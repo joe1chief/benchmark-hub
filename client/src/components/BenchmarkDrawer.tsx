@@ -174,7 +174,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
         <div className={`flex border-b px-6 shrink-0 transition-colors ${borderColor} ${drawerBg}`}>
           {[
             { key: 'info', icon: BookOpen, label: '详细信息' },
-            { key: 'pdf', icon: FileText, label: '完整论文', disabled: !hasPdf },
+            { key: 'pdf', icon: FileText, label: '完整论文', disabled: !hasPdf, fullscreen: true },
           ].map(({ key, icon: Icon, label, disabled }) => (
             <button key={key}
               className={`flex items-center gap-1.5 px-1 py-3 text-[13px] font-medium border-b-2 mr-6 transition-colors ${
@@ -191,7 +191,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
         </div>
 
         {/* 内容区 */}
-        <div className="flex-1 overflow-hidden">
+        <div className={`flex-1 overflow-hidden ${tab === 'pdf' ? 'flex flex-col' : ''}`}>
           {tab === 'info' ? (
             <div className="h-full overflow-y-auto px-6 py-5 space-y-5">
               {/* 勋章提示 */}
@@ -351,8 +351,8 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               )}
             </div>
           ) : (
-            /* PDF 阅读器 */
-            <div className={`h-full flex flex-col transition-colors ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`}>
+            /* PDF 阅读器 - 占据整个剩余空间 */
+            <div className={`flex-1 flex flex-col transition-colors ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`} style={{ minHeight: 0 }}>
               {/* PDF 工具栏 */}
               <div className={`flex items-center justify-between px-4 py-2 border-b shrink-0 transition-colors ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-center gap-2 min-w-0">
