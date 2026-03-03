@@ -540,11 +540,13 @@ def main():
     # Sort by name
     data.sort(key=lambda x: x['name'].lower())
     
-    # Save cleaned data
+    # Save cleaned data to both locations
     save_data(data, 'dist-ghpages/benchmarks.json')
+    save_data(data, 'client/public/benchmarks.json')
     
     # Save changes log
     save_data(changes_log, 'dist-ghpages/changes_log.json')
+    save_data(changes_log, 'changes_log.json')
     
     print(f"\n=== CLEANING COMPLETE ===")
     print(f"Final count: {len(data)} benchmarks")
