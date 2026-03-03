@@ -24,7 +24,7 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
-  base: "/benchmark-hub/",
+  base: "/llm-benchmark-costco/",
   build: {
     outDir: path.resolve(import.meta.dirname, "dist-ghpages"),
     emptyOutDir: true,

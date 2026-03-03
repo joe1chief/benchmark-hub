@@ -1,5 +1,5 @@
-// LLM Benchmark Costco 胶囊卡片组件
-// 设计：名称标签跨越边框（左上角），有设计感的浮雕风格卡片
+// LLM Benchmark Costco 卡片组件
+// 设计：名称无边框，纯文字 + 彩色文字阴影，悬浮时有光晕效果
 import React from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import { Calendar, Building2, BarChart3, Layers, Award, Lock, Unlock, ShieldAlert } from 'lucide-react';
@@ -41,55 +41,30 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
 
   const opennessInfo = OPENNESS_CONFIG[b.openness];
 
+  // 名称文字阴影：多层叠加，产生发光感
+  const nameTextShadow = isDark
+    ? `0 0 12px ${b.l1_color}99, 0 0 24px ${b.l1_color}44, 0 1px 3px rgba(0,0,0,0.8)`
+    : `0 0 8px ${b.l1_color}55, 0 1px 2px rgba(0,0,0,0.12), 0 2px 8px ${b.l1_color}33`;
+
   return (
     <div
-      className="group relative cursor-pointer transition-all duration-200 hover:-translate-y-px"
-      style={{ ...style, paddingTop: '14px' }}
+      className="group relative cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
+      style={{ ...style }}
       onClick={() => onClick(b)}
     >
-      {/* ── 名称标签：跨越边框，绝对定位在左上角 ── */}
-      <div
-        className="absolute left-4 top-0 z-10 flex items-center gap-1.5 px-2.5 py-[3px] rounded-full shadow-sm transition-all duration-200"
-        style={{
-          background: isDark
-            ? `linear-gradient(135deg, ${b.l1_color}33 0%, ${b.l1_color}18 100%)`
-            : `linear-gradient(135deg, ${b.l1_color}22 0%, ${b.l1_color}0f 100%)`,
-          border: `1.5px solid ${b.l1_color}55`,
-          backdropFilter: 'blur(4px)',
-          boxShadow: `0 0 0 1px ${isDark ? '#111' : '#fff'}, 0 2px 6px ${b.l1_color}22`,
-        }}
-      >
-        {b.widely_tested && (
-          <Award size={11} className="text-amber-500 shrink-0" title="被主要大模型厂商技术报告广泛测试" />
-        )}
-        <span
-          className="font-semibold text-[12.5px] leading-none truncate max-w-[200px]"
-          style={{
-            color: b.l1_color,
-            fontFamily: 'var(--font-mono)',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {b.name}
-        </span>
-      </div>
-
       {/* ── 卡片主体 ── */}
       <div
         className={`relative rounded-xl border transition-all duration-200 overflow-hidden ${
           isDark
-            ? 'bg-[#161616] border-gray-800 group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-black/30'
-            : 'bg-white border-gray-200 group-hover:border-transparent group-hover:shadow-md'
+            ? 'bg-[#161616] border-gray-800 group-hover:border-gray-700 group-hover:shadow-xl group-hover:shadow-black/40'
+            : 'bg-white border-gray-200 group-hover:border-gray-300 group-hover:shadow-lg group-hover:shadow-gray-200/80'
         }`}
-        style={{
-          boxShadow: isDark ? undefined : undefined,
-        }}
       >
         {/* 渐变色边框 overlay - hover 时显示 */}
         <div
           className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
           style={{
-            background: `linear-gradient(135deg, ${b.l1_color}, #1A73E8, #7C3AED)`,
+            background: `linear-gradient(135deg, ${b.l1_color}88, ${b.l1_color}22, ${b.l1_color}55)`,
             padding: '1px',
             WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
             WebkitMaskComposite: 'xor',
@@ -104,9 +79,31 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
         />
 
         {/* 卡片内容 */}
-        <div className="pl-4 pr-4 pt-5 pb-4">
-          {/* 顶部：难度标签（右对齐） */}
-          <div className="flex items-start justify-end mb-2 min-h-[20px]">
+        <div className="pl-5 pr-4 pt-4 pb-4">
+          {/* 顶部：名称 + 难度标签 */}
+          <div className="flex items-start justify-between gap-2 mb-2.5">
+            {/* 名称：无框，纯文字 + 阴影 */}
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              {b.widely_tested && (
+                <Award
+                  size={12}
+                  className="text-amber-500 shrink-0 mt-0.5"
+                  title="被主要大模型厂商技术报告广泛测试"
+                />
+              )}
+              <span
+                className="font-bold text-[14px] leading-tight truncate"
+                style={{
+                  color: b.l1_color,
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: '-0.02em',
+                  textShadow: nameTextShadow,
+                }}
+              >
+                {b.name}
+              </span>
+            </div>
+            {/* 难度标签 */}
             {b.difficulty && (
               <span
                 className={`tag-capsule shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full ${diffStyle}`}
@@ -118,26 +115,26 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
           </div>
 
           {/* 简介 */}
-          <p className={`text-[13px] leading-relaxed line-clamp-2 mb-3 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          <p className={`text-[12.5px] leading-relaxed line-clamp-2 mb-3 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             {b.intro || '暂无简介'}
           </p>
 
           {/* 元信息行 */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
             {b.published && (
-              <span className={`flex items-center gap-1 text-[12px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span className={`flex items-center gap-1 text-[11.5px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 <Calendar size={11} />
                 {b.published}
               </span>
             )}
             {b.org && (
-              <span className={`flex items-center gap-1 text-[12px] truncate max-w-[160px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span className={`flex items-center gap-1 text-[11.5px] truncate max-w-[160px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 <Building2 size={11} />
                 <span className="truncate">{b.org.split('、')[0].split(',')[0].trim()}</span>
               </span>
             )}
             {b.has_leaderboard && (
-              <span className="flex items-center gap-1 text-[12px] text-[#10A37F]">
+              <span className="flex items-center gap-1 text-[11.5px] text-[#10A37F]">
                 <BarChart3 size={11} />
                 排行榜
               </span>
@@ -156,7 +153,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
             <span
               className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
               style={{
-                backgroundColor: b.l1_color + (isDark ? '22' : '18'),
+                backgroundColor: b.l1_color + (isDark ? '22' : '15'),
                 color: b.l1_color,
                 fontFamily: 'var(--font-mono)',
               }}

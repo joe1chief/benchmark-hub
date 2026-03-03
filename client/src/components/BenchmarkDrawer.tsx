@@ -57,6 +57,7 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
 
 export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, onSelectBenchmark }: Props) {
   const [tab, setTab] = useState<'info' | 'pdf'>('info');
+  const [pdfFullscreen, setPdfFullscreen] = useState(false);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [pdfError, setPdfError] = useState(false);
   const [strategyIndex, setStrategyIndex] = useState(0);
@@ -69,6 +70,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
       setPdfLoaded(false);
       setPdfError(false);
       setStrategyIndex(0);
+      setPdfFullscreen(false);
     }
   }, [b?.id]);
 
@@ -120,7 +122,9 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
 
       {/* 抽屉主体 */}
       <div
-        className={`fixed right-0 top-0 bottom-0 w-full max-w-[720px] shadow-2xl z-50 flex flex-col transition-colors duration-200 ${drawerBg}`}
+        className={`fixed right-0 top-0 bottom-0 shadow-2xl z-50 flex flex-col transition-all duration-300 ${drawerBg} ${
+          pdfFullscreen ? 'w-full max-w-full' : 'w-full max-w-[720px]'
+        }`}
         style={{ animation: 'slideInRight 0.25s ease-out' }}
       >
         {/* 头部 */}
@@ -174,7 +178,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
         <div className={`flex border-b px-6 shrink-0 transition-colors ${borderColor} ${drawerBg}`}>
           {[
             { key: 'info', icon: BookOpen, label: '详细信息' },
-            { key: 'pdf', icon: FileText, label: '完整论文', disabled: !hasPdf, fullscreen: true },
+            { key: 'pdf', icon: FileText, label: '完整论文', disabled: !hasPdf },
           ].map(({ key, icon: Icon, label, disabled }) => (
             <button key={key}
               className={`flex items-center gap-1.5 px-1 py-3 text-[13px] font-medium border-b-2 mr-6 transition-colors ${
@@ -188,6 +192,18 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               {key === 'pdf' && !hasPdf && <span className="text-[10px] ml-1">(暂无)</span>}
             </button>
           ))}
+          {/* PDF 全屏切换按钮 */}
+          {tab === 'pdf' && hasPdf && (
+            <button
+              onClick={() => setPdfFullscreen(v => !v)}
+              title={pdfFullscreen ? '收起' : '全屏阅读'}
+              className={`ml-auto flex items-center gap-1 px-2 py-1 my-auto rounded-lg text-[11px] transition-colors ${
+                isDark ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+              }`}>
+              <Maximize2 size={12} />
+              {pdfFullscreen ? '收起' : '全屏'}
+            </button>
+          )}
         </div>
 
         {/* 内容区 */}
