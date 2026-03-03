@@ -1,5 +1,5 @@
 // LLM Benchmark Costco 主页
-// 设计：白底极简，#10A37F 绿色强调，Inter 字体，胶囊卡片网格
+// 设计：OpenAI 渐变色效果，白底极简，#10A37F 绿色强调
 import React, { useState, useMemo, useCallback } from 'react';
 import { useBenchmarks, useFilteredBenchmarks } from '@/hooks/useBenchmarks';
 import type { Benchmark } from '@/types/benchmark';
@@ -84,7 +84,7 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDark ? 'bg-[#0F0F0F]' : 'bg-[#FAFAFA]'}`}>
+    <div className={`min-h-screen transition-colors duration-200 relative ${isDark ? 'bg-[#0F0F0F]' : 'bg-[#FAFAFA]'}`}>
       {/* 顶部导航 */}
       <Navbar
         search={filters.search}
@@ -104,7 +104,7 @@ export default function Home() {
       />
 
       {/* 主内容区 */}
-      <main className="container py-6">
+      <main className="container py-6 relative z-10">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-gray-400">
             <SearchX size={40} className="mb-3 text-gray-300" />
@@ -139,24 +139,30 @@ export default function Home() {
               ))}
             </div>
 
-            {/* 加载更多 */}
+            {/* 加载更多 - 渐变色按钮 */}
             {hasMore && (
               <div className="flex justify-center mt-8">
                 <button
                   onClick={() => setPage(p => p + 1)}
-                  className={`px-6 py-2.5 text-[13px] font-medium rounded-lg border transition-all ${
-                    isDark
-                      ? 'border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-white'
-                  }`}
+                  className="group relative px-8 py-2.5 text-[13px] font-medium rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #10A37F 0%, #1A73E8 50%, #7C3AED 100%)',
+                    color: 'white',
+                  }}
                 >
-                  加载更多（还有 {filtered.length - paged.length} 个）
+                  <span className="relative z-10">加载更多（还有 {filtered.length - paged.length} 个）</span>
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </button>
               </div>
             )}
           </>
         )}
       </main>
+
+      {/* 底部渐变装饰线 */}
+      <div className="h-1 w-full" style={{
+        background: 'linear-gradient(90deg, #10A37F 0%, #1A73E8 33%, #7C3AED 66%, #F59E0B 100%)',
+      }} />
 
       {/* 详情抽屉 */}
       <BenchmarkDrawer

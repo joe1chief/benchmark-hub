@@ -22,17 +22,14 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
     }`}>
       <div className="container">
         <div className="flex items-center gap-4 h-14">
-          {/* Logo */}
+          {/* Logo - 显微镜 emoji */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#10A37F' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="5" height="5" rx="1" fill="white" />
-                <rect x="9" y="2" width="5" height="5" rx="1" fill="white" opacity="0.7" />
-                <rect x="2" y="9" width="5" height="5" rx="1" fill="white" opacity="0.7" />
-                <rect x="9" y="9" width="5" height="5" rx="1" fill="white" opacity="0.4" />
-              </svg>
-            </div>
-            <span className={`font-semibold text-[15px] tracking-tight transition-colors ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+            <span className="text-[22px] leading-none" role="img" aria-label="microscope">🔬</span>
+            <span className="font-semibold text-[15px] tracking-tight bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, #10A37F 0%, #1A73E8 50%, #7C3AED 100%)',
+              }}
+            >
               LLM Benchmark Costco
             </span>
           </div>
