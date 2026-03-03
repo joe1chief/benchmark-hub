@@ -1,8 +1,7 @@
-// LLM Benchmark Costco — Navbar (i18n)
+// LLM Benchmark Costco — Navbar (English)
 import React from 'react';
 import { Search, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useLang } from '@/contexts/LangContext';
 
 interface Props {
   search: string;
@@ -13,7 +12,6 @@ interface Props {
 
 export default function Navbar({ search, onSearchChange, total, filtered }: Props) {
   const { theme, toggleTheme, switchable } = useTheme();
-  const { lang, t, toggleLang } = useLang();
   const isDark = theme === 'dark';
 
   return (
@@ -31,18 +29,20 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
           {/* Logo */}
           <div className="flex items-center gap-2.5 shrink-0">
             <span className="text-[20px] leading-none select-none" role="img" aria-label="microscope">🔬</span>
-            <span
-              className="font-semibold text-[14px] tracking-tight"
-              style={{
-                fontFamily: "'Inter', -apple-system, sans-serif",
-                background: 'linear-gradient(90deg, #10A37F 0%, #1A73E8 60%, #7C3AED 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              {t.siteTitle}
-            </span>
+            <div className="flex flex-col leading-none">
+              <span
+                className="font-semibold text-[14px] tracking-tight"
+                style={{
+                  fontFamily: "'Inter', -apple-system, sans-serif",
+                  background: 'linear-gradient(90deg, #10A37F 0%, #1A73E8 60%, #7C3AED 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                LLM Benchmark Costco
+              </span>
+            </div>
           </div>
 
           {/* Search */}
@@ -54,7 +54,7 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
             />
             <input
               type="text"
-              placeholder={t.searchPlaceholder}
+              placeholder="Search by name, org, category..."
               value={search}
               onChange={e => onSearchChange(e.target.value)}
               className="w-full pl-9 pr-8 py-[7px] text-[13px] border rounded-xl outline-none transition-all"
@@ -92,42 +92,19 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
           >
             <span style={{ fontWeight: 600, color: isDark ? '#E5E7EB' : '#111827' }}>{filtered}</span>
             {filtered !== total && <span style={{ color: isDark ? '#4B5563' : '#D1D5DB' }}>/ {total}</span>}
-            <span>{lang === 'zh' ? '个 Benchmark' : t.benchmarks}</span>
+            <span>Benchmarks</span>
           </div>
-
-          {/* Language toggle */}
-          <button
-            onClick={toggleLang}
-            title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
-            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium border transition-all"
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              borderColor: isDark ? '#2D2D2D' : '#E5E7EB',
-              color: isDark ? '#9CA3AF' : '#6B7280',
-              backgroundColor: 'transparent',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#10A37F';
-              e.currentTarget.style.color = '#10A37F';
-              e.currentTarget.style.backgroundColor = 'rgba(16,163,127,0.06)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = isDark ? '#2D2D2D' : '#E5E7EB';
-              e.currentTarget.style.color = isDark ? '#9CA3AF' : '#6B7280';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <span className="text-[13px] leading-none">{lang === 'zh' ? '🇺🇸' : '🇨🇳'}</span>
-            <span>{lang === 'zh' ? 'EN' : '中文'}</span>
-          </button>
 
           {/* Theme toggle */}
           {switchable && toggleTheme && (
             <button
               onClick={toggleTheme}
-              title={isDark ? t.switchToLight : t.switchToDark}
+              title={isDark ? 'Switch to Light' : 'Switch to Dark'}
               className="p-2 rounded-xl transition-colors shrink-0"
-              style={{ color: isDark ? '#6B7280' : '#9CA3AF', backgroundColor: 'transparent' }}
+              style={{
+                color: isDark ? '#6B7280' : '#9CA3AF',
+                backgroundColor: 'transparent',
+              }}
               onMouseEnter={e => {
                 e.currentTarget.style.backgroundColor = isDark ? '#1F1F1F' : '#F3F4F6';
                 e.currentTarget.style.color = isDark ? '#E5E7EB' : '#374151';
@@ -152,13 +129,15 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
           <div className="flex items-center justify-end h-[22px]">
             <span
               className="text-[11px]"
-              style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#3D3D3D' : '#D1D5DB' }}
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                color: isDark ? '#3D3D3D' : '#D1D5DB',
+              }}
             >
-              {t.poweredBy}{' '}
+              powered by{' '}
               <span style={{ fontWeight: 600, color: isDark ? '#10A37F66' : '#10A37F88' }}>
                 Ant AQ eval team
               </span>
-              {t.poweredBySuffix}
             </span>
           </div>
         </div>

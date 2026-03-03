@@ -1,26 +1,30 @@
-// LLM Benchmark Costco — FilterBar (i18n)
+// LLM Benchmark Costco — FilterBar (English)
 import React from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useLang } from '@/contexts/LangContext';
 
 const L1_CATEGORIES = [
-  { key: '通用语言能力', color: '#2563EB' },
-  { key: 'Agent能力',   color: '#10A37F' },
-  { key: '多模态理解',  color: '#7C3AED' },
-  { key: '代码能力',    color: '#EA580C' },
-  { key: '科学推理',    color: '#0891B2' },
-  { key: '安全对齐',    color: '#DC2626' },
-  { key: '数学推理',    color: '#D97706' },
-  { key: '长文本理解',  color: '#059669' },
-  { key: '医疗健康',    color: '#DB2777' },
-  { key: '视频理解',    color: '#6D28D9' },
-  { key: '图表与文档理解', color: '#0D9488' },
-  { key: '空间与3D理解',  color: '#6366F1' },
+  { label: 'General Language',   color: '#2563EB' },
+  { label: 'Agent Capability',   color: '#10A37F' },
+  { label: 'Multimodal',         color: '#7C3AED' },
+  { label: 'Code',               color: '#EA580C' },
+  { label: 'Science & Reasoning',color: '#0891B2' },
+  { label: 'Safety & Alignment', color: '#DC2626' },
+  { label: 'Math',               color: '#D97706' },
+  { label: 'Long Context',       color: '#059669' },
+  { label: 'Medical & Health',   color: '#DB2777' },
+  { label: 'Video Understanding',color: '#6D28D9' },
+  { label: 'Chart & Document',   color: '#0D9488' },
+  { label: 'Spatial & 3D',       color: '#6366F1' },
 ];
 
-const YEARS = ['2026','2025','2024','2023','2022','2021','2020','2019','2018','2017','2016','2015','2014','2013','2012','2012以前'];
-const DIFFICULTIES = ['前沿','专家','进阶','基础'];
+const YEARS = ['2026','2025','2024','2023','2022','2021','2020','2019','2018','2017','2016','2015','2014','2013','2012','Before 2012'];
+const DIFFICULTIES = ['Frontier','Expert','Advanced','Basic'];
+const OPENNESS_OPTIONS = [
+  { value: 'public',        label: 'Public',       color: '#10A37F' },
+  { value: 'partly public', label: 'Partly Public', color: '#F59E0B' },
+  { value: 'in-house',      label: 'In-house',      color: '#EF4444' },
+];
 
 type SortType = 'newest' | 'oldest' | 'name';
 interface Filters {
@@ -40,16 +44,9 @@ interface Props {
 
 export default function FilterBar({ filters, onChange, counts, widelyTestedCount = 0 }: Props) {
   const { theme } = useTheme();
-  const { t, lang } = useLang();
   const isDark = theme === 'dark';
   const hasActive = filters.l1 || filters.year || filters.difficulty || filters.openness || filters.widelyTested;
   const widelyActive = !!filters.widelyTested;
-
-  const OPENNESS_OPTIONS = [
-    { value: 'public',        label: t.publicLabel,   color: '#10A37F' },
-    { value: 'partly public', label: t.partlyLabel,   color: '#F59E0B' },
-    { value: 'in-house',      label: t.inHouse,       color: '#EF4444' },
-  ];
 
   const baseSelectStyle: React.CSSProperties = {
     fontFamily: "'Inter', sans-serif",
@@ -81,23 +78,26 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
           {/* Filter icon */}
           <div
             className="flex items-center gap-1.5 shrink-0 pt-[7px]"
-            style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: isDark ? '#4B5563' : '#9CA3AF' }}
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '12px',
+              color: isDark ? '#4B5563' : '#9CA3AF',
+            }}
           >
             <SlidersHorizontal size={13} />
-            <span>{lang === 'zh' ? '筛选' : 'Filter'}</span>
+            <span>Filter</span>
           </div>
 
           <div className="flex-1 space-y-2 overflow-hidden">
-            {/* Row 1: L1 categories + widely adopted */}
+            {/* Row 1: L1 categories + Widely Adopted */}
             <div className="flex flex-wrap gap-1.5 items-center">
               {L1_CATEGORIES.map(cat => {
-                const label = t.l1[cat.key] || cat.key;
-                const active = filters.l1 === cat.key;
-                const count = counts[cat.key] || 0;
+                const active = filters.l1 === cat.label;
+                const count = counts[cat.label] || 0;
                 return (
                   <button
-                    key={cat.key}
-                    onClick={() => onChange({ l1: active ? '' : cat.key })}
+                    key={cat.label}
+                    onClick={() => onChange({ l1: active ? '' : cat.label })}
                     className="inline-flex items-center gap-1.5 transition-all duration-150"
                     style={{
                       fontFamily: "'Inter', sans-serif",
@@ -125,16 +125,19 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                       }
                     }}
                   >
-                    {label}
+                    {cat.label}
                     <span style={{ fontSize: '10px', opacity: 0.6 }}>{count}</span>
                   </button>
                 );
               })}
 
               {/* Divider */}
-              <div className="w-px h-5 mx-0.5" style={{ backgroundColor: isDark ? '#2D2D2D' : '#E5E7EB' }} />
+              <div
+                className="w-px h-5 mx-0.5"
+                style={{ backgroundColor: isDark ? '#2D2D2D' : '#E5E7EB' }}
+              />
 
-              {/* Widely adopted button */}
+              {/* Widely Adopted button */}
               <button
                 onClick={() => onChange({ widelyTested: widelyActive ? undefined : true })}
                 className="inline-flex items-center gap-1.5 transition-all duration-150"
@@ -152,29 +155,36 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                   cursor: 'pointer',
                   boxShadow: widelyActive ? '0 2px 8px rgba(245,158,11,0.3)' : 'none',
                 }}
+                title="Filter benchmarks widely adopted by major AI labs"
               >
                 <span style={{ fontSize: '13px', lineHeight: 1 }}>🏅</span>
-                <span>{t.widelyAdopted}</span>
+                <span>Widely Adopted</span>
                 {widelyTestedCount > 0 && (
                   <span style={{ fontSize: '10px', opacity: widelyActive ? 0.85 : 0.6 }}>{widelyTestedCount}</span>
                 )}
               </button>
             </div>
 
-            {/* Row 2: year + difficulty + openness + sort + clear */}
+            {/* Row 2: Year + Difficulty + Openness + Sort + Clear */}
             <div className="flex flex-wrap items-center gap-2">
               {/* Year */}
-              <select value={filters.year} onChange={e => onChange({ year: e.target.value })} style={baseSelectStyle}>
-                <option value="">{t.allYears}</option>
+              <select
+                value={filters.year}
+                onChange={e => onChange({ year: e.target.value })}
+                style={baseSelectStyle}
+              >
+                <option value="">All Years</option>
                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
 
               {/* Difficulty */}
-              <select value={filters.difficulty} onChange={e => onChange({ difficulty: e.target.value })} style={baseSelectStyle}>
-                <option value="">{t.allDifficulty}</option>
-                {DIFFICULTIES.map(d => (
-                  <option key={d} value={d}>{t.difficulty[d] || d}</option>
-                ))}
+              <select
+                value={filters.difficulty}
+                onChange={e => onChange({ difficulty: e.target.value })}
+                style={baseSelectStyle}
+              >
+                <option value="">All Levels</option>
+                {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
 
               {/* Openness */}
@@ -198,7 +208,10 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                         cursor: 'pointer',
                       }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: opt.color }} />
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: opt.color }}
+                      />
                       {opt.label}
                     </button>
                   );
@@ -206,13 +219,17 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
               </div>
 
               {/* Sort */}
-              <select value={filters.sort} onChange={e => onChange({ sort: e.target.value as SortType })} style={baseSelectStyle}>
-                <option value="newest">{t.sortNewest}</option>
-                <option value="oldest">{t.sortOldest}</option>
-                <option value="name">{t.sortName}</option>
+              <select
+                value={filters.sort}
+                onChange={e => onChange({ sort: e.target.value as SortType })}
+                style={baseSelectStyle}
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Name A→Z</option>
               </select>
 
-              {/* Clear */}
+              {/* Clear filters */}
               {hasActive && (
                 <button
                   onClick={() => onChange({ l1: '', year: '', difficulty: '', openness: '', widelyTested: undefined })}
@@ -237,7 +254,7 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                   }}
                 >
                   <X size={12} />
-                  {lang === 'zh' ? '清除' : 'Clear'}
+                  Clear
                 </button>
               )}
             </div>

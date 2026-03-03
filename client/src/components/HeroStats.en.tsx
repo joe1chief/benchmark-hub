@@ -1,8 +1,7 @@
-// LLM Benchmark Costco — HeroStats (i18n)
+// LLM Benchmark Costco — HeroStats (English)
 import React from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useLang } from '@/contexts/LangContext';
 
 interface Props {
   data: Benchmark[];
@@ -10,7 +9,6 @@ interface Props {
 
 export default function HeroStats({ data }: Props) {
   const { theme } = useTheme();
-  const { t } = useLang();
   const isDark = theme === 'dark';
 
   const total        = data.length;
@@ -19,10 +17,10 @@ export default function HeroStats({ data }: Props) {
   const widelyTested = data.filter(b => (b as any).widely_tested).length;
 
   const stats = [
-    { value: total,        label: t.statBenchmarks, color: '#10A37F' },
-    { value: categories,   label: t.statDims,        color: '#1A73E8' },
-    { value: families,     label: t.statFamilies,    color: '#7C3AED' },
-    { value: widelyTested, label: t.statWidely,      color: '#F59E0B' },
+    { value: total,        label: 'Benchmarks',       color: '#10A37F' },
+    { value: categories,   label: 'Capability Dims',  color: '#1A73E8' },
+    { value: families,     label: 'Families',         color: '#7C3AED' },
+    { value: widelyTested, label: 'Widely Adopted',   color: '#F59E0B' },
   ];
 
   return (
@@ -46,13 +44,20 @@ export default function HeroStats({ data }: Props) {
               backgroundClip: 'text',
             }}
           >
-            {t.heroTitle}
+            LLM Benchmark Costco
           </h1>
           <p
             className="text-[14px] max-w-xl leading-relaxed"
-            style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              color: isDark ? '#6B7280' : '#9CA3AF',
+            }}
           >
-            {t.heroDesc(total, categories)}
+            A curated database of{' '}
+            <strong style={{ color: isDark ? '#D1D5DB' : '#374151', fontWeight: 600 }}>{total}</strong>{' '}
+            LLM evaluation benchmarks across{' '}
+            <strong style={{ color: isDark ? '#D1D5DB' : '#374151', fontWeight: 600 }}>{categories}</strong>{' '}
+            capability dimensions. Each entry includes the full paper for inline reading.
           </p>
         </div>
 
@@ -60,15 +65,24 @@ export default function HeroStats({ data }: Props) {
         <div className="flex flex-wrap gap-10">
           {stats.map((s, i) => (
             <div key={i} className="flex flex-col gap-0.5">
-              <span
-                className="text-[32px] font-bold tabular-nums leading-none"
-                style={{ fontFamily: "'Inter', sans-serif", letterSpacing: '-0.03em', color: s.color }}
-              >
-                {s.value}
-              </span>
+              <div className="flex items-baseline gap-1">
+                <span
+                  className="text-[32px] font-bold tabular-nums leading-none"
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    letterSpacing: '-0.03em',
+                    color: s.color,
+                  }}
+                >
+                  {s.value}
+                </span>
+              </div>
               <span
                 className="text-[12px]"
-                style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#9CA3AF' }}
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  color: isDark ? '#4B5563' : '#9CA3AF',
+                }}
               >
                 {s.label}
               </span>

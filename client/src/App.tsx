@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, Router as WouterRouter } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LangProvider } from "./contexts/LangContext";
 import Home from "./pages/Home";
 
 // 自动检测 base path，支持 GitHub Pages 子路径部署
@@ -23,12 +24,14 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light" switchable={true}>
-        <TooltipProvider>
-          <Toaster />
-          <WouterRouter base={BASE_PATH}>
-            <Routes />
-          </WouterRouter>
-        </TooltipProvider>
+        <LangProvider>
+          <TooltipProvider>
+            <Toaster />
+            <WouterRouter base={BASE_PATH}>
+              <Routes />
+            </WouterRouter>
+          </TooltipProvider>
+        </LangProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

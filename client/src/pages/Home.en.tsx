@@ -1,15 +1,14 @@
-// LLM Benchmark Costco — Home (i18n)
+// LLM Benchmark Costco — Home (English)
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useBenchmarks, useFilteredBenchmarks } from '@/hooks/useBenchmarks';
 import type { Benchmark } from '@/types/benchmark';
-import Navbar from '@/components/Navbar';
-import FilterBar from '@/components/FilterBar';
-import HeroStats from '@/components/HeroStats';
-import BenchmarkCard from '@/components/BenchmarkCard';
-import BenchmarkDrawer from '@/components/BenchmarkDrawer';
+import Navbar from '@/components/Navbar.en';
+import FilterBar from '@/components/FilterBar.en';
+import HeroStats from '@/components/HeroStats.en';
+import BenchmarkCard from '@/components/BenchmarkCard.en';
+import BenchmarkDrawer from '@/components/BenchmarkDrawer.en';
 import { Loader2, SearchX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useLang } from '@/contexts/LangContext';
 
 const PAGE_SIZE = 60;
 
@@ -25,6 +24,25 @@ type FiltersType = {
   widelyTested?: boolean;
 };
 
+// Map Chinese L1 labels → English for filtering
+const L1_EN_MAP: Record<string, string> = {
+  '通用语言能力': 'General Language', 'Agent能力': 'Agent Capability',
+  '多模态理解': 'Multimodal', '代码能力': 'Code',
+  '科学推理': 'Science & Reasoning', '安全对齐': 'Safety & Alignment',
+  '数学推理': 'Math', '长文本理解': 'Long Context',
+  '医疗健康': 'Medical & Health', '视频理解': 'Video Understanding',
+  '图表与文档理解': 'Chart & Document', '空间与3D理解': 'Spatial & 3D',
+};
+// Reverse map: English → Chinese (for filtering against raw data)
+const L1_ZH_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(L1_EN_MAP).map(([zh, en]) => [en, zh])
+);
+
+// Map English difficulty → Chinese (for filtering against raw data)
+const DIFF_ZH_MAP: Record<string, string> = {
+  'Frontier': '前沿', 'Expert': '专家', 'Advanced': '进阶', 'Basic': '基础',
+};
+
 export default function Home() {
   const { data, loading, error } = useBenchmarks();
   const [selected, setSelected] = useState<Benchmark | null>(null);
@@ -34,13 +52,20 @@ export default function Home() {
     modality: '', openness: '', sort: 'newest',
   });
   const { theme } = useTheme();
-  const { t, lang } = useLang();
   const isDark = theme === 'dark';
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useFilteredBenchmarks(data, filters);
+  // Convert English filter values to Chinese before passing to useFilteredBenchmarks
+  const rawFilters = useMemo(() => ({
+    ...filters,
+    l1: L1_ZH_MAP[filters.l1] || filters.l1,
+    difficulty: DIFF_ZH_MAP[filters.difficulty] || filters.difficulty,
+  }), [filters]);
+
+  const filtered = useFilteredBenchmarks(data, rawFilters);
   const widelyTestedCount = useMemo(() => data.filter(b => (b as any).widely_tested === true).length, [data]);
 
+  // Counts keyed by English label
   const counts = useMemo(() => {
     const base = data.filter(b => {
       if (filters.search.trim()) {
@@ -50,7 +75,10 @@ export default function Home() {
       return true;
     });
     const c: Record<string, number> = {};
-    base.forEach(b => { c[b.l1] = (c[b.l1] || 0) + 1; });
+    base.forEach(b => {
+      const enLabel = L1_EN_MAP[b.l1] || b.l1;
+      c[enLabel] = (c[enLabel] || 0) + 1;
+    });
     return c;
   }, [data, filters.search]);
 
@@ -83,8 +111,11 @@ export default function Home() {
       >
         <div className="flex flex-col items-center gap-3">
           <Loader2 size={24} className="animate-spin" style={{ color: '#10A37F' }} />
-          <span className="text-[13px]" style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}>
-            {t.loading}
+          <span
+            className="text-[13px]"
+            style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}
+          >
+            Loading benchmarks…
           </span>
         </div>
       </div>
@@ -98,7 +129,7 @@ export default function Home() {
         style={{ backgroundColor: isDark ? '#0A0A0A' : '#FAFAFA' }}
       >
         <div className="text-center">
-          <p className="text-[15px] font-medium mb-1" style={{ color: isDark ? '#E5E7EB' : '#374151' }}>{t.loadError}</p>
+          <p className="text-[15px] font-medium mb-1" style={{ color: isDark ? '#E5E7EB' : '#374151' }}>Failed to load data</p>
           <p className="text-[13px]" style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}>{error}</p>
         </div>
       </div>
@@ -112,26 +143,22 @@ export default function Home() {
     >
       {/* Dynamic gradient background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute rounded-full animate-orb-1" style={{
-          width: '55vw', height: '55vw', top: '-20vw', left: '-10vw',
-          background: isDark ? 'radial-gradient(circle, rgba(16,163,127,0.14) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(16,163,127,0.07) 0%, transparent 65%)',
-          filter: 'blur(80px)',
-        }} />
-        <div className="absolute rounded-full animate-orb-2" style={{
-          width: '45vw', height: '45vw', top: '15vh', right: '-8vw',
-          background: isDark ? 'radial-gradient(circle, rgba(26,115,232,0.12) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(26,115,232,0.06) 0%, transparent 65%)',
-          filter: 'blur(100px)',
-        }} />
-        <div className="absolute rounded-full animate-orb-3" style={{
-          width: '50vw', height: '50vw', bottom: '-8vw', left: '15vw',
-          background: isDark ? 'radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 65%)',
-          filter: 'blur(120px)',
-        }} />
-        <div className="absolute rounded-full animate-orb-4" style={{
-          width: '30vw', height: '30vw', bottom: '5vh', right: '5vw',
-          background: isDark ? 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 65%)',
-          filter: 'blur(80px)',
-        }} />
+        <div className="absolute rounded-full animate-orb-1"
+          style={{ width: '55vw', height: '55vw', top: '-20vw', left: '-10vw',
+            background: isDark ? 'radial-gradient(circle, rgba(16,163,127,0.14) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(16,163,127,0.07) 0%, transparent 65%)',
+            filter: 'blur(80px)' }} />
+        <div className="absolute rounded-full animate-orb-2"
+          style={{ width: '45vw', height: '45vw', top: '15vh', right: '-8vw',
+            background: isDark ? 'radial-gradient(circle, rgba(26,115,232,0.12) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(26,115,232,0.06) 0%, transparent 65%)',
+            filter: 'blur(100px)' }} />
+        <div className="absolute rounded-full animate-orb-3"
+          style={{ width: '50vw', height: '50vw', bottom: '-8vw', left: '15vw',
+            background: isDark ? 'radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 65%)',
+            filter: 'blur(120px)' }} />
+        <div className="absolute rounded-full animate-orb-4"
+          style={{ width: '30vw', height: '30vw', bottom: '5vh', right: '5vw',
+            background: isDark ? 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 65%)',
+            filter: 'blur(80px)' }} />
       </div>
 
       {/* Content layer */}
@@ -156,27 +183,26 @@ export default function Home() {
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24">
               <SearchX size={36} style={{ color: isDark ? '#374151' : '#D1D5DB' }} className="mb-3" />
-              <p className="text-[15px] font-medium mb-1" style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}>
-                {t.noResults}
+              <p className="text-[15px] font-medium mb-1"
+                style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}>
+                No benchmarks found
               </p>
               <p className="text-[13px]" style={{ color: isDark ? '#4B5563' : '#D1D5DB' }}>
-                {t.noResultsHint}
+                Try adjusting your search or clearing filters
               </p>
             </div>
           ) : (
             <>
               {/* Result count */}
               <div className="flex items-center mb-5">
-                <p className="text-[13px]" style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#9CA3AF' }}>
-                  {lang === 'zh' ? '共 ' : ''}
-                  <span style={{ fontWeight: 600, color: isDark ? '#D1D5DB' : '#374151' }}>
-                    {filtered.length}
-                  </span>
-                  {' '}{t.results}
-                  {filters.l1 && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {t.l1[filters.l1] || filters.l1}</span>}
-                  {filters.year && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {filters.year}{lang === 'zh' ? '年' : ''}</span>}
-                  {filters.difficulty && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {t.difficulty[filters.difficulty] || filters.difficulty}</span>}
-                  {filters.widelyTested && <span style={{ color: '#F59E0B' }}> · 🏅 {t.widelyAdopted}</span>}
+                <p className="text-[13px]"
+                  style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#9CA3AF' }}>
+                  <span style={{ fontWeight: 600, color: isDark ? '#D1D5DB' : '#374151' }}>{filtered.length}</span>
+                  {' '}results
+                  {filters.l1 && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {filters.l1}</span>}
+                  {filters.year && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {filters.year}</span>}
+                  {filters.difficulty && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {filters.difficulty}</span>}
+                  {filters.widelyTested && <span style={{ color: '#F59E0B' }}> · 🏅 Widely Adopted</span>}
                 </p>
               </div>
 
@@ -199,8 +225,9 @@ export default function Home() {
               {hasMore && (
                 <div ref={sentinelRef} className="flex justify-center items-center py-10 gap-2">
                   <Loader2 size={16} className="animate-spin" style={{ color: '#10A37F' }} />
-                  <span className="text-[12px]" style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#D1D5DB' }}>
-                    {t.loadingMore}
+                  <span className="text-[12px]"
+                    style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#D1D5DB' }}>
+                    Loading more…
                   </span>
                 </div>
               )}
@@ -208,7 +235,7 @@ export default function Home() {
               {!hasMore && filtered.length > PAGE_SIZE && (
                 <div className="flex justify-center py-8">
                   <span className="text-[12px]" style={{ color: isDark ? '#2D2D2D' : '#E5E7EB' }}>
-                    {t.allShown(filtered.length)}
+                    — All {filtered.length} results shown —
                   </span>
                 </div>
               )}
@@ -216,11 +243,9 @@ export default function Home() {
           )}
         </main>
 
-        {/* Bottom decorative line */}
-        <div className="h-px w-full" style={{
-          background: 'linear-gradient(90deg, transparent 0%, #10A37F 25%, #1A73E8 50%, #7C3AED 75%, transparent 100%)',
-          opacity: 0.3,
-        }} />
+        {/* Footer gradient line */}
+        <div className="h-px w-full"
+          style={{ background: 'linear-gradient(90deg, transparent 0%, #10A37F 25%, #1A73E8 50%, #7C3AED 75%, transparent 100%)', opacity: 0.3 }} />
         <div className="h-8" />
       </div>
 
