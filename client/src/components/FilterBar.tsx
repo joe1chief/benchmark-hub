@@ -1,6 +1,7 @@
 // OpenAI 风格筛选栏
 import React from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const L1_CATEGORIES = [
   { label: '通用语言能力', color: '#2563EB' },
@@ -36,13 +37,19 @@ interface Props {
 
 export default function FilterBar({ filters, onChange, counts }: Props) {
   const hasActive = filters.l1 || filters.year || filters.difficulty;
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const selectClass = isDark
+    ? 'text-[12px] px-2.5 py-1 rounded-lg border border-gray-700 bg-gray-800 text-gray-300 outline-none focus:border-[#10A37F] transition-colors'
+    : 'text-[12px] px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-[#10A37F] transition-colors';
 
   return (
-    <div className="bg-white border-b border-gray-100 sticky top-14 z-20">
+    <div className={`border-b sticky top-[3.75rem] z-20 transition-colors duration-200 ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-100'}`}>
       <div className="container py-3">
         <div className="flex items-start gap-4">
           {/* 筛选图标 */}
-          <div className="flex items-center gap-1.5 text-[12px] text-gray-400 shrink-0 pt-1.5">
+          <div className={`flex items-center gap-1.5 text-[12px] shrink-0 pt-1.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
             <SlidersHorizontal size={13} />
             <span>筛选</span>
           </div>
@@ -63,6 +70,10 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
                       backgroundColor: cat.color,
                       color: 'white',
                       borderColor: cat.color,
+                    } : isDark ? {
+                      backgroundColor: 'transparent',
+                      color: '#9CA3AF',
+                      borderColor: '#374151',
                     } : {
                       backgroundColor: 'white',
                       color: '#6B7280',
@@ -72,14 +83,14 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
                       if (!active) {
                         e.currentTarget.style.borderColor = cat.color;
                         e.currentTarget.style.color = cat.color;
-                        e.currentTarget.style.backgroundColor = cat.color + '10';
+                        e.currentTarget.style.backgroundColor = cat.color + '15';
                       }
                     }}
                     onMouseLeave={e => {
                       if (!active) {
-                        e.currentTarget.style.borderColor = '#E5E7EB';
-                        e.currentTarget.style.color = '#6B7280';
-                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.borderColor = isDark ? '#374151' : '#E5E7EB';
+                        e.currentTarget.style.color = isDark ? '#9CA3AF' : '#6B7280';
+                        e.currentTarget.style.backgroundColor = isDark ? 'transparent' : 'white';
                       }
                     }}
                   >
@@ -96,7 +107,7 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
               <select
                 value={filters.year}
                 onChange={e => onChange({ year: e.target.value })}
-                className="text-[12px] px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-[#10A37F] transition-colors"
+                className={selectClass}
               >
                 <option value="">全部年份</option>
                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -106,7 +117,7 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
               <select
                 value={filters.difficulty}
                 onChange={e => onChange({ difficulty: e.target.value })}
-                className="text-[12px] px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-[#10A37F] transition-colors"
+                className={selectClass}
               >
                 <option value="">全部难度</option>
                 {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
@@ -116,7 +127,7 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
               <select
                 value={filters.sort}
                 onChange={e => onChange({ sort: e.target.value as SortType })}
-                className="text-[12px] px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-[#10A37F] transition-colors"
+                className={selectClass}
               >
                 <option value="newest">最新优先</option>
                 <option value="oldest">最早优先</option>
@@ -127,7 +138,11 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
               {hasActive && (
                 <button
                   onClick={() => onChange({ l1: '', year: '', difficulty: '' })}
-                  className="flex items-center gap-1 text-[12px] text-gray-400 hover:text-gray-600 transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+                  className={`flex items-center gap-1 text-[12px] transition-colors px-2 py-1 rounded-lg ${
+                    isDark
+                      ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                  }`}
                 >
                   <X size={12} />
                   清除筛选

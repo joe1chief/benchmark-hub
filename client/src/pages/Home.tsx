@@ -9,6 +9,7 @@ import HeroStats from '@/components/HeroStats';
 import BenchmarkCard from '@/components/BenchmarkCard';
 import BenchmarkDrawer from '@/components/BenchmarkDrawer';
 import { Loader2, SearchX } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const PAGE_SIZE = 60;
 
@@ -27,6 +28,8 @@ export default function Home() {
     modality: '',
     sort: 'newest',
   });
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const filtered = useFilteredBenchmarks(data, filters);
 
@@ -54,7 +57,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors ${isDark ? 'bg-[#0F0F0F]' : 'bg-[#FAFAFA]'}`}>
         <div className="flex flex-col items-center gap-3 text-gray-400">
           <Loader2 size={28} className="animate-spin" style={{ color: '#10A37F' }} />
           <span className="text-[14px]">加载 Benchmark 数据...</span>
@@ -65,9 +68,9 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors ${isDark ? 'bg-[#0F0F0F]' : 'bg-[#FAFAFA]'}`}>
         <div className="text-center text-gray-400">
-          <p className="text-[16px] font-medium text-gray-600 mb-1">数据加载失败</p>
+          <p className={`text-[16px] font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>数据加载失败</p>
           <p className="text-[13px]">{error}</p>
         </div>
       </div>
@@ -75,7 +78,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className={`min-h-screen transition-colors duration-200 ${isDark ? 'bg-[#0F0F0F]' : 'bg-[#FAFAFA]'}`}>
       {/* 顶部导航 */}
       <Navbar
         search={filters.search}
@@ -99,15 +102,15 @@ export default function Home() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-gray-400">
             <SearchX size={40} className="mb-3 text-gray-300" />
-            <p className="text-[15px] font-medium text-gray-500 mb-1">未找到匹配的 Benchmark</p>
+            <p className={`text-[15px] font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>未找到匹配的 Benchmark</p>
             <p className="text-[13px]">尝试修改搜索词或清除筛选条件</p>
           </div>
         ) : (
           <>
             {/* 结果计数 */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[13px] text-gray-400">
-                共 <span className="font-semibold text-gray-700">{filtered.length}</span> 个结果
+              <p className={`text-[13px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                共 <span className={`font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{filtered.length}</span> 个结果
                 {filters.l1 && <span className="ml-1">· {filters.l1}</span>}
                 {filters.year && <span className="ml-1">· {filters.year}年</span>}
                 {filters.difficulty && <span className="ml-1">· {filters.difficulty}难度</span>}
@@ -134,7 +137,11 @@ export default function Home() {
               <div className="flex justify-center mt-8">
                 <button
                   onClick={() => setPage(p => p + 1)}
-                  className="px-6 py-2.5 text-[13px] font-medium rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-white transition-all"
+                  className={`px-6 py-2.5 text-[13px] font-medium rounded-lg border transition-all ${
+                    isDark
+                      ? 'border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-white'
+                  }`}
                 >
                   加载更多（还有 {filtered.length - paged.length} 个）
                 </button>
