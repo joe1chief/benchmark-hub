@@ -33,22 +33,26 @@ interface Filters {
   difficulty: string;
   openness: string;
   sort: SortType;
+  widelyTested?: boolean;
 }
 
 interface Props {
   filters: Filters;
   onChange: (f: Partial<Filters>) => void;
   counts: Record<string, number>;
+  widelyTestedCount?: number;
 }
 
-export default function FilterBar({ filters, onChange, counts }: Props) {
-  const hasActive = filters.l1 || filters.year || filters.difficulty || filters.openness;
+export default function FilterBar({ filters, onChange, counts, widelyTestedCount = 0 }: Props) {
+  const hasActive = filters.l1 || filters.year || filters.difficulty || filters.openness || filters.widelyTested;
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   const selectClass = isDark
     ? 'text-[12px] px-2.5 py-1 rounded-lg border border-gray-700 bg-gray-800 text-gray-300 outline-none focus:border-[#10A37F] transition-colors'
     : 'text-[12px] px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-[#10A37F] transition-colors';
+
+  const widelyActive = !!filters.widelyTested;
 
   return (
     <div className={`border-b sticky top-[3.75rem] z-20 transition-colors duration-200 ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-100'}`}>
@@ -62,8 +66,8 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
 
           {/* 筛选内容 */}
           <div className="flex-1 space-y-2 overflow-hidden">
-            {/* L1 分类 */}
-            <div className="flex flex-wrap gap-1.5">
+            {/* L1 分类 + 广泛采用按钮 */}
+            <div className="flex flex-wrap gap-1.5 items-center">
               {L1_CATEGORIES.map(cat => {
                 const active = filters.l1 === cat.label;
                 const count = counts[cat.label] || 0;
@@ -105,6 +109,36 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
                   </button>
                 );
               })}
+
+              {/* 分隔线 */}
+              <div className={`w-px h-5 mx-0.5 ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`} />
+
+              {/* 广泛采用筛选按钮 */}
+              <button
+                onClick={() => onChange({ widelyTested: widelyActive ? undefined : true })}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold transition-all duration-150 border ${
+                  widelyActive
+                    ? 'text-white border-transparent shadow-md'
+                    : isDark
+                      ? 'text-gray-300 border-amber-800/60 hover:border-amber-600 hover:text-amber-400'
+                      : 'text-gray-600 border-amber-200 hover:border-amber-400 hover:text-amber-600'
+                }`}
+                style={widelyActive ? {
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                  boxShadow: '0 2px 12px rgba(245,158,11,0.4)',
+                } : isDark ? {
+                  backgroundColor: 'rgba(245,158,11,0.08)',
+                } : {
+                  backgroundColor: 'rgba(245,158,11,0.06)',
+                }}
+                title="筛选被主要大模型厂商技术报告广泛采用的基准"
+              >
+                <span className="text-[14px] leading-none">🏅</span>
+                <span>广泛采用</span>
+                {widelyTestedCount > 0 && (
+                  <span className={`text-[10px] ${widelyActive ? 'opacity-80' : 'opacity-60'}`}>{widelyTestedCount}</span>
+                )}
+              </button>
             </div>
 
             {/* 第二行：年份 + 难度 + 公开性 + 排序 */}
@@ -170,7 +204,7 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
               {/* 清除筛选 */}
               {hasActive && (
                 <button
-                  onClick={() => onChange({ l1: '', year: '', difficulty: '', openness: '' })}
+                  onClick={() => onChange({ l1: '', year: '', difficulty: '', openness: '', widelyTested: undefined })}
                   className={`flex items-center gap-1 text-[12px] transition-colors px-2 py-1 rounded-lg ${
                     isDark
                       ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'

@@ -1,8 +1,9 @@
 // LLM Benchmark Costco 卡片组件
 // 设计：名称无边框，纯文字 + 彩色文字阴影，悬浮时有光晕效果
+// 广泛采用：大勋章图标叠加在卡片右上角
 import React from 'react';
 import type { Benchmark } from '@/types/benchmark';
-import { Calendar, Building2, BarChart3, Layers, Award, Lock, Unlock, ShieldAlert } from 'lucide-react';
+import { Calendar, Building2, BarChart3, Layers, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface Props {
@@ -31,6 +32,15 @@ const OPENNESS_CONFIG: Record<string, { icon: typeof Unlock; color: string; labe
   'in-house': { icon: Lock, color: '#EF4444', label: 'In-house' },
 };
 
+// 机构名截断：最多显示 N 个字符
+function truncateOrg(org: string, maxLen = 18): string {
+  if (!org) return '';
+  // 取第一个机构（逗号/顿号分隔）
+  const first = org.split(/[、,，]/)[0].trim();
+  if (first.length <= maxLen) return first;
+  return first.slice(0, maxLen - 1) + '…';
+}
+
 export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -40,6 +50,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
     : (DIFFICULTY_STYLE_LIGHT[b.difficulty] || 'bg-gray-50 text-gray-600 border border-gray-200');
 
   const opennessInfo = OPENNESS_CONFIG[b.openness];
+  const widelyTested = (b as any).widely_tested === true;
 
   // 名称文字阴影：多层叠加，产生发光感
   const nameTextShadow = isDark
@@ -78,21 +89,39 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
           style={{ backgroundColor: b.l1_color }}
         />
 
+        {/* 广泛采用勋章 - 右上角大图标 */}
+        {widelyTested && (
+          <div
+            className="absolute top-2.5 right-2.5 z-10 pointer-events-none select-none"
+            title="被主要大模型厂商技术报告广泛测试"
+          >
+            <div className="relative flex items-center justify-center">
+              {/* 光晕背景 */}
+              <div
+                className="absolute inset-0 rounded-full blur-md opacity-60"
+                style={{ background: 'radial-gradient(circle, #F59E0B88 0%, transparent 70%)', transform: 'scale(1.8)' }}
+              />
+              {/* 勋章 emoji */}
+              <span
+                className="relative text-[22px] leading-none drop-shadow-lg"
+                style={{
+                  filter: 'drop-shadow(0 0 6px #F59E0Baa) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                }}
+              >
+                🏅
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* 卡片内容 */}
         <div className="pl-5 pr-4 pt-4 pb-4">
           {/* 顶部：名称 + 难度标签 */}
           <div className="flex items-start justify-between gap-2 mb-2.5">
             {/* 名称：无框，纯文字 + 阴影 */}
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              {b.widely_tested && (
-                <Award
-                  size={12}
-                  className="text-amber-500 shrink-0 mt-0.5"
-                  title="被主要大模型厂商技术报告广泛测试"
-                />
-              )}
+            <div className="min-w-0 flex-1" style={{ paddingRight: widelyTested ? '28px' : '0' }}>
               <span
-                className="font-bold text-[14px] leading-tight truncate"
+                className="font-bold text-[14px] leading-tight block truncate"
                 style={{
                   color: b.l1_color,
                   fontFamily: 'var(--font-mono)',
@@ -128,9 +157,14 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
               </span>
             )}
             {b.org && (
-              <span className={`flex items-center gap-1 text-[11.5px] truncate max-w-[160px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                <Building2 size={11} />
-                <span className="truncate">{b.org.split('、')[0].split(',')[0].trim()}</span>
+              <span
+                className={`flex items-center gap-1 text-[11.5px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
+                title={b.org}
+              >
+                <Building2 size={11} className="shrink-0" />
+                <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                  {truncateOrg(b.org)}
+                </span>
               </span>
             )}
             {b.has_leaderboard && (

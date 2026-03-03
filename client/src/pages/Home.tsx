@@ -1,6 +1,6 @@
 // LLM Benchmark Costco 主页
 // 设计：动态渐变背景，极简卡片，#10A37F 绿色强调
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useBenchmarks, useFilteredBenchmarks } from '@/hooks/useBenchmarks';
 import type { Benchmark } from '@/types/benchmark';
 import Navbar from '@/components/Navbar';
@@ -14,7 +14,16 @@ import { useTheme } from '@/contexts/ThemeContext';
 const PAGE_SIZE = 60;
 
 type SortType = 'newest' | 'oldest' | 'name';
-type FiltersType = { search: string; l1: string; year: string; difficulty: string; modality: string; openness: string; sort: SortType };
+type FiltersType = {
+  search: string;
+  l1: string;
+  year: string;
+  difficulty: string;
+  modality: string;
+  openness: string;
+  sort: SortType;
+  widelyTested?: boolean;
+};
 
 export default function Home() {
   const { data, loading, error } = useBenchmarks();
@@ -32,7 +41,13 @@ export default function Home() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  // 无限滚动 sentinel ref
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const filtered = useFilteredBenchmarks(data, filters);
+
+  // 广泛采用总数（不受其他筛选影响）
+  const widelyTestedCount = useMemo(() => data.filter(b => (b as any).widely_tested === true).length, [data]);
 
   // 分类计数（基于当前搜索，不含 L1 筛选）
   const counts = useMemo(() => {
@@ -59,6 +74,21 @@ export default function Home() {
 
   const paged = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = paged.length < filtered.length;
+
+  // IntersectionObserver 无限滚动
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting) {
+          setPage(p => p + 1);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, paged.length]);
 
   if (loading) {
     return (
@@ -179,6 +209,7 @@ export default function Home() {
           filters={filters}
           onChange={handleFilterChange}
           counts={counts}
+          widelyTestedCount={widelyTestedCount}
         />
 
         {/* 主内容区 */}
@@ -199,38 +230,41 @@ export default function Home() {
                   {filters.year && <span className="ml-1">· {filters.year}年</span>}
                   {filters.difficulty && <span className="ml-1">· {filters.difficulty}难度</span>}
                   {filters.openness && <span className="ml-1">· {filters.openness}</span>}
+                  {filters.widelyTested && <span className="ml-1">· 🏅 广泛采用</span>}
                 </p>
               </div>
 
-              {/* 卡片网格 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {/* 卡片网格 - 固定 3 列 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {paged.map((b, i) => (
                   <BenchmarkCard
                     key={b.id}
                     benchmark={b}
                     onClick={setSelected}
                     style={{
-                      animationDelay: `${Math.min(i, 20) * 30}ms`,
+                      animationDelay: `${Math.min(i % PAGE_SIZE, 20) * 30}ms`,
                       animation: 'fadeInUp 0.3s ease both',
                     }}
                   />
                 ))}
               </div>
 
-              {/* 加载更多 */}
+              {/* 无限滚动 sentinel + 加载指示器 */}
               {hasMore && (
-                <div className="flex justify-center mt-8">
-                  <button
-                    onClick={() => setPage(p => p + 1)}
-                    className="group relative px-8 py-2.5 text-[13px] font-medium rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-                    style={{
-                      background: 'linear-gradient(135deg, #10A37F 0%, #1A73E8 50%, #7C3AED 100%)',
-                      color: 'white',
-                    }}
-                  >
-                    <span className="relative z-10">加载更多（还有 {filtered.length - paged.length} 个）</span>
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </button>
+                <div ref={sentinelRef} className="flex justify-center items-center py-8 gap-2">
+                  <Loader2 size={18} className="animate-spin" style={{ color: '#10A37F' }} />
+                  <span className={`text-[13px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    加载中…
+                  </span>
+                </div>
+              )}
+
+              {/* 全部加载完毕提示 */}
+              {!hasMore && filtered.length > PAGE_SIZE && (
+                <div className="flex justify-center py-6">
+                  <span className={`text-[12px] ${isDark ? 'text-gray-600' : 'text-gray-300'}`}>
+                    — 已显示全部 {filtered.length} 个结果 —
+                  </span>
                 </div>
               )}
             </>

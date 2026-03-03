@@ -9,6 +9,7 @@ interface Filters {
   modality: string;
   openness: string;
   sort: 'newest' | 'oldest' | 'name';
+  widelyTested?: boolean;
 }
 
 export function useBenchmarks() {
@@ -72,6 +73,11 @@ export function useFilteredBenchmarks(data: Benchmark[], filters: Filters) {
     // 公开性筛选
     if (filters.openness) {
       result = result.filter(b => b.openness === filters.openness);
+    }
+
+    // 广泛采用筛选
+    if (filters.widelyTested) {
+      result = result.filter(b => (b as any).widely_tested === true);
     }
 
     // 排序
