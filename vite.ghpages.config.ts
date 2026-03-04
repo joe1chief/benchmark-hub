@@ -26,8 +26,9 @@ export default defineConfig({
   root: path.resolve(import.meta.dirname, "client"),
   base: "/llm-benchmark-costco/",
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist-ghpages"),
+    outDir: path.resolve(import.meta.dirname, 'dist-ghpages'),
     emptyOutDir: true,
+    modulePreload: false,
     rollupOptions: {
       output: {
         // 代码分割：将大型依赖单独打包
