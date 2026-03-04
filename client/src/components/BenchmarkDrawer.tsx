@@ -50,6 +50,36 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
   return strategies;
 }
 
+// Load mermaid from CDN (bypasses Vite bundle issues)
+function loadMermaidFromCDN(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).mermaid && (window as any).mermaid.render) {
+      resolve((window as any).mermaid);
+      return;
+    }
+    const existing = document.getElementById('mermaid-cdn');
+    if (existing) {
+      const check = setInterval(() => {
+        if ((window as any).mermaid && (window as any).mermaid.render) {
+          clearInterval(check);
+          resolve((window as any).mermaid);
+        }
+      }, 100);
+      setTimeout(() => { clearInterval(check); reject(new Error('Mermaid CDN timeout')); }, 15000);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'mermaid-cdn';
+    script.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+    script.onload = () => {
+      if ((window as any).mermaid) resolve((window as any).mermaid);
+      else reject(new Error('Mermaid not found after CDN load'));
+    };
+    script.onerror = () => reject(new Error('Failed to load Mermaid CDN'));
+    document.head.appendChild(script);
+  });
+}
+
 // Mermaid flowchart renderer component
 function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,7 +96,7 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
 
     const renderChart = async () => {
       try {
-        const mermaid = (await import('mermaid')).default;
+        const mermaid = await loadMermaidFromCDN();
         mermaid.initialize({
           startOnLoad: false,
           theme: isDark ? 'dark' : 'default',

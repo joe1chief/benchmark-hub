@@ -30,12 +30,16 @@ export default defineConfig({
     emptyOutDir: true,
     modulePreload: false,
     rollupOptions: {
+      external: ['mermaid'],
       output: {
         // 代码分割：将大型依赖单独打包
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'ui-vendor': ['lucide-react', 'framer-motion'],
           'router': ['wouter'],
+        },
+        globals: {
+          mermaid: 'mermaid',
         },
       },
     },
