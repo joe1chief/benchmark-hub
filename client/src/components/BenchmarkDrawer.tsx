@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import {
   X, ExternalLink, FileText, Calendar, Building2,
   BarChart3, Globe, Layers, ChevronRight, BookOpen,
   Maximize2, Download, RefreshCw, AlertTriangle,
   Award, Lock, Unlock, ShieldAlert, Link2, Users,
-  Home as HomeIcon, ChevronRight as ChevronRightIcon
+  Home as HomeIcon, ChevronRight as ChevronRightIcon,
+  GitBranch, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
@@ -18,7 +19,7 @@ interface Props {
 }
 
 function InfoRow({ label, value, isDark }: { label: string; value: string; isDark: boolean }) {
-  if (!value || value === 'nan' || value === 'None' || value === 'NaN') return null;
+  if (!value || value === 'nan' || value === 'None' || value === 'NaN' || value === 'N/A' || value === 'Not mentioned') return null;
   return (
     <div className={`flex gap-3 py-2.5 border-b last:border-0 transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
       <span className={`text-[12px] w-24 shrink-0 pt-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{label}</span>
@@ -49,8 +50,145 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
   return strategies;
 }
 
+// Mermaid flowchart renderer component
+function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [scale, setScale] = useState(0.85);
+  const [svgContent, setSvgContent] = useState<string>('');
+
+  useEffect(() => {
+    if (!code || !containerRef.current) return;
+    setLoading(true);
+    setError(null);
+
+    const renderChart = async () => {
+      try {
+        const mermaid = (await import('mermaid')).default;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? 'dark' : 'default',
+          themeVariables: isDark ? {
+            primaryColor: '#1a2a1a',
+            primaryTextColor: '#d1fae5',
+            primaryBorderColor: '#10A37F',
+            lineColor: '#10A37F',
+            secondaryColor: '#0f1f0f',
+            tertiaryColor: '#0a1a0a',
+            background: '#111111',
+            mainBkg: '#1a2a1a',
+            nodeBorder: '#10A37F',
+            clusterBkg: '#0f1f0f',
+            titleColor: '#d1fae5',
+            edgeLabelBackground: '#1a2a1a',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '13px',
+          } : {
+            primaryColor: '#f0fdf4',
+            primaryTextColor: '#065f46',
+            primaryBorderColor: '#10A37F',
+            lineColor: '#10A37F',
+            secondaryColor: '#ecfdf5',
+            tertiaryColor: '#f0fdf4',
+            background: '#ffffff',
+            mainBkg: '#f0fdf4',
+            nodeBorder: '#10A37F',
+            clusterBkg: '#ecfdf5',
+            titleColor: '#065f46',
+            edgeLabelBackground: '#f0fdf4',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '13px',
+          },
+          flowchart: {
+            htmlLabels: true,
+            curve: 'basis',
+            padding: 20,
+          },
+          securityLevel: 'loose',
+        });
+
+        const id = `mermaid-${Date.now()}`;
+        const { svg } = await mermaid.render(id, code);
+        setSvgContent(svg);
+        setLoading(false);
+      } catch (err) {
+        console.error('Mermaid render error:', err);
+        setError(String(err));
+        setLoading(false);
+      }
+    };
+
+    renderChart();
+  }, [code, isDark]);
+
+  if (loading) {
+    return (
+      <div className={`flex flex-col items-center justify-center h-48 gap-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className="w-7 h-7 border-2 border-gray-600 border-t-[#10A37F] rounded-full animate-spin" />
+        <span className="text-[12px]">Rendering flowchart...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`flex flex-col items-center justify-center h-32 gap-2 px-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+        <AlertTriangle size={20} className="text-amber-500" />
+        <span className="text-[12px] text-center">Failed to render flowchart</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {/* Zoom controls */}
+      <div className={`absolute top-2 right-2 z-10 flex items-center gap-1 rounded-lg border px-1.5 py-1 ${
+        isDark ? 'bg-gray-900/90 border-gray-700' : 'bg-white/90 border-gray-200'
+      } backdrop-blur-sm`}>
+        <button
+          onClick={() => setScale(s => Math.min(s + 0.15, 2.5))}
+          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          title="Zoom in"
+        >
+          <ZoomIn size={12} />
+        </button>
+        <span className={`text-[10px] w-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          onClick={() => setScale(s => Math.max(s - 0.15, 0.3))}
+          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          title="Zoom out"
+        >
+          <ZoomOut size={12} />
+        </button>
+        <button
+          onClick={() => setScale(0.85)}
+          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          title="Reset zoom"
+        >
+          <RotateCcw size={12} />
+        </button>
+      </div>
+
+      {/* SVG container */}
+      <div
+        ref={containerRef}
+        className="overflow-auto"
+        style={{ maxHeight: '600px' }}
+      >
+        <div
+          style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s ease' }}
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, onSelectBenchmark }: Props) {
-  const [tab, setTab] = useState<'info' | 'pdf'>('info');
+  const [tab, setTab] = useState<'info' | 'flowchart' | 'pdf'>('info');
   const [pdfFullscreen, setPdfFullscreen] = useState(false);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [pdfError, setPdfError] = useState(false);
@@ -96,6 +234,12 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
   const currentStrategy = strategies[strategyIndex];
   const embedUrl = currentStrategy?.url || '';
 
+  // Flowchart data
+  const flowchartCode = isEn
+    ? ((b as any).flowchart_en || (b as any).flowchart || '')
+    : ((b as any).flowchart_zh || (b as any).flowchart_en || (b as any).flowchart || '');
+  const hasFlowchart = !!flowchartCode;
+
   const opennessConfig: Record<string, { icon: typeof Unlock; color: string; label: string; bg: string; bgDark: string }> = {
     'public':        { icon: Unlock,      color: '#10A37F', label: t.publicLabel,  bg: 'bg-emerald-50 border-emerald-200', bgDark: 'bg-emerald-950/30 border-emerald-900/50' },
     'partly public': { icon: ShieldAlert, color: '#F59E0B', label: t.partlyLabel,  bg: 'bg-amber-50 border-amber-200',    bgDark: 'bg-amber-950/30 border-amber-900/50' },
@@ -107,13 +251,43 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
     ? allBenchmarks.filter(x => x.family === b.family && x.id !== b.id)
     : [];
 
-  const relatedBenchmarks = (b.related_benchmarks || [])
-    .map(name => allBenchmarks.find(x => x.name === name))
-    .filter((x): x is Benchmark => !!x)
-    .slice(0, 6);
+  // Enhanced related benchmarks with similarity scoring
+  const relatedBenchmarks = (() => {
+    const directRelated = (b.related_benchmarks || [])
+      .map(name => allBenchmarks.find(x => x.name === name))
+      .filter((x): x is Benchmark => !!x);
+
+    // Also find similar benchmarks by l1 category and task type
+    const sameCategory = allBenchmarks
+      .filter(x => x.id !== b.id && x.l1 === b.l1 && !directRelated.find(r => r.id === x.id))
+      .sort((a, b_) => {
+        // Prioritize same l2, same difficulty, same modality
+        let score = 0;
+        if (a.l2 === b.l2) score += 3;
+        if (a.difficulty === b.difficulty) score += 2;
+        if (a.modality === b.modality) score += 2;
+        if (a.widely_tested) score += 1;
+        let scoreB = 0;
+        if (b_.l2 === b.l2) scoreB += 3;
+        if (b_.difficulty === b.difficulty) scoreB += 2;
+        if (b_.modality === b.modality) scoreB += 2;
+        if (b_.widely_tested) scoreB += 1;
+        return scoreB - score;
+      })
+      .slice(0, 4);
+
+    return [...directRelated, ...sameCategory].slice(0, 8);
+  })();
 
   const drawerBg = isDark ? 'bg-[#111111]' : 'bg-white';
   const borderColor = isDark ? 'border-gray-800' : 'border-gray-100';
+
+  // Tab definitions
+  const tabs = [
+    { key: 'info', icon: BookOpen, label: t.detailsTab, disabled: false },
+    { key: 'flowchart', icon: GitBranch, label: isEn ? 'Build Process' : '构建流程', disabled: !hasFlowchart },
+    { key: 'pdf', icon: FileText, label: t.paperTab, disabled: !hasPdf },
+  ];
 
   return (
     <>
@@ -175,20 +349,18 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
 
         {/* Tabs */}
         <div className={`flex border-b px-6 shrink-0 transition-colors ${borderColor} ${drawerBg}`}>
-          {[
-            { key: 'info', icon: BookOpen, label: t.detailsTab },
-            { key: 'pdf',  icon: FileText, label: t.paperTab, disabled: !hasPdf },
-          ].map(({ key, icon: Icon, label, disabled }) => (
+          {tabs.map(({ key, icon: Icon, label, disabled }) => (
             <button key={key}
               className={`flex items-center gap-1.5 px-1 py-3 text-[13px] font-medium border-b-2 mr-6 transition-colors ${
                 tab === key ? 'border-[#10A37F] text-[#10A37F]'
                   : isDark ? 'border-transparent text-gray-500 hover:text-gray-300'
                   : 'border-transparent text-gray-400 hover:text-gray-600'
               } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
-              onClick={() => !disabled && setTab(key as 'info' | 'pdf')}
+              onClick={() => !disabled && setTab(key as 'info' | 'flowchart' | 'pdf')}
               disabled={disabled}>
               <Icon size={13} />{label}
               {key === 'pdf' && !hasPdf && <span className="text-[10px] ml-1">{t.paperNA}</span>}
+              {key === 'flowchart' && !hasFlowchart && <span className="text-[10px] ml-1">N/A</span>}
             </button>
           ))}
           {tab === 'pdf' && hasPdf && (
@@ -206,7 +378,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
 
         {/* Content */}
         <div className={`flex-1 overflow-hidden ${tab === 'pdf' ? 'flex flex-col' : ''}`}>
-          {tab === 'info' ? (
+          {tab === 'info' && (
             <div className="h-full overflow-y-auto px-6 py-5 space-y-5">
               {/* Widely adopted notice */}
               {b.widely_tested && (
@@ -245,6 +417,14 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                     }`}
                     style={!b.homepage ? { backgroundColor: '#10A37F' } : {}}>
                     <FileText size={13} />{t.actionReadPaper}<ChevronRightIcon size={13} />
+                  </button>
+                )}
+                {hasFlowchart && (
+                  <button onClick={() => setTab('flowchart')}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-lg border transition-colors ${
+                      isDark ? 'border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800' : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                    }`}>
+                    <GitBranch size={13} />{isEn ? 'View Build Process' : '查看构建流程'}<ChevronRightIcon size={13} />
                   </button>
                 )}
                 {b.paper_url && b.paper_url !== 'nan' && b.paper_url !== 'None' && (
@@ -334,7 +514,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                 </div>
               )}
 
-              {/* Related benchmarks */}
+              {/* Related benchmarks — enhanced */}
               {relatedBenchmarks.length > 0 && (
                 <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
                   <div className={`px-4 py-2.5 border-b transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
@@ -343,29 +523,101 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       {t.sectionRelated}
                     </span>
                   </div>
-                  <div className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {relatedBenchmarks.map(rel => (
+                  <div className="px-4 py-3 space-y-1.5">
+                    {relatedBenchmarks.map(rel => {
+                      // Compute shared traits
+                      const traits: string[] = [];
+                      if (rel.l1 === b.l1) traits.push(isEn ? (t.l1[rel.l1] || rel.l1) : (t.l1[rel.l1] || rel.l1));
+                      if (rel.l2 && rel.l2 === b.l2 && rel.l2 !== rel.l1) traits.push(isEn ? ((rel as any).l2_en || rel.l2) : rel.l2);
+                      if (rel.modality && rel.modality === b.modality) traits.push(isEn ? ((rel as any).modality_en || rel.modality) : rel.modality);
+                      if (rel.difficulty && rel.difficulty === b.difficulty) traits.push(t.difficulty[rel.difficulty] || rel.difficulty);
+
+                      return (
                         <button
                           key={rel.id}
                           onClick={() => onSelectBenchmark(rel)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium border transition-all ${
-                            isDark
-                              ? 'border-gray-700 text-gray-400 hover:border-[#10A37F] hover:text-[#10A37F] hover:bg-[#10A37F]/10'
-                              : 'border-gray-200 text-gray-600 hover:border-[#10A37F] hover:text-[#10A37F] hover:bg-[#10A37F]/5'
+                          className={`w-full flex items-start justify-between px-3 py-2.5 rounded-lg text-left transition-all group/rel ${
+                            isDark ? 'hover:bg-gray-800/80' : 'hover:bg-gray-50'
                           }`}
                         >
-                          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: rel.l1_color }} />
-                          {rel.name}
-                          {rel.widely_tested && <Award size={10} className="text-amber-500" />}
+                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                            <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: rel.l1_color }} />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`text-[13px] font-medium group-hover/rel:text-[#10A37F] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  {rel.name}
+                                </span>
+                                {rel.widely_tested && <Award size={11} className="text-amber-500 shrink-0" />}
+                              </div>
+                              {traits.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {traits.slice(0, 3).map((trait, i) => (
+                                    <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-md ${
+                                      isDark ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400'
+                                    }`}>{trait}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <span className={`text-[11px] ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>{rel.published}</span>
+                            <ChevronRight size={12} className={`transition-colors ${isDark ? 'text-gray-700 group-hover/rel:text-gray-400' : 'text-gray-300 group-hover/rel:text-gray-500'}`} />
+                          </div>
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
-          ) : (
+          )}
+
+          {tab === 'flowchart' && (
+            <div className="h-full overflow-y-auto px-6 py-5">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className={`text-[15px] font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {isEn ? 'Construction Process' : '构建流程图'}
+                  </h3>
+                  <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {isEn ? 'How this benchmark was built, step by step' : '该基准的详细构建步骤'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] px-2 py-1 rounded-lg ${isDark ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
+                    {isEn ? lang === 'en' ? 'English' : 'Chinese' : lang === 'zh' ? '中文' : '英文'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mermaid chart */}
+              <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
+                <div className={`px-4 py-2 border-b flex items-center gap-2 transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
+                  <GitBranch size={12} className="text-[#10A37F]" />
+                  <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {b.name} — {isEn ? 'Build Flowchart' : '构建流程图'}
+                  </span>
+                </div>
+                <div className={`p-4 transition-colors ${isDark ? 'bg-[#0d0d0d]' : 'bg-white'}`}>
+                  <MermaidChart code={flowchartCode} isDark={isDark} />
+                </div>
+              </div>
+
+              {/* Raw code toggle */}
+              <details className="mt-4">
+                <summary className={`cursor-pointer text-[12px] select-none transition-colors ${isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}>
+                  {isEn ? 'View raw Mermaid code' : '查看原始 Mermaid 代码'}
+                </summary>
+                <pre className={`mt-2 p-3 rounded-lg text-[11px] overflow-auto max-h-60 leading-relaxed transition-colors ${isDark ? 'bg-gray-900 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+                  {flowchartCode}
+                </pre>
+              </details>
+            </div>
+          )}
+
+          {tab === 'pdf' && (
             /* PDF Reader */
             <div className={`flex-1 flex flex-col transition-colors ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`} style={{ minHeight: 0 }}>
               {/* PDF toolbar */}
@@ -388,7 +640,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       )}
                     </div>
                   )}
-                  <button onClick={() => { setPdfLoaded(false); setPdfError(false); setStrategyIndex(0); }} title={t.reload}
+                  <button onClick={() => { setPdfLoaded(false); setPdfError(false); setStrategyIndex(0); }}
                     className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}>
                     <RefreshCw size={13} />
                   </button>
