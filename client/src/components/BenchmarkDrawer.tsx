@@ -224,6 +224,7 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
 export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, onSelectBenchmark }: Props) {
   const [tab, setTab] = useState<'info' | 'flowchart' | 'pdf'>('info');
   const [pdfFullscreen, setPdfFullscreen] = useState(false);
+  const [flowchartFullscreen, setFlowchartFullscreen] = useState(false);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [pdfError, setPdfError] = useState(false);
   const [strategyIndex, setStrategyIndex] = useState(0);
@@ -239,14 +240,21 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
       setPdfError(false);
       setStrategyIndex(0);
       setPdfFullscreen(false);
+      setFlowchartFullscreen(false);
     }
   }, [b?.id]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (flowchartFullscreen) { setFlowchartFullscreen(false); return; }
+        if (pdfFullscreen) { setPdfFullscreen(false); return; }
+        onClose();
+      }
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [onClose, flowchartFullscreen, pdfFullscreen]);
 
   const handlePdfError = useCallback(() => {
     const rawPdfUrl = b?.pdf_cdn_url || b?.arxiv_pdf_url || '';
@@ -407,6 +415,17 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               {key === 'flowchart' && !hasFlowchart && <span className="text-[10px] ml-1">N/A</span>}
             </button>
           ))}
+          {tab === 'flowchart' && hasFlowchart && (
+            <button
+              onClick={() => setFlowchartFullscreen(v => !v)}
+              title={flowchartFullscreen ? t.collapse : t.fullscreen}
+              className={`ml-auto flex items-center gap-1 px-2 py-1 my-auto rounded-lg text-[11px] transition-colors ${
+                isDark ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+              }`}>
+              <Maximize2 size={12} />
+              {flowchartFullscreen ? t.collapse : t.fullscreen}
+            </button>
+          )}
           {tab === 'pdf' && hasPdf && (
             <button
               onClick={() => setPdfFullscreen(v => !v)}
@@ -618,23 +637,53 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
           )}
 
           {tab === 'flowchart' && (
-            <div className="h-full overflow-y-auto px-6 py-5">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className={`text-[15px] font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {isEn ? 'Construction Process' : '构建流程图'}
-                  </h3>
-                  <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {isEn ? 'How this benchmark was built, step by step' : '该基准的详细构建步骤'}
-                  </p>
+            <div className={`overflow-y-auto transition-all duration-300 ease-in-out ${
+              flowchartFullscreen
+                ? 'fixed inset-0 z-[9999] px-8 py-6'
+                : 'h-full px-6 py-5'
+            } ${flowchartFullscreen ? (isDark ? 'bg-[#0A0A0A]' : 'bg-white') : ''}`}>
+              {/* Fullscreen close bar */}
+              {flowchartFullscreen && (
+                <div className={`flex items-center justify-between mb-4 pb-3 border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <GitBranch size={16} className="text-[#10A37F]" />
+                    <span className={`text-[15px] font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {b.name} — {isEn ? 'Build Flowchart' : '构建流程图'}
+                    </span>
+                    <span className={`text-[11px] px-2 py-1 rounded-lg ${isDark ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
+                      {isEn ? lang === 'en' ? 'English' : 'Chinese' : lang === 'zh' ? '中文' : '英文'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setFlowchartFullscreen(false)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                      isDark ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    }`}>
+                    <X size={14} />
+                    {isEn ? 'Exit Fullscreen' : '退出全屏'}
+                    <span className={`text-[10px] ml-1 px-1.5 py-0.5 rounded ${isDark ? 'bg-gray-800 text-gray-600' : 'bg-gray-200 text-gray-400'}`}>Esc</span>
+                  </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[11px] px-2 py-1 rounded-lg ${isDark ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
-                    {isEn ? lang === 'en' ? 'English' : 'Chinese' : lang === 'zh' ? '中文' : '英文'}
-                  </span>
+              )}
+
+              {/* Header (non-fullscreen) */}
+              {!flowchartFullscreen && (
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className={`text-[15px] font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+                      {isEn ? 'Construction Process' : '构建流程图'}
+                    </h3>
+                    <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {isEn ? 'How this benchmark was built, step by step' : '该基准的详细构建步骤'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[11px] px-2 py-1 rounded-lg ${isDark ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
+                      {isEn ? lang === 'en' ? 'English' : 'Chinese' : lang === 'zh' ? '中文' : '英文'}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Mermaid chart */}
               <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
