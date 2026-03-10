@@ -1,101 +1,132 @@
-# LLM Benchmark Costco
+# LLM Benchmark Costco 🛒
 
-> 378 个大模型评测基准的完整数据库，OpenAI 风格展示界面，支持搜索、筛选、在线阅读完整论文和查看构建流程图。
+[![Stars](https://img.shields.io/github/stars/joe1chief/llm-benchmark-costco?style=flat-square&logo=github&color=yellow)](https://github.com/joe1chief/llm-benchmark-costco/stargazers)
+[![Forks](https://img.shields.io/github/forks/joe1chief/llm-benchmark-costco?style=flat-square&logo=github&color=blue)](https://github.com/joe1chief/llm-benchmark-costco/network/members)
+[![License](https://img.shields.io/github/license/joe1chief/llm-benchmark-costco?style=flat-square&color=green)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/joe1chief/llm-benchmark-costco?style=flat-square&color=orange)](https://github.com/joe1chief/llm-benchmark-costco/commits/main)
+[![Benchmarks](https://img.shields.io/badge/Benchmarks-378-purple?style=flat-square)](https://joe1chief.github.io/llm-benchmark-costco/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://joe1chief.github.io/llm-benchmark-costco/)
 
-## 功能特性
+> A curated, searchable database of **378 LLM evaluation benchmarks** across 12 capability dimensions — with inline PDF reading, Mermaid build flowcharts, bilingual UI, and dark mode.
 
-- **378 个 Benchmark** 完整收录，涵盖 12 个能力维度
-- **实时搜索**：按名称、机构、分类即时过滤
-- **多维筛选**：L1 分类、年份、难度级别、公开度
-- **在线 PDF 阅读**：点击卡片直接阅读完整论文
-- **构建流程图**：支持查看基准测试的 Mermaid 构建流程图
-- **中英双语**：支持中英文界面和数据展示切换
-- **深色模式**：支持浅色/深色主题切换
-- **OpenAI 风格**：极简白底设计，专业研究人员友好
+**[🌐 Live Demo](https://joe1chief.github.io/llm-benchmark-costco/)** · **[📊 Browse Benchmarks](https://joe1chief.github.io/llm-benchmark-costco/)** · **[🤝 Contribute](CONTRIBUTING.md)**
 
-## 快速开始
+---
+
+![LLM Benchmark Costco Demo](demo.gif)
+
+---
+
+## Why LLM Benchmark Costco?
+
+| Feature | Costco | PapersWithCode | HuggingFace Datasets | arXiv Search |
+|---------|--------|---------------|---------------------|-------------|
+| Curated LLM benchmarks only | ✅ | ❌ (all ML) | ❌ (all datasets) | ❌ |
+| Inline PDF reading | ✅ | ❌ | ❌ | ❌ |
+| Build process flowcharts | ✅ | ❌ | ❌ | ❌ |
+| Multi-dim filtering (year/difficulty/openness) | ✅ | Partial | Partial | ❌ |
+| Bilingual (EN/ZH) | ✅ | ❌ | ❌ | ❌ |
+| Related benchmarks & family lineage | ✅ | ❌ | ❌ | ❌ |
+| Dark mode | ✅ | ❌ | ❌ | ❌ |
+
+## Features
+
+**378 Benchmarks** across 12 capability dimensions — Agent Capability (73), General Language (79), Multimodal (68), Code (41), Science & Reasoning (26), Safety & Alignment (23), Medical & Health (30), and more.
+
+**Inline PDF Reading** — Click any card to open the details drawer and read the full paper without leaving the page. Most entries embed the original arXiv PDF directly.
+
+**Build Process Flowcharts** — Over 200 benchmarks include Mermaid-rendered diagrams explaining exactly how the dataset was constructed. Now with **fullscreen mode** for complex flowcharts.
+
+**Powerful Filtering** — Filter by L1 capability category, year (including 2025/2026 latest), difficulty level (Basic → Frontier), and data openness (Public / Partly / In-house).
+
+**Family & Lineage** — Explore benchmark families (e.g., MMLU, GAIA, SWE-bench) and related benchmarks to understand the evaluation landscape.
+
+**Bilingual UI** — Full English and Chinese interface with bilingual data fields.
+
+## Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 本地开发
+# Local development
 pnpm dev
 
-# 构建（用于 Manus 平台）
-pnpm build
-
-# 构建 GitHub Pages 版本
-pnpm build:ghpages
-```
-
-## 部署到 GitHub Pages
-
-### 方法一：GitHub Actions 自动部署（推荐）
-
-1. 将本项目推送到 GitHub 仓库（`main` 分支）
-2. 进入仓库 **Settings → Pages**
-3. Source 选择 **GitHub Actions**
-4. 推送代码后，Actions 会自动构建并部署
-
-访问地址：`https://<username>.github.io/<repo-name>/`
-
-### 方法二：手动部署
-
-```bash
-# 构建静态文件
+# Build for GitHub Pages
 pnpm build:ghpages
 
-# 将 dist-ghpages/ 目录的内容推送到 gh-pages 分支
-# 方法：使用 gh-pages 工具
+# Deploy to gh-pages branch
 npx gh-pages -d dist-ghpages
 ```
 
-### 配置子路径（重要）
+## Deployment
 
-如果部署在子路径（如 `https://username.github.io/llm-benchmark-costco/`），需要修改 `vite.ghpages.config.ts`：
+### GitHub Pages (Recommended)
 
-```ts
-// 将 base 从 './' 改为你的仓库名
-base: '/llm-benchmark-costco/',
-```
+1. Fork or clone this repository
+2. Go to **Settings → Pages**
+3. Set Source to **Deploy from a branch** → `gh-pages`
+4. Run `pnpm build:ghpages && npx gh-pages -d dist-ghpages` to deploy
 
-如果部署在根路径（如 `https://username.github.io/`），保持 `base: './'` 即可。
+Access at: `https://<username>.github.io/llm-benchmark-costco/`
 
-## 更新数据
+> **Sub-path configuration**: If deploying under a sub-path, set `base: '/your-repo-name/'` in `vite.ghpages.config.ts`.
 
-最新数据存储在 `client/public/benchmarks.json` 中。更新数据时，请确保数据结构与 `client/src/types/benchmark.ts` 中的类型定义保持一致。
+## Updating Benchmark Data
 
-## 技术栈
+The data lives in `client/public/benchmarks.json`. Before updating, read [`skills/update-benchmarks/SKILL.md`](skills/update-benchmarks/SKILL.md) for the complete workflow covering type safety, null-value guards, and deployment steps.
 
-- **React 19** + **TypeScript**
-- **Tailwind CSS 4**
-- **Vite 7**
-- **Wouter**（轻量路由）
-- **Lucide React**（图标）
-- **Mermaid**（流程图渲染）
+## Tech Stack
 
-## 目录结构
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19 + TypeScript |
+| Styling | Tailwind CSS 4 |
+| Build | Vite 7 |
+| Routing | Wouter |
+| Icons | Lucide React |
+| Diagrams | Mermaid |
+| Deployment | GitHub Pages via `gh-pages` |
+
+## Project Structure
 
 ```
 llm-benchmark-costco/
 ├── client/
 │   ├── public/
-│   │   └── benchmarks.json      # 378 个 Benchmark 数据
+│   │   └── benchmarks.json          # 378 benchmark entries
 │   └── src/
 │       ├── components/
-│       │   ├── BenchmarkCard.tsx  # 胶囊卡片
-│       │   ├── BenchmarkDrawer.tsx # 详情抽屉 + PDF 阅读器 + 流程图
-│       │   ├── FilterBar.tsx      # 筛选栏
-│       │   ├── HeroStats.tsx      # 统计区
-│       │   └── Navbar.tsx         # 顶部导航
+│       │   ├── BenchmarkCard.tsx     # Card component
+│       │   ├── BenchmarkDrawer.tsx   # Detail drawer + PDF + flowchart
+│       │   ├── FilterBar.tsx         # Filter controls
+│       │   ├── HeroStats.tsx         # Stats banner
+│       │   └── Navbar.tsx            # Top navigation
+│       ├── contexts/
+│       │   └── LangContext.tsx       # i18n (EN/ZH)
 │       ├── hooks/
-│       │   └── useBenchmarks.ts   # 数据加载和筛选逻辑
+│       │   └── useBenchmarks.ts      # Data loading & filtering
 │       ├── pages/
-│       │   └── Home.tsx           # 主页面
+│       │   └── Home.tsx              # Main page
 │       └── types/
-│           └── benchmark.ts       # 类型定义
-├── vite.ghpages.config.ts         # GitHub Pages 构建配置
-├── .github/workflows/deploy.yml  # 自动部署工作流
+│           └── benchmark.ts          # TypeScript types
+├── skills/
+│   └── update-benchmarks/
+│       └── SKILL.md                  # Data update playbook
+├── vite.ghpages.config.ts            # GitHub Pages build config
 └── README.md
 ```
+
+## Contributing
+
+We welcome contributions! The easiest way to contribute is to submit a new benchmark via [GitHub Issues](https://github.com/joe1chief/llm-benchmark-costco/issues/new/choose) using the **Submit New Benchmark** template — no coding required.
+
+For code contributions, please read [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=joe1chief/llm-benchmark-costco)](https://github.com/joe1chief/llm-benchmark-costco/graphs/contributors)
+
+## License
+
+MIT
