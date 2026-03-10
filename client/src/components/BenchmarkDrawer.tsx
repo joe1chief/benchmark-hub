@@ -339,7 +339,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
         <div className={`flex items-start gap-3 px-6 py-5 border-b shrink-0 transition-colors ${borderColor} ${drawerBg}`}>
           <div className="w-1 h-12 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: b.l1_color || '#999' }} />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-2">
               <h2 className={`text-[17px] font-semibold leading-snug transition-colors ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
                 {b.name}
               </h2>
@@ -349,28 +349,36 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+              {/* Category tags group */}
               {b.l1 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: (b.l1_color || '#999') + '22', color: b.l1_color || '#999', fontFamily: 'var(--font-mono)' }}>
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-[3px] rounded-full"
+                  style={{ backgroundColor: (b.l1_color || '#999') + '18', color: b.l1_color || '#999' }}>
                   <Layers size={9} />{t.l1[b.l1] || b.l1}
                 </span>
               )}
               {b.l2 && b.l2 !== b.l1 && b.l2 !== 'nan' && (
-                <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full transition-colors ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}
-                  style={{ fontFamily: 'var(--font-mono)' }}>{isEn ? (b.l2_en || b.l2) : b.l2}</span>
+                <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-[3px] rounded-full transition-colors ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                  {isEn ? (b.l2_en || b.l2) : b.l2}
+                </span>
               )}
               {b.difficulty && b.difficulty !== 'nan' && (
-                <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full border transition-colors ${isDark ? 'bg-orange-950/40 text-orange-400 border-orange-900/50' : 'bg-orange-50 text-orange-600 border-orange-100'}`}
-                  style={{ fontFamily: 'var(--font-mono)' }}>{t.difficulty[b.difficulty] || b.difficulty}</span>
+                <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-[3px] rounded-full border transition-colors ${isDark ? 'bg-orange-950/40 text-orange-400 border-orange-900/50' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                  {t.difficulty[b.difficulty] || b.difficulty}
+                </span>
               )}
+              {/* Separator dot */}
+              {(b.l1 || b.l2 || b.difficulty) && (b.published || opennessInfo) && (
+                <span className={`text-[8px] mx-0.5 ${isDark ? 'text-gray-700' : 'text-gray-300'}`}>|</span>
+              )}
+              {/* Meta info group */}
               {b.published && (
-                <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                <span className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-[3px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                   <Calendar size={10} />{b.published}
                 </span>
               )}
               {opennessInfo && (
-                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${isDark ? opennessInfo.bgDark : opennessInfo.bg}`}
+                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-[3px] rounded-full border ${isDark ? opennessInfo.bgDark : opennessInfo.bg}`}
                   style={{ color: opennessInfo.color }}>
                   <opennessInfo.icon size={10} />{opennessInfo.label}
                 </span>

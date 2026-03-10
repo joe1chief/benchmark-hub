@@ -55,7 +55,7 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
   const baseSelectStyle: React.CSSProperties = {
     fontFamily: "'Inter', sans-serif",
     fontSize: '12px',
-    padding: '5px 10px',
+    padding: '5px 24px 5px 10px',
     borderRadius: '10px',
     border: `1px solid ${isDark ? '#2D2D2D' : '#E5E7EB'}`,
     backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
@@ -64,6 +64,10 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
     cursor: 'pointer',
     appearance: 'none' as const,
     WebkitAppearance: 'none' as const,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${isDark ? '%236B7280' : '%239CA3AF'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 6px center',
+    backgroundSize: '12px',
   };
 
   return (
@@ -88,8 +92,8 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
             <span>{lang === 'zh' ? '筛选' : 'Filter'}</span>
           </div>
 
-          <div className="flex-1 space-y-2 overflow-hidden">
-            {/* Row 1: L1 categories + widely adopted */}
+          <div className="flex-1 space-y-2.5 overflow-hidden">
+            {/* Row 1: L1 categories */}
             <div className="flex flex-wrap gap-1.5 items-center">
               {L1_CATEGORIES.map(cat => {
                 const label = t.l1[cat.key] || cat.key;
@@ -99,7 +103,7 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                   <button
                     key={cat.key}
                     onClick={() => onChange({ l1: active ? '' : cat.key })}
-                    className="inline-flex items-center gap-1.5 transition-all duration-150"
+                    className="inline-flex items-center gap-1 transition-all duration-150"
                     style={{
                       fontFamily: "'Inter', sans-serif",
                       fontSize: '12px',
@@ -127,14 +131,14 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                     }}
                   >
                     {label}
-                    <span style={{ fontSize: '10px', opacity: 0.6 }}>{count}</span>
+                    <span style={{ fontSize: '10px', opacity: 0.5 }}>{count}</span>
                   </button>
                 );
               })}
+            </div>
 
-              {/* Divider */}
-              <div className="w-px h-5 mx-0.5" style={{ backgroundColor: isDark ? '#2D2D2D' : '#E5E7EB' }} />
-
+            {/* Row 2: widely adopted + secondary filters */}
+            <div className="flex flex-wrap items-center gap-2">
               {/* Widely adopted button */}
               <button
                 onClick={() => onChange({ widelyTested: widelyActive ? undefined : true })}
@@ -160,10 +164,10 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                   <span style={{ fontSize: '10px', opacity: widelyActive ? 0.85 : 0.6 }}>{widelyTestedCount}</span>
                 )}
               </button>
-            </div>
 
-            {/* Row 2: year + difficulty + openness + sort + clear */}
-            <div className="flex flex-wrap items-center gap-2">
+              {/* Divider */}
+              <div className="w-px h-5 mx-0.5" style={{ backgroundColor: isDark ? '#2D2D2D' : '#E5E7EB' }} />
+
               {/* Year */}
               <select value={filters.year} onChange={e => onChange({ year: e.target.value })} style={baseSelectStyle}>
                 <option value="">{t.allYears}</option>
@@ -177,6 +181,9 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                   <option key={d} value={d}>{t.difficulty[d] || d}</option>
                 ))}
               </select>
+
+              {/* Divider */}
+              <div className="w-px h-5 mx-0.5" style={{ backgroundColor: isDark ? '#2D2D2D' : '#E5E7EB' }} />
 
               {/* Openness */}
               <div className="flex items-center gap-1">
@@ -205,6 +212,9 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                   );
                 })}
               </div>
+
+              {/* Divider */}
+              <div className="w-px h-5 mx-0.5" style={{ backgroundColor: isDark ? '#2D2D2D' : '#E5E7EB' }} />
 
               {/* Sort */}
               <select value={filters.sort} onChange={e => onChange({ sort: e.target.value as SortType })} style={baseSelectStyle}>
