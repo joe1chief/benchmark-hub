@@ -67,14 +67,20 @@ Each benchmark entry follows this structure:
 
 ### PR Checklist
 
-Before submitting a PR, please verify:
+Before submitting a PR, please run the local validation script:
 
-- [ ] JSON is valid (no syntax errors — use `python3 -c "import json; json.load(open('client/public/benchmarks.json'))"`)
-- [ ] `name` is unique (not already in the database)
-- [ ] `l1` value matches one of the valid L1 categories exactly
-- [ ] `related_benchmarks` only references names that exist in the database
-- [ ] `mermaid_flowchart` is either a valid Mermaid string or `null`
-- [ ] `year` is in `"YYYY-MM"` or `"YYYY"` format
+```bash
+python3 scripts/validate_benchmarks.py
+```
+
+This script checks for:
+- Valid JSON format
+- Unique `name`
+- Correct `l1` category values
+- Valid `related_benchmarks` references
+- Correct `year` format
+
+Our CI (`.github/workflows/ci.yml`) will automatically run this validation on your PR.
 
 ---
 
@@ -88,9 +94,11 @@ pnpm install
 pnpm dev        # Start dev server at http://localhost:5173
 
 # Before submitting a PR
-pnpm build      # Ensure it builds without errors
-pnpm build:ghpages  # Ensure GitHub Pages build works
+pnpm exec tsc --noEmit  # Check for TypeScript errors
+pnpm build:ghpages      # Ensure GitHub Pages build works
 ```
+
+Our CI (`.github/workflows/ci.yml`) will automatically run `tsc` and `build:ghpages` on your PR to catch any issues.
 
 Key files:
 
@@ -102,8 +110,6 @@ Key files:
 | `client/src/components/BenchmarkDrawer.tsx` | Detail drawer (PDF, flowchart, tabs) |
 | `client/src/components/FilterBar.tsx` | Filter controls |
 | `client/src/contexts/LangContext.tsx` | i18n translations (EN/ZH) |
-
-For a complete data update workflow (including type safety, null guards, and deployment), see [`skills/update-benchmarks/SKILL.md`](skills/update-benchmarks/SKILL.md).
 
 ---
 
