@@ -38,11 +38,7 @@ export default function HeroStats({ data }: Props) {
   ];
 
   return (
-    <div
-      className="border-b transition-colors duration-200"
-      style={{ borderColor: isDark ? '#1F1F1F' : '#F3F4F6' }}
-    >
-      <div className="container py-10">
+    <div className="container py-10">
         {/* Title row — lazy-cow-47 特效 + 原子轨道装饰 */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2.5">
@@ -113,7 +109,6 @@ export default function HeroStats({ data }: Props) {
             </div>
           ))}
         </div>
-      </div>
     </div>
   );
 }

@@ -78,21 +78,6 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
       {/* 内层内容区 — heavy-elephant-39 的 .card-info */}
       <div className="benchmark-card-inner h-full flex flex-col">
 
-        {/* Top color bar */}
-        <div
-          className="card-color-bar h-[3px] w-full shrink-0 transition-all duration-300 group-hover:h-[4px]"
-          style={{
-            backgroundColor: b.l1_color,
-            boxShadow: `0 0 0px ${b.l1_color}00`,
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 8px ${b.l1_color}99, 0 0 16px ${b.l1_color}44`;
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0px ${b.l1_color}00`;
-          }}
-        />
-
         {/* Card content */}
         <div className="flex flex-col flex-1 px-5 pt-4 pb-4 gap-3">
 

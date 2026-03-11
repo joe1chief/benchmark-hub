@@ -147,27 +147,7 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
         </div>
       </div>
 
-      {/* Powered by bar — "Ant AQ eval team" 流光特效 */}
-      <div
-        className="border-t transition-colors duration-200"
-        style={{ borderColor: isDark ? '#1A1A1A' : '#F9FAFB' }}
-      >
-        <div className="container">
-          <div className="flex items-center justify-end h-[22px]">
-            <span
-              className="text-[11px]"
-              style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#3D3D3D' : '#D1D5DB' }}
-            >
-              {t.poweredBy}{' '}
-              {/* 流光特效：暗色/亮色分别使用不同亮度的 shimmer */}
-              <span className={isDark ? 'powered-by-shimmer' : 'powered-by-shimmer-light'}>
-                Ant AQ eval team
-              </span>
-              {t.poweredBySuffix}
-            </span>
-          </div>
-        </div>
-      </div>
+
     </header>
   );
 }
