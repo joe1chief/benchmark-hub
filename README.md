@@ -4,10 +4,10 @@
 [![Forks](https://img.shields.io/github/forks/joe1chief/llm-benchmark-costco?style=flat-square&logo=github&color=blue)](https://github.com/joe1chief/llm-benchmark-costco/network/members)
 [![License](https://img.shields.io/github/license/joe1chief/llm-benchmark-costco?style=flat-square&color=green)](LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/joe1chief/llm-benchmark-costco?style=flat-square&color=orange)](https://github.com/joe1chief/llm-benchmark-costco/commits/main)
-[![Benchmarks](https://img.shields.io/badge/Benchmarks-379-purple?style=flat-square)](https://joe1chief.github.io/llm-benchmark-costco/)
+[![Benchmarks](https://img.shields.io/badge/Benchmarks-378-purple?style=flat-square)](https://joe1chief.github.io/llm-benchmark-costco/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://joe1chief.github.io/llm-benchmark-costco/)
 
-> A curated, searchable database of **379 LLM evaluation benchmarks** across 11 capability dimensions — with inline PDF reading, Mermaid build flowcharts, bilingual UI, dark mode, **neon glow effects**, and **automated CI/CD**.
+> A curated, searchable database of **378 LLM evaluation benchmarks** across 10 capability dimensions — with inline PDF reading, Mermaid build flowcharts, bilingual UI, dark mode, **neon glow effects**, and **automated CI/CD**.
 
 **[🌐 Live Demo](https://joe1chief.github.io/llm-benchmark-costco/)** · **[📊 Browse Benchmarks](https://joe1chief.github.io/llm-benchmark-costco/)** · **[🤝 Contribute](CONTRIBUTING.md)**
 
@@ -32,7 +32,7 @@
 
 ## Features
 
-- **379 Benchmarks** across 11 capability dimensions — Agent Capability (71), General Language (39), Multimodal (72), Code (40), Science & Reasoning (18), Safety & Alignment (24), Medical & Health (58), and more.
+- **378 Benchmarks** across 10 capability dimensions — Agent Capability (71), General Language (39), Multimodal (72), Code (40), Science & Reasoning (18), Safety & Alignment (24), Medical & Health (58), and more.
 - **Neon Glow & Shimmer Effects** — Interactive neon glow effect on card hover and a subtle shimmer animation on the logo in dark mode.
 - **Inline PDF Reading** — Click any card to open the details drawer and read the full paper without leaving the page. Most entries embed the original arXiv PDF directly.
 - **Build Process Flowcharts** — Over 200 benchmarks include Mermaid-rendered diagrams explaining exactly how the dataset was constructed. Now with **fullscreen mode** for complex flowcharts.
@@ -102,7 +102,7 @@ llm-benchmark-costco/
 │   └── sync-and-deploy.yml         # Daily sync
 ├── client/
 │   ├── public/
-│   │   └── benchmarks.json          # 379 benchmark entries
+│   │   └── benchmarks.json          # 378 benchmark entries
 │   └── src/
 │       ├── components/
 │       │   ├── BenchmarkCard.tsx     # Card component with neon glow
