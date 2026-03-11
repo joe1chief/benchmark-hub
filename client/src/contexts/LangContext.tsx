@@ -261,7 +261,7 @@ export const STRINGS = {
   },
 } as const;
 
-export type Strings = typeof STRINGS['zh'];
+export type Strings = typeof STRINGS['zh'] | typeof STRINGS['en'];
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 interface LangContextType {

@@ -1,0 +1,126 @@
+name: Sync benchmarks.json & Auto Deploy
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 触发条件：
+#   1. 每天 UTC 02:00（北京时间 10:00）自动检查 main 分支 benchmarks.json 变更
+#   2. 手动触发（可指定是否强制重新部署）
+#
+# 工作流逻辑：
+#   - 检查 client/public/benchmarks.json 与上次部署时的 hash 是否一致
+#   - 若有变更，则触发 deploy workflow
+#   - 若无变更，跳过部署（节省 CI 资源）
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # 每天 UTC 02:00 运行（北京时间 10:00）
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: '强制重新部署（即使数据未变更）'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  check-and-deploy:
+    name: Check for changes & deploy if needed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if benchmarks.json changed recently
+        id: check-changes
+        run: |
+          # 获取最近一次 benchmarks.json 的修改时间
+          LAST_MODIFIED=$(git log -1 --format="%ci" -- client/public/benchmarks.json)
+          LAST_COMMIT=$(git log -1 --format="%H" -- client/public/benchmarks.json)
+          
+          echo "Last modified: $LAST_MODIFIED"
+          echo "Last commit: $LAST_COMMIT"
+          echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
+          
+          # 检查是否在过去 25 小时内有变更（覆盖每日调度间隔）
+          HOURS_AGO=$(git log --since="25 hours ago" --format="%H" -- client/public/benchmarks.json | head -1)
+          
+          if [ -n "$HOURS_AGO" ] || [ "${{ inputs.force_deploy }}" = "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📝 benchmarks.json has changes in the last 25h or force deploy requested"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No recent changes to benchmarks.json, skipping deployment"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - name: Cache pnpm store
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        if: steps.check-changes.outputs.changed == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Python (for validation)
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate benchmarks.json
+        if: steps.check-changes.outputs.changed == 'true'
+        run: python3 scripts/validate_benchmarks.py
+
+      - name: Build for GitHub Pages
+        if: steps.check-changes.outputs.changed == 'true'
+        run: pnpm build:ghpages
+        env:
+          NODE_ENV: production
+
+      - name: Deploy to gh-pages
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-ghpages
+          publish_branch: gh-pages
+          commit_message: |
+            chore(deploy): scheduled sync — benchmarks.json updated
+            
+            Source commit: ${{ steps.check-changes.outputs.last_commit }}
+          force_orphan: false
+          enable_jekyll: false
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.check-changes.outputs.changed }}" = "true" ]; then
+            echo "## ✅ Deployment Completed" >> $GITHUB_STEP_SUMMARY
+            echo "Deployed new benchmarks.json to GitHub Pages." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ⏭️ No Deployment Needed" >> $GITHUB_STEP_SUMMARY
+            echo "benchmarks.json has not changed in the last 25 hours." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 Live: https://joe1chief.github.io/llm-benchmark-costco/" >> $GITHUB_STEP_SUMMARY

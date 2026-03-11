@@ -1,4 +1,4 @@
-// LLM Benchmark Costco — Navbar (i18n)
+// LLM Benchmark Costco — Navbar (i18n + Logo Shimmer Effect)
 import React from 'react';
 import { Search, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -28,17 +28,21 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
       <div className="container">
         <div className="flex items-center gap-5 h-14">
 
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <span className="text-[20px] leading-none select-none" role="img" aria-label="microscope">🔬</span>
+          {/* Logo — 流光特效 */}
+          <div className="logo-container flex items-center gap-2.5 shrink-0 cursor-default select-none">
+            {/* emoji 微光晕 */}
             <span
-              className="font-semibold text-[14px] tracking-tight"
+              className="logo-emoji-glow text-[20px] leading-none"
+              role="img"
+              aria-label="microscope"
+            >
+              🔬
+            </span>
+            {/* 文字流光 */}
+            <span
+              className="logo-shimmer font-semibold text-[14px] tracking-tight"
               style={{
                 fontFamily: "'Inter', -apple-system, sans-serif",
-                background: 'linear-gradient(90deg, #10A37F 0%, #1A73E8 60%, #7C3AED 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
               }}
             >
               {t.siteTitle}

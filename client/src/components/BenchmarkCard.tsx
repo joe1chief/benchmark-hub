@@ -1,5 +1,5 @@
-// LLM Benchmark Costco — BenchmarkCard (i18n)
-import React from 'react';
+// LLM Benchmark Costco — BenchmarkCard (i18n + Neon Glow Effect)
+import React, { useRef, useCallback } from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import { Calendar, Building2, BarChart3, Layers, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -38,6 +38,8 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
   const isDark = theme === 'dark';
   const isEn = lang === 'en';
   const widelyTested = b.widely_tested === true;
+  const cardRef = useRef<HTMLDivElement>(null);
+
   // Use English difficulty key when in English mode
   const diffKey = isEn ? (b.difficulty_en || b.difficulty) : b.difficulty;
   const diffColor = DIFFICULTY_COLORS[diffKey] || DIFFICULTY_COLORS[b.difficulty];
@@ -53,23 +55,52 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
   };
   const opennessInfo = b.openness ? opennessConfig[b.openness] : undefined;
 
+  // 鼠标移动时更新 CSS 变量，驱动荧光光晕跟随鼠标
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty('--mx', `${x}%`);
+    el.style.setProperty('--my', `${y}%`);
+  }, []);
+
   return (
     <article
-      className="group relative cursor-pointer"
+      className="group relative cursor-pointer benchmark-card-glow"
       style={style}
       onClick={() => onClick(b)}
+      onMouseMove={handleMouseMove}
+      ref={cardRef}
     >
+      {/* 扫光线 */}
+      <div className="scan-line" aria-hidden="true" />
+
       <div
         className={`
-          h-full flex flex-col rounded-2xl border overflow-hidden transition-all duration-200
+          h-full flex flex-col rounded-2xl border overflow-hidden transition-all duration-300
+          ${widelyTested ? 'benchmark-card-featured' : ''}
           ${isDark
-            ? 'bg-[#161616] border-[#242424] hover:border-[#333] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
-            : 'bg-white border-[#E5E7EB] hover:border-[#D1D5DB] hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]'
+            ? 'bg-[#161616] border-[#242424] hover:border-[#10A37F44] hover:shadow-[0_8px_32px_rgba(16,163,127,0.15),0_0_0_1px_rgba(16,163,127,0.15)]'
+            : 'bg-white border-[#E5E7EB] hover:border-[#10A37F55] hover:shadow-[0_4px_24px_rgba(16,163,127,0.12),0_0_0_1px_rgba(16,163,127,0.12)]'
           }
         `}
       >
-        {/* Top color bar */}
-        <div className="h-[3px] w-full shrink-0" style={{ backgroundColor: b.l1_color || '#999' }} />
+        {/* Top color bar — 荧光扩散 */}
+        <div
+          className="card-color-bar h-[3px] w-full shrink-0 transition-all duration-300 group-hover:h-[4px]"
+          style={{
+            backgroundColor: b.l1_color || '#999',
+            boxShadow: `0 0 0px ${b.l1_color || '#999'}00`,
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 8px ${b.l1_color || '#10A37F'}99, 0 0 16px ${b.l1_color || '#10A37F'}44`;
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0px ${b.l1_color || '#999'}00`;
+          }}
+        />
 
         {/* Card content */}
         <div className="flex flex-col flex-1 px-5 pt-4 pb-4 gap-3">
@@ -87,11 +118,18 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
                 </span>
               )}
               <span
-                className="font-semibold text-[14px] leading-snug truncate"
+                className="font-semibold text-[14px] leading-snug truncate transition-all duration-300 group-hover:brightness-110"
                 style={{
                   color: b.l1_color || '#999',
                   fontFamily: "'Inter', -apple-system, sans-serif",
                   letterSpacing: '-0.01em',
+                  textShadow: 'none',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLSpanElement).style.textShadow = `0 0 12px ${b.l1_color || '#10A37F'}88`;
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLSpanElement).style.textShadow = 'none';
                 }}
               >
                 {b.name}
@@ -101,7 +139,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
             {/* Difficulty badge */}
             {b.difficulty && diffColor && (
               <span
-                className="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md"
+                className="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md transition-all duration-200 group-hover:brightness-110"
                 style={{
                   color: diffColor.text,
                   backgroundColor: isDark ? diffColor.bgDark : diffColor.bg,
@@ -159,7 +197,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
           <div className="flex flex-wrap gap-1.5 pt-1 border-t" style={{ borderColor: isDark ? '#242424' : '#F3F4F6' }}>
             {b.l1 && (
               <span
-                className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md"
+                className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md transition-all duration-200 group-hover:brightness-110"
                 style={{ backgroundColor: (b.l1_color || '#999') + (isDark ? '1A' : '12'), color: b.l1_color || '#999' }}
               >
                 <Layers size={9} />

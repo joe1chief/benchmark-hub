@@ -1,0 +1,125 @@
+name: Deploy to GitHub Pages
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 触发条件：
+#   1. push 到 main 分支（任何文件变更，包括 benchmarks.json 数据更新）
+#   2. 手动触发（workflow_dispatch）
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # 数据文件变更 → 自动重新部署
+      - 'client/public/benchmarks.json'
+      - 'benchmarks.json'
+      # 前端源码变更 → 自动重新部署
+      - 'client/src/**'
+      - 'client/index.html'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'vite.ghpages.config.ts'
+      - 'vite.config.ts'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '手动触发原因（可选）'
+        required: false
+        default: 'Manual deployment'
+
+# 设置 GITHUB_TOKEN 权限，允许部署到 GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个部署任务运行，避免并发冲突
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 1: 验证数据完整性
+  # ───────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate benchmarks.json
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run data validation
+        run: python3 scripts/validate_benchmarks.py
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 2: 构建并部署到 GitHub Pages
+  # ───────────────────────────────────────────────────────────────────────────
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for GitHub Pages
+        run: pnpm build:ghpages
+        env:
+          NODE_ENV: production
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-ghpages
+          publish_branch: gh-pages
+          commit_message: |
+            chore(deploy): auto-deploy from ${{ github.sha }}
+            
+            Triggered by: ${{ github.event_name }}
+            Commit: ${{ github.event.head_commit.message || inputs.reason }}
+          force_orphan: false
+          enable_jekyll: false
+
+      - name: Deployment summary
+        run: |
+          echo "## ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Live URL | https://joe1chief.github.io/llm-benchmark-costco/ |" >> $GITHUB_STEP_SUMMARY
