@@ -27,7 +27,7 @@ on:
         required: false
         default: 'Manual deployment'
 
-# 设置 GITHUB_TOKEN 权限，允许部署到 GitHub Pages
+# 设置 GITHUB_TOKEN 权限，允许部署到 GitHub Pages 并回写 README
 permissions:
   contents: write
   pages: write
@@ -40,14 +40,21 @@ concurrency:
 
 jobs:
   # ───────────────────────────────────────────────────────────────────────────
-  # Job 1: 验证数据完整性
+  # Job 1: 验证数据完整性 + 自动同步 README 统计数字
   # ───────────────────────────────────────────────────────────────────────────
   validate:
-    name: Validate benchmarks.json
+    name: Validate & Sync README Stats
     runs-on: ubuntu-latest
+    outputs:
+      readme_changed: ${{ steps.sync-readme.outputs.readme_changed }}
+      benchmark_total: ${{ steps.sync-readme.outputs.benchmark_total }}
+      benchmark_dims: ${{ steps.sync-readme.outputs.benchmark_dims }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # 需要写权限来提交 README 更新
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,6 +63,36 @@ jobs:
 
       - name: Run data validation
         run: python3 scripts/validate_benchmarks.py
+
+      - name: Sync README stats from benchmarks.json
+        id: sync-readme
+        run: |
+          # 运行脚本并捕获输出
+          python3 scripts/update_readme_stats.py /tmp/stats.env
+          
+          # 读取统计数据
+          source /tmp/stats.env
+          echo "benchmark_total=$BENCHMARK_TOTAL" >> $GITHUB_OUTPUT
+          echo "benchmark_dims=$BENCHMARK_DIMS"   >> $GITHUB_OUTPUT
+          
+          # 检查 README 是否有变更
+          if git diff --quiet README.md; then
+            echo "readme_changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ README.md stats are already up to date"
+          else
+            echo "readme_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ README.md stats updated:"
+            git diff --stat README.md
+          fi
+
+      - name: Commit README stats update
+        if: steps.sync-readme.outputs.readme_changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore(readme): auto-sync stats → ${{ steps.sync-readme.outputs.benchmark_total }} benchmarks, ${{ steps.sync-readme.outputs.benchmark_dims }} dims [skip ci]"
+          git push
 
   # ───────────────────────────────────────────────────────────────────────────
   # Job 2: 构建并部署到 GitHub Pages
@@ -67,6 +104,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # 拉取最新代码（包含 Job 1 可能提交的 README 更新）
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -107,6 +147,7 @@ jobs:
             chore(deploy): auto-deploy from ${{ github.sha }}
             
             Triggered by: ${{ github.event_name }}
+            Benchmarks: ${{ needs.validate.outputs.benchmark_total }} total, ${{ needs.validate.outputs.benchmark_dims }} dims
             Commit: ${{ github.event.head_commit.message || inputs.reason }}
           force_orphan: false
           enable_jekyll: false
@@ -120,4 +161,6 @@ jobs:
           echo "| Trigger | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Benchmarks | ${{ needs.validate.outputs.benchmark_total }} total, ${{ needs.validate.outputs.benchmark_dims }} dims |" >> $GITHUB_STEP_SUMMARY
+          echo "| README Updated | ${{ needs.validate.outputs.readme_changed }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Live URL | https://joe1chief.github.io/llm-benchmark-costco/ |" >> $GITHUB_STEP_SUMMARY

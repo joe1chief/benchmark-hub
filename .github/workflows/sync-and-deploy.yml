@@ -7,7 +7,7 @@ name: Sync benchmarks.json & Auto Deploy
 #
 # 工作流逻辑：
 #   - 检查 client/public/benchmarks.json 与上次部署时的 hash 是否一致
-#   - 若有变更，则触发 deploy workflow
+#   - 若有变更，则同步 README 统计数字 → 构建 → 部署到 gh-pages
 #   - 若无变更，跳过部署（节省 CI 资源）
 # ─────────────────────────────────────────────────────────────────────────────
 on:
@@ -36,6 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if benchmarks.json changed recently
         id: check-changes
@@ -59,6 +60,43 @@ jobs:
             echo "⏭️ No recent changes to benchmarks.json, skipping deployment"
           fi
 
+      - name: Set up Python
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate benchmarks.json
+        if: steps.check-changes.outputs.changed == 'true'
+        run: python3 scripts/validate_benchmarks.py
+
+      - name: Sync README stats from benchmarks.json
+        id: sync-readme
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          python3 scripts/update_readme_stats.py /tmp/stats.env
+          source /tmp/stats.env
+          echo "benchmark_total=$BENCHMARK_TOTAL" >> $GITHUB_OUTPUT
+          echo "benchmark_dims=$BENCHMARK_DIMS"   >> $GITHUB_OUTPUT
+          
+          if git diff --quiet README.md; then
+            echo "readme_changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ README.md stats already up to date"
+          else
+            echo "readme_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ README.md stats updated"
+            git diff --stat README.md
+          fi
+
+      - name: Commit README stats update
+        if: steps.check-changes.outputs.changed == 'true' && steps.sync-readme.outputs.readme_changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore(readme): auto-sync stats → ${{ steps.sync-readme.outputs.benchmark_total }} benchmarks [skip ci]"
+          git push
+
       - name: Setup Node.js
         if: steps.check-changes.outputs.changed == 'true'
         uses: actions/setup-node@v4
@@ -81,16 +119,6 @@ jobs:
         if: steps.check-changes.outputs.changed == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Set up Python (for validation)
-        if: steps.check-changes.outputs.changed == 'true'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Validate benchmarks.json
-        if: steps.check-changes.outputs.changed == 'true'
-        run: python3 scripts/validate_benchmarks.py
-
       - name: Build for GitHub Pages
         if: steps.check-changes.outputs.changed == 'true'
         run: pnpm build:ghpages
@@ -107,6 +135,7 @@ jobs:
           commit_message: |
             chore(deploy): scheduled sync — benchmarks.json updated
             
+            Benchmarks: ${{ steps.sync-readme.outputs.benchmark_total }} total, ${{ steps.sync-readme.outputs.benchmark_dims }} dims
             Source commit: ${{ steps.check-changes.outputs.last_commit }}
           force_orphan: false
           enable_jekyll: false
@@ -115,7 +144,13 @@ jobs:
         run: |
           if [ "${{ steps.check-changes.outputs.changed }}" = "true" ]; then
             echo "## ✅ Deployment Completed" >> $GITHUB_STEP_SUMMARY
-            echo "Deployed new benchmarks.json to GitHub Pages." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Benchmarks | ${{ steps.sync-readme.outputs.benchmark_total }} total |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dimensions | ${{ steps.sync-readme.outputs.benchmark_dims }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| README Updated | ${{ steps.sync-readme.outputs.readme_changed }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Live URL | https://joe1chief.github.io/llm-benchmark-costco/ |" >> $GITHUB_STEP_SUMMARY
           else
             echo "## ⏭️ No Deployment Needed" >> $GITHUB_STEP_SUMMARY
             echo "benchmarks.json has not changed in the last 25 hours." >> $GITHUB_STEP_SUMMARY
