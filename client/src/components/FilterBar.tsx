@@ -6,7 +6,7 @@ import { useLang } from '@/contexts/LangContext';
 
 const L1_CATEGORIES = [
   { key: '通用语言能力', color: '#2563EB' },
-  { key: 'Agent能力',   color: '#7B6FE8' },
+  { key: 'Agent能力',   color: '#10A37F' },
   { key: '多模态理解',  color: '#7C3AED' },
   { key: '代码能力',    color: '#EA580C' },
   { key: '科学推理',    color: '#0891B2' },
@@ -47,7 +47,7 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
   const widelyActive = !!filters.widelyTested;
 
   const OPENNESS_OPTIONS = [
-    { value: 'public',        label: t.publicLabel,   color: '#7B6FE8' },
+    { value: 'public',        label: t.publicLabel,   color: '#10A37F' },
     { value: 'partly public', label: t.partlyLabel,   color: '#F59E0B' },
     { value: 'in-house',      label: t.inHouse,       color: '#EF4444' },
   ];

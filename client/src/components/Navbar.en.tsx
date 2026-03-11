@@ -68,7 +68,7 @@ export default function Navbar({ search, onSearchChange, total, filtered }: Prop
                 boxShadow: 'none',
               }}
               onFocus={e => {
-                e.currentTarget.style.borderColor = '#7B6FE8';
+                e.currentTarget.style.borderColor = '#10A37F';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,163,127,0.08)';
               }}
               onBlur={e => {

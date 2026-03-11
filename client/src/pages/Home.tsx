@@ -82,7 +82,7 @@ export default function Home() {
         style={{ backgroundColor: isDark ? '#0A0A0A' : '#FAFAFA' }}
       >
         <div className="flex flex-col items-center gap-3">
-          <Loader2 size={24} className="animate-spin" style={{ color: '#7B6FE8' }} />
+          <Loader2 size={24} className="animate-spin" style={{ color: '#10A37F' }} />
           <span className="text-[13px]" style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}>
             {t.loading}
           </span>
@@ -203,7 +203,7 @@ export default function Home() {
               {/* Infinite scroll sentinel */}
               {hasMore && (
                 <div ref={sentinelRef} className="flex justify-center items-center py-10 gap-2">
-                  <Loader2 size={16} className="animate-spin" style={{ color: '#7B6FE8' }} />
+                  <Loader2 size={16} className="animate-spin" style={{ color: '#10A37F' }} />
                   <span className="text-[12px]" style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#D1D5DB' }}>
                     {t.loadingMore}
                   </span>
@@ -223,7 +223,7 @@ export default function Home() {
 
         {/* Bottom decorative line */}
         <div className="h-px w-full" style={{
-          background: 'linear-gradient(90deg, transparent 0%, #7B6FE8 25%, #1A73E8 50%, #7C3AED 75%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, #10A37F 25%, #1A73E8 50%, #7C3AED 75%, transparent 100%)',
           opacity: 0.3,
         }} />
         <div className="h-8" />

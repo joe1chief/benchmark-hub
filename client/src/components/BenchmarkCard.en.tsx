@@ -30,7 +30,7 @@ const DIFFICULTY_COLORS: Record<string, { text: string; bg: string; bgDark: stri
 };
 
 const OPENNESS_CONFIG: Record<string, { icon: typeof Unlock; color: string; label: string }> = {
-  'public':        { icon: Unlock,      color: '#7B6FE8', label: 'Public'  },
+  'public':        { icon: Unlock,      color: '#10A37F', label: 'Public'  },
   'partly public': { icon: ShieldAlert, color: '#F59E0B', label: 'Partly'  },
   'in-house':      { icon: Lock,        color: '#EF4444', label: 'Private' },
 };
@@ -156,7 +156,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
               </span>
             )}
             {b.has_leaderboard && (
-              <span className="flex items-center gap-1 text-[11.5px]" style={{ color: '#7B6FE8' }}>
+              <span className="flex items-center gap-1 text-[11.5px]" style={{ color: '#10A37F' }}>
                 <BarChart3 size={11} />
                 Leaderboard
               </span>
@@ -186,7 +186,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
                 className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md"
                 style={{
                   backgroundColor: isDark ? 'rgba(16,163,127,0.10)' : 'rgba(16,163,127,0.08)',
-                  color: '#7B6FE8',
+                  color: '#10A37F',
                 }}
               >
                 {b.family}

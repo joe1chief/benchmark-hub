@@ -8,7 +8,7 @@ interface Props {
   data: Benchmark[];
 }
 
-/** nice-sheep-25 原子轨道 Loader（使用项目原配色 #7B6FE8） */
+/** nice-sheep-25 原子轨道 Loader（使用项目原配色 #10A37F） */
 function AtomLoader() {
   return (
     <div className="atom-loader" aria-hidden="true">
@@ -33,7 +33,7 @@ export default function HeroStats({ data }: Props) {
   const widelyTested = data.filter(b => b.widely_tested).length;
 
   const stats = [
-    { value: total,        label: t.statBenchmarks, color: '#7B6FE8' },
+    { value: total,        label: t.statBenchmarks, color: '#10A37F' },
     { value: categories,   label: t.statDims,        color: '#1A73E8' },
     { value: families,     label: t.statFamilies,    color: '#7C3AED' },
     { value: widelyTested, label: t.statWidely,      color: '#F59E0B' },
@@ -61,7 +61,7 @@ export default function HeroStats({ data }: Props) {
               className="hero-title-fx text-[30px] font-semibold tracking-tight"
               style={{
                 fontFamily: "'Inter', -apple-system, sans-serif",
-                color: isDark ? '#9D94F0' : '#7B6FE8',
+                color: isDark ? '#34D399' : '#10A37F',
               }}
             >
               {t.heroTitle}

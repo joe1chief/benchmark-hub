@@ -46,7 +46,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
   const modality = isEn ? (b.modality_en || b.modality) : b.modality;
 
   const opennessConfig: Record<string, { icon: typeof Unlock; color: string; label: string }> = {
-    'public':        { icon: Unlock,      color: '#7B6FE8', label: t.publicLabel  },
+    'public':        { icon: Unlock,      color: '#10A37F', label: t.publicLabel  },
     'partly public': { icon: ShieldAlert, color: '#F59E0B', label: t.partlyLabel  },
     'in-house':      { icon: Lock,        color: '#EF4444', label: t.privateLabel },
   };
@@ -88,7 +88,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
                   textShadow: 'none',
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLSpanElement).style.textShadow = `0 0 12px ${b.l1_color || '#7B6FE8'}88`;
+                  (e.currentTarget as HTMLSpanElement).style.textShadow = `0 0 12px ${b.l1_color || '#10A37F'}88`;
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLSpanElement).style.textShadow = 'none';
@@ -142,7 +142,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
               </span>
             )}
             {b.has_leaderboard && (
-              <span className="flex items-center gap-1 text-[11.5px]" style={{ color: '#7B6FE8' }}>
+              <span className="flex items-center gap-1 text-[11.5px]" style={{ color: '#10A37F' }}>
                 <BarChart3 size={11} />
                 {t.leaderboard}
               </span>
@@ -169,7 +169,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
             {b.family && (
               <span
                 className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md"
-                style={{ backgroundColor: isDark ? 'rgba(16,163,127,0.10)' : 'rgba(16,163,127,0.08)', color: '#7B6FE8' }}
+                style={{ backgroundColor: isDark ? 'rgba(16,163,127,0.10)' : 'rgba(16,163,127,0.08)', color: '#10A37F' }}
               >
                 {b.family}
               </span>

@@ -28,7 +28,7 @@ function InfoRow({ label, value, isDark }: { label: string; value: string; isDar
 }
 
 const OPENNESS_CONFIG: Record<string, { icon: typeof Unlock; color: string; label: string; bg: string; bgDark: string }> = {
-  'public':        { icon: Unlock,      color: '#7B6FE8', label: 'Public',        bg: 'bg-violet-50 border-violet-200',  bgDark: 'bg-violet-950/30 border-violet-900/50' },
+  'public':        { icon: Unlock,      color: '#10A37F', label: 'Public',        bg: 'bg-emerald-50 border-emerald-200',  bgDark: 'bg-emerald-950/30 border-emerald-900/50' },
   'partly public': { icon: ShieldAlert, color: '#F59E0B', label: 'Partly Public', bg: 'bg-amber-50 border-amber-200',      bgDark: 'bg-amber-950/30 border-amber-900/50' },
   'in-house':      { icon: Lock,        color: '#EF4444', label: 'In-house',      bg: 'bg-red-50 border-red-200',          bgDark: 'bg-red-950/30 border-red-900/50' },
 };
@@ -200,7 +200,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
           ].map(({ key, icon: Icon, label, disabled }) => (
             <button key={key}
               className={`flex items-center gap-1.5 px-1 py-3 text-[13px] font-medium border-b-2 mr-6 transition-colors ${
-                tab === key ? 'border-[#7B6FE8] text-[#7B6FE8]'
+                tab === key ? 'border-[#10A37F] text-[#10A37F]'
                   : isDark ? 'border-transparent text-gray-500 hover:text-gray-300'
                   : 'border-transparent text-gray-400 hover:text-gray-600'
               } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
@@ -247,9 +247,9 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                 {b.homepage && (
                   <a href={b.homepage} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-lg text-white transition-colors"
-                    style={{ backgroundColor: '#7B6FE8' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#5B4FD0')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#7B6FE8')}>
+                    style={{ backgroundColor: '#10A37F' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0D8F6F')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#10A37F')}>
                     <HomeIcon size={13} />Homepage<ExternalLink size={11} />
                   </a>
                 )}
@@ -260,7 +260,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                         ? isDark ? 'border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800' : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                         : 'text-white'
                     }`}
-                    style={!b.homepage ? { backgroundColor: '#7B6FE8' } : {}}>
+                    style={!b.homepage ? { backgroundColor: '#10A37F' } : {}}>
                     <FileText size={13} />Read Full Paper<ChevronRightIcon size={13} />
                   </button>
                 )}
@@ -309,7 +309,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                   <InfoRow label="Data Access"   value={opennessInfo?.label || b.openness} isDark={isDark} />
                   <div className={`flex gap-3 py-2.5 transition-colors`}>
                     <span className={`text-[12px] w-24 shrink-0 pt-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Leaderboard</span>
-                    <span className={`text-[13px] font-medium flex items-center gap-1 ${b.has_leaderboard ? 'text-[#7B6FE8]' : isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+                    <span className={`text-[13px] font-medium flex items-center gap-1 ${b.has_leaderboard ? 'text-[#10A37F]' : isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                       {b.has_leaderboard ? (<><BarChart3 size={13} /> Public Leaderboard</>) : 'None'}
                     </span>
                   </div>
@@ -336,7 +336,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: member.l1_color }} />
-                          <span className={`text-[13px] font-medium truncate group-hover/member:text-[#7B6FE8] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <span className={`text-[13px] font-medium truncate group-hover/member:text-[#10A37F] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             {member.name}
                           </span>
                           {member.widely_tested && <Award size={12} className="text-amber-500 shrink-0" />}
@@ -368,8 +368,8 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                           onClick={() => onSelectBenchmark(rel)}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium border transition-all ${
                             isDark
-                              ? 'border-gray-700 text-gray-400 hover:border-[#7B6FE8] hover:text-[#7B6FE8] hover:bg-[#7B6FE8]/10'
-                              : 'border-gray-200 text-gray-600 hover:border-[#7B6FE8] hover:text-[#7B6FE8] hover:bg-[#7B6FE8]/5'
+                              ? 'border-gray-700 text-gray-400 hover:border-[#10A37F] hover:text-[#10A37F] hover:bg-[#10A37F]/10'
+                              : 'border-gray-200 text-gray-600 hover:border-[#10A37F] hover:text-[#10A37F] hover:bg-[#10A37F]/5'
                           }`}
                         >
                           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: rel.l1_color }} />
@@ -388,7 +388,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               {/* PDF toolbar */}
               <div className={`flex items-center justify-between px-4 py-2 border-b shrink-0 transition-colors ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-center gap-2 min-w-0">
-                  <FileText size={13} className="text-[#7B6FE8] shrink-0" />
+                  <FileText size={13} className="text-[#10A37F] shrink-0" />
                   <span className={`text-[12px] truncate max-w-[300px] font-medium transition-colors ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                     {b.name}
                   </span>
@@ -424,7 +424,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               <div className="flex-1 relative overflow-hidden">
                 {!pdfLoaded && !pdfError && (
                   <div className={`absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 transition-colors ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`}>
-                    <div className="w-8 h-8 border-2 border-gray-700 border-t-[#7B6FE8] rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-gray-700 border-t-[#10A37F] rounded-full animate-spin" />
                     <span className={`text-[13px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                       Loading paper{strategies.length > 1 && <span className="ml-1 text-[11px] opacity-60">({currentStrategy?.label})</span>}…
                     </span>
@@ -446,7 +446,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       </button>
                       <a href={rawPdfUrl} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-lg text-white transition-colors"
-                        style={{ backgroundColor: '#7B6FE8' }}>
+                        style={{ backgroundColor: '#10A37F' }}>
                         <ExternalLink size={12} />Open Directly
                       </a>
                     </div>
@@ -465,7 +465,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                     {currentStrategy?.label} · If display is broken, open in a new tab.
                   </span>
                   <a href={rawPdfUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-[11px] text-[#7B6FE8] hover:underline flex items-center gap-1">
+                    className="text-[11px] text-[#10A37F] hover:underline flex items-center gap-1">
                     <ExternalLink size={10} />Original link
                   </a>
                 </div>

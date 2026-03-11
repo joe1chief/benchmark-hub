@@ -110,13 +110,13 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
           themeVariables: isDark ? {
             primaryColor: '#1a2a1a',
             primaryTextColor: '#d1fae5',
-            primaryBorderColor: '#7B6FE8',
-            lineColor: '#7B6FE8',
+            primaryBorderColor: '#10A37F',
+            lineColor: '#10A37F',
             secondaryColor: '#0f1f0f',
             tertiaryColor: '#0a1a0a',
             background: '#111111',
             mainBkg: '#1a2a1a',
-            nodeBorder: '#7B6FE8',
+            nodeBorder: '#10A37F',
             clusterBkg: '#0f1f0f',
             titleColor: '#d1fae5',
             edgeLabelBackground: '#1a2a1a',
@@ -125,13 +125,13 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
           } : {
             primaryColor: '#f0fdf4',
             primaryTextColor: '#065f46',
-            primaryBorderColor: '#7B6FE8',
-            lineColor: '#7B6FE8',
+            primaryBorderColor: '#10A37F',
+            lineColor: '#10A37F',
             secondaryColor: '#ecfdf5',
             tertiaryColor: '#f0fdf4',
             background: '#ffffff',
             mainBkg: '#f0fdf4',
-            nodeBorder: '#7B6FE8',
+            nodeBorder: '#10A37F',
             clusterBkg: '#ecfdf5',
             titleColor: '#065f46',
             edgeLabelBackground: '#f0fdf4',
@@ -163,7 +163,7 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
   if (loading) {
     return (
       <div className={`flex flex-col items-center justify-center h-48 gap-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-        <div className="w-7 h-7 border-2 border-gray-600 border-t-[#7B6FE8] rounded-full animate-spin" />
+        <div className="w-7 h-7 border-2 border-gray-600 border-t-[#10A37F] rounded-full animate-spin" />
         <span className="text-[12px]">Rendering flowchart...</span>
       </div>
     );
@@ -287,7 +287,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
   const hasFlowchart = !!flowchartCode;
 
   const opennessConfig: Record<string, { icon: typeof Unlock; color: string; label: string; bg: string; bgDark: string }> = {
-    'public':        { icon: Unlock,      color: '#7B6FE8', label: t.publicLabel,  bg: 'bg-violet-50 border-violet-200', bgDark: 'bg-violet-950/30 border-violet-900/50' },
+    'public':        { icon: Unlock,      color: '#10A37F', label: t.publicLabel,  bg: 'bg-emerald-50 border-emerald-200', bgDark: 'bg-emerald-950/30 border-emerald-900/50' },
     'partly public': { icon: ShieldAlert, color: '#F59E0B', label: t.partlyLabel,  bg: 'bg-amber-50 border-amber-200',    bgDark: 'bg-amber-950/30 border-amber-900/50' },
     'in-house':      { icon: Lock,        color: '#EF4444', label: t.privateLabel, bg: 'bg-red-50 border-red-200',        bgDark: 'bg-red-950/30 border-red-900/50' },
   };
@@ -408,7 +408,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
           {tabs.map(({ key, icon: Icon, label, disabled }) => (
             <button key={key}
               className={`flex items-center gap-1.5 px-1 py-3 text-[13px] font-medium border-b-2 mr-6 transition-colors ${
-                tab === key ? 'border-[#7B6FE8] text-[#7B6FE8]'
+                tab === key ? 'border-[#10A37F] text-[#10A37F]'
                   : isDark ? 'border-transparent text-gray-500 hover:text-gray-300'
                   : 'border-transparent text-gray-400 hover:text-gray-600'
               } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
@@ -469,9 +469,9 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                 {b.homepage && (
                   <a href={b.homepage} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-lg text-white transition-colors"
-                    style={{ backgroundColor: '#7B6FE8' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#5B4FD0')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#7B6FE8')}>
+                    style={{ backgroundColor: '#10A37F' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0D8F6F')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#10A37F')}>
                     <HomeIcon size={13} />{t.actionHomepage}<ExternalLink size={11} />
                   </a>
                 )}
@@ -482,7 +482,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                         ? isDark ? 'border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800' : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                         : 'text-white'
                     }`}
-                    style={!b.homepage ? { backgroundColor: '#7B6FE8' } : {}}>
+                    style={!b.homepage ? { backgroundColor: '#10A37F' } : {}}>
                     <FileText size={13} />{t.actionReadPaper}<ChevronRightIcon size={13} />
                   </button>
                 )}
@@ -539,7 +539,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                   <InfoRow label={t.fieldDataAccess}   value={opennessInfo?.label || b.openness} isDark={isDark} />
                   <div className="flex gap-3 py-2.5">
                     <span className={`text-[12px] w-24 shrink-0 pt-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t.fieldLeaderboard}</span>
-                    <span className={`text-[13px] font-medium flex items-center gap-1 ${b.has_leaderboard ? 'text-[#7B6FE8]' : isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+                    <span className={`text-[13px] font-medium flex items-center gap-1 ${b.has_leaderboard ? 'text-[#10A37F]' : isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                       {b.has_leaderboard ? (<><BarChart3 size={13} /> {t.hasLeaderboard}</>) : t.noLeaderboard}
                     </span>
                   </div>
@@ -566,7 +566,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: member.l1_color || '#999' }} />
-                          <span className={`text-[13px] font-medium truncate group-hover/member:text-[#7B6FE8] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <span className={`text-[13px] font-medium truncate group-hover/member:text-[#10A37F] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             {member.name}
                           </span>
                           {member.widely_tested && <Award size={12} className="text-amber-500 shrink-0" />}
@@ -611,7 +611,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                             <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: rel.l1_color || '#999' }} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`text-[13px] font-medium group-hover/rel:text-[#7B6FE8] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <span className={`text-[13px] font-medium group-hover/rel:text-[#10A37F] transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                   {rel.name}
                                 </span>
                                 {rel.widely_tested && <Award size={11} className="text-amber-500 shrink-0" />}
@@ -650,7 +650,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               {flowchartFullscreen && (
                 <div className={`flex items-center justify-between mb-4 pb-3 border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
                   <div className="flex items-center gap-3">
-                    <GitBranch size={16} className="text-[#7B6FE8]" />
+                    <GitBranch size={16} className="text-[#10A37F]" />
                     <span className={`text-[15px] font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
                       {b.name} — {isEn ? 'Build Flowchart' : '构建流程图'}
                     </span>
@@ -692,7 +692,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               {/* Mermaid chart */}
               <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
                 <div className={`px-4 py-2 border-b flex items-center gap-2 transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
-                  <GitBranch size={12} className="text-[#7B6FE8]" />
+                  <GitBranch size={12} className="text-[#10A37F]" />
                   <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                     {b.name} — {isEn ? 'Build Flowchart' : '构建流程图'}
                   </span>
@@ -728,7 +728,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                 {b.paper_url && (
                   <a href={b.paper_url} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-4 py-2 text-[13px] rounded-lg text-white transition-colors"
-                    style={{ backgroundColor: '#7B6FE8' }}>
+                    style={{ backgroundColor: '#10A37F' }}>
                     <ExternalLink size={13} />{t.viewOnPublisher}
                   </a>
                 )}
@@ -750,7 +750,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               {/* PDF toolbar */}
               <div className={`flex items-center justify-between px-4 py-2 border-b shrink-0 transition-colors ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-center gap-2 min-w-0">
-                  <FileText size={13} className="text-[#7B6FE8] shrink-0" />
+                  <FileText size={13} className="text-[#10A37F] shrink-0" />
                   <span className={`text-[12px] truncate max-w-[300px] font-medium transition-colors ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                     {b.name}
                   </span>
@@ -786,7 +786,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
               <div className="flex-1 relative overflow-hidden">
                 {!pdfLoaded && !pdfError && (
                   <div className={`absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 transition-colors ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`}>
-                    <div className="w-8 h-8 border-2 border-gray-700 border-t-[#7B6FE8] rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-gray-700 border-t-[#10A37F] rounded-full animate-spin" />
                     <span className={`text-[13px] transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                       {t.pdfLoading}{strategies.length > 1 && <span className="ml-1 text-[11px] opacity-60">({currentStrategy?.label})</span>}...
                     </span>
@@ -808,7 +808,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       </button>
                       <a href={rawPdfUrl} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-lg text-white transition-colors"
-                        style={{ backgroundColor: '#7B6FE8' }}>
+                        style={{ backgroundColor: '#10A37F' }}>
                         <ExternalLink size={12} />{t.openDirectly}
                       </a>
                     </div>
@@ -827,7 +827,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                     {currentStrategy?.label} · {t.pdfFooterHint}
                   </span>
                   <a href={rawPdfUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-[11px] text-[#7B6FE8] hover:underline flex items-center gap-1">
+                    className="text-[11px] text-[#10A37F] hover:underline flex items-center gap-1">
                     <ExternalLink size={10} />{t.originalLink}
                   </a>
                 </div>

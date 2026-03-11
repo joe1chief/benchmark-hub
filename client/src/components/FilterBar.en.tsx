@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const L1_CATEGORIES = [
   { label: 'General Language',   color: '#2563EB' },
-  { label: 'Agent Capability',   color: '#7B6FE8' },
+  { label: 'Agent Capability',   color: '#10A37F' },
   { label: 'Multimodal',         color: '#7C3AED' },
   { label: 'Code',               color: '#EA580C' },
   { label: 'Science & Reasoning',color: '#0891B2' },
@@ -21,7 +21,7 @@ const L1_CATEGORIES = [
 const YEARS = ['2026','2025','2024','2023','2022','2021','2020','2019','2018','2017','2016','2015','2014','2013','2012','Before 2012'];
 const DIFFICULTIES = ['Frontier','Expert','Advanced','Basic'];
 const OPENNESS_OPTIONS = [
-  { value: 'public',        label: 'Public',       color: '#7B6FE8' },
+  { value: 'public',        label: 'Public',       color: '#10A37F' },
   { value: 'partly public', label: 'Partly Public', color: '#F59E0B' },
   { value: 'in-house',      label: 'In-house',      color: '#EF4444' },
 ];
