@@ -237,6 +237,16 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
   const isDark = theme === 'dark';
   const isEn = lang === 'en';
 
+  const [citationCopied, setCitationCopied] = useState(false);
+  const cleanIntro = b ? (isEn ? (b.intro_en || b.intro) : b.intro || '').replace(/\s+/g, ' ').replace(/"/g, '\\"').trim() : '';
+  const bibtexCode = b ? `@article{${b.id},\n  title={${b.name}: ${cleanIntro}},\n  author={${b.org || 'Unknown'}},\n  journal={arXiv preprint},\n  year={${b.year || new Date().getFullYear()}}\n}` : '';
+
+  const handleCopyCitation = useCallback(() => {
+    navigator.clipboard.writeText(bibtexCode);
+    setCitationCopied(true);
+    setTimeout(() => setCitationCopied(false), 2000);
+  }, [bibtexCode]);
+
   useEffect(() => {
     if (b) {
       setTab('info');
@@ -543,6 +553,32 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
                       {b.has_leaderboard ? (<><BarChart3 size={13} /> {t.hasLeaderboard}</>) : t.noLeaderboard}
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Citation info */}
+              <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
+                <div className={`px-4 py-2.5 border-b flex items-center justify-between transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
+                  <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {lang === 'zh' ? '文献引用 (BibTeX)' : 'Cite Reference (BibTeX)'}
+                  </span>
+                  <button
+                    onClick={handleCopyCitation}
+                    className={`text-[11.5px] font-medium px-2.5 py-0.5 rounded transition-colors ${
+                      citationCopied
+                        ? 'bg-emerald-500 text-white'
+                        : isDark
+                        ? 'bg-gray-800 text-gray-400 hover:text-gray-200'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {citationCopied ? (lang === 'zh' ? '已复制' : 'Copied') : (lang === 'zh' ? '复制 BibTeX' : 'Copy BibTeX')}
+                  </button>
+                </div>
+                <div className="p-3">
+                  <pre className={`text-[11px] font-mono p-2.5 rounded-lg overflow-x-auto select-all leading-normal ${isDark ? 'bg-gray-950 text-emerald-400' : 'bg-gray-50/80 text-emerald-700 border border-gray-100'}`}>
+                    {bibtexCode}
+                  </pre>
                 </div>
               </div>
 
