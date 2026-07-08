@@ -1,0 +1,125 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ART Build Process
+  description: >-
+    Paper-aligned four-stage EHR scenario mining, synthetic clinical task generation, quality audit, and MedAgentBench
+    evaluation workflow for ART, based on arXiv:2601.08988.
+  legend: >-
+    Solid arrows show the ART benchmark-generation and evaluation pipeline; dashed arrows mark expert audit and future
+    QA-agent routing.
+nodes:
+  - id: ehr_source
+    label: |-
+      Real EHR observations
+      50k records / 695 patients
+      lab codes and timestamps
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: scenario_agent
+    label: |-
+      Scenario identification
+      retrieval, aggregation
+      threshold failure modes
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: synthesis
+    label: |-
+      Task generation agent
+      GPT-4o-mini variants
+      authentic clinical data retained
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: task_schema
+    label: |-
+      Structured ART tasks
+      instruction, context
+      ground truth and MRN
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: quality
+    label: |-
+      Quality audit
+      source alignment checks
+      HITL clinical expert review
+    type: decision
+    size: xl
+    position:
+      x: 820
+      'y': 160
+  - id: benchmark
+    label: |-
+      Balanced benchmark
+      600 tasks
+      200 per failure mode
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 70
+  - id: medagentbench
+    label: |-
+      AgentBench evaluation
+      FHIR live EHR API
+      stateless temperature 0
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+  - id: results
+    label: |-
+      Success-rate report
+      exact match by category
+      retrieval, aggregation, threshold
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: ehr_source
+    to: scenario_agent
+    type: primary
+  - from: scenario_agent
+    to: synthesis
+    type: primary
+  - from: synthesis
+    to: task_schema
+    type: primary
+  - from: task_schema
+    to: quality
+    type: primary
+  - from: quality
+    to: benchmark
+    type: primary
+  - from: quality
+    to: synthesis
+    type: optional
+    label: revise low-confidence tasks
+  - from: benchmark
+    to: medagentbench
+    type: primary
+  - from: medagentbench
+    to: results
+    type: primary
+  - from: results
+    to: quality
+    type: optional
+    label: future QA-agent routing
+modules: []
