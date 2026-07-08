@@ -1,0 +1,121 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ART 构建流程
+  description: 基于 arXiv:2601.08988，对齐 ART 的四阶段 EHR 场景挖掘、临床任务合成、质量审核和 MedAgentBench 评测流程。
+  legend: 实线表示 ART 基准生成与评测主流程；虚线表示专家审核和未来 QA-agent 路由。
+nodes:
+  - id: ehr_source
+    label: |-
+      真实 EHR 观测
+      5 万记录 / 695 名患者
+      实验室代码与时间戳
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: scenario_agent
+    label: |-
+      场景识别 Agent
+      检索、聚合
+      阈值失败模式
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: synthesis
+    label: |-
+      任务生成 Agent
+      GPT-4o-mini 改写
+      保留真实临床数据
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: task_schema
+    label: |-
+      结构化 ART 任务
+      指令、上下文
+      标准答案与 MRN
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: quality
+    label: |-
+      质量审核
+      源数据对齐检查
+      临床专家 HITL 复核
+    type: decision
+    size: xl
+    position:
+      x: 820
+      'y': 160
+  - id: benchmark
+    label: |-
+      平衡评测集
+      600 个任务
+      每类失败模式 200 个
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 70
+  - id: medagentbench
+    label: |-
+      AgentBench 评测
+      FHIR 实时 EHR API
+      无状态温度 0
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+  - id: results
+    label: |-
+      成功率报告
+      按类别 exact match
+      检索、聚合、阈值
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: ehr_source
+    to: scenario_agent
+    type: primary
+  - from: scenario_agent
+    to: synthesis
+    type: primary
+  - from: synthesis
+    to: task_schema
+    type: primary
+  - from: task_schema
+    to: quality
+    type: primary
+  - from: quality
+    to: benchmark
+    type: primary
+  - from: quality
+    to: synthesis
+    type: optional
+    label: 修改低置信任务
+  - from: benchmark
+    to: medagentbench
+    type: primary
+  - from: medagentbench
+    to: results
+    type: primary
+  - from: results
+    to: quality
+    type: optional
+    label: 未来 QA-agent 路由
+modules: []
