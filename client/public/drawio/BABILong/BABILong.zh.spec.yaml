@@ -1,0 +1,121 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: BABILong 构建流程
+  description: 基于 arXiv:2406.10149，对齐论文的 BABILong 长上下文样本构造、基线评测和记忆模型评测流程。
+  legend: 实线表示 BABILong 样本生成和评测主流程；虚线表示论文报告中的 RAG 与循环记忆模型评测分支。
+nodes:
+  - id: babi_tasks
+    label: |-
+      bAbI 任务生成器
+      QA1 到 QA20
+      模拟事实与问题
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: pg19_background
+    label: |-
+      PG19 背景书籍
+      自然长文本上下文
+      无关干扰内容
+    type: document
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: fact_insertion
+    label: |-
+      事实隐藏流水线
+      插入任务句子
+      保留背景文本顺序
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: length_splits
+    label: |-
+      控长样本集合
+      预定义切分最高 10M
+      每题事实数可变
+    type: database
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: llm_eval
+    label: |-
+      长上下文 LLM 评测
+      识别相关事实
+      回答推理问题
+    type: terminal
+    size: xl
+    position:
+      x: 820
+      'y': 70
+  - id: rag_eval
+    label: |-
+      RAG 基线
+      512 token 块或句子
+      检索支撑事实
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 250
+  - id: memory_models
+    label: |-
+      循环记忆训练
+      RMT 和 ARMT 课程学习
+      1 万训练 / 1 千评测
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 160
+  - id: report
+    label: |-
+      BABILong 报告
+      按任务和长度统计准确率
+      外推到 50M token
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: babi_tasks
+    to: fact_insertion
+    type: primary
+  - from: pg19_background
+    to: fact_insertion
+    type: data
+  - from: fact_insertion
+    to: length_splits
+    type: primary
+  - from: length_splits
+    to: llm_eval
+    type: primary
+  - from: length_splits
+    to: rag_eval
+    type: optional
+    label: 块级与句级检索
+  - from: length_splits
+    to: memory_models
+    type: optional
+    label: 课程学习片段
+  - from: llm_eval
+    to: report
+    type: primary
+  - from: rag_eval
+    to: report
+    type: data
+  - from: memory_models
+    to: report
+    type: data
+modules: []

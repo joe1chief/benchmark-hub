@@ -1,0 +1,123 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: BABILong Build Process
+  description: Paper-aligned long-context benchmark construction and evaluation workflow for BABILong, based on arXiv:2406.10149.
+  legend: >-
+    Solid arrows show the BABILong sample-generation and evaluation pipeline; dashed arrows mark retrieval and
+    recurrent-memory evaluation branches reported in the paper.
+nodes:
+  - id: babi_tasks
+    label: |-
+      bAbI task generator
+      QA1 to QA20
+      simulated facts and questions
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: pg19_background
+    label: |-
+      PG19 background books
+      natural long contexts
+      irrelevant distractor text
+    type: document
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: fact_insertion
+    label: |-
+      Fact hiding pipeline
+      insert task sentences
+      preserve background order
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: length_splits
+    label: |-
+      Length-controlled samples
+      predefined splits up to 10M
+      variable facts per task
+    type: database
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: llm_eval
+    label: |-
+      Long-context LLM evaluation
+      distinguish relevant facts
+      answer reasoning questions
+    type: terminal
+    size: xl
+    position:
+      x: 820
+      'y': 70
+  - id: rag_eval
+    label: |-
+      RAG baselines
+      512-token chunks or sentences
+      retrieve supporting facts
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 250
+  - id: memory_models
+    label: |-
+      Recurrent-memory training
+      RMT and ARMT curriculum
+      10k train / 1k eval
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 160
+  - id: report
+    label: |-
+      BABILong report
+      accuracy by task and length
+      extrapolation up to 50M tokens
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: babi_tasks
+    to: fact_insertion
+    type: primary
+  - from: pg19_background
+    to: fact_insertion
+    type: data
+  - from: fact_insertion
+    to: length_splits
+    type: primary
+  - from: length_splits
+    to: llm_eval
+    type: primary
+  - from: length_splits
+    to: rag_eval
+    type: optional
+    label: chunk and sentence retrieval
+  - from: length_splits
+    to: memory_models
+    type: optional
+    label: curriculum segments
+  - from: llm_eval
+    to: report
+    type: primary
+  - from: rag_eval
+    to: report
+    type: data
+  - from: memory_models
+    to: report
+    type: data
+modules: []
