@@ -1,0 +1,124 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: AA-Omniscience 构建流程
+  description: 基于 arXiv:2511.13029 论文整理的 AA-Omniscience 构建与评测流程。
+  legend: 实线表示基准构建与评测主流程；虚线表示用于保证可靠性和校准评估的审核/过滤回路。
+nodes:
+  - id: domains
+    label: |-
+      领域与主题范围
+      6 个经济相关领域
+      42 个主题
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: sources
+    label: |-
+      权威来源
+      一手、主要、二手来源
+      最新事实
+    type: document
+    size: xl
+    position:
+      x: 300
+      'y': 160
+  - id: generator
+    label: |-
+      问题生成 agent
+      从来源文本中抽取
+      事实型问题
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 70
+  - id: filters
+    label: |-
+      筛选与修订
+      难度、歧义
+      来源依赖、精确性
+    type: decision
+    size: xl
+    position:
+      x: 560
+      'y': 250
+  - id: dataset
+    label: |-
+      问题集
+      6,000 道总题量
+      公开 10% 子集
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 160
+  - id: answer
+    label: |-
+      模型答题
+      无上下文、无工具
+      有把握才回答
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 70
+  - id: grading
+    label: |-
+      Gemini 评分器
+      正确 / 部分正确
+      错误 / 未尝试
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+  - id: metrics
+    label: |-
+      可靠性指标
+      OI: \(100(c-i)/(c+p+i+a)\)
+      准确率 + 幻觉率
+    type: formula
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: domains
+    to: sources
+    type: primary
+  - from: sources
+    to: generator
+    type: primary
+  - from: generator
+    to: filters
+    type: data
+    label: 候选问题
+  - from: filters
+    to: generator
+    type: optional
+    label: 修订或移除
+  - from: filters
+    to: dataset
+    type: primary
+    label: 通过题目
+  - from: dataset
+    to: answer
+    type: primary
+  - from: dataset
+    to: grading
+    type: data
+    label: 标准答案
+  - from: answer
+    to: grading
+    type: primary
+    label: 模型答案
+  - from: grading
+    to: metrics
+    type: primary
+modules: []
