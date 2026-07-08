@@ -30,7 +30,7 @@ def find_by_id(data, bid):
     return None
 
 def main():
-    data = load_data('dist-ghpages/benchmarks.json')
+    data = load_data('client/public/benchmarks.json')
     changes_log = {
         'deleted': [],
         'renamed': [],
