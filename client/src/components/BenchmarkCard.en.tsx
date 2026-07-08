@@ -69,7 +69,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
   return (
     <article
       className={`group cursor-pointer benchmark-card-glow ${widelyTested ? 'benchmark-card-featured' : ''}`}
-      style={style}
+      style={{ ...style, '--card-color': b.l1_color } as React.CSSProperties}
       onClick={() => onClick(b)}
     >
       {/* 扫光线 */}
