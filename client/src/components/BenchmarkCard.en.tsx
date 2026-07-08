@@ -8,6 +8,7 @@ interface Props {
   benchmark: Benchmark;
   onClick: (b: Benchmark) => void;
   style?: React.CSSProperties;
+  isStarred?: boolean;
 }
 
 // Map Chinese difficulty labels → English
@@ -57,7 +58,7 @@ function truncateOrg(org: string, maxLen = 20): string {
   return first.length <= maxLen ? first : first.slice(0, maxLen - 1) + '…';
 }
 
-export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
+export default function BenchmarkCard({ benchmark: b, onClick, style, isStarred }: Props) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const widelyTested = (b as any).widely_tested === true;
@@ -93,6 +94,15 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
                   style={{ filter: 'drop-shadow(0 1px 3px rgba(245,158,11,0.5))' }}
                 >
                   🏅
+                </span>
+              )}
+              {isStarred && (
+                <span
+                  className="shrink-0 text-[14px] leading-none select-none"
+                  title="Starred"
+                  style={{ filter: 'drop-shadow(0 1px 2px rgba(226,185,59,0.5))' }}
+                >
+                  ⭐
                 </span>
               )}
               <span
