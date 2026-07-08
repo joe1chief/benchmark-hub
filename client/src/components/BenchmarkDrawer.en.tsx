@@ -76,7 +76,26 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
   return strategies;
 }
 
-export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, onSelectBenchmark, isStarred, onToggleStar }: Props) {
+export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmarks, onClose, onSelectBenchmark, isStarred, onToggleStar }: Props) {
+  const [detailData, setDetailData] = useState<Benchmark | null>(null);
+
+  useEffect(() => {
+    if (propBenchmark) {
+      setDetailData(null);
+      fetch(`./benchmarks_detail/${propBenchmark.id}.json?v=${Date.now()}`)
+        .then(r => r.json())
+        .then((data: Benchmark) => {
+          setDetailData(data);
+        })
+        .catch(e => {
+          console.error("Failed to load details:", e);
+          setDetailData(propBenchmark);
+        });
+    }
+  }, [propBenchmark?.id]);
+
+  const b = (detailData || propBenchmark) as Benchmark;
+
   const [tab, setTab] = useState<'info' | 'pdf'>('info');
   const [pdfFullscreen, setPdfFullscreen] = useState(false);
   const [pdfLoaded, setPdfLoaded] = useState(false);
@@ -147,7 +166,7 @@ export default function BenchmarkDrawer({ benchmark: b, allBenchmarks, onClose, 
     }
   }, [strategyIndex, b]);
 
-  if (!b) return null;
+  if (!propBenchmark) return null;
 
   const rawPdfUrl = b.pdf_cdn_url || b.arxiv_pdf_url || '';
   const hasPdf = !!rawPdfUrl;

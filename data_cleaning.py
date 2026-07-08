@@ -540,9 +540,26 @@ def main():
     # Sort by name
     data.sort(key=lambda x: x['name'].lower())
     
-    # Save cleaned data to both locations
-    save_data(data, 'dist-ghpages/benchmarks.json')
-    save_data(data, 'client/public/benchmarks.json')
+    # Save cleaned data to both locations with split flowcharts
+    import os
+    os.makedirs('client/public/benchmarks_detail', exist_ok=True)
+    os.makedirs('dist-ghpages/benchmarks_detail', exist_ok=True)
+    
+    summary_data = []
+    for item in data:
+        # Save details file containing all fields
+        save_data(item, f"client/public/benchmarks_detail/{item['id']}.json")
+        save_data(item, f"dist-ghpages/benchmarks_detail/{item['id']}.json")
+        
+        # Strip flowcharts for the main summary array
+        summary_item = item.copy()
+        summary_item.pop('flowchart_en', None)
+        summary_item.pop('flowchart_zh', None)
+        summary_item.pop('mermaid_flowchart', None)
+        summary_data.append(summary_item)
+        
+    save_data(summary_data, 'dist-ghpages/benchmarks.json')
+    save_data(summary_data, 'client/public/benchmarks.json')
     
     # Save changes log
     save_data(changes_log, 'dist-ghpages/changes_log.json')
