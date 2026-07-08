@@ -31,6 +31,7 @@ def find_by_id(data, bid):
 
 def main():
     data = load_data('client/public/benchmarks.json')
+
     changes_log = {
         'deleted': [],
         'renamed': [],
@@ -537,6 +538,45 @@ def main():
     # STEP 12: FINAL CLEANUP
     # ==========================================
     
+    # Deduplicate entries by name (case-insensitive)
+    # For duplicate records, keep the one with more populated fields (more non-empty values)
+    deduped = []
+    seen_names = {}
+    for item in data:
+        name = item.get('name', '').strip()
+        if not name:
+            continue
+        populated_count = sum(1 for v in item.values() if v is not None and str(v).strip() != "")
+        name_lower = name.lower()
+        if name_lower in seen_names:
+            prev_idx, prev_score = seen_names[name_lower]
+            if populated_count > prev_score:
+                deduped[prev_idx] = item
+                seen_names[name_lower] = (prev_idx, populated_count)
+        else:
+            seen_names[name_lower] = (len(deduped), populated_count)
+            deduped.append(item)
+            
+    # Deduplicate entries by ID
+    deduped_by_id = []
+    seen_ids = {}
+    for item in deduped:
+        item_id = item.get('id', '').strip()
+        if not item_id:
+            deduped_by_id.append(item)
+            continue
+        populated_count = sum(1 for v in item.values() if v is not None and str(v).strip() != "")
+        if item_id in seen_ids:
+            prev_idx, prev_score = seen_ids[item_id]
+            if populated_count > prev_score:
+                deduped_by_id[prev_idx] = item
+                seen_ids[item_id] = (prev_idx, populated_count)
+        else:
+            seen_ids[item_id] = (len(deduped_by_id), populated_count)
+            deduped_by_id.append(item)
+            
+    data = deduped_by_id
+
     # Sort by name
     data.sort(key=lambda x: x['name'].lower())
     
