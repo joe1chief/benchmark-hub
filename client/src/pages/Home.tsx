@@ -23,12 +23,34 @@ type FiltersType = {
   openness: string;
   sort: SortType;
   widelyTested?: boolean;
+  starredOnly?: boolean;
 };
 
 export default function Home() {
   const { data, loading, error } = useBenchmarks();
   const [selected, setSelected] = useState<Benchmark | null>(null);
   const [page, setPage] = useState(1);
+
+  // Starred benchmarks LocalStorage State
+  const [starredIds, setStarredIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('starred-benchmarks') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleStar = useCallback((id: string) => {
+    setStarredIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem('starred-benchmarks', JSON.stringify(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
+    });
+  }, []);
   
   // Initialize filters from URL query parameters
   const [filters, setFilters] = useState<FiltersType>(() => {
@@ -43,6 +65,7 @@ export default function Home() {
         openness: params.get('openness') || '',
         sort: (params.get('sort') as SortType) || 'newest',
         widelyTested: params.get('widely') === 'true' ? true : undefined,
+        starredOnly: params.get('starred') === 'true' ? true : undefined,
       };
     } catch {
       return {
@@ -57,7 +80,17 @@ export default function Home() {
   const isDark = theme === 'dark';
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useFilteredBenchmarks(data, filters);
+  // Exclude starredOnly when calling hook to avoid type compiler errors
+  const { starredOnly, ...restFilters } = filters;
+  const baseFiltered = useFilteredBenchmarks(data, restFilters as any);
+  
+  const filtered = useMemo(() => {
+    let res = baseFiltered;
+    if (starredOnly) {
+      res = res.filter(b => starredIds.includes(b.id));
+    }
+    return res;
+  }, [baseFiltered, starredOnly, starredIds]);
   const widelyTestedCount = useMemo(() => data.filter(b => b.widely_tested === true).length, [data]);
 
   // Sync filters to URL query parameters
@@ -72,6 +105,7 @@ export default function Home() {
       if (filters.openness) params.set('openness', filters.openness);
       if (filters.sort !== 'newest') params.set('sort', filters.sort);
       if (filters.widelyTested) params.set('widely', 'true');
+      if (filters.starredOnly) params.set('starred', 'true');
 
       const queryString = params.toString();
       const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
@@ -109,7 +143,8 @@ export default function Home() {
       setFilters({
         search: '', l1: '', year: '', difficulty: '',
         modality: '', openness: '', sort: 'newest',
-        widelyTested: undefined
+        widelyTested: undefined,
+        starredOnly: undefined
       });
       setPage(1);
     }
@@ -233,6 +268,7 @@ export default function Home() {
           onChange={handleFilterChange}
           counts={counts}
           widelyTestedCount={widelyTestedCount}
+          starredCount={starredIds.length}
         />
 
         <main className="container py-8">
@@ -260,6 +296,7 @@ export default function Home() {
                   {filters.year && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {filters.year}{lang === 'zh' ? '年' : ''}</span>}
                   {filters.difficulty && <span style={{ color: isDark ? '#6B7280' : '#9CA3AF' }}> · {t.difficulty[filters.difficulty] || filters.difficulty}</span>}
                   {filters.widelyTested && <span style={{ color: '#F59E0B' }}> · 🏅 {t.widelyAdopted}</span>}
+                  {filters.starredOnly && <span style={{ color: '#F59E0B' }}> · ⭐ {lang === 'zh' ? '已收藏' : 'Starred'}</span>}
                 </p>
               </div>
 
@@ -270,6 +307,7 @@ export default function Home() {
                     key={b.id}
                     benchmark={b}
                     onClick={setSelected}
+                    isStarred={starredIds.includes(b.id)}
                     style={{
                       animationDelay: `${Math.min(i % PAGE_SIZE, 24) * 25}ms`,
                       animation: 'fadeInUp 0.28s ease both',
@@ -323,6 +361,8 @@ export default function Home() {
         <BenchmarkDrawer
           benchmark={selected}
           allBenchmarks={data}
+          isStarred={starredIds.includes(selected.id)}
+          onToggleStar={() => toggleStar(selected.id)}
           onClose={() => setSelected(null)}
           onSelectBenchmark={handleSelectBenchmark}
         />

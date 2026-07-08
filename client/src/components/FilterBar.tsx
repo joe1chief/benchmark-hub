@@ -31,20 +31,23 @@ interface Filters {
   openness: string;
   sort: SortType;
   widelyTested?: boolean;
+  starredOnly?: boolean;
 }
 interface Props {
   filters: Filters;
   onChange: (f: Partial<Filters>) => void;
   counts: Record<string, number>;
   widelyTestedCount?: number;
+  starredCount?: number;
 }
 
-export default function FilterBar({ filters, onChange, counts, widelyTestedCount = 0 }: Props) {
+export default function FilterBar({ filters, onChange, counts, widelyTestedCount = 0, starredCount = 0 }: Props) {
   const { theme } = useTheme();
   const { t, lang } = useLang();
   const isDark = theme === 'dark';
-  const hasActive = filters.l1 || filters.year || filters.difficulty || filters.openness || filters.widelyTested;
+  const hasActive = filters.l1 || filters.year || filters.difficulty || filters.openness || filters.widelyTested || filters.starredOnly;
   const widelyActive = !!filters.widelyTested;
+  const starredActive = !!filters.starredOnly;
 
   const OPENNESS_OPTIONS = [
     { value: 'public',        label: t.publicLabel,   color: '#10A37F' },
@@ -163,6 +166,32 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
                 <span>{t.widelyAdopted}</span>
                 {widelyTestedCount > 0 && (
                   <span style={{ fontSize: '10px', opacity: widelyActive ? 0.85 : 0.6 }}>{widelyTestedCount}</span>
+                )}
+              </button>
+
+              {/* Starred button */}
+              <button
+                onClick={() => onChange({ starredOnly: starredActive ? undefined : true })}
+                className="inline-flex items-center gap-1.5 transition-all duration-150"
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '12px',
+                  fontWeight: starredActive ? 600 : 500,
+                  padding: '4px 12px',
+                  borderRadius: '10px',
+                  border: `1px solid ${starredActive ? '#E2B93B' : (isDark ? '#3A300A' : '#FEF3C7')}`,
+                  backgroundColor: starredActive
+                    ? '#E2B93B'
+                    : (isDark ? 'rgba(226,185,59,0.06)' : 'rgba(226,185,59,0.05)'),
+                  color: starredActive ? '#FFFFFF' : (isDark ? '#D97706' : '#B45309'),
+                  cursor: 'pointer',
+                  boxShadow: starredActive ? '0 2px 8px rgba(226,185,59,0.3)' : 'none',
+                }}
+              >
+                <span style={{ fontSize: '13px', lineHeight: 1 }}>⭐</span>
+                <span>{lang === 'zh' ? '已收藏' : 'Starred'}</span>
+                {starredCount > 0 && (
+                  <span style={{ fontSize: '10px', opacity: starredActive ? 0.85 : 0.6 }}>{starredCount}</span>
                 )}
               </button>
 
