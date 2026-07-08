@@ -17,8 +17,11 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Optional
 
 DATA_PATH = Path(__file__).parent.parent / "client" / "public" / "benchmarks.json"
+PUBLIC_DIR = DATA_PATH.parent
+DETAIL_DIR = PUBLIC_DIR / "benchmarks_detail"
 
 # Data uses Chinese l1 values; these are the canonical values
 VALID_L1 = {
@@ -42,6 +45,18 @@ VALID_OPENNESS = {"public", "partly public", "in-house", ""}
 REQUIRED_FIELDS = ["name", "l1", "year"]
 
 YEAR_RE = re.compile(r"^\d{4}(-\d{2})?$")
+URL_RE = re.compile(r"^(https?:)?//")
+
+DRAWIO_ASSET_FIELDS = {
+    "drawio_flowchart_en": ".svg",
+    "drawio_flowchart_zh": ".svg",
+    "drawio_source_en": ".drawio",
+    "drawio_source_zh": ".drawio",
+    "drawio_spec_en": ".spec.yaml",
+    "drawio_spec_zh": ".spec.yaml",
+    "drawio_arch_en": ".arch.json",
+    "drawio_arch_zh": ".arch.json",
+}
 
 errors = []
 warnings = []
@@ -55,6 +70,34 @@ def err(msg: str):
 def warn(msg: str):
     warnings.append(msg)
     print(f"  ⚠️  WARN:  {msg}")
+
+
+def resolve_public_asset_path(value: str) -> Optional[Path]:
+    if URL_RE.match(value) or value.startswith(("data:", "blob:")):
+        return None
+    normalized = value.lstrip("/") if value.startswith("/") else value
+    normalized = normalized[2:] if normalized.startswith("./") else normalized
+    return PUBLIC_DIR / normalized
+
+
+def validate_drawio_assets(entry: dict, prefix: str):
+    for field, suffix in DRAWIO_ASSET_FIELDS.items():
+        value = entry.get(field)
+        if value in (None, ""):
+            continue
+        if not isinstance(value, str):
+            err(f"{prefix} {field} must be a string, got: {type(value).__name__}")
+            continue
+        if not value.endswith(suffix):
+            err(f"{prefix} {field} must end with '{suffix}', got: '{value}'")
+            continue
+        asset_path = resolve_public_asset_path(value)
+        if asset_path is not None and not asset_path.exists():
+            err(f"{prefix} {field} points to missing public asset: '{value}'")
+
+    review_note = entry.get("drawio_review_note")
+    if review_note is not None and not isinstance(review_note, str):
+        err(f"{prefix} drawio_review_note must be a string, got: {type(review_note).__name__}")
 
 
 def main():
@@ -117,6 +160,8 @@ def main():
         if flowchart is not None and not isinstance(flowchart, str):
             err(f"{prefix} mermaid_flowchart must be a string or null, got: {type(flowchart).__name__}")
 
+        validate_drawio_assets(entry, prefix)
+
         # related_benchmarks cross-reference
         related = entry.get("related_benchmarks", [])
         if related and isinstance(related, list):
@@ -124,10 +169,26 @@ def main():
                 if ref not in all_names:
                     warn(f"{prefix} related_benchmarks references non-existent entry: '{ref}'")
 
+    detail_count = 0
+    if DETAIL_DIR.exists():
+        for detail_path in sorted(DETAIL_DIR.glob("*.json")):
+            detail_count += 1
+            try:
+                with open(detail_path, encoding="utf-8") as f:
+                    detail = json.load(f)
+            except json.JSONDecodeError as e:
+                err(f"[{detail_path.name}] invalid detail JSON: {e}")
+                continue
+            if not isinstance(detail, dict):
+                err(f"[{detail_path.name}] detail JSON root must be an object")
+                continue
+            validate_drawio_assets(detail, f"[{detail.get('name', detail_path.stem)}]")
+
     # Summary
     print()
     print(f"{'='*50}")
     print(f"Total entries: {len(data)}")
+    print(f"Detail files:  {detail_count}")
     print(f"Errors:   {len(errors)}")
     print(f"Warnings: {len(warnings)}")
 

@@ -45,6 +45,15 @@ export interface Benchmark {
   mermaid_flowchart?: string | null;
   flowchart_en?: string;
   flowchart_zh?: string;
+  drawio_flowchart_en?: string;
+  drawio_flowchart_zh?: string;
+  drawio_source_en?: string;
+  drawio_source_zh?: string;
+  drawio_spec_en?: string;
+  drawio_spec_zh?: string;
+  drawio_arch_en?: string;
+  drawio_arch_zh?: string;
+  drawio_review_note?: string;
   // Default taxonomy fields
   default_l1?: string;
   default_l2?: string;

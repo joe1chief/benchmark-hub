@@ -26,6 +26,14 @@ function isMissingInfo(value: string | undefined | null) {
   return MISSING_INFO_VALUES.has(String(value ?? '').trim().toLowerCase());
 }
 
+function resolvePublicAssetPath(path: string | undefined | null) {
+  const value = String(path ?? '').trim();
+  if (!value) return '';
+  if (/^(https?:)?\/\//.test(value) || value.startsWith('data:') || value.startsWith('blob:')) return value;
+  if (value.startsWith('/')) return value;
+  return `./${value.replace(/^\.?\//, '')}`;
+}
+
 function InfoRow({ label, value, isDark }: { label: string; value: string | undefined | null; isDark: boolean }) {
   const missing = isMissingInfo(value);
   const displayValue = missing ? '待补充' : value;
@@ -238,6 +246,62 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
   );
 }
 
+function DrawioSvgChart({ src, alt, isDark }: { src: string; alt: string; isDark: boolean }) {
+  const [scale, setScale] = useState(0.9);
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className={`flex flex-col items-center justify-center h-32 gap-2 px-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+        <AlertTriangle size={20} className="text-amber-500" />
+        <span className="text-[12px] text-center">Failed to load draw.io SVG</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className={`absolute top-2 right-2 z-10 flex items-center gap-1 rounded-lg border px-1.5 py-1 ${
+        isDark ? 'bg-gray-900/90 border-gray-700' : 'bg-white/90 border-gray-200'
+      } backdrop-blur-sm`}>
+        <button
+          onClick={() => setScale(s => Math.min(s + 0.15, 2.5))}
+          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          title="Zoom in"
+        >
+          <ZoomIn size={12} />
+        </button>
+        <span className={`text-[10px] w-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          onClick={() => setScale(s => Math.max(s - 0.15, 0.3))}
+          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          title="Zoom out"
+        >
+          <ZoomOut size={12} />
+        </button>
+        <button
+          onClick={() => setScale(0.9)}
+          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          title="Reset zoom"
+        >
+          <RotateCcw size={12} />
+        </button>
+      </div>
+      <div className="overflow-auto" style={{ maxHeight: '680px' }}>
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setError(true)}
+          className="block max-w-none"
+          style={{ width: `${scale * 100}%`, minWidth: 720 }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmarks, onClose, onSelectBenchmark, isStarred, onToggleStar }: Props) {
   const [detailData, setDetailData] = useState<Benchmark | null>(null);
 
@@ -347,11 +411,23 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
   const currentStrategy = strategies[strategyIndex];
   const embedUrl = currentStrategy?.url || '';
 
-  // Flowchart data — safely handle null/undefined mermaid_flowchart
+  // Flowchart data: prefer draw.io SVG assets, then Mermaid as a legacy fallback.
+  const drawioFlowchartPath = isEn
+    ? (b.drawio_flowchart_en || b.drawio_flowchart_zh || '')
+    : (b.drawio_flowchart_zh || b.drawio_flowchart_en || '');
+  const drawioSourcePath = isEn
+    ? (b.drawio_source_en || b.drawio_source_zh || '')
+    : (b.drawio_source_zh || b.drawio_source_en || '');
+  const drawioSpecPath = isEn
+    ? (b.drawio_spec_en || b.drawio_spec_zh || '')
+    : (b.drawio_spec_zh || b.drawio_spec_en || '');
+  const drawioFlowchartUrl = resolvePublicAssetPath(drawioFlowchartPath);
+  const drawioSourceUrl = resolvePublicAssetPath(drawioSourcePath);
+  const drawioSpecUrl = resolvePublicAssetPath(drawioSpecPath);
   const flowchartCode = isEn
     ? (b.flowchart_en || b.mermaid_flowchart || '')
     : (b.flowchart_zh || b.flowchart_en || b.mermaid_flowchart || '');
-  const hasFlowchart = !!flowchartCode;
+  const hasFlowchart = !!drawioFlowchartUrl || !!flowchartCode;
 
   const opennessConfig: Record<string, { icon: typeof Unlock; color: string; label: string; bg: string; bgDark: string }> = {
     'public':        { icon: Unlock,      color: '#10A37F', label: t.publicLabel,  bg: 'bg-emerald-50 border-emerald-200', bgDark: 'bg-emerald-950/30 border-emerald-900/50' },
@@ -627,7 +703,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
         </div>
       )}
 
-      {/* Mermaid chart */}
+      {/* Flowchart chart */}
       <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
         <div className={`px-4 py-2 border-b flex items-center gap-2 transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
           <GitBranch size={12} className="text-[#10A37F]" />
@@ -636,19 +712,47 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
           </span>
         </div>
         <div className={`p-4 transition-colors ${isDark ? 'bg-[#0d0d0d]' : 'bg-white'}`}>
-          <MermaidChart code={flowchartCode} isDark={isDark} />
+          {drawioFlowchartUrl
+            ? <DrawioSvgChart src={drawioFlowchartUrl} alt={`${b.name} build process`} isDark={isDark} />
+            : <MermaidChart code={flowchartCode} isDark={isDark} />}
         </div>
       </div>
 
-      {/* Raw code toggle */}
-      <details className="mt-4">
-        <summary className={`cursor-pointer text-[12px] select-none transition-colors ${isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}>
-          {isEn ? 'View raw Mermaid code' : '查看原始 Mermaid 代码'}
-        </summary>
-        <pre className={`mt-2 p-3 rounded-lg text-[11px] overflow-auto max-h-60 leading-relaxed transition-colors ${isDark ? 'bg-gray-950 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
-          {flowchartCode}
-        </pre>
-      </details>
+      {drawioFlowchartUrl ? (
+        <div className={`mt-4 flex flex-wrap gap-2 text-[12px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+          <a href={drawioFlowchartUrl} target="_blank" rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
+              isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700'
+            }`}>
+            <ExternalLink size={12} /> SVG
+          </a>
+          {drawioSourceUrl && (
+            <a href={drawioSourceUrl} target="_blank" rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
+                isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700'
+              }`}>
+              <Download size={12} /> .drawio
+            </a>
+          )}
+          {drawioSpecUrl && (
+            <a href={drawioSpecUrl} target="_blank" rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
+                isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700'
+              }`}>
+              <FileText size={12} /> YAML
+            </a>
+          )}
+        </div>
+      ) : (
+        <details className="mt-4">
+          <summary className={`cursor-pointer text-[12px] select-none transition-colors ${isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}>
+            {isEn ? 'View raw Mermaid code' : '查看原始 Mermaid 代码'}
+          </summary>
+          <pre className={`mt-2 p-3 rounded-lg text-[11px] overflow-auto max-h-60 leading-relaxed transition-colors ${isDark ? 'bg-gray-950 text-gray-400' : 'bg-gray-50 text-gray-600'}`}>
+            {flowchartCode}
+          </pre>
+        </details>
+      )}
     </div>
   );
 
