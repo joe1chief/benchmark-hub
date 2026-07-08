@@ -6,6 +6,8 @@ import { useLang } from '@/contexts/LangContext';
 
 interface Props {
   data: Benchmark[];
+  activeFilters?: any;
+  onStatClick?: (statType: 'total' | 'dims' | 'families' | 'widely') => void;
 }
 
 /** nice-sheep-25 原子轨道 Loader（使用项目原配色 #10A37F） */
@@ -22,7 +24,7 @@ function AtomLoader() {
   );
 }
 
-export default function HeroStats({ data }: Props) {
+export default function HeroStats({ data, activeFilters, onStatClick }: Props) {
   const { theme } = useTheme();
   const { t } = useLang();
   const isDark = theme === 'dark';
@@ -33,10 +35,10 @@ export default function HeroStats({ data }: Props) {
   const widelyTested = data.filter(b => b.widely_tested).length;
 
   const stats = [
-    { value: total,        label: t.statBenchmarks, color: '#10A37F' },
-    { value: categories,   label: t.statDims,        color: '#1A73E8' },
-    { value: families,     label: t.statFamilies,    color: '#7C3AED' },
-    { value: widelyTested, label: t.statWidely,      color: '#F59E0B' },
+    { key: 'total', value: total,        label: t.statBenchmarks, color: '#10A37F' },
+    { key: 'dims', value: categories,   label: t.statDims,        color: '#1A73E8' },
+    { key: 'families', value: families,     label: t.statFamilies,    color: '#7C3AED' },
+    { key: 'widely', value: widelyTested, label: t.statWidely,      color: '#F59E0B' },
   ];
 
   return (
@@ -79,22 +81,38 @@ export default function HeroStats({ data }: Props) {
         {/* Stats + powered-by brutalist 标签 */}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap gap-10">
-            {stats.map((s, i) => (
-              <div key={i} className="flex flex-col gap-0.5">
-                <span
-                  className="text-[32px] font-bold tabular-nums leading-none"
-                  style={{ fontFamily: "'Inter', sans-serif", letterSpacing: '-0.03em', color: s.color }}
+            {stats.map((s, i) => {
+              const active = s.key === 'widely' && activeFilters?.widelyTested;
+              return (
+                <div
+                  key={i}
+                  className="flex flex-col gap-0.5 cursor-pointer select-none transition-all duration-300 hover:scale-105 active:scale-95"
+                  onClick={() => onStatClick?.(s.key as any)}
                 >
-                  {s.value}
-                </span>
-                <span
-                  className="text-[12px]"
-                  style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#4B5563' : '#9CA3AF' }}
-                >
-                  {s.label}
-                </span>
-              </div>
-            ))}
+                  <span
+                    className="text-[32px] font-bold tabular-nums leading-none"
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      letterSpacing: '-0.03em',
+                      color: s.color,
+                      textShadow: active ? `0 0 15px ${s.color}88` : 'none',
+                    }}
+                  >
+                    {s.value}
+                  </span>
+                  <span
+                    className="text-[12px]"
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      color: active ? s.color : (isDark ? '#4B5563' : '#9CA3AF'),
+                      fontWeight: active ? 600 : 400,
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {/* quiet-dog-6 brutalist 文字标签 */}

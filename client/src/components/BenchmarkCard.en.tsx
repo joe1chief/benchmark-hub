@@ -76,10 +76,12 @@ export default function BenchmarkCard({ benchmark: b, onClick, style }: Props) {
       <div className="scan-line" aria-hidden="true" />
 
       {/* 内层内容区 — heavy-elephant-39 的 .card-info */}
-      <div className="benchmark-card-inner h-full flex flex-col">
+      <div className="benchmark-card-inner h-full flex flex-col relative">
+        {/* Left vertical category stripe */}
+        <div className="absolute left-0 top-0 bottom-0 w-[5px] rounded-l-[15px]" style={{ backgroundColor: b.l1_color || '#999' }} />
 
         {/* Card content */}
-        <div className="flex flex-col flex-1 px-5 pt-4 pb-4 gap-3">
+        <div className="flex flex-col flex-1 pl-6 pr-5 pt-4 pb-4 gap-3">
 
           {/* Row 1: medal + name + difficulty */}
           <div className="flex items-start justify-between gap-2">

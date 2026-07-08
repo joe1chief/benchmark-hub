@@ -64,6 +64,7 @@ export default function FilterBar({ filters, onChange, counts, widelyTestedCount
 
   return (
     <div
+      id="filter-bar"
       className="sticky border-b transition-colors duration-200"
       style={{
         top: '3.75rem',

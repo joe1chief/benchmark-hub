@@ -7,7 +7,7 @@ import FilterBar from '@/components/FilterBar';
 import HeroStats from '@/components/HeroStats';
 import BenchmarkCard from '@/components/BenchmarkCard';
 import BenchmarkDrawer from '@/components/BenchmarkDrawer';
-import { Loader2, SearchX } from 'lucide-react';
+import { Loader2, SearchX, ArrowUp } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
 
@@ -29,10 +29,29 @@ export default function Home() {
   const { data, loading, error } = useBenchmarks();
   const [selected, setSelected] = useState<Benchmark | null>(null);
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<FiltersType>({
-    search: '', l1: '', year: '', difficulty: '',
-    modality: '', openness: '', sort: 'newest',
+  
+  // Initialize filters from URL query parameters
+  const [filters, setFilters] = useState<FiltersType>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        search: params.get('q') || '',
+        l1: params.get('category') || '',
+        year: params.get('year') || '',
+        difficulty: params.get('difficulty') || '',
+        modality: params.get('modality') || '',
+        openness: params.get('openness') || '',
+        sort: (params.get('sort') as SortType) || 'newest',
+        widelyTested: params.get('widely') === 'true' ? true : undefined,
+      };
+    } catch {
+      return {
+        search: '', l1: '', year: '', difficulty: '',
+        modality: '', openness: '', sort: 'newest',
+      };
+    }
   });
+
   const { theme } = useTheme();
   const { t, lang } = useLang();
   const isDark = theme === 'dark';
@@ -40,6 +59,61 @@ export default function Home() {
 
   const filtered = useFilteredBenchmarks(data, filters);
   const widelyTestedCount = useMemo(() => data.filter(b => b.widely_tested === true).length, [data]);
+
+  // Sync filters to URL query parameters
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams();
+      if (filters.search) params.set('q', filters.search);
+      if (filters.l1) params.set('category', filters.l1);
+      if (filters.year) params.set('year', filters.year);
+      if (filters.difficulty) params.set('difficulty', filters.difficulty);
+      if (filters.modality) params.set('modality', filters.modality);
+      if (filters.openness) params.set('openness', filters.openness);
+      if (filters.sort !== 'newest') params.set('sort', filters.sort);
+      if (filters.widelyTested) params.set('widely', 'true');
+
+      const queryString = params.toString();
+      const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    } catch (e) {
+      console.error('URL sync failed:', e);
+    }
+  }, [filters]);
+
+  // Back to Top button scroll detection
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 450);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Handle stat metrics click to update filters
+  const handleStatClick = useCallback((statType: 'total' | 'dims' | 'families' | 'widely') => {
+    if (statType === 'widely') {
+      setFilters(prev => ({ ...prev, widelyTested: prev.widelyTested ? undefined : true }));
+      setPage(1);
+    } else if (statType === 'dims') {
+      const filterBar = document.getElementById('filter-bar');
+      if (filterBar) {
+        filterBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } else if (statType === 'total') {
+      setFilters({
+        search: '', l1: '', year: '', difficulty: '',
+        modality: '', openness: '', sort: 'newest',
+        widelyTested: undefined
+      });
+      setPage(1);
+    }
+  }, []);
 
   const counts = useMemo(() => {
     const base = data.filter(b => {
@@ -146,7 +220,11 @@ export default function Home() {
         {/* HeroStats 包裹 quiet-dog-6 brutalist 效果 */}
         <div className="container">
           <div className="hero-brutalist-wrap">
-            <HeroStats data={data} />
+            <HeroStats
+              data={data}
+              activeFilters={filters}
+              onStatClick={handleStatClick}
+            />
           </div>
         </div>
 
@@ -227,6 +305,17 @@ export default function Home() {
           opacity: 0.3,
         }} />
         <div className="h-8" />
+
+        {/* Floating Back to Top Button */}
+        {showBackToTop && (
+          <button
+            onClick={scrollToTop}
+            className="back-to-top fixed bottom-8 right-8 z-40 flex items-center justify-center w-10 h-10 rounded-full shadow-lg cursor-pointer transition-all duration-300 active:scale-95"
+            title={lang === 'zh' ? '回到顶部' : 'Back to Top'}
+          >
+            <ArrowUp size={16} />
+          </button>
+        )}
       </div>
 
       {/* Detail drawer */}
