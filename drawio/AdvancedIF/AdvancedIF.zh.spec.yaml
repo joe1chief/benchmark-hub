@@ -1,0 +1,123 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: AdvancedIF 构建流程
+  description: 基于 arXiv:2511.10507 对齐的 AdvancedIF 基准构建与 rubric 评估流程。
+  legend: 实线表示基准样本构建和评估主流程；虚线表示对抗筛选和基于 rubric 的判定。
+nodes:
+  - id: taxonomy
+    label: |-
+      能力分类
+      复杂指令、多轮上下文
+      system prompt steerability
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: prompts
+    label: |-
+      专家撰写 prompt
+      人工编写提示
+      聚焦单一 IF 类别
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: adversarial
+    label: |-
+      对抗式保留
+      只保留会触发
+      最后一轮 IF 失败的 prompt
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: rubrics
+    label: |-
+      专家 rubric
+      每条最多 20 个 criteria
+      多轮人工 review
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: dataset
+    label: |-
+      AdvancedIF 集合
+      1,645 个 dialogs
+      人工 prompts + rubrics
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 160
+  - id: responses
+    label: |-
+      模型回答
+      对每个 dialog 或 prompt
+      生成最后一轮响应
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 70
+  - id: verifier
+    label: |-
+      Rubric verifier
+      o3-mini 逐条 criteria 检查
+      全部通过才记 TRUE
+    type: decision
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+  - id: metrics
+    label: |-
+      分类得分
+      ComplexIF / context / system
+      TRUE 百分比
+    type: terminal
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: taxonomy
+    to: prompts
+    type: primary
+  - from: prompts
+    to: adversarial
+    type: data
+    label: 候选 prompts
+  - from: adversarial
+    to: prompts
+    type: optional
+    label: 修改或丢弃
+  - from: adversarial
+    to: rubrics
+    type: primary
+    label: 保留样本
+  - from: rubrics
+    to: dataset
+    type: primary
+  - from: dataset
+    to: responses
+    type: primary
+  - from: dataset
+    to: verifier
+    type: data
+    label: prompts + rubrics
+  - from: responses
+    to: verifier
+    type: primary
+  - from: verifier
+    to: metrics
+    type: primary
+modules: []
