@@ -1,12 +1,12 @@
-name: Sync benchmarks.json & Auto Deploy
+name: Sync benchmark public data & Auto Deploy
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 触发条件：
-#   1. 每天 UTC 02:00（北京时间 10:00）自动检查 main 分支 benchmarks.json 变更
+#   1. 每天 UTC 02:00（北京时间 10:00）自动检查 main 分支 public 数据/资产变更
 #   2. 手动触发（可指定是否强制重新部署）
 #
 # 工作流逻辑：
-#   - 检查 client/public/benchmarks.json 与上次部署时的 hash 是否一致
+#   - 检查 client/public 下的网站数据、详情 JSON、PDF、图表等资产是否近期变化
 #   - 若有变更，则同步 README 统计数字 → 构建 → 部署到 gh-pages
 #   - 若无变更，跳过部署（节省 CI 资源）
 # ─────────────────────────────────────────────────────────────────────────────
@@ -38,26 +38,26 @@ jobs:
           fetch-depth: 2
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check if benchmarks.json changed recently
+      - name: Check if public benchmark data changed recently
         id: check-changes
         run: |
-          # 获取最近一次 benchmarks.json 的修改时间
-          LAST_MODIFIED=$(git log -1 --format="%ci" -- client/public/benchmarks.json)
-          LAST_COMMIT=$(git log -1 --format="%H" -- client/public/benchmarks.json)
+          # 获取最近一次 public 数据/资产的修改时间
+          LAST_MODIFIED=$(git log -1 --format="%ci" -- client/public)
+          LAST_COMMIT=$(git log -1 --format="%H" -- client/public)
           
           echo "Last modified: $LAST_MODIFIED"
           echo "Last commit: $LAST_COMMIT"
           echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
           
           # 检查是否在过去 25 小时内有变更（覆盖每日调度间隔）
-          HOURS_AGO=$(git log --since="25 hours ago" --format="%H" -- client/public/benchmarks.json | head -1)
+          HOURS_AGO=$(git log --since="25 hours ago" --format="%H" -- client/public | head -1)
           
           if [ -n "$HOURS_AGO" ] || [ "${{ inputs.force_deploy }}" = "true" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "📝 benchmarks.json has changes in the last 25h or force deploy requested"
+            echo "📝 Public benchmark data has changes in the last 25h or force deploy requested"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "⏭️ No recent changes to benchmarks.json, skipping deployment"
+            echo "⏭️ No recent changes to public benchmark data, skipping deployment"
           fi
 
       - name: Set up Python
@@ -133,7 +133,7 @@ jobs:
           publish_dir: ./dist-ghpages
           publish_branch: gh-pages
           commit_message: |
-            chore(deploy): scheduled sync — benchmarks.json updated
+            chore(deploy): scheduled sync — public benchmark data updated
             
             Benchmarks: ${{ steps.sync-readme.outputs.benchmark_total }} total, ${{ steps.sync-readme.outputs.benchmark_dims }} dims
             Source commit: ${{ steps.check-changes.outputs.last_commit }}
@@ -153,7 +153,7 @@ jobs:
             echo "| Live URL | https://joe1chief.github.io/llm-benchmark-costco/ |" >> $GITHUB_STEP_SUMMARY
           else
             echo "## ⏭️ No Deployment Needed" >> $GITHUB_STEP_SUMMARY
-            echo "benchmarks.json has not changed in the last 25 hours." >> $GITHUB_STEP_SUMMARY
+            echo "Public benchmark data has not changed in the last 25 hours." >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🌐 Live: https://joe1chief.github.io/llm-benchmark-costco/" >> $GITHUB_STEP_SUMMARY

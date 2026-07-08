@@ -39,7 +39,7 @@
 - **Powerful Filtering** — Filter by L1 capability category, year (including 2025/2026 latest), difficulty level (Basic → Frontier), and data openness (Public / Partly / In-house).
 - **Family & Lineage** — Explore benchmark families (e.g., MMLU, GAIA, SWE-bench) and related benchmarks to understand the evaluation landscape.
 - **Bilingual UI** — Full English and Chinese interface with bilingual data fields.
-- **Automated CI/CD** — GitHub Actions automatically validate and deploy updates to GitHub Pages when `benchmarks.json` is changed.
+- **Automated CI/CD** — GitHub Actions automatically validate and deploy updates to GitHub Pages when benchmark data or public assets change.
 
 ## Quick Start
 
@@ -56,9 +56,9 @@ pnpm build:ghpages
 
 ## Deployment
 
-This project uses **GitHub Actions** for automated deployment. Any push to the `main` branch that includes changes to `client/public/benchmarks.json` will trigger a new build and deployment to the `gh-pages` branch.
+This project uses **GitHub Actions** for automated deployment. Any push to the `main` branch that includes changes under `client/public/**` will trigger validation, a GitHub Pages build, and deployment to the `gh-pages` branch.
 
-A daily cron job also runs to sync any external changes to `benchmarks.json`.
+A daily cron job also runs to sync recent public benchmark data and asset changes.
 
 ### Manual Deployment
 
