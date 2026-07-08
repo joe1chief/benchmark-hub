@@ -1,0 +1,121 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Arena-Hard-Auto 构建流程
+  description: 基于 arXiv:2406.11939 重绘的 BenchBuilder 策划、Arena-Hard-Auto 提示筛选与 LLM-as-a-Judge 评测流程。
+  legend: 实线表示众包提示过滤和自动评测主流程；虚线表示外部验证、偏差控制与人类偏好对齐检查。
+nodes:
+  - id: source
+    label: |-
+      众包提示来源
+      20 万条 Chatbot Arena 提示
+      可配置实时数据源
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: cleanup
+    label: |-
+      初始过滤
+      去重
+      去除多轮和非英语
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: clustering
+    label: |-
+      主题建模
+      嵌入、UMAP、HDBSCAN
+      4000 个主题簇
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: quality
+    label: |-
+      GPT-4-Turbo 评分
+      七项提示质量
+      提示与簇级得分
+    type: decision
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: sampling
+    label: |-
+      高质量抽样
+      分数 >=6，簇均分 >=5
+      250 簇各抽 2 题
+    type: document
+    size: xl
+    position:
+      x: 820
+      'y': 70
+  - id: safety
+    label: |-
+      最终清理
+      去除 PII 与冒犯文本
+      500 个挑战提示
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 250
+  - id: judging
+    label: |-
+      成对裁判对局
+      与基线模型比较
+      CoT 与位置交换
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 160
+  - id: scores
+    label: |-
+      基准质量报告
+      每模型 1000 次判断
+      BT 分数与置信区间
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: source
+    to: cleanup
+    type: primary
+  - from: cleanup
+    to: clustering
+    type: primary
+  - from: clustering
+    to: quality
+    type: primary
+  - from: quality
+    to: sampling
+    type: primary
+  - from: sampling
+    to: safety
+    type: primary
+  - from: safety
+    to: judging
+    type: primary
+  - from: judging
+    to: scores
+    type: primary
+  - from: scores
+    to: quality
+    type: optional
+    label: 200 题标签验证
+  - from: scores
+    to: source
+    type: optional
+    label: 人类偏好对齐
+modules: []

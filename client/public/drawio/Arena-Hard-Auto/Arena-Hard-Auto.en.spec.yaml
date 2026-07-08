@@ -1,0 +1,125 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Arena-Hard-Auto Build Process
+  description: >-
+    Paper-aligned BenchBuilder curation, Arena-Hard-Auto prompt selection, and LLM-as-a-Judge evaluation workflow, based
+    on arXiv:2406.11939.
+  legend: >-
+    Solid arrows show crowd prompt filtering and automatic evaluation; dashed arrows mark external validation, bias
+    controls, and human-preference alignment checks.
+nodes:
+  - id: source
+    label: |-
+      Crowd prompt source
+      200k Chatbot Arena prompts
+      configurable live data
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 160
+  - id: cleanup
+    label: |-
+      Initial filtering
+      remove duplicates
+      multi-turn and non-English
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 70
+  - id: clustering
+    label: |-
+      Topic modeling
+      embeddings, UMAP, HDBSCAN
+      4000 topic clusters
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: quality
+    label: |-
+      GPT-4-Turbo scoring
+      seven prompt qualities
+      prompt and cluster scores
+    type: decision
+    size: xl
+    position:
+      x: 560
+      'y': 160
+  - id: sampling
+    label: |-
+      High-quality sampling
+      score >=6, cluster mean >=5
+      250 clusters x 2 prompts
+    type: document
+    size: xl
+    position:
+      x: 820
+      'y': 70
+  - id: safety
+    label: |-
+      Final cleanup
+      remove PII and offensive text
+      500 challenging prompts
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 250
+  - id: judging
+    label: |-
+      Pairwise judge games
+      baseline model comparison
+      CoT and position swap
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 160
+  - id: scores
+    label: |-
+      Benchmark quality report
+      1000 judgments per model
+      BT scores and CI
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 160
+edges:
+  - from: source
+    to: cleanup
+    type: primary
+  - from: cleanup
+    to: clustering
+    type: primary
+  - from: clustering
+    to: quality
+    type: primary
+  - from: quality
+    to: sampling
+    type: primary
+  - from: sampling
+    to: safety
+    type: primary
+  - from: safety
+    to: judging
+    type: primary
+  - from: judging
+    to: scores
+    type: primary
+  - from: scores
+    to: quality
+    type: optional
+    label: 200-query label validation
+  - from: scores
+    to: source
+    type: optional
+    label: human-preference alignment
+modules: []
