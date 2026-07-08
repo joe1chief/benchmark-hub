@@ -19,12 +19,23 @@ interface Props {
   onToggleStar?: () => void;
 }
 
-function InfoRow({ label, value, isDark }: { label: string; value: string; isDark: boolean }) {
-  if (!value || value === 'nan' || value === 'None' || value === 'NaN') return null;
+const MISSING_INFO_VALUES = new Set(['nan', 'none', 'n/a', 'not mentioned', '']);
+
+function isMissingInfo(value: string | undefined | null) {
+  return MISSING_INFO_VALUES.has(String(value ?? '').trim().toLowerCase());
+}
+
+function InfoRow({ label, value, isDark }: { label: string; value: string | undefined | null; isDark: boolean }) {
+  const missing = isMissingInfo(value);
+  const displayValue = missing ? 'Not specified' : value;
   return (
     <div className={`flex gap-3 py-2.5 border-b last:border-0 transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
       <span className={`text-[12px] w-24 shrink-0 pt-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{label}</span>
-      <span className={`text-[13px] leading-relaxed transition-colors ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{value}</span>
+      <span className={`text-[13px] leading-relaxed transition-colors ${
+        missing
+          ? isDark ? 'text-gray-600 italic' : 'text-gray-400 italic'
+          : isDark ? 'text-gray-300' : 'text-gray-700'
+      }`}>{displayValue}</span>
     </div>
   );
 }
