@@ -6,86 +6,151 @@ meta:
   routing: orthogonal
   title: LiveMathBench Build Process
   description: >-
-    Paper-aligned LiveMathBench workflow from competition and examination sources through bilingual math items, repeated
-    generations, answer checking, and G-Pass stability metrics.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned LiveMathBench workflow: curate recent CNMO, Chinese college-entrance, AMC, and Putnam problems; remove
+    unsuitable items and convert single-choice questions into open problem-solving tasks; provide paired English and
+    Chinese versions; derive a hard split from low QwQ-32B-Preview and o1-mini accuracy; then use 48 samples per
+    question, answer judging, Greedy Accuracy, G-Pass@16 thresholds, and mG-Pass@16 to measure potential and stability.
+  legend: Solid arrows show the main flow; the lower branch is the model-selected hard subset.
 nodes:
-  - id: exam_sources
-    label: Exam Sources
-    type: document
-    size: xl
+  - id: cnmo
+    label: CNMO
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 40
+  - id: ccee
+    label: CCEE
+    type: database
+    size: large
     position:
       x: 40
       'y': 160
-  - id: bilingual_set
-    label: Bilingual Set
-    type: document
-    size: xl
+  - id: amc
+    label: AMC
+    type: database
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: livemath
-    label: LiveMath
+      x: 40
+      'y': 280
+  - id: putnam
+    label: Putnam
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 400
+  - id: curate
+    label: Curate Tasks
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: sample_runs
+      x: 260
+      'y': 220
+  - id: bilingual
+    label: EN + ZH Pair
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 220
+  - id: full_set
+    label: 119 × 2 Set
+    type: document
+    size: large
+    position:
+      x: 700
+      'y': 220
+  - id: hard_set
+    label: Hard Low-Acc
+    type: document
+    size: large
+    position:
+      x: 700
+      'y': 420
+  - id: samples
     label: 48 Samples
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: answer_check
-    label: Answer Check
+      x: 920
+      'y': 220
+  - id: judge
+    label: Qwen Judge
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: gpass
-    label: G-Pass@k
+      x: 1140
+      'y': 220
+  - id: counts
+    label: Correct c of n
     type: process
-    size: xl
+    size: large
     position:
-      x: 1240
-      'y': 160
+      x: 1360
+      'y': 220
+  - id: metrics
+    label: Greedy + GPass
+    type: process
+    size: large
+    position:
+      x: 1580
+      'y': 220
   - id: mgpass
-    label: mG-Pass
+    label: mG-Pass@16
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: stability
-    label: Stability
+      x: 1800
+      'y': 220
+  - id: profile
+    label: Score Profile
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2020
+      'y': 220
 edges:
-  - from: exam_sources
-    to: bilingual_set
+  - from: cnmo
+    to: curate
     type: primary
-  - from: bilingual_set
-    to: livemath
+  - from: ccee
+    to: curate
     type: primary
-  - from: livemath
-    to: sample_runs
+  - from: amc
+    to: curate
     type: primary
-  - from: sample_runs
-    to: answer_check
+  - from: putnam
+    to: curate
     type: primary
-  - from: answer_check
-    to: gpass
+  - from: curate
+    to: bilingual
     type: primary
-  - from: gpass
+  - from: bilingual
+    to: full_set
+    type: primary
+  - from: full_set
+    to: hard_set
+    type: optional
+  - from: full_set
+    to: samples
+    type: primary
+  - from: hard_set
+    to: samples
+    type: primary
+  - from: samples
+    to: judge
+    type: primary
+  - from: judge
+    to: counts
+    type: primary
+  - from: counts
+    to: metrics
+    type: primary
+  - from: metrics
     to: mgpass
     type: primary
   - from: mgpass
-    to: stability
+    to: profile
     type: primary
 modules: []

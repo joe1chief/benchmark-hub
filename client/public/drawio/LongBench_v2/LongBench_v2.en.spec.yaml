@@ -4,88 +4,182 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongBench_v2 Build Process
+  title: LongBench v2 Build Process
   description: >-
-    Paper-aligned LongBench v2 pipeline from annotator-uploaded long contexts and multiple-choice drafting through
-    automated and expert review, revision, and accuracy evaluation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned five-step LongBench v2 collection pipeline: select one of six categories and 20 subtasks; upload
+    personally read English documents; extract text and reject contexts below 8,192 words or overlapping prior
+    submissions; draft a four-option question, answer, and evidence; reject questions solved by all three review LLMs;
+    apply an expert checklist, answer check, and three-minute difficulty gate; revise at most five times; then tag
+    difficulty and retain 503 multiple-choice questions for accuracy evaluation.
+  legend: Solid arrows show accepted data; dotted branches show rejection or revision paths.
 nodes:
-  - id: long_docs
-    label: Long Docs
-    type: document
-    size: xl
+  - id: taxonomy
+    label: 6 Cat / 20 Sub
+    type: process
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: mcq_draft
-    label: MCQ Draft
+      'y': 220
+  - id: upload
+    label: Upload Files
     type: document
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: llm_vet
-    label: 3 LLM Vet
+      x: 240
+      'y': 220
+  - id: doc_gate
+    label: Long + Unique?
+    type: decision
+    size: large
+    position:
+      x: 440
+      'y': 220
+  - id: reject_doc
+    label: Reject Context
+    type: document
+    size: large
+    position:
+      x: 440
+      'y': 420
+  - id: annotate
+    label: MCQ + Evidence
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: expert_review
+      x: 640
+      'y': 220
+  - id: auto_review
+    label: 3-LLM Review
+    type: process
+    size: large
+    position:
+      x: 840
+      'y': 220
+  - id: auto_gate
+    label: All 3 Correct?
+    type: decision
+    size: large
+    position:
+      x: 1040
+      'y': 220
+  - id: expert
     label: Expert Review
     type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: revise_loop
-    label: Revise Loop
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: six_categories
-    label: 6 Categories
-    type: process
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: mcq_set
+      'y': 220
+  - id: manual_gate
+    label: Valid + >3m?
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 220
+  - id: revise
+    label: Revise ≤5
+    type: process
+    size: large
+    position:
+      x: 1240
+      'y': 440
+  - id: discard
+    label: Drop after 5
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 600
+  - id: difficulty
+    label: Easy / Hard
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 220
+  - id: final_set
     label: 503 MCQs
     type: document
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: accuracy
+      x: 1840
+      'y': 220
+  - id: evaluate
+    label: Model Eval
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 220
+  - id: score
     label: Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2240
+      'y': 220
 edges:
-  - from: long_docs
-    to: mcq_draft
+  - from: taxonomy
+    to: upload
     type: primary
-  - from: mcq_draft
-    to: llm_vet
+  - from: upload
+    to: doc_gate
     type: primary
-  - from: llm_vet
-    to: expert_review
+  - from: doc_gate
+    to: reject_doc
+    type: optional
+  - from: doc_gate
+    to: annotate
     type: primary
-  - from: expert_review
-    to: revise_loop
+  - from: annotate
+    to: auto_review
     type: primary
-  - from: revise_loop
-    to: six_categories
+  - from: auto_review
+    to: auto_gate
     type: primary
-  - from: six_categories
-    to: mcq_set
+  - from: auto_gate
+    to: expert
     type: primary
-  - from: mcq_set
-    to: accuracy
+  - from: auto_gate
+    to: revise
+    type: optional
+    waypoints:
+      - x: 1120
+        'y': 380
+      - x: 1200
+        'y': 380
+  - from: expert
+    to: manual_gate
+    type: primary
+  - from: manual_gate
+    to: difficulty
+    type: primary
+  - from: manual_gate
+    to: revise
+    type: optional
+    waypoints:
+      - x: 1520
+        'y': 380
+      - x: 1400
+        'y': 380
+  - from: revise
+    to: auto_review
+    type: optional
+    waypoints:
+      - x: 1040
+        'y': 540
+      - x: 920
+        'y': 540
+  - from: revise
+    to: discard
+    type: optional
+  - from: difficulty
+    to: final_set
+    type: primary
+  - from: final_set
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: score
     type: primary
 modules: []

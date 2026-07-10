@@ -4,86 +4,179 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongBench_v2 构建流程
-  description: 根据论文整理的 LongBench v2 流程：标注者上传长上下文、选择题构造、自动与专家审核、修订循环和准确率评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LongBench v2 构建流程
+  description: >-
+    依据论文重绘的 LongBench v2 五步采集流程：从六大类、20 个子任务中选择任务，上传本人读过的英文文档， 转为文本并拒绝少于 8,192 词或与既有提交高度重合的上下文，标注四选一问题、答案和证据；若三个审核
+    模型全部答对则退回修订，再由专家检查题目规范、答案正确性和三分钟难度门；最多修订五次，通过后标记 难度并形成 503 道选择题，以准确率评测。
+  legend: 实线表示通过的数据；点线分支表示拒绝或修订路径。
 nodes:
-  - id: long_docs
-    label: 长文档
-    type: document
-    size: xl
+  - id: taxonomy
+    label: 六大类20子任务
+    type: process
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: mcq_draft
-    label: 选择题稿
+      'y': 220
+  - id: upload
+    label: 上传本人文档
     type: document
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: llm_vet
-    label: 三模型筛
-    type: process
-    size: xl
+      x: 240
+      'y': 220
+  - id: doc_gate
+    label: 足够长且不重复？
+    type: decision
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: expert_review
-    label: 专家审核
-    type: process
-    size: xl
+      x: 440
+      'y': 220
+  - id: reject_doc
+    label: 拒绝上下文
+    type: document
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: revise_loop
-    label: 修订循环
+      x: 440
+      'y': 420
+  - id: annotate
+    label: 四选一题与证据
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: six_categories
-    label: 六类任务
+      x: 640
+      'y': 220
+  - id: auto_review
+    label: 三模型审核
     type: process
-    size: xl
+    size: large
+    position:
+      x: 840
+      'y': 220
+  - id: auto_gate
+    label: 三者全答对？
+    type: decision
+    size: large
+    position:
+      x: 1040
+      'y': 220
+  - id: expert
+    label: 专家人工审核
+    type: process
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: mcq_set
-    label: 503题
-    type: document
-    size: xl
+      'y': 220
+  - id: manual_gate
+    label: 合格且超过3分？
+    type: decision
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: accuracy
+      x: 1440
+      'y': 220
+  - id: revise
+    label: 最多修改五次
+    type: process
+    size: large
+    position:
+      x: 1240
+      'y': 440
+  - id: discard
+    label: 五次后仍失败则丢弃
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 600
+  - id: difficulty
+    label: 简单或困难
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 220
+  - id: final_set
+    label: 503道选择题
+    type: document
+    size: large
+    position:
+      x: 1840
+      'y': 220
+  - id: evaluate
+    label: 模型评测
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 220
+  - id: score
     label: 准确率
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2240
+      'y': 220
 edges:
-  - from: long_docs
-    to: mcq_draft
+  - from: taxonomy
+    to: upload
     type: primary
-  - from: mcq_draft
-    to: llm_vet
+  - from: upload
+    to: doc_gate
     type: primary
-  - from: llm_vet
-    to: expert_review
+  - from: doc_gate
+    to: reject_doc
+    type: optional
+  - from: doc_gate
+    to: annotate
     type: primary
-  - from: expert_review
-    to: revise_loop
+  - from: annotate
+    to: auto_review
     type: primary
-  - from: revise_loop
-    to: six_categories
+  - from: auto_review
+    to: auto_gate
     type: primary
-  - from: six_categories
-    to: mcq_set
+  - from: auto_gate
+    to: expert
     type: primary
-  - from: mcq_set
-    to: accuracy
+  - from: auto_gate
+    to: revise
+    type: optional
+    waypoints:
+      - x: 1120
+        'y': 380
+      - x: 1200
+        'y': 380
+  - from: expert
+    to: manual_gate
+    type: primary
+  - from: manual_gate
+    to: difficulty
+    type: primary
+  - from: manual_gate
+    to: revise
+    type: optional
+    waypoints:
+      - x: 1520
+        'y': 380
+      - x: 1400
+        'y': 380
+  - from: revise
+    to: auto_review
+    type: optional
+    waypoints:
+      - x: 1040
+        'y': 540
+      - x: 920
+        'y': 540
+  - from: revise
+    to: discard
+    type: optional
+  - from: difficulty
+    to: final_set
+    type: primary
+  - from: final_set
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: score
     type: primary
 modules: []

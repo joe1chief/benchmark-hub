@@ -6,86 +6,172 @@ meta:
   routing: orthogonal
   title: LongDocURL Build Process
   description: >-
-    Paper-aligned LongDocURL construction pipeline from task taxonomy and PDF crawling through layout parsing, iterative
-    QA generation, automatic verification, and human checking.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned four-module LongDocURL pipeline: crawl about 200,000 CommonCrawl PDFs; filter English documents to
+    50-150 pages; classify document type from sampled pages with GPT-4o and retain 396 documents; parse region-level
+    text-type-bbox triples; generate QA pairs with multi-step task-specific prompts across 20 subtasks; verify task
+    relevance, format, and faithfulness automatically; then recover correctable negatives, check original visual PDFs,
+    and cross-check annotations before retaining 2,325 QA pairs and applying the three-stage accuracy protocol.
+  legend: Solid arrows show accepted data; the lower branch carries machine-flagged samples into human recovery.
 nodes:
-  - id: task_taxon
-    label: Task Taxon
-    type: process
-    size: xl
+  - id: pdfs
+    label: 200k PDFs
+    type: database
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: pdf_crawl
-    label: PDF Crawl
-    type: database
-    size: xl
+      'y': 220
+  - id: filter
+    label: EN, 50–150?
+    type: decision
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: doc_filter
-    label: Doc Filter
+      x: 240
+      'y': 220
+  - id: reject
+    label: Exclude PDF
+    type: document
+    size: large
+    position:
+      x: 240
+      'y': 420
+  - id: classify
+    label: GPT-4o Type
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: layout_parse
-    label: Layout Parse
+      x: 440
+      'y': 220
+  - id: documents
+    label: 396 Documents
+    type: document
+    size: large
+    position:
+      x: 640
+      'y': 220
+  - id: taxonomy
+    label: 20 Subtasks
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: qa_generate
-    label: QA Generate
+      x: 840
+      'y': 40
+  - id: parse
+    label: Text-Type-BBox
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
+      x: 840
+      'y': 220
+  - id: generate
+    label: Multi-step QA
+    type: process
+    size: large
+    position:
+      x: 1040
+      'y': 220
   - id: auto_verify
     label: Auto Verify
     type: process
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: human_check
-    label: Human Check
+      'y': 220
+  - id: verify_gate
+    label: 3 Criteria?
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 220
+  - id: negative
+    label: Negative + Log
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 420
+  - id: human
+    label: Visual Recover
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: qa_pairs
-    label: 2325 QA
+      x: 1640
+      'y': 220
+  - id: crosscheck
+    label: Cross-check
+    type: process
+    size: large
+    position:
+      x: 1840
+      'y': 220
+  - id: final_set
+    label: 2,325 QA Pairs
+    type: document
+    size: large
+    position:
+      x: 2040
+      'y': 220
+  - id: evaluate
+    label: 3-Stage Eval
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 220
+  - id: score
+    label: Gen. Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2440
+      'y': 220
 edges:
-  - from: task_taxon
-    to: pdf_crawl
+  - from: pdfs
+    to: filter
     type: primary
-  - from: pdf_crawl
-    to: doc_filter
+  - from: filter
+    to: reject
+    type: optional
+  - from: filter
+    to: classify
     type: primary
-  - from: doc_filter
-    to: layout_parse
+  - from: classify
+    to: documents
     type: primary
-  - from: layout_parse
-    to: qa_generate
+  - from: documents
+    to: parse
     type: primary
-  - from: qa_generate
+  - from: taxonomy
+    to: generate
+    type: data
+  - from: parse
+    to: generate
+    type: primary
+  - from: generate
     to: auto_verify
     type: primary
   - from: auto_verify
-    to: human_check
+    to: verify_gate
     type: primary
-  - from: human_check
-    to: qa_pairs
+  - from: verify_gate
+    to: human
+    type: primary
+  - from: verify_gate
+    to: negative
+    type: optional
+  - from: negative
+    to: human
+    type: optional
+  - from: human
+    to: crosscheck
+    type: primary
+  - from: crosscheck
+    to: final_set
+    type: primary
+  - from: final_set
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: score
     type: primary
 modules: []

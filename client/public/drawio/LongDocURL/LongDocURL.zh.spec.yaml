@@ -5,85 +5,171 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: LongDocURL 构建流程
-  description: 根据论文整理的 LongDocURL 构建流程：任务分类、PDF 抓取、版面解析、迭代 QA 生成、自动验证和人工检查。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    依据论文重绘的 LongDocURL 四模块流程：从 CommonCrawl 抓取约 20 万份 PDF，筛选 50 至 150 页的英文文档， 由 GPT-4o 根据抽样页面判断文档类型并保留 396
+    份文档；解析区域级“文本-类型-边框”三元组，针对 20 个 子任务用多步提示生成问答；自动检查任务相关性、格式正确性和忠实性，再由人工恢复可修正负样本、对照原始 视觉 PDF 补充标注并交叉检查，最终保留 2,325
+    组问答，按三阶段协议计算广义准确率。
+  legend: 实线表示通过的数据；下方分支把机器标记样本送入人工恢复。
 nodes:
-  - id: task_taxon
-    label: 任务分类
-    type: process
-    size: xl
+  - id: pdfs
+    label: 约20万份PDF
+    type: database
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: pdf_crawl
-    label: PDF抓取
-    type: database
-    size: xl
+      'y': 220
+  - id: filter
+    label: 英文且50至150页？
+    type: decision
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: doc_filter
-    label: 文档过滤
+      x: 240
+      'y': 220
+  - id: reject
+    label: 排除文档
+    type: document
+    size: large
+    position:
+      x: 240
+      'y': 420
+  - id: classify
+    label: GPT-4o文档分类
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: layout_parse
-    label: 版面解析
+      x: 440
+      'y': 220
+  - id: documents
+    label: 保留396份文档
+    type: document
+    size: large
+    position:
+      x: 640
+      'y': 220
+  - id: taxonomy
+    label: 20个子任务
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: qa_generate
-    label: QA生成
+      x: 840
+      'y': 40
+  - id: parse
+    label: 文本类型边框三元组
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
+      x: 840
+      'y': 220
+  - id: generate
+    label: 多步问答生成
+    type: process
+    size: large
+    position:
+      x: 1040
+      'y': 220
   - id: auto_verify
-    label: 自动验证
+    label: 自动质量验证
     type: process
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: human_check
-    label: 人工检查
+      'y': 220
+  - id: verify_gate
+    label: 三项标准全通过？
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 220
+  - id: negative
+    label: 负样本与验证链
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 420
+  - id: human
+    label: 恢复并对照原始PDF
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: qa_pairs
-    label: 2325问答
+      x: 1640
+      'y': 220
+  - id: crosscheck
+    label: 标注交叉检查
+    type: process
+    size: large
+    position:
+      x: 1840
+      'y': 220
+  - id: final_set
+    label: 2325组问答
+    type: document
+    size: large
+    position:
+      x: 2040
+      'y': 220
+  - id: evaluate
+    label: 三阶段评测
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 220
+  - id: score
+    label: 广义准确率
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2440
+      'y': 220
 edges:
-  - from: task_taxon
-    to: pdf_crawl
+  - from: pdfs
+    to: filter
     type: primary
-  - from: pdf_crawl
-    to: doc_filter
+  - from: filter
+    to: reject
+    type: optional
+  - from: filter
+    to: classify
     type: primary
-  - from: doc_filter
-    to: layout_parse
+  - from: classify
+    to: documents
     type: primary
-  - from: layout_parse
-    to: qa_generate
+  - from: documents
+    to: parse
     type: primary
-  - from: qa_generate
+  - from: taxonomy
+    to: generate
+    type: data
+  - from: parse
+    to: generate
+    type: primary
+  - from: generate
     to: auto_verify
     type: primary
   - from: auto_verify
-    to: human_check
+    to: verify_gate
     type: primary
-  - from: human_check
-    to: qa_pairs
+  - from: verify_gate
+    to: human
+    type: primary
+  - from: verify_gate
+    to: negative
+    type: optional
+  - from: negative
+    to: human
+    type: optional
+  - from: human
+    to: crosscheck
+    type: primary
+  - from: crosscheck
+    to: final_set
+    type: primary
+  - from: final_set
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: score
     type: primary
 modules: []

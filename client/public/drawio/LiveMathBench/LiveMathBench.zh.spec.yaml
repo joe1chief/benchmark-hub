@@ -5,85 +5,150 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: LiveMathBench 构建流程
-  description: 根据论文整理的 LiveMathBench 流程：竞赛和考试来源、双语数学题、多次生成、答案校验，以及 G-Pass 稳定性指标。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    依据论文重绘的 LiveMathBench 流程：整理最新的全国中学生数学奥赛、高考、美国数学竞赛与 Putnam 竞赛题， 移除不合适题目并把单选题改为开放式解答题，为每题提供中英文配对版本，再依据 QwQ-32B-Preview
+    与 o1-mini 的低准确率派生困难子集；评测时每题采样 48 次，经答案裁判后报告贪心准确率、G-Pass@16 各阈值 与 mG-Pass@16，以同时衡量能力潜力和稳定性。
+  legend: 实线表示主流程；下方分支表示由模型表现筛出的困难子集。
 nodes:
-  - id: exam_sources
-    label: 考试来源
-    type: document
-    size: xl
+  - id: cnmo
+    label: 全国中数奥赛
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 40
+  - id: ccee
+    label: 高考
+    type: database
+    size: large
     position:
       x: 40
       'y': 160
-  - id: bilingual_set
-    label: 双语题集
+  - id: amc
+    label: 美国数学竞赛
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 280
+  - id: putnam
+    label: Putnam竞赛
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 400
+  - id: curate
+    label: 筛选与题型转换
+    type: process
+    size: large
+    position:
+      x: 260
+      'y': 220
+  - id: bilingual
+    label: 中英文配对
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 220
+  - id: full_set
+    label: 119×2题
     type: document
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: livemath
-    label: LiveMath
+      x: 700
+      'y': 220
+  - id: hard_set
+    label: 低准确率困难集
+    type: document
+    size: large
+    position:
+      x: 700
+      'y': 420
+  - id: samples
+    label: 每题采样48次
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: sample_runs
-    label: 48次采样
+      x: 920
+      'y': 220
+  - id: judge
+    label: Qwen答案裁判
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: answer_check
-    label: 答案校验
+      x: 1140
+      'y': 220
+  - id: counts
+    label: n次中正确c次
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: gpass
-    label: G-Pass@k
+      x: 1360
+      'y': 220
+  - id: metrics
+    label: 贪心与G-Pass
     type: process
-    size: xl
+    size: large
     position:
-      x: 1240
-      'y': 160
+      x: 1580
+      'y': 220
   - id: mgpass
-    label: mG-Pass
+    label: mG-Pass@16
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: stability
-    label: 稳定性
+      x: 1800
+      'y': 220
+  - id: profile
+    label: 能力稳定性画像
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2020
+      'y': 220
 edges:
-  - from: exam_sources
-    to: bilingual_set
+  - from: cnmo
+    to: curate
     type: primary
-  - from: bilingual_set
-    to: livemath
+  - from: ccee
+    to: curate
     type: primary
-  - from: livemath
-    to: sample_runs
+  - from: amc
+    to: curate
     type: primary
-  - from: sample_runs
-    to: answer_check
+  - from: putnam
+    to: curate
     type: primary
-  - from: answer_check
-    to: gpass
+  - from: curate
+    to: bilingual
     type: primary
-  - from: gpass
+  - from: bilingual
+    to: full_set
+    type: primary
+  - from: full_set
+    to: hard_set
+    type: optional
+  - from: full_set
+    to: samples
+    type: primary
+  - from: hard_set
+    to: samples
+    type: primary
+  - from: samples
+    to: judge
+    type: primary
+  - from: judge
+    to: counts
+    type: primary
+  - from: counts
+    to: metrics
+    type: primary
+  - from: metrics
     to: mgpass
     type: primary
   - from: mgpass
-    to: stability
+    to: profile
     type: primary
 modules: []

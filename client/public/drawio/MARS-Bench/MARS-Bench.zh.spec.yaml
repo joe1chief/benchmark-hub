@@ -4,86 +4,184 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MARS-Bench Build Process (Chinese)
-  description: Mars-Bench 的论文对齐构建流程：整理现有火星科学数据集，经专家修正后统一为可直接训练的格式和划分，再用基线模型、多训练策略和任务指标评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: Mars-Bench 构建流程
+  description: >-
+    依据论文重绘的 Mars-Bench 流程：按可用性与宽松许可筛选既有火星科学数据，选出覆盖分类、分割和目标检测的 20 个轨道器与火星车数据集；在行星科学专家及原作者参与下整理、重构、去重、平衡并纠正数据，提供统一加载器
+    和常用标注格式；有官方训练/验证/测试划分则保留，否则按标准方法创建；再派生跨域、比例子集和少样本版本， 调优三种训练策略并用七个随机种子重训，最终报告任务指标、归一化 IQM 与自举 95% 置信区间。
+  legend: 实线表示保留的数据；点线分支表示被论文筛选门排除的数据集。
 nodes:
   - id: sources
-    label: 火星来源
+    label: 既有火星数据集
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: curate
-    label: 数据整理
-    type: process
-    size: xl
+      'y': 220
+  - id: source_gate
+    label: 可用且许可宽松？
+    type: decision
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: expert
-    label: 专家修正
-    type: user
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: format
-    label: 统一格式
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: splits
-    label: 任务划分
+      x: 240
+      'y': 220
+  - id: excluded
+    label: 排除数据集
     type: document
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: models
-    label: 基线模型
+      x: 240
+      'y': 420
+  - id: selected
+    label: 20个火星数据集
+    type: document
+    size: large
+    position:
+      x: 440
+      'y': 220
+  - id: curate
+    label: 重构与纠正
     type: process
-    size: xl
+    size: large
+    position:
+      x: 640
+      'y': 220
+  - id: expert
+    label: 领域专家验证
+    type: process
+    size: large
+    position:
+      x: 840
+      'y': 220
+  - id: formats
+    label: 统一加载与格式
+    type: process
+    size: large
+    position:
+      x: 1040
+      'y': 220
+  - id: split_gate
+    label: 有官方划分？
+    type: decision
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: seeds
-    label: 7随机种
+      'y': 220
+  - id: keep_split
+    label: 保留原划分
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: metrics
-    label: F1/IoU/mAP
+      x: 1440
+      'y': 100
+  - id: create_split
+    label: 创建标准划分
+    type: process
+    size: large
+    position:
+      x: 1440
+      'y': 340
+  - id: standard_split
+    label: 训练验证测试集
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 220
+  - id: cross_domain
+    label: 跨域分区
+    type: process
+    size: large
+    position:
+      x: 1840
+      'y': 100
+  - id: low_data
+    label: 比例与少样本集
+    type: process
+    size: large
+    position:
+      x: 1840
+      'y': 340
+  - id: tune
+    label: 调优三种训练策略
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 220
+  - id: seeds
+    label: 七个随机种子
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 220
+  - id: task_metrics
+    label: F1、IoU、mAP
+    type: process
+    size: large
+    position:
+      x: 2440
+      'y': 220
+  - id: report
+    label: IQM与95%区间
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2640
+      'y': 220
 edges:
   - from: sources
+    to: source_gate
+    type: primary
+  - from: source_gate
+    to: excluded
+    type: optional
+  - from: source_gate
+    to: selected
+    type: primary
+  - from: selected
     to: curate
     type: primary
   - from: curate
     to: expert
     type: primary
   - from: expert
-    to: format
+    to: formats
     type: primary
-  - from: format
-    to: splits
+  - from: formats
+    to: split_gate
     type: primary
-  - from: splits
-    to: models
+  - from: split_gate
+    to: keep_split
     type: primary
-  - from: models
+  - from: split_gate
+    to: create_split
+    type: primary
+  - from: keep_split
+    to: standard_split
+    type: primary
+  - from: create_split
+    to: standard_split
+    type: primary
+  - from: standard_split
+    to: cross_domain
+    type: primary
+  - from: standard_split
+    to: low_data
+    type: primary
+  - from: cross_domain
+    to: tune
+    type: primary
+  - from: low_data
+    to: tune
+    type: primary
+  - from: tune
     to: seeds
     type: primary
   - from: seeds
-    to: metrics
+    to: task_metrics
+    type: primary
+  - from: task_metrics
+    to: report
     type: primary
 modules: []
