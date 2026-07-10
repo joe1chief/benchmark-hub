@@ -5,117 +5,195 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BIG-Bench Extra Hard 构建流程
-  description: 基于 arXiv:2502.19187，对齐 BIG-Bench Extra Hard 作为 BBH 饱和后的继任基准：替换 23 个 BBH 任务、用参考模型半对抗迭代难度、构建 BBEH Mini，并用调和平均准确率评测。
-  legend: 实线表示任务构建和评测主流程；虚线表示半对抗难度迭代。
+  description: 对齐论文的 BBEH 流程：从 23 项 BBH 饱和审计，经半对抗难度校准、确定性答案抽取， 到完整集与 Mini 集的分层聚合。
+  legend: 实线表示构建与评测；虚线循环表示持续加难，直到两个参考模型准确率都低于 70%。
 nodes:
   - id: bbh_audit
     label: |-
-      BBH审计
-      饱和/捷径
+      审计BBH
+      饱和与捷径
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: task_mapping
+      'y': 240
+  - id: skill_map
     label: |-
-      任务映射
-      23领域
+      保持覆盖
+      23个推理领域
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
+      x: 280
+      'y': 240
   - id: harder_tasks
     label: |-
-      更难替换
-      多跳推理
+      逐项替换
+      更难同域任务
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: reference_models
+      x: 520
+      'y': 240
+  - id: candidates
+    label: |-
+      构造候选
+      长上下文与多跳
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 240
+  - id: ref_models
     label: |-
       参考模型
-      低于70%
+      Flash与Thinking
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 80
+  - id: difficulty_gate
+    label: |-
+      两个模型
+      都低于70%？
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: dataset
+      x: 1000
+      'y': 240
+  - id: harden
     label: |-
-      BBEH数据
-      23任务
-    type: database
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: mini
-    label: |-
-      BBEH Mini
-      460例
-    type: database
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: analysis
-    label: |-
-      数据分析
-      上下文/思维
+      增加难度
+      或替换任务
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: metric
+      x: 760
+      'y': 440
+  - id: full_set
     label: |-
-      指标
-      调和/微均
+      完整BBEH
+      23项任务
+      每项200；DQA 120
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: mini
+    label: |-
+      BBEH Mini
+      每项20，共460
+    type: database
+    size: xl
+    position:
+      x: 1480
+      'y': 60
+  - id: prompt
+    label: |-
+      逐步推理后缀
+      固定终答前缀
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 1480
+      'y': 240
+  - id: extract
+    label: |-
+      抽取并清洗
+      确定性匹配
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: task_accuracy
+    label: |-
+      分任务
+      准确率
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+  - id: harmonic
+    label: |-
+      完整BBEH
+      调整调和平均
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 100
+  - id: micro
+    label: |-
+      BBEH Mini
+      微平均
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 380
   - id: report
     label: |-
       模型报告
-      推理空间
+      通用推理能力
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2440
+      'y': 240
 edges:
   - from: bbh_audit
-    to: task_mapping
+    to: skill_map
     type: primary
-  - from: task_mapping
+  - from: skill_map
     to: harder_tasks
     type: primary
   - from: harder_tasks
-    to: reference_models
+    to: candidates
     type: primary
-  - from: reference_models
-    to: dataset
+  - from: candidates
+    to: difficulty_gate
     type: primary
-  - from: reference_models
-    to: harder_tasks
+  - from: ref_models
+    to: difficulty_gate
+    type: primary
+  - from: difficulty_gate
+    to: harden
     type: optional
-    label: 增加难度
-  - from: dataset
+  - from: harden
+    to: candidates
+    type: optional
+  - from: difficulty_gate
+    to: full_set
+    type: primary
+  - from: full_set
     to: mini
     type: primary
-  - from: dataset
-    to: analysis
+  - from: full_set
+    to: prompt
     type: primary
-  - from: analysis
-    to: metric
+  - from: mini
+    to: prompt
     type: primary
-  - from: metric
+  - from: prompt
+    to: extract
+    type: primary
+  - from: extract
+    to: task_accuracy
+    type: primary
+  - from: task_accuracy
+    to: harmonic
+    type: primary
+  - from: task_accuracy
+    to: micro
+    type: primary
+  - from: harmonic
+    to: report
+    type: primary
+  - from: micro
     to: report
     type: primary
 modules: []

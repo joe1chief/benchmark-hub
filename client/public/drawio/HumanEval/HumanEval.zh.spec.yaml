@@ -5,75 +5,131 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HumanEval 构建流程
-  description: 对齐论文的 HumanEval 流程：手写函数合成题、函数签名、docstring、单元测试、 沙箱执行、模型代码样本和 pass@k 估计。
-  legend: 实线箭头表示题目编写、可执行测试、沙箱检查和函数正确性评分。
+  description: 对齐论文的 HumanEval 流程：164 道人工原创函数合成题，经提示组装、多样本生成、 沙箱单元测试和无偏 pass@k 估计。
+  legend: 实线将模型可见字段与隐藏测试分开，仅在沙箱执行时汇合。
 nodes:
   - id: author
-    label: 手写题目
+    label: |-
+      人工原创题目
+      避免公开集污染
     type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: signature
-    label: 函数签名
+      'y': 240
+  - id: dataset
+    label: |-
+      HumanEval
+      164道题
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 240
+  - id: fields
+    label: |-
+      函数签名与Docstring
+      函数体与单元测试
+      平均7.7个测试
     type: document
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: docstring
-    label: Docstring
+      x: 520
+      'y': 240
+  - id: prompt
+    label: |-
+      模型提示
+      头部+函数签名
+      +Docstring
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 760
+      'y': 80
   - id: tests
-    label: 单元测试
+    label: |-
+      隐藏单元测试
+      函数正确性
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1000
+      'y': 400
+  - id: samples
+    label: |-
+      生成n=200个
+      代码样本
+      新代码块处停止
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 80
   - id: sandbox
-    label: 沙箱执行
+    label: |-
+      沙箱执行
+      gVisor与eBPF防火墙
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: samples
-    label: 代码样本
+      x: 1240
+      'y': 240
+  - id: correct
+    label: |-
+      统计c个
+      全部测试通过样本
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metric
-    label: pass@k
+      x: 1480
+      'y': 240
+  - id: estimator
+    label: |-
+      无偏pass@k
+      k不超过100
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: report
+    label: |-
+      函数正确性
+      评测报告
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1960
+      'y': 240
 edges:
   - from: author
-    to: signature
+    to: dataset
     type: primary
-  - from: signature
-    to: docstring
+  - from: dataset
+    to: fields
     type: primary
-  - from: docstring
+  - from: fields
+    to: prompt
+    type: primary
+  - from: fields
     to: tests
+    type: primary
+  - from: prompt
+    to: samples
+    type: primary
+  - from: samples
+    to: sandbox
     type: primary
   - from: tests
     to: sandbox
     type: primary
   - from: sandbox
-    to: samples
+    to: correct
     type: primary
-  - from: samples
-    to: metric
+  - from: correct
+    to: estimator
+    type: primary
+  - from: estimator
+    to: report
     type: primary
 modules: []

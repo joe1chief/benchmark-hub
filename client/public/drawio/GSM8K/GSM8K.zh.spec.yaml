@@ -5,60 +5,123 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GSM8K 构建流程
-  description: 对齐论文的 GSM8K 流程：从人工小学数学应用题到自然语言解答和答案准确率。
-  legend: 实线箭头表示人工命题、质量一致性检查、多样自然语言解答、训练测试划分、模型解题和最终答案评分。
+  description: 对齐论文的 GSM8K 流程：人工原创小学数学题，经答案一致性质量控制、自然语言解答、 官方数据划分，以及基线和验证器排序两条终答评测路径。
+  legend: 实线表示数据构建；下方分支表示论文中的验证器实验。
 nodes:
   - id: writers
-    label: 人工作者
-    type: database
+    label: |-
+      人工命题者
+      原创题目
+    type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: problems
-    label: 8.5K应用题
+      'y': 240
+  - id: design
+    label: |-
+      保持语言多样性
+      2至8步算术
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 280
+      'y': 240
+  - id: problems
+    label: |-
+      8.5K道题
+      小学数学应用题
+    type: database
+    size: xl
+    position:
+      x: 520
+      'y': 240
   - id: qc
-    label: 质量控制
+    label: |-
+      工作者答案
+      一致性质量检查
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 760
+      'y': 240
   - id: solutions
-    label: 自然语言解答
+    label: |-
+      多样化
+      自然语言解答
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1000
+      'y': 240
   - id: split
-    label: 7.5K/1K划分
+    label: |-
+      官方划分
+      训练7.5K/测试1K
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: baseline
+    label: |-
+      基线
+      单个低温样本
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: models
-    label: 模型解题
+      x: 1480
+      'y': 80
+  - id: verifier_train
+    label: |-
+      生成器训练2轮
+      每道训练题100样本
+      按终答标注
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1480
+      'y': 400
+  - id: verifier
+    label: |-
+      训练验证器
+      1轮
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: search
+    label: |-
+      测试题100样本
+      排序并取最高分
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 400
+  - id: answer_match
+    label: |-
+      抽取最终答案
+      精确正确性匹配
+    type: decision
+    size: xl
+    position:
+      x: 2200
+      'y': 240
   - id: score
-    label: 答案匹配
+    label: |-
+      测试解题率
+      基线/验证器
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2440
+      'y': 240
 edges:
   - from: writers
+    to: design
+    type: primary
+  - from: design
     to: problems
     type: primary
   - from: problems
@@ -71,9 +134,24 @@ edges:
     to: split
     type: primary
   - from: split
-    to: models
+    to: baseline
     type: primary
-  - from: models
+  - from: split
+    to: verifier_train
+    type: primary
+  - from: verifier_train
+    to: verifier
+    type: primary
+  - from: verifier
+    to: search
+    type: primary
+  - from: baseline
+    to: answer_match
+    type: primary
+  - from: search
+    to: answer_match
+    type: primary
+  - from: answer_match
     to: score
     type: primary
 modules: []

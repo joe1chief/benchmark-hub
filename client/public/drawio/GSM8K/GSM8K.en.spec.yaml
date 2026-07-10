@@ -6,63 +6,124 @@ meta:
   routing: orthogonal
   title: GSM8K Build Process
   description: >-
-    Paper-aligned GSM8K flow from human-written grade-school math problems to natural-language solutions and answer
-    accuracy.
-  legend: >-
-    Solid arrows show human problem writing, quality agreement checks, diverse natural-language solutions, train/test
-    split, model solving, and final-answer scoring.
+    Paper-aligned GSM8K construction from original human-written grade-school problems through agreement-based quality
+    control, natural-language solutions, official splits, and both baseline and verifier-ranked final-answer evaluation.
+  legend: Solid arrows show dataset construction; the lower branch shows the paper's verifier experiment.
 nodes:
   - id: writers
-    label: Writers
-    type: database
+    label: |-
+      Human Writers
+      Original Problems
+    type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: problems
-    label: 8.5K Problems
+      'y': 240
+  - id: design
+    label: |-
+      Design for Diversity
+      2–8 Arithmetic Steps
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 280
+      'y': 240
+  - id: problems
+    label: |-
+      8.5K Problems
+      Grade-School Math
+    type: database
+    size: xl
+    position:
+      x: 520
+      'y': 240
   - id: qc
-    label: QC Check
+    label: |-
+      Worker Answer
+      Agreement QC
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 760
+      'y': 240
   - id: solutions
-    label: NL Solutions
+    label: |-
+      Diverse Natural-
+      Language Solutions
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1000
+      'y': 240
   - id: split
-    label: 7.5K/1K Split
+    label: |-
+      Official Split
+      Train 7.5K / Test 1K
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: baseline
+    label: |-
+      Baseline
+      One Low-T Sample
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: models
-    label: Model Solve
+      x: 1480
+      'y': 80
+  - id: verifier_train
+    label: |-
+      Train Generator 2 Epochs
+      100 Samples / Train Item
+      Final-Answer Labels
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1480
+      'y': 400
+  - id: verifier
+    label: |-
+      Train Verifier
+      One Epoch
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: search
+    label: |-
+      100 Test Samples
+      Rank + Select Top
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 400
+  - id: answer_match
+    label: |-
+      Extract Final Answer
+      Exact Correctness Match
+    type: decision
+    size: xl
+    position:
+      x: 2200
+      'y': 240
   - id: score
-    label: Answer Match
+    label: |-
+      Test Solve Rate
+      Baseline / Verifier
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2440
+      'y': 240
 edges:
   - from: writers
+    to: design
+    type: primary
+  - from: design
     to: problems
     type: primary
   - from: problems
@@ -75,9 +136,24 @@ edges:
     to: split
     type: primary
   - from: split
-    to: models
+    to: baseline
     type: primary
-  - from: models
+  - from: split
+    to: verifier_train
+    type: primary
+  - from: verifier_train
+    to: verifier
+    type: primary
+  - from: verifier
+    to: search
+    type: primary
+  - from: baseline
+    to: answer_match
+    type: primary
+  - from: search
+    to: answer_match
+    type: primary
+  - from: answer_match
     to: score
     type: primary
 modules: []

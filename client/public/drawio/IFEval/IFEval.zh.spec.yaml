@@ -5,75 +5,177 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: IFEval 构建流程
-  description: 对齐论文的 IFEval 构建流程：可验证指令类型、prompt 合成、few-shot 冲突检查、 重写增广、人工编辑、确定性 verifier 和严格/宽松准确率。
-  legend: 实线箭头表示指令选择、prompt 合成、人工策划、verifier 实现和指标计算。
+  description: 对齐论文的 IFEval 流程：25 类确定性可验证指令，经四阶段提示合成形成 541 条提示， 再做严格验证、8 种宽松变换和四项准确率统计。
+  legend: 实线表示提示构建与评测；下方分支对响应应用宽松变换。
 nodes:
+  - id: base
+    label: |-
+      基础提示
+      开放式请求
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 80
   - id: types
-    label: 指令类型
+    label: |-
+      25类可验证
+      原子指令
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: base
-    label: 基础Prompt
-    type: document
+      'y': 400
+  - id: synthesize
+    label: |-
+      随机附加
+      1至3条指令
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: check
-    label: 逻辑检查
+      x: 280
+      'y': 240
+  - id: logic_gate
+    label: |-
+      Few-shot检查
+      提示是否合理？
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 520
+      'y': 240
   - id: rephrase
-    label: 改写增广
+    label: |-
+      Few-shot改写
+      提升措辞多样性
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 760
+      'y': 240
   - id: manual
-    label: 人工编辑
+    label: |-
+      逐条人工
+      检查与编辑
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: verifier
-    label: 验证程序
+      x: 1000
+      'y': 240
+  - id: dataset
+    label: |-
+      IFEval
+      541条提示
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: response
+    label: |-
+      模型响应
+      零样本提示
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 240
+  - id: strict_verify
+    label: |-
+      确定性检查器
+      原始响应
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: transforms
+    label: |-
+      8种宽松变体
+      原始+3种处理
+      及其组合
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: loose_verify
+    label: |-
+      任一变体通过
+      宽松准则
+    type: decision
+    size: xl
+    position:
+      x: 1960
+      'y': 400
+  - id: strict_metrics
+    label: |-
+      严格准确率
+      提示级+指令级
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: 准确率
+      x: 2200
+      'y': 80
+  - id: loose_metrics
+    label: |-
+      宽松准确率
+      提示级+指令级
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 400
+  - id: report
+    label: |-
+      IFEval四项
+      准确率报告
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2440
+      'y': 240
 edges:
-  - from: types
-    to: base
-    type: primary
   - from: base
-    to: check
+    to: synthesize
     type: primary
-  - from: check
+  - from: types
+    to: synthesize
+    type: primary
+  - from: synthesize
+    to: logic_gate
+    type: primary
+  - from: logic_gate
     to: rephrase
     type: primary
   - from: rephrase
     to: manual
     type: primary
   - from: manual
-    to: verifier
+    to: dataset
     type: primary
-  - from: verifier
-    to: metrics
+  - from: dataset
+    to: response
+    type: primary
+  - from: response
+    to: strict_verify
+    type: primary
+  - from: response
+    to: transforms
+    type: primary
+  - from: transforms
+    to: loose_verify
+    type: primary
+  - from: strict_verify
+    to: strict_metrics
+    type: primary
+  - from: loose_verify
+    to: loose_metrics
+    type: primary
+  - from: strict_metrics
+    to: report
+    type: primary
+  - from: loose_metrics
+    to: report
     type: primary
 modules: []
