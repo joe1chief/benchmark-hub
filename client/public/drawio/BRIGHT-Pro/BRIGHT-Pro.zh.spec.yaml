@@ -5,84 +5,195 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BRIGHT-Pro 构建流程
-  description: >-
-    基于论文的 BRIGHT-Pro 构建流程：从 BRIGHT StackExchange 查询出发，由专家分解 reasoning aspect 并加权，重新审核和扩展 gold evidence，经第二标注员质检后，在静态
-    aspect-aware 指标和 agentic search 协议中评估检索器。
-  legend: 实线箭头表示查询选择、aspect/evidence 标注、质量控制以及静态和 agentic 评估。
+  description: 严格对齐 arXiv:2605.04018，展示 BRIGHT-Pro 推理密集检索基准的专家构建、静态评测与 Agentic 评测流程。
+  legend: 实线表示基准构建与评测主流程；虚线传递 aspect 权重、已验证参考答案或复核反馈。
 nodes:
-  - id: bright
-    label: BRIGHT查询
+  - id: bright_source
+    label: |-
+      从 BRIGHT StackExchange 出发
+      七个领域共 739 个查询
+      统一语料含 526,319 个文档
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: aspects
-    label: 推理Aspect
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: weights
-    label: Aspect权重
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: reaudit
-    label: 重审Gold
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: collect
-    label: 新增证据
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: segment
-    label: 证据切分
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: qc
-    label: 二次审核
+      'y': 240
+  - id: experts
+    label: |-
+      分配同领域专家
+      以社区答案作为起点
+      独立识别可辩护解答所需前提
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: static
-    label: 静态指标
+      x: 320
+      'y': 240
+  - id: aspects
+    label: |-
+      分解每个信息需求
+      紧凑且不冗余的推理 aspect
+      每个 aspect 配一至两句理由
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 70
-  - id: agentic
-    label: Agentic搜索
+      x: 600
+      'y': 60
+  - id: weights
+    label: |-
+      标注 aspect 重要性
+      Likert 1–5 分 • 归一化后总和为 1
+      从主导证据到边缘证据
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 60
+  - id: reaudit
+    label: |-
+      重审原 BRIGHT 正例
+      把显式证据分配给 aspect
+      丢弃弱项 • 合并重叠 • 裁剪噪声
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: collect
+    label: |-
+      收集新的 aspect 证据
+      网页搜索或 AI 辅助搜索
+      必须提供显式、精确、可信的支持
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: segment
+    label: |-
+      用 FireCrawl 处理来源页面
+      去模板并人工裁剪残余噪声
+      多 aspect 页面切成单 aspect 正例
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: refine
+    label: |-
+      迭代修订 aspect 结构
+      补缺失前提 • 拆分过宽 aspect
+      合并重复推理需求
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 60
+  - id: qc
+    label: |-
+      同领域第二标注员独立复核
+      检查粒度、平衡、权重和覆盖
+      重查证据可信度 • 50 题 κ = 0.742
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 240
+  - id: release
+    label: |-
+      发布 BRIGHT-Pro
+      739 个查询 • 平均 3.74 个 aspect
+      每题平均 7.13 个正例文档
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: static_eval
+    label: |-
+      运行静态排序检索
+      每题输出一个段落排序列表
+      奖励互补 aspect 覆盖
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: static_metrics
+    label: |-
+      评分静态检索
+      α-nDCG@k，α = 0.5 • 加权 A-Recall
+      NDCG@k 与 Recall@k 诊断
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: agentic_sample
+    label: |-
+      固定 Agentic 评测样本
+      175 题 • 每领域 25 题
+      所有检索器使用相同样本与预算
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: agent_loop
+    label: |-
+      在搜索 Agent 中运行检索器
+      GPT-5-mini 与 Qwen3.5 • 每轮 Top 5
+      固定 R=1,2,3 或自适应停止
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+  - id: reference
+    label: |-
+      构建并验证参考答案
+      GPT-5 高推理读取人工金证据
+      对 40 个样本做盲评人类核验
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 440
+  - id: judge
+    label: |-
+      评审带引用的最终答案
+      aspect 覆盖 0 / 0.5 / 1 • 总体 1–5
+      完整性 • 轮数 • AER 效率奖励
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 440
+  - id: report
+    label: |-
+      汇报检索器与 Agent 效用
+      静态多样性 • 推理完整性
+      最终质量、搜索轮数与 AER
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 250
+      x: 2560
+      'y': 240
 edges:
-  - from: bright
+  - from: bright_source
+    to: experts
+    type: primary
+  - from: experts
     to: aspects
     type: primary
   - from: aspects
     to: weights
     type: primary
-  - from: weights
+  - from: experts
     to: reaudit
     type: primary
+  - from: weights
+    to: collect
+    type: data
   - from: reaudit
     to: collect
     type: primary
@@ -90,12 +201,45 @@ edges:
     to: segment
     type: primary
   - from: segment
+    to: refine
+    type: primary
+  - from: refine
     to: qc
     type: primary
+  - from: weights
+    to: qc
+    type: data
   - from: qc
-    to: static
+    to: refine
+    type: optional
+  - from: qc
+    to: release
     type: primary
-  - from: qc
-    to: agentic
+  - from: release
+    to: static_eval
+    type: primary
+  - from: static_eval
+    to: static_metrics
+    type: primary
+  - from: release
+    to: agentic_sample
+    type: primary
+  - from: agentic_sample
+    to: agent_loop
+    type: primary
+  - from: release
+    to: reference
+    type: data
+  - from: agent_loop
+    to: judge
+    type: primary
+  - from: reference
+    to: judge
+    type: data
+  - from: static_metrics
+    to: report
+    type: primary
+  - from: judge
+    to: report
     type: primary
 modules: []

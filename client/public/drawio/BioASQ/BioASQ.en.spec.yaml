@@ -6,83 +6,173 @@ meta:
   routing: orthogonal
   title: BioASQ Build Process
   description: >-
-    Paper-aligned overview of the original BioASQ benchmark workflow: Task 1a uses PubMed/MEDLINE records and MeSH
-    labels for large-scale semantic indexing, while Task 1b uses biomedical-expert questions, Phase A retrieval targets,
-    Phase B exact and ideal answers, and dedicated automatic and manual evaluation measures.
-  legend: The upper lane shows semantic indexing; the lower lane shows biomedical question answering.
+    Paper-aligned construction and two-task evaluation of the first BioASQ biomedical semantic indexing and QA
+    challenge, based on the open-access 2015 BMC Bioinformatics overview.
+  legend: >-
+    The upper branch is Task 1a online MeSH indexing; the lower branch is expert-built Task 1b QA. Dashed arrows carry
+    delayed curator labels or gold Phase-A material.
 nodes:
-  - id: pubmed
-    label: PubMed
+  - id: sources
+    label: |-
+      Integrate Biomedical Knowledge Sources
+      MEDLINE / PubMed and PubMed Central
+      MeSH, Ontologies, Databases, and RDF Triples
     type: database
     size: xl
     position:
       x: 40
-      'y': 70
-  - id: mesh_train
-    label: MeSH
+      'y': 280
+  - id: task1a_train
+    label: |-
+      Build Task 1a Training Data
+      Title + Abstract + Existing MeSH Labels
+      Indexed before 1 March 2013
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: task1a_test
+    label: |-
+      Create Weekly Unlabeled Test Sets
+      Three Batches × Six Weeks • Unique New Articles
+      Journals Expected to Receive MeSH within 90 Days
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: task1a
-    label: Task 1a
+      x: 600
+      'y': 40
+  - id: task1a_submit
+    label: |-
+      Run Online Semantic Indexing
+      Predict MeSH Headings within 21 Hours
+      No Curator Labels Available at Submission Time
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: experts
-    label: Experts
+      x: 880
+      'y': 40
+  - id: task1a_gold
+    label: |-
+      Wait for NLM Curator Annotations
+      Incrementally Reveal True MeSH Labels
+      Freeze Available Labels at Challenge End
     type: user
     size: xl
     position:
-      x: 40
-      'y': 250
+      x: 1160
+      'y': 40
+  - id: task1a_metrics
+    label: |-
+      Score Task 1a Classification
+      Flat Micro-F1
+      Hierarchical Lowest-Common-Ancestor F Measure
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: experts
+    label: |-
+      Biomedical Experts Author Real Questions
+      Yes/No • Factoid • List • Summary
+      Ground Answers in Articles and Ontologies
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 420
   - id: qa_gold
-    label: QA gold
-    type: document
+    label: |-
+      Build Task 1b Gold Benchmark
+      29 Development + 282 Test Questions
+      Concepts • Documents • Snippets • Triples • Answers
+    type: database
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 600
+      'y': 420
   - id: phase_a
-    label: Phase A
+    label: |-
+      Run Task 1b Phase A Retrieval
+      Return Concepts, Articles, Snippets, RDF Triples
+      Limits 100 / 100 / 100 / 1,000 per Question
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
+      x: 880
+      'y': 280
+  - id: phase_a_metrics
+    label: |-
+      Score Phase A Retrieval
+      MAP / GMAP • Precision • Recall • F Measure
+      Offset-Aware Matching for Snippets
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 260
   - id: phase_b
-    label: Phase B
+    label: |-
+      Run Task 1b Phase B Answering
+      Supply Gold Phase-A Evidence
+      Produce Exact Answers and ≤200-Word Ideal Summaries
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: metrics
-    label: Metrics
-    type: document
+      x: 880
+      'y': 540
+  - id: exact_metrics
+    label: |-
+      Score Exact Answers
+      Yes/No Accuracy • Factoid Strict/Lenient + MRR
+      List Precision, Recall, and F Measure
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1160
+      'y': 460
+  - id: ideal_metrics
+    label: |-
+      Score Ideal Answers
+      Automatic ROUGE Summarization Measures
+      Biomedical-Expert Manual Quality Assessment
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 660
   - id: results
-    label: Results
+    label: |-
+      Publish BioASQ Challenge Results
+      Semantic Indexing and QA Leaderboards
+      Public Data, Evaluation Services, Runs, and Baselines
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 380
 edges:
-  - from: pubmed
-    to: mesh_train
+  - from: sources
+    to: task1a_train
     type: primary
-  - from: mesh_train
-    to: task1a
+  - from: task1a_train
+    to: task1a_test
     type: primary
-  - from: task1a
-    to: metrics
+  - from: task1a_test
+    to: task1a_submit
+    type: primary
+  - from: task1a_submit
+    to: task1a_gold
+    type: primary
+  - from: task1a_gold
+    to: task1a_metrics
+    type: data
+  - from: task1a_metrics
+    to: results
+    type: primary
+  - from: sources
+    to: experts
     type: primary
   - from: experts
     to: qa_gold
@@ -91,12 +181,27 @@ edges:
     to: phase_a
     type: primary
   - from: phase_a
+    to: phase_a_metrics
+    type: primary
+  - from: phase_a_metrics
+    to: results
+    type: primary
+  - from: phase_a
     to: phase_b
+    type: optional
+  - from: qa_gold
+    to: phase_b
+    type: data
+  - from: phase_b
+    to: exact_metrics
     type: primary
   - from: phase_b
-    to: metrics
+    to: ideal_metrics
     type: primary
-  - from: metrics
+  - from: exact_metrics
+    to: results
+    type: primary
+  - from: ideal_metrics
     to: results
     type: primary
 modules: []
