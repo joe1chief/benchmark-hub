@@ -1,0 +1,165 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: TACO 构建与评测流程
+  description: 对齐论文的竞赛编程问题采集、可执行解答筛选、语义去重、单元测试增强、多维标注与 Pass@k 评测流程。
+  legend: 上排从左到右为基准构建，下排从右到左为模型评测；发布集包含 25,443 个训练问题、 1,000 个测试问题与 1,539,152 个经验证的 Python 3 解答。
+nodes:
+  - id: sources
+    label: |-
+      七个问题来源
+      四个直接爬取的竞赛平台
+      APPS + CodeContest + Description2code
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: parsers
+    label: |-
+      平台专用解析
+      人工抽查解析器输出
+      少量 SVG 数学公式 OCR + 抓取标签
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: solution_gate
+    label: |-
+      可执行解答门控
+      在测试上运行新爬取解答
+      用 2to3 转换 Python 2；排除失败项
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: normalize
+    label: |-
+      规范化与去重
+      MinHash + Jaccard 阈值 0.85
+      AST 去注释并格式化
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: tests
+    label: |-
+      单元测试增强
+      GPT-4 生成输入 + 30 个验证正确的解答
+      仅保留共识输出，直至至少 200 个测试
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      TACO 发布集
+      25,443 个训练 + 1,000 个测试问题
+      1,539,152 个解答；36 类算法 + 8 项技能
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      测试问题输入
+      题面 + 约束 + 示例
+      标准输入或函数调用格式
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: sample
+    label: |-
+      每题采样 200 次
+      top_p = 0.95
+      按难度使用温度 0.2 / 0.6 / 0.8
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: postprocess
+    label: |-
+      补全结果后处理
+      截断为完整程序
+      保留所需接口
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: execute
+    label: |-
+      执行全部单元测试
+      按所需输入输出模式运行
+      捕获编译、运行与输出错误
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: correctness
+    label: |-
+      精确正确性门控
+      每个单元测试都必须通过
+      任一失败即拒绝该补全
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      TACO 结果
+      Pass@1 / Pass@10 / Pass@100
+      按难度与编程技能分组
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
+edges:
+  - from: sources
+    to: parsers
+    type: primary
+  - from: parsers
+    to: solution_gate
+    type: primary
+  - from: solution_gate
+    to: normalize
+    type: primary
+  - from: normalize
+    to: tests
+    type: primary
+  - from: tests
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: postprocess
+    type: primary
+  - from: postprocess
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
+    to: report
+    type: primary
+modules: []

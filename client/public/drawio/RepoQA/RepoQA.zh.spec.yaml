@@ -1,0 +1,165 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: RepoQA 构建与评测流程
+  description: 按论文展示从依赖排序真实仓库和不含名称的明确函数描述构建并评测 500 个多语言“搜索针函数”任务。
+  legend: 先从左到右阅读任务构建，再从右到左阅读检索评测；5 种语言各含 10 个仓库，每个仓库贡献 10 个深度受控针函数。
+nodes:
+  - id: repositories
+    label: |-
+      50 个热门 GitHub 仓库
+      Python / C++ / Java / TypeScript / Rust
+      每语言 10 个；至少 100 星
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: quality
+    label: |-
+      仓库质量门
+      主题多样 + 已打包项目
+      具备单元测试或 CI/CD
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: dependencies
+    label: |-
+      入口目录分析
+      保留主包源文件
+      标注文件依赖关系
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: candidates
+    label: |-
+      依赖有序候选池
+      按拓扑顺序拼接源码
+      64 块；名称唯一；函数体 < 2,000 字节
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: descriptions
+    label: |-
+      针函数描述标注
+      GPT-4-Turbo 编写四段描述
+      隐藏函数名与变量名
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      RepoQA SNF 发布
+      每仓库 10 个针函数
+      5 种语言共 500 个任务
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: placement
+    label: |-
+      深度受控 16k 上下文
+      针函数位于 10%...100%
+      周围为拓扑有序仓库代码
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: prompt
+    label: |-
+      搜索针函数提示
+      指令 + 代码 + 函数描述
+      末尾重复指令
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: output
+    label: |-
+      模型复述目标函数
+      在代码围栏中返回代码
+      不使用仓库工具或 Agent 循环
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: parse
+    label: |-
+      Tree-Sitter 后处理
+      提取首个语法有效代码块
+      对比上下文全部函数
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: match
+    label: |-
+      检索成功门
+      目标针函数平滑 BLEU 最高
+      与针函数相似度 > 0.8
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      RepoQA 检索准确率
+      总体与分语言报告
+      可选无注释对比
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
+edges:
+  - from: repositories
+    to: quality
+    type: primary
+  - from: quality
+    to: dependencies
+    type: primary
+  - from: dependencies
+    to: candidates
+    type: primary
+  - from: candidates
+    to: descriptions
+    type: primary
+  - from: descriptions
+    to: release
+    type: primary
+  - from: release
+    to: placement
+    type: primary
+  - from: placement
+    to: prompt
+    type: primary
+  - from: prompt
+    to: output
+    type: primary
+  - from: output
+    to: parse
+    type: primary
+  - from: parse
+    to: match
+    type: primary
+  - from: match
+    to: report
+    type: primary
+modules: []
