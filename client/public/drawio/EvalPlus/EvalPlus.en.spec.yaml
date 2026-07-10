@@ -5,77 +5,169 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EvalPlus Build Process
-  description: Paper-aligned EvalPlus flow from base code benchmarks to automated test generation and pass@k evaluation.
-  legend: >-
-    Solid arrows show benchmark augmentation: base tasks, contracts, LLM seed inputs, type-aware mutation, differential
-    testing, optional minimization, and pass@k scoring.
+  description: >-
+    Paper-aligned EvalPlus workflow: ground-truth code and base tests prompt ChatGPT for seeds, program contracts reject
+    invalid inputs, iterative type-aware mutation scales the test pool, HumanEval+ expands tests by 80 times, optional
+    greedy set cover creates a mini suite, and differential testing yields unbiased pass@k.
+  legend: Solid arrows show the main pipeline; the lower feedback edge shows valid mutants returning to the seed pool.
 nodes:
   - id: base
-    label: Base Bench
+    label: |-
+      Base Benchmark
+      Ground Truth + Tests
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: contracts
-    label: Contracts
+      'y': 240
+  - id: prompt
+    label: |-
+      Prompt: Ground Truth
+      Tests + Instruction
     type: document
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
+      x: 240
+      'y': 240
   - id: seeds
-    label: LLM Seeds
+    label: |-
+      ChatGPT Seeds
+      About 30 / Task
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: mutate
-    label: Mutate In
+      x: 440
+      'y': 240
+  - id: seed_filter
+    label: |-
+      Seed Input
+      Contract Filter
+    type: decision
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: seed_pool
+    label: Valid Seed Pool
+    type: database
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: mutation
+    label: |-
+      Type-aware Mutation
+      1,000 / Task
     type: process
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: oracle
-    label: Diff Oracle
-    type: terminal
-    size: xl
+      x: 1040
+      'y': 240
+  - id: mutant_filter
+    label: |-
+      Mutant Input
+      Contract Filter
+    type: decision
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: mini
-    label: Mini Suite
+      x: 1240
+      'y': 240
+  - id: plus
+    label: |-
+      HumanEval+
+      80x Test Scale
+    type: database
+    size: large
+    position:
+      x: 1440
+      'y': 240
+  - id: distill
+    label: |-
+      Optional Greedy
+      Set Cover
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
+      x: 1640
+      'y': 40
+  - id: full
+    label: Full Plus Suite
     type: document
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 1640
+      'y': 300
+  - id: mini
+    label: |-
+      HumanEval+-Mini
+      47x Smaller
+    type: document
+    size: large
+    position:
+      x: 1840
+      'y': 40
+  - id: differential
+    label: |-
+      Run LLM Code
+      Differentially vs GT
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 240
+  - id: score
+    label: Unbiased pass@k
+    type: terminal
+    size: large
+    position:
+      x: 2240
+      'y': 240
 edges:
   - from: base
-    to: contracts
+    to: prompt
     type: primary
-  - from: contracts
+  - from: prompt
     to: seeds
     type: primary
   - from: seeds
-    to: mutate
+    to: seed_filter
     type: primary
-  - from: mutate
-    to: oracle
+  - from: seed_filter
+    to: seed_pool
     type: primary
-  - from: oracle
+  - from: seed_pool
+    to: mutation
+    type: primary
+  - from: mutation
+    to: mutant_filter
+    type: primary
+  - from: mutant_filter
+    to: seed_pool
+    type: data
+    waypoints:
+      - x: 1310
+        'y': 460
+      - x: 910
+        'y': 460
+  - from: mutant_filter
+    to: plus
+    type: primary
+  - from: plus
+    to: distill
+    type: data
+  - from: plus
+    to: full
+    type: primary
+  - from: distill
     to: mini
     type: primary
+  - from: full
+    to: differential
+    type: primary
   - from: mini
+    to: differential
+    type: primary
+  - from: differential
     to: score
     type: primary
 modules: []

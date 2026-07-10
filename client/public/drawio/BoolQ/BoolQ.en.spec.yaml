@@ -6,100 +6,173 @@ meta:
   routing: orthogonal
   title: BoolQ Build Process
   description: >-
-    Paper-aligned construction of BoolQ: Natural Questions-style search queries are filtered for likely yes/no
-    questions, paired with Wikipedia pages and human-selected passages, labeled with yes/no answers, split into
-    train/dev/test sets, audited for annotation quality, and evaluated with accuracy.
-  legend: Solid arrows show the dataset construction and evaluation path.
+    Paper-aligned BoolQ workflow: anonymized Google queries are heuristically filtered for natural yes/no questions,
+    retained only when Wikipedia appears in the top five results, judged and annotated in three human steps, combined
+    with Natural Questions yes/no items, split into train/dev/test sets, quality-audited, and evaluated by accuracy.
+  legend: Solid arrows show construction and evaluation; the upper branch is the independent annotation audit.
 nodes:
-  - id: nq
-    label: NQ
+  - id: queries
+    label: |-
+      Anonymized Google
+      Search Queries
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: Filter
+      'y': 220
+  - id: yes_no_filter
+    label: |-
+      Likely Yes/No
+      Heuristic Filter
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
-  - id: wiki
-    label: Wiki
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: annotate
-    label: Annotate
-    type: user
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: passage
-    label: Passage
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: Split
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: audit
-    label: Audit
+      x: 240
+      'y': 220
+  - id: wiki_gate
+    label: |-
+      Wikipedia in
+      Top 5 Results
     type: decision
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
-  - id: models
-    label: Models
+      x: 440
+      'y': 220
+  - id: quality
+    label: |-
+      Judge Question
+      Before Page View
+    type: decision
+    size: large
+    position:
+      x: 640
+      'y': 220
+  - id: passage
+    label: |-
+      Find Passage or
+      Mark Unanswerable
+    type: user
+    size: large
+    position:
+      x: 840
+      'y': 220
+  - id: answer
+    label: |-
+      Assign Yes / No
+      Answer
     type: process
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 70
-  - id: accuracy
-    label: Accuracy
+      x: 1040
+      'y': 220
+  - id: pool
+    label: |-
+      13k New + 3k NQ
+      16k Total
+    type: database
+    size: large
+    position:
+      x: 1240
+      'y': 220
+  - id: audit
+    label: |-
+      110-item Audit
+      90% Label Accuracy
+    type: process
+    size: large
+    position:
+      x: 1440
+      'y': 40
+  - id: split
+    label: Official Split
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 300
+  - id: train
+    label: |-
+      Train 9.4k
+      All NQ Items Here
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 160
+  - id: dev
+    label: Dev 3.2k
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 300
+  - id: test
+    label: Test 3.2k
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 440
+  - id: model
+    label: |-
+      Question + Passage
+      Yes/No Prediction
+    type: process
+    size: large
+    position:
+      x: 1840
+      'y': 300
+  - id: score
+    label: Model Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 250
+      x: 2040
+      'y': 300
 edges:
-  - from: nq
-    to: filter
+  - from: queries
+    to: yes_no_filter
     type: primary
-  - from: filter
-    to: wiki
+  - from: yes_no_filter
+    to: wiki_gate
     type: primary
-  - from: wiki
-    to: annotate
+  - from: wiki_gate
+    to: quality
     type: primary
-  - from: annotate
+  - from: quality
     to: passage
     type: primary
   - from: passage
+    to: answer
+    type: primary
+  - from: answer
+    to: pool
+    type: primary
+  - from: pool
+    to: audit
+    type: data
+  - from: pool
     to: split
     type: primary
   - from: split
-    to: audit
+    to: train
     type: primary
-  - from: audit
-    to: models
+  - from: split
+    to: dev
     type: primary
-  - from: audit
-    to: accuracy
+  - from: split
+    to: test
     type: primary
-  - from: models
-    to: accuracy
+  - from: train
+    to: model
+    type: primary
+  - from: dev
+    to: model
+    type: primary
+  - from: test
+    to: model
+    type: primary
+  - from: model
+    to: score
     type: primary
 modules: []

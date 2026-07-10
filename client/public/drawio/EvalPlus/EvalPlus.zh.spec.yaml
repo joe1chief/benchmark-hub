@@ -5,75 +5,168 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EvalPlus 构建流程
-  description: 按论文对齐的 EvalPlus 构建流程：从原始代码基准到自动测试增强和 pass@k 评测。
-  legend: 实线箭头表示基准增强流程：原始任务、输入契约、LLM种子、类型变异、差分测试、可选精简以及 pass@k 评分。
+  description: >-
+    按论文对齐的 EvalPlus 流程：用参考实现与基础测试提示 ChatGPT 生成种子，依据程序输入契约剔除无效输入， 通过迭代式类型感知变异扩充测试池，使 HumanEval+ 测试规模增至 80
+    倍；可选贪心集合覆盖生成精简套件，最后差分执行并计算无偏 pass@k。
+  legend: 实线表示主流程；下方回边表示通过契约检查的变异输入重新进入种子池。
 nodes:
   - id: base
-    label: 原始基准
+    label: |-
+      原始代码基准
+      参考实现 + 基础测试
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: contracts
-    label: 输入契约
+      'y': 240
+  - id: prompt
+    label: |-
+      提示：参考实现
+      测试示例 + 指令
     type: document
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
+      x: 240
+      'y': 240
   - id: seeds
-    label: LLM种子
+    label: |-
+      ChatGPT 种子
+      每题约 30 个
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: mutate
-    label: 类型变异
+      x: 440
+      'y': 240
+  - id: seed_filter
+    label: |-
+      种子输入
+      契约检查
+    type: decision
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: seed_pool
+    label: 有效种子池
+    type: database
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: mutation
+    label: |-
+      类型感知变异
+      每题 1,000 个
     type: process
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: oracle
-    label: 差分判定
-    type: terminal
-    size: xl
+      x: 1040
+      'y': 240
+  - id: mutant_filter
+    label: |-
+      变异输入
+      契约检查
+    type: decision
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: mini
-    label: 精简套件
+      x: 1240
+      'y': 240
+  - id: plus
+    label: |-
+      HumanEval+
+      测试规模 80 倍
+    type: database
+    size: large
+    position:
+      x: 1440
+      'y': 240
+  - id: distill
+    label: |-
+      可选贪心
+      集合覆盖
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
+      x: 1640
+      'y': 40
+  - id: full
+    label: 完整增强测试集
     type: document
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 1640
+      'y': 300
+  - id: mini
+    label: |-
+      HumanEval+-Mini
+      缩小 47 倍
+    type: document
+    size: large
+    position:
+      x: 1840
+      'y': 40
+  - id: differential
+    label: |-
+      执行模型代码
+      与参考实现差分
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 240
+  - id: score
+    label: 无偏 pass@k
+    type: terminal
+    size: large
+    position:
+      x: 2240
+      'y': 240
 edges:
   - from: base
-    to: contracts
+    to: prompt
     type: primary
-  - from: contracts
+  - from: prompt
     to: seeds
     type: primary
   - from: seeds
-    to: mutate
+    to: seed_filter
     type: primary
-  - from: mutate
-    to: oracle
+  - from: seed_filter
+    to: seed_pool
     type: primary
-  - from: oracle
+  - from: seed_pool
+    to: mutation
+    type: primary
+  - from: mutation
+    to: mutant_filter
+    type: primary
+  - from: mutant_filter
+    to: seed_pool
+    type: data
+    waypoints:
+      - x: 1310
+        'y': 460
+      - x: 910
+        'y': 460
+  - from: mutant_filter
+    to: plus
+    type: primary
+  - from: plus
+    to: distill
+    type: data
+  - from: plus
+    to: full
+    type: primary
+  - from: distill
     to: mini
     type: primary
+  - from: full
+    to: differential
+    type: primary
   - from: mini
+    to: differential
+    type: primary
+  - from: differential
     to: score
     type: primary
 modules: []
