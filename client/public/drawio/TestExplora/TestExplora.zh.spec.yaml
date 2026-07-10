@@ -1,0 +1,165 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: TestExplora 构建与评测流程
+  description: 对齐论文的 Issue-PR 采集、可达性与代码质量门控、自动仓库环境、可执行缺陷真值、 主动测试生成及以 F2P 为核心的评测流程。
+  legend: 上排从左到右为基准构建，下排从右到左为测试生成评测；只有同一生成测试在修复版本通过、 在缺陷基线版本失败时，才算主动发现缺陷。
+nodes:
+  - id: sources
+    label: |-
+      高质量 GitHub 来源
+      仅选星标超过 1,000 的仓库
+      抓取 12,227 个 Issue-PR 补丁
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: split
+    label: |-
+      补丁拆分
+      分离测试补丁 Pt 与代码补丁 Pc
+      解析变更函数与测试调用
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: reachability
+    label: |-
+      可达性 + 质量门控
+      测试须通过显式调用到达修复函数
+      移除意图篡改、TODO 或 pass 实现
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: environment
+    label: |-
+      自动构建环境
+      GitHub Actions Runner 镜像 + 系统工具链
+      合并依赖；Poetry / PDM / pip 安装
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: oracle_docs
+    label: |-
+      可执行真值 + 文档
+      金标准测试在基线失败、应用 Pc 后通过
+      DocAgent 描述入口意图 / 输入 / 错误
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      TestExplora 发布集
+      1,552 个 PR / 2,389 个任务 / 482 个仓库
+      Lite：330 个 PR / 517 个任务
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: scenario
+    label: |-
+      白盒或黑盒输入
+      两种场景始终提供文档
+      白盒：实现 + 依赖；黑盒：函数签名
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: generate
+    label: |-
+      主动测试生成
+      编写仓库级测试用例
+      输出可应用的测试补丁
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: head
+    label: |-
+      修复版本执行
+      应用 Pc 后运行生成测试
+      测试级 Head Pass Rate 衡量意图一致性
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: base
+    label: |-
+      缺陷基线执行
+      在应用 Pc 前运行同一批已通过测试
+      至少一个测试此时失败才算 PR 成功
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: coverage
+    label: |-
+      代码覆盖诊断
+      入口覆盖率（EC）
+      变更聚焦覆盖率（CFG）
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      TestExplora 结果
+      Head Pass + PR 级 Fail-to-Pass 比率
+      EC / CFG + 生成测试数量
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
+edges:
+  - from: sources
+    to: split
+    type: primary
+  - from: split
+    to: reachability
+    type: primary
+  - from: reachability
+    to: environment
+    type: primary
+  - from: environment
+    to: oracle_docs
+    type: primary
+  - from: oracle_docs
+    to: release
+    type: primary
+  - from: release
+    to: scenario
+    type: primary
+  - from: scenario
+    to: generate
+    type: primary
+  - from: generate
+    to: head
+    type: primary
+  - from: head
+    to: base
+    type: primary
+  - from: base
+    to: coverage
+    type: primary
+  - from: coverage
+    to: report
+    type: primary
+modules: []
