@@ -5,119 +5,177 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AGIEval Build Process
-  description: Paper-aligned benchmark construction and evaluation workflow for AGIEval, based on arXiv:2304.06364.
-  legend: >-
-    Solid arrows show exam-derived benchmark construction and model evaluation; dashed arrows mark filtering and
-    human-performance reference paths.
+  description: >-
+    Paper-aligned AGIEval construction from official human exams and reused exam datasets through objective-question
+    filtering, 20-task bilingual assembly, four prompting settings, and format-specific metrics.
+  legend: Solid arrows show dataset construction, human reference scores, and model evaluation.
 nodes:
-  - id: exam_pool
+  - id: official_sources
     label: |-
-      Official exam pool
-      Gaokao, SAT, LSAT
-      GMAT, GRE, AMC, AIME
+      Official Public Exams
+      Gaokao / SAT / LSAT
+      GRE / GMAT / Law / Civil Service
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: exam_selection
+      'y': 80
+  - id: reused_sources
     label: |-
-      Exam selection
-      standardized high-quality tests
-      human reasoning and real-world relevance
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: objective_filter
-    label: |-
-      Objective-question filter
-      remove subjective items
-      keep MCQ and fill-in blanks
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: data_collection
-    label: |-
-      Source collection
-      public online exams
-      LSAT, LogiQA, MATH, JEC-QA
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: dataset
-    label: |-
-      AGIEval dataset
-      8,062 questions
-      bilingual Chinese and English
+      Reused Exam Datasets
+      LogiQA / MATH / AQuA-RAT
+      JEC-QA / LSAT Data
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: human_baselines
+      x: 40
+      'y': 400
+  - id: select
     label: |-
-      Human baselines
-      average and top test takers
-      scaled to task scores
-    type: user
-    size: xl
-    position:
-      x: 1080
-      'y': 70
-  - id: model_eval
-    label: |-
-      Model evaluation
-      zero-shot, few-shot
-      chain-of-thought prompts
+      Select Standardized Exams
+      Human Reasoning +
+      Real-World Relevance
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: metrics_release
+      x: 280
+      'y': 240
+  - id: objective
     label: |-
-      Outcomes and release
-      accuracy, EM, F1
-      outputs and code published
+      Remove Subjective Items
+      Keep MCQ + Fill-in
+    type: decision
+    size: xl
+    position:
+      x: 520
+      'y': 240
+  - id: normalize
+    label: |-
+      Normalize Sources
+      Downsample MATH and
+      Two JEC-QA Tasks to 1K Each
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 240
+  - id: dataset
+    label: |-
+      AGIEval
+      20 Tasks / 8,062 Questions
+      Chinese + English
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 240
+  - id: humans
+    label: |-
+      Human References
+      Average + Top Test Takers
+    type: user
+    size: xl
+    position:
+      x: 1240
+      'y': 80
+  - id: prompts
+    label: |-
+      Prompt Regimes
+      Zero-shot / 5-shot
+      With / Without CoT
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: generation
+    label: |-
+      Greedy Generation
+      Temperature 0
+      Max 2,048 Tokens
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 400
+  - id: format
+    label: |-
+      Question Format
+      MCQ or Fill-in?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: mcq
+    label: |-
+      Multiple Choice
+      Classification Accuracy
+    type: document
+    size: xl
+    position:
+      x: 1960
+      'y': 260
+  - id: fill
+    label: |-
+      Fill-in-the-Blank
+      Exact Match + F1
+    type: document
+    size: xl
+    position:
+      x: 1960
+      'y': 500
+  - id: report
+    label: |-
+      Task Results
+      Model vs Human
+      Outputs + Code Released
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2200
+      'y': 240
 edges:
-  - from: exam_pool
-    to: exam_selection
+  - from: official_sources
+    to: select
     type: primary
-  - from: exam_selection
-    to: objective_filter
-    type: data
-    label: chosen exams
-  - from: objective_filter
-    to: exam_selection
-    type: optional
-    label: remove subjective questions
-  - from: objective_filter
-    to: data_collection
+  - from: reused_sources
+    to: select
     type: primary
-  - from: data_collection
+  - from: select
+    to: objective
+    type: primary
+  - from: objective
+    to: normalize
+    type: primary
+  - from: normalize
     to: dataset
     type: primary
   - from: dataset
-    to: human_baselines
-    type: data
-  - from: dataset
-    to: model_eval
+    to: humans
     type: primary
-  - from: human_baselines
-    to: metrics_release
-    type: data
-  - from: model_eval
-    to: metrics_release
+  - from: dataset
+    to: prompts
+    type: primary
+  - from: prompts
+    to: generation
+    type: primary
+  - from: generation
+    to: format
+    type: primary
+  - from: format
+    to: mcq
+    type: primary
+  - from: format
+    to: fill
+    type: primary
+  - from: humans
+    to: report
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: fill
+    to: report
     type: primary
 modules: []

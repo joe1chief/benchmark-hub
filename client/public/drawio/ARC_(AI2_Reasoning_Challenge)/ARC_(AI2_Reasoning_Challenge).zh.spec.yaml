@@ -4,118 +4,164 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC 构建流程
-  description: 基于 arXiv:1803.05457 重绘的 AI2 Reasoning Challenge 题目收集、Challenge/Easy 过滤、语料构建与基线评测流程。
-  legend: 实线表示题集构建和公开发布主流程；虚线表示可选 ARC Corpus 支撑与基线失败分析。
+  title: AI2 推理挑战构建流程
+  description: 对齐论文的 ARC 流程：从自然小学科学考试，经双求解器难度过滤、精确的 Challenge/Easy 划分、 可选 1400 万句语料支撑、基线评分，到公开发布。
+  legend: 实线表示题集与语料构建及评测；目标节点直接说明判定门结果。
 nodes:
   - id: sources
     label: |-
-      公开科学考试
-      自然小学科学题
-      人类编写测验
+      公开人类考试
+      3至9年级科学
+      非图形选择题
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 240
   - id: question_set
     label: |-
-      ARC 题目集
-      7787 道非图形选择题
-      覆盖 3 到 9 年级
+      ARC题目集
+      7,787道自然题
+      通常四个选项
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: simple_solvers
+      x: 280
+      'y': 240
+  - id: filters
     label: |-
       难度过滤器
-      IR 与 PMI 求解器
-      尝试回答每题
+      Waterloo检索求解器
+      PMI共现求解器
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: split
+      x: 520
+      'y': 240
+  - id: gate
     label: |-
-      Challenge/Easy 划分
-      2590 难题，5197 易题
-      train/dev/test 分区
+      两个求解器
+      都答错？
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: corpus
+      x: 760
+      'y': 240
+  - id: challenge
     label: |-
-      ARC Corpus
-      1400 万科学句子
-      搜索模板与 AristoMini
+      挑战集
+      2,590题
+      两个过滤器都失败
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: analysis
+      x: 1000
+      'y': 80
+  - id: easy
     label: |-
-      推理类型分析
-      知识类型分类
-      抽样约 95% 覆盖
-    type: document
+      简单集
+      5,197题
+      至少一个求解器答对
+    type: database
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: baselines
+      x: 1000
+      'y': 400
+  - id: partitions
     label: |-
-      基线系统
-      IR、PMI、BiDAF
-      DecompAttn 与 DGEM
+      训练/验证/测试
+      挑战1119/299/1172
+      简单2251/570/2376
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: corpus_recipe
+    label: |-
+      可选语料构建
+      约100模板×80主题
+      +AristoMini
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 760
+      'y': 560
+  - id: corpus
+    label: |-
+      ARC语料库
+      1400万科学句子
+      约95%知识覆盖
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 560
+  - id: baselines
+    label: |-
+      基线系统
+      检索/PMI/BiDAF
+      DecompAttn/DGEM
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 240
+  - id: score
+    label: |-
+      选择题评分
+      答对得1分
+      并列答案按比例得分
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 240
   - id: release
     label: |-
-      ARC 公开发布
-      数据、语料、模型
+      ARC公开发布
+      数据/语料/模型
       排行榜挑战
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1960
+      'y': 240
 edges:
   - from: sources
     to: question_set
     type: primary
   - from: question_set
-    to: simple_solvers
+    to: filters
     type: primary
-  - from: simple_solvers
-    to: split
+  - from: filters
+    to: gate
     type: primary
-  - from: split
+  - from: gate
+    to: challenge
+    type: primary
+  - from: gate
+    to: easy
+    type: primary
+  - from: challenge
+    to: partitions
+    type: primary
+  - from: easy
+    to: partitions
+    type: primary
+  - from: corpus_recipe
     to: corpus
-    type: data
-    label: 可选支撑语料
-  - from: corpus
-    to: analysis
-    type: data
-  - from: split
+    type: primary
+  - from: partitions
     to: baselines
     type: primary
-  - from: analysis
+  - from: corpus
     to: baselines
     type: optional
   - from: baselines
+    to: score
+    type: primary
+  - from: score
     to: release
     type: primary
-  - from: release
-    to: question_set
-    type: optional
-    label: 排行榜提交
 modules: []

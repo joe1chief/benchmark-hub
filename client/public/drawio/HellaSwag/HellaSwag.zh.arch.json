@@ -7,50 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "sources",
-      "label": "数据来源",
+      "id": "activity",
+      "label": "ActivityNet字幕\n上下文与真实结尾\n活动类别标签",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "endings",
-      "label": "GPT结尾",
+      "id": "wikihow",
+      "label": "抓取WikiHow\n80K组上下文\n与后续段落",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "candidates",
+      "label": "微调GPT\n过量生成错误结尾\nWikiHow采用两句结尾",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "af",
-      "label": "BERT过滤",
+      "label": "BERT-Large对抗过滤\n随机虚拟划分\n每轮重新初始化",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "人工过滤",
+      "id": "replace",
+      "label": "用困难候选\n替换易判负例",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "best",
-      "label": "高一致上下文",
-      "type": "document",
+      "id": "human",
+      "label": "众包验证\n1个真实+5个过滤结尾\n替换看似真实的负例",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "域内/零样本",
+      "id": "curated",
+      "label": "高一致上下文\nActivityNet 25K\nWikiHow 45K",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "split",
+      "label": "共70K\n训练50K\n验证10K+测试10K",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "categories",
+      "label": "每个验证/测试集\n域内类别5K\n留出类别5K",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "model",
+      "label": "四选一\n1个真实+3个负例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "score",
-      "label": "准确率",
+      "label": "准确率\n总体/域内/零样本\n与分来源结果",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,37 +82,67 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "sources",
-      "to": "endings",
+      "from": "activity",
+      "to": "candidates",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "endings",
-      "to": "af",
+      "from": "wikihow",
+      "to": "candidates",
       "type": "primary"
     },
     {
       "id": "edge-3",
+      "from": "candidates",
+      "to": "af",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "af",
+      "to": "replace",
+      "type": "optional"
+    },
+    {
+      "id": "edge-5",
+      "from": "replace",
+      "to": "candidates",
+      "type": "optional"
+    },
+    {
+      "id": "edge-6",
       "from": "af",
       "to": "human",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-7",
       "from": "human",
-      "to": "best",
+      "to": "curated",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "best",
-      "to": "splits",
+      "id": "edge-8",
+      "from": "curated",
+      "to": "split",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "splits",
+      "id": "edge-9",
+      "from": "split",
+      "to": "categories",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "categories",
+      "to": "model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "model",
       "to": "score",
       "type": "primary"
     }

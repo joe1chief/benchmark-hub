@@ -5,87 +5,146 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: 2WikiMultihopQA 构建流程
-  description: 基于 COLING 2020 论文与 arXiv 源码整理的 2WikiMultihopQA 数据集构建流程。
-  legend: 实线表示主构建流程；虚线表示进入统一质量门之前的分支生成路径。
+  description: 对齐论文的 2WikiMultihopQA 流程：从 Wikipedia 与 Wikidata，经验证模板、四类问题、 干扰段落与歧义控制、难度感知划分，到联合证据评测。
+  legend: 实线表示并行问题生成、统一质量门、数据划分和评测。
 nodes:
   - id: source
     label: |-
-      Wiki 摘要 + Wikidata
-      5.95M 实体 / 23,763 组
+      Wikipedia摘要
+      +Wikidata陈述
+      5.95M实体/23,763组
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 240
   - id: templates
     label: |-
-      问题模板
-      HotpotQA NER + 人工模板
-      4 类问题
+      模板设计
+      HotpotQA实体识别+人工
+      移除单跳形式
     type: process
     size: xl
     position:
       x: 280
-      'y': 70
+      'y': 80
   - id: rules
     label: |-
-      逻辑规则校验
-      AMIE 候选 -> 28 条 Wikidata 规则
+      逻辑规则
+      AMIE候选
+      人工验证28条规则
     type: process
     size: xl
     position:
       x: 280
-      'y': 250
-  - id: compare
+      'y': 400
+  - id: comparison
     label: |-
-      comparison 生成
-      抽取实体对
-      共同关系 + 摘要
+      比较与桥接比较
+      实体对+共同关系
     type: process
     size: xl
     position:
-      x: 540
-      'y': 70
+      x: 520
+      'y': 80
   - id: bridge
     label: |-
-      bridge 生成
-      构造二跳链路
-      inference + compositional
+      推断与组合问题
+      验证二跳链路
     type: process
     size: xl
     position:
-      x: 540
-      'y': 250
-  - id: sample
+      x: 520
+      'y': 400
+  - id: fields
     label: |-
-      QA 样本字段
-      Q、A、C、句级 SF
-      证据三元组
+      构造问答记录
+      问题/答案/上下文
+      支持句/证据三元组
     type: document
     size: xl
     position:
-      x: 800
-      'y': 160
-  - id: quality
+      x: 760
+      'y': 240
+  - id: distractors
     label: |-
-      质量门
-      移除歧义、相等比较
-      检查 Wiki-Wikidata 不匹配
+      检索干扰段落
+      前50段→8或6段
+      打乱为10段上下文
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 80
+  - id: postprocess
+    label: |-
+      后处理
+      平衡是/否答案
+      移除歧义与不匹配
     type: decision
     size: xl
     position:
-      x: 1060
-      'y': 160
+      x: 1000
+      'y': 400
   - id: dataset
     label: |-
-      发布与评估
-      train / dev / test
-      answer、SF、evidence EM/F1
+      2WikiMultihopQA
+      192,606题
+      四类问题
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: split_model
+    label: |-
+      单跳BERT
+      5折难度划分
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 240
+  - id: train
+    label: |-
+      训练集
+      中等154,878
+      困难12,576
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: heldout
+    label: |-
+      留出集
+      验证12,576
+      测试12,576
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: predict
+    label: |-
+      预测答案
+      句级支持事实
+      证据三元组
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+  - id: score
+    label: |-
+      精确匹配与F1
+      答案/支持事实/证据
+      联合精确匹配与联合F1
     type: terminal
     size: xl
     position:
-      x: 1320
-      'y': 160
+      x: 2200
+      'y': 240
 edges:
   - from: source
     to: templates
@@ -94,27 +153,48 @@ edges:
     to: rules
     type: primary
   - from: templates
-    to: compare
-    type: data
-    label: comparison / bridge-comparison
+    to: comparison
+    type: primary
   - from: templates
     to: bridge
-    type: data
-    label: bridge 模板
+    type: primary
   - from: rules
     to: bridge
     type: primary
-    label: inference 规则
-  - from: compare
-    to: sample
+  - from: comparison
+    to: fields
     type: primary
   - from: bridge
-    to: sample
+    to: fields
     type: primary
-  - from: sample
-    to: quality
+  - from: fields
+    to: distractors
     type: primary
-  - from: quality
+  - from: fields
+    to: postprocess
+    type: primary
+  - from: distractors
     to: dataset
+    type: primary
+  - from: postprocess
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split_model
+    type: primary
+  - from: split_model
+    to: train
+    type: primary
+  - from: split_model
+    to: heldout
+    type: primary
+  - from: train
+    to: predict
+    type: primary
+  - from: heldout
+    to: predict
+    type: primary
+  - from: predict
+    to: score
     type: primary
 modules: []

@@ -6,78 +6,150 @@ meta:
   routing: orthogonal
   title: HellaSwag Build Process
   description: >-
-    Paper-aligned HellaSwag construction pipeline from ActivityNet/WikiHow contexts through GPT ending generation, BERT
-    adversarial filtering, human filtering, split construction, and accuracy evaluation.
-  legend: >-
-    Solid arrows show source collection, adversarial negative generation, human agreement filtering, split creation, and
-    scoring.
+    Paper-aligned HellaSwag pipeline from ActivityNet and WikiHow contexts through GPT negative generation, iterative
+    BERT-Large adversarial filtering, human validation, category splits, and four-way accuracy.
+  legend: Solid arrows show construction and evaluation; the dashed loop replaces easy negatives until convergence.
 nodes:
-  - id: sources
-    label: Sources
+  - id: activity
+    label: |-
+      ActivityNet Captions
+      Context + True Ending
+      Activity Labels
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: endings
-    label: GPT Endings
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: af
-    label: BERT AF
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: human
-    label: Human Filter
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: best
-    label: Best Contexts
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: splits
-    label: In/Zero Split
+      'y': 80
+  - id: wikihow
+    label: |-
+      WikiHow Scrape
+      80K Context /
+      Follow-up Paragraphs
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 400
+  - id: candidates
+    label: |-
+      Fine-Tuned GPT
+      Oversample Wrong Endings
+      Use 2-Sentence WikiHow
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 240
+  - id: af
+    label: |-
+      BERT-Large AF
+      Random Dummy Split
+      Reinitialize Each Round
+    type: decision
+    size: xl
+    position:
+      x: 520
+      'y': 240
+  - id: replace
+    label: |-
+      Replace Easy Negatives
+      with Hard Candidates
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 440
+  - id: human
+    label: |-
+      Crowd Validation
+      1 True + 5 AF Endings
+      Replace Realistic Negatives
+    type: user
+    size: xl
+    position:
+      x: 760
+      'y': 240
+  - id: curated
+    label: |-
+      High-Agreement Contexts
+      ActivityNet 25K
+      WikiHow 45K
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 240
+  - id: split
+    label: |-
+      70K Total
+      Train 50K
+      Val 10K + Test 10K
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: categories
+    label: |-
+      Each Val/Test Set
+      5K In-Domain +
+      5K Held-Out Categories
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 240
+  - id: model
+    label: |-
+      Four-Way Choice
+      One True + 3 Negatives
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 240
   - id: score
-    label: Accuracy
+    label: |-
+      Accuracy
+      Overall / In-Domain /
+      Zero-Shot / Source
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1960
+      'y': 240
 edges:
-  - from: sources
-    to: endings
+  - from: activity
+    to: candidates
     type: primary
-  - from: endings
+  - from: wikihow
+    to: candidates
+    type: primary
+  - from: candidates
     to: af
     type: primary
+  - from: af
+    to: replace
+    type: optional
+  - from: replace
+    to: candidates
+    type: optional
   - from: af
     to: human
     type: primary
   - from: human
-    to: best
+    to: curated
     type: primary
-  - from: best
-    to: splits
+  - from: curated
+    to: split
     type: primary
-  - from: splits
+  - from: split
+    to: categories
+    type: primary
+  - from: categories
+    to: model
+    type: primary
+  - from: model
     to: score
     type: primary
 modules: []

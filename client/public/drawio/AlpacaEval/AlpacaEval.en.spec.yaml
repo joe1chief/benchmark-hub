@@ -4,88 +4,178 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval Build Process
+  title: AlpacaEval-LC Build Process
   description: >-
-    Paper-aligned AlpacaEval pipeline: curate 805 Alpaca instructions, generate evaluated-model and baseline responses,
-    randomize response order, obtain GPT-4 pairwise preferences, and fit the length-control GLM for LC win rate.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned AlpacaEval and length-controlled extension from 805 user-representative instructions through
+    randomized GPT-4-Turbo pairwise judging, raw win rate, GLM fitting, and counterfactual LC win rate.
+  legend: Solid arrows show response comparison and length-control estimation.
 nodes:
-  - id: n1
-    label: Alpaca Demo
+  - id: instructions
+    label: |-
+      AlpacaEval Set
+      805 Instructions
+      Alpaca Web Interactions
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 805 Prompts
-    type: document
+      'y': 240
+  - id: model_response
+    label: |-
+      Evaluated Model
+      Candidate Response
+    type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: Model Replies
+      'y': 80
+  - id: base_response
+    label: |-
+      GPT-4-Turbo Baseline
+      Reference Response
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 400
+  - id: shuffle
+    label: |-
+      Randomize
+      Response Order
     type: process
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: Base Replies
-    type: process
+      'y': 240
+  - id: judge
+    label: |-
+      GPT-4-Turbo Judge
+      Pairwise Comparison
+    type: decision
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Order Shuffle
-    type: process
+      'y': 240
+  - id: preference
+    label: |-
+      Preference Probability
+      Candidate over Baseline
+    type: document
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: GPT-4 Judge
-    type: process
+      'y': 240
+  - id: raw
+    label: |-
+      Raw AlpacaEval
+      Mean Win Rate
+    type: document
     size: xl
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: Length GLM
+      'y': 80
+  - id: ratings
+    label: |-
+      Leaderboard Ratings
+      Models × 805 Instructions
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: glm
+    label: |-
+      Logistic GLM Features
+      Model Identity
+      Length Difference
+      Instruction Difficulty
     type: process
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: LC Win Rate
-    type: terminal
+      'y': 240
+  - id: regularize
+    label: |-
+      Fit with 5-Fold CV
+      L2 Regularization
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 240
+  - id: counterfactual
+    label: |-
+      Set Length Difference = 0
+      Predict Equal-Length
+      Preferences
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+  - id: lc
+    label: |-
+      AlpacaEval-LC
+      Length-Controlled
+      Mean Win Rate
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 400
+  - id: report
+    label: |-
+      Raw + LC
+      Leaderboard Report
+    type: terminal
+    size: xl
+    position:
+      x: 2440
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: instructions
+    to: model_response
     type: primary
-  - from: n2
-    to: n3
+  - from: instructions
+    to: base_response
     type: primary
-  - from: n3
-    to: n4
+  - from: model_response
+    to: shuffle
     type: primary
-  - from: n4
-    to: n5
+  - from: base_response
+    to: shuffle
     type: primary
-  - from: n5
-    to: n6
+  - from: shuffle
+    to: judge
     type: primary
-  - from: n6
-    to: n7
+  - from: judge
+    to: preference
     type: primary
-  - from: n7
-    to: n8
+  - from: preference
+    to: raw
+    type: primary
+  - from: preference
+    to: ratings
+    type: primary
+  - from: ratings
+    to: glm
+    type: primary
+  - from: glm
+    to: regularize
+    type: primary
+  - from: regularize
+    to: counterfactual
+    type: primary
+  - from: counterfactual
+    to: lc
+    type: primary
+    waypoints:
+      - x: 2080
+        'y': 440
+  - from: raw
+    to: report
+    type: primary
+  - from: lc
+    to: report
     type: primary
 modules: []
