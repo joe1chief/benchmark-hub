@@ -5,121 +5,209 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BABE 构建流程
-  description: 基于 arXiv:2602.05857，对齐 Biology Arena Benchmark 从前沿生物文献、专家三题组、 资深专家审核、LLM 辅助去简单题到强/弱相关标注的构建流程。
-  legend: 实线表示基准构建主流程；虚线表示修订、过滤和难度控制反馈。
+  description: 基于 arXiv:2602.05857，展示 Biology Arena Benchmark 的论文对齐构建与实验推理评测流程。
+  legend: 实线表示通过后的构建与评测阶段；虚线表示修订循环和两类诊断关系分支。
 nodes:
-  - id: sources
+  - id: literature
     label: |-
-      前沿文献
-      12子领域
+      整理前沿生物学文献
+      同行评审论文 • 专著
+      权威综述文章
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 220
   - id: source_filter
     label: |-
-      来源筛选
-      新近深入
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: expert_items
-    label: |-
-      专家命题
-      三题组
+      筛选来源材料
+      新近 • 领域相关 • 概念深度充足
+      适合多步推理
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: triplets
+      x: 320
+      'y': 220
+  - id: expert_triplet
     label: |-
-      问题三元组
-      自含提示
+      领域专家编写三题组
+      概念理解 • 方法解释
+      高阶实验推理
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: item_contract
+    label: |-
+      强制题目合同
+      自包含 • 无歧义 • 忠于来源
+      避免浅层事实检索
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 880
+      'y': 220
   - id: senior_review
     label: |-
-      资深复审
-      忠实性
+      资深专家组审核
+      相关性 • 事实忠实度 • 逻辑
+      答案正确性与来源对齐
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 70
+      x: 1160
+      'y': 220
+  - id: revision
+    label: |-
+      退回不合格题目
+      修复事实错误、歧义或来源偏离
+      再执行第二轮审核
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
   - id: llm_filter
     label: |-
-      LLM过滤
-      去简单题
+      借助 LLM 移除简单题
+      保留研究级实验推理题
+      保存明确的相关性标注
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: correlation
+      x: 1440
+      'y': 220
+  - id: strong_relation
     label: |-
-      相关标注
-      强/弱
+      标注强相关题组
+      Q1 → Q2 → Q3 顺序依赖
+      前题答案是后题必要输入
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: benchmark
+      x: 1720
+      'y': 80
+  - id: weak_relation
     label: |-
-      BABE数据集
-      45/55
+      标注弱相关题组
+      并行独立证据提取
+      从同一来源文档读取不同上下文
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: release
+    label: |-
+      发布 BABE
+      研究来源的多模态三题组
+      12 个生物子领域 • 强相关 45% / 弱相关 55%
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: evaluation
+      x: 2000
+      'y': 220
+  - id: model_eval
     label: |-
-      模型评估
-      生物推理
+      评测前沿与开源模型
+      综合实验图表与背景上下文
+      回答每组三道问题
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: subset_scores
+    label: |-
+      评分答案正确性
+      总体平均 • 强相关子集
+      弱相关子集
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 540
+  - id: multi_trial
+    label: |-
+      运行多次推理
+      n = 1、2、4、8
+      比较平均分与 Best-of-N 增益
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 820
+  - id: reasoning_analysis
+    label: |-
+      分析推理行为
+      深度推理 • 自我探索
+      自我反思与收敛性
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: report
+    label: |-
+      汇报 BABE 诊断结果
+      理解深度与广度
+      错误传播与语义干扰
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 680
 edges:
-  - from: sources
+  - from: literature
     to: source_filter
     type: primary
   - from: source_filter
-    to: expert_items
+    to: expert_triplet
     type: primary
-  - from: expert_items
-    to: triplets
+  - from: expert_triplet
+    to: item_contract
     type: primary
-  - from: triplets
+  - from: item_contract
     to: senior_review
     type: primary
   - from: senior_review
+    to: revision
+    type: optional
+  - from: revision
+    to: senior_review
+    type: optional
+  - from: senior_review
     to: llm_filter
     type: primary
-  - from: senior_review
-    to: expert_items
-    type: optional
-    label: 退回修订
   - from: llm_filter
-    to: correlation
-    type: primary
-  - from: correlation
-    to: benchmark
-    type: primary
-  - from: benchmark
-    to: evaluation
-    type: primary
+    to: strong_relation
+    type: data
   - from: llm_filter
-    to: expert_items
-    type: optional
-    label: 移除或重写
+    to: weak_relation
+    type: data
+  - from: strong_relation
+    to: release
+    type: primary
+  - from: weak_relation
+    to: release
+    type: primary
+  - from: release
+    to: model_eval
+    type: primary
+  - from: model_eval
+    to: subset_scores
+    type: primary
+  - from: model_eval
+    to: multi_trial
+    type: data
+  - from: subset_scores
+    to: reasoning_analysis
+    type: primary
+  - from: multi_trial
+    to: reasoning_analysis
+    type: data
+  - from: reasoning_analysis
+    to: report
+    type: primary
 modules: []
