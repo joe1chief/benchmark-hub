@@ -5,85 +5,190 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CharXiv 构建流程
-  description: 与论文对齐的 CharXiv 构建流程：从 arXiv 论文中渲染并筛选多样图表， 由研究生标注描述性和推理问题，保证答案明确，再将模型表现与人类基线比较。
-  legend: 实线箭头表示图表筛选、问题构造、验证和评测流程。
+  description: 对齐论文的 CharXiv 构建与评测流程：从八个 arXiv 学科提取并筛选 2,323 张科学图表，配套 9,292 道描述题和 2,323 道推理题，经专家核验后，使用带人工参考答案且经人工评分验证的 GPT-4o 裁判计分。
+  legend: 实线箭头表示图表筛选、两条并行问答构建、专家核验、发布和零样本评测流程。
 nodes:
-  - id: arxiv
-    label: arXiv图表
+  - id: papers
+    label: |-
+      下载arXiv预印本
+      八个学科 • 2020年1月–2023年9月
+      保留论文与图表上下文
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: select
-    label: 图表筛选
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: desc
-    label: 描述题
+      'y': 220
+  - id: render
+    label: |-
+      提取并重新渲染图形
+      将科学图表规范为图像
+      保留自然标签、样式和复杂度
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: reason
-    label: 推理题
+      x: 340
+      'y': 220
+  - id: siglip
+    label: |-
+      SigLIP相似度预筛
+      找出可能是图表的科学图形
+      降低人工筛选量
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: expert
-    label: 专家核验
+      x: 640
+      'y': 220
+  - id: manual
+    label: |-
+      研究生人工筛选
+      优先保证视觉与主题多样性
+      保留自然且有挑战的图表
+    type: user
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: quality
+    label: |-
+      通过成对相似度去重
+      删除模糊或标签不清的图表
+      定稿2,323张高分辨率图表
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: CharXiv
+      x: 1240
+      'y': 220
+  - id: descriptive
+    label: |-
+      描述题：每图四题
+      19个模板覆盖提取、枚举、
+      模式识别、计数和组合
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 模型评测
+      x: 1540
+      'y': 40
+  - id: answerability
+    label: |-
+      三道可回答 + 一道不可回答
+      开放词表短答案
+      共9,292道描述题
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 40
+  - id: reasoning
+    label: |-
+      推理题：每图一题
+      人工综合多个视觉元素
+      要求明确且可核验的短答案
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: reasoning_set
+    label: |-
+      标注推理答案类别
+      图内/通用文本或数值
+      共2,323道唯一推理题
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 400
+  - id: verify
+    label: |-
+      人类专家核验
+      检查图表、问题和参考答案
+      保持清晰的自动评分目标
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: release
+    label: |-
+      发布CharXiv
+      2,323张图表 • 共11,615道题
+      验证集1,000图 • 测试集1,323图
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: inference
+    label: |-
+      多模态模型零样本评测
+      自然指令 + 图表 + 问题
+      描述题与推理题分别计分
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: judge
+    label: |-
+      GPT-4o结合人工参考答案裁判
+      接受等价答案形式
+      400题上与人工评分一致率98.5%
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
   - id: human
-    label: 人类基线
+    label: |-
+      相同指令下建立人类基线
+      推理80.5% • 描述92.1%
+      对比开源与闭源多模态模型
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 220
 edges:
-  - from: arxiv
-    to: select
+  - from: papers
+    to: render
     type: primary
-  - from: select
-    to: desc
+  - from: render
+    to: siglip
     type: primary
-  - from: desc
-    to: reason
+  - from: siglip
+    to: manual
     type: primary
-  - from: reason
-    to: expert
+  - from: manual
+    to: quality
     type: primary
-  - from: expert
-    to: bench
+  - from: quality
+    to: descriptive
     type: primary
-  - from: bench
-    to: eval
+  - from: quality
+    to: reasoning
     type: primary
-  - from: eval
+  - from: descriptive
+    to: answerability
+    type: primary
+  - from: reasoning
+    to: reasoning_set
+    type: primary
+  - from: answerability
+    to: verify
+    type: primary
+  - from: reasoning_set
+    to: verify
+    type: primary
+  - from: verify
+    to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
+    to: judge
+    type: primary
+  - from: judge
     to: human
     type: primary
 modules: []
