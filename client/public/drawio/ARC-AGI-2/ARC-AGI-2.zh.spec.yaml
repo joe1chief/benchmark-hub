@@ -4,159 +4,175 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC-AGI-2 构建流程
-  description: 按论文对齐的ARC-AGI-2构建流程：从新创作任务和历史保留任务中过量生成候选题，经受控人类测试筛选、冗余审查、评测子集校准和两层验证后发布，并按官方离线协议评测未见任务。
-  legend: 实线箭头表示主流程；带标签的分支表示淘汰及训练集/评测集分流。
+  title: ARC-AGI-2 构建与评测流程
+  description: 对齐论文的高复杂度网格题过量生成、受控人类可解性测试、三类评测集难度校准、双层验证与离线 Pass@2 评分流程。
+  legend: 1,000 题公开训练集不做难度校准。公开、半私有、私有评测集各 120 题且难度校准；每道评测题都被至少两个人在两次尝试内解出。
 nodes:
-  - id: n1
-    label: 新创作任务
+  - id: sources
+    label: |-
+      汇集候选任务来源
+      专门新编的 ARC-AGI-2 任务
+      以往 ARC 版本未使用的保留题
     type: database
-    size: large
+    size: xl
     position:
       x: 40
-      'y': 80
-  - id: n2
-    label: 历史保留任务
+      'y': 100
+  - id: design
+    label: |-
+      有意过量生成新颖任务
+      多规则 / 多步骤组合
+      情境规则 + 上下文内符号定义
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: humans
+    label: |-
+      运行受控人类测试
+      407 人 • 515 个会话 • 1,848 个测试对
+      13,405 次尝试；记录准确率与用时
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: gate
+    label: 是否满足难度校准评测集门槛？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: calibrate
+    label: |-
+      筛选评测候选题
+      要求 ≥2 位独立人类解出
+      两次尝试内成功 • 计算经验难度指数
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: train_or_reject
+    label: |-
+      路由非评测候选题
+      较易且有效任务 → 公开训练集
+      不可解、冗余或有缺陷任务 → 移除
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 330
+  - id: sets
+    label: |-
+      发布 ARC-AGI-2 子集
+      训练集 1,000 题（未校准）
+      公开 / 半私有 / 私有评测各 120 题
     type: database
-    size: large
-    position:
-      x: 40
-      'y': 240
-  - id: n3
-    label: 过量生成候选题
-    type: process
-    size: large
-    position:
-      x: 240
-      'y': 160
-  - id: n4
-    label: 受控人类测试
-    type: process
-    size: large
-    position:
-      x: 440
-      'y': 160
-  - id: n5
-    label: 至少2人解出？
-    type: decision
-    size: large
-    position:
-      x: 640
-      'y': 160
-  - id: n6
-    label: 淘汰任务
-    type: document
-    size: large
-    position:
-      x: 640
-      'y': 360
-  - id: n7
-    label: 计算难度指数
-    type: process
-    size: large
-    position:
-      x: 840
-      'y': 160
-  - id: n8
-    label: 冗余共识审查
-    type: process
-    size: large
-    position:
-      x: 1040
-      'y': 160
-  - id: n9
-    label: 分配数据子集
-    type: decision
-    size: large
-    position:
-      x: 1240
-      'y': 160
-  - id: n10
-    label: 公开训练集
-    type: document
-    size: large
+    size: xl
     position:
       x: 1440
-      'y': 64
-  - id: n11
-    label: 校准三类评测集
-    type: document
-    size: large
+      'y': 330
+  - id: validate
+    label: |-
+      执行双层最终验证
+      每道评测题由两位外部独立人员解出
+      再由原作者之外的内部人员复核
+    type: process
+    size: xl
     position:
       x: 1440
-      'y': 256
-  - id: n12
-    label: 两层最终验证
-    type: process
-    size: large
-    position:
-      x: 1640
-      'y': 256
-  - id: n13
-    label: ARC-AGI-2任务
+      'y': 600
+  - id: format
+    label: |-
+      呈现静态网格任务
+      通常 2–5 个示例输入/输出对
+      ≤30×30 网格 • 最多 10 色 • 未见测试输入
     type: document
-    size: large
+    size: xl
     position:
-      x: 1840
-      'y': 160
-  - id: n14
-    label: 离线隐藏集评测
+      x: 1160
+      'y': 600
+  - id: competition
+    label: |-
+      运行 ARC Prize 离线评测
+      120 半私有 + 120 私有未见任务
+      四张 L4 • 12 小时 • 禁止联网
     type: process
-    size: large
+    size: xl
     position:
-      x: 2040
-      'y': 160
-  - id: n15
-    label: 准确率与成本视图
+      x: 880
+      'y': 600
+  - id: predict
+    label: |-
+      每个测试输入提交两个预测
+      从示例中归纳规则
+      构造尺寸与全部输出单元
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 600
+  - id: score
+    label: |-
+      执行 Pass@2 像素级精确评分
+      两个网格任一完全匹配则该测试输入通过
+      任务的全部测试对通过才算完整正确
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 600
+  - id: report
+    label: |-
+      报告准确率与效率
+      私有集准确率决定竞赛名次
+      公开排行榜增加每题成本
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 2240
-      'y': 160
+      x: 40
+      'y': 600
 edges:
-  - from: n1
-    to: n3
+  - from: sources
+    to: design
     type: primary
-  - from: n2
-    to: n3
+  - from: design
+    to: humans
     type: primary
-  - from: n3
-    to: n4
+  - from: humans
+    to: gate
     type: primary
-  - from: n4
-    to: n5
+  - from: gate
+    to: calibrate
     type: primary
-  - from: n5
-    to: n6
+  - from: gate
+    to: train_or_reject
+    type: optional
+  - from: calibrate
+    to: sets
     type: primary
-  - from: n5
-    to: n7
+  - from: train_or_reject
+    to: sets
     type: primary
-  - from: n7
-    to: n8
+  - from: sets
+    to: validate
     type: primary
-  - from: n8
-    to: n9
+  - from: validate
+    to: format
     type: primary
-  - from: n9
-    to: n10
+  - from: format
+    to: competition
     type: primary
-  - from: n9
-    to: n11
+  - from: competition
+    to: predict
     type: primary
-  - from: n11
-    to: n12
+  - from: predict
+    to: score
     type: primary
-  - from: n10
-    to: n13
-    type: primary
-  - from: n12
-    to: n13
-    type: primary
-  - from: n13
-    to: n14
-    type: primary
-  - from: n14
-    to: n15
+  - from: score
+    to: report
     type: primary
 modules: []

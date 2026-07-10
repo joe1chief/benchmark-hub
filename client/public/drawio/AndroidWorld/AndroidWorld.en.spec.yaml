@@ -4,107 +4,157 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AndroidWorld Build Process
+  title: AndroidWorld Construction and Evaluation Workflow
   description: >-
-    Paper-aligned dynamic Android agent benchmark construction and online reward-evaluation workflow, based on
-    arXiv:2405.14573.
+    Paper-aligned workflow for authoring reproducible Android tasks, instantiating them with controlled random
+    parameters, evaluating online agent interaction with durable device-state rewards, and measuring robustness.
   legend: >-
-    Solid arrows show task generation, agent-environment interaction, and reward evaluation; dashed arrows mark
-    controlled seeding and teardown for reproducibility.
+    The 116 entries are human-authored task templates, not 116 static examples. Random parameters create millions of
+    goal instances; success is checked from durable system/app state, with UI inspection only when state access is
+    impractical.
 nodes:
   - id: apps
     label: |-
-      Real Android apps
-      20 apps on Pixel 6
-      Android 13 fixed setup
+      Select 20 Real Android Apps
+      Open-Source F-Droid + Built-In System Apps
+      Offline • No Login • On-Device Storage
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: taskeval
+      'y': 100
+  - id: tasks
     label: |-
-      TaskEval templates
-      116 programmatic tasks
-      app-specific logic
+      Author 116 Practical Task Templates
+      Notes, Calendar, Messaging, Maps, Utilities
+      Side-Effect and State-Query Tasks
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: annotate
+    label: |-
+      Human Task Annotation
+      Perform Each Task and Confirm Solvability
+      Difficulty • Category • Human Steps • Duration
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: classes
+    label: |-
+      Implement TaskEval Classes
+      Random-Parameter Generator + Natural-Language Goal
+      Initialize • is_successful • Teardown
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: params
+      x: 880
+      'y': 100
+  - id: environment
     label: |-
-      Random parameters
-      natural-language goals
-      millions of variants
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: initialize
-    label: |-
-      Initialize task state
-      app data and OS time
-      seed-controlled setup
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: observations
-    label: |-
-      Android observations
-      screenshot and a11y tree
-      AndroidEnv plus ADB
+      Freeze the Reproducible Device
+      Pixel 6 Emulator • Android 13 • Fixed App Versions
+      Reset Time to 2023-10-15 15:34 UTC
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
+      x: 1160
+      'y': 100
+  - id: taskeval
+    label: |-
+      Release AndroidWorld Task Suite
+      116 Templates across 20 Apps
+      Controlled Seeds Enable Millions of Variants
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: instantiate
+    label: |-
+      Instantiate One Online Task
+      Sample Seeded Parameters and Initial State
+      Render the Concrete Natural-Language Goal
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 470
+  - id: observations
+    label: |-
+      Expose Android Observations and Actions
+      Screenshot + Accessibility Tree via AndroidEnv / ADB
+      Tap • Long-Press • Swipe • Type • Nav • Limited APIs
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 470
   - id: agent
     label: |-
-      Agent action loop
-      JSON click/type/scroll
-      M3A and SeeAct baselines
+      Run the Agent Interaction Loop
+      Observe → Reason → JSON Action → Observe Effect
+      Stop at Success or Task-Specific Step Limit
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 470
+  - id: reward
+    label: |-
+      Compute Durable Functional Reward
+      Inspect Files, App Databases, and System Settings
+      UI-Element Fallback; Partial Reward for Composites
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: metrics
+    label: |-
+      Evaluate Humans and Baseline Agents
+      M3A / M3A-Simple / Android-Adapted SeeAct
+      Success Rate: Best Agent 30.6% • Humans 80.0%
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 470
+  - id: robustness
+    label: |-
+      Analyze Robustness
+      Three Seeds + Same/Different-Parameter Trials
+      95% Wilson CIs; Pixel 5 / Android 12 Cross-Check
     type: terminal
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: reward
-    label: |-
-      Durable reward checks
-      files, DB rows, settings
-      UI validation when needed
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: report
-    label: |-
-      Success-rate analysis
-      baseline and human SR
-      seed robustness
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 470
 edges:
   - from: apps
+    to: tasks
+    type: primary
+  - from: tasks
+    to: annotate
+    type: primary
+  - from: annotate
+    to: classes
+    type: primary
+  - from: classes
+    to: environment
+    type: primary
+  - from: environment
     to: taskeval
     type: primary
   - from: taskeval
-    to: params
+    to: instantiate
     type: primary
-  - from: params
-    to: initialize
-    type: primary
-  - from: initialize
+  - from: instantiate
     to: observations
-    type: data
+    type: primary
   - from: observations
     to: agent
     type: primary
@@ -112,14 +162,9 @@ edges:
     to: reward
     type: primary
   - from: reward
-    to: observations
-    type: optional
-    label: continue until done
-  - from: reward
-    to: report
+    to: metrics
     type: primary
-  - from: report
-    to: initialize
-    type: optional
-    label: teardown and next seed
+  - from: metrics
+    to: robustness
+    type: primary
 modules: []
