@@ -5,90 +5,115 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMATH 构建流程
-  description: 基于论文的 CMATH 构建流程：从中文小学练习册和考试收集数学应用题，将 PDF/Word 转为纯文本，去除含图题目并清洗验证，标注年级和答案元数据，再做零样本数值匹配与干扰鲁棒性评测。
-  legend: 实线箭头表示收集、清洗、标注、发布和评测流程。
+  description: 对齐论文的 CMATH 流程：将中文小学练习册和考试数字化、过滤、清洗、验证并标注成 1,689 道按年级分层的应用题；模型以零样本数值匹配评分，并在独立构建的 60 题干扰鲁棒性集合上测试。
+  legend: 实线箭头表示数据集构建、主评测与并行鲁棒性分支。
 nodes:
   - id: sources
-    label: 练习册考试
+    label: 网上中文小学练习册与考试
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: formats
-    label: PDF或Word
-    type: document
+      'y': 170
+  - id: digitize
+    label: 自动或人工将 PDF、Word 转为纯文本
+    type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: text
-    label: 转纯文本
-    type: process
+      'y': 170
+  - id: text_filter
+    label: 去除含图题
+    type: decision
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: graphics
-    label: 去除图题
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
+      'y': 170
   - id: clean
-    label: 去重清洗
+    label: 文本题去重与清洗
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 820
+      'y': 170
   - id: validate
-    label: 人工验证
+    label: 作者多轮验证
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1080
+      'y': 170
   - id: annotate
-    label: 年级答案元数据
+    label: 标注年级、数值答案、推理步数与数字位数
     type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 170
+  - id: dataset
+    label: CMATH：1 至 6 年级共 1,689 题
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
-  - id: dataset
-    label: 1.7k题目
-    type: document
+      'y': 170
+  - id: zero_shot
+    label: 零样本输入原始题目
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 160
-  - id: eval
-    label: 零样本评测
+      'y': 60
+  - id: extract
+    label: 正则表达式提取可能的结论数值
     type: process
     size: xl
     position:
       x: 2120
-      'y': 160
-  - id: robust
-    label: 干扰集
-    type: terminal
+      'y': 60
+  - id: exact_match
+    label: 数值匹配与准确率
+    type: document
     size: xl
     position:
       x: 2380
-      'y': 160
+      'y': 60
+  - id: manual_audit
+    label: 人工抽检 200 条响应
+    type: user
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: distractor_set
+    label: 60 道题，构造 0 至 5 个干扰项
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 280
+  - id: robustness
+    label: 比较含数值干扰项增加时的准确率
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 280
+  - id: report
+    label: 年级、复杂度与鲁棒性报告
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 170
 edges:
   - from: sources
-    to: formats
+    to: digitize
     type: primary
-  - from: formats
-    to: text
+  - from: digitize
+    to: text_filter
     type: primary
-  - from: text
-    to: graphics
-    type: primary
-  - from: graphics
+  - from: text_filter
     to: clean
     type: primary
   - from: clean
@@ -101,9 +126,27 @@ edges:
     to: dataset
     type: primary
   - from: dataset
-    to: eval
+    to: zero_shot
     type: primary
-  - from: eval
-    to: robust
+  - from: zero_shot
+    to: extract
+    type: primary
+  - from: extract
+    to: exact_match
+    type: primary
+  - from: exact_match
+    to: manual_audit
+    type: primary
+  - from: dataset
+    to: distractor_set
+    type: primary
+  - from: distractor_set
+    to: robustness
+    type: primary
+  - from: manual_audit
+    to: report
+    type: primary
+  - from: robustness
+    to: report
     type: primary
 modules: []

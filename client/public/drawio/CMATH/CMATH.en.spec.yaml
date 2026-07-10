@@ -6,92 +6,117 @@ meta:
   routing: orthogonal
   title: CMATH Build Process
   description: >-
-    Paper-aligned construction of CMATH: Chinese elementary math word problems are collected from online workbooks and
-    exams, converted to text, cleaned, validated, annotated with grade and answer metadata, and evaluated with zero-shot
-    numerical matching plus a distractor robustness subset.
-  legend: Solid arrows show collection, cleaning, annotation, release, and evaluation.
+    Paper-aligned CMATH flow. Chinese elementary-school workbooks and exams are digitized, filtered, cleaned, validated,
+    and annotated into 1,689 grade-stratified word problems; models are scored by zero-shot numeral matching and a
+    separately constructed 60-problem distractor robustness test.
+  legend: Solid arrows trace dataset construction, main evaluation, and the parallel robustness branch.
 nodes:
   - id: sources
-    label: Exams
+    label: Online Chinese Elementary Workbooks and Exams
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: formats
-    label: PDF or Word
-    type: document
+      'y': 170
+  - id: digitize
+    label: Convert PDF or Word to Text, Automatically or Manually
+    type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: text
-    label: To Text
-    type: process
+      'y': 170
+  - id: text_filter
+    label: Drop Graphic Problems
+    type: decision
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: graphics
-    label: Drop Graphics
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
+      'y': 170
   - id: clean
-    label: Dedup Clean
+    label: Deduplicate and Clean Text Problems
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 820
+      'y': 170
   - id: validate
-    label: Human Validate
+    label: Author Validation
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1080
+      'y': 170
   - id: annotate
-    label: Metadata
+    label: Annotate Grade, Numeric Answer, Reasoning Steps and Digit Count
     type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 170
+  - id: dataset
+    label: 'CMATH: 1,689 Problems across Grades 1 to 6'
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
-  - id: dataset
-    label: 1.7k Problems
-    type: document
+      'y': 170
+  - id: zero_shot
+    label: Zero-Shot Original Problem Statement
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 160
-  - id: eval
-    label: Zero-Shot
+      'y': 60
+  - id: extract
+    label: Regular Expression Extracts Likely Concluding Numerals
     type: process
     size: xl
     position:
       x: 2120
-      'y': 160
-  - id: robust
-    label: Distractors
-    type: terminal
+      'y': 60
+  - id: exact_match
+    label: Numeral Match and Accuracy
+    type: document
     size: xl
     position:
       x: 2380
-      'y': 160
+      'y': 60
+  - id: manual_audit
+    label: Audit 200 Responses
+    type: user
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: distractor_set
+    label: 60 Problems with 0 to 5 Distractors
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 280
+  - id: robustness
+    label: Compare Accuracy as Number-Bearing Distractors Increase
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 280
+  - id: report
+    label: Grade, Complexity and Robustness Report
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 170
 edges:
   - from: sources
-    to: formats
+    to: digitize
     type: primary
-  - from: formats
-    to: text
+  - from: digitize
+    to: text_filter
     type: primary
-  - from: text
-    to: graphics
-    type: primary
-  - from: graphics
+  - from: text_filter
     to: clean
     type: primary
   - from: clean
@@ -104,9 +129,27 @@ edges:
     to: dataset
     type: primary
   - from: dataset
-    to: eval
+    to: zero_shot
     type: primary
-  - from: eval
-    to: robust
+  - from: zero_shot
+    to: extract
+    type: primary
+  - from: extract
+    to: exact_match
+    type: primary
+  - from: exact_match
+    to: manual_audit
+    type: primary
+  - from: dataset
+    to: distractor_set
+    type: primary
+  - from: distractor_set
+    to: robustness
+    type: primary
+  - from: manual_audit
+    to: report
+    type: primary
+  - from: robustness
+    to: report
     type: primary
 modules: []
