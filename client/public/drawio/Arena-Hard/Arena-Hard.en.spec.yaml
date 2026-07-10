@@ -5,88 +5,145 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Arena-Hard Build Process
-  description: >-
-    Paper-aligned Arena-Hard construction: clean crowdsourced Arena queries, cluster topics, score seven prompt
-    qualities, sample 500 diverse hard prompts, generate model responses, obtain pairwise LLM judgments, and aggregate
-    Bradley-Terry win rates.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: Paper-aligned BenchBuilder construction and evaluation pipeline for the 500-prompt Arena-Hard-Auto benchmark.
+  legend: Read the top row left-to-right, then the lower row right-to-left through evaluation and quality review.
 nodes:
-  - id: n1
-    label: Arena Logs
+  - id: source
+    label: |-
+      Chatbot Arena Logs
+      200,000 Crowdsourced Prompts
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Clean Prompts
+      'y': 100
+  - id: clean
+    label: |-
+      Clean Prompt Pool
+      Remove Duplicates, Multi-turn
+      and Non-English Content
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Topic Clusters
+      x: 320
+      'y': 100
+  - id: topics
+    label: |-
+      Hierarchical Topic Modeling
+      text-embedding-3-small + UMAP
+      HDBSCAN -> 4,000 Topics
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 7-Axis Score
+      x: 600
+      'y': 100
+  - id: quality
+    label: |-
+      GPT-4-Turbo Quality Annotator
+      Seven Required Skills (0-7)
+      Keep Prompt >=6 / Topic Mean >=5
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Sample 500
+      x: 880
+      'y': 100
+  - id: safety
+    label: |-
+      High-quality Topic Pool
+      More than 500 Clusters
+      Remove PII / Offensive Content
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: sample
+    label: |-
+      Stratified Prompt Sampling
+      Randomly Select 250 Clusters
+      2 Prompts per Cluster
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: dataset
+    label: |-
+      Arena-Hard-Auto
+      500 Diverse Hard Prompts
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Model Replies
+      x: 1440
+      'y': 440
+  - id: responses
+    label: |-
+      Evaluated + Baseline Responses
+      Open-ended Model Generation
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Pairwise Judge
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      GPT-4-Turbo Pairwise Judge
+      Swap A/B Positions per Prompt
+      1,000 Judgments per Model
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: BT Win Rate
+      x: 880
+      'y': 440
+  - id: score
+    label: |-
+      Bradley-Terry Aggregation
+      Win Rate + Bootstrap CI
+      Optional Style Controls
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: metrics
+    label: |-
+      Benchmark Quality Review
+      Separability / Human Agreement
+      Pair Rank Brier Score
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: clean
     type: primary
-  - from: n2
-    to: n3
+  - from: clean
+    to: topics
     type: primary
-  - from: n3
-    to: n4
+  - from: topics
+    to: quality
     type: primary
-  - from: n4
-    to: n5
+  - from: quality
+    to: safety
     type: primary
-  - from: n5
-    to: n6
+  - from: safety
+    to: sample
     type: primary
-  - from: n6
-    to: n7
+  - from: sample
+    to: dataset
     type: primary
-  - from: n7
-    to: n8
+  - from: dataset
+    to: responses
+    type: primary
+  - from: responses
+    to: judge
+    type: primary
+  - from: judge
+    to: score
+    type: primary
+  - from: score
+    to: metrics
     type: primary
 modules: []

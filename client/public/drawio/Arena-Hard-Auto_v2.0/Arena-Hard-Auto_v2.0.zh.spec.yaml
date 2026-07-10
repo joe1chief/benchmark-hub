@@ -5,85 +5,136 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Arena-Hard-Auto v2.0 构建流程
-  description: 按来源对齐的Arena-Hard-Auto v2.0流程：从Chatbot Arena更新提示，组成500条困难查询和250条创意写作查询，由GPT-4.1/Gemini-2.5比较模型与基线回答并计算风格控制胜率。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  description: 版本分层流程：论文提供 BenchBuilder 骨架，官方仓库补充 v2.0 困难题、创意写作题、裁判和风格控制汇总配置。
+  legend: 上方为 500 条困难提示流程，下方为 250 条创意写作提示流程。
 nodes:
-  - id: n1
-    label: Arena日志
+  - id: source
+    label: |-
+      Chatbot Arena 新鲜查询
+      真实用户提示
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 困难筛选
+      'y': 270
+  - id: curate
+    label: |-
+      BenchBuilder 式筛选
+      清洗、聚类、质量过滤
+      选择新鲜困难查询
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 500条困难题
+      x: 320
+      'y': 270
+  - id: hard
+    label: |-
+      困难提示集
+      500 条新鲜开放式查询
+      软件、数学等主题
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 250条创意题
+      x: 600
+      'y': 100
+  - id: creative
+    label: |-
+      创意写作集
+      250 条 Arena 查询
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 750条提示
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 模型对基线
+      x: 600
+      'y': 440
+  - id: hard_answers
+    label: |-
+      困难集回答
+      被测模型对基线模型
+      成对 A/B 展示
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 双裁判
+      x: 880
+      'y': 100
+  - id: creative_answers
+    label: |-
+      创意写作回答
+      被测模型对基线模型
+      成对 A/B 展示
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 风格控制胜率
+      x: 880
+      'y': 440
+  - id: hard_judge
+    label: |-
+      困难题裁判
+      官方配置 Gemini-2.5
+      可选 GPT-4.1
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: creative_judge
+    label: |-
+      创意写作双裁判
+      GPT-4.1 + Gemini-2.5
+      各自独立判定
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: aggregate
+    label: |-
+      按类别汇总
+      困难 / 创意写作胜率
+      Bootstrap 置信区间
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 270
+  - id: style
+    label: |-
+      风格控制得分
+      控制 Markdown 与长度
+      模型排名 / 榜单
     type: terminal
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 270
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: curate
     type: primary
-  - from: n2
-    to: n3
+  - from: curate
+    to: hard
     type: primary
-  - from: n3
-    to: n4
+  - from: curate
+    to: creative
     type: primary
-  - from: n4
-    to: n5
+  - from: hard
+    to: hard_answers
     type: primary
-  - from: n5
-    to: n6
+  - from: creative
+    to: creative_answers
     type: primary
-  - from: n6
-    to: n7
+  - from: hard_answers
+    to: hard_judge
     type: primary
-  - from: n7
-    to: n8
+  - from: creative_answers
+    to: creative_judge
+    type: primary
+  - from: hard_judge
+    to: aggregate
+    type: primary
+  - from: creative_judge
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: style
     type: primary
 modules: []
