@@ -6,68 +6,155 @@ meta:
   routing: orthogonal
   title: CiteEval Build Process
   description: >-
-    Paper-aligned construction flow for CiteEval: LFQA queries and retrieved contexts are used to generate cited RAG
-    responses, which receive statement-level human context attribution, citation edits, and ratings before model-based
-    CiteEval-Auto metrics are validated and used for RAG benchmarking.
-  legend: Solid arrows show query sampling, human citation annotation, automatic metric construction, and RAG evaluation.
+    Paper-aligned CiteEval flow: long-form QA queries, fixed retrieval contexts, and responses from four models are
+    annotated at statement level for attribution, citation edits, and 1-to-5 ratings; quality-controlled labels then
+    train and validate CiteEval-Auto before full-context and cited-context RAG benchmarking.
+  legend: Solid arrows show data construction, human annotation, metric development, and benchmark evaluation.
 nodes:
-  - id: queries
-    label: LFQA Queries
+  - id: principles
+    label: |-
+      Define Three Evaluation Principles
+      Use Full Retrieval Context
+      Include Beyond-retrieval Contexts + Fine-grained Ratings
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: retrieval
-    label: Retrieval
+      'y': 220
+  - id: queries
+    label: |-
+      Sample Long-form QA Queries
+      ASQA • ELI5 • MS MARCO • LFRQA
+      948 Development + 3,000 Test Queries
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
+  - id: retrieval
+    label: |-
+      Fix the Retrieval Evidence
+      Provide 10 Passages per Query
+      Preserve the Full Context for Evaluation
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 220
   - id: responses
-    label: Cited Reply
+    label: |-
+      Generate Human-study Responses
+      100 Queries × 3 Sources × 4 Models
+      GPT-4o/mini + Llama-3-70B/8B = 1,200
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 940
+      'y': 220
+  - id: statements
+    label: |-
+      Parse Statements and Citations
+      Split Responses with NLTK
+      Extract Citation Markers [1] through [10]
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
   - id: attribution
-    label: Context Labels
+    label: |-
+      Annotate Supporting Context
+      Retrieval • User • Response • Parametric
+      Mark N/A for Non-applicable Beyond-retrieval Sources
     type: user
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1540
+      'y': 40
   - id: edits
-    label: Citation Edits
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: ratings
-    label: Human Ratings
+    label: |-
+      Record Critical Citation Edits
+      Add Missing Citations
+      Delete Unsupported or Unnecessary Citations
     type: user
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: auto
-    label: Auto Metrics
+      x: 1540
+      'y': 220
+  - id: ratings
+    label: |-
+      Assign Fine-grained Ratings
+      Score Citation Quality from 1 to 5
+      Evaluate Full and Cited Context Scenarios
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: qc
+    label: |-
+      Quality-control Human Labels
+      Three Blind Passes + Majority/Mean Aggregation
+      Linguist Validation after Three Pilot Rounds
+    type: decision
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: split
+    label: |-
+      Split Metric-development Data
+      200 Responses for Metric Development
+      1,000 Responses for Meta-evaluation
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: auto_context
+    label: |-
+      Automate Context Attribution
+      Model Which Context Supports Each Statement
+      Cover Retrieval and Beyond-retrieval Evidence
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: rag
-    label: RAG Benchmark
+      x: 2440
+      'y': 40
+  - id: ensemble
+    label: |-
+      Build CiteEval-Auto
+      ITERCOE + EDITDIST Ensemble
+      Combine Model Reasoning and Edit Distance
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 400
+  - id: validate
+    label: |-
+      Meta-evaluate against Human Scores
+      GPT-4o + MLR Configuration
+      Reach Pearson Correlation 0.731
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2740
+      'y': 220
+  - id: benchmark
+    label: |-
+      Benchmark Diverse RAG Systems
+      Compare Full-context and Cited-context Scores
+      Diagnose and Iteratively Improve Citations
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
 edges:
+  - from: principles
+    to: queries
+    type: primary
   - from: queries
     to: retrieval
     type: primary
@@ -75,18 +162,42 @@ edges:
     to: responses
     type: primary
   - from: responses
+    to: statements
+    type: primary
+  - from: statements
     to: attribution
     type: primary
-  - from: attribution
+  - from: statements
     to: edits
     type: primary
-  - from: edits
+  - from: statements
     to: ratings
     type: primary
-  - from: ratings
-    to: auto
+  - from: attribution
+    to: qc
     type: primary
-  - from: auto
-    to: rag
+  - from: edits
+    to: qc
+    type: primary
+  - from: ratings
+    to: qc
+    type: primary
+  - from: qc
+    to: split
+    type: primary
+  - from: split
+    to: auto_context
+    type: primary
+  - from: split
+    to: ensemble
+    type: primary
+  - from: auto_context
+    to: validate
+    type: primary
+  - from: ensemble
+    to: validate
+    type: primary
+  - from: validate
+    to: benchmark
     type: primary
 modules: []

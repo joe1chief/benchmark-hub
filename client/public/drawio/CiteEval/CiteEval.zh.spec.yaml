@@ -5,66 +5,155 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CiteEval 构建流程
-  description: 对齐论文的 CiteEval 构建流程：从 LFQA 查询和检索上下文生成带引用的 RAG 响应， 对每个陈述做人工上下文归因、引用编辑和评分，再验证 CiteEval-Auto 指标并用于 RAG 评测。
-  legend: 实线箭头表示查询采样、人工引用标注、自动指标构建和 RAG 评测流程。
+  description: >-
+    与论文对齐的 CiteEval 流程：对长文本问答查询、固定检索上下文和四个模型的回答进行陈述级支持来源、引文编辑及 1—5 分标注； 通过质量控制的标签开发并验证 CiteEval-Auto，最后用于完整上下文和仅引文上下文的
+    RAG 基准评测。
+  legend: 实线表示数据构建、人工标注、自动指标开发与基准评测主流程。
 nodes:
-  - id: queries
-    label: LFQA查询
+  - id: principles
+    label: |-
+      定义三项评测原则
+      使用完整检索上下文
+      纳入检索外上下文与细粒度评分
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: retrieval
-    label: 检索上下文
+      'y': 220
+  - id: queries
+    label: |-
+      采样长文本问答查询
+      ASQA • ELI5 • MS MARCO • LFRQA
+      开发集 948 条 + 测试集 3,000 条
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
+  - id: retrieval
+    label: |-
+      固定检索证据
+      每个查询提供 10 个段落
+      评测时保留完整上下文
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 220
   - id: responses
-    label: 引用响应
+    label: |-
+      生成人工研究回答
+      100 查询 × 3 来源 × 4 模型
+      GPT-4o/mini + Llama-3-70B/8B，共 1,200 条
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 940
+      'y': 220
+  - id: statements
+    label: |-
+      解析陈述与引文
+      使用 NLTK 拆分回答
+      抽取 [1] 至 [10] 引文标记
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
   - id: attribution
-    label: 上下文归因
+    label: |-
+      标注支持来源
+      检索 • 用户 • 回答 • 参数知识
+      对不适用的检索外来源标记 N/A
     type: user
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1540
+      'y': 40
   - id: edits
-    label: 引用编辑
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: ratings
-    label: 人工评分
+    label: |-
+      记录关键引文编辑
+      添加缺失引文
+      删除无支持或不必要引文
     type: user
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: auto
-    label: 自动指标
+      x: 1540
+      'y': 220
+  - id: ratings
+    label: |-
+      给出细粒度评分
+      将引文质量评为 1 至 5 分
+      同时评测完整与仅引文上下文
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: qc
+    label: |-
+      人工标签质量控制
+      三轮盲标 + 多数票／均值聚合
+      三轮试标后由语言学专家验证
+    type: decision
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: split
+    label: |-
+      划分指标开发数据
+      200 条用于指标开发
+      1,000 条用于元评测
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: auto_context
+    label: |-
+      自动识别支持来源
+      判断每条陈述由哪类上下文支持
+      同时覆盖检索与检索外证据
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: rag
-    label: RAG评测
+      x: 2440
+      'y': 40
+  - id: ensemble
+    label: |-
+      构建 CiteEval-Auto
+      ITERCOE + EDITDIST 集成
+      融合模型推理与编辑距离
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 400
+  - id: validate
+    label: |-
+      对照人工分数进行元评测
+      GPT-4o + MLR 配置
+      Pearson 相关系数达到 0.731
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2740
+      'y': 220
+  - id: benchmark
+    label: |-
+      评测多种 RAG 系统
+      比较完整上下文与仅引文上下文得分
+      诊断并迭代改进引文
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
 edges:
+  - from: principles
+    to: queries
+    type: primary
   - from: queries
     to: retrieval
     type: primary
@@ -72,18 +161,42 @@ edges:
     to: responses
     type: primary
   - from: responses
+    to: statements
+    type: primary
+  - from: statements
     to: attribution
     type: primary
-  - from: attribution
+  - from: statements
     to: edits
     type: primary
-  - from: edits
+  - from: statements
     to: ratings
     type: primary
-  - from: ratings
-    to: auto
+  - from: attribution
+    to: qc
     type: primary
-  - from: auto
-    to: rag
+  - from: edits
+    to: qc
+    type: primary
+  - from: ratings
+    to: qc
+    type: primary
+  - from: qc
+    to: split
+    type: primary
+  - from: split
+    to: auto_context
+    type: primary
+  - from: split
+    to: ensemble
+    type: primary
+  - from: auto_context
+    to: validate
+    type: primary
+  - from: ensemble
+    to: validate
+    type: primary
+  - from: validate
+    to: benchmark
     type: primary
 modules: []

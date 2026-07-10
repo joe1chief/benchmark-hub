@@ -6,68 +6,145 @@ meta:
   routing: orthogonal
   title: CheXGenBench 构建流程
   description: >-
-    对齐论文的 CheXGenBench 构建流程：选择 11 个 T2I 模型，用 MIMIC-CXR 和 LLaVA-Rad 增强标注 标准化训练，生成合成胸片后评估保真度、模式覆盖、隐私风险、下游实用性，并发布
+    对齐论文的 CheXGenBench 流程：11 个胸片文生图模型使用相同的 MIMIC-CXR 数据、增强提示和训练预算；合成图像从保真度、 隐私和临床实用性三轴评测；领先的 Sana 0.6B 路径经延长训练和过滤后发布
     SynthCheX-75K。
-  legend: 实线箭头表示标准化训练、合成图像生成、三类评测轴和数据发布流程。
+  legend: 实线箭头表示标准化训练和三条评测轴；虚线箭头表示数据集发布路径。
 nodes:
   - id: models
-    label: 模型集合
+    label: |-
+      选择11种文生图架构
+      经典 + 最新扩散/Transformer模型
+      同时比较小模型与大于10亿参数模型
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: captions
-    label: MIMIC标注
+      'y': 40
+  - id: data
+    label: |-
+      统一MIMIC-CXR数据
+      237,388个训练样本 + 固定划分
+      保留胸片与报告
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 40
+      'y': 400
+  - id: captions
+    label: |-
+      构建增强生成提示
+      LLaVA-Rad扩展缩写式报告文本
+      增加更丰富的临床与视觉描述
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 220
   - id: training
-    label: 标准训练
+    label: |-
+      统一20轮训练协议
+      小于10亿参数：全量微调
+      大于10亿参数：LoRA秩32
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 640
+      'y': 220
   - id: generate
-    label: 合成CXR
+    label: |-
+      生成合成胸部X光片
+      使用相同的保留提示/数据协议
+      保存各模型输出供全部评测
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 220
   - id: fidelity
-    label: 保真度指标
-    type: terminal
+    label: |-
+      保真度 + 模式覆盖
+      RadDino FID/KID • BioViL-T对齐
+      精确/召回/密度/覆盖 + 病理条件分析
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1240
+      'y': 40
   - id: privacy
-    label: 隐私指标
-    type: terminal
+    label: |-
+      隐私 + 再识别风险
+      像素最近邻距离
+      RadDino潜空间距离 + 孪生网络再识别分数
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1240
+      'y': 220
   - id: utility
-    label: 实用性指标
+    label: |-
+      下游临床实用性
+      用合成数据训练图像分类器
+      在真实测试集评估准确率/AUROC
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: reports
+    label: |-
+      报告生成实用性
+      根据合成胸片生成检查所见
+      BLEU • ROUGE-L • F1-RadGraph • 临床F1
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: scorecard
+    label: |-
+      统一20多项指标记分卡
+      对比保真、覆盖、隐私和实用性
+      揭示指标分歧与模型权衡
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: release
-    label: SynthCheX-75K
-    type: document
+      x: 1840
+      'y': 220
+  - id: select
+    label: |-
+      选出领先的Sana 0.6B
+      延长超过基准预算的微调
+      生成更大的合成候选池
+    type: decision
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2140
+      'y': 220
+  - id: filter
+    label: |-
+      HealthGPT质量过滤
+      删除低质量或临床不合理图像
+      保留高质量合成胸片
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: release
+    label: |-
+      发布SynthCheX-75K
+      75,000张合成胸部X光片
+      同步发布基准、模型和数据集
+    type: database
+    size: xl
+    position:
+      x: 2740
+      'y': 220
 edges:
   - from: models
+    to: captions
+    type: primary
+  - from: data
     to: captions
     type: primary
   - from: captions
@@ -79,13 +156,31 @@ edges:
   - from: generate
     to: fidelity
     type: primary
-  - from: fidelity
+  - from: generate
     to: privacy
     type: primary
-  - from: privacy
+  - from: generate
     to: utility
     type: primary
   - from: utility
+    to: reports
+    type: primary
+  - from: fidelity
+    to: scorecard
+    type: primary
+  - from: privacy
+    to: scorecard
+    type: primary
+  - from: reports
+    to: scorecard
+    type: primary
+  - from: scorecard
+    to: select
+    type: data
+  - from: select
+    to: filter
+    type: primary
+  - from: filter
     to: release
     type: primary
 modules: []

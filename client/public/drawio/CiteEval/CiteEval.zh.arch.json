@@ -7,56 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 14,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "queries",
-      "label": "LFQA查询",
+      "id": "principles",
+      "label": "定义三项评测原则\n使用完整检索上下文\n纳入检索外上下文与细粒度评分",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "queries",
+      "label": "采样长文本问答查询\nASQA • ELI5 • MS MARCO • LFRQA\n开发集 948 条 + 测试集 3,000 条",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "retrieval",
-      "label": "检索上下文",
+      "label": "固定检索证据\n每个查询提供 10 个段落\n评测时保留完整上下文",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "responses",
-      "label": "引用响应",
+      "label": "生成人工研究回答\n100 查询 × 3 来源 × 4 模型\nGPT-4o/mini + Llama-3-70B/8B，共 1,200 条",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "statements",
+      "label": "解析陈述与引文\n使用 NLTK 拆分回答\n抽取 [1] 至 [10] 引文标记",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "attribution",
-      "label": "上下文归因",
+      "label": "标注支持来源\n检索 • 用户 • 回答 • 参数知识\n对不适用的检索外来源标记 N/A",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "edits",
-      "label": "引用编辑",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "ratings",
-      "label": "人工评分",
+      "label": "记录关键引文编辑\n添加缺失引文\n删除无支持或不必要引文",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "auto",
-      "label": "自动指标",
+      "id": "ratings",
+      "label": "给出细粒度评分\n将引文质量评为 1 至 5 分\n同时评测完整与仅引文上下文",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "qc",
+      "label": "人工标签质量控制\n三轮盲标 + 多数票／均值聚合\n三轮试标后由语言学专家验证",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "split",
+      "label": "划分指标开发数据\n200 条用于指标开发\n1,000 条用于元评测",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "auto_context",
+      "label": "自动识别支持来源\n判断每条陈述由哪类上下文支持\n同时覆盖检索与检索外证据",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "rag",
-      "label": "RAG评测",
+      "id": "ensemble",
+      "label": "构建 CiteEval-Auto\nITERCOE + EDITDIST 集成\n融合模型推理与编辑距离",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "对照人工分数进行元评测\nGPT-4o + MLR 配置\nPearson 相关系数达到 0.731",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "评测多种 RAG 系统\n比较完整上下文与仅引文上下文得分\n诊断并迭代改进引文",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +100,98 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "principles",
+      "to": "queries",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
       "from": "queries",
       "to": "retrieval",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-3",
       "from": "retrieval",
       "to": "responses",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "responses",
-      "to": "attribution",
-      "type": "primary"
-    },
-    {
       "id": "edge-4",
-      "from": "attribution",
-      "to": "edits",
+      "from": "responses",
+      "to": "statements",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "edits",
-      "to": "ratings",
+      "from": "statements",
+      "to": "attribution",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "ratings",
-      "to": "auto",
+      "from": "statements",
+      "to": "edits",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "auto",
-      "to": "rag",
+      "from": "statements",
+      "to": "ratings",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "attribution",
+      "to": "qc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "edits",
+      "to": "qc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "ratings",
+      "to": "qc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "qc",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "split",
+      "to": "auto_context",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "split",
+      "to": "ensemble",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "auto_context",
+      "to": "validate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "ensemble",
+      "to": "validate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "validate",
+      "to": "benchmark",
       "type": "primary"
     }
   ],

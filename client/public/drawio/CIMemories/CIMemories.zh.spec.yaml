@@ -5,95 +5,177 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CIMemories 构建流程
-  description: 基于论文的 CIMemories 构建流程：合成用户身份和事件属性，生成长期记忆语句，构造社交任务上下文，用隐私人格标注属性-上下文标签并过滤共识标签，再评估记忆增强模型的泄露和效用。
-  legend: 实线箭头表示画像生成、上下文标注、样本组合、模型运行和裁判计分。
+  description: 与论文对齐的 CIMemories 流程：从合成身份扩展出基于个人事件的记忆，与人工设计的目标—接收者情境配对， 按 Westin 隐私人格严格筛选一致标签，最终在重复任务压力下衡量不当披露与有效回忆。
+  legend: 实线表示基准构建与评测主流程；虚线表示通过标签筛选后的发布路径。
 nodes:
-  - id: identity
-    label: 合成身份
+  - id: identities
+    label: |-
+      创建合成用户身份
+      Faker 生成的人口属性档案
+      主评测使用 10 个用户档案
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: attributes
-    label: 事件属性
+      'y': 220
+  - id: events
+    label: |-
+      采样个人生活事件
+      正向经历与挑战性经历
+      覆盖九类信息领域
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: memory
-    label: 记忆语句
+      x: 340
+      'y': 220
+  - id: memories
+    label: |-
+      生成属性与记忆
+      GPT-OSS-120B 生成记忆陈述
+      每个档案平均约 147 个属性
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 640
+      'y': 220
   - id: contexts
-    label: 49个任务场景
+    label: |-
+      人工设计 49 个社交任务情境
+      明确目标、接收者与具体场景
+      将情境与候选属性配对
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 40
   - id: personas
-    label: 人格标注
+    label: |-
+      应用 Westin 隐私人格
+      隐私保守型 • 务实型 • 不关心型
+      每种人格采样 10 次 GPT-5 标签
+    type: user
+    size: xl
+    position:
+      x: 940
+      'y': 400
+  - id: labels
+    label: |-
+      标注属性必要性与风险
+      完成任务是否必须使用？
+      向该接收者透露是否不恰当？
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: agreement
-    label: 共识过滤
+      x: 1240
+      'y': 220
+  - id: consensus
+    label: |-
+      强制零熵一致性
+      按 Westin 先验混合人格投票
+      丢弃有歧义的属性—情境对
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: instances
-    label: 画像任务对
-    type: document
+      x: 1540
+      'y': 220
+  - id: balance
+    label: |-
+      每个情境需同时包含两类标签
+      保留必要属性与不当披露属性
+      移除缺少任一类别的情境
+    type: decision
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 220
+  - id: instances
+    label: |-
+      发布 CIMemories 样本
+      Hub 上共 7.19 万条属性—情境记录
+      记忆 + 任务 + 接收者 + 标准标签
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
   - id: runs
-    label: 记忆模型运行
+    label: |-
+      运行记忆增强模型
+      在任务前注入已存用户记忆
+      每个样本采样五个回答
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2440
+      'y': 220
   - id: judge
-    label: 泄露裁判
+    label: |-
+      检测被透露的属性
+      使用 DeepSeek-R1 的 REVEAL 判分器
+      将回答内容与标准属性匹配
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 160
+      x: 2740
+      'y': 220
+  - id: metrics
+    label: |-
+      计算隐私与效用指标
+      Violation@5 衡量不当披露
+      Completeness 衡量必要信息完整度
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: stress
+    label: |-
+      持久记忆压力测试
+      每个用户从 1 扩展到 40 个任务
+      每个任务重复生成 1 至 5 次
+    type: terminal
+    size: xl
+    position:
+      x: 3340
+      'y': 220
 edges:
-  - from: identity
-    to: attributes
+  - from: identities
+    to: events
     type: primary
-  - from: attributes
-    to: memory
+  - from: events
+    to: memories
     type: primary
-  - from: memory
+  - from: memories
     to: contexts
     type: primary
+  - from: memories
+    to: labels
+    type: primary
   - from: contexts
-    to: personas
+    to: labels
     type: primary
   - from: personas
-    to: agreement
+    to: labels
     type: primary
-  - from: agreement
+  - from: labels
+    to: consensus
+    type: primary
+  - from: consensus
+    to: balance
+    type: primary
+  - from: balance
     to: instances
-    type: primary
+    type: data
   - from: instances
     to: runs
     type: primary
   - from: runs
     to: judge
+    type: primary
+  - from: judge
+    to: metrics
+    type: primary
+  - from: metrics
+    to: stress
     type: primary
 modules: []
