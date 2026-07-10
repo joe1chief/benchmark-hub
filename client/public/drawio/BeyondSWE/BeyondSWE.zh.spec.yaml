@@ -5,97 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BeyondSWE 构建流程
-  description: >-
-    基于论文对齐 BeyondSWE 的构建流程：从真实 GitHub 仓库中构造 CrossRepo、DomainFix、 DepMigrate 与 Doc2Repo 四类任务，经过 Docker
-    环境、稳定性检查、人工审核和全新容器评测。
-  legend: 实线表示候选到评测的主流程；拒绝和修订门槛写入审校说明。
+  description: 对齐论文的四类候选挖掘、任务专用专家复核、智能体辅助环境、重复稳定性检查与纯净容器评测。
+  legend: 上排从左向右完成构建，下排从右向左完成基准任务与独立评测。
 nodes:
   - id: sources
-    label: 候选
+    label: |-
+      各任务专用真实来源
+      GitHub PR / 外部链接 / 依赖包
+      2025 年新建仓库与自然语言规格
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: task_split
-    label: 四类任务
+      'y': 100
+  - id: funnels
+    label: |-
+      各任务候选漏斗
+      CrossRepo 3千->800；DomainFix 800->200
+      DepMigrate 7千->1千；Doc2Repo 60->50
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: filtering
-    label: 过滤
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: docker
-    label: Docker
+      x: 320
+      'y': 100
+  - id: expert
+    label: |-
+      按任务类型专家复核
+      外链相关性 / 三位领域专家
+      四位 SWE 专家 / 规格-测试对齐
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
+      x: 600
+      'y': 100
+  - id: environment
+    label: |-
+      智能体辅助 Docker 构建
+      Ubuntu + PR 前代码库
+      将成功配置命令固化为 Dockerfile
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
   - id: stability
-    label: 稳定性
-    type: decision
+    label: |-
+      严格稳定性检查
+      构建并重复运行相关测试 5 次
+      稳定 P2P / F2P 或参考实现测试
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: human_audit
-    label: 审核
-    type: decision
+      x: 1160
+      'y': 100
+  - id: quality
+    label: |-
+      最终质量审计
+      5 位资深 SWE + 5 位资深博士
+      排除泄漏、不稳定与无效测试
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1440
+      'y': 100
   - id: dataset
-    label: 数据集
+    label: |-
+      BeyondSWE：500 题 / 246 个仓库
+      CrossRepo 200 + DomainFix 72
+      DepMigrate 178 + Doc2Repo 50
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 70
-  - id: agent_run
-    label: 运行
+      x: 1440
+      'y': 440
+  - id: input
+    label: |-
+      智能体任务
+      Issue + 代码库或自然语言规格
+      生成补丁或完整代码库
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: fresh
+    label: |-
+      独立最终验证
+      将变更应用到纯净容器
+      恢复测试；移除未来历史
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 250
+      x: 880
+      'y': 440
+  - id: execute
+    label: |-
+      可执行成功合同
+      Issue 任务：全部 P2P + F2P 通过
+      Doc2Repo：改写后的完整测试套件
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
   - id: metrics
-    label: 指标
+    label: |-
+      任务专用指标
+      Issue 任务报告问题解决率
+      Doc2Repo 报告通过率 + 近乎正确数
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 440
 edges:
   - from: sources
-    to: task_split
+    to: funnels
     type: primary
-  - from: task_split
-    to: filtering
+  - from: funnels
+    to: expert
     type: primary
-  - from: filtering
-    to: docker
+  - from: expert
+    to: environment
     type: primary
-  - from: docker
+  - from: environment
     to: stability
     type: primary
   - from: stability
-    to: human_audit
+    to: quality
     type: primary
-  - from: human_audit
+  - from: quality
     to: dataset
     type: primary
   - from: dataset
-    to: agent_run
+    to: input
     type: primary
-  - from: agent_run
+  - from: input
+    to: fresh
+    type: primary
+  - from: fresh
+    to: execute
+    type: primary
+  - from: execute
     to: metrics
     type: primary
 modules: []
