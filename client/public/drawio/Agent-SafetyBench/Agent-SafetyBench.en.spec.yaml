@@ -5,118 +5,210 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Agent-SafetyBench Build Process
-  description: Paper-aligned benchmark construction and safety scoring workflow for Agent-SafetyBench, based on arXiv:2412.14470.
+  description: >-
+    Paper-aligned construction, quality-control, scorer-training, and agent-evaluation workflow based on
+    arXiv:2412.14470.
   legend: >-
-    Solid arrows show dataset construction and agent evaluation; dashed arrows mark quality-control and scorer-training
-    checkpoints.
+    Solid arrows follow the published construction and evaluation pipeline; both legacy-data refinement and new-case
+    augmentation feed the same validated benchmark.
 nodes:
   - id: taxonomy
     label: |-
-      Safety taxonomy
-      8 risk categories
-      10 failure modes
+      Define Safety Taxonomy
+      8 Risk Categories
+      10 Failure Modes
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: format
+      'y': 170
+  - id: legacy_sources
     label: |-
-      Test-case schema
-      risk, instruction/dialog
-      environments, failure modes
+      Collect Existing Cases
+      R-Judge • AgentDojo • GuardAgent
+      ToolEmu • ToolSword • InjecAgent
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: environments
+      x: 320
+      'y': 40
+  - id: environment_names
     label: |-
-      Interactive environments
-      JSON tool schema
-      Python environment classes
+      Generate New Environment Names
+      GPT-4o • Claude 3.5 • Gemini 1.5
+      300 Candidate Environments
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 320
+      'y': 300
   - id: refine
     label: |-
-      Refine existing data
-      revise failure modes
-      dedupe and standardize
+      Refine Existing Data
+      Clarify Failure Modes • Deduplicate
+      Standardize Environments and Parameters
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
+      x: 600
+      'y': 40
   - id: augment
     label: |-
-      Data augmentation
-      300 new environment names
-      250 cases per risk class
+      Generate Missing Cases
+      Risk-Controlled Instructions
+      Expected Risky Behaviors
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: quality
+      x: 600
+      'y': 300
+  - id: merge
     label: |-
-      Quality control
-      manual precheck
-      scripts, postcheck, cross-validation
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: benchmark
-    label: |-
-      Benchmark release
-      349 environments
-      2,000 test cases
+      Balance the Eight Categories
+      876 Refined + 1,124 New Cases
+      250 Cases per Risk Category
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 880
+      'y': 170
+  - id: schema
+    label: |-
+      Encode Test-Case Schema
+      Risk • Instruction or Dialog
+      Environments • Failure Modes
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 170
+  - id: environments
+    label: |-
+      Implement Dynamic Environments
+      JSON Tool Schemas + Python Classes
+      Configurable Initialization Parameters
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 170
+  - id: precheck
+    label: |-
+      Manual Author Precheck
+      Inspect Every Generated Case
+      Repair Invalid Instructions and Risks
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: automatic_checks
+    label: |-
+      Automated Validation
+      Parse JSON and Execute Python
+      Verify Tools and Environment Behavior
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 500
+  - id: interaction_qc
+    label: |-
+      Postcheck and Cross-Validation
+      4,000 Agent Interaction Records
+      Manual Labels and Case Revisions
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 500
+  - id: benchmark
+    label: |-
+      Release Agent-SafetyBench
+      349 Dynamic Environments
+      2,000 Validated Test Cases
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 500
   - id: scorer
     label: |-
-      Agent evaluation
-      tool-interaction records
-      finetuned scorer -> safety score
+      Train the Safety Scorer
+      Fine-Tune Qwen2.5-7B on 4,000 Records
+      91.5% Held-Out Accuracy
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 790
+  - id: agent_eval
+    label: |-
+      Evaluate 16 Agents
+      Dynamic Tool-Interaction Loops
+      Preserve Complete Trajectories
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 500
+  - id: report
+    label: |-
+      Report Safety Results
+      Safe-Trajectory Ratio as Safety Score
+      Risk and Failure-Mode Breakdowns
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 790
 edges:
   - from: taxonomy
-    to: format
+    to: legacy_sources
     type: primary
   - from: taxonomy
-    to: environments
+    to: environment_names
     type: data
-  - from: format
+  - from: legacy_sources
     to: refine
     type: primary
-  - from: environments
+  - from: environment_names
     to: augment
     type: primary
   - from: refine
-    to: quality
+    to: merge
     type: primary
   - from: augment
-    to: quality
+    to: merge
     type: primary
-  - from: quality
-    to: refine
-    type: optional
-    label: revise invalid cases
-  - from: quality
+  - from: merge
+    to: schema
+    type: primary
+  - from: schema
+    to: environments
+    type: primary
+  - from: environments
+    to: precheck
+    type: primary
+  - from: precheck
+    to: automatic_checks
+    type: primary
+  - from: automatic_checks
+    to: interaction_qc
+    type: primary
+  - from: interaction_qc
     to: benchmark
     type: primary
-  - from: benchmark
+  - from: interaction_qc
     to: scorer
+    type: data
+  - from: benchmark
+    to: agent_eval
     type: primary
+  - from: agent_eval
+    to: report
+    type: primary
+  - from: scorer
+    to: report
+    type: data
 modules: []

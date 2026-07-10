@@ -4,118 +4,224 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: All-Angles Build Process
+  title: All-Angles Bench Build Process
   description: >-
-    Paper-aligned multi-view scene benchmark construction and evaluation workflow for All-Angles Bench, based on
-    arXiv:2504.15280.
+    Paper-aligned multi-view scene selection, question construction, human quality control, and MLLM evaluation workflow
+    based on arXiv:2504.15280.
   legend: >-
-    Solid arrows show scene selection, question annotation, paired-question construction, and model evaluation; dashed
-    arrows mark human quality-control feedback.
+    Each item is a three-option multiple-choice question with one correct answer; paired questions test whether a model
+    preserves cross-view correspondences under controlled transformations.
 nodes:
-  - id: scenes
+  - id: source_scenes
     label: |-
-      Multi-view sources
-      Ego-Exo4D and EgoHumans
-      90 real-world scenes
+      Start from Multi-View Video Data
+      83 Ego-Exo4D Scenes
+      7 EgoHumans Scenes
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
+      'y': 170
+  - id: select_scenes
     label: |-
-      Six task categories
-      counting, attributes, distance
-      direction, manipulation, camera pose
+      Manually Select 90 Scenes
+      At Least Three Useful Viewpoints
+      Diverse Real-World Activities
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 170
+  - id: view_set
+    label: |-
+      Curate Each View Set
+      Final 4–5 Spatially Dispersed Views
+      Resize Images to 796 × 448
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 170
+  - id: task_design
+    label: |-
+      Design Six Reasoning Tasks
+      Count • Attribute • Distance • Direction
+      Manipulation • Camera Pose
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 170
+  - id: draft
+    label: |-
+      Draft Questions with GPT-4o
+      Three per Task and Scene
+      One Camera-Pose Question per Scene
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 170
+  - id: view_policy
+    label: |-
+      Apply Task-Specific View Policy
+      All Views for Counting and Camera Pose
+      Two Random Views for Other Tasks
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 170
+  - id: human_review
+    label: |-
+      Eight STEM PhD Annotators Review All Items
+      Remove Invalid Questions
+      Refine Wording and Answer Choices
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: mcq
+    label: |-
+      Enforce the MCQ Contract
+      Three Answer Options
+      Exactly One Correct Answer
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: draft_questions
-    label: |-
-      MLLM question drafts
-      multi-view visual grounding
-      category-specific templates
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: annotation
-    label: |-
-      Human annotation
-      8 annotators inspect images
-      remove invalid or unclear items
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: answer_check
-    label: |-
-      Answer and option review
-      revise incorrect choices
-      one correct MCQ answer
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 70
+      x: 1160
+      'y': 500
   - id: paired
     label: |-
-      Paired questions
-      rephrase or swap view order
-      preserve visual correspondence
+      Construct Paired Questions
+      Rephrase, Swap Orientation, or Change Views
+      Preserve the Underlying Correspondence
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: dataset
+      x: 880
+      'y': 500
+  - id: final_qc
     label: |-
-      All-Angles Bench
-      2,132 QA pairs
-      85.3% paired counterparts
-    type: document
+      Perform Final Human Quality Control
+      Verify Visual Evidence and Single Answer
+      85.3% Paired Coverage Excluding Counting
+    type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
+      x: 600
+      'y': 500
+  - id: benchmark
     label: |-
-      Multi-view evaluation
-      27 MLLMs
-      250-question human subset
+      Release All-Angles Bench
+      2,132 QA Pairs • 90 Scenes
+      Six Multi-View Task Categories
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 500
+  - id: model_eval
+    label: |-
+      Evaluate 27 MLLMs
+      Standard Multiple-Choice Prompting
+      Parse One of Three Answer Options
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 500
+  - id: accuracy
+    label: |-
+      Compute Accuracy
+      Overall and by Task Category
+      Compare Open and Proprietary Models
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 790
+  - id: consistency
+    label: |-
+      Measure Paired Inconsistency
+      Compare Answers to Corresponding Items
+      Diagnose Cross-View Instability
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 790
+  - id: human
+    label: |-
+      Establish Human Reference
+      250-Question Stratified Subset
+      Cover All Six Task Categories
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 790
+  - id: report
+    label: |-
+      Report Multi-View Gaps
+      Accuracy • Paired Consistency
+      Model–Human Performance Gap
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 790
 edges:
-  - from: scenes
-    to: tasks
+  - from: source_scenes
+    to: select_scenes
     type: primary
-  - from: tasks
-    to: draft_questions
+  - from: select_scenes
+    to: view_set
     type: primary
-  - from: draft_questions
-    to: annotation
+  - from: view_set
+    to: task_design
     type: primary
-  - from: annotation
-    to: answer_check
+  - from: task_design
+    to: draft
     type: primary
-  - from: answer_check
+  - from: draft
+    to: view_policy
+    type: primary
+  - from: view_policy
+    to: human_review
+    type: primary
+  - from: human_review
+    to: mcq
+    type: primary
+  - from: mcq
     to: paired
     type: primary
   - from: paired
-    to: dataset
+    to: final_qc
     type: primary
-  - from: dataset
-    to: evaluation
+  - from: final_qc
+    to: benchmark
     type: primary
-  - from: answer_check
-    to: annotation
-    type: optional
-    label: quality-control loop
+  - from: benchmark
+    to: model_eval
+    type: primary
+  - from: model_eval
+    to: accuracy
+    type: primary
+  - from: model_eval
+    to: consistency
+    type: data
+  - from: benchmark
+    to: human
+    type: data
+  - from: accuracy
+    to: report
+    type: primary
+  - from: consistency
+    to: report
+    type: primary
+  - from: human
+    to: report
+    type: primary
 modules: []
