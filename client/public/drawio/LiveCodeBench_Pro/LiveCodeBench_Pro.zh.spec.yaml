@@ -4,86 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LiveCodeBench Pro 构建流程
-  description: 根据论文整理的 LiveCodeBench Pro 流程：顶级实时竞赛、固定测试、专家标签、模型运行和失败诊断。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LiveCodeBench Pro 构建与评测流程
+  description: 按论文展示 LiveCodeBench Pro 的实时收集、竞赛主办方质量门、专家标注、模型判题、Elo 报告及人机失败配对诊断。
+  legend: 先从左到右阅读实时构建行，再从右到左阅读模型与诊断评测行；题库快照为论文截至 2025-04-25 的 584 题。
 nodes:
-  - id: live_contests
-    label: 实时竞赛
-    type: document
+  - id: sources
+    label: |-
+      顶级实时竞赛
+      Codeforces + ICPC 系列 + IOI 系列
+      明确排除 LeetCode
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: problem_vet
-    label: 题目审核
+      'y': 100
+  - id: capture
+    label: |-
+      实时题目收集
+      随比赛进行即时采集
+      早于解答 / 题解 / 讨论公开
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: fixed_tests
-    label: 固定测试
+      x: 320
+      'y': 100
+  - id: host_gate
+    label: |-
+      竞赛主办方质量门
+      协调员 + 至少 2 名专家测试者
+      压测判题数据
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: immutable
+    label: |-
+      可复现判题合同
+      赛后公开完整测试集
+      模型与人类使用不变规则
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: elo_tiers
-    label: Elo分层
+      x: 880
+      'y': 100
+  - id: difficulty
+    label: |-
+      Codeforces 风格难度
+      简单：Elo <= 2000
+      中等：(2000, 3000]｜困难：> 3000
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: expert_tags
-    label: 专家标签
+      x: 1160
+      'y': 100
+  - id: annotations
+    label: |-
+      专家题目标注
+      算法标签 + 认知重点
+      三盲共识裁决
     type: user
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: model_runs
-    label: 模型运行
+      x: 1440
+      'y': 100
+  - id: release
+    label: |-
+      论文快照
+      截至 2025-04-25 共 584 题
+      持续按日更新
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: prompt
+    label: |-
+      受控 C++ 生成
+      统一竞赛程序员提示
+      主评测不使用外部工具
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      编译与官方测试判题
+      全部隐藏测试通过才接受
+      保留竞赛时间 / 内存限制
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: scores
+    label: |-
+      性能报告
+      Pass@1 与 Pass@k
+      对比人类选手的贝叶斯 MAP Elo
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: fail_analysis
-    label: 失败分析
-    type: process
+      x: 600
+      'y': 440
+  - id: failure_sample
+    label: |-
+      配对失败样本
+      125 个 o3-mini + 125 个人类失败
+      人类选手 Elo 相近
+    type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: elo_passk
-    label: Elo/Pass@k
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      细粒度诊断
+      逐行判定与根因标注
+      算法错误与实现错误对比
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: live_contests
-    to: problem_vet
+  - from: sources
+    to: capture
     type: primary
-  - from: problem_vet
-    to: fixed_tests
+  - from: capture
+    to: host_gate
     type: primary
-  - from: fixed_tests
-    to: elo_tiers
+  - from: host_gate
+    to: immutable
     type: primary
-  - from: elo_tiers
-    to: expert_tags
+  - from: immutable
+    to: difficulty
     type: primary
-  - from: expert_tags
-    to: model_runs
+  - from: difficulty
+    to: annotations
     type: primary
-  - from: model_runs
-    to: fail_analysis
+  - from: annotations
+    to: release
     type: primary
-  - from: fail_analysis
-    to: elo_passk
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: judge
+    type: primary
+  - from: judge
+    to: scores
+    type: primary
+  - from: scores
+    to: failure_sample
+    type: primary
+  - from: failure_sample
+    to: report
     type: primary
 modules: []

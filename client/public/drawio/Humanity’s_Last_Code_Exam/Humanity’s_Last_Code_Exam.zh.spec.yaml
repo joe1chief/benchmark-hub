@@ -4,86 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Humanity’s Last Code Exam Build Process (ZH)
-  description: 对齐论文的 HLCE 构建流程：从 IOI/ICPC 世界总决赛来源到题目抽取、测试用例收集、任务过滤、代码运行和通过率/自我认知评测。
-  legend: 实线箭头表示 HLCE 的数据构建与评测流程。
+  title: Humanity's Last Code Exam 构建与评测流程
+  description: 按论文复现 HLCE 从 ICPC 世界总决赛与 IOI 题目到标准输入输出、交互式统一评测及独立自我识别任务的流程。
+  legend: 先从左到右阅读基准构建行，再从右到左阅读评测行；题量和年份保留论文中 ICPC 与 IOI 子集的不同口径。
 nodes:
-  - id: source
-    label: IOI/ICPC
-    type: document
+  - id: sources
+    label: |-
+      顶级竞赛来源
+      ICPC 世界总决赛 + IOI
+      总体覆盖：2010-2024
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: crawl
-    label: 题目抓取
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: format
-    label: 格式清洗
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: tests
-    label: 测试用例
+      'y': 100
+  - id: icpc_extract
+    label: |-
+      ICPC 题面提取
+      人工复制官方 PDF
+      ChatGPT 统一格式
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: filter
-    label: 任务过滤
+      x: 320
+      'y': 100
+  - id: icpc_gate
+    label: |-
+      ICPC 官方测试门
+      移除缺失或损坏测试
+      排除不兼容交互题
     type: decision
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: set
-    label: 235题
+      x: 600
+      'y': 100
+  - id: ioi_extract
+    label: |-
+      IOI 题面提取
+      抓取 Codeforces IOI 数据
+      ChatGPT 清理与重排
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: runs
-    label: 代码运行
+      x: 880
+      'y': 100
+  - id: ioi_gate
+    label: |-
+      IOI 官方测试门
+      收集完整测试用例
+      排除仅输出题
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      HLCE 发布：235 题
+      146 道 ICPC（2011-2023）
+      89 道 IOI（2010-2024）
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      模型评测输入
+      题面 + 约束条件
+      C++ / Python 竞赛设置
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: generate
+    label: |-
+      代码生成任务
+      每题生成 5 个回答
+      OpenRouter 默认超参数
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metrics
-    label: 通过/自判
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      统一在线-离线判题
+      ICPC：Python 标准 I/O 框架
+      IOI：Codeforces 提交机器人
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: correctness
+    label: |-
+      功能正确性
+      ICPC：通过全部官方测试
+      IOI：满分 100；部分分视为失败
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: self_recognition
+    label: |-
+      独立自我识别任务
+      判断自己的代码是否正确
+      Python 评测框架
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      HLCE 结果
+      代码：Pass@1 与 Pass@5
+      自我识别：AUC
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: source
-    to: crawl
+  - from: sources
+    to: icpc_extract
     type: primary
-  - from: crawl
-    to: format
+  - from: icpc_extract
+    to: icpc_gate
     type: primary
-  - from: format
-    to: tests
+  - from: icpc_gate
+    to: ioi_extract
     type: primary
-  - from: tests
-    to: filter
+  - from: ioi_extract
+    to: ioi_gate
     type: primary
-  - from: filter
-    to: set
+  - from: ioi_gate
+    to: release
     type: primary
-  - from: set
-    to: runs
+  - from: release
+    to: prompt
     type: primary
-  - from: runs
-    to: metrics
+  - from: prompt
+    to: generate
+    type: primary
+  - from: generate
+    to: judge
+    type: primary
+  - from: judge
+    to: correctness
+    type: primary
+  - from: correctness
+    to: self_recognition
+    type: primary
+  - from: self_recognition
+    to: report
     type: primary
 modules: []
