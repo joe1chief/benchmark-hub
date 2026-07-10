@@ -1,0 +1,240 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: AthenaBench-Mini Build Process
+  description: >-
+    Paper-aligned CTI dataset construction, representative mini-subset selection, and six-task evaluation workflow based
+    on arXiv:2511.01144.
+  legend: >-
+    AthenaBench-Mini is a 950-item public subset selected from the 8,100-item full benchmark; task-specific sampling
+    rates preserve the aggregate model ranking as closely as possible.
+nodes:
+  - id: cti_sources
+    label: |-
+      Curate Authoritative CTI Knowledge
+      MITRE ATT&CK • CWE • CAPEC • CISA
+      STIX/TAXII • GDPR and Standards
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: cve_sources
+    label: |-
+      Ingest Live Vulnerability Data
+      NVD API • CVE Descriptions
+      CVSS Metrics and CWE Tags
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: threat_sources
+    label: |-
+      Collect Threat and Defense Evidence
+      APT Vendor Reports • Security Blogs
+      MITRE STIX Techniques and Mitigations
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: ckt
+    label: |-
+      Build CTI Knowledge Test
+      GPT-5 Generates Five-Option MCQs
+      Two-Model Flagging + Human Repair
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: rcm_vsp
+    label: |-
+      Build RCM and VSP Tasks
+      Map Root-Cause CWE and Predict CVSS
+      Deduplicate and Filter Short Records
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 220
+  - id: taa_rms_ate
+    label: |-
+      Build TAA, RMS, and ATE Tasks
+      Anonymize Actors • Link Mitigations
+      Rewrite Techniques as Scenarios
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: full_benchmark
+    label: |-
+      Assemble Full AthenaBench
+      8,100 Items across Six CTI Tasks
+      Remove Duplicates and Leakage Clues
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: sampling_policy
+    label: |-
+      Apply Task-Specific Mini Rates
+      10% CKT/RCM/VSP • 20% ATE/RMS
+      50% TAA
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: candidate_subsets
+    label: |-
+      Generate Candidate Mini Subsets
+      Use Ten Random Seeds
+      Evaluate Aggregate Model Performance
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: representative_selection
+    label: |-
+      Select the Representative Seed
+      Closest Aggregate Performance
+      to the Complete Benchmark
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: mini_release
+    label: |-
+      Release AthenaBench-Mini
+      CKT 300 • ATE 100 • RCM 200
+      RMS 100 • VSP 200 • TAA 50
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: model_eval
+    label: |-
+      Evaluate 12 LLMs
+      Proprietary and Open-Source Models
+      Temperature 0 Where Supported
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: categorical_metrics
+    label: |-
+      Score Categorical Tasks
+      Accuracy for CKT, ATE, RCM, and TAA
+      Exact Task-Specific Answers
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 580
+  - id: rms_metric
+    label: |-
+      Score Risk Mitigation
+      Multi-Label F1 for RMS
+      Allow Multiple Valid Strategies
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 580
+  - id: vsp_metric
+    label: |-
+      Score Vulnerability Severity
+      Parse CVSS and Compute MAD
+      Normalize Accuracy as 1 - MAD / 7.7
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 580
+  - id: combined
+    label: |-
+      Aggregate Six Task Scores
+      Uniform Percentage Scale
+      Compare Full and Mini Rankings
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 800
+  - id: report
+    label: |-
+      Report AthenaBench-Mini Results
+      Six Task Metrics + Combined Score
+      Diagnose CTI Reasoning Gaps
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 1020
+edges:
+  - from: cti_sources
+    to: ckt
+    type: primary
+  - from: cve_sources
+    to: rcm_vsp
+    type: primary
+  - from: threat_sources
+    to: taa_rms_ate
+    type: primary
+  - from: ckt
+    to: full_benchmark
+    type: primary
+  - from: rcm_vsp
+    to: full_benchmark
+    type: primary
+  - from: taa_rms_ate
+    to: full_benchmark
+    type: primary
+  - from: full_benchmark
+    to: sampling_policy
+    type: primary
+  - from: sampling_policy
+    to: candidate_subsets
+    type: primary
+  - from: candidate_subsets
+    to: representative_selection
+    type: primary
+  - from: representative_selection
+    to: mini_release
+    type: primary
+  - from: mini_release
+    to: model_eval
+    type: primary
+  - from: model_eval
+    to: categorical_metrics
+    type: primary
+  - from: model_eval
+    to: rms_metric
+    type: data
+  - from: model_eval
+    to: vsp_metric
+    type: data
+  - from: categorical_metrics
+    to: combined
+    type: primary
+  - from: rms_metric
+    to: combined
+    type: primary
+  - from: vsp_metric
+    to: combined
+    type: primary
+  - from: combined
+    to: report
+    type: primary
+modules: []

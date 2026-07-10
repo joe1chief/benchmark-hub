@@ -1,0 +1,187 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Arena-Hard v2.0 构建流程
+  description: 基于 arXiv:2406.11939 与官方 lmarena/arena-hard-auto 仓库对齐的 v2.0 提示集构成和自动偏好评测流程。
+  legend: Arena-Hard 论文定义实时数据基准管线；官方 v2.0 版本补充准确的新提示数量、创意写作拆分、评审配置与风格控制汇报方式。
+nodes:
+  - id: arena_data
+    label: |-
+      从 Chatbot Arena 数据出发
+      新鲜真实用户问题
+      保持开放式任务多样性
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 170
+  - id: hard_prompts
+    label: |-
+      整理高难提示集
+      500 个新鲜高难问题
+      软件 • 数学 • 真实问题求解
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: creative_prompts
+    label: |-
+      整理创意写作集
+      250 个 Arena 问题
+      单独进行创意能力评测
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: release
+    label: |-
+      发布 Arena-Hard v2.0
+      共 750 个提示
+      保存类别标签与参考数据
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 170
+  - id: answers
+    label: |-
+      生成模型回答
+      候选系统与参考系统
+      按提示和模型缓存回答
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 170
+  - id: hard_judge
+    label: |-
+      成对评审高难提示
+      Gemini 2.5 官方配置
+      GPT-4.1 快速稳定替代配置
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: creative_judge
+    label: |-
+      评审创意写作
+      GPT-4.1 与 Gemini 2.5 独立判断
+      汇总评审器集成结果
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: style_features
+    label: |-
+      计算风格特征
+      回答长度 • Markdown 密度
+      将特征附加到模型回答
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: judgments
+    label: |-
+      保存成对判断
+      候选更好 • 平局 • 参考更好
+      按提示、模型和评审器缓存
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: aggregation
+    label: |-
+      汇总评测结果
+      高难集使用风格控制
+      创意集使用评审器集成
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 600
+  - id: win_rate
+    label: |-
+      计算模型胜率
+      Bootstrap 置信区间
+      与参考模型比较
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 600
+  - id: quality_metrics
+    label: |-
+      验证基准质量
+      置信可分性
+      与人类偏好的一致性
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 600
+  - id: report
+    label: |-
+      发布 Arena-Hard v2.0 排行榜
+      高难与创意写作结果
+      分数及置信区间
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 600
+edges:
+  - from: arena_data
+    to: hard_prompts
+    type: primary
+  - from: arena_data
+    to: creative_prompts
+    type: data
+  - from: hard_prompts
+    to: release
+    type: primary
+  - from: creative_prompts
+    to: release
+    type: primary
+  - from: release
+    to: answers
+    type: primary
+  - from: answers
+    to: hard_judge
+    type: primary
+  - from: answers
+    to: creative_judge
+    type: data
+  - from: hard_judge
+    to: style_features
+    type: primary
+  - from: hard_judge
+    to: judgments
+    type: data
+  - from: creative_judge
+    to: judgments
+    type: primary
+  - from: style_features
+    to: aggregation
+    type: data
+  - from: judgments
+    to: aggregation
+    type: primary
+  - from: aggregation
+    to: win_rate
+    type: primary
+  - from: win_rate
+    to: quality_metrics
+    type: primary
+  - from: quality_metrics
+    to: report
+    type: primary
+modules: []
