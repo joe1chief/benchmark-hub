@@ -5,190 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BigCodeBench 构建流程
-  description: >-
-    按论文对齐的 BigCodeBench 流程：以 ODEX/Stack Overflow API 用法为种子，用 GPT-4 合成任务并去偏、AST 过滤， 在人工监督下通过 Code Interpreter
-    迭代重构和测试，再依次人工审查、预评测、交叉复核，构造 Complete/Instruct 两版提示并在沙箱中执行评分。
-  legend: 实线表示 Complete 的三阶段构建主流程；下方分支从 Complete 派生并核验 Instruct 提示。
+  description: 对齐论文的三阶段人机协作构建：从 ODEX 种子，经人工监督的 GPT-4 重构、严格人工筛选、 可执行验证与 Instruct 变体转换形成基准。
+  legend: 先从左到右阅读构建行，再从右到左阅读验证、变体与评测行。
 nodes:
-  - id: seeds
+  - id: odex
     label: |-
-      ODEX / Stack Overflow
-      API 用法种子
+      ODEX 种子样本
+      Stack Overflow 意图 + 代码骨架
+      真实函数级起点
     type: database
-    size: large
+    size: xl
     position:
       x: 40
-      'y': 240
-  - id: synthesis
+      'y': 100
+  - id: synthesize
     label: |-
-      GPT-4 两样本提示
-      合成任务
+      阶段一：GPT-4 合成
+      gpt-4-0613 + 2-Shot 示例
+      丰富意图并生成多库实现
     type: process
-    size: large
+    size: xl
     position:
-      x: 240
-      'y': 240
-  - id: debias
+      x: 320
+      'y': 100
+  - id: obfuscate
     label: |-
-      虚拟函数名 +
-      回译扰动
+      缓解偏差并验证语法
+      混淆入口名 + 回译 Docstring
+      AST 有效池：4,718 条
     type: process
-    size: large
+    size: xl
     position:
-      x: 440
-      'y': 240
-  - id: drafts
-    label: |-
-      AST 有效草稿
-      4,718 个样本
-    type: database
-    size: large
-    position:
-      x: 640
-      'y': 240
+      x: 600
+      'y': 100
   - id: refactor
     label: |-
-      Code Interpreter
-      人工反馈循环
+      阶段二：监督式重构
+      13 名 Python 标注员 + GPT-4 Code Interpreter
+      分类、调试、重构并生成测试
     type: process
-    size: large
+    size: xl
     position:
-      x: 840
-      'y': 240
-  - id: tests
+      x: 880
+      'y': 100
+  - id: paired
     label: |-
-      规范 PEP-257
-      编写并运行至少 5 个测试
+      对齐程序与测试
+      导入项 + PEP-257 + 指令一致性
+      1,223 组重构后的任务-测试对
     type: process
-    size: large
+    size: xl
     position:
-      x: 1040
-      'y': 240
-  - id: refactored
+      x: 1160
+      'y': 100
+  - id: curation
     label: |-
-      重构任务池
-      1,223 个任务
-    type: database
-    size: large
-    position:
-      x: 1240
-      'y': 240
-  - id: examine
-    label: |-
-      人工审查
-      确定性 unittest
-    type: decision
-    size: large
+      阶段三：人工筛选
+      确定性 unittest + 消除 Flaky 测试
+      GPT-3.5 预评测 + 7 人交叉检查
+    type: process
+    size: xl
     position:
       x: 1440
-      'y': 240
-  - id: preeval
+      'y': 100
+  - id: validate
     label: |-
-      GPT-3.5
-      预评测
+      最终可执行验证
+      GHCR 沙箱自动化
+      11 人手写 33 题解答，97% 通过
     type: process
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 240
-  - id: crosscheck
-    label: |-
-      7 人交叉复核
-      沙箱验证；32/33 通过
-    type: user
-    size: large
-    position:
-      x: 1840
-      'y': 240
-  - id: complete
+      x: 1440
+      'y': 440
+  - id: dataset
     label: |-
       BigCodeBench-Complete
-      1,140 任务 / 139 个库
+      1,140 个 Python 任务 / 139 个库 / 7 个领域
+      平均 5.6 个测试 + 99% 分支覆盖率
     type: database
-    size: large
+    size: xl
     position:
-      x: 2040
-      'y': 140
+      x: 1160
+      'y': 440
+  - id: complete
+    label: |-
+      Complete 模式提示
+      结构化 PEP-257 Docstring
+      生成函数实现
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 440
   - id: instruct
     label: |-
-      规则转换
-      自然语言 Instruct 提示
-    type: document
-    size: large
-    position:
-      x: 2240
-      'y': 400
-  - id: instruct_qc
-    label: |-
-      Instruct 对齐检查
-      5 人质检
-    type: decision
-    size: large
-    position:
-      x: 2440
-      'y': 400
-  - id: execute
-    label: |-
-      零样本沙箱
-      执行测试套件
+      派生 BigCodeBench-Instruct
+      按解析规则删除非必要细节
+      5 名作者抽检提示-解答一致性
     type: process
-    size: large
+    size: xl
     position:
-      x: 2440
-      'y': 140
-  - id: score
+      x: 600
+      'y': 440
+  - id: report
     label: |-
-      Pass@1 / Pass@5
-      校准 Pass@1
+      评测可执行正确率
+      运行人工整理的 unittest 套件
+      报告 Complete 与 Instruct 的 Pass@1
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 2640
-      'y': 140
+      x: 320
+      'y': 440
 edges:
-  - from: seeds
-    to: synthesis
+  - from: odex
+    to: synthesize
     type: primary
-  - from: synthesis
-    to: debias
+  - from: synthesize
+    to: obfuscate
     type: primary
-  - from: debias
-    to: drafts
-    type: primary
-  - from: drafts
+  - from: obfuscate
     to: refactor
     type: primary
   - from: refactor
-    to: tests
+    to: paired
     type: primary
-  - from: tests
-    to: refactored
+  - from: paired
+    to: curation
     type: primary
-  - from: refactored
-    to: examine
+  - from: curation
+    to: validate
     type: primary
-  - from: examine
-    to: preeval
+  - from: validate
+    to: dataset
     type: primary
-  - from: preeval
-    to: crosscheck
-    type: primary
-  - from: crosscheck
+  - from: dataset
     to: complete
     type: primary
   - from: complete
-    to: execute
-    type: primary
-  - from: complete
     to: instruct
-    type: data
+    type: primary
   - from: instruct
-    to: instruct_qc
-    type: primary
-  - from: instruct_qc
-    to: execute
-    type: primary
-  - from: execute
-    to: score
+    to: report
     type: primary
 modules: []

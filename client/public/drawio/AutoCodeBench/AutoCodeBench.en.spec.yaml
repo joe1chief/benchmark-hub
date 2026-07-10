@@ -6,124 +6,162 @@ meta:
   routing: orthogonal
   title: AutoCodeBench Build Process
   description: >-
-    Paper-aligned AutoCodeGen pipeline for constructing the 3,920-problem multilingual AutoCodeBench dataset from
-    Stack-Edu code seeds through sandbox-backed tests, reverse problem generation, filtering, human audit, and Pass@1
-    evaluation, based on arXiv:2508.09101.
-  legend: Solid arrows show the construction and evaluation pipeline; dashed arrows mark sandbox and human-quality feedback.
+    Paper-aligned AutoCodeGen workflow from Stack-Edu seeds through LLM-sandbox test synthesis, reverse-order problem
+    generation, three-stage filtering, and multilingual balancing.
+  legend: Read the generation row left-to-right, then the filtering and evaluation row right-to-left.
 nodes:
   - id: seeds
     label: |-
-      Stack-Edu seeds
-      real GitHub code
-      function/class/file levels
+      Stack-Edu Seed Snippets
+      Educational Code from The Stack v2
+      Function / Class / File Level
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: code_solution
+      'y': 100
+  - id: solution
     label: |-
-      Code solution generation
-      DeepSeek-V3 refinement
-      comments and cleanup
+      Refine Code Solutions
+      DeepSeek-V3-0324 + Language Few-Shot
+      Self-Contained, Verifiable, Commented
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: test_inputs
+      x: 320
+      'y': 100
+  - id: inputs
     label: |-
-      Test input generation
-      public examples
-      private edge cases
+      Generate Test Inputs
+      Public: Up to 3 Basic Cases
+      Private: 7+ Cases Including Edges
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: sandbox_outputs
+      x: 600
+      'y': 100
+  - id: outputs
     label: |-
-      Sandbox outputs
-      execute solution plus inputs
-      integrate tests
-    type: terminal
+      Execute in Multilingual Sandbox
+      Solution + Public / Private Inputs
+      Capture Corresponding Outputs
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: problem_generation
+      x: 880
+      'y': 100
+  - id: tests
     label: |-
-      Problem generation
-      reverse from solution
-      six problem specs
+      Integrate Executable Tests
+      LLM Combines Inputs + Outputs into Assertions
+      Re-run Solution and Both Test Functions
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: problem
+    label: |-
+      Reverse-Order Problem Generation
+      Six Heuristic Specifications
+      Embed Public Tests; Do Not Leak Solution Hints
     type: document
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: filtering
+      x: 1440
+      'y': 100
+  - id: translate
     label: |-
-      Data filtering
-      DeepSeek-Coder difficulty
-      R1 critic and cyclic sampling
-    type: decision
+      Route Language Coverage
+      Six Languages Use the Direct Workflow
+      Other 14 Translate Unused Data; All Enter Filtering
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: benchmark
+      x: 1440
+      'y': 440
+  - id: difficulty
     label: |-
-      Final benchmark
-      3,920 problems
-      balanced 20 languages
+      Difficulty Control
+      DeepSeek-Coder-V2-Lite: 10 Attempts
+      Discard Problems Solved 10/10
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: quality
+    label: |-
+      Quality Control
+      DeepSeek-R1-0528 Critiques 7 Criteria
+      Check Reproducibility and Problem-Test Alignment
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: diversity
+    label: |-
+      Diversity Sampling
+      DeepSeek-V3-0324 Category Labels
+      Cyclic Sampling Across Category Pools
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: dataset
+    label: |-
+      AutoCodeBench
+      3,920 Problems / 37,777 Tests
+      20 Languages / 14 Categories
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: human_audit
+      x: 320
+      'y': 440
+  - id: report
     label: |-
-      Human audit
-      6 professional annotators
-      87.6% validity estimate
-    type: process
+      Executable Evaluation
+      Sandbox Runs Hidden Full Tests
+      Pass@1 + Difficulty and Language Analysis
+    type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: evaluation
-    label: |-
-      Model evaluation
-      Pass@1
-      standard code-block prompt
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 440
 edges:
   - from: seeds
-    to: code_solution
+    to: solution
     type: primary
-  - from: code_solution
-    to: test_inputs
+  - from: solution
+    to: inputs
     type: primary
-  - from: test_inputs
-    to: sandbox_outputs
+  - from: inputs
+    to: outputs
     type: primary
-  - from: sandbox_outputs
-    to: problem_generation
+  - from: outputs
+    to: tests
     type: primary
-  - from: problem_generation
-    to: filtering
+  - from: tests
+    to: problem
     type: primary
-  - from: filtering
-    to: benchmark
+  - from: problem
+    to: translate
     type: primary
-  - from: benchmark
-    to: human_audit
+  - from: translate
+    to: difficulty
     type: primary
-  - from: human_audit
-    to: evaluation
+  - from: difficulty
+    to: quality
+    type: primary
+  - from: quality
+    to: diversity
+    type: primary
+  - from: diversity
+    to: dataset
+    type: primary
+  - from: dataset
+    to: report
     type: primary
 modules: []
