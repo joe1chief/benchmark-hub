@@ -5,85 +5,161 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: LiveBench 构建流程
-  description: 根据论文整理的 LiveBench 流程：近期来源、客观答案任务、月度刷新、私有保留题和自动评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    依据论文重绘的 LiveBench 流程：一类任务来自近期竞赛、数据集、新闻、arXiv 摘要和电影梗概，另一类是既有 benchmark 的更难、污染受限变体，共覆盖六类 18
+    个任务；仅保留有客观真值且可自动判分的任务，并定制可解析 终答格式；每月优先替换较旧或较易任务，平均替换约六分之一；新题延迟一个月公开，使榜单始终保留六分之一 私有题；以温度零单轮运行，逐题得 0 至 1
+    分，再依次按题平均到任务、按任务平均到类别、按六类平均为总分。
+  legend: 两类来源合并；拒绝分支保证客观自动判分；公开集与私有集在评测前汇合。
 nodes:
-  - id: recent_sources
-    label: 近期来源
-    type: document
-    size: xl
+  - id: recent
+    label: 近期信息来源
+    type: database
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: six_tasks
-    label: 六类任务
-    type: process
-    size: xl
+      'y': 100
+  - id: variants
+    label: 更难的既有变体
+    type: database
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: objective_gt
-    label: 客观答案
+      x: 40
+      'y': 340
+  - id: build
+    label: 构造具体任务
+    type: process
+    size: large
+    position:
+      x: 260
+      'y': 220
+  - id: taxonomy
+    label: 六类18任务
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 220
+  - id: objective
+    label: 有客观真值？
+    type: decision
+    size: large
+    position:
+      x: 700
+      'y': 220
+  - id: exclude
+    label: 排除该任务
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: prompt_format
-    label: 格式提示
+      x: 700
+      'y': 420
+  - id: prompt
+    label: 可解析终答提示
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: monthly_refresh
-    label: 月度更新
+      x: 920
+      'y': 220
+  - id: refresh
+    label: 每月替换六分之一
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: private_holdout
-    label: 私有保留
+      x: 1140
+      'y': 220
+  - id: released
+    label: 已公开题集
     type: document
-    size: xl
+    size: large
     position:
-      x: 1240
-      'y': 160
-  - id: auto_score
-    label: 自动评分
+      x: 1360
+      'y': 100
+  - id: private
+    label: 六分之一私有题
+    type: document
+    size: large
+    position:
+      x: 1360
+      'y': 340
+  - id: infer
+    label: 温度零单轮推理
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: live_score
-    label: Live分数
+      x: 1580
+      'y': 220
+  - id: grade
+    label: 任务专用自动判分
+    type: process
+    size: large
+    position:
+      x: 1800
+      'y': 220
+  - id: task_avg
+    label: 逐题平均到任务
+    type: process
+    size: large
+    position:
+      x: 2020
+      'y': 220
+  - id: cat_avg
+    label: 任务平均到类别
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 220
+  - id: score
+    label: LiveBench总分
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2460
+      'y': 220
 edges:
-  - from: recent_sources
-    to: six_tasks
+  - from: recent
+    to: build
     type: primary
-  - from: six_tasks
-    to: objective_gt
+  - from: variants
+    to: build
     type: primary
-  - from: objective_gt
-    to: prompt_format
+  - from: build
+    to: taxonomy
     type: primary
-  - from: prompt_format
-    to: monthly_refresh
+  - from: taxonomy
+    to: objective
     type: primary
-  - from: monthly_refresh
-    to: private_holdout
+  - from: objective
+    to: exclude
+    type: optional
+  - from: objective
+    to: prompt
     type: primary
-  - from: private_holdout
-    to: auto_score
+  - from: prompt
+    to: refresh
     type: primary
-  - from: auto_score
-    to: live_score
+  - from: refresh
+    to: released
+    type: primary
+  - from: refresh
+    to: private
+    type: primary
+  - from: released
+    to: infer
+    type: primary
+  - from: private
+    to: infer
+    type: primary
+  - from: infer
+    to: grade
+    type: primary
+  - from: grade
+    to: task_avg
+    type: primary
+  - from: task_avg
+    to: cat_avg
+    type: primary
+  - from: cat_avg
+    to: score
     type: primary
 modules: []

@@ -6,86 +6,165 @@ meta:
   routing: orthogonal
   title: LiveBench Build Process
   description: >-
-    Paper-aligned LiveBench pipeline from recent sources and objective-answer tasks through monthly refresh, private
-    holdout, and automatic category scoring.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned LiveBench workflow: build tasks from recent competitions, datasets, news, arXiv abstracts, and movie
+    synopses or from harder contamination-limited variants of prior benchmarks; cover 18 tasks in six categories;
+    require objective ground truth and automatic grading; tailor prompts for parseable final answers; refresh monthly by
+    replacing about one sixth of questions, prioritizing old or easy tasks; delay new-question release for one month so
+    one sixth remains private on the leaderboard; run single-turn temperature-zero evaluation; score each question from
+    zero to one; and average questions into tasks, tasks into categories, and six categories into LiveBench Score.
+  legend: >-
+    Two source types merge; the rejection branch enforces objective automatic grading; public and private sets rejoin
+    for evaluation.
 nodes:
-  - id: recent_sources
-    label: Recent Source
-    type: document
-    size: xl
+  - id: recent
+    label: Recent Sources
+    type: database
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: six_tasks
-    label: Six Tasks
-    type: process
-    size: xl
+      'y': 100
+  - id: variants
+    label: Hard Variants
+    type: database
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: objective_gt
-    label: Objective GT
+      x: 40
+      'y': 340
+  - id: build
+    label: Build Tasks
+    type: process
+    size: large
+    position:
+      x: 260
+      'y': 220
+  - id: taxonomy
+    label: 6 Cat / 18
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 220
+  - id: objective
+    label: Objective GT?
+    type: decision
+    size: large
+    position:
+      x: 700
+      'y': 220
+  - id: exclude
+    label: Exclude Task
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: prompt_format
-    label: Prompt Format
+      x: 700
+      'y': 420
+  - id: prompt
+    label: Answer Format
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: monthly_refresh
-    label: Monthly New
+      x: 920
+      'y': 220
+  - id: refresh
+    label: Monthly 1/6
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: private_holdout
-    label: Holdout Set
+      x: 1140
+      'y': 220
+  - id: released
+    label: Released Set
     type: document
-    size: xl
+    size: large
     position:
-      x: 1240
-      'y': 160
-  - id: auto_score
-    label: Auto Score
+      x: 1360
+      'y': 100
+  - id: private
+    label: 1/6 Private
+    type: document
+    size: large
+    position:
+      x: 1360
+      'y': 340
+  - id: infer
+    label: Temp-0 Model
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: live_score
-    label: Live Score
+      x: 1580
+      'y': 220
+  - id: grade
+    label: Task Grader
+    type: process
+    size: large
+    position:
+      x: 1800
+      'y': 220
+  - id: task_avg
+    label: Q → Task Avg
+    type: process
+    size: large
+    position:
+      x: 2020
+      'y': 220
+  - id: cat_avg
+    label: Task → Cat Avg
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 220
+  - id: score
+    label: Overall Score
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2460
+      'y': 220
 edges:
-  - from: recent_sources
-    to: six_tasks
+  - from: recent
+    to: build
     type: primary
-  - from: six_tasks
-    to: objective_gt
+  - from: variants
+    to: build
     type: primary
-  - from: objective_gt
-    to: prompt_format
+  - from: build
+    to: taxonomy
     type: primary
-  - from: prompt_format
-    to: monthly_refresh
+  - from: taxonomy
+    to: objective
     type: primary
-  - from: monthly_refresh
-    to: private_holdout
+  - from: objective
+    to: exclude
+    type: optional
+  - from: objective
+    to: prompt
     type: primary
-  - from: private_holdout
-    to: auto_score
+  - from: prompt
+    to: refresh
     type: primary
-  - from: auto_score
-    to: live_score
+  - from: refresh
+    to: released
+    type: primary
+  - from: refresh
+    to: private
+    type: primary
+  - from: released
+    to: infer
+    type: primary
+  - from: private
+    to: infer
+    type: primary
+  - from: infer
+    to: grade
+    type: primary
+  - from: grade
+    to: task_avg
+    type: primary
+  - from: task_avg
+    to: cat_avg
+    type: primary
+  - from: cat_avg
+    to: score
     type: primary
 modules: []
