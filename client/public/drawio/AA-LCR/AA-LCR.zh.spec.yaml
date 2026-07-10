@@ -4,88 +4,149 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AA-LCR Build Process
-  description: >-
-    Official-source-aligned construction of AA-LCR: curate long real-world document sets, write human-crafted
-    multi-document reasoning questions, validate answers with humans, then score long-context model accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: AA-LCR 构建与评测流程
+  description: 对齐官方方法的 AA-LCR 构建与评测流程，涵盖真实多文档集、人工出题、非前沿模型难度检查、人工验证、 有序长上下文提示和基于 Qwen 的答案等价性判定。
+  legend: AA-LCR 没有独立论文；本图依据 Artificial Analysis 官方方法说明与公开数据卡。上排构建基准，下排评测模型回答。
 nodes:
-  - id: n1
-    label: 文档集
+  - id: documents
+    label: |-
+      整理真实世界文档
+      来自公开材料的 7 类文档
+      公司 • 行业 • 政府 • 学术 • 法律 • 营销 • 调研
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 10万Tokens
+      'y': 100
+  - id: sets
+    label: |-
+      组装 30 个文档集
+      共 234 篇文档、2,979,757 tokens
+      完整提示平均 99,325 tokens
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 人工问题
+      x: 320
+      'y': 100
+  - id: author
+    label: |-
+      人工编写问题
+      团队成员 + 受聘本科生共同参与
+      面向真实场景的多文档通用 / 数学推理
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: difficulty
+    label: |-
+      用非前沿模型检查难度
+      GPT-4o-mini • Llama 3.1 70B • Gemini 1.5 Flash
+      答案必须依靠推理，不能直接检索得到
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: validate
+    label: |-
+      人工验证答案
+      验证者基于同一文档独立解题
+      失败项修改或丢弃；每道保留题至少 1 人解出
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      发布 AA-LCR
+      30 个文档集共 100 道题
+      官方答案 + 按顺序提取的文档
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      构造长上下文提示
+      按文件名顺序置于 BEGIN / END 标记之间
+      全部文档之后再追加问题
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 多步推理
+      x: 1440
+      'y': 440
+  - id: response
+    label: |-
+      目标模型回答
+      阅读完整文档集并跨文档推理
+      输出候选答案
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 模型试测
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      LLM 答案等价性检查
+      Qwen3-235B-A22B-2507 • 非推理模式
+      输入问题 + 官方答案 + 候选答案
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 人工验证
-    type: decision
+      x: 880
+      'y': 440
+  - id: verdict
+    label: |-
+      二元判定
+      输出 CORRECT 或 INCORRECT
+      判断候选答案与参考答案的语义等价性
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 100题
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      AA-LCR 结果
+      100 道题上的准确率
+      报告长上下文多文档推理能力
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: documents
+    to: sets
     type: primary
-  - from: n2
-    to: n3
+  - from: sets
+    to: author
     type: primary
-  - from: n3
-    to: n4
+  - from: author
+    to: difficulty
     type: primary
-  - from: n4
-    to: n5
+  - from: difficulty
+    to: validate
     type: primary
-  - from: n5
-    to: n6
+  - from: validate
+    to: release
     type: primary
-  - from: n6
-    to: n7
+  - from: release
+    to: prompt
     type: primary
-  - from: n7
-    to: n8
+  - from: prompt
+    to: response
+    type: primary
+  - from: response
+    to: judge
+    type: primary
+  - from: judge
+    to: verdict
+    type: primary
+  - from: verdict
+    to: report
     type: primary
 modules: []

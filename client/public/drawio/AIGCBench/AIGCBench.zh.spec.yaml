@@ -4,86 +4,149 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIGCBench 构建流程
-  description: 按论文对齐的AIGCBench构建流程：融合真实视频-文本、图像-文本与生成数据，形成3,928个样本，以4个维度的11项指标评测图生视频模型，并用人工判断验证标准。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: AIGCBench 构建与评测流程
+  description: 对齐论文的 AIGCBench 三类数据源构建，以及用参考式与无参考指标从四个维度评测图生视频系统， 最后通过 42 人用户研究验证评测标准。
+  legend: 上方分支分别构建 1,000 个真实视频-文本、925 个真实图像-文本和 2,003 个生成图像-文本样本； 下排在统一帧数后评测生成视频。
 nodes:
-  - id: n1
-    label: 真实数据对
+  - id: webvid
+    label: |-
+      参考视频-文本分支
+      从 WebVid10M 验证集按视频子类型
+      采样 1,000 对数据
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 文本组合器
+      'y': 40
+  - id: laion
+    label: |-
+      无参考图像-文本分支
+      从 LAION-Aesthetics 随机采样 925 对
+      支持无需参考视频的指标
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 180
+  - id: prompts
+    label: |-
+      合成提示分支
+      组合主体 • 行为 • 背景 • 图像风格
+      随机生成 3,000 条模板提示
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: GPT-4扩写
+      x: 40
+      'y': 320
+  - id: enrich
+    label: |-
+      使用 GPT-4 扩写提示
+      让内容更加生动、丰富
+      保留四部分语义组合
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: SDXL生成筛选
+      x: 320
+      'y': 320
+  - id: generate
+    label: |-
+      生成并筛选图像
+      SDXL Base • 1280×720 • 16:9
+      T2I-CompBench 指标筛出前 2,003 对
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 3928个样本
-    type: document
+      x: 600
+      'y': 320
+  - id: release
+    label: |-
+      汇总 AIGCBench
+      1,000 + 925 + 2,003 = 3,928 个样本
+      同时支持参考视频与无参考评测
+    type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 图生视频模型
+      x: 1160
+      'y': 180
+  - id: i2v
+    label: |-
+      运行图生视频模型
+      输入每个控制图像及对应文本
+      生成候选视频
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 11项指标
+      x: 1160
+      'y': 440
+  - id: normalize
+    label: |-
+      统一视频输入
+      除特别说明外均取前 16 帧
+      需要时从参考视频采样 4 个关键帧
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 人工验证
+      x: 880
+      'y': 440
+  - id: metrics
+    label: |-
+      计算 4 个维度的 11 项指标
+      控制-视频对齐 • 运动效果
+      时序一致性 • 视频质量
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 560
+  - id: report
+    label: |-
+      AIGCBench 指标报告
+      参考式 / 无参考 CLIP 与 SSIM • MSE • RAFT 光流
+      相邻帧一致性 • 帧数 • DOVER
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 560
+  - id: human
+    label: |-
+      通过用户研究验证评测标准
+      42 人 • 5 种方法各采样 30 个结果
+      在相同四个维度上投票选优
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 560
 edges:
-  - from: n1
-    to: n2
+  - from: webvid
+    to: release
     type: primary
-  - from: n2
-    to: n3
+  - from: laion
+    to: release
     type: primary
-  - from: n3
-    to: n4
+  - from: prompts
+    to: enrich
     type: primary
-  - from: n4
-    to: n5
+  - from: enrich
+    to: generate
     type: primary
-  - from: n5
-    to: n6
+  - from: generate
+    to: release
     type: primary
-  - from: n6
-    to: n7
+  - from: release
+    to: i2v
     type: primary
-  - from: n7
-    to: n8
+  - from: i2v
+    to: normalize
+    type: primary
+  - from: normalize
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
+  - from: report
+    to: human
     type: primary
 modules: []

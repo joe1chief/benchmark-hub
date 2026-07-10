@@ -4,119 +4,166 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIRS-Bench Build Process
-  description: Paper-aligned AI research-agent task construction and evaluation workflow for AIRS-Bench, based on arXiv:2602.06855.
+  title: AIRS-Bench Build and Evaluation Process
+  description: >-
+    Paper-aligned sourcing, verification, down-selection, packaging, agent execution, task scoring, nonlinear
+    normalization, and aggregate reporting for the AIRS-Bench research-agent suite.
   legend: >-
-    Solid arrows show task sourcing, packaging, and harness evaluation; dashed arrows mark SOTA verification and
-    hidden-label preparation paths.
+    The top row constructs 20 tasks from an approximately 100-task candidate pool; the bottom row executes agents with
+    hidden test labels and reports valid-submission rate, normalized score, and Elo.
 nodes:
-  - id: sources
+  - id: source
     label: |-
-      Paper and leaderboard sources
-      PapersWithCode SOTA results
-      2020 to 2025 ML papers
+      Source Candidate Research Tasks
+      PapersWithCode Leaderboards + SOTA Papers
+      Prefer 2020–2025 Results and Hugging Face Data
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
+      'y': 100
+  - id: eligibility
     label: |-
-      Dataset filtering
-      HuggingFace availability
-      train and test splits
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: manual_create
-    label: |-
-      Manual task creation
-      verify metric and splits
-      update SOTA when needed
+      Apply Eligibility Requirements
+      Clear ML Objective • Train / Test Splits
+      Available Data and Reproducible Evaluation Metric
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: select20
+      x: 320
+      'y': 100
+  - id: verify
     label: |-
-      Benchmark selection
-      about 100 candidates
-      choose 20 tasks in 7 categories
-    type: process
+      Manually Create and Verify Each Task
+      Match Paper Metric, Split, and Evaluation Protocol
+      Confirm Cited SOTA; Update if a Better Result Exists
+    type: user
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: metadata
+      x: 600
+      'y': 100
+  - id: candidates
     label: |-
-      metadata.yaml
-      problem, dataset, metric
-      SOTA score and paper fields
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: task_files
-    label: |-
-      Task files
-      project_description
-      prepare and evaluate scripts
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: datasets
-    label: |-
-      Prepared data
-      train split visible
-      test labels hidden from agent
+      Build the Candidate Pool
+      Approximately 100 Tasks
+      From Approximately 85 ML Papers and Datasets
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
+      x: 880
+      'y': 100
+  - id: select
     label: |-
-      Agent evaluation
-      AIRA-dojo and MLGym
-      24h GPU runs and normalized score
+      Down-Select the Final Suite
+      Agent-Performance and Ranking Fidelity
+      Preserve 7 Categories while Keeping Evaluation Tractable
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: package
+    label: |-
+      Package 20 Tasks from 17 Papers / 16 Datasets
+      project_description • metadata.yaml
+      prepare / evaluate / evaluate_prepare Scripts
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: environment
+    label: |-
+      Prepare the Agent Environment
+      Training Labels Visible • Test Labels Hidden
+      No Baseline Code; Internet + Cached Resources Available
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: agent
+    label: |-
+      Run End-to-End Research Agents
+      AIRA-dojo One-Shot / Greedy or MLGym ReAct
+      Develop, Train, Validate, and Predict within 24 h on One H200
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: raw_score
+    label: |-
+      Evaluate Submitted Predictions
+      Task-Specific evaluate.py Uses Hidden Test Labels
+      Record the Raw Metric and Submission Validity
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: normalize
+    label: |-
+      Normalize Each Task Score
+      φ(s) = −log10 |s − Optimal|
+      Worst Observed Run = 0 • Literature SOTA = 1
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: aggregate
+    label: |-
+      Aggregate across Tasks and Seeds
+      Average Normalized Score
+      Valid Submission Rate + Pairwise Elo Rating
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      AIRS-Bench Results
+      Compare 14 Model–Scaffold Agents
+      Report Reliability, Research Quality, and Relative Ranking
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: sources
-    to: filter
+  - from: source
+    to: eligibility
     type: primary
-  - from: filter
-    to: manual_create
+  - from: eligibility
+    to: verify
     type: primary
-  - from: manual_create
-    to: filter
-    type: optional
-    label: verify SOTA and splits
-  - from: manual_create
-    to: select20
+  - from: verify
+    to: candidates
     type: primary
-  - from: select20
-    to: metadata
+  - from: candidates
+    to: select
     type: primary
-  - from: select20
-    to: task_files
-    type: data
-  - from: metadata
-    to: datasets
+  - from: select
+    to: package
     type: primary
-  - from: task_files
-    to: datasets
-    type: data
-  - from: datasets
-    to: evaluation
+  - from: package
+    to: environment
+    type: primary
+  - from: environment
+    to: agent
+    type: primary
+  - from: agent
+    to: raw_score
+    type: primary
+  - from: raw_score
+    to: normalize
+    type: primary
+  - from: normalize
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
 modules: []

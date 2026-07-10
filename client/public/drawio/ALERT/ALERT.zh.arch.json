@@ -1,63 +1,93 @@
 {
   "version": 1,
-  "title": "ALERT 构建流程",
+  "title": "ALERT 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 8,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
       "id": "source",
-      "label": "亚马逊购买信号\n15 个电商类别\n五星用户-商品交互",
+      "label": "从 Amazon Reviews 2023 开始\n覆盖 15 个电商类别的购买记录\n用真实交易中的隐式偏好",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "quality_filter",
-      "label": "数据质量过滤\n标题至少 6 个字母\n用户有 5 至 20 次交易",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "balanced_sample",
-      "label": "均衡采样\n每类最多 200 条行为\n保留 2,761 条交互",
+      "id": "context",
+      "label": "构建推荐上下文\n最近一次购买 = 目标商品\n标题 + 价格 + 商家；更早购买 = 用户历史",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "benchmark_context",
-      "label": "基准上下文\n最近购买作为目标商品\n购买历史构成用户画像",
-      "type": "document",
+      "id": "filter",
+      "label": "应用数据质量控制\n标题 ≥ 6 个字母 • 用户有 5–20 次购买\n仅保留五星购买 • 每类最多 200 条行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "保留 ALERT 数据集\n15 类共 2,761 个用户–商品交互\n仅用购买历史画像；不含人口统计或用户 ID",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "criteria",
-      "label": "解释评估准则\n编辑团队与用户研究共建\n推理、清晰、叙事、中性语气",
+      "label": "制定 4 项评测准则\n电商编辑团队设计 + 用户研究优化\n推理一致性 • 清晰简洁 • 叙事吸引力 • 中性语气",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "pair",
+      "label": "形成两两解释比较\n候选模型 vs PreferenceLogic 基线\n提供用户历史、目标商品与一项准则",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "选择哪种评估器架构？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "gen",
+      "label": "ALERT-Gen\nClaude-3-Sonnet 思维链两两比较\n输出 A / B / C（平局）；系统交换位置",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "evaluators",
-      "label": "LLM 自动评审器\nALERT-Gen 思维链比较\nALERT-Disc 按准则打分",
+      "id": "disc",
+      "label": "ALERT-Disc\nArmoRM 分别为两个解释打分\n准则对应奖励分更高者获胜",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "aggregate",
-      "label": "分治与聚合\n每个准则独立判断\n多数投票得到最终偏好",
+      "id": "divide",
+      "label": "按评测准则拆分\n分别判断推理、清晰度、叙事和语气\n得到四个聚焦的偏好判断",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "meta_eval",
-      "label": "可靠性验证\n负例与专家人工标注\n专家一致性达到 70%",
+      "id": "vote",
+      "label": "多数投票聚合\n合并四项准则偏好\n生成最终 A / B / 平局判断",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "result",
+      "label": "ALERT 基准结果\n胜率 = 候选解释优于基线的交互占比\n分别报告 ALERT-Gen 与 ALERT-Disc 比较",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "meta",
+      "label": "元评测评估器可靠性\n受控数据 / 提示干扰 + 3 位专家标注者\n与专家人工判断约 70% 一致",
+      "type": "user",
       "size": "xl"
     }
   ],
@@ -65,51 +95,80 @@
     {
       "id": "edge-1",
       "from": "source",
-      "to": "quality_filter",
+      "to": "context",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "quality_filter",
-      "to": "balanced_sample",
+      "from": "context",
+      "to": "filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "balanced_sample",
-      "to": "benchmark_context",
+      "from": "filter",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "benchmark_context",
+      "from": "dataset",
       "to": "criteria",
       "type": "primary"
     },
     {
       "id": "edge-5",
       "from": "criteria",
-      "to": "evaluators",
-      "type": "data"
+      "to": "pair",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "evaluators",
-      "to": "aggregate",
+      "from": "pair",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "aggregate",
-      "to": "meta_eval",
+      "from": "route",
+      "to": "gen",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "meta_eval",
-      "to": "criteria",
-      "type": "optional",
-      "label": "校验人类偏好对齐"
+      "from": "route",
+      "to": "disc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "gen",
+      "to": "divide",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "disc",
+      "to": "divide",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "divide",
+      "to": "vote",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "vote",
+      "to": "result",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "vote",
+      "to": "meta",
+      "type": "primary"
     }
   ],
   "modules": []

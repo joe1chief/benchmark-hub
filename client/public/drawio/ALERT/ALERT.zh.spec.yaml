@@ -4,114 +4,175 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ALERT 构建流程
-  description: 基于 Li et al. 2025 论文重绘的 ALERT 推荐解释基准数据构建与 LLM 评审验证流程。
-  legend: 实线表示数据集构建与评审器验证主流程；虚线表示元评测结果对评估准则的校准反馈。
+  title: ALERT 构建与评测流程
+  description: 对齐论文的 ALERT 用户–商品上下文与准则构建，通过 ALERT-Gen 或 ALERT-Disc 架构进行推荐解释两两评测， 再做分治多数投票、胜率报告与人类对齐元评测。
+  legend: 上排构建含 2,761 个交互的基准；下排分流至两种官方评估器之一， 再应用相同的四准则多数投票协议。
 nodes:
   - id: source
     label: |-
-      亚马逊购买信号
-      15 个电商类别
-      五星用户-商品交互
+      从 Amazon Reviews 2023 开始
+      覆盖 15 个电商类别的购买记录
+      用真实交易中的隐式偏好
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: quality_filter
+      'y': 100
+  - id: context
     label: |-
-      数据质量过滤
-      标题至少 6 个字母
-      用户有 5 至 20 次交易
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: balanced_sample
-    label: |-
-      均衡采样
-      每类最多 200 条行为
-      保留 2,761 条交互
+      构建推荐上下文
+      最近一次购买 = 目标商品
+      标题 + 价格 + 商家；更早购买 = 用户历史
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: benchmark_context
+      x: 320
+      'y': 100
+  - id: filter
     label: |-
-      基准上下文
-      最近购买作为目标商品
-      购买历史构成用户画像
+      应用数据质量控制
+      标题 ≥ 6 个字母 • 用户有 5–20 次购买
+      仅保留五星购买 • 每类最多 200 条行为
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: dataset
+    label: |-
+      保留 ALERT 数据集
+      15 类共 2,761 个用户–商品交互
+      仅用购买历史画像；不含人口统计或用户 ID
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: criteria
+    label: |-
+      制定 4 项评测准则
+      电商编辑团队设计 + 用户研究优化
+      推理一致性 • 清晰简洁 • 叙事吸引力 • 中性语气
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: pair
+    label: |-
+      形成两两解释比较
+      候选模型 vs PreferenceLogic 基线
+      提供用户历史、目标商品与一项准则
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: criteria
+      x: 1440
+      'y': 100
+  - id: route
+    label: 选择哪种评估器架构？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 460
+  - id: gen
     label: |-
-      解释评估准则
-      编辑团队与用户研究共建
-      推理、清晰、叙事、中性语气
+      ALERT-Gen
+      Claude-3-Sonnet 思维链两两比较
+      输出 A / B / C（平局）；系统交换位置
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: evaluators
+      x: 1160
+      'y': 360
+  - id: disc
     label: |-
-      LLM 自动评审器
-      ALERT-Gen 思维链比较
-      ALERT-Disc 按准则打分
+      ALERT-Disc
+      ArmoRM 分别为两个解释打分
+      准则对应奖励分更高者获胜
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: aggregate
+      x: 1160
+      'y': 560
+  - id: divide
     label: |-
-      分治与聚合
-      每个准则独立判断
-      多数投票得到最终偏好
+      按评测准则拆分
+      分别判断推理、清晰度、叙事和语气
+      得到四个聚焦的偏好判断
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: meta_eval
+      x: 880
+      'y': 460
+  - id: vote
     label: |-
-      可靠性验证
-      负例与专家人工标注
-      专家一致性达到 70%
+      多数投票聚合
+      合并四项准则偏好
+      生成最终 A / B / 平局判断
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 460
+  - id: result
+    label: |-
+      ALERT 基准结果
+      胜率 = 候选解释优于基线的交互占比
+      分别报告 ALERT-Gen 与 ALERT-Disc 比较
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 360
+  - id: meta
+    label: |-
+      元评测评估器可靠性
+      受控数据 / 提示干扰 + 3 位专家标注者
+      与专家人工判断约 70% 一致
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 560
 edges:
   - from: source
-    to: quality_filter
+    to: context
     type: primary
-  - from: quality_filter
-    to: balanced_sample
+  - from: context
+    to: filter
     type: primary
-  - from: balanced_sample
-    to: benchmark_context
+  - from: filter
+    to: dataset
     type: primary
-  - from: benchmark_context
+  - from: dataset
     to: criteria
     type: primary
   - from: criteria
-    to: evaluators
-    type: data
-  - from: evaluators
-    to: aggregate
+    to: pair
     type: primary
-  - from: aggregate
-    to: meta_eval
+  - from: pair
+    to: route
     type: primary
-  - from: meta_eval
-    to: criteria
-    type: optional
-    label: 校验人类偏好对齐
+  - from: route
+    to: gen
+    type: primary
+  - from: route
+    to: disc
+    type: primary
+  - from: gen
+    to: divide
+    type: primary
+  - from: disc
+    to: divide
+    type: primary
+  - from: divide
+    to: vote
+    type: primary
+  - from: vote
+    to: result
+    type: primary
+  - from: vote
+    to: meta
+    type: primary
 modules: []

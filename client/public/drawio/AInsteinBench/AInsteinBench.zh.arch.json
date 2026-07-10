@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "AInsteinBench 构建流程",
+  "title": "AInsteinBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
       "id": "repositories",
-      "label": "科学代码仓库\nPySCF、Qiskit、RDKit\nAMReX、OpenMM、Einstein Toolkit",
+      "label": "选择 6 个科学软件代码库\nPySCF • Qiskit • Einstein Toolkit\nAMReX • OpenMM • RDKit",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "pr_crawl",
-      "label": "PR 爬取\nissue 描述、base commit\nfix patch 与测试更新",
+      "id": "pr_tasks",
+      "label": "挖掘问题修复任务\n筛选含测试更新的科学 / 数值计算合并 PR\n提取 Issue、基线提交、修复补丁与测试补丁",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "feature_ablation",
-      "label": "特征任务合成\n消融科学模块\n补充测试相关 API 文档",
+      "id": "feature_tasks",
+      "label": "合成功能实现任务\n删除模块 / 源码组件并保留其余上下文\n仅提供测试实际使用签名组成的最小 API 块",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "environment",
-      "label": "环境重建\n历史依赖栈\n隔离 Docker 测试",
+      "label": "重建历史运行环境\n恢复依赖、构建路径和科学工作流\n在隔离的最小 Docker 镜像中运行每项任务",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "filtering",
-      "label": "fail-to-pass 过滤\nbase 通过、patched 失败\nfixed patch 通过",
-      "type": "decision",
+      "id": "f2p",
+      "label": "强制 Fail-to-Pass 转换\n基线提交 + 原测试 = PASS\n加测试补丁 = FAIL • 再加标准修复 = PASS",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "expert_review",
-      "label": "领域专家复核\n科学相关性\n测试强度与难度分层",
+      "id": "expert",
+      "label": "领域专家验证\n检查科学相关性、描述清晰度和测试覆盖\n修订测试；评定科学 + 工程难度",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "AInsteinBench 任务\n244 个问题\n真实 PR 与特征实现",
+      "id": "release",
+      "label": "发布 AInsteinBench\n6 个代码库共 244 道题\n由综合难度分数划分简单 / 中等 / 困难",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "agent_eval",
-      "label": "coding agent 评估\n查看、编辑、跑测试\nsolve rate 与失败分析",
+      "id": "task",
+      "label": "初始化任务容器\n问题描述 + 基础代码库状态\n复现脚本和科学测试套件",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "agent",
+      "label": "运行 CodeAct 编码 Agent\n规划–行动循环：检查、编辑、安装和测试\n在隔离科学环境中迭代",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "patch",
+      "label": "生成候选补丁\n保持代码库 API 与数值行为\n提交最终工作区变更",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "tests",
+      "label": "执行科学验证\n运行复现脚本 + 任务 / 代码库测试\n必须通过隐藏的 Fail-to-Pass 行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "AInsteinBench 结果\n244 道题上的问题解决率\n按代码库、领域、类型和难度拆分",
       "type": "terminal",
       "size": "xl"
     }
@@ -65,56 +89,73 @@
     {
       "id": "edge-1",
       "from": "repositories",
-      "to": "pr_crawl",
+      "to": "pr_tasks",
       "type": "primary"
     },
     {
       "id": "edge-2",
       "from": "repositories",
-      "to": "feature_ablation",
-      "type": "data"
+      "to": "feature_tasks",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "pr_crawl",
+      "from": "pr_tasks",
       "to": "environment",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "feature_ablation",
+      "from": "feature_tasks",
       "to": "environment",
-      "type": "data"
+      "type": "primary"
     },
     {
       "id": "edge-5",
       "from": "environment",
-      "to": "filtering",
+      "to": "f2p",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "filtering",
-      "to": "expert_review",
+      "from": "f2p",
+      "to": "expert",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "expert_review",
-      "to": "filtering",
-      "type": "optional",
-      "label": "调整测试强度"
+      "from": "expert",
+      "to": "release",
+      "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "expert_review",
-      "to": "dataset",
+      "from": "release",
+      "to": "task",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "dataset",
-      "to": "agent_eval",
+      "from": "task",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "agent",
+      "to": "patch",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "patch",
+      "to": "tests",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "tests",
+      "to": "report",
       "type": "primary"
     }
   ],
