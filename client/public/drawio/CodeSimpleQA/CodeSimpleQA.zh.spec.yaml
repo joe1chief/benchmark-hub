@@ -5,75 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CodeSimpleQA 构建流程
-  description: 按论文对齐的 CodeSimpleQA 构建流程：从官方代码文档到双语事实问答评测。
-  legend: 实线箭头表示文档采集、事实问答改写、人工标注、质量校验、双语基准发布、模型作答和事实性评分。
+  description: 对齐论文且显式处理文本不一致的双语代码事实问答评测集构建；与 66.9M 训练语料严格分离， 并通过事实性答案等级评分。
+  legend: 先从左到右阅读基准整理行，再从右到左阅读纯评测行；橙色表示论文文本校准。
 nodes:
-  - id: docs
-    label: 代码文档
+  - id: families
+    label: |-
+      论文报告的三类来源
+      Code WebQA + 自构造问题
+      人工编写的文档问答
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: draft
-    label: 问答草稿
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: annot
-    label: 人工复核
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: valid
-    label: 来源校验
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: set
-    label: 双语集合
+      'y': 100
+  - id: documents
+    label: |-
+      人工编写的双语文档分支
+      Stack Overflow / GitHub / 官方文档
+      Python.org / MDN / CSDN / SegmentFault
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: answer
-    label: 模型作答
+      x: 320
+      'y': 100
+  - id: annotate
+    label: |-
+      人工改写问答
+      8名受训多语言标注员
+      1,500个候选 -> 680组规范问答
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 准确率
+      x: 600
+      'y': 100
+  - id: review
+    label: |-
+      工程师独立复核
+      事实性 / 清晰度 / 来源一致性
+      至少3名复核者共识后保留312组
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: reconcile
+    label: |-
+      合并来源并校准计数
+      Code WebQA + 自构造 + 312组人工问答
+      一致报告1,498/英文782；一段写1,478/762
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: dataset
+    label: |-
+      CodeSimpleQA 评测集
+      采用一致报告：1,498 = 英文782 + 中文716
+      15+编程语言 / 21个计算机领域
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: boundary
+    label: |-
+      评测 / 训练边界
+      不与 CodeSimpleQA-Instruct 混合
+      后者是独立的66.9M条训练语料
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: answer
+    label: |-
+      模型回答代码事实问题
+      英文与中文提示
+      简洁、以文档为依据的回复
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      事实性裁判
+      问题 + 预测 + 参考答案 / 来源
+      检查完整包含与矛盾
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: grades
+    label: |-
+      三类答案等级
+      正确（CO）/ 未尝试（NA）
+      错误（IN）
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      代码事实问答指标
+      正确率 + 尝试中正确率
+      F-Score与语言 / 领域分项
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: docs
-    to: draft
+  - from: families
+    to: documents
     type: primary
-  - from: draft
-    to: annot
+  - from: documents
+    to: annotate
     type: primary
-  - from: annot
-    to: valid
+  - from: annotate
+    to: review
     type: primary
-  - from: valid
-    to: set
+  - from: review
+    to: reconcile
     type: primary
-  - from: set
+  - from: reconcile
+    to: dataset
+    type: primary
+  - from: dataset
+    to: boundary
+    type: primary
+  - from: boundary
     to: answer
     type: primary
   - from: answer
-    to: score
+    to: judge
+    type: primary
+  - from: judge
+    to: grades
+    type: primary
+  - from: grades
+    to: report
     type: primary
 modules: []

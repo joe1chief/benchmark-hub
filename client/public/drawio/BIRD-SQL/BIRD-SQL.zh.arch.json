@@ -7,56 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "db_sources",
-      "label": "真实数据库来源\nKaggle、CTU、开放表\n噪声大值域 schema",
+      "id": "databases",
+      "label": "真实大型数据库\n80个开放DB来自Kaggle / Relation.vit / 表格\n15个新建隐藏测试DB",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "db_curation",
-      "label": "数据库整理\n95 个数据库 / 37 个领域\nschema 与值描述文件",
+      "id": "descriptions",
+      "label": "数据库准备\n标准化Schema与约束\n编写表 / 列 / 值描述文件",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "annotator_gate",
-      "label": "标注者准入\n专家培训与考试\n只保留合格人员",
+      "id": "workers",
+      "label": "合格标注团队\n专家培训并考核众包人员\n保留11名母语提问者 + SQL专家",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "question_annotation",
-      "label": "问题标注\n使用数据库描述\n记录外部知识证据",
+      "id": "questions",
+      "label": "自然语言问题\n使用数据库 + 描述文件\n记录所需外部知识证据",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "sql_annotation",
-      "label": "双盲 SQL 标注\n两名 SQL 标注者独立完成\n执行并比较结果",
+      "id": "doubleblind",
+      "label": "双盲 SQL 标注\n每题由两名独立人员编写SQL\n分别执行并比较结果集",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "expert_review",
-      "label": "专家审核\nSQL 有效性\n文本-知识-SQL 对齐\n选择高效标准答案",
-      "type": "decision",
+      "id": "expert",
+      "label": "专家共识与检查\n解决分歧；检查可执行 / 非NULL\n验证文本-知识-SQL对齐",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "BIRD-SQL 数据集\n12,751 个 text-SQL 对\n69 训 / 11 验 / 15 测数据库",
+      "id": "dataset",
+      "label": "BIRD-SQL 发布\n12,751对 / 95个DB / 33.4GB / 37领域\n69训练 / 11开发 / 15隐藏测试DB",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "evaluation",
-      "label": "评测协议\nEX、VA、R-VES\n正确性与执行效率",
+      "id": "input",
+      "label": "知识落地的 Text-to-SQL 输入\n问题Q + 数据库D\n外部知识K + Schema描述",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "模型生成 SQL\n微调或零样本 / 上下文学习模型\n知识与思维链提示变体",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "execute",
+      "label": "执行预测与标准 SQL\n比较结果集判定有效性\n测量相对查询时间",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "正确性与效率\n执行准确率（EX）\n有效效率分数（VES）",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,58 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "db_sources",
-      "to": "db_curation",
+      "from": "databases",
+      "to": "descriptions",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "db_curation",
-      "to": "question_annotation",
+      "from": "descriptions",
+      "to": "workers",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "annotator_gate",
-      "to": "question_annotation",
-      "type": "data"
+      "from": "workers",
+      "to": "questions",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "question_annotation",
-      "to": "sql_annotation",
+      "from": "questions",
+      "to": "doubleblind",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "sql_annotation",
-      "to": "expert_review",
+      "from": "doubleblind",
+      "to": "expert",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "expert_review",
-      "to": "sql_annotation",
-      "type": "optional",
-      "label": "结果不一致时共识审核"
+      "from": "expert",
+      "to": "dataset",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "expert_review",
-      "to": "splits",
+      "from": "dataset",
+      "to": "input",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "question_annotation",
-      "to": "splits",
-      "type": "optional",
-      "label": "记录知识证据"
+      "from": "input",
+      "to": "generate",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "splits",
-      "to": "evaluation",
+      "from": "generate",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "execute",
+      "to": "report",
       "type": "primary"
     }
   ],

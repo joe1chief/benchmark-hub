@@ -5,100 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CF-Div2-Stepfun 构建流程
-  description: >-
-    基于 Step 3.5 Flash 技术报告对齐 CF-Div2-Stepfun：选择新鲜的官方 CodeForces Div.2 题目， 用离线本地评测替代在线提交，构造小规模、随机、对抗和压力测试，用
-    accepted/failed 提交校验评测器， 并以 avg@8、pass@8 和简化 rating 给模型计分。
-  legend: 实线箭头表示比赛题选择、测试构造、沙箱评分、评测器校验和模型计分。
+  description: 对齐附录的近期 53 题 Codeforces Div.2 基准构建：离线本地评分、分层测试生成、 正确/失败提交验证、八次采样评测与竞赛 Rating。
+  legend: 先从左到右阅读离线测试构建行，再从右到左阅读评分器验证与模型评测行。
 nodes:
   - id: contests
-    label: 比赛
+    label: |-
+      近期官方 Codeforces Div.2
+      2024年9月至2025年2月竞赛
+      竞赛级、截点后的新题
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 100
   - id: problems
-    label: 题目
+    label: |-
+      CF-Div2-Stepfun
+      53道官方竞赛题
+      题面 + 约束 + 提交证据
     type: document
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: small_tests
-    label: 小测
+      x: 320
+      'y': 100
+  - id: small
+    label: |-
+      阶段一：小规模正确性测试
+      生成足量紧凑用例
+      覆盖核心功能行为
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: random_tests
-    label: 随机
+      x: 600
+      'y': 100
+  - id: random
+    label: |-
+      阶段二：大规模随机测试
+      随机化高规模输入
+      检查复杂度与限制
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: edge_tests
-    label: 边界
-    type: decision
+      x: 880
+      'y': 100
+  - id: adversarial
+    label: |-
+      阶段三：对抗边界用例
+      分析常见错误模式
+      利用真实用户被Hack提交的证据
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1160
+      'y': 100
+  - id: stress
+    label: |-
+      压力测试扩展
+      持续生成直至出现反例
+      区分失败提交与正确提交
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
   - id: grader
-    label: 评测器
+    label: |-
+      离线本地评分器
+      替代实时在线提交
+      统一编译与执行命令
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1440
+      'y': 440
   - id: validate
-    label: 校验
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: models
-    label: 模型
+    label: |-
+      可靠性验证
+      100%的Accepted提交判为通过
+      92.45%的代表性失败提交被识别
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: scores
-    label: 分数
+      x: 1160
+      'y': 440
+  - id: sample
+    label: |-
+      模型评测提示
+      每题生成8次回复
+      C++ / Python / Java完整程序
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: execute
+    label: |-
+      编译并运行每次尝试
+      执行分层离线测试套件
+      仅全部用例成功才标记Passed
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      竞赛级得分
+      准确率（avg@8）+ pass@8
+      简化 Codeforces C++ Rating
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 320
+      'y': 440
 edges:
   - from: contests
     to: problems
     type: primary
   - from: problems
-    to: small_tests
+    to: small
     type: primary
-  - from: problems
-    to: random_tests
+  - from: small
+    to: random
     type: primary
-  - from: small_tests
-    to: edge_tests
+  - from: random
+    to: adversarial
     type: primary
-  - from: random_tests
-    to: edge_tests
+  - from: adversarial
+    to: stress
     type: primary
-  - from: edge_tests
+  - from: stress
     to: grader
     type: primary
   - from: grader
     to: validate
     type: primary
   - from: validate
-    to: models
+    to: sample
     type: primary
-  - from: models
-    to: scores
+  - from: sample
+    to: execute
+    type: primary
+  - from: execute
+    to: report
     type: primary
 modules: []

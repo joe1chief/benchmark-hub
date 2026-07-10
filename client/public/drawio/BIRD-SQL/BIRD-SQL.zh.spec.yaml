@@ -5,118 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BIRD-SQL 构建流程
-  description: 基于 arXiv:2305.03111，对齐论文的 BIRD-SQL 数据库收集、双盲 SQL 标注、专家审核和执行效率评测流程。
-  legend: 实线表示数据集构建与评测主流程；虚线表示外部知识记录和专家共识回路。
+  description: 对齐论文的大规模、脏数据、知识落地 Text-to-SQL 构建：经真实数据库整理、合格众包标注、 双盲 SQL 编写、专家共识与效率感知执行形成基准。
+  legend: 先从左到右阅读标注行，再从右到左阅读数据发布与可执行评测行。
 nodes:
-  - id: db_sources
+  - id: databases
     label: |-
-      真实数据库来源
-      Kaggle、CTU、开放表
-      噪声大值域 schema
+      真实大型数据库
+      80个开放DB来自Kaggle / Relation.vit / 表格
+      15个新建隐藏测试DB
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: db_curation
+      'y': 100
+  - id: descriptions
     label: |-
-      数据库整理
-      95 个数据库 / 37 个领域
-      schema 与值描述文件
+      数据库准备
+      标准化Schema与约束
+      编写表 / 列 / 值描述文件
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: annotator_gate
+      x: 320
+      'y': 100
+  - id: workers
     label: |-
-      标注者准入
-      专家培训与考试
-      只保留合格人员
+      合格标注团队
+      专家培训并考核众包人员
+      保留11名母语提问者 + SQL专家
     type: user
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: question_annotation
+      x: 600
+      'y': 100
+  - id: questions
     label: |-
-      问题标注
-      使用数据库描述
-      记录外部知识证据
+      自然语言问题
+      使用数据库 + 描述文件
+      记录所需外部知识证据
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: sql_annotation
+      x: 880
+      'y': 100
+  - id: doubleblind
     label: |-
       双盲 SQL 标注
-      两名 SQL 标注者独立完成
-      执行并比较结果
+      每题由两名独立人员编写SQL
+      分别执行并比较结果集
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: expert_review
+      x: 1160
+      'y': 100
+  - id: expert
     label: |-
-      专家审核
-      SQL 有效性
-      文本-知识-SQL 对齐
-      选择高效标准答案
-    type: decision
+      专家共识与检查
+      解决分歧；检查可执行 / 非NULL
+      验证文本-知识-SQL对齐
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: splits
+      x: 1440
+      'y': 100
+  - id: dataset
     label: |-
-      BIRD-SQL 数据集
-      12,751 个 text-SQL 对
-      69 训 / 11 验 / 15 测数据库
+      BIRD-SQL 发布
+      12,751对 / 95个DB / 33.4GB / 37领域
+      69训练 / 11开发 / 15隐藏测试DB
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
+      x: 1440
+      'y': 440
+  - id: input
     label: |-
-      评测协议
-      EX、VA、R-VES
-      正确性与执行效率
+      知识落地的 Text-to-SQL 输入
+      问题Q + 数据库D
+      外部知识K + Schema描述
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: generate
+    label: |-
+      模型生成 SQL
+      微调或零样本 / 上下文学习模型
+      知识与思维链提示变体
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: execute
+    label: |-
+      执行预测与标准 SQL
+      比较结果集判定有效性
+      测量相对查询时间
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      正确性与效率
+      执行准确率（EX）
+      有效效率分数（VES）
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: db_sources
-    to: db_curation
+  - from: databases
+    to: descriptions
     type: primary
-  - from: db_curation
-    to: question_annotation
+  - from: descriptions
+    to: workers
     type: primary
-  - from: annotator_gate
-    to: question_annotation
-    type: data
-  - from: question_annotation
-    to: sql_annotation
+  - from: workers
+    to: questions
     type: primary
-  - from: sql_annotation
-    to: expert_review
+  - from: questions
+    to: doubleblind
     type: primary
-  - from: expert_review
-    to: sql_annotation
-    type: optional
-    label: 结果不一致时共识审核
-  - from: expert_review
-    to: splits
+  - from: doubleblind
+    to: expert
     type: primary
-  - from: question_annotation
-    to: splits
-    type: optional
-    label: 记录知识证据
-  - from: splits
-    to: evaluation
+  - from: expert
+    to: dataset
+    type: primary
+  - from: dataset
+    to: input
+    type: primary
+  - from: input
+    to: generate
+    type: primary
+  - from: generate
+    to: execute
+    type: primary
+  - from: execute
+    to: report
     type: primary
 modules: []

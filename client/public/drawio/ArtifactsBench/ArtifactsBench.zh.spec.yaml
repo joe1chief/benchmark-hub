@@ -5,114 +5,140 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ArtifactsBench 构建流程
-  description: 基于 arXiv:2507.04952，对齐 ArtifactsBench 的候选来源、过滤、checklist 校准、沙箱截图评测和 MLLM 裁判验证流程。
-  legend: 实线表示基准构建与自动评测主流程；虚线表示歧义修复、人类验证和 WebDev Arena 对齐。
+  description: 对齐论文的动态交互式作品构建与评测：从多源候选，经校准检查表、确定性浏览器轨迹、 双 MLLM 裁判与人类验证形成可复现分数。
+  legend: 先从左到右阅读基准构建行，再从右到左阅读可执行多模态评测行。
 nodes:
-  - id: candidate_sources
+  - id: sources
     label: |-
-      候选来源
-      专家 showcase
-      SVG/网页片段与截图
+      多源候选
+      专家作品 + SVG/网页数据集
+      案例研究 + 截图转查询生成
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filtering
+      'y': 100
+  - id: filter
     label: |-
-      来源过滤
-      移除无效、简单
-      非视觉或非交互项
+      自动来源过滤
+      删除不完整 / 非视觉 / 过于简单项
+      检查许可并要求交互动态
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
+      x: 320
+      'y': 100
   - id: dedup
     label: |-
-      去重与污染控制
-      MinHash、语义相似度
+      两阶段去重
+      MinHash + DOM/CSS/JS 语义相似度
       截图感知哈希
-    type: decision
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: rewriting
+      x: 600
+      'y': 100
+  - id: rewrite
     label: |-
-      提示词改写
-      专家清晰度审核
-      30/40/30 难度校准
+      提示修复与可解性检查
+      专家 + LLM 清晰度改写
+      修订或删除脆弱 / 歧义任务
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: checklist
+    label: |-
+      校准的任务检查表
+      Hunyuan-Turbos 起草10个维度
+      人工精炼；Cohen's Kappa不低于0.8
     type: document
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: checklist
-    label: |-
-      Checklist 校准
-      10 个维度
-      LLM 草拟并人工精修
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 250
+      x: 1160
+      'y': 100
   - id: dataset
     label: |-
-      ArtifactsBench 数据集
-      1,825 个可执行查询
-      九主题与校准难度层级
+      ArtifactsBench：1,825题
+      9个动态视觉领域
+      后验难度分布：30 / 40 / 30
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1440
+      'y': 100
   - id: execution
     label: |-
-      沙箱执行
-      Playwright 1024x768
-      交互前中后三张截图
+      确定性浏览器沙箱
+      提取并执行模型代码
+      Playwright / Chromium，1024 x 768
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: trajectory
+    label: |-
+      脚本化交互轨迹
+      捕获交互前 / 中 / 后
+      三张按时间排序的截图
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: referees
+    label: |-
+      检查表引导的双裁判
+      Qwen2.5-VL-72B + Gemini-2.5-Pro
+      评分5个视觉 + 5个代码维度
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: human
+    label: |-
+      双盲人类验证
+      280个实例 / 6个模型
+      前端工程师；Pair ACC最高90.95%
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: arena
+    label: |-
+      外部排名保真度检查
+      比较完整模型排名
+      对齐 WebDev Arena 人类偏好
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      可复现的作品得分
+      视觉保真度 + 交互正确性
+      代码逻辑 / 鲁棒性 / 工程质量
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: judge
-    label: |-
-      MLLM-as-Judge
-      checklist 引导双裁判
-      代码与视觉证据
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: validation
-    label: |-
-      对齐报告
-      280 例人类研究
-      WebDev Arena 一致性 94.4%
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: candidate_sources
-    to: filtering
+  - from: sources
+    to: filter
     type: primary
-  - from: filtering
+  - from: filter
     to: dedup
     type: primary
   - from: dedup
-    to: rewriting
+    to: rewrite
     type: primary
-  - from: dedup
-    to: filtering
-    type: optional
-    label: 改写或丢弃
-  - from: rewriting
+  - from: rewrite
     to: checklist
     type: primary
   - from: checklist
@@ -122,13 +148,18 @@ edges:
     to: execution
     type: primary
   - from: execution
-    to: judge
+    to: trajectory
     type: primary
-  - from: judge
-    to: validation
+  - from: trajectory
+    to: referees
     type: primary
-  - from: validation
-    to: checklist
-    type: optional
-    label: 人类与 Arena 校准
+  - from: referees
+    to: human
+    type: primary
+  - from: human
+    to: arena
+    type: primary
+  - from: arena
+    to: report
+    type: primary
 modules: []

@@ -5,77 +5,152 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CodeSimpleQA Build Process
-  description: Paper-aligned CodeSimpleQA flow from official code documents to bilingual factual QA evaluation.
+  description: >-
+    Paper-aligned and discrepancy-aware construction of the bilingual factual code QA evaluation set, kept separate from
+    the 66.9M-sample training corpus and scored with factuality-aware answer grades.
   legend: >-
-    Solid arrows show source-document collection, factual QA rewriting, human annotation, validation, bilingual
-    benchmark release, model answering, and factuality scoring.
+    Read the benchmark curation row left-to-right, then the evaluation-only row right-to-left; orange marks paper-text
+    reconciliation.
 nodes:
-  - id: docs
-    label: Code Docs
+  - id: families
+    label: |-
+      Three Reported Source Families
+      Code WebQA + Self-Constructed Questions
+      Human-Written Documentation QA
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: draft
-    label: QA Draft
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: annot
-    label: Human Check
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: valid
-    label: Source Valid
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: set
-    label: Bilingual Set
+      'y': 100
+  - id: documents
+    label: |-
+      Human-Written Documentation Branch
+      Stack Overflow / GitHub / Official Docs
+      Python.org / MDN / CSDN / SegmentFault
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: answer
-    label: Model Answer
+      x: 320
+      'y': 100
+  - id: annotate
+    label: |-
+      Human QA Rewriting
+      Eight Trained Multi-Language Annotators
+      1,500 Candidates -> 680 Well-Formed Pairs
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
+      x: 600
+      'y': 100
+  - id: review
+    label: |-
+      Independent Engineer Review
+      Factuality / Clarity / Source Alignment
+      Retain 312 with at Least Three-Reviewer Consensus
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: reconcile
+    label: |-
+      Merge Sources and Reconcile Count
+      Code WebQA + Self-Constructed + 312 Human QAs
+      Consistent 1,498/782 EN; One Paragraph 1,478/762
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: dataset
+    label: |-
+      CodeSimpleQA Evaluation Set
+      Use Consistent Report: 1,498 = 782 EN + 716 ZH
+      15+ Languages / 21 CS Domains
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: boundary
+    label: |-
+      Evaluation / Training Boundary
+      Do Not Mix with CodeSimpleQA-Instruct
+      Separate 66.9M-Sample Post-Training Corpus
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: answer
+    label: |-
+      Model Answers Factual Code Questions
+      English and Chinese Prompts
+      Concise Documentation-Grounded Response
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      Factuality Judge
+      Question + Prediction + Reference / Source
+      Check Full Inclusion and Contradictions
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: grades
+    label: |-
+      Three Answer Grades
+      Correct (CO) / Not Attempted (NA)
+      Incorrect (IN)
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      Factual Code QA Metrics
+      Correct Rate + Correct Given Attempted
+      F-Score and Language / Domain Breakdowns
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: docs
-    to: draft
+  - from: families
+    to: documents
     type: primary
-  - from: draft
-    to: annot
+  - from: documents
+    to: annotate
     type: primary
-  - from: annot
-    to: valid
+  - from: annotate
+    to: review
     type: primary
-  - from: valid
-    to: set
+  - from: review
+    to: reconcile
     type: primary
-  - from: set
+  - from: reconcile
+    to: dataset
+    type: primary
+  - from: dataset
+    to: boundary
+    type: primary
+  - from: boundary
     to: answer
     type: primary
   - from: answer
-    to: score
+    to: judge
+    type: primary
+  - from: judge
+    to: grades
+    type: primary
+  - from: grades
+    to: report
     type: primary
 modules: []
