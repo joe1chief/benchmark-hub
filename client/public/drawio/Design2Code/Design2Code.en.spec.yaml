@@ -5,75 +5,165 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Design2Code Build Process
-  description: Paper-aligned Design2Code flow from real webpage curation to screenshot-to-code visual and human evaluation.
-  legend: Solid arrows show webpage collection, quality filtering, reference creation, code generation, and evaluation.
+  description: >-
+    Paper-aligned curation of real-world screenshot-to-code test pages from C4, followed by rendered-page comparison
+    using high-level and element-level visual metrics validated against human pairwise preferences.
+  legend: >-
+    Read the main benchmark curation row left-to-right, then the screenshot-to-code evaluation row right-to-left; orange
+    distinguishes the main C4 set from the separately sourced HARD set.
 nodes:
   - id: c4
-    label: C4 Web Links
+    label: |-
+      C4 Validation Web Links
+      Scrape Real-World Pages
+      Inline All CSS into One HTML File per Page
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: scrape
-    label: Scrape Inline
+      'y': 100
+  - id: raw
+    label: |-
+      Initial Real-Web Pool
+      127.9k Self-Contained HTML Pages
+      Preserve Real Layout and Content Complexity
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: auto_filter
+    label: |-
+      Automatic Filtering + Deduplication
+      Remove Pages Too Long or Too Simple
+      127.9k -> 14k Candidates
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: Auto Filters
+      x: 600
+      'y': 100
+  - id: isolate
+    label: |-
+      Make Pages Evaluation-Ready
+      Remove External Dependencies
+      Replace Multimedia with Placeholders
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 880
+      'y': 100
   - id: manual
-    label: Manual Pick
-    type: process
+    label: |-
+      Two-Author Manual Curation
+      Align on 200 Pages at 75% Agreement
+      Review 7k for Quality / Safety / Format / Diversity
+    type: user
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: reference
-    label: Reference Shot
+      x: 1160
+      'y': 100
+  - id: sets
+    label: |-
+      Two Evaluation Sets
+      Main: 484 C4 Real Pages
+      Separate HARD: 80 GitHub Pages via Same Filters
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: screenshot
+    label: |-
+      Model Input
+      Reference Webpage Screenshot
+      Direct / Text-Augmented / Self-Revision Prompts
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1440
+      'y': 440
   - id: code
-    label: Generate Code
+    label: |-
+      Multimodal Code Generation
+      Produce HTML + CSS Implementation
+      No Reference Source Code Exposed
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Visual Eval
+      x: 1160
+      'y': 440
+  - id: render
+    label: |-
+      Browser Rendering
+      Execute Generated Implementation
+      Capture Generated Webpage Screenshot
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: match
+    label: |-
+      Element Detection and Matching
+      Text + Non-Text Blocks
+      Hungarian Assignment from Text Similarity
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: metrics
+    label: |-
+      Automatic Visual Metrics
+      Block-Match / Text / Position / Color
+      High-Level CLIP Similarity
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: human
+    label: |-
+      Human Validation and Reporting
+      100 Examples x 5 Annotators + Majority Vote
+      Metrics Predict Pairwise Preference at 79.9% Accuracy
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
 edges:
   - from: c4
-    to: scrape
+    to: raw
     type: primary
-  - from: scrape
-    to: filter
+  - from: raw
+    to: auto_filter
     type: primary
-  - from: filter
+  - from: auto_filter
+    to: isolate
+    type: primary
+  - from: isolate
     to: manual
     type: primary
   - from: manual
-    to: reference
+    to: sets
     type: primary
-  - from: reference
+  - from: sets
+    to: screenshot
+    type: primary
+  - from: screenshot
     to: code
     type: primary
   - from: code
-    to: eval
+    to: render
+    type: primary
+  - from: render
+    to: match
+    type: primary
+  - from: match
+    to: metrics
+    type: primary
+  - from: metrics
+    to: human
     type: primary
 modules: []

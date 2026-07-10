@@ -5,75 +5,161 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CRUXEval 构建流程
-  description: 对齐论文的 CRUXEval 流程：从 Code Llama 候选生成到过滤后的 800 个函数输入/输出预测任务。
-  legend: 实线箭头表示候选生成、过滤、样本量选择和执行式评分。
+  description: 依据论文呈现确定性 Python 执行题的生成、过滤与抽样流程，以及成对的输入预测、输出预测、 可执行正确性验证和 Bootstrap 不确定性评估。
+  legend: 上行从左到右阅读候选构建，下行从右到左阅读双任务执行评测。
 nodes:
-  - id: llama
-    label: Code Llama
+  - id: library
+    label: |-
+      标准库函数种子
+      共 69 个：47 str + 11 dict + 11 list
+      使用两组变化的少样本示例
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: generate
+    label: |-
+      Code Llama 34B 过量生成
+      生成 Python 函数与 5 个输入
+      执行函数得到对应输出
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: pool
+    label: |-
+      原始候选池
+      102,000 个函数
+      489,306 组输入输出对
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: compile_filter
+    label: |-
+      编译期过滤
+      使用全部参数、语法与断言有效
+      代码长度为 75-300 字符
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: runtime_filter
+    label: |-
+      运行期与安全过滤
+      无浮点、导入或副作用
+      确定性、无异常且 2 秒内完成
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: sample
+    label: |-
+      噪声感知最终抽样
+      从 1,700 个候选 Bootstrap 不同规模
+      随机选取 800 个稳定样本
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: dataset
+    label: |-
+      CRUXEval 发布集
+      800 个确定性 Python 函数
+      每题 3-13 行并配一组输入输出
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: tasks
+    label: |-
+      两个互补任务
+      CRUXEval-O：由函数和输入预测输出
+      CRUXEval-I：寻找能产生目标输出的任意输入
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: generate_answer
+    label: |-
+      模型预测
+      直接提示或思维链提示
+      输出 Python 输入或输出字面量
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: execute
+    label: |-
+      基于执行的正确性
+      输出题：f(输入) == 生成输出
+      输入题：f(生成输入) == 目标输出
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: uncertainty
+    label: |-
+      统计可靠性
+      对数据集执行 10,000 次 Bootstrap
+      报告 2.5%-97.5% 区间
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      CRUXEval-I 与 CRUXEval-O 结果
+      Pass@1 与 Pass@5
+      成对模型比较
     type: terminal
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: stdlib
-    label: 标准库种子
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: pairs
-    label: 输入输出对
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: filters
-    label: 质量过滤
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: sample
-    label: 自举800
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: tasks
-    label: 输入输出任务
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      'y': 440
 edges:
-  - from: llama
-    to: stdlib
+  - from: library
+    to: generate
     type: primary
-  - from: stdlib
-    to: pairs
+  - from: generate
+    to: pool
     type: primary
-  - from: pairs
-    to: filters
+  - from: pool
+    to: compile_filter
     type: primary
-  - from: filters
+  - from: compile_filter
+    to: runtime_filter
+    type: primary
+  - from: runtime_filter
     to: sample
     type: primary
   - from: sample
+    to: dataset
+    type: primary
+  - from: dataset
     to: tasks
     type: primary
   - from: tasks
-    to: score
+    to: generate_answer
+    type: primary
+  - from: generate_answer
+    to: execute
+    type: primary
+  - from: execute
+    to: uncertainty
+    type: primary
+  - from: uncertainty
+    to: report
     type: primary
 modules: []

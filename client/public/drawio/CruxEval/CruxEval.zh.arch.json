@@ -7,89 +7,149 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "llama",
-      "label": "Code Llama",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "stdlib",
-      "label": "标准库种子",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "pairs",
-      "label": "输入输出对",
+      "id": "library",
+      "label": "标准库函数种子\n共 69 个：47 str + 11 dict + 11 list\n使用两组变化的少样本示例",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "filters",
-      "label": "质量过滤",
+      "id": "generate",
+      "label": "Code Llama 34B 过量生成\n生成 Python 函数与 5 个输入\n执行函数得到对应输出",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "pool",
+      "label": "原始候选池\n102,000 个函数\n489,306 组输入输出对",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "compile_filter",
+      "label": "编译期过滤\n使用全部参数、语法与断言有效\n代码长度为 75-300 字符",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "runtime_filter",
+      "label": "运行期与安全过滤\n无浮点、导入或副作用\n确定性、无异常且 2 秒内完成",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "自举800",
+      "label": "噪声感知最终抽样\n从 1,700 个候选 Bootstrap 不同规模\n随机选取 800 个稳定样本",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "CRUXEval 发布集\n800 个确定性 Python 函数\n每题 3-13 行并配一组输入输出",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "tasks",
-      "label": "输入输出任务",
+      "label": "两个互补任务\nCRUXEval-O：由函数和输入预测输出\nCRUXEval-I：寻找能产生目标输出的任意输入",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generate_answer",
+      "label": "模型预测\n直接提示或思维链提示\n输出 Python 输入或输出字面量",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Pass@k",
-      "type": "document",
+      "id": "execute",
+      "label": "基于执行的正确性\n输出题：f(输入) == 生成输出\n输入题：f(生成输入) == 目标输出",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "uncertainty",
+      "label": "统计可靠性\n对数据集执行 10,000 次 Bootstrap\n报告 2.5%-97.5% 区间",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "CRUXEval-I 与 CRUXEval-O 结果\nPass@1 与 Pass@5\n成对模型比较",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "llama",
-      "to": "stdlib",
+      "from": "library",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "stdlib",
-      "to": "pairs",
+      "from": "generate",
+      "to": "pool",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "pairs",
-      "to": "filters",
+      "from": "pool",
+      "to": "compile_filter",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "filters",
-      "to": "sample",
+      "from": "compile_filter",
+      "to": "runtime_filter",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "sample",
-      "to": "tasks",
+      "from": "runtime_filter",
+      "to": "sample",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "sample",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "dataset",
+      "to": "tasks",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "tasks",
-      "to": "score",
+      "to": "generate_answer",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "generate_answer",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "execute",
+      "to": "uncertainty",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "uncertainty",
+      "to": "report",
       "type": "primary"
     }
   ],

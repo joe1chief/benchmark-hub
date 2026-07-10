@@ -5,77 +5,163 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FronTalk Build Process
-  description: Paper-aligned FronTalk flow from real website sampling to agent-based front-end evaluation.
-  legend: >-
-    Solid arrows show C4 website sampling, representative site selection, intent/test generation, simulator-based
-    instruction grounding, manual refinement, web-agent evaluation, and pass/usability reporting.
+  description: >-
+    Paper-aligned curation of multi-turn front-end dialogues with equivalent textual and visual feedback, followed by
+    web-agent instruction-following, forgetting, and first-time-user usability evaluation.
+  legend: Read the dialogue and test construction row left-to-right, then the conversational evaluation row right-to-left.
 nodes:
   - id: c4
-    label: C4 Sites
+    label: |-
+      Real-World Website Pool
+      Sample 10,000 Webpages from C4
+      Exclude Low-Information Seeds Later
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 100
+  - id: cluster
+    label: |-
+      Summarize and Cluster Websites
+      GPT-4o Content + Feature Summaries
+      BERTopic Finds Thematic Clusters
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
   - id: sites
-    label: 100 Sites
+    label: |-
+      Manual Representative Selection
+      One Informative Site per Prominent Cluster
+      100 Diverse Seed Websites
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: intents
+    label: |-
+      Ten-Turn Intent + Test Generation
+      GPT-4o Produces Functional or Design Intents
+      Pair Each Intent with Verifiable Test Cases
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: tests
-    label: Intents/Test
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: sim
-    label: Text/Vis Sim
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
+      x: 880
+      'y': 100
   - id: refine
-    label: Manual Refine
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: agent
-    label: Web Agent
+    label: |-
+      Manual Test-Case Refinement
+      Remove 66 Hallucinated Cases (1.7%)
+      Edit 2,783 (73.4%); Validity 90.1% -> 94.7%
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass/UX
+      x: 1160
+      'y': 100
+  - id: dataset
+    label: |-
+      FronTalk Release
+      100 Dialogues / 1,000 Turns
+      3,676 Manually Refined Test Cases
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: simulator
+    label: |-
+      Equivalent User Feedback
+      Text Simulator Resolves Intent from History
+      Visual Simulator Annotates Current Screenshots
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: generation
+    label: |-
+      Conversational Code Generation
+      Condition on Current Instruction + Full History
+      Produce Updated Front-End Code Every Turn
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: render
+    label: |-
+      Render Conversation Outputs
+      Preserve Intermediate Turn Websites
+      Final Website Comes from Turn 10 Code
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: instruction
+    label: |-
+      Agent-Based Instruction Following
+      Web Agent Explores and Executes Test Cases
+      Image Tools Support Visual Design Checks
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: forgetting
+    label: |-
+      Multi-Turn Forgetting Analysis
+      Evaluate Intermediate and Final Outputs
+      Detect Previously Passing Features that Regress
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: usability
+    label: |-
+      FronTalk Metrics
+      Pass Rate + Forgetting Rate
+      First-Time-User Trajectories -> Pairwise UX Win Rate
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
 edges:
   - from: c4
+    to: cluster
+    type: primary
+  - from: cluster
     to: sites
     type: primary
   - from: sites
-    to: tests
+    to: intents
     type: primary
-  - from: tests
-    to: sim
-    type: primary
-  - from: sim
+  - from: intents
     to: refine
     type: primary
   - from: refine
-    to: agent
+    to: dataset
     type: primary
-  - from: agent
-    to: score
+  - from: dataset
+    to: simulator
+    type: primary
+  - from: simulator
+    to: generation
+    type: primary
+  - from: generation
+    to: render
+    type: primary
+  - from: render
+    to: instruction
+    type: primary
+  - from: instruction
+    to: forgetting
+    type: primary
+  - from: forgetting
+    to: usability
     type: primary
 modules: []

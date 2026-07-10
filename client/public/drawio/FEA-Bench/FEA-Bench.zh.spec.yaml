@@ -5,75 +5,161 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FEA-Bench 构建流程
-  description: 按论文对齐的 FEA-Bench 构建流程：从 GitHub PR 到可执行的新功能实现任务。
-  legend: 实线箭头表示仓库选择、PR过滤、功能意图过滤、测试补丁抽取、任务环境、模型补丁以及单测评估。
+  description: 依据论文呈现从 Top PyPI 对应 GitHub 拉取请求构建仓库级功能实现任务的过程，包含仓库快速验证、 新组件与意图门禁、补丁前后可执行测试和实例解决率评测。
+  legend: 上行从左到右阅读仓库与拉取请求过滤，下行从右到左阅读可执行基准评测。
 nodes:
-  - id: prs
-    label: GitHub PR
+  - id: pypi
+    label: |-
+      Top PyPI 包全集
+      8,000 个有影响力的 Python 包
+      解析对应 GitHub 仓库
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: rules
-    label: 规则过滤
+      'y': 100
+  - id: scope
+    label: |-
+      仓库范围过滤
+      要求有许可证且 PR 超过 1,000 个
+      约 600 个仓库保留
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 320
+      'y': 100
+  - id: fast
+    label: |-
+      快速安装与测试验证
+      每仓前 20 个修改测试文件的 PR
+      pip install -e . + pytest -> 119 个来源仓
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: pr
+    label: |-
+      拉取请求任务候选
+      抓取所有含测试变更的 PR
+      基线提交、环境、测试补丁与金标准补丁
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: component
+    label: |-
+      基于规则的新组件门禁
+      解析新增函数、类与文档
+      至少 1 个、占编辑行 >25%、补丁 <=8,192 Token
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
   - id: intent
-    label: 意图过滤
+    label: |-
+      基于意图的门禁
+      GPT-4o 分类 PR 描述
+      仅保留主要意图为新增功能的任务
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: tests
-    label: 测试补丁
+      x: 1440
+      'y': 100
+  - id: verify
+    label: |-
+      可执行单元测试验证
+      基线应用测试补丁：可能有测试失败
+      再应用金标准补丁：相关测试必须全过
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: dataset
+    label: |-
+      FEA-Bench 发布集
+      完整版：1,401 题 / 83 个仓库
+      Lite：200 题 / 48 个仓库
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: prompt
+    label: |-
+      模型可见任务合同
+      功能请求与新组件签名
+      基线仓库和环境；隐藏金标准补丁与测试
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: setup
-    label: 任务环境
+      x: 880
+      'y': 440
+  - id: context
+    label: |-
+      仓库上下文与提示
+      Oracle / BM25 / Agentless 检索
+      详细或精简的新组件定义
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: patch
-    label: 智能体补丁
+      x: 600
+      'y': 440
+  - id: edit
+    label: |-
+      生成并应用仓库编辑
+      自然编辑格式或直接 Patch
+      运行隐藏单元测试
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: unit
-    label: 单测验证
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      FEA-Bench 结果
+      实例解决率与补丁应用成功率
+      检索精确率、召回率及复杂度切片
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: prs
-    to: rules
+  - from: pypi
+    to: scope
     type: primary
-  - from: rules
+  - from: scope
+    to: fast
+    type: primary
+  - from: fast
+    to: pr
+    type: primary
+  - from: pr
+    to: component
+    type: primary
+  - from: component
     to: intent
     type: primary
   - from: intent
-    to: tests
+    to: verify
     type: primary
-  - from: tests
-    to: setup
+  - from: verify
+    to: dataset
     type: primary
-  - from: setup
-    to: patch
+  - from: dataset
+    to: prompt
     type: primary
-  - from: patch
-    to: unit
+  - from: prompt
+    to: context
+    type: primary
+  - from: context
+    to: edit
+    type: primary
+  - from: edit
+    to: report
     type: primary
 modules: []

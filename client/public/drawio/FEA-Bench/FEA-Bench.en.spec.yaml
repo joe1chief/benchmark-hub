@@ -5,77 +5,164 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FEA-Bench Build Process
-  description: Paper-aligned FEA-Bench flow from GitHub pull requests to executable feature-implementation tasks.
-  legend: >-
-    Solid arrows show repository selection, pull-request filtering, feature-intent filtering, test-patch extraction,
-    task setup, model patching, and unit-test evaluation.
+  description: >-
+    Paper-aligned construction of repository-level feature-implementation tasks from Top PyPI GitHub pull requests,
+    including repository fast validation, new-component and intent gates, executable before/after tests, and
+    resolved-ratio evaluation.
+  legend: Read the repository and pull-request filtering row left-to-right, then the executable benchmark row right-to-left.
 nodes:
-  - id: prs
-    label: GitHub PRs
+  - id: pypi
+    label: |-
+      Top PyPI Package Universe
+      8,000 Influential Python Packages
+      Resolve Corresponding GitHub Repositories
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: rules
-    label: Rule Filter
+      'y': 100
+  - id: scope
+    label: |-
+      Repository Scope Filter
+      Require a License + More Than 1,000 PRs
+      Approximately 600 Repositories Remain
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 320
+      'y': 100
+  - id: fast
+    label: |-
+      Fast Installation/Test Validation
+      First 20 PRs with Test-File Changes
+      pip install -e . + pytest -> 119 Sources
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: pr
+    label: |-
+      Pull-Request Task Candidates
+      Crawl All PRs with Test Changes
+      Base Commit + Environment + Test/Gold Patches
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: component
+    label: |-
+      Rule-Based New-Component Gate
+      Parse Added Functions / Classes + Docs
+      At Least 1, >25% Edited Lines, Patch <=8,192 Tokens
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
   - id: intent
-    label: Intent Filter
+    label: |-
+      Intent-Based Gate
+      GPT-4o Classifies PR Description
+      Retain Primary Intent = New Feature
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: tests
-    label: Test Patch
+      x: 1440
+      'y': 100
+  - id: verify
+    label: |-
+      Executable Unit-Test Verification
+      Test Patch on Base: Some Tests May Fail
+      Add Gold Patch: All Relevant Tests Must Pass
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: dataset
+    label: |-
+      FEA-Bench Releases
+      Full: 1,401 Tasks / 83 Repositories
+      Lite: 200 Tasks / 48 Repositories
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: prompt
+    label: |-
+      Model-Visible Task Contract
+      Feature Request + New-Component Signatures
+      Base Repository / Environment; Hide Gold + Tests
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: setup
-    label: Task Setup
+      x: 880
+      'y': 440
+  - id: context
+    label: |-
+      Repository Context and Hints
+      Oracle / BM25 / Agentless Retrieval
+      Detailed or Brief New-Component Definitions
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: patch
-    label: Agent Patch
+      x: 600
+      'y': 440
+  - id: edit
+    label: |-
+      Generate and Apply Repository Edits
+      Natural Edit Format or Direct Patch
+      Run the Hidden Unit Tests
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: unit
-    label: Unit Tests
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      FEA-Bench Results
+      Resolved Ratio + Patch Apply Rate
+      Retrieval Precision / Recall and Complexity Slices
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: prs
-    to: rules
+  - from: pypi
+    to: scope
     type: primary
-  - from: rules
+  - from: scope
+    to: fast
+    type: primary
+  - from: fast
+    to: pr
+    type: primary
+  - from: pr
+    to: component
+    type: primary
+  - from: component
     to: intent
     type: primary
   - from: intent
-    to: tests
+    to: verify
     type: primary
-  - from: tests
-    to: setup
+  - from: verify
+    to: dataset
     type: primary
-  - from: setup
-    to: patch
+  - from: dataset
+    to: prompt
     type: primary
-  - from: patch
-    to: unit
+  - from: prompt
+    to: context
+    type: primary
+  - from: context
+    to: edit
+    type: primary
+  - from: edit
+    to: report
     type: primary
 modules: []
