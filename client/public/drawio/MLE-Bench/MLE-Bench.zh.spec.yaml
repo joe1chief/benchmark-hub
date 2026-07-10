@@ -5,85 +5,175 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MLE-Bench 构建流程
-  description: 对齐论文的 MLE-Bench 构建流程：筛选 Kaggle 机器学习竞赛，将其重打包为离线训练/测试任务和评分脚本，用 Agent 脚手架运行，并按公开人类排行榜基线评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    论文对齐的 MLE-Bench 流程：5,673 个已结束 Kaggle 竞赛经人工相关性与可复现性门控缩减为 75 个测试任务和 7 个开发任务；离线数据、本地评分器、私有榜单快照、受控 Agent
+    运行与反作弊审计支持相对人类的奖牌率。
+  legend: 实线表示竞赛筛选、离线打包、受控 Agent 执行、完整性审计与评分。
 nodes:
-  - id: n1
-    label: Kaggle竞赛池
+  - id: pool
+    label: |-
+      Meta Kaggle 题池
+      5,673 个已结束竞赛
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 筛选75项
+      'y': 180
+  - id: screen
+    label: |-
+      排除社区竞赛
+      人工筛查 586 个
     type: process
-    size: xl
+    size: large
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: 重建划分
-    type: document
+      'y': 180
+  - id: criteria
+    label: |-
+      选择门槛
+      现代 ML + 任务清晰
+      本地指标 + 数据可用
+    type: decision
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: 加入评分器
-    type: process
+      'y': 180
+  - id: selection
+    label: |-
+      基准入选
+      75 测试 + 7 开发
+      低 / 中 / 高：22 / 38 / 15
+    type: database
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Agent运行
+      'y': 180
+  - id: split
+    label: |-
+      数据集重建
+      使用公开测试集或重切训练集
+      通常 10% 测试 + 分布核验
     type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: 规则检查
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 榜单基线
+      'y': 180
+  - id: package
+    label: |-
+      离线竞赛包
+      任务说明 + 数据
+      私有榜单快照
     type: document
     size: xl
     position:
+      x: 1240
+      'y': 180
+  - id: grading
+    label: |-
+      本地评分合同
+      竞赛原指标
+      校验服务：只查格式
+    type: process
+    size: xl
+    position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: 奖牌率
-    type: terminal
+      'y': 180
+  - id: environment
+    label: |-
+      受控 Docker 运行
+      24 小时 / A10 / 36 vCPU
+      三个随机种子
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 180
+  - id: agent
+    label: |-
+      模型 + Agent 框架
+      训练 / 调试 / 预测
+      生成 submission.csv
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 180
+  - id: validation
+    label: |-
+      提交校验
+      CSV 格式正确？
+    type: decision
+    size: large
+    position:
+      x: 2200
+      'y': 180
+  - id: audit
+    label: |-
+      完整性审计
+      仅检查奖牌候选
+      GPT-4o 规则检查
+      Dolos 对照前 50 笔记本
+      相似度 >60% → 人工复核
+    type: decision
+    size: xl
+    position:
+      x: 2680
+      'y': 180
+  - id: compare
+    label: |-
+      本地计算分数
+      对照私有榜单
+      识别奖牌候选
+    type: process
+    size: large
+    position:
+      x: 2440
+      'y': 180
+  - id: metrics
+    label: |-
+      铜 / 银 / 金牌
+      任意奖牌率 + 原始分
+      可选 pass@k
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 180
 edges:
-  - from: n1
-    to: n2
+  - from: pool
+    to: screen
     type: primary
-  - from: n2
-    to: n3
+  - from: screen
+    to: criteria
     type: primary
-  - from: n3
-    to: n4
+  - from: criteria
+    to: selection
     type: primary
-  - from: n4
-    to: n5
+  - from: selection
+    to: split
     type: primary
-  - from: n5
-    to: n6
+  - from: split
+    to: package
     type: primary
-  - from: n6
-    to: n7
+  - from: package
+    to: grading
     type: primary
-  - from: n7
-    to: n8
+  - from: grading
+    to: environment
+    type: primary
+  - from: environment
+    to: agent
+    type: primary
+  - from: agent
+    to: validation
+    type: primary
+  - from: validation
+    to: compare
+    type: primary
+  - from: compare
+    to: audit
+    type: primary
+  - from: audit
+    to: metrics
     type: primary
 modules: []

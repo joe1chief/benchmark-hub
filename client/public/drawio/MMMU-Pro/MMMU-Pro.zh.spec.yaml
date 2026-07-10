@@ -5,85 +5,186 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMMU-Pro 构建流程
-  description: 对齐论文的 MMMU-Pro 构建流程：通过过滤纯文本可解题、扩充选项、加入仅视觉设置来强化 MMMU，并用准确率及 OCR/CoT 分析比较多模态模型。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 论文对齐的 MMMU-Pro 流程：MMMU 题目先由四个纯文本模型各运行十次筛查，再均衡抽取 1,800 题；通过模型辅助 专家复核扩展为十选项并缩减到 1,730 道有效题，随后人工拍摄纯视觉变体，在标准与视觉形式下评测。
+  legend: 实线表示三阶段加固与评测；最终分支区分总体准确率和 OCR、思维链诊断分析。
 nodes:
-  - id: n1
-    label: MMMU基础
+  - id: base
+    label: |-
+      MMMU 基础集
+      11,500 道题
+      30 个学科
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 纯文本过滤
+      'y': 220
+  - id: text_probe
+    label: |-
+      纯文本探测
+      四个强 LLM
+      每模型运行十次
     type: process
-    size: xl
+    size: large
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: 选项扩充
-    type: process
+      'y': 220
+  - id: filter_gate
+    label: |-
+      可回答性门控
+      单模型答对 >5 / 10
+      ≥3 / 4 模型通过则删除
+    type: decision
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: 十个选项
-    type: document
-    size: xl
+      'y': 220
+  - id: sample
+    label: |-
+      均衡抽样
+      1,800 道题
+      每学科 60 题
+    type: database
+    size: large
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: 仅视觉设置
+      'y': 220
+  - id: generate_options
+    label: |-
+      GPT-4o 生成
+      可信干扰选项
     type: process
-    size: xl
+    size: large
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: 标准/视觉集
-    type: document
-    size: xl
+      'y': 220
+  - id: filter_options
+    label: |-
+      Claude 3.5 过滤
+      质量 + 多样性
+    type: process
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: OCR/CoT评测
+      'y': 220
+  - id: human_review
+    label: |-
+      两轮人工复核
+      修订选项 + 核验图文相关性
+      删除 70 题
     type: process
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
-    type: terminal
+      'y': 220
+  - id: standard
+    label: |-
+      标准 MMMU-Pro
+      1,730 道题
+      最多十个选项
+    type: database
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 60
+  - id: vision
+    label: |-
+      纯视觉采集
+      1,730 张照片 / 截图
+      多样显示环境
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 380
+  - id: dataset
+    label: |-
+      两种输入形式
+      3,460 份表示
+      同一 1,730 题 × 2
+    type: database
+    size: xl
+    position:
+      x: 2200
+      'y': 220
+  - id: settings
+    label: |-
+      两种设置评测
+      十选项标准输入
+      纯视觉输入
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: prompts
+    label: |-
+      直接 + 思维链提示
+      报告较高结果
+    type: process
+    size: large
+    position:
+      x: 2680
+      'y': 220
+  - id: score
+    label: |-
+      总体准确率
+      标准与视觉均值
+    type: terminal
+    size: large
+    position:
+      x: 2920
+      'y': 60
+  - id: analysis
+    label: |-
+      诊断分析
+      OCR Levenshtein 相似度
+      思维链与错误影响
+    type: document
+    size: xl
+    position:
+      x: 2920
+      'y': 380
 edges:
-  - from: n1
-    to: n2
+  - from: base
+    to: text_probe
     type: primary
-  - from: n2
-    to: n3
+  - from: text_probe
+    to: filter_gate
     type: primary
-  - from: n3
-    to: n4
+  - from: filter_gate
+    to: sample
     type: primary
-  - from: n4
-    to: n5
+  - from: sample
+    to: generate_options
     type: primary
-  - from: n5
-    to: n6
+  - from: generate_options
+    to: filter_options
     type: primary
-  - from: n6
-    to: n7
+  - from: filter_options
+    to: human_review
     type: primary
-  - from: n7
-    to: n8
+  - from: human_review
+    to: standard
     type: primary
+  - from: standard
+    to: vision
+    type: primary
+  - from: standard
+    to: dataset
+    type: primary
+  - from: vision
+    to: dataset
+    type: primary
+  - from: dataset
+    to: settings
+    type: primary
+  - from: settings
+    to: prompts
+    type: primary
+  - from: prompts
+    to: score
+    type: primary
+  - from: prompts
+    to: analysis
+    type: data
 modules: []

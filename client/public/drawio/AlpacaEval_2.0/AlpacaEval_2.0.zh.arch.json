@@ -7,57 +7,75 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 8,
+    "nodes": 11,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
       "id": "instructions",
-      "label": "固定指令集\n805 条 Alpaca 演示提示\n覆盖用户交互",
+      "label": "固定指令集\n805 条 Alpaca 提示",
       "type": "document",
-      "size": "xl"
+      "size": "large"
     },
     {
       "id": "baseline",
-      "label": "基线模型回复\nGPT-4 turbo 基线\n每条指令一个回答",
+      "label": "基线回复\nGPT-4-1106-Preview",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
       "id": "candidate",
-      "label": "候选模型回复\n待评估模型输出\n同一 805 条指令",
+      "label": "候选模型回复\n同一 805 条提示",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
       "id": "evaluator",
-      "label": "GPT-4 turbo 评审器\n成对比较回复\n输出偏好概率",
+      "label": "GPT-4-Turbo 评审\n随机呈现顺序",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "win_rate",
-      "label": "标准胜率\n期望偏好概率\n汇总 805 条指令",
-      "type": "process",
-      "size": "xl"
+      "id": "ratings",
+      "label": "成对偏好结果\n每题偏好概率",
+      "type": "database",
+      "size": "large"
+    },
+    {
+      "id": "raw_win",
+      "label": "标准胜率\n805 题均值",
+      "type": "terminal",
+      "size": "large"
     },
     {
       "id": "glm",
-      "label": "偏差控制 GLM\n模型身份\n长度差异与指令难度",
+      "label": "反对称 GLM\n模型 + 长度 + 题目",
       "type": "formula",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "lc_win_rate",
-      "label": "长度控制胜率\n将长度差异设为零\n得到反事实偏好",
+      "id": "regularize",
+      "label": "拟合与正则化\n五折交叉验证 + L2",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "lc_win",
+      "label": "长度控制胜率\n长度项置零",
       "type": "terminal",
-      "size": "xl"
+      "size": "large"
+    },
+    {
+      "id": "semantics",
+      "label": "保持胜率语义\n自比 50%；交换对称",
+      "type": "document",
+      "size": "large"
     },
     {
       "id": "validation",
-      "label": "鲁棒性验证\n降低长度可操纵性\nChatbot Arena 相关性 0.98",
-      "type": "document",
+      "label": "外部验证\n可操纵性 25% → 10%\nArena ρ：.94 → .98",
+      "type": "terminal",
       "size": "xl"
     }
   ],
@@ -89,27 +107,50 @@
     {
       "id": "edge-5",
       "from": "evaluator",
-      "to": "win_rate",
+      "to": "ratings",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "evaluator",
-      "to": "glm",
-      "type": "data"
+      "from": "ratings",
+      "to": "raw_win",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "glm",
-      "to": "lc_win_rate",
+      "from": "ratings",
+      "to": "glm",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "lc_win_rate",
+      "from": "glm",
+      "to": "regularize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "regularize",
+      "to": "lc_win",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "lc_win",
+      "to": "semantics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "raw_win",
       "to": "validation",
-      "type": "optional",
-      "label": "对照人类偏好验证"
+      "type": "optional"
+    },
+    {
+      "id": "edge-12",
+      "from": "semantics",
+      "to": "validation",
+      "type": "optional"
     }
   ],
   "modules": []

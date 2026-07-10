@@ -6,86 +6,190 @@ meta:
   routing: orthogonal
   title: MMMU-Pro Build Process
   description: >-
-    Paper-aligned construction of MMMU-Pro: harden MMMU by filtering text-only-solvable items, augmenting options,
-    adding a vision-only setting, and comparing multimodal models by accuracy with OCR/CoT analyses.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MMMU-Pro workflow: MMMU questions are screened by four text-only models over ten trials, balanced to
+    1,800 items, expanded to ten options with model-assisted expert review, reduced to 1,730 valid questions, and paired
+    with manually captured vision-only variants for evaluation in standard and visual forms.
+  legend: >-
+    Solid arrows show the three hardening stages and evaluation; the final branch separates overall accuracy from
+    diagnostic OCR and chain-of-thought analyses.
 nodes:
-  - id: n1
-    label: MMMU Base
+  - id: base
+    label: |-
+      MMMU Base
+      11.5k Questions
+      30 Subjects
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Text Filter
+      'y': 220
+  - id: text_probe
+    label: |-
+      Text-only Probe
+      Four Strong LLMs
+      Ten Runs Each
     type: process
-    size: xl
+    size: large
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: Option Augment
-    type: process
+      'y': 220
+  - id: filter_gate
+    label: |-
+      Answerability Gate
+      Model Correct >5 / 10
+      Drop if ≥3 / 4 Models Pass
+    type: decision
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: 10 Choices
-    type: document
-    size: xl
+      'y': 220
+  - id: sample
+    label: |-
+      Balanced Sample
+      1,800 Questions
+      60 per Subject
+    type: database
+    size: large
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Vision-Only
+      'y': 220
+  - id: generate_options
+    label: |-
+      GPT-4o Generates
+      Plausible Distractors
     type: process
-    size: xl
+    size: large
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: Two Settings
-    type: document
-    size: xl
+      'y': 220
+  - id: filter_options
+    label: |-
+      Claude 3.5 Filters
+      Quality + Diversity
+    type: process
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: OCR/CoT Eval
+      'y': 220
+  - id: human_review
+    label: |-
+      Two Human Review Rounds
+      Refine Options + Image Relevance
+      Remove 70 Questions
     type: process
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
-    type: terminal
+      'y': 220
+  - id: standard
+    label: |-
+      Standard MMMU-Pro
+      1,730 Questions
+      Up to 10 Choices
+    type: database
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 60
+  - id: vision
+    label: |-
+      Vision-only Capture
+      1,730 Photos / Screenshots
+      Varied Display Conditions
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 380
+  - id: dataset
+    label: |-
+      Two Input Forms
+      3,460 Representations
+      Same 1,730 Questions × 2
+    type: database
+    size: xl
+    position:
+      x: 2200
+      'y': 220
+  - id: settings
+    label: |-
+      Evaluate Two Settings
+      10-option Standard
+      Vision-only Input
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: prompts
+    label: |-
+      Direct + CoT Prompts
+      Report Higher Result
+    type: process
+    size: large
+    position:
+      x: 2680
+      'y': 220
+  - id: score
+    label: |-
+      Overall Accuracy
+      Mean of Standard + Vision
+    type: terminal
+    size: large
+    position:
+      x: 2920
+      'y': 60
+  - id: analysis
+    label: |-
+      Diagnostic Analysis
+      OCR Levenshtein Similarity
+      CoT and Error Effects
+    type: document
+    size: xl
+    position:
+      x: 2920
+      'y': 380
 edges:
-  - from: n1
-    to: n2
+  - from: base
+    to: text_probe
     type: primary
-  - from: n2
-    to: n3
+  - from: text_probe
+    to: filter_gate
     type: primary
-  - from: n3
-    to: n4
+  - from: filter_gate
+    to: sample
     type: primary
-  - from: n4
-    to: n5
+  - from: sample
+    to: generate_options
     type: primary
-  - from: n5
-    to: n6
+  - from: generate_options
+    to: filter_options
     type: primary
-  - from: n6
-    to: n7
+  - from: filter_options
+    to: human_review
     type: primary
-  - from: n7
-    to: n8
+  - from: human_review
+    to: standard
     type: primary
+  - from: standard
+    to: vision
+    type: primary
+  - from: standard
+    to: dataset
+    type: primary
+  - from: vision
+    to: dataset
+    type: primary
+  - from: dataset
+    to: settings
+    type: primary
+  - from: settings
+    to: prompts
+    type: primary
+  - from: prompts
+    to: score
+    type: primary
+  - from: prompts
+    to: analysis
+    type: data
 modules: []

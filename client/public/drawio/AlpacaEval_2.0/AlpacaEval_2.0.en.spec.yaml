@@ -6,92 +6,113 @@ meta:
   routing: orthogonal
   title: AlpacaEval 2.0 Build Process
   description: >-
-    Paper-aligned pairwise auto-evaluation and length-controlled win-rate workflow for AlpacaEval 2.0, based on
-    arXiv:2404.04475.
+    Paper-aligned AlpacaEval 2.0 workflow: 805 fixed instructions produce randomized GPT-4-Turbo pairwise judgments; the
+    standard win rate and a regularized antisymmetric GLM yield raw and length-controlled scores, which are checked for
+    win-rate semantics, lower verbosity gameability, and stronger Chatbot Arena agreement.
   legend: >-
-    Solid arrows show the pairwise evaluation pipeline and LC win-rate computation; dashed arrows show validation
-    against human-preference benchmarks.
+    Solid arrows show response generation, judging, and score estimation; dashed arrows compare raw and
+    length-controlled metrics against robustness and human-preference evidence.
 nodes:
   - id: instructions
     label: |-
-      Fixed instruction set
-      805 Alpaca web-demo prompts
-      user-interaction coverage
+      Fixed Instructions
+      805 Alpaca Prompts
     type: document
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
+      'y': 220
   - id: baseline
     label: |-
-      Baseline responses
-      GPT-4 turbo baseline
-      one answer per instruction
+      Baseline Responses
+      GPT-4-1106-Preview
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 70
+      x: 240
+      'y': 60
   - id: candidate
     label: |-
-      Candidate responses
-      evaluated model outputs
-      same 805 instructions
+      Candidate Responses
+      Same 805 Prompts
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 250
+      x: 240
+      'y': 380
   - id: evaluator
     label: |-
-      GPT-4 turbo evaluator
-      pairwise comparison
-      preference probability
+      GPT-4-Turbo Judge
+      Randomized Order
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: win_rate
+      x: 440
+      'y': 220
+  - id: ratings
     label: |-
-      Standard win rate
-      expected preference probability
-      over 805 instructions
-    type: process
-    size: xl
+      Pairwise Preference
+      Probability per Prompt
+    type: database
+    size: large
     position:
-      x: 820
-      'y': 70
+      x: 640
+      'y': 220
+  - id: raw_win
+    label: |-
+      Standard Win Rate
+      Mean over 805
+    type: terminal
+    size: large
+    position:
+      x: 840
+      'y': 40
   - id: glm
     label: |-
-      Bias-control GLM
-      model identity
-      length difference and instruction
+      Antisymmetric GLM
+      Model + Length + Task
     type: formula
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 250
-  - id: lc_win_rate
+      x: 840
+      'y': 260
+  - id: regularize
     label: |-
-      Length-controlled win rate
-      set length difference to zero
-      counterfactual preference
+      Fit and Regularize
+      5-fold CV + L2
+    type: process
+    size: large
+    position:
+      x: 1040
+      'y': 260
+  - id: lc_win
+    label: |-
+      LC Win Rate
+      Set Length Term = 0
+    type: terminal
+    size: large
+    position:
+      x: 1240
+      'y': 260
+  - id: semantics
+    label: |-
+      Win-rate Semantics
+      Self 50%; Swap Symmetry
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 260
+  - id: validation
+    label: |-
+      External Validation
+      Gameability 25% → 10%
+      Arena ρ: .94 → .98
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: validation
-    label: |-
-      Robustness validation
-      lower length gameability
-      Chatbot Arena correlation 0.98
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 1700
+      'y': 140
 edges:
   - from: instructions
     to: baseline
@@ -106,16 +127,27 @@ edges:
     to: evaluator
     type: primary
   - from: evaluator
-    to: win_rate
+    to: ratings
     type: primary
-  - from: evaluator
+  - from: ratings
+    to: raw_win
+    type: primary
+  - from: ratings
     to: glm
-    type: data
-  - from: glm
-    to: lc_win_rate
     type: primary
-  - from: lc_win_rate
+  - from: glm
+    to: regularize
+    type: primary
+  - from: regularize
+    to: lc_win
+    type: primary
+  - from: lc_win
+    to: semantics
+    type: primary
+  - from: raw_win
     to: validation
     type: optional
-    label: validate vs humans
+  - from: semantics
+    to: validation
+    type: optional
 modules: []
