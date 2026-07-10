@@ -6,99 +6,210 @@ meta:
   routing: orthogonal
   title: CFBench 构建流程
   description: >-
-    基于论文对齐 CFBench：从在线日志和 NLP 任务中挖掘真实指令，抽取并扩展原子约束形成 10 类约束体系， 平衡场景和约束得到样本，人工修订指令、答案和检查清单，再用 GPT-4o 按 checkpoint 评判
+    按论文与官方代码构建 1,000 条中文复杂约束遵循样本：从真实指令和 NLP 任务建立 10 大类、25+ 子类约束体系， 由专家细化独立检查点，形成简单/困难各 500 条的数据，并用 GPT-4o 与可执行定义计算
     CSR、ISR、PSR。
-  legend: 实线箭头表示约束体系构建、样本组装、人工修订、清单评判和指标计算。
+  legend: 实线表示数据集构建与评测，虚线表示来源证据或质量控制反馈。
 nodes:
   - id: sources
-    label: 来源
+    label: |-
+      收集真实指令
+      在线服务日志与既有 NLP 任务
+      覆盖四类 NLP 任务和真实生活领域
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: atomic
-    label: 原子约束
+      'y': 220
+  - id: filter
+    label: |-
+      过滤并聚类指令池
+      去除噪声与重复内容
+      保留约 30,000 条代表性指令
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
+  - id: atomic
+    label: |-
+      提取并扩展原子约束
+      LLM 辅助分类、合成与演化
+      产生 5,000 多个独特约束
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
   - id: taxonomy
-    label: 分类
+    label: |-
+      建立约束类型体系
+      10 个一级类别
+      25 个以上细粒度子类别
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: 均衡
-    type: decision
+      x: 940
+      'y': 220
+  - id: select
+    label: |-
+      评估并平衡候选指令
+      约束类型与数量 • 场景 • 任务
+      选出 2,000 条精炼指令
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: samples
-    label: 样本
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 160
+      x: 1240
+      'y': 220
   - id: annotate
-    label: 标注
+    label: |-
+      专业标注员细化样本
+      指令 • 黄金答案 • 约束标签
+      结合专家参与进行迭代复核
     type: user
     size: xl
     position:
-      x: 1340
-      'y': 70
+      x: 1540
+      'y': 100
   - id: checklist
-    label: 清单
+    label: |-
+      把要求拆成独立检查点
+      每项要求对应一个可独立判断的标准
+      标注类型及主需/次需优先级
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 250
-  - id: judge
-    label: 评判
+      x: 1540
+      'y': 340
+  - id: qc
+    label: |-
+      验证指令、答案与检查清单
+      培训 • 交叉验证 • 批次验证
+      修正或重新生成不合格样本
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: metrics
-    label: 指标
+      x: 1840
+      'y': 220
+  - id: release
+    label: |-
+      发布 1,000 条 CFBench 样本
+      简单 500 条 • 困难 500 条
+      200+ 场景 • 20 个领域 • 50+ NLP 任务
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: inference
+    label: |-
+      生成模型回答
+      输入中文复杂约束指令
+      最大生成长度 2,048 tokens
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: judge
+    label: |-
+      GPT-4o 判断每个检查点
+      对照提示、回答、黄金答案和标准
+      解析二元满足分数 • 温度 0
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: csr
+    label: |-
+      CSR
+      二元检查点满足度的均值
+      汇总所有约束与样本
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 40
+  - id: isr
+    label: |-
+      ISR
+      仅当 CSR = 1 时整条指令算满足
+      对全部检查点通过指示量取均值
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: psr
+    label: |-
+      PSR
+      主需必须全部满足，并评价次需
+      应用官方带优先级的阈值逻辑
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 400
+  - id: report
+    label: |-
+      报告 CSR、ISR 与 PSR
+      简单集 • 困难集 • 全集
+      按约束、领域与 NLP 任务细分
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 220
 edges:
   - from: sources
+    to: filter
+    type: primary
+  - from: filter
     to: atomic
     type: primary
   - from: atomic
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: balance
+    to: select
     type: primary
-  - from: balance
-    to: samples
-    type: primary
-  - from: samples
+  - from: select
     to: annotate
     type: primary
-  - from: samples
+  - from: select
     to: checklist
     type: primary
   - from: annotate
-    to: judge
+    to: qc
     type: primary
   - from: checklist
+    to: qc
+    type: primary
+  - from: qc
+    to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
     to: judge
     type: primary
   - from: judge
-    to: metrics
+    to: csr
+    type: primary
+  - from: judge
+    to: isr
+    type: primary
+  - from: judge
+    to: psr
+    type: primary
+  - from: csr
+    to: report
+    type: primary
+  - from: isr
+    to: report
+    type: primary
+  - from: psr
+    to: report
     type: primary
 modules: []

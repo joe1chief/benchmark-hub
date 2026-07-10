@@ -7,62 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 9,
+    "nodes": 15,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "sources",
-      "label": "来源",
+      "label": "收集真实指令\n在线服务日志与既有 NLP 任务\n覆盖四类 NLP 任务和真实生活领域",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "filter",
+      "label": "过滤并聚类指令池\n去除噪声与重复内容\n保留约 30,000 条代表性指令",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "atomic",
-      "label": "原子约束",
+      "label": "提取并扩展原子约束\nLLM 辅助分类、合成与演化\n产生 5,000 多个独特约束",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "taxonomy",
-      "label": "分类",
+      "label": "建立约束类型体系\n10 个一级类别\n25 个以上细粒度子类别",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "balance",
-      "label": "均衡",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "samples",
-      "label": "样本",
-      "type": "database",
+      "id": "select",
+      "label": "评估并平衡候选指令\n约束类型与数量 • 场景 • 任务\n选出 2,000 条精炼指令",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "annotate",
-      "label": "标注",
+      "label": "专业标注员细化样本\n指令 • 黄金答案 • 约束标签\n结合专家参与进行迭代复核",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "checklist",
-      "label": "清单",
+      "label": "把要求拆成独立检查点\n每项要求对应一个可独立判断的标准\n标注类型及主需/次需优先级",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "评判",
+      "id": "qc",
+      "label": "验证指令、答案与检查清单\n培训 • 交叉验证 • 批次验证\n修正或重新生成不合格样本",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "指标",
+      "id": "release",
+      "label": "发布 1,000 条 CFBench 样本\n简单 500 条 • 困难 500 条\n200+ 场景 • 20 个领域 • 50+ NLP 任务",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "生成模型回答\n输入中文复杂约束指令\n最大生成长度 2,048 tokens",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "GPT-4o 判断每个检查点\n对照提示、回答、黄金答案和标准\n解析二元满足分数 • 温度 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "csr",
+      "label": "CSR\n二元检查点满足度的均值\n汇总所有约束与样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "isr",
+      "label": "ISR\n仅当 CSR = 1 时整条指令算满足\n对全部检查点通过指示量取均值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "psr",
+      "label": "PSR\n主需必须全部满足，并评价次需\n应用官方带优先级的阈值逻辑",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告 CSR、ISR 与 PSR\n简单集 • 困难集 • 全集\n按约束、领域与 NLP 任务细分",
       "type": "terminal",
       "size": "xl"
     }
@@ -71,55 +107,103 @@
     {
       "id": "edge-1",
       "from": "sources",
-      "to": "atomic",
+      "to": "filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
+      "from": "filter",
+      "to": "atomic",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
       "from": "atomic",
       "to": "taxonomy",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "taxonomy",
-      "to": "balance",
-      "type": "primary"
-    },
-    {
       "id": "edge-4",
-      "from": "balance",
-      "to": "samples",
+      "from": "taxonomy",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "samples",
+      "from": "select",
       "to": "annotate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "samples",
+      "from": "select",
       "to": "checklist",
       "type": "primary"
     },
     {
       "id": "edge-7",
       "from": "annotate",
-      "to": "judge",
+      "to": "qc",
       "type": "primary"
     },
     {
       "id": "edge-8",
       "from": "checklist",
-      "to": "judge",
+      "to": "qc",
       "type": "primary"
     },
     {
       "id": "edge-9",
+      "from": "qc",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "release",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "inference",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
       "from": "judge",
-      "to": "metrics",
+      "to": "csr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "judge",
+      "to": "isr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "judge",
+      "to": "psr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "csr",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "isr",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "psr",
+      "to": "report",
       "type": "primary"
     }
   ],

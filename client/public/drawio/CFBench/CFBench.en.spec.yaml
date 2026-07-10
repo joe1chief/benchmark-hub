@@ -6,101 +6,213 @@ meta:
   routing: orthogonal
   title: CFBench Build Process
   description: >-
-    Paper-aligned construction of CFBench: online logs and NLP tasks are mined for real-world instructions, atomic
-    constraints are extracted and expanded into a 10-category taxonomy, balanced scenarios and constraints produce
-    curated samples, annotators refine instructions, answers, and checklists, and GPT-4o-based checkpoint judging
-    reports CSR, ISR, and PSR.
-  legend: Solid arrows show constraint-system construction, sample assembly, human refinement, checklist judging, and metrics.
+    Paper- and official-code-aligned construction of 1,000 Chinese complex constraint-following samples from real
+    instructions and NLP tasks, with a 10-primary/25-subcategory constraint taxonomy, expert-refined independent
+    checkpoints, 500 easy and 500 hard examples, GPT-4o judging, and executable CSR, ISR, and PSR definitions.
+  legend: >-
+    Solid arrows show dataset construction and evaluation; dashed arrows carry source evidence or quality-control
+    feedback.
 nodes:
   - id: sources
-    label: Sources
+    label: |-
+      Collect Real Instructions
+      Online Service Logs and Existing NLP Tasks
+      Cover Four NLP Types and Real-life Domains
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: atomic
-    label: Atomic
+      'y': 220
+  - id: filter
+    label: |-
+      Filter and Cluster the Instruction Pool
+      Remove Noise and Redundancy
+      Retain About 30,000 Representative Instructions
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
+  - id: atomic
+    label: |-
+      Extract and Expand Atomic Constraints
+      LLM-assisted Classification, Synthesis, and Evolution
+      Produce More than 5,000 Unique Constraints
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
   - id: taxonomy
-    label: Taxonomy
+    label: |-
+      Build the Constraint Type System
+      10 Primary Categories
+      More than 25 Fine-grained Subcategories
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: Balance
-    type: decision
+      x: 940
+      'y': 220
+  - id: select
+    label: |-
+      Assess and Balance Candidate Instructions
+      Constraint Types and Counts • Scenarios • Tasks
+      Select 2,000 Refined Instructions
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: samples
-    label: Samples
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 160
+      x: 1240
+      'y': 220
   - id: annotate
-    label: Annotate
+    label: |-
+      Professional Annotators Refine Samples
+      Instruction • Gold Answer • Constraint Labels
+      Iterative Review with Expert Involvement
     type: user
     size: xl
     position:
-      x: 1340
-      'y': 70
+      x: 1540
+      'y': 100
   - id: checklist
-    label: Checklist
+    label: |-
+      Decompose Requirements into Checkpoints
+      One Independently Judgable Criterion per Requirement
+      Mark Type and Priority: Primary or Secondary
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 250
-  - id: judge
-    label: Judge
+      x: 1540
+      'y': 340
+  - id: qc
+    label: |-
+      Validate Instructions, Answers, and Checklists
+      Training • Cross-validation • Batch Validation
+      Correct or Regenerate Unsatisfactory Samples
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: metrics
-    label: Metrics
+      x: 1840
+      'y': 220
+  - id: release
+    label: |-
+      Release 1,000 CFBench Samples
+      500 Easy • 500 Hard
+      200+ Scenarios • 20 Domains • 50+ NLP Tasks
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: inference
+    label: |-
+      Generate Model Responses
+      Chinese Complex Constraint Instructions
+      Maximum Generation Length 2,048 Tokens
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: judge
+    label: |-
+      GPT-4o Judges Every Checkpoint
+      Compare Prompt, Response, Gold, and Criteria
+      Parse Binary Satisfaction Scores • Temperature 0
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: csr
+    label: |-
+      CSR
+      Mean Binary Checkpoint Satisfaction
+      Average across All Constraints and Samples
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 40
+  - id: isr
+    label: |-
+      ISR
+      Instruction Counts as Satisfied Only If CSR = 1
+      Average the All-checkpoints-pass Indicator
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: psr
+    label: |-
+      PSR
+      Require All Primary Needs; Score Secondary Needs
+      Apply the Official Priority-aware Threshold Logic
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 400
+  - id: report
+    label: |-
+      Report CSR, ISR, and PSR
+      Easy • Hard • Full Sets
+      Break Down by Constraint, Domain, and NLP Task
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 220
 edges:
   - from: sources
+    to: filter
+    type: primary
+  - from: filter
     to: atomic
     type: primary
   - from: atomic
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: balance
+    to: select
     type: primary
-  - from: balance
-    to: samples
-    type: primary
-  - from: samples
+  - from: select
     to: annotate
     type: primary
-  - from: samples
+  - from: select
     to: checklist
     type: primary
   - from: annotate
-    to: judge
+    to: qc
     type: primary
   - from: checklist
+    to: qc
+    type: primary
+  - from: qc
+    to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
     to: judge
     type: primary
   - from: judge
-    to: metrics
+    to: csr
+    type: primary
+  - from: judge
+    to: isr
+    type: primary
+  - from: judge
+    to: psr
+    type: primary
+  - from: csr
+    to: report
+    type: primary
+  - from: isr
+    to: report
+    type: primary
+  - from: psr
+    to: report
     type: primary
 modules: []
