@@ -1,0 +1,153 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedMCQA 构建流程
+  description: >-
+    对齐论文的 MedMCQA 流程：收集医学专业人员编写的模拟/在线测试及官方 AIIMS、NEET PG 题，按纯文本四选项要求过滤，经启发式清洗与人工监督校对后去重，按考试划分并以 0.9 相似度门防泄漏，最终对 193,155
+    题用准确率评测。
+  legend: 实线箭头表示数据收集、纯文本质量过滤、按考试防泄漏划分和评测。
+nodes:
+  - id: sources
+    label: |-
+      医学考试来源
+      专业人员模拟 / 在线测试系列
+      官方 AIIMS + NEET PG（1991 至今）
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: collect
+    label: |-
+      收集 MCQ 记录
+      ID + 问题 + 四个选项
+      正确答案 + 详细解析
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 240
+  - id: text_filter
+    label: |-
+      纯文本可答性过滤
+      要求四个选项 + 最佳答案
+      移除依赖图片 / 表格 / 外部信息的题
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 240
+  - id: heuristic_clean
+    label: |-
+      启发式清洗
+      删除人工词表关键词
+      处理 HTML / 符号 / URL / 空白
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 240
+  - id: proofread
+    label: |-
+      人工监督校对
+      语法 / 标点 / 拼写
+      人工确认 Grammarly 建议
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 240
+  - id: dedupe
+    label: |-
+      删除重复题
+      最终 193,155 条记录
+      21 个学科 / 约 2.4K 个主题
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 240
+  - id: exam_split
+    label: |-
+      按考试划分
+      训练：模拟 + 在线测试
+      开发：NEET PG / 测试：AIIMS PG
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: leakage
+    label: |-
+      泄漏防护
+      计算题目两两 Levenshtein
+      开发/测试相似度 >0.9 则删除
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: split
+    label: |-
+      发布划分
+      训练 182,822 / 开发 4,183
+      测试 6,150
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+  - id: model
+    label: |-
+      医学问答模型
+      读取问题 + 选项
+      选择正确选项
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 240
+  - id: metric
+    label: |-
+      准确率
+      总体 + 分学科结果
+    type: terminal
+    size: large
+    position:
+      x: 2840
+      'y': 240
+edges:
+  - from: sources
+    to: collect
+    type: primary
+  - from: collect
+    to: text_filter
+    type: primary
+  - from: text_filter
+    to: heuristic_clean
+    type: primary
+  - from: heuristic_clean
+    to: proofread
+    type: primary
+  - from: proofread
+    to: dedupe
+    type: primary
+  - from: dedupe
+    to: exam_split
+    type: primary
+  - from: exam_split
+    to: leakage
+    type: primary
+  - from: leakage
+    to: split
+    type: primary
+  - from: split
+    to: model
+    type: primary
+  - from: model
+    to: metric
+    type: primary
+modules: []
