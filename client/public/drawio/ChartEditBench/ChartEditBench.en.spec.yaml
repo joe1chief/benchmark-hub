@@ -6,87 +6,227 @@ meta:
   routing: orthogonal
   title: ChartEditBench Build Process
   description: >-
-    Paper-aligned construction flow for ChartEditBench: LLM-generated chart programs are turned into progressive
-    multi-turn edits, validated through execution, Chart-R1 checks, assertions, and human review, then evaluated in a
-    conversational protocol.
-  legend: Solid arrows show dataset construction, validation, and evaluation flow.
+    Paper-aligned construction and conversational evaluation of 4,142 six-turn chart-editing instances across 37
+    matplotlib chart types, with progressive five-turn modifications, executable-code gates, Chart-R1 and assertion
+    verification, a 400-instance human audit, two grounded editing tasks, and five complementary metrics.
+  legend: Solid arrows show generation and evaluation; dashed arrows carry verification evidence.
 nodes:
-  - id: specs
-    label: Chart Specs
+  - id: specification
+    label: |-
+      Sample Structured Initial-chart Specifications
+      37 matplotlib Types in Six Categories
+      Fixed-seed Data and Visual Parameters
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: charts
-    label: Initial Charts
+      'y': 220
+  - id: initial
+    label: |-
+      Stage 1: Generate Initial Chart Code
+      LLM Produces Executable Python
+      Sandbox Render Establishes Turn 0
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
   - id: edits
-    label: Edit Chains
+    label: |-
+      Stage 2: Generate Five Dependent Modifications
+      Turn 1 Style • Turns 2–3 Structure
+      Turns 4–5 Conversion, Subplots, or Dual Axes
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: execution
-    label: Execution QC
-    type: decision
+      x: 640
+      'y': 220
+  - id: balance
+    label: |-
+      Round-robin Balance the Edit Space
+      17 Style Types • 18 Data Types
+      Alternate Families across Turns • 50/50 Coverage
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: chartr1
-    label: Chart-R1 QC
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: assertions
-    label: Assertions
+      x: 940
+      'y': 220
+  - id: vqa
+    label: |-
+      Stage 3: Add Five VQA Pairs per Rendered Chart
+      Type • Visual Properties • Data Interpretation
+      Structural Analysis for Future Understanding Tests
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1240
+      'y': 40
+  - id: execution_gate
+    label: |-
+      Validate Every Generated Program
+      AST Syntax • Isolated Execution within 60 Seconds
+      Render File • Required Imports/savefig/close
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: retry
+    label: |-
+      Retry Failed Generation
+      Exponential Backoff up to Three Attempts
+      Discard Any Instance Still Failing a Gate
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: chart_r1
+    label: |-
+      Chart-R1 Automated Verification
+      Code-to-code Instruction Check
+      Chart-to-chart Visual Change Check
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 80
+  - id: assertions
+    label: |-
+      Generate Two Assertion Families
+      3–4 Instruction-following Assertions per Turn
+      4–8 General Code-requirement Assertions per Turn
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 260
   - id: human
-    label: Human Subset
+    label: |-
+      Human-verify 400 Stratified Instances
+      Two Experts Score Code, Visual Fidelity, Preservation
+      Cohen’s Kappa and Discussion for Disagreements
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: Turn Eval
+      x: 1840
+      'y': 440
+  - id: release
+    label: |-
+      Release the Final ChartEditBench
+      4,142 Instances • 20,710 Modification Samples
+      Six Turns • 37 Chart Types • 35 Edit Types
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 260
+  - id: task_code
+    label: |-
+      Task 1: Code-to-Code Modification
+      Original Code + Original and Target Charts
+      Predict Modified Code from Visual Delta
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 100
+  - id: task_nl
+    label: |-
+      Task 2: Natural-language Delta
+      Original Code + Chart + Edit Instruction
+      Predict Instruction-following Modified Code
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 360
+  - id: conversation
+    label: |-
+      Run the Conversational Five-turn Chain
+      Feed Each Model Prediction into the Next Turn
+      Fall Back to Last Valid Render after Execution Failure
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 260
+  - id: score
+    label: |-
+      Apply Hybrid Per-turn Scoring
+      Programmatic Assertion Pass Rate or Chart-R1 1–5
+      Execution • Instruction • Code Quality • Visual Similarity
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 260
+  - id: report
+    label: |-
+      Report Five Metrics and Overall Score
+      Break Down by Turn, Type, Style/Data, and Difficulty
+      Diagnose Error Accumulation and Context Breakdown
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 260
 edges:
-  - from: specs
-    to: charts
+  - from: specification
+    to: initial
     type: primary
-  - from: charts
+  - from: initial
     to: edits
     type: primary
   - from: edits
-    to: execution
+    to: balance
     type: primary
-  - from: execution
-    to: chartr1
+  - from: balance
+    to: vqa
     type: primary
-  - from: chartr1
+  - from: balance
+    to: execution_gate
+    type: primary
+  - from: execution_gate
+    to: retry
+    type: primary
+  - from: retry
+    to: chart_r1
+    type: primary
+  - from: retry
     to: assertions
     type: primary
-  - from: assertions
+  - from: retry
     to: human
     type: primary
+  - from: vqa
+    to: release
+    type: data
+  - from: chart_r1
+    to: release
+    type: data
+  - from: assertions
+    to: release
+    type: primary
   - from: human
-    to: eval
+    to: release
+    type: data
+  - from: release
+    to: task_code
+    type: primary
+  - from: release
+    to: task_nl
+    type: primary
+  - from: task_code
+    to: conversation
+    type: primary
+  - from: task_nl
+    to: conversation
+    type: primary
+  - from: conversation
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

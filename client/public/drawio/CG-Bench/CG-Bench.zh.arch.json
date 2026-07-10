@@ -7,62 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 14,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "videos",
-      "label": "长视频",
+      "id": "collect",
+      "label": "人工收集互联网视频\n时长超过 10 分钟 • 保留音频与字幕\n避免复用既有学术视频数据集",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "domains",
-      "label": "14个根域",
+      "id": "taxonomy_video",
+      "label": "用 4–8 个词标记视频内容\n14 个根类 • 171 个二级类 • 638 个三级类\n平衡领域与 10–80 分钟时长",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "7轮筛选",
-      "type": "decision",
+      "id": "review_video",
+      "label": "开展七轮人工视频复核\n检查内容相关性、质量与多样性\n保留 1,219 个精选长视频",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "taxonomy",
-      "label": "问题分类",
-      "type": "process",
+      "id": "question_taxonomy",
+      "label": "建立问题分类体系\n感知 • 推理 • 幻觉\n细分感知与推理子类别",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "qac",
-      "label": "问答线索",
-      "type": "document",
+      "label": "每个视频标注 6–15 个 QAC 三元组\n看完整视频 • 使用标注者母语\n先写问答，再标一个或多个线索区间",
+      "type": "user",
       "size": "xl"
     },
     {
       "id": "options",
-      "label": "多选选项",
+      "label": "构造多项选择题选项\n每题加入 4–7 个负样本\n时间线索区间覆盖完整事件",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "review",
-      "label": "迭代质检",
-      "type": "decision",
+      "id": "manual_qc",
+      "label": "人工复核问题、选项与答案\n拒绝弱样本并要求修订\n监控线索时长与时间位置多样性",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "12,129组QAC",
-      "type": "document",
+      "id": "model_qc",
+      "label": "保证视频依赖与难度\nGPT-4 移除纯文本可答问题\nMLLM 移除稀疏帧或小模型易答问题",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "线索评测",
+      "id": "release",
+      "label": "发布 CG-Bench\n1,219 个视频 • 12,129 个 QAC 三元组\n14,362 个线索区间 • 平均 19.24 秒",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "mcq",
+      "label": "长视频与线索片段多选题\n完整视频对比合并后的标注线索片段\n报告 long-acc. 与 clue-acc.",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "white_box",
+      "label": "白盒线索定位\n模型输出一个或多个时间区间\nmIoU • rec.@IoU • acc.@IoU",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "black_box",
+      "label": "黑盒可信度\n比较完整视频与仅线索片段准确率\nCRR = min(long-acc., clue-acc.) / clue-acc.",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "open_ended",
+      "label": "线索辅助开放问答\nGPT-4o 先判断文本，必要时请求视觉线索\n只从标注区间采样辅助帧",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告准确率、定位与可信度\n按感知、推理与幻觉细分\n诊断长视频理解中的上下文稀释",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,25 +100,25 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "videos",
-      "to": "domains",
+      "from": "collect",
+      "to": "taxonomy_video",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "domains",
-      "to": "filter",
+      "from": "taxonomy_video",
+      "to": "review_video",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "filter",
-      "to": "taxonomy",
+      "from": "review_video",
+      "to": "question_taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "taxonomy",
+      "from": "question_taxonomy",
       "to": "qac",
       "type": "primary"
     },
@@ -101,19 +131,73 @@
     {
       "id": "edge-6",
       "from": "options",
-      "to": "review",
+      "to": "manual_qc",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "review",
-      "to": "dataset",
+      "from": "options",
+      "to": "model_qc",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "dataset",
-      "to": "eval",
+      "from": "manual_qc",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "model_qc",
+      "to": "release",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "release",
+      "to": "mcq",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "release",
+      "to": "white_box",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "release",
+      "to": "black_box",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "release",
+      "to": "open_ended",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "mcq",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "white_box",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "black_box",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "open_ended",
+      "to": "report",
       "type": "primary"
     }
   ],

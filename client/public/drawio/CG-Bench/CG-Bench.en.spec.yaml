@@ -6,97 +6,201 @@ meta:
   routing: orthogonal
   title: CG-Bench Build Process
   description: >-
-    Paper-aligned construction of CG-Bench: long videos are manually collected from defined domains, annotated with
-    question-answer-clue triplets, iteratively reviewed, and evaluated with MCQ, white-box clue grounding, black-box
-    clue recovery, and clue-aided open-ended QA.
-  legend: Solid arrows show collection, annotation, quality review, release, and evaluation.
+    Paper-aligned construction and clue-grounded evaluation of 1,219 long videos and 12,129 question-answer-clue
+    triplets, with seven-round video review, multi-stage QA difficulty filtering, 14,362 temporal clue intervals, and
+    long-video, white-box, black-box, and clue-aided open-ended evaluation.
+  legend: Solid arrows show construction and evaluation; dashed arrows carry quality-filter evidence.
 nodes:
-  - id: videos
-    label: Long Videos
+  - id: collect
+    label: |-
+      Manually Collect Internet Videos
+      Longer than 10 Minutes • Retain Audio and Subtitles
+      Avoid Reusing Existing Academic Video Datasets
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: domains
-    label: 14 Domains
+      'y': 220
+  - id: taxonomy_video
+    label: |-
+      Tag Video Content in 4–8 Words
+      14 Root • 171 Secondary • 638 Tertiary Categories
+      Balance Domains and 10–80 Minute Durations
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: 7-Round Filter
-    type: decision
+      x: 340
+      'y': 220
+  - id: review_video
+    label: |-
+      Perform Seven Rounds of Manual Video Review
+      Check Content Relevance, Quality, and Diversity
+      Retain 1,219 Curated Long Videos
+    type: user
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: taxonomy
-    label: QA Taxonomy
-    type: process
+      x: 640
+      'y': 220
+  - id: question_taxonomy
+    label: |-
+      Define the Question Taxonomy
+      Perception • Reasoning • Hallucination
+      Fine-grained Perception and Reasoning Subcategories
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 220
   - id: qac
-    label: QAC Triplets
-    type: document
+    label: |-
+      Annotate 6–15 QAC Triplets per Video
+      Watch the Entire Video • Use Native Language
+      Write QA First, then Mark One or More Clue Intervals
+    type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1240
+      'y': 220
   - id: options
-    label: MCQ Options
+    label: |-
+      Create Multiple-choice Options
+      Add 4–7 Negative Samples per Question
+      Preserve Complete Events in Temporal Clue Intervals
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: review
-    label: Review Loop
-    type: decision
+      x: 1540
+      'y': 220
+  - id: manual_qc
+    label: |-
+      Manually Review Question, Options, and Answer
+      Reject Weak Items and Request Revision
+      Monitor Clue Duration and Temporal Position Diversity
+    type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: dataset
-    label: 12,129 QACs
-    type: document
+      x: 1840
+      'y': 80
+  - id: model_qc
+    label: |-
+      Enforce Video Dependency and Difficulty
+      GPT-4 Removes Text-only-answerable QA
+      MLLMs Remove Sparse-frame or Small-model-easy Items
+    type: process
     size: xl
     position:
-      x: 1860
+      x: 1840
+      'y': 340
+  - id: release
+    label: |-
+      Release CG-Bench
+      1,219 Videos • 12,129 QAC Triplets
+      14,362 Clue Intervals • Average 19.24 Seconds
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: mcq
+    label: |-
+      Long-video and Clue-based MCQ
+      Full Video versus Merged Annotated Clue Clips
+      Report long-acc. and clue-acc.
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 0
+  - id: white_box
+    label: |-
+      White-box Clue Grounding
+      Model Outputs One or More Time Intervals
+      mIoU • rec.@IoU • acc.@IoU
+    type: process
+    size: xl
+    position:
+      x: 2440
       'y': 160
-  - id: eval
-    label: Clue Eval
+  - id: black_box
+    label: |-
+      Black-box Credibility
+      Compare Full-video and Clue-only Accuracy
+      CRR = min(long-acc., clue-acc.) / clue-acc.
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 320
+  - id: open_ended
+    label: |-
+      Clue-aided Open-ended QA
+      GPT-4o Judges Text First; Request Visual Clues If Needed
+      Sample Frames only from Annotated Intervals
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 480
+  - id: report
+    label: |-
+      Report Accuracy, Grounding, and Credibility
+      Break Down Perception, Reasoning, and Hallucination
+      Diagnose Context Dilution in Long-video Understanding
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 160
+      x: 2740
+      'y': 220
 edges:
-  - from: videos
-    to: domains
+  - from: collect
+    to: taxonomy_video
     type: primary
-  - from: domains
-    to: filter
+  - from: taxonomy_video
+    to: review_video
     type: primary
-  - from: filter
-    to: taxonomy
+  - from: review_video
+    to: question_taxonomy
     type: primary
-  - from: taxonomy
+  - from: question_taxonomy
     to: qac
     type: primary
   - from: qac
     to: options
     type: primary
   - from: options
-    to: review
+    to: manual_qc
     type: primary
-  - from: review
-    to: dataset
+  - from: options
+    to: model_qc
     type: primary
-  - from: dataset
-    to: eval
+  - from: manual_qc
+    to: release
+    type: primary
+  - from: model_qc
+    to: release
+    type: data
+  - from: release
+    to: mcq
+    type: primary
+  - from: release
+    to: white_box
+    type: primary
+  - from: release
+    to: black_box
+    type: primary
+  - from: release
+    to: open_ended
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: white_box
+    to: report
+    type: primary
+  - from: black_box
+    to: report
+    type: primary
+  - from: open_ended
+    to: report
     type: primary
 modules: []

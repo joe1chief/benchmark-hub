@@ -5,85 +5,227 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ChartEditBench 构建流程
-  description: 对齐论文的 ChartEditBench 构建流程：由 LLM 生成初始图表代码，扩展成难度递进的多轮修改链， 经过执行验证、Chart-R1 自动核查、断言体系和人工抽检后，用对话式协议评测模型。
-  legend: 实线箭头表示数据构建、质量控制与评测主流程。
+  description: >-
+    按论文构建并以对话方式评测 4,142 个六轮图表编辑实例，覆盖 37 种 matplotlib 图型：生成五轮递进修改，经可执行代码门禁、 Chart-R1 与断言验证、400 实例人工审计，再在两种 grounded
+    编辑任务上报告五项互补指标。
+  legend: 实线表示生成与评测，虚线表示验证证据。
 nodes:
-  - id: specs
-    label: 图表规格
+  - id: specification
+    label: |-
+      采样结构化初始图表规格
+      六大类 37 种 matplotlib 图型
+      固定随机种子的数据与视觉参数
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: charts
-    label: 初始图表
+      'y': 220
+  - id: initial
+    label: |-
+      阶段 1：生成初始图表代码
+      LLM 生成可执行 Python
+      沙箱渲染形成第 0 轮
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
   - id: edits
-    label: 修改链
+    label: |-
+      阶段 2：生成五轮依赖修改
+      第 1 轮样式 • 第 2–3 轮结构
+      第 4–5 轮转换、子图或双轴
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: execution
-    label: 执行验证
-    type: decision
+      x: 640
+      'y': 220
+  - id: balance
+    label: |-
+      轮询平衡编辑空间
+      17 种样式修改 • 18 种数据修改
+      各轮交替类别 • 约 50/50 覆盖
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: chartr1
-    label: Chart-R1核查
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: assertions
-    label: 断言体系
+      x: 940
+      'y': 220
+  - id: vqa
+    label: |-
+      阶段 3：每张渲染图加入五个 VQA 对
+      图型 • 视觉属性 • 数据解释
+      结构分析用于未来理解评测
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1240
+      'y': 40
+  - id: execution_gate
+    label: |-
+      验证每段生成程序
+      AST 语法 • 隔离执行且限时 60 秒
+      渲染文件 • 必需 import/savefig/close
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: retry
+    label: |-
+      重试失败生成
+      指数退避且最多三次
+      仍未通过任一门禁则丢弃实例
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: chart_r1
+    label: |-
+      Chart-R1 自动验证
+      代码到代码的指令检查
+      图表到图表的视觉变化检查
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 80
+  - id: assertions
+    label: |-
+      生成两类断言
+      每轮 3–4 条指令遵循断言
+      每轮 4–8 条通用代码要求断言
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 260
   - id: human
-    label: 人工子集
+    label: |-
+      人工验证 400 个分层实例
+      两位专家评价代码、视觉保真与未改内容保持
+      用 Cohen’s Kappa 并讨论解决分歧
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: 逐轮评测
+      x: 1840
+      'y': 440
+  - id: release
+    label: |-
+      发布最终 ChartEditBench
+      4,142 个实例 • 20,710 次修改
+      六轮 • 37 种图型 • 35 种修改
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 260
+  - id: task_code
+    label: |-
+      任务 1：代码到代码修改
+      原代码 + 原图与目标图
+      根据视觉差异预测修改后代码
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 100
+  - id: task_nl
+    label: |-
+      任务 2：自然语言差量修改
+      原代码 + 图表 + 编辑指令
+      预测遵循指令的修改后代码
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 360
+  - id: conversation
+    label: |-
+      运行五轮对话式编辑链
+      每轮把模型自己的预测送入下一轮
+      执行失败时回退到最近有效渲染
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 260
+  - id: score
+    label: |-
+      应用逐轮混合评分
+      程序断言通过率或 Chart-R1 1–5 分
+      执行 • 指令 • 代码质量 • 视觉相似度
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 260
+  - id: report
+    label: |-
+      报告五项指标与总体得分
+      按轮次、图型、样式/数据和难度细分
+      诊断误差累积与共同上下文断裂
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 260
 edges:
-  - from: specs
-    to: charts
+  - from: specification
+    to: initial
     type: primary
-  - from: charts
+  - from: initial
     to: edits
     type: primary
   - from: edits
-    to: execution
+    to: balance
     type: primary
-  - from: execution
-    to: chartr1
+  - from: balance
+    to: vqa
     type: primary
-  - from: chartr1
+  - from: balance
+    to: execution_gate
+    type: primary
+  - from: execution_gate
+    to: retry
+    type: primary
+  - from: retry
+    to: chart_r1
+    type: primary
+  - from: retry
     to: assertions
     type: primary
-  - from: assertions
+  - from: retry
     to: human
     type: primary
+  - from: vqa
+    to: release
+    type: data
+  - from: chart_r1
+    to: release
+    type: data
+  - from: assertions
+    to: release
+    type: primary
   - from: human
-    to: eval
+    to: release
+    type: data
+  - from: release
+    to: task_code
+    type: primary
+  - from: release
+    to: task_nl
+    type: primary
+  - from: task_code
+    to: conversation
+    type: primary
+  - from: task_nl
+    to: conversation
+    type: primary
+  - from: conversation
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

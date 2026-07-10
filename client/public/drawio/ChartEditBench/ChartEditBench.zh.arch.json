@@ -7,56 +7,104 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 16,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "specs",
-      "label": "图表规格",
+      "id": "specification",
+      "label": "采样结构化初始图表规格\n六大类 37 种 matplotlib 图型\n固定随机种子的数据与视觉参数",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "charts",
-      "label": "初始图表",
+      "id": "initial",
+      "label": "阶段 1：生成初始图表代码\nLLM 生成可执行 Python\n沙箱渲染形成第 0 轮",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "edits",
-      "label": "修改链",
+      "label": "阶段 2：生成五轮依赖修改\n第 1 轮样式 • 第 2–3 轮结构\n第 4–5 轮转换、子图或双轴",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "execution",
-      "label": "执行验证",
-      "type": "decision",
+      "id": "balance",
+      "label": "轮询平衡编辑空间\n17 种样式修改 • 18 种数据修改\n各轮交替类别 • 约 50/50 覆盖",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "chartr1",
-      "label": "Chart-R1核查",
-      "type": "decision",
+      "id": "vqa",
+      "label": "阶段 3：每张渲染图加入五个 VQA 对\n图型 • 视觉属性 • 数据解释\n结构分析用于未来理解评测",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "execution_gate",
+      "label": "验证每段生成程序\nAST 语法 • 隔离执行且限时 60 秒\n渲染文件 • 必需 import/savefig/close",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "retry",
+      "label": "重试失败生成\n指数退避且最多三次\n仍未通过任一门禁则丢弃实例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "chart_r1",
+      "label": "Chart-R1 自动验证\n代码到代码的指令检查\n图表到图表的视觉变化检查",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "assertions",
-      "label": "断言体系",
+      "label": "生成两类断言\n每轮 3–4 条指令遵循断言\n每轮 4–8 条通用代码要求断言",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "human",
-      "label": "人工子集",
+      "label": "人工验证 400 个分层实例\n两位专家评价代码、视觉保真与未改内容保持\n用 Cohen’s Kappa 并讨论解决分歧",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "逐轮评测",
+      "id": "release",
+      "label": "发布最终 ChartEditBench\n4,142 个实例 • 20,710 次修改\n六轮 • 37 种图型 • 35 种修改",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "task_code",
+      "label": "任务 1：代码到代码修改\n原代码 + 原图与目标图\n根据视觉差异预测修改后代码",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "task_nl",
+      "label": "任务 2：自然语言差量修改\n原代码 + 图表 + 编辑指令\n预测遵循指令的修改后代码",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "conversation",
+      "label": "运行五轮对话式编辑链\n每轮把模型自己的预测送入下一轮\n执行失败时回退到最近有效渲染",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "应用逐轮混合评分\n程序断言通过率或 Chart-R1 1–5 分\n执行 • 指令 • 代码质量 • 视觉相似度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告五项指标与总体得分\n按轮次、图型、样式/数据和难度细分\n诊断误差累积与共同上下文断裂",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +112,116 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "specs",
-      "to": "charts",
+      "from": "specification",
+      "to": "initial",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "charts",
+      "from": "initial",
       "to": "edits",
       "type": "primary"
     },
     {
       "id": "edge-3",
       "from": "edits",
-      "to": "execution",
+      "to": "balance",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "execution",
-      "to": "chartr1",
+      "from": "balance",
+      "to": "vqa",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "chartr1",
-      "to": "assertions",
+      "from": "balance",
+      "to": "execution_gate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "assertions",
-      "to": "human",
+      "from": "execution_gate",
+      "to": "retry",
       "type": "primary"
     },
     {
       "id": "edge-7",
+      "from": "retry",
+      "to": "chart_r1",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "retry",
+      "to": "assertions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "retry",
+      "to": "human",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "vqa",
+      "to": "release",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "chart_r1",
+      "to": "release",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "assertions",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
       "from": "human",
-      "to": "eval",
+      "to": "release",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "release",
+      "to": "task_code",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "release",
+      "to": "task_nl",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "task_code",
+      "to": "conversation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "task_nl",
+      "to": "conversation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "conversation",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],
