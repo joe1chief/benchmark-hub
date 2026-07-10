@@ -4,115 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIME / MathArena 构建流程
-  description: 基于 arXiv:2505.23281 对齐的 MathArena 中 AIME 切片构建与评估流程。
-  legend: 实线表示竞赛题接入、模型评估和排行榜报告主流程；虚线区分答案解析与证明题人工评分路径。
+  title: AIME / MathArena 构建与评测流程
+  description: 对齐论文的 MathArena 流程（本目录将其列在 AIME 条目下）：持续纳入新发布竞赛、规范题目、 在发布附近评测所选模型，分流评分答案题与证明题，并发布带统计不确定性的结果。
+  legend: 上排构建论文快照中的 7 项竞赛、162 道题；下排分流至最终答案或自然语言证明评分，再公开报告。
 nodes:
-  - id: competitions
+  - id: stream
     label: |-
-      定期数学竞赛
-      AIME 和更难竞赛
-      新发布题目
+      监控定期举办的数学竞赛
+      使用刚发布且经主办方审核的题目
+      保留竞赛日期以追踪污染风险
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: selection
+      'y': 100
+  - id: select
     label: |-
-      竞赛选择
-      有声誉且有挑战
-      排除已饱和竞赛
-    type: decision
+      选择权威且高难的竞赛
+      同时覆盖最终答案题与证明题
+      排除 Kangaroo 等已被模型饱和的来源
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: extraction
+      x: 320
+      'y': 100
+  - id: extract
     label: |-
-      题目抽取
-      来自原始竞赛来源
-      统一格式模板
+      从原始来源提取
+      统一题目与解答模板
+      人工检查错字、不一致与格式问题
     type: document
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: realtime_eval
+      x: 600
+      'y': 100
+  - id: snapshot
     label: |-
-      实时评估
-      贴近发布日期运行
-      降低污染风险
+      MathArena 论文快照
+      AIME 30 • HMMT 30 • BRUMO 30 • CMIMC 40
+      USAMO 6 • IMO 6 • Project Euler 20 = 162 题
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: models
+    label: |-
+      选择排行榜模型
+      总体领先 • 开源权重领先 • 成本–性能 Pareto
+      排除不满足任一条件的非推理模型
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: answer_branch
+      x: 1160
+      'y': 100
+  - id: generate
     label: |-
-      最终答案路径
-      boxed answer 提示
-      规则解析器加 sympy 校验
+      在竞赛发布附近生成解答
+      使用供应商推荐设置 • 不额外调参
+      每题 4 个回答；标记竞赛后发布的模型
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: proof_branch
-    label: |-
-      证明题路径
-      专家制定评分标准
-      匿名双人评分
-    type: user
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: review
-    label: |-
-      人工复核与 judge
-      标记解析失败
-      语义等价检查
+      x: 1440
+      'y': 100
+  - id: route
+    label: 题目属于哪种格式？
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: leaderboard
+      x: 1440
+      'y': 470
+  - id: answer
     label: |-
-      MathArena 结果
-      rank 区间和准确率
-      公开榜单与模型回答
+      最终答案评分
+      要求 boxed 答案 • 自定义 LaTeX → SymPy 解析器
+      Gemini 2.5 Flash 交叉检查；人工处理标记项 / 分歧
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: proof
+    label: |-
+      自然语言证明评分
+      专家先制定贴近竞赛的部分分评分方案
+      2 名独立裁判对匿名证明评分并给出理由
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 580
+  - id: score
+    label: |-
+      计算竞赛得分
+      答案题：4 次回答上的 Pass@1 / 准确率
+      证明题：按 Rubric 加权的部分分
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 470
+  - id: statistics
+    label: |-
+      估计统计不确定性
+      成对置换检验得到排名置信区间
+      小规模竞赛用伯努利准确率置信区间
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: publish
+    label: |-
+      发布 MathArena 结果
+      公开排行榜 + 单条模型回答
+      竞赛得分、排名区间、成本与发布日期警告
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 470
 edges:
-  - from: competitions
-    to: selection
+  - from: stream
+    to: select
     type: primary
-  - from: selection
-    to: extraction
+  - from: select
+    to: extract
     type: primary
-  - from: extraction
-    to: realtime_eval
+  - from: extract
+    to: snapshot
     type: primary
-  - from: realtime_eval
-    to: answer_branch
+  - from: snapshot
+    to: models
     type: primary
-    label: AIME 答案题
-  - from: realtime_eval
-    to: proof_branch
-    type: data
-    label: 证明竞赛
-  - from: answer_branch
-    to: review
-    type: data
-  - from: proof_branch
-    to: review
-    type: data
-  - from: review
-    to: leaderboard
+  - from: models
+    to: generate
+    type: primary
+  - from: generate
+    to: route
+    type: primary
+  - from: route
+    to: answer
+    type: primary
+  - from: route
+    to: proof
+    type: primary
+  - from: answer
+    to: score
+    type: primary
+  - from: proof
+    to: score
+    type: primary
+  - from: score
+    to: statistics
+    type: primary
+  - from: statistics
+    to: publish
     type: primary
 modules: []

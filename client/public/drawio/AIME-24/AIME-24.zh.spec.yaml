@@ -4,86 +4,136 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIME-24 构建流程
-  description: 按官方赛制对齐的AIME-24评测流程：整理2024年AIME I与II共30道题及000-999答案键，解析模型作答，并计算精确匹配准确率或Mean@k。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: AIME-24 封装与评测流程
+  description: 对齐官方竞赛与公开数据集的 2024 AIME 流程：把 AIME I 与 AIME II 封装为 30 题 LLM 评测， 并对解析后的数值答案做精确匹配。
+  legend: AIME 没有基准论文。MAA 规定每场 15 题和 0-999 答案格式；研究数据集会合并主场与备用场， 但真实参赛者只能参加其中一场。
 nodes:
-  - id: n1
-    label: 2024年AIME
+  - id: official
+    label: |-
+      2024 MAA AIME 竞赛
+      AMC 10 / AMC 12 之后的邀请赛
+      题目由 MAA 命制并组织考试
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: I与II试卷
+      'y': 100
+  - id: forms
+    label: |-
+      两个备用关系的考试场次
+      AIME I = 主日期 • AIME II = 备用日期
+      每名学生只能参加一场
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 30道题
+      x: 320
+      'y': 100
+  - id: format
+    label: |-
+      保留官方考试合同
+      每场 15 题 • 3 小时
+      每题答案均为 000 到 999 的整数
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: collect
+    label: |-
+      收集 2024 题目与答案键
+      AIME I 15 题 + AIME II 15 题
+      保留原始数学题面与数值答案
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 000-999答案
+      x: 880
+      'y': 100
+  - id: package
+    label: |-
+      构建公开 AIME-24 数据集
+      合并两场为 30 道评测题
+      统一 problem / answer 字段
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: prompt
+    label: |-
+      提示目标模型
+      每次提供一道题并要求推理与最终答案
+      采样设置由具体评测框架定义
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 模型作答
+      x: 1160
+      'y': 440
+  - id: samples
+    label: |-
+      生成 1 次或 k 次尝试
+      分别保存每个回答
+      模型输出不采用真实竞赛的部分分
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 答案解析
+      x: 880
+      'y': 440
+  - id: parse
+    label: |-
+      解析最终数值答案
+      提取 boxed / 明确声明的结果
+      将前导零统一到 000-999 答案键
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 精确匹配
-    type: decision
+      x: 600
+      'y': 440
+  - id: exact
+    label: |-
+      与官方答案键比较
+      每次尝试做整数精确匹配
+      正确 = 1 • 错误 / 无法解析 = 0
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率/Mean@k
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      AIME-24 结果
+      单次尝试报告精确匹配准确率
+      框架采样 k 次时报告 Avg@k / Mean@k
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: official
+    to: forms
     type: primary
-  - from: n2
-    to: n3
+  - from: forms
+    to: format
     type: primary
-  - from: n3
-    to: n4
+  - from: format
+    to: collect
     type: primary
-  - from: n4
-    to: n5
+  - from: collect
+    to: package
     type: primary
-  - from: n5
-    to: n6
+  - from: package
+    to: prompt
     type: primary
-  - from: n6
-    to: n7
+  - from: prompt
+    to: samples
     type: primary
-  - from: n7
-    to: n8
+  - from: samples
+    to: parse
+    type: primary
+  - from: parse
+    to: exact
+    type: primary
+  - from: exact
+    to: report
     type: primary
 modules: []

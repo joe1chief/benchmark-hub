@@ -4,123 +4,198 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AMEGA-LLM Build Process
+  title: AMEGA-LLM Build and Evaluation Process
   description: >-
-    Paper-aligned AMEGA benchmark construction and autonomous medical guideline-adherence evaluation workflow, based on
-    npj Digital Medicine volume 7, article 358.
+    Paper-aligned physician construction of guideline-grounded clinical cases and automated oral-exam evaluation with
+    criterion-level GPT-4 judgments, conditional reasks, repeated majority voting, weighted scores, and evaluator
+    validation.
   legend: >-
-    Solid arrows show case construction and model evaluation; dashed arrows mark reask, repeated judging, and human
-    validation safeguards.
+    The diagram intentionally uses the paper snapshot of 20 cases, 135 questions, and 1,337 criteria. The current
+    official repository later extends the resource to 24 cases, 163 questions, and 1,497 criteria.
 nodes:
   - id: guidelines
     label: |-
-      Medical guideline base
-      current clinical guidance
-      physician expertise
+      Select Current Clinical Guidelines
+      Highly Regarded US and Global Organizations
+      Cover Diagnosis, Treatment, Monitoring, and Follow-Up
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 100
+  - id: physicians
+    label: |-
+      Experienced Physicians Build the Benchmark
+      Each Has More than 5 Years of Clinical Experience
+      Select Guidelines and Translate Recommendations into Cases
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 100
   - id: cases
     label: |-
-      Crafted clinical cases
-      20 diagnostic scenarios
-      13 specialties
+      Craft 20 Fictional Clinical Cases
+      13 Medical Specialties
+      Presenting Complaint, History, Examination, Labs, and Imaging
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
+      x: 600
+      'y': 100
   - id: questions
     label: |-
-      Open-ended questions
-      135 real clinical prompts
-      diagnosis and treatment
+      Write 6–8 Sequential Questions per Case
+      135 Open-Ended Questions Total
+      Probe Differential, Workup, Therapy, Complications, and Follow-Up
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: criteria
+      x: 880
+      'y': 100
+  - id: rubrics
     label: |-
-      Weighted criteria
-      1337 scoring elements
-      guideline-derived checks
+      Define Guideline-Derived Weighted Rubrics
+      1,337 Individual Scoring Elements
+      Clinical Significance Weights • Maximum 50 Points per Case
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: candidate
+      x: 1160
+      'y': 100
+  - id: release
     label: |-
-      Candidate model
-      answers each case question
-      may receive reask
-    type: terminal
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: evaluator
-    label: |-
-      GPT-4 evaluator
-      parse answer and criteria
-      extract clinical concepts
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: voting
-    label: |-
-      Repeated Boolean judging
-      11 parallel attempts
-      majority vote and confidence
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: |-
-      Aggregated score report
-      criterion to case score
-      50-point case maximum
+      Physician Review and AMEGA Release
+      ≥1 Additional Physician Reviews and Iteratively Refines Each Case
+      20–30 Hours per Case • More than 400 Hours Total
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      Simulate a Zero-Shot Oral Examination
+      Give the Initial Case, Then One Question at a Time
+      Standardized Prompt; No Demonstration Answers
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 470
+  - id: candidate
+    label: |-
+      Candidate Model Response
+      Answer the Current Clinical Question
+      Continue Sequentially through the Case
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 470
+  - id: evaluator
+    label: |-
+      GPT-4-0613 Evaluator Model
+      Extract Clinical Concepts and Check Every Rubric Element
+      Return a True / False Vector of Criteria Met
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 470
+  - id: gate
+    label: All Criteria Met / Reask Allowed?
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: reask
+    label: |-
+      Guided Reask and Self-Reflection
+      Reveal Unmet Criteria and Let the Candidate Add Details
+      Skip Reask for Critical Errors with Immediate Consequences
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 690
+  - id: voting
+    label: |-
+      Stabilize Criterion Judgments
+      11 Parallel Evaluations per Criterion
+      Majority Vote + 0–1 Confidence from Agreement
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 470
+  - id: score
+    label: |-
+      AMEGA Guideline-Adherence Results
+      Multiply Boolean Outcomes by Weights, Then Sum
+      Question / Case Scores, 50-Point Mean, Normalized Deficiencies, Cost
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: validate
+    label: |-
+      Validate Evaluator Reliability
+      50-Run Simulation; Stability after 11 Runs
+      Clinical-Expert Checks on 2 Cases + Spot Checks on Cases 3 and 5
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 580
 edges:
   - from: guidelines
+    to: physicians
+    type: primary
+  - from: physicians
     to: cases
     type: primary
   - from: cases
     to: questions
     type: primary
   - from: questions
-    to: criteria
+    to: rubrics
     type: primary
-  - from: criteria
+  - from: rubrics
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
     to: candidate
-    type: data
-    label: case + question
+    type: primary
   - from: candidate
     to: evaluator
     type: primary
   - from: evaluator
+    to: gate
+    type: primary
+  - from: gate
+    to: reask
+    type: primary
+    waypoints:
+      - x: 730
+        'y': 650
+      - x: 1290
+        'y': 650
+  - from: reask
+    to: candidate
+    type: optional
+  - from: gate
     to: voting
     type: primary
   - from: voting
-    to: candidate
-    type: optional
-    label: reask if allowed
-  - from: voting
-    to: scores
+    to: score
     type: primary
-  - from: scores
-    to: evaluator
-    type: optional
-    label: expert spot checks
+  - from: voting
+    to: validate
+    type: primary
 modules: []

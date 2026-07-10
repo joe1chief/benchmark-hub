@@ -4,117 +4,167 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIME / MathArena Build Process
-  description: Paper-aligned construction and evaluation workflow for the AIME slice in MathArena, based on arXiv:2505.23281.
+  title: AIME / MathArena Build and Evaluation Process
+  description: >-
+    Paper-aligned MathArena workflow represented by this catalog's AIME entry: continuously ingest newly released
+    competitions, standardize problems, evaluate selected models close to release, grade answer and proof tasks through
+    separate paths, and publish statistically qualified results.
   legend: >-
-    Solid arrows show competition ingestion, model evaluation, and leaderboard reporting; dashed arrows distinguish
-    final-answer parsing from proof-based human grading.
+    The top row builds the evolving seven-competition, 162-problem paper snapshot. The bottom row branches between
+    final-answer and natural-language-proof grading before public reporting.
 nodes:
-  - id: competitions
+  - id: stream
     label: |-
-      Recurring competitions
-      AIME and harder contests
-      newly released problems
+      Monitor Recurring Math Competitions
+      Use Newly Released, Organizer-Vetted Problems
+      Preserve Competition Date for Contamination Tracking
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: selection
+      'y': 100
+  - id: select
     label: |-
-      Competition selection
-      reputable and challenging
-      avoid saturated contests
-    type: decision
+      Select Reputable, Challenging Competitions
+      Include Final-Answer and Proof-Based Formats
+      Exclude Saturated Sources such as Kangaroo
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: extraction
+      x: 320
+      'y': 100
+  - id: extract
     label: |-
-      Problem extraction
-      original sources
-      standardized templates
+      Extract from Original Sources
+      Standardize Problem and Solution Templates
+      Manually Check Typos, Inconsistencies, and Formatting
     type: document
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: realtime_eval
+      x: 600
+      'y': 100
+  - id: snapshot
     label: |-
-      Real-time evaluation
-      run near release date
-      reduce contamination risk
+      MathArena Paper Snapshot
+      AIME 30 • HMMT 30 • BRUMO 30 • CMIMC 40
+      USAMO 6 • IMO 6 • Project Euler 20 = 162 Problems
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: models
+    label: |-
+      Select Models for the Leaderboard
+      Top Overall • Top Open-Weight • Cost–Performance Pareto
+      Exclude Non-Reasoning Models that Meet None of These Criteria
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: answer_branch
+      x: 1160
+      'y': 100
+  - id: generate
     label: |-
-      Final-answer branch
-      boxed answer prompt
-      rule parser plus sympy check
+      Generate Solutions Near Competition Release
+      Provider-Recommended Settings • No Further Tuning
+      4 Responses per Problem; Flag Models Released Later
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: proof_branch
-    label: |-
-      Proof branch
-      expert grading scheme
-      anonymized double grading
-    type: user
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: review
-    label: |-
-      Manual review and judge
-      flagged parser failures
-      semantic answer checks
+      x: 1440
+      'y': 100
+  - id: route
+    label: Problem Format?
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: leaderboard
+      x: 1440
+      'y': 470
+  - id: answer
     label: |-
-      MathArena outputs
-      rank intervals and accuracy
-      public leaderboard and responses
+      Final-Answer Grading
+      Require a Boxed Answer • Custom LaTeX → SymPy Parser
+      Gemini 2.5 Flash Cross-Check; Manually Resolve Flags / Disagreements
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: proof
+    label: |-
+      Natural-Language Proof Grading
+      Experts First Create a Competition-Like Partial-Credit Scheme
+      2 Independent Judges Grade Anonymized Proofs with Justifications
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 580
+  - id: score
+    label: |-
+      Compute Competition Scores
+      Answer Tasks: Pass@1 / Accuracy over 4 Responses
+      Proof Tasks: Rubric-Weighted Partial Credit
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 470
+  - id: statistics
+    label: |-
+      Estimate Statistical Uncertainty
+      Paired-Permutation Rank Confidence Interval
+      Bernoulli Accuracy Confidence Interval for Small Competitions
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: publish
+    label: |-
+      Publish MathArena Results
+      Public Leaderboard + Individual Model Responses
+      Competition Scores, Rank Intervals, Costs, and Release-Date Warnings
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 470
 edges:
-  - from: competitions
-    to: selection
+  - from: stream
+    to: select
     type: primary
-  - from: selection
-    to: extraction
+  - from: select
+    to: extract
     type: primary
-  - from: extraction
-    to: realtime_eval
+  - from: extract
+    to: snapshot
     type: primary
-  - from: realtime_eval
-    to: answer_branch
+  - from: snapshot
+    to: models
     type: primary
-    label: AIME answer tasks
-  - from: realtime_eval
-    to: proof_branch
-    type: data
-    label: proof competitions
-  - from: answer_branch
-    to: review
-    type: data
-  - from: proof_branch
-    to: review
-    type: data
-  - from: review
-    to: leaderboard
+  - from: models
+    to: generate
+    type: primary
+  - from: generate
+    to: route
+    type: primary
+  - from: route
+    to: answer
+    type: primary
+  - from: route
+    to: proof
+    type: primary
+  - from: answer
+    to: score
+    type: primary
+  - from: proof
+    to: score
+    type: primary
+  - from: score
+    to: statistics
+    type: primary
+  - from: statistics
+    to: publish
     type: primary
 modules: []
