@@ -5,85 +5,123 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: InfiniteBench 构建流程
-  description: 对齐论文的 InfiniteBench 流程：真实长上下文来源、关键实体替换、人工标注小说/对话/代码任务、 合成检索/代码/数学任务，以及任务特定评分。
-  legend: 实线箭头表示真实来源处理、人工标注、合成任务生成、套件组装和评测。
+  description: >-
+    论文对齐的 InfiniteBench 流程：真实的长篇小说、剧本与代码仓库经人工处理形成标注任务，合成的检索、代码与数学上下文 针对四种长上下文能力，两条支路共同组成 12 个任务、3,946 条中英文样本，平均长度约 20 万
+    token。
+  legend: 实线箭头表示真实数据与合成数据两条构建支路、套件汇合及任务特定评测。
 nodes:
-  - id: sources
-    label: 长文本来源
+  - id: realistic_sources
+    label: |-
+      真实长文本来源
+      在线小说 + 影视剧本
+      PyPI 仓库（64K–256K）
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: replace
-    label: 实体替换
+      'y': 80
+  - id: realistic_processing
+    label: |-
+      来源处理
+      过滤 + 实体替换
+      剧本清洗 / 掩名 / 补长
+      代码展平 + 插入 1 个缺陷
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: human
-    label: 人工任务
+      x: 300
+      'y': 80
+  - id: human_tasks
+    label: |-
+      五条人工标注流水线
+      小说摘要 / 问答 / 选择
+      对话问答 + 代码调试
     type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: synthetic
-    label: 合成任务
+      x: 560
+      'y': 80
+  - id: synthetic_sources
+    label: |-
+      合成长上下文
+      检索 + 代码 + 数学
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 400
+  - id: ability_tasks
+    label: |-
+      可控任务
+      定位 / 信息解析
+      状态保持 / 顺序处理
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
+      x: 300
+      'y': 400
   - id: suite
-    label: 12任务
+    label: |-
+      InfiniteBench 套件
+      3,946 样本 / 12 个任务
+      5 个领域；中英文
     type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: context
-    label: 100K+输入
+      x: 820
+      'y': 240
+  - id: length
+    label: |-
+      长上下文输入
+      平均约 20 万 Token
+      平均超过 10 万
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: models
-    label: 模型运行
+      x: 1080
+      'y': 240
+  - id: model_eval
+    label: |-
+      长上下文模型运行
+      各任务专用提示
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
+      x: 1340
+      'y': 240
   - id: metrics
-    label: 指标
+    label: |-
+      任务特定评分
+      准确率 / ROUGE-L-Sum
+      无效选择题输出记 0 分
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1600
+      'y': 240
 edges:
-  - from: sources
-    to: replace
+  - from: realistic_sources
+    to: realistic_processing
     type: primary
-  - from: replace
-    to: human
+  - from: realistic_processing
+    to: human_tasks
     type: primary
-  - from: human
-    to: synthetic
+  - from: human_tasks
+    to: suite
     type: primary
-  - from: synthetic
+  - from: synthetic_sources
+    to: ability_tasks
+    type: primary
+  - from: ability_tasks
     to: suite
     type: primary
   - from: suite
-    to: context
+    to: length
     type: primary
-  - from: context
-    to: models
+  - from: length
+    to: model_eval
     type: primary
-  - from: models
+  - from: model_eval
     to: metrics
     type: primary
 modules: []
