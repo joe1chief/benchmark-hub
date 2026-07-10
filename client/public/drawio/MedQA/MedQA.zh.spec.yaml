@@ -1,0 +1,162 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedQA 构建流程
+  description: 对齐论文的 MedQA 流程：收集美国、中国大陆和中国台湾地区的医学执业考试题，去重、规范为四选一并按 80/10/10 划分；同时把中英文医学教材经 OCR 处理为检索语料，开放域系统检索并阅读证据后选择答案，以准确率评测。
+  legend: 实线箭头表示考试题和教材语料两条并行构建支路，以及后续检索、阅读和评测。
+nodes:
+  - id: exams
+    label: |-
+      专业医学执业考试
+      USMLE / MCMLE / TWMLE
+      真题 + 模拟题
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 80
+  - id: collect_questions
+    label: |-
+      题目收集
+      美国 / 中国大陆题库网站
+      中国台湾官方 PDF 经 OCR
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: deduplicate
+    label: |-
+      删除重复题目
+      保留唯一正确答案
+    type: process
+    size: large
+    position:
+      x: 600
+      'y': 80
+  - id: normalize_options
+    label: |-
+      合理使用下的选项规范化
+      打乱答案顺序
+      USMLE / MCMLE 随机删一个错误项
+    type: process
+    size: xl
+    position:
+      x: 840
+      'y': 80
+  - id: question_split
+    label: |-
+      按题目划分 80 / 10 / 10
+      USMLE 12,723 / MCMLE 34,251
+      TWMLE 14,123；每题四选一
+    type: database
+    size: xl
+    position:
+      x: 1140
+      'y': 80
+  - id: textbooks
+    label: |-
+      医学教材
+      USMLE / TWMLE 共用 18 本英文书
+      MCMLE 使用 33 本简体中文书
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: ocr_books
+    label: |-
+      PDF 经 OCR 转文本
+      修正拼写错误
+      划分为段落
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: corpus
+    label: |-
+      检索语料
+      英文 231,581 个段落
+      中文 116,216 个段落
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: coverage
+    label: |-
+      两位医学博士覆盖率审计
+      每个来源抽 100 道开发题
+      美国 88% / 大陆 100% / 台湾 87%
+    type: user
+    size: xl
+    position:
+      x: 900
+      'y': 520
+  - id: openqa
+    label: |-
+      开放域问答系统
+      检索相关段落
+      阅读问题 + 证据 + 选项
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 300
+  - id: choose
+    label: |-
+      选择一个最佳答案
+      四个选项中仅一个正确
+    type: process
+    size: large
+    position:
+      x: 1760
+      'y': 300
+  - id: metric
+    label: |-
+      准确率
+      按语言报告开发 / 测试结果
+    type: terminal
+    size: large
+    position:
+      x: 2020
+      'y': 300
+edges:
+  - from: exams
+    to: collect_questions
+    type: primary
+  - from: collect_questions
+    to: deduplicate
+    type: primary
+  - from: deduplicate
+    to: normalize_options
+    type: primary
+  - from: normalize_options
+    to: question_split
+    type: primary
+  - from: textbooks
+    to: ocr_books
+    type: primary
+  - from: ocr_books
+    to: corpus
+    type: primary
+  - from: corpus
+    to: coverage
+    type: primary
+  - from: question_split
+    to: openqa
+    type: primary
+  - from: coverage
+    to: openqa
+    type: primary
+  - from: openqa
+    to: choose
+    type: primary
+  - from: choose
+    to: metric
+    type: primary
+modules: []

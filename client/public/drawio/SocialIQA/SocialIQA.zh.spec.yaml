@@ -1,0 +1,155 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: SocialIQA 构建流程
+  description: 对齐论文的 SocialIQA 流程：用 ATOMIC 事件生成社会情境与推理问题，并行收集人工负例和问题切换负例，经人工多数验证和文体分类器过滤三选一题，最终以准确率评测 37,588 个样本。
+  legend: 实线箭头表示基于 ATOMIC 的情境生成、两条负答案支路、题目验证、划分与评测。
+nodes:
+  - id: atomic
+    label: |-
+      ATOMIC 知识图谱
+      24K 个社会事件
+      九类推理维度
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: rewrite
+    label: |-
+      MTurk 事件改写
+      添加姓名 / 填充占位符
+      修复语法
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 240
+  - id: positives
+    label: |-
+      情境 + 问答生成
+      情境比事件多 7-25 词
+      编辑模板并写两个正确答案
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 240
+  - id: hia
+    label: |-
+      HIA 负例支路
+      人工编写两个答案
+      主题相近但细节错误
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 60
+  - id: qsa
+    label: |-
+      QSA 负例支路
+      切换到相关推理问题
+      为错误问题写两个正确答案
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 420
+  - id: tuple
+    label: |-
+      三选一题目
+      随机选择一个正确答案
+      选择两个蕴含度最低的负例
+    type: document
+    size: xl
+    position:
+      x: 1180
+      'y': 240
+  - id: validate
+    label: |-
+      人工多数验证
+      训练集：三人
+      开发 / 测试：再由五人复核
+    type: user
+    size: xl
+    position:
+      x: 1460
+      'y': 240
+  - id: filter
+    label: |-
+      开发 / 测试难度过滤
+      深层文体分类器
+      移除较容易样本
+    type: process
+    size: xl
+    position:
+      x: 1740
+      'y': 240
+  - id: dataset
+    label: |-
+      SocialIQA 共 37,588 题
+      训练 33,410 / 开发 1,954
+      测试 2,224；情境互斥
+    type: database
+    size: xl
+    position:
+      x: 2020
+      'y': 240
+  - id: predict
+    label: |-
+      读取情境 + 问题
+      对三个候选答案评分
+      选择最高概率答案
+    type: process
+    size: xl
+    position:
+      x: 2300
+      'y': 240
+  - id: metric
+    label: |-
+      测试准确率
+      人类对比抽样
+      开发 900 + 测试 900
+    type: terminal
+    size: xl
+    position:
+      x: 2580
+      'y': 240
+edges:
+  - from: atomic
+    to: rewrite
+    type: primary
+  - from: rewrite
+    to: positives
+    type: primary
+  - from: positives
+    to: hia
+    type: primary
+  - from: positives
+    to: qsa
+    type: primary
+  - from: hia
+    to: tuple
+    type: primary
+  - from: qsa
+    to: tuple
+    type: primary
+  - from: tuple
+    to: validate
+    type: primary
+  - from: validate
+    to: filter
+    type: primary
+  - from: filter
+    to: dataset
+    type: primary
+  - from: dataset
+    to: predict
+    type: primary
+  - from: predict
+    to: metric
+    type: primary
+modules: []

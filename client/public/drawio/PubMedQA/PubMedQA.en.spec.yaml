@@ -1,0 +1,200 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PubMedQA Build Process
+  description: >-
+    Paper-aligned PubMedQA workflow: structured PubMed abstracts yield expert-labeled PQA-L, rule-filtered PQA-U, and
+    heuristic PQA-A branches; models may train in phases across the three resources, but the benchmark evaluates
+    yes/no/maybe reasoning on the PQA-L test set with accuracy and macro-F1.
+  legend: >-
+    Solid arrows show the natural-question and artificial-question branches, three released subsets, training, and the
+    PQA-L evaluation protocol.
+nodes:
+  - id: pubmed
+    label: |-
+      PubMed Structured Abstracts
+      Title + Body + Conclusion
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 300
+  - id: natural_titles
+    label: |-
+      Natural Question Titles
+      Title Contains Question Mark
+      Abstract Has Conclusion Section
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: natural_instance
+    label: |-
+      pre-PQA-U Instance
+      Question = Title
+      Context = Abstract without Conclusion
+      Long Answer = Conclusion
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: expert_annotation
+    label: |-
+      Two M.D. Candidate Annotators
+      One Sees Long Answer; One Does Not
+      Discuss Disagreement or Remove Item
+    type: user
+    size: xl
+    position:
+      x: 900
+      'y': 20
+  - id: pqa_l
+    label: |-
+      PQA-L: 1,000 Expert-labeled
+      500 for 10-fold Cross-validation
+      500 Held-out Test
+    type: database
+    size: xl
+    position:
+      x: 1200
+      'y': 20
+  - id: answerable_filter
+    label: |-
+      PQA-U Rule Filter
+      Drop Wh-questions + Multi-entity Choice
+      >93% Agreement on Answerability
+    type: process
+    size: xl
+    position:
+      x: 900
+      'y': 240
+  - id: pqa_u
+    label: |-
+      PQA-U
+      61.2K Unlabeled
+      Yes / No / Maybe-answerable
+    type: database
+    size: xl
+    position:
+      x: 1200
+      'y': 240
+  - id: statement_titles
+    label: |-
+      Statement-title Articles
+      NP-(VBP/VBZ) Pattern
+      Structured Conclusion Required
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: artificial_convert
+    label: |-
+      Heuristic Question Conversion
+      Move / Add Copula or Auxiliary
+      Label Yes / No from Verb Negation
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: pqa_a
+    label: |-
+      PQA-A: 211.3K Artificial
+      Train 200K / Validation 11.3K
+      Yes 92.8% / No 7.2%
+    type: database
+    size: xl
+    position:
+      x: 900
+      'y': 520
+  - id: training
+    label: |-
+      Optional Multi-phase Training
+      PQA-A Pretrain → PQA-U Pseudo-label
+      → PQA-L Fine-tune
+    type: process
+    size: xl
+    position:
+      x: 1500
+      'y': 300
+  - id: evaluate
+    label: |-
+      PQA-L Reasoning-required Test
+      Input: Question + Context
+      Conclusion Hidden at Inference
+    type: process
+    size: xl
+    position:
+      x: 1800
+      'y': 300
+  - id: prediction
+    label: |-
+      Predict One Label
+      Yes / No / Maybe
+    type: process
+    size: large
+    position:
+      x: 2080
+      'y': 300
+  - id: metric
+    label: |-
+      Test Accuracy
+      Macro-F1 across Three Labels
+    type: terminal
+    size: large
+    position:
+      x: 2320
+      'y': 300
+edges:
+  - from: pubmed
+    to: natural_titles
+    type: primary
+  - from: pubmed
+    to: statement_titles
+    type: primary
+  - from: natural_titles
+    to: natural_instance
+    type: primary
+  - from: natural_instance
+    to: expert_annotation
+    type: primary
+  - from: expert_annotation
+    to: pqa_l
+    type: primary
+  - from: natural_instance
+    to: answerable_filter
+    type: primary
+  - from: answerable_filter
+    to: pqa_u
+    type: primary
+  - from: statement_titles
+    to: artificial_convert
+    type: primary
+  - from: artificial_convert
+    to: pqa_a
+    type: primary
+  - from: pqa_l
+    to: training
+    type: primary
+  - from: pqa_u
+    to: training
+    type: primary
+  - from: pqa_a
+    to: training
+    type: primary
+  - from: training
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: prediction
+    type: primary
+  - from: prediction
+    to: metric
+    type: primary
+modules: []
