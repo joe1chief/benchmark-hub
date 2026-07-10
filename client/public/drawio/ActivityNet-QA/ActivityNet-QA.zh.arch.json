@@ -1,62 +1,80 @@
 {
   "version": 1,
-  "title": "ActivityNet-QA Build Process",
+  "title": "ActivityNet-QA 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "ActivityNet",
+      "id": "videos",
+      "label": "从 ActivityNet v1.3 采样视频\n约 20,000 个长视频中选取 5,800 个\n训练 / 验证 / 测试：3,200 / 1,800 / 800 个视频",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "网络视频",
+      "id": "author",
+      "label": "人工众包编写问答\n每个视频恰好 10 对问题与答案\n初始问题和答案均以中文编写",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "众包问答",
-      "type": "user",
+      "id": "types",
+      "label": "控制问题类型覆盖\n1 动作 + 1 空间 + 1 时间 + 7 自由问题\n自由题答案：是非、数量、颜色、物体、位置、其他",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "问答对",
+      "id": "quality",
+      "label": "标注质量门控\n问题编写者与答案标注者相互独立\n不可答题返工；随机抽题由多人作答并多数投票",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "translate",
+      "label": "中译英质量检查\n用 CIDEr 比较谷歌、百度、搜狗与有道译文\n低一致性样本人工检查；其余采用百度结果",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "ActivityNet-QA 数据集\n5,800 个视频上的 58,000 对中英对齐问答\n训练 / 验证 / 测试：32,000 / 18,000 / 8,000 对",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prediction",
+      "label": "VideoQA 模型预测\n输入：完整视频 + 自由形式问题\n输出：简短开放式答案",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "质量清洗",
+      "id": "exact",
+      "label": "精确匹配准确率\n仅预测与金标准答案完全相等时记 1 分\n官方评测脚本使用这一比较",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "统计分析",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n7",
-      "label": "VideoQA评测",
+      "id": "wups",
+      "label": "WUPS 语义相似度\n基于 WordNet 比较答案词集合\n论文报告阈值 0.9 与 0.0 下的 WUPS",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "准确率",
+      "id": "aggregate",
+      "label": "按问题类型汇总\n动作 • 空间关系 • 时间关系 • 自由问题\n自由问题再按六类答案细分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "ActivityNet-QA 结果\n总体及分题型准确率\nWUPS 用于补充严格相等对答案歧义的处理",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +82,68 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "videos",
+      "to": "author",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "author",
+      "to": "types",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "types",
+      "to": "quality",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "quality",
+      "to": "translate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "translate",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "release",
+      "to": "prediction",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "prediction",
+      "to": "exact",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "prediction",
+      "to": "wups",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "exact",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "wups",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "aggregate",
+      "to": "report",
       "type": "primary"
     }
   ],

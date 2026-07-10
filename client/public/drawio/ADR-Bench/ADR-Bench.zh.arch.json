@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "ADR-Bench 构建流程",
+  "title": "ADR-Bench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 12,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "scenarios",
-      "label": "真实用户场景\n商业研究\n政策、软件、法律、金融",
+      "id": "study",
+      "label": "调研真实深度研究用法\n日常用户需求与业务场景\n聚焦复杂、开放式中文研究请求",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "query_draft",
-      "label": "专家起草 query\n领域专家编写\n初始中文任务",
+      "id": "draft",
+      "label": "领域专家起草初始问题\n覆盖真实研究交付物\n同时纳入通用需求与高风险专业需求",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "filtering",
-      "label": "多轮测试\n筛选并修订 query\n保证适合 Deep Research",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "tracks",
-      "label": "评估双轨\n通用领域\n金融与法律专业领域",
+      "id": "refine",
+      "label": "多轮测试—过滤—修订\n移除不适合深度研究的问题\n人工筛选多样、有代表性的通用任务",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human_eval",
-      "label": "通用领域人工评审\n双盲配对比较\n四个质量子维度",
-      "type": "user",
+      "id": "domains",
+      "label": "将 9 个领域组织为双轨\n通用：7 个领域 × 10 = 70 题\n专业：金融 20 + 法律 20 = 40 题",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "expert_rubrics",
-      "label": "专业领域 rubrics\n专家设计任务和标准\n多轮交叉验证",
-      "type": "document",
+      "id": "rubric_quality",
+      "label": "专业 rubric 质量控制\n专家共同设计任务及枚举式 rubric\n原子性 • 可验证 • 无歧义 • 独立 • 对齐",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "suite",
+      "label": "ADR-Bench\n110 个中文深度研究问题\n70 个通用题 + 40 个金融 / 法律专业题",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "reports",
-      "label": "模型研究报告\n每个 query 生成报告\n按对应协议评分",
+      "label": "生成最终研究报告\nReAct 智能体：最多 30 轮，每轮 16k token\n商业系统：使用默认网页配置",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "选择评测轨道？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "general_eval",
+      "label": "通用轨：盲审人工两两对比\n左优 / 右优 / 都好 / 都一般 / 都差\n信息完整 • 内容深度 • 需求契合 • 可读性",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "ranking",
-      "label": "ADR-Bench 结果\nElo 评分与维度分\nDeep Research 能力排名",
+      "id": "professional_eval",
+      "label": "专业轨：自动化 rubric 评测\n经专家交叉验证的正向与负向标准\n严重专业错误可使整份报告判为不可用",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "汇总各轨专属结果\n通用：胜 / 平 / 负、分维度及 Elo 风格评级\n专业：带明确风险惩罚的 rubric 得分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "result",
+      "label": "ADR-Bench 结果\n真实用户偏好 + 专业知识质量\n报告总体、维度、领域与专业分层视图",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,59 +88,80 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "scenarios",
-      "to": "query_draft",
+      "from": "study",
+      "to": "draft",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "query_draft",
-      "to": "filtering",
-      "type": "data",
-      "label": "初稿 queries"
+      "from": "draft",
+      "to": "refine",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "filtering",
-      "to": "query_draft",
-      "type": "optional",
-      "label": "修订不适合任务"
+      "from": "refine",
+      "to": "domains",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "filtering",
-      "to": "tracks",
-      "type": "primary",
-      "label": "最终 query 集"
+      "from": "domains",
+      "to": "suite",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "tracks",
-      "to": "human_eval",
+      "from": "domains",
+      "to": "rubric_quality",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "tracks",
-      "to": "expert_rubrics",
+      "from": "rubric_quality",
+      "to": "suite",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "human_eval",
+      "from": "suite",
       "to": "reports",
-      "type": "data"
+      "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "expert_rubrics",
-      "to": "reports",
-      "type": "data"
+      "from": "reports",
+      "to": "route",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "reports",
-      "to": "ranking",
+      "from": "route",
+      "to": "general_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "route",
+      "to": "professional_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "general_eval",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "professional_eval",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "aggregate",
+      "to": "result",
       "type": "primary"
     }
   ],

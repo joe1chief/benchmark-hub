@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "AbstentionBench Build Process",
+  "title": "AbstentionBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "数据复核",
+      "id": "search",
+      "label": "系统化搜索数据集\n拒答、拒绝与不确定性资源\n初筛 82 个候选数据集",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "20个数据集",
+      "id": "review",
+      "label": "作者深入复核与筛选\n仅保留应该拒答的样本\n选出 16 个通用领域数据集",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "6类场景",
+      "id": "variants",
+      "label": "构造 3 个推理变体\nGPQA-Diamond • GSM8K • MMLU-Math\n复制原题，再删除最终问题之前的上下文",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "推理子集",
+      "id": "add_umwp",
+      "label": "加入 UMWP\n现有不可回答数学文字题\n与 16 个筛选集及 3 个构造集汇合",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scenarios",
+      "label": "归入 6 类拒答场景\n答案未知 • 错误前提 • 过时 • 主观\n上下文不足 • 意图不明",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "AbstentionBench\n20 个数据集 • 超过 35,000 个不可回答问题\n全量套件 + 每数据集最多 100 题的快速子集",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "labels",
+      "label": "评测记录\n问题 + 是否应拒答标签\n在可用数据集中附参考答案",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "前沿模型",
+      "id": "inference",
+      "label": "被测模型推理\n默认最多生成 4,000 token\n除特别说明外温度为 0.8",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "LLM裁判",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "n7",
-      "label": "拒答判断",
+      "id": "abstention_judge",
+      "label": "Llama 3.1 8B Instruct 拒答判分器\n问题 + 回答 → 是 / 否\n在人工标注回答上达到 88% 准确率",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "得分",
+      "id": "correctness_judge",
+      "label": "Llama 3.1 8B Instruct 正确性判分器\n对照参考答案判断非拒答回答\n仅用于具备金标准答案的数据集",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "评测指标\n核心：拒答召回率\n拒答精确率 + F1 • 回答准确率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "AbstentionBench 结果\n按数据集与六类场景汇总\n比较指令、推理、规模及提示干预效果",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +88,68 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "search",
+      "to": "review",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "review",
+      "to": "variants",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "variants",
+      "to": "add_umwp",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "add_umwp",
+      "to": "scenarios",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "scenarios",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "release",
+      "to": "labels",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "labels",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "inference",
+      "to": "abstention_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "abstention_judge",
+      "to": "correctness_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "correctness_judge",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "metrics",
+      "to": "report",
       "type": "primary"
     }
   ],

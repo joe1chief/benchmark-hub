@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "ACPBench Hard Build Process",
+  "title": "ACPBench Hard Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "domains",
-      "label": "Planning domains\n13 PDDL domains\nfrom ACPBench",
+      "id": "pddl",
+      "label": "Generate PDDL Domain + Problem Files\n13 Planning Domains from ACPBench\nUse Existing ALFWorld PDDL Instead of Its Generator",
       "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "tasks",
-      "label": "Atomic planning tasks\n7 ACP tasks\nplus next action",
-      "type": "process",
       "size": "xl"
     },
     {
       "id": "planner",
-      "label": "Symbolic planning support\ncurrent state as initial state\nhigh-quality planner plus backup",
+      "label": "Run Top-K / Top-Quality Planner\nProduce Multiple Valid Plans\nPreserve Planning Task, Current State, and Goal",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "questions",
-      "label": "Open-ended NL questions\ntemplate-based PDDL to text\ngenerative answer format",
-      "type": "document",
+      "id": "sample",
+      "label": "Sample Plans or Intermediate States\nChoose the Required Artifact per Task\nSkip States When Reachability Certainty Is Unavailable",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "answers",
-      "label": "Stored symbolic answers\napplicable actions, effects\nplans, facts, landmarks",
-      "type": "database",
+      "id": "symbolic",
+      "label": "Generate Symbolic Questions + Answers\nApplicability • Progression • Reachability • Action Reachability\nValidation • Justification • Landmarks • Next Action",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "validators",
-      "label": "Task validators\nparse generated answers\ncheck correctness by task",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "model_eval",
-      "label": "LLM evaluation\nanswer each generative task\nno multiple-choice options",
+      "id": "translate",
+      "label": "Translate with Domain Templates\nPDDL Facts and Actions → Natural Language\nRetain Facts, Actions, Plans, Costs, and Witness Sets for Scoring",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "ACPBench Hard results\ntask-wise accuracy\nplanning-reasoning diagnosis",
+      "label": "ACPBench Hard Dataset\nDev: 40 Examples per Task = 320\nTest: 10 per Domain × 13 × 8 Tasks = 1,040",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "Open-Ended Model Evaluation\nNatural-Language Context + Task Instruction + 2 Shots\nTemperature 0 • Maximum 1,000 Generated Tokens",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "Task-Specific Grammar Parser\nExtract Action Lists, Fact Lists, Plans, or an Index\nReject Unparseable / Invalid Symbols",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "Validator Path?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "stored",
+      "label": "Stored-Answer / Simulation Checks\nExact Sets for Applicability and Progression\nFirst Invalid Index; Proper-Subsequence Plan for Justification",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "solve",
+      "label": "Planner-Backed Checks\nReachability • Action Reachability • Landmarks\nNext Action Must Reduce Optimal Goal Distance by One",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "ACPBench Hard Results\nBinary Correctness and Accuracy per Task / Domain\nStrict Complete Answers; Optional Jaccard Analysis for Applicability",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,58 +88,74 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "domains",
-      "to": "tasks",
+      "from": "pddl",
+      "to": "planner",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "domains",
-      "to": "planner",
-      "type": "data"
+      "from": "planner",
+      "to": "sample",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "tasks",
-      "to": "questions",
+      "from": "sample",
+      "to": "symbolic",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "planner",
-      "to": "questions",
-      "type": "primary",
-      "label": "states and plans"
+      "from": "symbolic",
+      "to": "translate",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "questions",
-      "to": "answers",
+      "from": "translate",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "answers",
-      "to": "validators",
-      "type": "data"
+      "from": "release",
+      "to": "inference",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "questions",
-      "to": "model_eval",
+      "from": "inference",
+      "to": "parse",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "model_eval",
-      "to": "validators",
-      "type": "primary",
-      "label": "generated responses"
+      "from": "parse",
+      "to": "route",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "validators",
-      "to": "release",
+      "from": "route",
+      "to": "stored",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "route",
+      "to": "solve",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "stored",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "solve",
+      "to": "report",
       "type": "primary"
     }
   ],
