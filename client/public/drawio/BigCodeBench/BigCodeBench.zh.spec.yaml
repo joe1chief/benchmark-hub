@@ -5,118 +5,190 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BigCodeBench 构建流程
-  description: 基于 arXiv:2406.15877，对齐论文的 BigCodeBench 人机协同构造、人工校验和执行评测流程。
-  legend: 实线表示 BigCodeBench-Complete 的三阶段构建与评测主流程；虚线表示 Instruct 转换和验证反馈。
+  description: >-
+    按论文对齐的 BigCodeBench 流程：以 ODEX/Stack Overflow API 用法为种子，用 GPT-4 合成任务并去偏、AST 过滤， 在人工监督下通过 Code Interpreter
+    迭代重构和测试，再依次人工审查、预评测、交叉复核，构造 Complete/Instruct 两版提示并在沙箱中执行评分。
+  legend: 实线表示 Complete 的三阶段构建主流程；下方分支从 Complete 派生并核验 Instruct 提示。
 nodes:
-  - id: seed_examples
+  - id: seeds
     label: |-
-      ODEX 种子样例
-      Stack Overflow 意图
-      代码骨架与 API 用法
+      ODEX / Stack Overflow
+      API 用法种子
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: llm_synthesis
+      'y': 240
+  - id: synthesis
     label: |-
-      GPT-4 任务合成
-      2-shot 示例提示
-      混淆与回译扰动
+      GPT-4 两样本提示
+      合成任务
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 70
-  - id: draft_pool
+      x: 240
+      'y': 240
+  - id: debias
     label: |-
-      草稿任务池
-      4,718 个函数样本
-      AST 校验程序
+      虚拟函数名 +
+      回译扰动
+    type: process
+    size: large
+    position:
+      x: 440
+      'y': 240
+  - id: drafts
+    label: |-
+      AST 有效草稿
+      4,718 个样本
     type: database
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 250
-  - id: refactor_tests
+      x: 640
+      'y': 240
+  - id: refactor
     label: |-
-      Code Interpreter 循环
-      13 名标注者重构代码
-      编写并执行 unittest
+      Code Interpreter
+      人工反馈循环
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: human_curation
+      x: 840
+      'y': 240
+  - id: tests
     label: |-
-      人工精选
-      指南化审查
-      GPT-3.5 预评测
-      7 名标注者交叉检查
-    type: decision
-    size: xl
+      规范 PEP-257
+      编写并运行至少 5 个测试
+    type: process
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: complete_set
+      x: 1040
+      'y': 240
+  - id: refactored
+    label: |-
+      重构任务池
+      1,223 个任务
+    type: database
+    size: large
+    position:
+      x: 1240
+      'y': 240
+  - id: examine
+    label: |-
+      人工审查
+      确定性 unittest
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 240
+  - id: preeval
+    label: |-
+      GPT-3.5
+      预评测
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: crosscheck
+    label: |-
+      7 人交叉复核
+      沙箱验证；32/33 通过
+    type: user
+    size: large
+    position:
+      x: 1840
+      'y': 240
+  - id: complete
     label: |-
       BigCodeBench-Complete
-      1,140 个任务
-      139 个库 / 7 个领域
+      1,140 任务 / 139 个库
     type: database
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 70
-  - id: instruct_set
+      x: 2040
+      'y': 140
+  - id: instruct
     label: |-
-      BigCodeBench-Instruct
-      面向自然语言提示
-      按预定义规则转换
+      规则转换
+      自然语言 Instruct 提示
     type: document
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 250
-  - id: evaluation
+      x: 2240
+      'y': 400
+  - id: instruct_qc
     label: |-
-      执行式评测
-      容器沙箱运行测试
-      pass@k 与验证报告
-    type: terminal
-    size: xl
+      Instruct 对齐检查
+      5 人质检
+    type: decision
+    size: large
     position:
-      x: 1340
-      'y': 160
+      x: 2440
+      'y': 400
+  - id: execute
+    label: |-
+      零样本沙箱
+      执行测试套件
+    type: process
+    size: large
+    position:
+      x: 2440
+      'y': 140
+  - id: score
+    label: |-
+      Pass@1 / Pass@5
+      校准 Pass@1
+    type: terminal
+    size: large
+    position:
+      x: 2640
+      'y': 140
 edges:
-  - from: seed_examples
-    to: llm_synthesis
+  - from: seeds
+    to: synthesis
     type: primary
-  - from: llm_synthesis
-    to: draft_pool
+  - from: synthesis
+    to: debias
     type: primary
-  - from: draft_pool
-    to: refactor_tests
+  - from: debias
+    to: drafts
     type: primary
-  - from: refactor_tests
-    to: human_curation
+  - from: drafts
+    to: refactor
     type: primary
-  - from: human_curation
-    to: complete_set
+  - from: refactor
+    to: tests
     type: primary
-  - from: complete_set
-    to: instruct_set
-    type: optional
-    label: 预定义转换规则
-  - from: complete_set
-    to: evaluation
+  - from: tests
+    to: refactored
     type: primary
-  - from: instruct_set
-    to: evaluation
+  - from: refactored
+    to: examine
+    type: primary
+  - from: examine
+    to: preeval
+    type: primary
+  - from: preeval
+    to: crosscheck
+    type: primary
+  - from: crosscheck
+    to: complete
+    type: primary
+  - from: complete
+    to: execute
+    type: primary
+  - from: complete
+    to: instruct
     type: data
-  - from: evaluation
-    to: human_curation
-    type: optional
-    label: 抽样验证与失败分析
+  - from: instruct
+    to: instruct_qc
+    type: primary
+  - from: instruct_qc
+    to: execute
+    type: primary
+  - from: execute
+    to: score
+    type: primary
 modules: []

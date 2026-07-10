@@ -5,75 +5,199 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GaokaoBench 构建流程
-  description: 对齐论文的 GaokaoBench 流程：从 2010-2022 高考试题到客观/主观评分和折算总分。
-  legend: 实线箭头表示试题收集、脚本/人工转换、题型划分、提示作答、客观匹配、人工/LLM评分和总分折算。
+  description: >-
+    按论文对齐的 GaokaoBench 流程：把 2010–2022 年全国高考试卷从 PDF 转成 JSON 与 LaTeX，形成九科 2,811 题； 客观题与主观题使用各自的零样本提示，分别经过规则匹配、双教师评分或
+    GPT-4-turbo 裁判，再汇总得分率、750 分折算成绩和裁判一致性。
+  legend: 实线区分客观题自动评分与主观题人工/LLM 裁判路径。
 nodes:
   - id: exams
-    label: 高考试题
+    label: |-
+      2010–2022 年
+      全国高考 PDF
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
+      'y': 240
   - id: convert
-    label: 解析标注
+    label: |-
+      脚本 + 人工
+      PDF 转 JSON
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
-  - id: types
-    label: 客观/主观题
+      x: 240
+      'y': 240
+  - id: latex
+    label: 数学公式转 LaTeX
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: prompt
-    label: 零样本提示
-    type: document
-    size: xl
+      x: 440
+      'y': 240
+  - id: pool
+    label: |-
+      9 个科目
+      2,811 道题
+    type: database
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: match
-    label: 客观匹配
+      x: 640
+      'y': 240
+  - id: question_type
+    label: 是否需要人工评分
     type: decision
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: grade
-    label: 人工评分
+      x: 840
+      'y': 240
+  - id: objective
+    label: |-
+      客观题 1,781 道
+      选择 + 填空
+    type: document
+    size: large
+    position:
+      x: 1040
+      'y': 80
+  - id: subjective
+    label: |-
+      主观题 1,030 道
+      开放题 + 改错题
+    type: document
+    size: large
+    position:
+      x: 1040
+      'y': 400
+  - id: objective_prompt
+    label: |-
+      零样本
+      客观题提示
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
+      x: 1240
+      'y': 80
+  - id: subjective_prompt
+    label: |-
+      零样本
+      主观题提示
+    type: process
+    size: large
+    position:
+      x: 1240
+      'y': 400
+  - id: match
+    label: |-
+      规则匹配
+      标准答案
+    type: process
+    size: large
+    position:
+      x: 1440
+      'y': 80
+  - id: grade_path
+    label: 主观题评分者
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 400
+  - id: teachers
+    label: |-
+      2 名教师评分
+      取平均分
+    type: user
+    size: large
+    position:
+      x: 1640
+      'y': 280
+  - id: llm_judge
+    label: |-
+      GPT-4-turbo 裁判
+      评分点 + 温度 0
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 500
+  - id: rates
+    label: |-
+      各科客观 / 主观题
+      得分率
+    type: process
+    size: large
+    position:
+      x: 1840
       'y': 160
-  - id: score
-    label: 折算总分
+  - id: correlation
+    label: |-
+      裁判一致性
+      Spearman + Kendall
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1600
+      x: 1840
+      'y': 440
+  - id: total
+    label: |-
+      理科 / 文科
+      折算总分 / 750
+    type: terminal
+    size: large
+    position:
+      x: 2040
       'y': 160
 edges:
   - from: exams
     to: convert
     type: primary
   - from: convert
-    to: types
+    to: latex
     type: primary
-  - from: types
-    to: prompt
+  - from: latex
+    to: pool
     type: primary
-  - from: prompt
+  - from: pool
+    to: question_type
+    type: primary
+  - from: question_type
+    to: objective
+    type: primary
+  - from: question_type
+    to: subjective
+    type: primary
+  - from: objective
+    to: objective_prompt
+    type: primary
+  - from: subjective
+    to: subjective_prompt
+    type: primary
+  - from: objective_prompt
     to: match
     type: primary
-  - from: match
-    to: grade
+  - from: subjective_prompt
+    to: grade_path
     type: primary
-  - from: grade
-    to: score
+  - from: grade_path
+    to: teachers
+    type: primary
+  - from: grade_path
+    to: llm_judge
+    type: data
+  - from: match
+    to: rates
+    type: primary
+  - from: teachers
+    to: rates
+    type: primary
+  - from: teachers
+    to: correlation
+    type: data
+  - from: llm_judge
+    to: correlation
+    type: primary
+  - from: rates
+    to: total
     type: primary
 modules: []

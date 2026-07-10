@@ -5,85 +5,162 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MME 构建流程
-  description: 对齐论文的 MME 构建流程：人工设计图像指令-答案对，组织为感知与认知子任务，用简洁提示评估并量化 MLLM 能力。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    按论文对齐的 MME 流程：十个感知子任务与四个认知子任务使用不带原始标注的公开图像，以及新拍摄或生成的图像； 在 1,187 张图像上人工编写 2,374 组指令-答案，每图一题答案为“是”、一题为“否”，最终计算
+    ACC、ACC+ 及感知/认知总分。
+  legend: 实线先区分感知与认知图像来源，再合流到人工问答和统一评分流程。
 nodes:
-  - id: n1
-    label: 图像来源
-    type: database
-    size: xl
+  - id: taxonomy
+    label: 14 个子任务
+    type: decision
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 14子任务
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 人工问答
+      'y': 240
+  - id: perception
+    label: |-
+      感知 10 项
+      识别 + OCR
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 防泄漏
+      x: 240
+      'y': 80
+  - id: cognition
+    label: |-
+      认知 4 项
+      推理 / 计算 / 文本 / 代码
+    type: document
+    size: large
+    position:
+      x: 240
+      'y': 400
+  - id: public_images
+    label: |-
+      COCO + 公开数据集
+      仅使用图像
+    type: database
+    size: large
+    position:
+      x: 440
+      'y': 80
+  - id: new_images
+    label: |-
+      人工拍摄 +
+      扩散模型生成图
+    type: database
+    size: large
+    position:
+      x: 440
+      'y': 400
+  - id: manual_qa
+    label: |-
+      全部问答人工编写
+      不使用来源标注
+    type: user
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: dataset
+    label: |-
+      1,187 张图像
+      2,374 组问答
+    type: database
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: pair_rule
+    label: |-
+      每图 2 个问题
+      一题“是” + 一题“否”
+    type: document
+    size: large
+    position:
+      x: 1040
+      'y': 240
+  - id: prompt
+    label: |-
+      零样本提示
+      “请回答是或否”
     type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 提示集合
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: MLLM评测
-    type: decision
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: 感知/认知
-    type: document
-    size: xl
+      'y': 240
+  - id: scoring
+    label: 评分输出
+    type: decision
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 得分
+      x: 1440
+      'y': 240
+  - id: acc
+    label: |-
+      ACC
+      按单题统计
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 1640
+      'y': 80
+  - id: acc_plus
+    label: |-
+      ACC+
+      两题同时正确
+    type: terminal
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: totals
+    label: |-
+      子任务分 = ACC + ACC+
+      感知 2000 / 认知 800
+    type: terminal
+    size: large
+    position:
+      x: 1640
+      'y': 400
 edges:
-  - from: n1
-    to: n2
+  - from: taxonomy
+    to: perception
     type: primary
-  - from: n2
-    to: n3
+  - from: taxonomy
+    to: cognition
     type: primary
-  - from: n3
-    to: n4
+  - from: perception
+    to: public_images
     type: primary
-  - from: n4
-    to: n5
+  - from: cognition
+    to: new_images
     type: primary
-  - from: n5
-    to: n6
+  - from: public_images
+    to: manual_qa
     type: primary
-  - from: n6
-    to: n7
+  - from: new_images
+    to: manual_qa
     type: primary
-  - from: n7
-    to: n8
+  - from: manual_qa
+    to: dataset
+    type: primary
+  - from: dataset
+    to: pair_rule
+    type: primary
+  - from: pair_rule
+    to: prompt
+    type: primary
+  - from: prompt
+    to: scoring
+    type: primary
+  - from: scoring
+    to: acc
+    type: primary
+  - from: scoring
+    to: acc_plus
+    type: primary
+  - from: scoring
+    to: totals
     type: primary
 modules: []

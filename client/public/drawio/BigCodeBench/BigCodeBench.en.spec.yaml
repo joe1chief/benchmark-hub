@@ -6,121 +6,190 @@ meta:
   routing: orthogonal
   title: BigCodeBench Build Process
   description: >-
-    Paper-aligned human-LLM collaborative construction, curation, and execution evaluation workflow for BigCodeBench,
-    based on arXiv:2406.15877.
-  legend: >-
-    Solid arrows show the three-stage Complete benchmark construction and evaluation flow; dashed arrows show the
-    Instruct transformation and validation feedback.
+    Paper-aligned BigCodeBench workflow: ODEX/Stack Overflow API-use seeds are synthesized by GPT-4, de-biased and AST
+    filtered, iteratively refactored and tested with Code Interpreter under human supervision, then examined,
+    pre-evaluated, cross-checked, transformed into Complete/Instruct prompts, and scored by sandbox execution.
+  legend: Solid arrows show the three Complete-construction stages; the lower branch derives and validates Instruct prompts.
 nodes:
-  - id: seed_examples
+  - id: seeds
     label: |-
-      ODEX seed examples
-      Stack Overflow intents
-      code skeletons and API usage
+      ODEX / Stack Overflow
+      API-use Seeds
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: llm_synthesis
+      'y': 240
+  - id: synthesis
     label: |-
-      GPT-4 task synthesis
-      2-shot demonstrations
-      obfuscation and back-translation
+      GPT-4 2-shot
+      Task Synthesis
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 70
-  - id: draft_pool
+      x: 240
+      'y': 240
+  - id: debias
     label: |-
-      Draft task pool
-      4,718 function samples
-      AST-validated programs
+      Dummy Names +
+      Back-translation
+    type: process
+    size: large
+    position:
+      x: 440
+      'y': 240
+  - id: drafts
+    label: |-
+      AST-valid Drafts
+      4,718 Samples
     type: database
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 250
-  - id: refactor_tests
+      x: 640
+      'y': 240
+  - id: refactor
     label: |-
-      Code Interpreter loop
-      13 annotators refactor code
-      write and execute unittest cases
+      Code Interpreter
+      Human Feedback Loop
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: human_curation
+      x: 840
+      'y': 240
+  - id: tests
     label: |-
-      Human curation
-      guideline examination
-      GPT-3.5 pre-evaluation
-      cross-check by 7 annotators
-    type: decision
-    size: xl
+      Refine PEP-257
+      Write + Run 5+ Tests
+    type: process
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: complete_set
+      x: 1040
+      'y': 240
+  - id: refactored
+    label: |-
+      Refactored Pool
+      1,223 Tasks
+    type: database
+    size: large
+    position:
+      x: 1240
+      'y': 240
+  - id: examine
+    label: |-
+      Manual Examination
+      Deterministic unittest
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 240
+  - id: preeval
+    label: |-
+      GPT-3.5
+      Pre-evaluation
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: crosscheck
+    label: |-
+      7-Annotator Cross-check
+      Sandbox; 32/33 Pass
+    type: user
+    size: large
+    position:
+      x: 1840
+      'y': 240
+  - id: complete
     label: |-
       BigCodeBench-Complete
-      1,140 tasks
-      139 libraries / 7 domains
+      1,140 Tasks / 139 Libraries
     type: database
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 70
-  - id: instruct_set
+      x: 2040
+      'y': 140
+  - id: instruct
     label: |-
-      BigCodeBench-Instruct
-      NL-oriented prompts
-      transformed by predefined rules
+      Rule-based Transform
+      NL-oriented Instruct
     type: document
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 250
-  - id: evaluation
+      x: 2240
+      'y': 400
+  - id: instruct_qc
     label: |-
-      Execution evaluation
-      containerized sandbox tests
-      pass@k and validation report
-    type: terminal
-    size: xl
+      Instruct Alignment
+      5-Author QC
+    type: decision
+    size: large
     position:
-      x: 1340
-      'y': 160
+      x: 2440
+      'y': 400
+  - id: execute
+    label: |-
+      Zero-shot Sandbox
+      Execute Test Suites
+    type: process
+    size: large
+    position:
+      x: 2440
+      'y': 140
+  - id: score
+    label: |-
+      Pass@1 / Pass@5
+      Calibrated Pass@1
+    type: terminal
+    size: large
+    position:
+      x: 2640
+      'y': 140
 edges:
-  - from: seed_examples
-    to: llm_synthesis
+  - from: seeds
+    to: synthesis
     type: primary
-  - from: llm_synthesis
-    to: draft_pool
+  - from: synthesis
+    to: debias
     type: primary
-  - from: draft_pool
-    to: refactor_tests
+  - from: debias
+    to: drafts
     type: primary
-  - from: refactor_tests
-    to: human_curation
+  - from: drafts
+    to: refactor
     type: primary
-  - from: human_curation
-    to: complete_set
+  - from: refactor
+    to: tests
     type: primary
-  - from: complete_set
-    to: instruct_set
-    type: optional
-    label: predefined conversion rules
-  - from: complete_set
-    to: evaluation
+  - from: tests
+    to: refactored
     type: primary
-  - from: instruct_set
-    to: evaluation
+  - from: refactored
+    to: examine
+    type: primary
+  - from: examine
+    to: preeval
+    type: primary
+  - from: preeval
+    to: crosscheck
+    type: primary
+  - from: crosscheck
+    to: complete
+    type: primary
+  - from: complete
+    to: execute
+    type: primary
+  - from: complete
+    to: instruct
     type: data
-  - from: evaluation
-    to: human_curation
-    type: optional
-    label: sample validation and failure analysis
+  - from: instruct
+    to: instruct_qc
+    type: primary
+  - from: instruct_qc
+    to: execute
+    type: primary
+  - from: execute
+    to: score
+    type: primary
 modules: []
