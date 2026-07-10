@@ -1,62 +1,98 @@
 {
   "version": 1,
-  "title": "ASPERA 构建流程",
+  "title": "ASPERA 与 Asper-Bench 构建及评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 10,
+    "nodes": 14,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "assistant_library",
-      "label": "助手库模拟\n7 个数据库\n69 个 Python 原语",
+      "id": "library",
+      "label": "实现 ASPERA 助理库\n模拟公司 • 7 个数据库 • 69 个原语\n49 个函数 • 20 个类 • 时间工具",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "aep_generation",
-      "label": "查询与 AEP 生成\nGPT-4o 加示例\n复杂组合程序",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "bias_control",
-      "label": "多样性控制\n历史查询提示\nfocus 指令与过滤",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "sip_generation",
-      "label": "SIP 生成\n初始化模拟状态\n动态用户数据库",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "ep_generation",
-      "label": "EP 生成\n执行 SIP 与 AEP\n断言目标和副作用",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "human_qc",
-      "label": "开发者调控\nIDE 中运行与编辑程序\n标注者确认质量",
+      "id": "session",
+      "label": "启动开发者与 LLM 交互\n提供聚焦指令或人工查询\n控制复杂度、长度与场景",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "Asper-Bench 数据集\n250 个任务\nAEP、SIP、EP 标注",
+      "id": "prompt",
+      "label": "为 GPT-4o 生成提供依据\n助理库文档 + 自然语言规则\n每类程序 5 个上下文示例",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "aep",
+      "label": "生成查询 + 参考 AEP\n组合原语、流程控制、循环与时间逻辑\n开发者执行、筛选并编辑",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sip",
+      "label": "生成 SIP\n构建查询所需的动态模拟状态\n开发者执行并编辑初始化器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ep",
+      "label": "生成 EP\n依次运行 SIP 与 AEP，断言返回值和状态变化\n支持多个可接受结果与条件分支",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "审核并发布 Asper-Bench\n第一作者执行/修正，两名标注员确认质量\n250 题：71 个信息查询 + 179 个状态修改",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "evaluator",
-      "label": "ASPERA 评测器\n完整或部分代码库知识\n断言通过即任务成功",
+      "id": "setting",
+      "label": "选择评测设置\nCCK：完整库文档 + 5 个 AEP 示例\nPS：逐模块选原语 + 1 个示例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "candidate",
+      "label": "生成候选 AEP\n模型把未见用户查询转换为 Python\nPS 另记原语精确率、召回率和微平均 F1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "initialize",
+      "label": "初始化参考状态\n在隔离模拟中执行任务 SIP\n条件查询覆盖 AEP 的每个分支",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "execute",
+      "label": "执行候选 AEP\n观测返回值、异常与数据库副作用",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "assertions",
+      "label": "执行是否无错误结束\n且参考 EP 的全部断言通过？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "metric",
+      "label": "计算任务成功率\n仅全部必要检查通过才算完成一题\n比较 CCK 与原语选择难度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告程序合成能力\n任务成功率 + 原语选择诊断\n分析缺失、多余与误用原语",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,65 +100,80 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "assistant_library",
-      "to": "aep_generation",
+      "from": "library",
+      "to": "session",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "assistant_library",
-      "to": "sip_generation",
-      "type": "data"
+      "from": "session",
+      "to": "prompt",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "aep_generation",
-      "to": "bias_control",
-      "type": "optional",
-      "label": "缓解重复偏差"
+      "from": "prompt",
+      "to": "aep",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "bias_control",
-      "to": "aep_generation",
-      "type": "optional",
-      "label": "调整 focus"
+      "from": "aep",
+      "to": "sip",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "aep_generation",
-      "to": "sip_generation",
+      "from": "sip",
+      "to": "ep",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "sip_generation",
-      "to": "ep_generation",
+      "from": "ep",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "ep_generation",
-      "to": "human_qc",
+      "from": "release",
+      "to": "setting",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "human_qc",
-      "to": "aep_generation",
-      "type": "optional",
-      "label": "执行并编辑输出"
+      "from": "setting",
+      "to": "candidate",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "human_qc",
-      "to": "dataset",
+      "from": "candidate",
+      "to": "initialize",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "dataset",
-      "to": "evaluator",
+      "from": "initialize",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "execute",
+      "to": "assertions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "assertions",
+      "to": "metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "metric",
+      "to": "report",
       "type": "primary"
     }
   ],

@@ -4,120 +4,191 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AdvancedIF 构建流程
-  description: 基于 arXiv:2511.10507 对齐的 AdvancedIF 基准构建与 rubric 评估流程。
-  legend: 实线表示基准样本构建和评估主流程；虚线表示对抗筛选和基于 rubric 的判定。
+  title: AdvancedIF 构建与量规评测流程
+  description: 按论文呈现专家围绕三类能力人工编写对抗式指令遵循对话和末轮量规，再用 o3-mini 逐准则判断并执行 “全部满足才通过”严格评分的完整流程。
+  legend: AdvancedIF 含 1,645 个人工对话与人工量规。多轮对话只为最后一轮收集量规；模型回答必须满足全部适用 准则，该对话才得分。
 nodes:
-  - id: taxonomy
+  - id: scope
     label: |-
-      能力分类
-      复杂指令、多轮上下文
-      system prompt steerability
-    type: database
+      定义高级指令遵循
+      将指令执行与事实性区分
+      避免意图模糊和能力域重叠
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
+      'y': 240
+  - id: experts
     label: |-
-      专家撰写 prompt
-      人工编写提示
-      聚焦单一 IF 类别
-    type: process
+      招募人类专家标注员
+      提示与量规均由人工编写
+      每个提示针对一类高级指令遵循能力
+    type: user
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: adversarial
-    label: |-
-      对抗式保留
-      只保留会触发
-      最后一轮 IF 失败的 prompt
+      x: 320
+      'y': 240
+  - id: category
+    label: 属于哪类指令遵循？
     type: decision
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: rubrics
+      x: 600
+      'y': 240
+  - id: complex
     label: |-
-      专家 rubric
-      每条最多 20 个 criteria
-      多轮人工 review
+      显式复杂指令遵循
+      402 个单轮对话 • 平均 7.44 条准则
+      6+ 条语气、格式、风格、长度、否定、
+      拼写、结构或条件联动指令
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: dataset
+      x: 880
+      'y': 20
+  - id: carried
     label: |-
-      AdvancedIF 集合
-      1,645 个 dialogs
-      人工 prompts + rubrics
-    type: database
+      多轮上下文延续
+      736 个对话 • 平均 7.69 轮 • 6.08 条准则
+      将初始设定、分散细节与编辑带到末轮
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: responses
+      x: 880
+      'y': 240
+  - id: system
     label: |-
-      模型回答
-      对每个 dialog 或 prompt
-      生成最后一轮响应
+      系统提示可控性
+      507 个对话 • 平均 11.21 轮 • 9.81 条准则
+      风格、安全、产品、语音与工具规范
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 460
+  - id: adversarial
+    label: |-
+      对抗式收集提示
+      多轮标注员先与给定 LLM 对话
+      只保留末轮触发指令遵循失败的提示
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
+      x: 1160
+      'y': 240
+  - id: rubrics
+    label: |-
+      编写末轮量规
+      同一标注员把指令拆成最多 20 条
+      清晰、可独立验证的二元准则
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 240
+  - id: dataset
+    label: |-
+      发布 AdvancedIF
+      402 + 736 + 507 = 1,645 个对话
+      人工提示 • 人工量规 • 多轮 + 系统提示
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: response
+    label: |-
+      生成模型回答
+      使用完整用户/系统对话上下文
+      在最后一轮对回答评分
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 700
   - id: verifier
     label: |-
-      Rubric verifier
-      o3-mini 逐条 criteria 检查
-      全部通过才记 TRUE
+      逐条验证全部准则
+      o3-mini 接收提示、回答与量规
+      为每条准则输出真或假
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 700
+  - id: strict
+    label: |-
+      全部量规准则都为真吗？
+      任一要求失败即整段对话失败
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: metrics
+      x: 1160
+      'y': 700
+  - id: score
     label: |-
-      分类得分
-      ComplexIF / context / system
-      TRUE 百分比
+      汇总严格通过率
+      复杂指令 CIF • 上下文延续 CC
+      系统可控 SS • 三类平均分
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 700
+  - id: report
+    label: |-
+      报告高级指令遵循能力
+      比较思考与最小思考模型
+      诊断单轮、上下文延续与系统提示差距
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 600
+      'y': 700
 edges:
-  - from: taxonomy
-    to: prompts
+  - from: scope
+    to: experts
     type: primary
-  - from: prompts
+  - from: experts
+    to: category
+    type: primary
+  - from: category
+    to: complex
+    type: primary
+  - from: category
+    to: carried
+    type: primary
+  - from: category
+    to: system
+    type: primary
+  - from: complex
     to: adversarial
-    type: data
-    label: 候选 prompts
-  - from: adversarial
-    to: prompts
-    type: optional
-    label: 修改或丢弃
+    type: primary
+  - from: carried
+    to: adversarial
+    type: primary
+  - from: system
+    to: adversarial
+    type: primary
   - from: adversarial
     to: rubrics
     type: primary
-    label: 保留样本
   - from: rubrics
     to: dataset
     type: primary
   - from: dataset
-    to: responses
+    to: response
     type: primary
-  - from: dataset
-    to: verifier
-    type: data
-    label: prompts + rubrics
-  - from: responses
+  - from: response
     to: verifier
     type: primary
   - from: verifier
-    to: metrics
+    to: strict
+    type: primary
+  - from: strict
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []
