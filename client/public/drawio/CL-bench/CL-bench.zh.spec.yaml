@@ -5,95 +5,180 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CL-bench 构建流程
-  description: 基于论文的 CL-bench 构建流程：领域专家设计无污染复杂上下文、上下文依赖任务、多轮任务链和二元评分标准；模型解答只有通过全部 rubrics 才算解决任务。
-  legend: 实线箭头表示专家构建、质量控制、基准发布和评分标准验证。
+  description: 与论文对齐的 CL-bench 流程：领域专家构造抗污染的新知识上下文、依赖上下文且部分有顺序关系的任务，以及多维二元 Rubric； GPT-5.1 严格验证时，仅当一题的全部 Rubric 都通过才计为解决。
+  legend: 实线表示专家构建与评测主流程；分支表示上下文分类与验证器可靠性检查。
 nodes:
-  - id: contexts
-    label: 专家上下文
+  - id: sources
+    label: |-
+      汇集真实情境来源
+      手册 • 论文 • 数据 • 规则 • 流程
+      评测时无需外部检索
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 220
   - id: novelty
-    label: 新知识
+    label: |-
+      构造新知识或长尾知识
+      虚构内容 • 修改真实内容
+      小众及新兴专业内容
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
+  - id: taxonomy
+    label: |-
+      覆盖四类上下文
+      领域 • 规则 • 流程 • 经验发现／模拟
+      平衡 18 个细分类别
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: contexts
+    label: |-
+      专家编写 500 个复杂上下文
+      每个上下文平均投入 20 专家小时
+      平均 1.04 万 Token • 最长 6.5 万
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 400
   - id: tasks
-    label: 上下文任务
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: sequences
-    label: 多轮任务链
+    label: |-
+      设计 1,899 个上下文依赖任务
+      清晰 • 具体 • 准确 • 困难
+      所需知识必须包含在上下文中
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 220
+  - id: sequence
+    label: |-
+      编码顺序依赖
+      51.1% 的任务跨越多轮
+      后续任务可依赖此前标准答案
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
   - id: rubrics
-    label: 二元评分项
+    label: |-
+      编写 31,607 条二元 Rubric
+      每题平均 16.6 条
+      正确性 • 完整性 • 流程 • 格式
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1540
+      'y': 220
   - id: qc
-    label: 专家质检
+    label: |-
+      执行专家质量控制
+      双重检查 Rubric + 随机抽样验证
+      反复修订上下文、任务、答案与标准
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: benchmark
-    label: 1,899个任务
-    type: document
+      x: 1840
+      'y': 220
+  - id: release
+    label: |-
+      发布 CL-bench
+      500 上下文 • 1,899 任务 • 31,607 Rubric
+      无上下文时解题率低于 1%
+    type: database
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2140
+      'y': 220
   - id: solve
-    label: 模型解答
+    label: |-
+      运行前沿语言模型
+      提供系统提示、上下文与任务历史
+      每个模型收集三轮答案
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2440
+      'y': 220
   - id: verify
-    label: 全部通过
+    label: |-
+      GPT-5.1 验证每条 Rubric
+      每项标准作二元是／否判断
+      全部 Rubric 通过才算该题解决
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 160
+      x: 2740
+      'y': 220
+  - id: reliability
+    label: |-
+      验证自动判分器可靠性
+      与另外两个判分器一致率超过 90%
+      100 份人工审计答案准确率超过 90%
+    type: decision
+    size: xl
+    position:
+      x: 3040
+      'y': 40
+  - id: report
+    label: |-
+      报告任务解决率
+      总体 + 四大类别 + 18 个子类别
+      十个前沿模型平均仅 17.2%
+    type: terminal
+    size: xl
+    position:
+      x: 3340
+      'y': 220
 edges:
-  - from: contexts
+  - from: sources
     to: novelty
     type: primary
   - from: novelty
+    to: taxonomy
+    type: primary
+  - from: novelty
+    to: contexts
+    type: primary
+  - from: taxonomy
+    to: tasks
+    type: primary
+  - from: contexts
     to: tasks
     type: primary
   - from: tasks
-    to: sequences
+    to: sequence
     type: primary
-  - from: sequences
+  - from: sequence
     to: rubrics
     type: primary
   - from: rubrics
     to: qc
     type: primary
   - from: qc
-    to: benchmark
-    type: primary
-  - from: benchmark
+    to: release
+    type: data
+  - from: release
     to: solve
     type: primary
   - from: solve
     to: verify
+    type: primary
+  - from: verify
+    to: reliability
+    type: primary
+  - from: verify
+    to: report
+    type: primary
+  - from: reliability
+    to: report
     type: primary
 modules: []

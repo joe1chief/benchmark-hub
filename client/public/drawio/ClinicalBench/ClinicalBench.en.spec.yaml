@@ -6,76 +6,195 @@ meta:
   routing: orthogonal
   title: ClinicalBench Build Process
   description: >-
-    Paper-aligned construction flow for ClinicalBench: MIMIC-III/MIMIC-IV cohorts are filtered, split, converted to
-    text, and used to compare traditional ML with general and medical LLMs on clinical prediction tasks.
-  legend: Solid arrows show cohort processing, model evaluation, and metric aggregation.
+    Paper-aligned ClinicalBench flow: two MIMIC databases are filtered and split for three prediction tasks, training
+    labels alone are under-sampled, structured features and code-to-text inputs feed 11 traditional models and 22 LLMs,
+    and direct, prompting, and fine-tuning strategies are compared with task-specific F1 and AUROC.
+  legend: Solid arrows show cohort construction and comparison; branches separate traditional ML and LLM evaluation paths.
 nodes:
-  - id: mimic
-    label: MIMIC Data
+  - id: data
+    label: |-
+      Use Two Credentialed Clinical Databases
+      MIMIC-III v1.4 + MIMIC-IV v2.2
+      Preserve the Same Cohort Contract for All Models
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: Filter Cohort
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: split
-    label: Split Sets
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: Rebalance
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: text
-    label: Code-to-Text
+      'y': 220
+  - id: tasks
+    label: |-
+      Define Three Prediction Tasks
+      Length of Stay — Three Classes
+      Mortality + Readmission — Binary Classes
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: models
-    label: ML + LLMs
+      x: 340
+      'y': 220
+  - id: cohort
+    label: |-
+      Filter the Patient Cohort
+      Keep First-time Visits Only
+      Exclude Age below 18 and Missing Values
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: split
+    label: |-
+      Create Stratified Data Splits
+      Training • Validation • Test
+      Share Identical Splits across Model Families
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: balance
+    label: |-
+      Rebalance Training Labels Only
+      Apply Under-sampling to the Training Set
+      Leave Validation and Test Unchanged
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: structured
+    label: |-
+      Prepare Structured ML Features
+      Diagnoses • Procedures • Medications • Drugs
+      Retain Coded Clinical Variables
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 40
+  - id: text
+    label: |-
+      Convert Codes to LLM-readable Text
+      ICD-9/10 Diagnosis and Procedure Descriptions
+      ATC Medication and Drug Descriptions
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: ml
+    label: |-
+      Train 11 Traditional Models
+      LR • SVM • Trees • XGBoost • KNN
+      MLP • Transformer • RNN and Others
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: F1 / AUROC
-    type: document
+      x: 1840
+      'y': 40
+  - id: llms
+    label: |-
+      Evaluate 22 Language Models
+      14 General-purpose + 8 Medical LLMs
+      Compare Model Scale and Decoding Temperature
+    type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 400
+  - id: prompt
+    label: |-
+      Test LLM Prompting Strategies
+      Direct • Chain-of-Thought • Self-reflection
+      Role-playing • In-context Learning
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 320
+  - id: finetune
+    label: |-
+      Test Task-specific Fine-tuning
+      Full and Partial LoRA Variants
+      Evaluate Data-scale Effects
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 480
+  - id: predictions
+    label: |-
+      Collect Held-out Predictions
+      Use the Same Validation/Test Cases
+      Compare ML and LLM Outputs Head to Head
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: metrics
+    label: |-
+      Apply Task-specific Metrics
+      Length of Stay: Macro F1 + AUROC
+      Mortality/Readmission: F1 + AUROC
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: report
+    label: |-
+      Report Repeated Comparisons
+      Five-run 95% Confidence Intervals
+      Confusion Matrices + Loss Curves + Findings
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
 edges:
-  - from: mimic
-    to: filter
+  - from: data
+    to: tasks
     type: primary
-  - from: filter
+  - from: tasks
+    to: cohort
+    type: primary
+  - from: cohort
     to: split
     type: primary
   - from: split
     to: balance
     type: primary
   - from: balance
+    to: structured
+    type: primary
+  - from: balance
     to: text
     type: primary
-  - from: text
-    to: models
+  - from: structured
+    to: ml
     type: primary
-  - from: models
+  - from: text
+    to: llms
+    type: primary
+  - from: llms
+    to: prompt
+    type: primary
+  - from: llms
+    to: finetune
+    type: primary
+  - from: ml
+    to: predictions
+    type: primary
+  - from: prompt
+    to: predictions
+    type: primary
+  - from: finetune
+    to: predictions
+    type: primary
+  - from: predictions
     to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

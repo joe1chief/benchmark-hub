@@ -5,75 +5,195 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ClinicalBench 构建流程
-  description: 对齐论文的 ClinicalBench 构建流程：从 MIMIC-III/MIMIC-IV 过滤队列、划分数据、转换文本输入，并比较传统 ML 与通用/医疗 LLM 的临床预测表现。
-  legend: 实线箭头表示队列处理、模型评测与指标汇总。
+  description: >-
+    与论文对齐的 ClinicalBench 流程：从两个 MIMIC 数据库筛选并划分三类预测任务，仅对训练标签欠采样，结构化特征与 代码转文本输入分别进入 11 个传统模型和 22 个 LLM，再以任务专属 F1 与 AUROC
+    比较直接提示、提示工程和微调策略。
+  legend: 实线表示队列构建与比较主流程；分支分别表示传统机器学习和 LLM 评测路径。
 nodes:
-  - id: mimic
-    label: MIMIC数据
+  - id: data
+    label: |-
+      使用两个需授权的临床数据库
+      MIMIC-III v1.4 + MIMIC-IV v2.2
+      所有模型共享同一队列合同
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: 队列过滤
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: split
-    label: 分层划分
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: 训练平衡
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: text
-    label: 代码转文本
+      'y': 220
+  - id: tasks
+    label: |-
+      定义三类预测任务
+      住院时长：三分类
+      死亡与再入院：二分类
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: models
-    label: 模型评测
+      x: 340
+      'y': 220
+  - id: cohort
+    label: |-
+      筛选患者队列
+      仅保留首次就诊
+      排除未满 18 岁和有缺失值的记录
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: split
+    label: |-
+      创建分层数据划分
+      训练 • 验证 • 测试
+      各模型家族使用完全相同划分
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: balance
+    label: |-
+      仅平衡训练标签
+      对训练集执行欠采样
+      验证集和测试集保持不变
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: structured
+    label: |-
+      准备结构化机器学习特征
+      诊断 • 操作 • 用药 • 药物
+      保留编码后的临床变量
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 40
+  - id: text
+    label: |-
+      将代码转换为 LLM 可读文本
+      ICD-9/10 诊断与操作描述
+      ATC 用药与药物描述
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: ml
+    label: |-
+      训练 11 个传统模型
+      LR • SVM • 决策树 • XGBoost • KNN
+      MLP • Transformer • RNN 等
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: F1/AUROC
-    type: document
+      x: 1840
+      'y': 40
+  - id: llms
+    label: |-
+      评测 22 个语言模型
+      14 个通用 LLM + 8 个医疗 LLM
+      比较模型规模与解码温度
+    type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 400
+  - id: prompt
+    label: |-
+      测试 LLM 提示策略
+      直接提示 • 思维链 • 自我反思
+      角色扮演 • 上下文学习
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 320
+  - id: finetune
+    label: |-
+      测试任务专属微调
+      完整与部分 LoRA 变体
+      评估训练数据规模影响
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 480
+  - id: predictions
+    label: |-
+      收集保留集预测
+      使用相同验证／测试病例
+      直接比较 ML 与 LLM 输出
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: metrics
+    label: |-
+      应用任务专属指标
+      住院时长：Macro F1 + AUROC
+      死亡／再入院：F1 + AUROC
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: report
+    label: |-
+      报告重复实验比较
+      五次运行的 95% 置信区间
+      混淆矩阵 + 损失曲线 + 结论
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
 edges:
-  - from: mimic
-    to: filter
+  - from: data
+    to: tasks
     type: primary
-  - from: filter
+  - from: tasks
+    to: cohort
+    type: primary
+  - from: cohort
     to: split
     type: primary
   - from: split
     to: balance
     type: primary
   - from: balance
+    to: structured
+    type: primary
+  - from: balance
     to: text
     type: primary
-  - from: text
-    to: models
+  - from: structured
+    to: ml
     type: primary
-  - from: models
+  - from: text
+    to: llms
+    type: primary
+  - from: llms
+    to: prompt
+    type: primary
+  - from: llms
+    to: finetune
+    type: primary
+  - from: ml
+    to: predictions
+    type: primary
+  - from: prompt
+    to: predictions
+    type: primary
+  - from: finetune
+    to: predictions
+    type: primary
+  - from: predictions
     to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

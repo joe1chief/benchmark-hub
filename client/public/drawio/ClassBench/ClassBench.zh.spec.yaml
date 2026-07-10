@@ -1,0 +1,183 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ClassBench（AWM 环境）构建流程
+  description: >-
+    与论文对齐的 ClassBench 身份及构建流程：它不是 AWM 论文中的独立基准，而是 AgentWorldModel-1K 中生成的 “音乐学校排课与考勤”环境之一，经场景、任务、SQLite、MCP
+    接口、验证与执行修复阶段产生。
+  legend: 实线表示论文披露的 AWM 合成链路；身份说明节点用于避免把该环境误解为独立 benchmark。
+nodes:
+  - id: identity
+    label: |-
+      明确对象身份
+      ClassBench = 音乐学校排课与考勤
+      它是 AWM 场景，不是独立基准
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: seeds
+    label: |-
+      从 100 个领域名称种子开始
+      聚焦有状态应用
+      要求数据库支持 CRUD 操作
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: scenarios
+    label: |-
+      合成场景描述
+      LLM 将名称扩展为应用概念
+      包含 ClassBench 音乐学校工作流
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: filter
+    label: |-
+      筛选场景并去重
+      CRUD 分类器 + 嵌入去重
+      限制过度集中的类别
+    type: decision
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: tasks
+    label: |-
+      每个场景生成 10 个用户任务
+      可通过 API 完成且默认已登录
+      任务决定后端所需功能
+    type: document
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: database
+    label: |-
+      构建 SQLite 状态与初始数据
+      推断实体、关系与约束
+      满足每个任务的执行前提
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 40
+  - id: tools
+    label: |-
+      生成 MCP 工具接口
+      设计最小化的类型化工具 Schema
+      实现 Python 读写操作
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: verifier
+    label: |-
+      生成任务专属验证逻辑
+      比较执行前后的数据库状态
+      代码增强 LLM-as-a-Judge 奖励
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: execute
+    label: |-
+      执行每个生成组件
+      测试数据库、工具与验证逻辑
+      在隔离环境中捕获运行错误
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: repair
+    label: |-
+      自我修复生成失败
+      将错误和代码反馈给 LLM
+      最多重试五轮
+    type: decision
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: release
+    label: |-
+      随 AgentWorldModel-1K 发布
+      属于 1,000 个环境与 10,000 个任务
+      数据库 + 工具 + 任务 + 验证逻辑
+    type: database
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: run
+    label: |-
+      运行多轮工具使用 Agent
+      可重置的隔离 MCP 环境
+      Agent 修改音乐学校工作流状态
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: score
+    label: |-
+      验证任务完成情况
+      检查前后状态与判分结果
+      报告成功或环境错误
+    type: terminal
+    size: xl
+    position:
+      x: 3340
+      'y': 220
+edges:
+  - from: identity
+    to: seeds
+    type: primary
+  - from: seeds
+    to: scenarios
+    type: primary
+  - from: scenarios
+    to: filter
+    type: primary
+  - from: filter
+    to: tasks
+    type: primary
+  - from: tasks
+    to: database
+    type: primary
+  - from: tasks
+    to: tools
+    type: primary
+  - from: database
+    to: verifier
+    type: primary
+  - from: tools
+    to: verifier
+    type: primary
+  - from: verifier
+    to: execute
+    type: primary
+  - from: execute
+    to: repair
+    type: primary
+  - from: repair
+    to: release
+    type: data
+  - from: release
+    to: run
+    type: primary
+  - from: run
+    to: score
+    type: primary
+modules: []
