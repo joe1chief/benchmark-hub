@@ -1,0 +1,197 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Blueprint-Bench 构建流程
+  description: 按论文构建并评估 50 个公寓照片空间重建任务：标准化四色平面图、三种模型生成路径、确定性计算机视觉结构抽取， 以及加权房间连通性相似度评分。
+  legend: 实线表示数据集构建、生成和评分，虚线把人类与随机基线加入最终比较。
+nodes:
+  - id: listings
+    label: |-
+      收集公寓房源材料
+      室内照片序列
+      房源官方平面图
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: dataset
+    label: |-
+      选取 50 套公寓
+      每套约 20 张室内照片
+      改编官方平面图作为金标准
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 220
+  - id: format
+    label: |-
+      标准化金标准平面图
+      九项绘制规则
+      黑墙 • 绿门 • 红色房间中心 • 白底
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: package
+    label: |-
+      封装评测输入
+      照片序列加格式说明
+      大部分公寓保密，仅发布代码与样例
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: image_model
+    label: |-
+      图像生成模型路径
+      单次生成平面图图像
+      遵循同一套九项规则
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: llm
+    label: |-
+      多模态 LLM 路径
+      推断房间、连通关系与相对尺度
+      生成 SVG 代码并转换为图像
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: agent
+    label: |-
+      Linux 容器中的 Agent 路径
+      从目录读取照片 • 写入指定图像文件
+      可检查并迭代修订绘图
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: raster
+    label: |-
+      规范化提交的平面图图像
+      保持可评分的像素颜色与几何
+      格式不合规会反映到分数
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: extract
+    label: |-
+      确定性抽取空间结构
+      HSV 红点检测 • Flood-Fill 房间分割
+      绿门扫描 • 面积与大小排序
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: graph
+    label: |-
+      生成结构化平面图 JSON
+      房间连通图 • 门位置与方向
+      按面积从大到小分配房间 ID
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 220
+  - id: components
+    label: |-
+      计算六项相似度
+      边 Jaccard • 度相关 • 图密度
+      房间数 • 门数 • 门方向
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 220
+  - id: baselines
+    label: |-
+      构建比较基线
+      人类在 12 套公寓上重建
+      不看照片随机生成典型平面图
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 440
+  - id: score
+    label: |-
+      0 到 1 的加权相似度
+      边 50% • 度 20% • 密度 10% • 房间 10%
+      门数 5% • 门方向 5%
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 220
+  - id: report
+    label: |-
+      比较 LLM、图像模型、Agent 与基线
+      跨 50 套公寓和重复 epoch 汇总
+      更新公开空间智能排行榜
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 220
+edges:
+  - from: listings
+    to: dataset
+    type: primary
+  - from: dataset
+    to: format
+    type: primary
+  - from: format
+    to: package
+    type: primary
+  - from: package
+    to: image_model
+    type: primary
+  - from: package
+    to: llm
+    type: primary
+  - from: package
+    to: agent
+    type: primary
+  - from: image_model
+    to: raster
+    type: primary
+  - from: llm
+    to: raster
+    type: primary
+  - from: agent
+    to: raster
+    type: primary
+  - from: raster
+    to: extract
+    type: primary
+  - from: extract
+    to: graph
+    type: primary
+  - from: graph
+    to: components
+    type: primary
+  - from: components
+    to: score
+    type: primary
+  - from: baselines
+    to: score
+    type: data
+  - from: score
+    to: report
+    type: primary
+modules: []

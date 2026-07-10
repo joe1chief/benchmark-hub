@@ -7,62 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 9,
+    "nodes": 15,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "browsecomp",
-      "label": "BrowseComp",
+      "id": "original",
+      "label": "Start from Original BrowseComp\n1,266 Complex Question-Answer Pairs\nReplace Dynamic Black-Box Web Evaluation",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "mine",
-      "label": "Mine",
+      "id": "o3_mining",
+      "label": "Use OpenAI o3 with Web Search\nProduce Clues, Candidate URLs, and Evidence Snippets\nScrape Candidate Pages",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "Verify",
+      "id": "initial_filter",
+      "label": "Filter Hallucinated URLs and Scraping Failures\nRetain Initial Evidence for 1,142 Queries\nSend Evidence Chains to Human Review",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "negatives",
-      "label": "Negatives",
+      "id": "human_verify",
+      "label": "Fourteen Student Annotators Verify Evidence\nMore than 400 Hours • Over 80% Agreement\nCheck Each Clue and Complete Answering Chain",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "verified",
+      "label": "Finalize 830 Verified Queries\nLabel Evidence Documents Needed for Reasoning\nLabel Gold Documents that Also Contain the Final Answer",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "decompose",
+      "label": "GPT-4o Decomposes Each Query\nAverage Seven Search Sub-Queries\nTarget Topically Related Distractors",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hard_negatives",
+      "label": "Mine Hard Negatives with Google Search API\nRelated but Not Useful for the Final Answer\nAdd Challenging Retrieval Distractors",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "corpus",
-      "label": "Corpus",
+      "label": "Build the Fixed Deduplicated Corpus\n100,195 Documents across 830 Queries\nAverage 6.1 Evidence • 76.28 Negatives • 2.9 Gold",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "retriever",
-      "label": "Retriever",
+      "id": "retrievers",
+      "label": "Configure Controlled Retrieval\nBM25 • Qwen3-Embedding 0.6B / 4B / 8B\nReasonIR 8B • Oracle Evidence Context",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "topk",
+      "label": "Return Top-5 Search Results per Call\nTruncate Each Result to 512 Tokens\nOptional get-document Tool Opens Full Content",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "agent",
-      "label": "Agent",
+      "label": "Deep-Research Agent Iterates\nPlan Searches • Read Results • Cross-Check Evidence\nReturn Final Answer with Document Citations",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "Judge",
+      "id": "answer_score",
+      "label": "Score End-to-End Answering\nNormalized Answer Accuracy and Recall\nCount Search Calls and Agent Cost",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "Metrics",
+      "id": "citation_score",
+      "label": "Score Citation Grounding\nPrecision and Recall against Positive Documents\nPreserve Per-Query Metrics",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "retrieval_score",
+      "label": "Score Standalone Retrieval\nEvidence and Gold Recall@5 / 100 / 1000\nNDCG@10 against Released Qrels",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Report Controlled Agent and Retriever Results\nDisentangle Retrieval, Reasoning, Citations, and Context\nCompare BM25, Dense Retrieval, Oracle, and Ablations",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,56 +106,104 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "browsecomp",
-      "to": "mine",
+      "from": "original",
+      "to": "o3_mining",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "mine",
-      "to": "verify",
+      "from": "o3_mining",
+      "to": "initial_filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "verify",
-      "to": "negatives",
+      "from": "initial_filter",
+      "to": "human_verify",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "verify",
-      "to": "corpus",
+      "from": "human_verify",
+      "to": "verified",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "negatives",
-      "to": "corpus",
+      "from": "initial_filter",
+      "to": "decompose",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "corpus",
-      "to": "retriever",
+      "from": "decompose",
+      "to": "hard_negatives",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "retriever",
-      "to": "agent",
+      "from": "verified",
+      "to": "corpus",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "agent",
-      "to": "judge",
+      "from": "hard_negatives",
+      "to": "corpus",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "judge",
-      "to": "metrics",
+      "from": "corpus",
+      "to": "retrievers",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "retrievers",
+      "to": "topk",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "topk",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "agent",
+      "to": "answer_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "agent",
+      "to": "citation_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "retrievers",
+      "to": "retrieval_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "answer_score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "citation_score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "retrieval_score",
+      "to": "report",
       "type": "primary"
     }
   ],

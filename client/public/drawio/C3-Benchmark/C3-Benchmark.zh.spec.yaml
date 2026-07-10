@@ -4,99 +4,200 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: C3-Benchmark 构建流程
-  description: 基于论文对齐 C3-Bench：从公开 API 工具出发精修工具描述，用五角色框架生成多任务 Agent 数据， 采样轨迹、隐藏信息和策略切换，专家修订并交叉检查，最终用三类鲁棒性挑战和细粒度指标评测。
-  legend: 实线箭头表示工具准备、多角色生成、专家修订、挑战构建和评测主路径。
+  title: C3-Bench 构建流程
+  description: 按论文用多角色框架构建相关多任务 Agent 轨迹，经专家修订后，对工具关系、隐藏信息和决策历史设置三项受控鲁棒性挑战， 并计算细粒度路径与稳定性指标。
+  legend: 实线表示生成与评测，虚线表示真实日志设计信号或注入的正确历史；测试数据不复制用户日志。
 nodes:
-  - id: apis
-    label: API
+  - id: design_signals
+    label: |-
+      从真实用户日志分析设计信号
+      相关追问、隐藏上下文与策略变化
+      测试数据不来自用户日志
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tools
-    label: 工具
-    type: process
+      'y': 40
+  - id: tool_space
+    label: |-
+      准备多样化工具 Schema
+      记录参数与逻辑依赖
+      支持串行、并行与组合调用
+    type: database
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: roles
-    label: 角色
+      x: 40
+      'y': 400
+  - id: framework
+    label: |-
+      运行五角色生成框架
+      User • Planner • AI Agent • Tool • Checker
+      15 种角色子类与启发式规则
     type: user
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: trajectory
-    label: 轨迹
+      x: 320
+      'y': 220
+  - id: sample
+    label: |-
+      采样目标决策轨迹
+      指定单工具、多工具、聊天或澄清策略
+      覆盖串行、并行与混合多工具形式
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: tasks
-    label: 任务
-    type: document
+      x: 600
+      'y': 220
+  - id: questions
+    label: |-
+      生成用户问题
+      随机混元系列模型加少样本示例
+      保持 2 至 4 个相关任务自然可信
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: experts
-    label: 专家
-    type: user
+      x: 880
+      'y': 40
+  - id: execution
+    label: |-
+      生成正确执行过程
+      HunYuan-TurboS 生成动作与观察
+      Checker 检查计划、工具与并行逻辑
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: challenges
-    label: 挑战
+      x: 880
+      'y': 220
+  - id: hiding
+    label: |-
+      分配信息隐藏策略
+      省略 • 指代 • 长上下文依赖
+      在先前任务中保留所需事实
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: expert_qc
+    label: |-
+      五位 LLM 研究专家修订数据
+      自检 • 交叉检查 • 高级专家终审
+      准确率从约 60% 提升到接近 100%
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: 指标
+      x: 1160
+      'y': 220
+  - id: release
+    label: |-
+      组装 C3-Bench 测试数据
+      256 条单任务与 768 条多任务
+      均匀覆盖 336 种策略切换类型
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: challenge1
+    label: |-
+      挑战 1 • 复杂工具关系
+      DFS 拓扑排序枚举有效路径
+      增量决策树匹配检查工具调用
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: agents
-    label: Agent
+      x: 1720
+      'y': 40
+  - id: challenge2
+    label: |-
+      挑战 2 • 关键隐藏信息
+      仅给正确历史用户任务与摘要
+      在省略、指代、长上下文下评分最终任务
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: challenge3
+    label: |-
+      挑战 3 • 可变决策轨迹
+      注入正确的历史动作与观察
+      与挑战 2 比较所有策略切换
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: metrics
+    label: |-
+      计算细粒度鲁棒性指标
+      Accuracy • Accomplish Progress • Optimal Path Rate
+      PTF • Volatility Factor • Debiased Descent Direction
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 220
+  - id: report
+    label: |-
+      比较 49 个快思考、慢思考与专用 Agent
+      诊断工具依赖、上下文、任务长度和策略影响
+      发布数据、生成框架、测试 Harness 与排行榜
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2280
+      'y': 220
 edges:
-  - from: apis
-    to: tools
+  - from: design_signals
+    to: framework
+    type: data
+  - from: tool_space
+    to: framework
+    type: data
+  - from: framework
+    to: sample
     type: primary
-  - from: tools
-    to: roles
+  - from: sample
+    to: questions
     type: primary
-  - from: roles
-    to: trajectory
+  - from: sample
+    to: execution
     type: primary
-  - from: roles
-    to: tasks
+  - from: sample
+    to: hiding
     type: primary
-  - from: trajectory
-    to: experts
+  - from: questions
+    to: expert_qc
     type: primary
-  - from: tasks
-    to: experts
+  - from: execution
+    to: expert_qc
     type: primary
-  - from: experts
-    to: challenges
+  - from: hiding
+    to: expert_qc
     type: primary
-  - from: challenges
+  - from: expert_qc
+    to: release
+    type: primary
+  - from: release
+    to: challenge1
+    type: primary
+  - from: release
+    to: challenge2
+    type: primary
+  - from: release
+    to: challenge3
+    type: primary
+  - from: challenge1
+    to: metrics
+    type: primary
+  - from: challenge2
+    to: metrics
+    type: primary
+  - from: challenge3
     to: metrics
     type: primary
   - from: metrics
-    to: agents
+    to: report
     type: primary
 modules: []
