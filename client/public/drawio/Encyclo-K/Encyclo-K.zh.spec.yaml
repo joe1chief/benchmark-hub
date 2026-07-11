@@ -5,75 +5,122 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Encyclo-K 构建流程
-  description: 按论文对齐的 Encyclo-K 构建流程：从教材知识陈述到动态多陈述评测。
-  legend: 实线箭头表示教材来源、正确陈述抽取、错误陈述生成、动态采样、选项组装、答案抽取和准确率统计。
+  description: 对齐论文：以语句为单位策展、合成错误语句、动态组题并进行精确准确率评测。
+  legend: 实线箭头复现官方三阶段。§3.1.1 写 43 个源子领域；Table 1 写最终覆盖 44 个领域 / 62 个子领域。
 nodes:
   - id: books
-    label: 权威教材
+    label: |-
+      选择 62 本大学 / 研究生教材
+      11 个学科 · 43 个源子领域（§3.1.1）
+      权威的中英文知识来源
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: facts
-    label: 正确陈述
+      'y': 250
+  - id: screenshots
+    label: |-
+      人工截取教材页面
+      用马赛克遮盖无关内容
+      保留可溯源的上下文
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: false_stmts
-    label: 错误陈述
+      'y': 250
+  - id: extract
+    label: |-
+      提取独立正确语句
+      doubao-1.5-vision-pro-32k + 标题
+      独立 · 清晰 · 简洁规则
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: sample
-    label: 动态采样
-    type: decision
+      'y': 250
+  - id: correct_qc
+    label: |-
+      过滤并复核正确语句
+      移除图像 / 引用 / 语义含混项
+      3 名标注员复核 21,525 条合格语句
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: opts
-    label: 选项组装
-    type: document
+      'y': 250
+  - id: false_stmts
+    label: |-
+      生成高迷惑性错误语句
+      DeepSeek-R1 + 六类错误模式
+      过滤过短项 → 21,494 条错误语句
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: parse
-    label: 答案抽取
-    type: terminal
+      'y': 250
+  - id: pool
+    label: |-
+      建立语句集合
+      21,525 条正确 + 21,494 条错误
+      共 43,019 条 · 44 个领域 / 62 个子领域（Table 1）
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 准确率
-    type: document
+      'y': 250
+  - id: assemble
+    label: |-
+      动态采样并组题
+      8–10 条语句 · 4–8 个选项
+      每个选项组合 2–4 条语句
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: dataset
+    label: |-
+      Encyclo-K 标准配置
+      5,038 题：3,286 英文 + 1,752 中文
+      按学科语句占比分配
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: evaluate
+    label: |-
+      分层正则解析选项字母
+      失败时匹配选项文本
+      未解析计错 · 报告准确率
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
   - from: books
-    to: facts
+    to: screenshots
     type: primary
-  - from: facts
+  - from: screenshots
+    to: extract
+    type: primary
+  - from: extract
+    to: correct_qc
+    type: primary
+  - from: correct_qc
     to: false_stmts
     type: primary
   - from: false_stmts
-    to: sample
+    to: pool
     type: primary
-  - from: sample
-    to: opts
+  - from: pool
+    to: assemble
     type: primary
-  - from: opts
-    to: parse
+  - from: assemble
+    to: dataset
     type: primary
-  - from: parse
-    to: score
+  - from: dataset
+    to: evaluate
     type: primary
 modules: []
