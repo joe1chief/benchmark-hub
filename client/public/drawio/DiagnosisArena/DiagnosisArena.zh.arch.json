@@ -7,50 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "期刊病例",
+      "id": "reports",
+      "label": "4,175 份临床病例报告\n来源于 10 个顶级医学期刊",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "segment",
-      "label": "病例分段",
+      "label": "仅保留诊断信息\n按标题移除治疗与随访\nClaude-3.5-Sonnet → 四段 Markdown",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "迭代过滤",
+      "id": "simple",
+      "label": "淘汰简单病例\nBaichuan-M1 · DeepSeek-V3 · GPT-4o\n各采样 2 次；任一次答对即排除",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "clues",
+      "label": "人工智能专家检查线索充分性\n仅保留全票认为可推理的病例\n1,783 例进入下一阶段",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "consensus",
+      "label": "DeepSeek-R1 验证\n8 次采样并投票\n无相关诊断共识则排除",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "expert",
-      "label": "专家核验",
+      "id": "physicians",
+      "label": "执业专科医师复核\n排除证据缺失或诊断含糊病例",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "DiagnosisArena\n1,113 对病例 · 28 个专科\n平均输入长度 545.02",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "两种评测格式",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "open",
+      "label": "开放式诊断\n按置信度顺序生成五个候选",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "pairs",
-      "label": "病例诊断对",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "model",
-      "label": "模型诊断",
+      "id": "mcq",
+      "label": "四选一题型\n用 o1 / DeepSeek-R1 部分正确输出作干扰项",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "GPT-4o判定",
+      "id": "openjudge",
+      "label": "GPT-4o 诊断裁判\n相同 / 相关 / 无关\n仅“相同”计为正确",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "mcqjudge",
+      "label": "规则抽取选项\n与固定标准选项比较",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "诊断推理报告\n开放式 Top-1 / Top-5 准确率\n选择题准确率 + 泄漏分析",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +94,80 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
+      "from": "reports",
       "to": "segment",
       "type": "primary"
     },
     {
       "id": "edge-2",
       "from": "segment",
-      "to": "filter",
+      "to": "simple",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "filter",
-      "to": "expert",
+      "from": "simple",
+      "to": "clues",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "expert",
-      "to": "pairs",
+      "from": "clues",
+      "to": "consensus",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "pairs",
-      "to": "model",
+      "from": "consensus",
+      "to": "physicians",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "model",
-      "to": "judge",
+      "from": "physicians",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "benchmark",
+      "to": "route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "route",
+      "to": "open",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "route",
+      "to": "mcq",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "open",
+      "to": "openjudge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "mcq",
+      "to": "mcqjudge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "openjudge",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "mcqjudge",
+      "to": "metrics",
       "type": "primary"
     }
   ],

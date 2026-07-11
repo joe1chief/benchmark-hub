@@ -7,87 +7,141 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "seg",
-      "label": "Seg Masks",
+      "id": "source",
+      "label": "Objects365 v2 validation subset\nobject instances with human segmentation masks",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "expand",
-      "label": "VLM Expand",
+      "id": "select",
+      "label": "Select 100 challenging masked regions\none object of interest per instance",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "ssl",
-      "label": "SSL Web",
+      "id": "vlms",
+      "label": "Multi-VLM property proposals\nGPT-4o 34 · Gemini-1.5-Pro 35\nClaude-3.5-Sonnet 31 regions",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "attrs",
-      "label": "Attr Set",
+      "id": "route",
+      "label": "Two question families",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "positive",
+      "label": "Positive questions\nobject / part properties\ncolor · shape · texture · material · size",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "negative",
+      "label": "Negative questions\ntypical but absent attributes\nor details outside the target region",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "qa",
+      "label": "Manual inspection and integrity checks\nremove ambiguous / unclear answers\ndeduplicate against DLC training images",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "DLC-Bench\n100 masked instances · 892 verified questions\nno reference captions required",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "caption",
-      "label": "Model Cap",
+      "label": "Candidate localized captioner\nimage + specified mask → detailed region description",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "Ref-free",
-      "type": "terminal",
+      "label": "Llama-3.1-8B text-only judge\nchoose a mutually exclusive answer per question",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "Detail Score",
-      "type": "document",
+      "label": "Reference-free DLC report\nPos: +1 / +0.5 / 0 / −1\nNeg: reward omission; penalize hallucination\nreport Pos · Neg · average",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "seg",
-      "to": "expand",
+      "from": "source",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "expand",
-      "to": "ssl",
+      "from": "select",
+      "to": "vlms",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "ssl",
-      "to": "attrs",
+      "from": "vlms",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attrs",
-      "to": "caption",
+      "from": "route",
+      "to": "positive",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "route",
+      "to": "negative",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "positive",
+      "to": "qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "negative",
+      "to": "qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "qa",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "benchmark",
+      "to": "caption",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
       "from": "caption",
       "to": "judge",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-11",
       "from": "judge",
       "to": "score",
       "type": "primary"

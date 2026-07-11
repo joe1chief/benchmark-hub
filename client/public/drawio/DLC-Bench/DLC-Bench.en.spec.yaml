@@ -5,71 +5,143 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DLC-Bench Build Process
-  description: Paper-aligned DLC-Bench flow from segmentation data to reference-free detailed local caption evaluation.
+  description: >-
+    Paper-aligned region selection, multi-VLM property generation, positive/negative question curation, and
+    reference-free localized-caption scoring.
   legend: >-
-    Solid arrows show mask/keyword collection, VLM caption expansion, SSL web-image scaling, attribute construction,
-    model captioning, reference-free judging, and detail/hallucination scoring.
+    Solid arrows trace benchmark construction from Objects365 regions and separate detail-recall and
+    hallucination-control questions.
 nodes:
-  - id: seg
-    label: Seg Masks
+  - id: source
+    label: |-
+      Objects365 v2 validation subset
+      object instances with human segmentation masks
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: expand
-    label: VLM Expand
+      'y': 210
+  - id: select
+    label: |-
+      Select 100 challenging masked regions
+      one object of interest per instance
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: ssl
-    label: SSL Web
+      'y': 210
+  - id: vlms
+    label: |-
+      Multi-VLM property proposals
+      GPT-4o 34 · Gemini-1.5-Pro 35
+      Claude-3.5-Sonnet 31 regions
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: attrs
-    label: Attr Set
-    type: document
+      'y': 210
+  - id: route
+    label: Two question families
+    type: decision
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: caption
-    label: Model Cap
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: judge
-    label: Ref-free
-    type: terminal
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Detail Score
+      'y': 210
+  - id: positive
+    label: |-
+      Positive questions
+      object / part properties
+      color · shape · texture · material · size
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 70
+  - id: negative
+    label: |-
+      Negative questions
+      typical but absent attributes
+      or details outside the target region
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 350
+  - id: qa
+    label: |-
+      Manual inspection and integrity checks
+      remove ambiguous / unclear answers
+      deduplicate against DLC training images
+    type: decision
+    size: xl
+    position:
+      x: 1340
+      'y': 210
+  - id: benchmark
+    label: |-
+      DLC-Bench
+      100 masked instances · 892 verified questions
+      no reference captions required
+    type: database
+    size: xl
+    position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: caption
+    label: |-
+      Candidate localized captioner
+      image + specified mask → detailed region description
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: judge
+    label: |-
+      Llama-3.1-8B text-only judge
+      choose a mutually exclusive answer per question
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: score
+    label: |-
+      Reference-free DLC report
+      Pos: +1 / +0.5 / 0 / −1
+      Neg: reward omission; penalize hallucination
+      report Pos · Neg · average
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 210
 edges:
-  - from: seg
-    to: expand
+  - from: source
+    to: select
     type: primary
-  - from: expand
-    to: ssl
+  - from: select
+    to: vlms
     type: primary
-  - from: ssl
-    to: attrs
+  - from: vlms
+    to: route
     type: primary
-  - from: attrs
+  - from: route
+    to: positive
+    type: primary
+  - from: route
+    to: negative
+    type: primary
+  - from: positive
+    to: qa
+    type: primary
+  - from: negative
+    to: qa
+    type: primary
+  - from: qa
+    to: benchmark
+    type: primary
+  - from: benchmark
     to: caption
     type: primary
   - from: caption

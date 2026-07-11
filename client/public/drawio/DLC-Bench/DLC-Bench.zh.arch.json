@@ -7,87 +7,141 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "seg",
-      "label": "分割掩码",
+      "id": "source",
+      "label": "Objects365 v2 验证集子集\n带人工分割掩码的对象实例",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "expand",
-      "label": "VLM扩写",
+      "id": "select",
+      "label": "选择 100 个高难掩码区域\n每个实例含一个目标对象",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "ssl",
-      "label": "SSL网页图",
+      "id": "vlms",
+      "label": "多视觉语言模型提出属性\nGPT-4o 34 · Gemini-1.5-Pro 35\nClaude-3.5-Sonnet 31 个区域",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "attrs",
-      "label": "属性集合",
+      "id": "route",
+      "label": "两类问题",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "positive",
+      "label": "正向问题\n对象 / 部件属性\n颜色 · 形状 · 纹理 · 材质 · 尺寸",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "negative",
+      "label": "负向问题\n常见但实际不存在的属性\n或目标区域之外的细节",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "qa",
+      "label": "人工检查与完整性验证\n删除答案含糊或不清的问题\n与局部描述训练图像去重",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "DLC-Bench\n100 个掩码实例 · 892 个验证问题\n无需参考描述",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "caption",
-      "label": "模型描述",
+      "label": "候选局部描述模型\n图像 + 指定掩码 → 详细区域描述",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "无参考判分",
-      "type": "terminal",
+      "label": "Llama-3.1-8B 纯文本裁判\n为每题选择一个互斥答案",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "细节评分",
-      "type": "document",
+      "label": "无参考局部描述报告\n正向：+1 / +0.5 / 0 / −1\n负向：遗漏得分，幻觉扣分\n报告正向 · 负向 · 平均分",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "seg",
-      "to": "expand",
+      "from": "source",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "expand",
-      "to": "ssl",
+      "from": "select",
+      "to": "vlms",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "ssl",
-      "to": "attrs",
+      "from": "vlms",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attrs",
-      "to": "caption",
+      "from": "route",
+      "to": "positive",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "route",
+      "to": "negative",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "positive",
+      "to": "qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "negative",
+      "to": "qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "qa",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "benchmark",
+      "to": "caption",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
       "from": "caption",
       "to": "judge",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-11",
       "from": "judge",
       "to": "score",
       "type": "primary"

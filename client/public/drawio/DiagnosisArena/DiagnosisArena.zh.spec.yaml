@@ -5,75 +5,169 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DiagnosisArena 构建流程
-  description: 对齐论文的 DiagnosisArena 流程：从期刊病例报告到分段诊断推理评测。
-  legend: 实线箭头表示病例来源、分段、质量过滤、模型诊断和 GPT-4o 判定。
+  description: 对齐论文的医学病例收集、仅诊断信息分段、迭代难度过滤、专家验证和双格式评测流程。
+  legend: 实线箭头展示从 4,175 到 1,113 的筛选漏斗，并分开开放式与选择题评分协议。
 nodes:
-  - id: source
-    label: 期刊病例
+  - id: reports
+    label: |-
+      4,175 份临床病例报告
+      来源于 10 个顶级医学期刊
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 210
   - id: segment
-    label: 病例分段
+    label: |-
+      仅保留诊断信息
+      按标题移除治疗与随访
+      Claude-3.5-Sonnet → 四段 Markdown
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filter
-    label: 迭代过滤
-    type: process
+      'y': 210
+  - id: simple
+    label: |-
+      淘汰简单病例
+      Baichuan-M1 · DeepSeek-V3 · GPT-4o
+      各采样 2 次；任一次答对即排除
+    type: decision
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: expert
-    label: 专家核验
-    type: process
+      'y': 210
+  - id: clues
+    label: |-
+      人工智能专家检查线索充分性
+      仅保留全票认为可推理的病例
+      1,783 例进入下一阶段
+    type: decision
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: pairs
-    label: 病例诊断对
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: model
-    label: 模型诊断
+      'y': 210
+  - id: consensus
+    label: |-
+      DeepSeek-R1 验证
+      8 次采样并投票
+      无相关诊断共识则排除
     type: process
     size: xl
     position:
+      x: 1080
+      'y': 210
+  - id: physicians
+    label: |-
+      执业专科医师复核
+      排除证据缺失或诊断含糊病例
+    type: decision
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: judge
-    label: GPT-4o判定
-    type: terminal
+      'y': 210
+  - id: benchmark
+    label: |-
+      DiagnosisArena
+      1,113 对病例 · 28 个专科
+      平均输入长度 545.02
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: route
+    label: 两种评测格式
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: open
+    label: |-
+      开放式诊断
+      按置信度顺序生成五个候选
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 70
+  - id: mcq
+    label: |-
+      四选一题型
+      用 o1 / DeepSeek-R1 部分正确输出作干扰项
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 350
+  - id: openjudge
+    label: |-
+      GPT-4o 诊断裁判
+      相同 / 相关 / 无关
+      仅“相同”计为正确
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 70
+  - id: mcqjudge
+    label: |-
+      规则抽取选项
+      与固定标准选项比较
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 350
+  - id: metrics
+    label: |-
+      诊断推理报告
+      开放式 Top-1 / Top-5 准确率
+      选择题准确率 + 泄漏分析
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 210
 edges:
-  - from: source
+  - from: reports
     to: segment
     type: primary
   - from: segment
-    to: filter
+    to: simple
     type: primary
-  - from: filter
-    to: expert
+  - from: simple
+    to: clues
     type: primary
-  - from: expert
-    to: pairs
+  - from: clues
+    to: consensus
     type: primary
-  - from: pairs
-    to: model
+  - from: consensus
+    to: physicians
     type: primary
-  - from: model
-    to: judge
+  - from: physicians
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: route
+    type: primary
+  - from: route
+    to: open
+    type: primary
+  - from: route
+    to: mcq
+    type: primary
+  - from: open
+    to: openjudge
+    type: primary
+  - from: mcq
+    to: mcqjudge
+    type: primary
+  - from: openjudge
+    to: metrics
+    type: primary
+  - from: mcqjudge
+    to: metrics
     type: primary
 modules: []

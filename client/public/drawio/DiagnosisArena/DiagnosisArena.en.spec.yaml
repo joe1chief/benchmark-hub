@@ -5,75 +5,171 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DiagnosisArena Build Process
-  description: Paper-aligned DiagnosisArena flow from journal case reports to segmented diagnostic reasoning evaluation.
-  legend: Solid arrows show case sourcing, segmentation, quality filtering, model diagnosis, and GPT-4o judging.
+  description: >-
+    Paper-aligned medical case collection, diagnostic-only segmentation, iterative difficulty filtering, expert
+    verification, and dual-format evaluation.
+  legend: Solid arrows trace the 4,175-to-1,113 curation funnel and separate open-ended and multiple-choice scoring protocols.
 nodes:
-  - id: source
-    label: Journal Cases
+  - id: reports
+    label: |-
+      4,175 clinical case reports
+      10 top-tier medical journals
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 210
   - id: segment
-    label: Segment
+    label: |-
+      Diagnostic-only segmentation
+      remove treatment / follow-up by headings
+      Claude-3.5-Sonnet → four Markdown sections
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filter
-    label: Iter Filter
-    type: process
+      'y': 210
+  - id: simple
+    label: |-
+      Eliminate easy cases
+      Baichuan-M1 · DeepSeek-V3 · GPT-4o
+      2 trials each; any correct → exclude
+    type: decision
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: expert
-    label: Expert Check
-    type: process
+      'y': 210
+  - id: clues
+    label: |-
+      AI-expert clue sufficiency
+      retain only unanimous reasonable cases
+      1,783 advance
+    type: decision
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: pairs
-    label: Case Pairs
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: model
-    label: Model Dx
+      'y': 210
+  - id: consensus
+    label: |-
+      DeepSeek-R1 verification
+      8 samples + voting
+      no relevant-diagnosis consensus → exclude
     type: process
     size: xl
     position:
+      x: 1080
+      'y': 210
+  - id: physicians
+    label: |-
+      Board-certified physician review
+      reject missing evidence or ambiguous diagnosis
+    type: decision
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: judge
-    label: GPT-4o Judge
-    type: terminal
+      'y': 210
+  - id: benchmark
+    label: |-
+      DiagnosisArena
+      1,113 paired cases · 28 specialties
+      mean input length 545.02
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: route
+    label: Two evaluation formats
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: open
+    label: |-
+      Open-ended diagnosis
+      generate five candidates in confidence order
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 70
+  - id: mcq
+    label: |-
+      Four-option MCQ
+      partially correct o1 / DeepSeek-R1 outputs as distractors
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 350
+  - id: openjudge
+    label: |-
+      GPT-4o diagnosis judge
+      identical / relevant / irrelevant
+      only identical counts as correct
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 70
+  - id: mcqjudge
+    label: |-
+      Rule-based option extraction
+      compare against fixed ground-truth option
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 350
+  - id: metrics
+    label: |-
+      Diagnostic reasoning report
+      open-ended Top-1 / Top-5 accuracy
+      MCQ accuracy + leakage analyses
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 210
 edges:
-  - from: source
+  - from: reports
     to: segment
     type: primary
   - from: segment
-    to: filter
+    to: simple
     type: primary
-  - from: filter
-    to: expert
+  - from: simple
+    to: clues
     type: primary
-  - from: expert
-    to: pairs
+  - from: clues
+    to: consensus
     type: primary
-  - from: pairs
-    to: model
+  - from: consensus
+    to: physicians
     type: primary
-  - from: model
-    to: judge
+  - from: physicians
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: route
+    type: primary
+  - from: route
+    to: open
+    type: primary
+  - from: route
+    to: mcq
+    type: primary
+  - from: open
+    to: openjudge
+    type: primary
+  - from: mcq
+    to: mcqjudge
+    type: primary
+  - from: openjudge
+    to: metrics
+    type: primary
+  - from: mcqjudge
+    to: metrics
     type: primary
 modules: []

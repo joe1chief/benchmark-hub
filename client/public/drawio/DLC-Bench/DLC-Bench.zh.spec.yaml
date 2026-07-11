@@ -5,69 +5,139 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DLC-Bench 构建流程
-  description: 按论文对齐的 DLC-Bench 构建流程：从分割数据到无参考的局部详细描述评测。
-  legend: 实线箭头表示掩码关键词采集、VLM描述扩展、SSL网页图扩展、属性构建、模型描述、无参考判分和细节/幻觉评分。
+  description: 对齐论文的区域选择、多视觉语言模型属性生成、正负问题策展与无参考局部描述评分流程。
+  legend: 实线箭头从 Objects365 区域追踪基准构建，并分开细节召回与幻觉控制问题。
 nodes:
-  - id: seg
-    label: 分割掩码
+  - id: source
+    label: |-
+      Objects365 v2 验证集子集
+      带人工分割掩码的对象实例
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: expand
-    label: VLM扩写
+      'y': 210
+  - id: select
+    label: |-
+      选择 100 个高难掩码区域
+      每个实例含一个目标对象
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: ssl
-    label: SSL网页图
+      'y': 210
+  - id: vlms
+    label: |-
+      多视觉语言模型提出属性
+      GPT-4o 34 · Gemini-1.5-Pro 35
+      Claude-3.5-Sonnet 31 个区域
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: attrs
-    label: 属性集合
-    type: document
+      'y': 210
+  - id: route
+    label: 两类问题
+    type: decision
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: caption
-    label: 模型描述
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: judge
-    label: 无参考判分
-    type: terminal
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 细节评分
+      'y': 210
+  - id: positive
+    label: |-
+      正向问题
+      对象 / 部件属性
+      颜色 · 形状 · 纹理 · 材质 · 尺寸
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 70
+  - id: negative
+    label: |-
+      负向问题
+      常见但实际不存在的属性
+      或目标区域之外的细节
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 350
+  - id: qa
+    label: |-
+      人工检查与完整性验证
+      删除答案含糊或不清的问题
+      与局部描述训练图像去重
+    type: decision
+    size: xl
+    position:
+      x: 1340
+      'y': 210
+  - id: benchmark
+    label: |-
+      DLC-Bench
+      100 个掩码实例 · 892 个验证问题
+      无需参考描述
+    type: database
+    size: xl
+    position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: caption
+    label: |-
+      候选局部描述模型
+      图像 + 指定掩码 → 详细区域描述
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: judge
+    label: |-
+      Llama-3.1-8B 纯文本裁判
+      为每题选择一个互斥答案
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: score
+    label: |-
+      无参考局部描述报告
+      正向：+1 / +0.5 / 0 / −1
+      负向：遗漏得分，幻觉扣分
+      报告正向 · 负向 · 平均分
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 210
 edges:
-  - from: seg
-    to: expand
+  - from: source
+    to: select
     type: primary
-  - from: expand
-    to: ssl
+  - from: select
+    to: vlms
     type: primary
-  - from: ssl
-    to: attrs
+  - from: vlms
+    to: route
     type: primary
-  - from: attrs
+  - from: route
+    to: positive
+    type: primary
+  - from: route
+    to: negative
+    type: primary
+  - from: positive
+    to: qa
+    type: primary
+  - from: negative
+    to: qa
+    type: primary
+  - from: qa
+    to: benchmark
+    type: primary
+  - from: benchmark
     to: caption
     type: primary
   - from: caption
