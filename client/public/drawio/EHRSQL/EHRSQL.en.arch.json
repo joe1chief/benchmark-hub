@@ -7,50 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
       "id": "poll",
-      "label": "Staff Poll",
+      "label": "Konyang University Hospital poll\n1,742 real information-seeking utterances\n222 valid staff respondents",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "template",
-      "label": "Templates",
+      "id": "templates",
+      "label": "Filter, scope, merge, and extend\nno-patient / individual / group questions\n230 templates: 174 answerable + 56 unanswerable",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "time",
-      "label": "Time Slots",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "sql",
-      "label": "SQL Labels",
+      "label": "Design paired NL–SQL time templates\nglobal · within-event · exact-time filters\nexpression, unit, interval, and option slots",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "db",
-      "label": "MIMIC eICU",
+      "id": "sql",
+      "label": "Manual SQL annotation\n4 graduate students · 5 months · revisions\none labeler + per-database reviewer",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "schema",
+      "label": "Map MIMIC-III and eICU schemas\nprefer hierarchical nested queries over JOINs\nshare slots with question / time templates",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "preprocess",
+      "label": "Privacy-aware database preprocessing\nadd cost table · shift time to 2100–2105\ncurrent time 2105-12-31 · shuffle patient values",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "instantiate",
+      "label": "Instantiate each template in three stages\noperation value → time template → condition value\ncombine NL and SQL slots consistently",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "execute",
+      "label": "Execute generated SQL\nsample real database records\nkeep answerable pairs only if ≥1 valid answer",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "paraphrase",
+      "label": "Expand linguistic variety\nhuman paraphrases (mean 21) + T5 / back-translation\nRoBERTa meaning filter + perplexity / edit dedup",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "crowd",
+      "label": "Three-group crowd quality gate\nretain only unanimous-pass paraphrases\nmean 47 final paraphrases per template",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "EHRSQL dataset\n24,411 question–SQL pairs · 2 databases\n93.2% use time · mean 2.7 nesting levels",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "Data Splits",
+      "label": "Template-covered splits per database\ntrain 9.3K · validation 1.1K · test 1.8K\nunanswerable only in val/test, 33% each",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "Exec Score",
+      "id": "prediction",
+      "label": "Trustworthy semantic parsing\ngenerate SQL or abstain via confidence threshold\nnever send low-confidence SQL to EHR database",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "Answerability and execution metrics\nF1ans plus Pexe, Rexe, and F1exe\nexecutable answer must be correct to count",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,12 +101,12 @@
     {
       "id": "edge-1",
       "from": "poll",
-      "to": "template",
+      "to": "templates",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "template",
+      "from": "templates",
       "to": "time",
       "type": "primary"
     },
@@ -77,19 +119,61 @@
     {
       "id": "edge-4",
       "from": "sql",
-      "to": "db",
+      "to": "schema",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "db",
-      "to": "split",
+      "from": "schema",
+      "to": "preprocess",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "preprocess",
+      "to": "instantiate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "instantiate",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "execute",
+      "to": "paraphrase",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "paraphrase",
+      "to": "crowd",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "crowd",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "dataset",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
       "from": "split",
-      "to": "eval",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "prediction",
+      "to": "metrics",
       "type": "primary"
     }
   ],

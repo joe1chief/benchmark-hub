@@ -7,50 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
       "id": "poll",
-      "label": "员工问卷",
+      "label": "建阳大学医院问卷\n1,742 条真实信息需求话语\n222 位有效医护受访者",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "template",
-      "label": "问题模板",
+      "id": "templates",
+      "label": "过滤、分范围、合并并扩展\n无患者、单患者、患者群体问题\n230 个模板：可回答 174 + 不可回答 56",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "time",
-      "label": "时间槽位",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "sql",
-      "label": "SQL标注",
+      "label": "设计自然语言—SQL 成对时间模板\n全局、事件内、精确时间过滤\n表达式、单位、区间与选项槽位",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "db",
-      "label": "MIMIC/eICU",
+      "id": "sql",
+      "label": "人工 SQL 标注\n4 名研究生 · 5 个月 · 多轮修订\n一人标注、每个数据库另设审核员",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "schema",
+      "label": "映射 MIMIC-III 与 eICU 模式\n优先层级嵌套查询而非 JOIN\n与问题及时间模板共用槽位",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "preprocess",
+      "label": "隐私保护数据库预处理\n新增费用表 · 时间平移至 2100—2105\n当前时间 2105-12-31 · 跨患者打乱数值",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "instantiate",
+      "label": "三阶段实例化模板\n操作值 → 时间模板 → 条件值\n一致填充自然语言与 SQL 槽位",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "execute",
+      "label": "执行生成 SQL\n从真实数据库记录采样\n可回答样本须至少得到一个有效答案",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "paraphrase",
+      "label": "扩展语言多样性\n人工释义均值 21 + T5 / 回译\nRoBERTa 语义过滤 + 困惑度及编辑距离去重",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "crowd",
+      "label": "三组众包质检门槛\n仅保留三组一致通过的释义\n每模板最终平均 47 个释义",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "EHRSQL 数据集\n24,411 个问题—SQL 对 · 2 个数据库\n93.2% 使用时间 · 平均嵌套 2.7 层",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "数据划分",
+      "label": "每库保持模板覆盖的划分\n训练 9.3K · 验证 1.1K · 测试 1.8K\n不可回答仅在验证/测试，各占 33%",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "执行评分",
+      "id": "prediction",
+      "label": "可信语义解析\n生成 SQL 或按置信阈值拒答\n低置信 SQL 不发送至病历数据库",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "可回答性与执行指标\nF1ans 及 Pexe、Rexe、F1exe\n仅执行结果正确才计为正确回答",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,12 +101,12 @@
     {
       "id": "edge-1",
       "from": "poll",
-      "to": "template",
+      "to": "templates",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "template",
+      "from": "templates",
       "to": "time",
       "type": "primary"
     },
@@ -77,19 +119,61 @@
     {
       "id": "edge-4",
       "from": "sql",
-      "to": "db",
+      "to": "schema",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "db",
-      "to": "split",
+      "from": "schema",
+      "to": "preprocess",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "preprocess",
+      "to": "instantiate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "instantiate",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "execute",
+      "to": "paraphrase",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "paraphrase",
+      "to": "crowd",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "crowd",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "dataset",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
       "from": "split",
-      "to": "eval",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "prediction",
+      "to": "metrics",
       "type": "primary"
     }
   ],

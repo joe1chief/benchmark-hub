@@ -5,75 +5,177 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DUDE 构建流程
-  description: 按论文对齐的 DUDE 构建流程：从公开视觉丰富文档到多领域 DocVQA 评测。
-  legend: 实线箭头表示公开 VRD 来源、人工检索、两轮问答标注、一致性筛选、多类型问答构造、DocVQA 评测和 ANLS 统计。
+  description: 对齐论文的文档采集、分阶段人工标注、仲裁、诊断标签与 ANLS 评测流程。
+  legend: 实线箭头表示主要构建路径；一致性分支区分自动接纳答案与需专家仲裁答案。
 nodes:
-  - id: docs
-    label: 公开文档
+  - id: sources
+    label: |-
+      公共聚合来源
+      archive.org · Wikimedia Commons · DocumentCloud
+      按类别关键词人工检索
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: search
-    label: 人工检索
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: qa
-    label: 问答标注
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: filter
-    label: ANLS筛选
+      'y': 250
+  - id: document_gate
+    label: |-
+      文档选择门槛
+      公版或宽松许可
+      视觉多样 · 移除隐私及法律风险
     type: decision
     size: xl
     position:
+      x: 300
+      'y': 250
+  - id: documents
+    label: |-
+      多行业英文视觉丰富文档
+      5,019 份 · 年代 1860—2022
+      平均 5.72 页 · 原生数字与扫描件
+    type: database
+    size: xl
+    position:
+      x: 560
+      'y': 250
+  - id: phase1
+    label: |-
+      阶段一 · 编写问答对
+      全体众包员：抽取式、摘要式、列表
+      抽取答案同时标证据框
+    type: process
+    size: xl
+    position:
       x: 820
-      'y': 160
-  - id: items
-    label: 多类问答
-    type: document
+      'y': 250
+  - id: filter
+    label: |-
+      半自动问答过滤
+      长度、字符和类型规则
+      聚类重复及近重复样本
+    type: decision
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eval
-    label: DocVQA评测
+      'y': 250
+  - id: phase2
+    label: |-
+      阶段二 · 独立作答
+      第二位众包员回答同一问题
+      形成双答案问答三元组
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: ANLS
-    type: terminal
+      'y': 250
+  - id: agreement
+    label: |-
+      答案间 ANLS 门槛
+      一致性 > 0.8 直接接纳
+      较低一致性进入仲裁
+    type: decision
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: direct
+    label: |-
+      直接晋级
+      高一致性三元组
+      语言学家编写的不可回答题跳过阶段二至三
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 90
+  - id: phase3
+    label: |-
+      阶段三 · 优质众包员仲裁
+      选择答案或推翻两者
+      5 位语言学博士修正异常决策
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 410
+  - id: final
+    label: |-
+      DUDE 基准
+      41,541 题 · 抽取式 42.39%
+      摘要式 38.25% · 列表 6.62% · 无答案 12.74%
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: diagnostics
+    label: |-
+      可选阶段四 · 测试集诊断
+      语言学家复核问答并标注难度、
+      证据、操作和答案形式
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: evaluation
+    label: |-
+      文档问答评测
+      训练、验证和隐藏测试预测
+      处理单答案、列表与无答案
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 250
+  - id: report
+    label: |-
+      ANLS 报告
+      总体及诊断切片
+      多域多任务泛化
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 250
 edges:
-  - from: docs
-    to: search
+  - from: sources
+    to: document_gate
     type: primary
-  - from: search
-    to: qa
+  - from: document_gate
+    to: documents
     type: primary
-  - from: qa
+  - from: documents
+    to: phase1
+    type: primary
+  - from: phase1
     to: filter
     type: primary
   - from: filter
-    to: items
+    to: phase2
     type: primary
-  - from: items
-    to: eval
+  - from: phase2
+    to: agreement
     type: primary
-  - from: eval
-    to: score
+  - from: agreement
+    to: direct
+    type: primary
+  - from: agreement
+    to: phase3
+    type: primary
+  - from: direct
+    to: final
+    type: primary
+  - from: phase3
+    to: final
+    type: primary
+  - from: final
+    to: diagnostics
+    type: primary
+  - from: diagnostics
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: report
     type: primary
 modules: []
