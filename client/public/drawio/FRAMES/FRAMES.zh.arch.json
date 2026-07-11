@@ -7,50 +7,62 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 9,
+    "edges": 8,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "wiki",
-      "label": "维基文章",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "annotate",
-      "label": "人工问答",
+      "id": "synthetic_pilot",
+      "label": "试验让LLM生成多文章问题\n超过30%的问题/答案产生幻觉\n难以生成严格需要4篇以上文章的问题",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "clean",
-      "label": "清理幻觉",
+      "id": "human_authoring",
+      "label": "改用经筛选的人工标注\n编写问题与正确自由文本答案\n列出回答所需的全部Wikipedia文章",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "复核标注",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "labels",
-      "label": "推理标签",
+      "id": "reasoning_labels",
+      "label": "标注一个或多个5类推理标签\n数值 · 表格 · 多重约束\n时间 · 后处理",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "rag",
-      "label": "RAG系统",
+      "id": "reannotation",
+      "label": "三个月后重新标注\n核验正确性与Wikipedia依据\n移除5.5%已不再成立的答案",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "答案评分",
+      "id": "safeguards",
+      "label": "为可能变化的答案加入日期\n移除Yes/No二元问题\n来源限定为可解释的Wikipedia页面",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "最终FRAMES评测集\n824道跨主题多跳问题\n每题需要2–15篇Wikipedia文章",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "single_step",
+      "label": "比较单步证据设置\n仅问题 · BM25 Top 2 / Top 4\n真值文章oracle作为上界",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "multi_step",
+      "label": "迭代生成BM25查询并检索\n最优：5步×5查询；每次Top 10文档\n规划示例 + 查询去重 + 逐步思考",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scoring",
+      "label": "Gemini 1.5 Pro对照金标自动评分\n人工验证准确率0.96 · κ=0.889\n报告总体与五类推理准确率",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +70,50 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "wiki",
-      "to": "annotate",
+      "from": "synthetic_pilot",
+      "to": "human_authoring",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "annotate",
-      "to": "clean",
+      "from": "human_authoring",
+      "to": "reasoning_labels",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "clean",
-      "to": "verify",
+      "from": "reasoning_labels",
+      "to": "reannotation",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "verify",
-      "to": "labels",
+      "from": "reannotation",
+      "to": "safeguards",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "labels",
-      "to": "rag",
+      "from": "safeguards",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "rag",
-      "to": "score",
+      "from": "dataset",
+      "to": "single_step",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "single_step",
+      "to": "multi_step",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "multi_step",
+      "to": "scoring",
       "type": "primary"
     }
   ],

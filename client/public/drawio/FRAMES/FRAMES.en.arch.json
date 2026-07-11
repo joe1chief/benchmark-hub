@@ -7,50 +7,62 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 9,
+    "edges": 8,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "wiki",
-      "label": "Wiki Articles",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "annotate",
-      "label": "Human QAs",
+      "id": "synthetic_pilot",
+      "label": "Pilot LLM multi-article question generation\nmore than 30% hallucinated questions/answers\nstruggled to require more than 4 articles",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "clean",
-      "label": "Clean Halluc",
+      "id": "human_authoring",
+      "label": "Replace pilot with vetted human annotation\nwrite question, correct free-form answer\nlist every required Wikipedia article",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "Re-annotate",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "labels",
-      "label": "Reason Labels",
+      "id": "reasoning_labels",
+      "label": "Assign one or more of 5 reasoning labels\nnumerical · tabular · multiple constraints\ntemporal · post-processing",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "rag",
-      "label": "RAG System",
+      "id": "reannotation",
+      "label": "Re-annotate after three months\nverify correctness and Wikipedia grounding\nremove 5.5% whose answers no longer hold",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Answer Score",
+      "id": "safeguards",
+      "label": "Add dates for temporally changing answers\nremove binary Yes/No questions\nrestrict sources to interpretable Wikipedia pages",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Final FRAMES evaluation set\n824 multi-hop questions across diverse topics\neach requires 2–15 Wikipedia articles",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "single_step",
+      "label": "Compare single-step evidence settings\nnaive question only · BM25 top 2 / top 4\noracle ground-truth articles as upper bound",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "multi_step",
+      "label": "Iterate BM25 query generation and retrieval\nbest: 5 steps × 5 queries; retrieve top 10 docs\nplanning examples + unique-query / stepwise rules",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scoring",
+      "label": "Gemini 1.5 Pro autorates against gold answer\nhuman validation: 0.96 accuracy · κ=0.889\nreport overall and five reasoning-type accuracies",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +70,50 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "wiki",
-      "to": "annotate",
+      "from": "synthetic_pilot",
+      "to": "human_authoring",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "annotate",
-      "to": "clean",
+      "from": "human_authoring",
+      "to": "reasoning_labels",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "clean",
-      "to": "verify",
+      "from": "reasoning_labels",
+      "to": "reannotation",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "verify",
-      "to": "labels",
+      "from": "reannotation",
+      "to": "safeguards",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "labels",
-      "to": "rag",
+      "from": "safeguards",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "rag",
-      "to": "score",
+      "from": "dataset",
+      "to": "single_step",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "single_step",
+      "to": "multi_step",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "multi_step",
+      "to": "scoring",
       "type": "primary"
     }
   ],

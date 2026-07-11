@@ -5,75 +5,122 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FRAMES 构建流程
-  description: 对齐论文的 FRAMES 流程：从基于维基的人工标注到事实性、检索和推理评测。
-  legend: 实线箭头表示文章选择、人工出题、质量检查、推理标注、RAG 执行和答案评分。
+  description: 按论文还原 FRAMES 的人工构建、时间质量控制和单步/多步 RAG 评测。
+  legend: 实线箭头区分被放弃的合成试验与最终824题人工集，再展示可复现Wikipedia检索、迭代查询规划、自动评分和准确率报告。
 nodes:
-  - id: wiki
-    label: 维基文章
-    type: database
+  - id: synthetic_pilot
+    label: |-
+      试验让LLM生成多文章问题
+      超过30%的问题/答案产生幻觉
+      难以生成严格需要4篇以上文章的问题
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: annotate
-    label: 人工问答
+      'y': 250
+  - id: human_authoring
+    label: |-
+      改用经筛选的人工标注
+      编写问题与正确自由文本答案
+      列出回答所需的全部Wikipedia文章
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: clean
-    label: 清理幻觉
-    type: process
+      'y': 250
+  - id: reasoning_labels
+    label: |-
+      标注一个或多个5类推理标签
+      数值 · 表格 · 多重约束
+      时间 · 后处理
+    type: document
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: verify
-    label: 复核标注
+      'y': 250
+  - id: reannotation
+    label: |-
+      三个月后重新标注
+      核验正确性与Wikipedia依据
+      移除5.5%已不再成立的答案
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: labels
-    label: 推理标签
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: rag
-    label: RAG系统
+      'y': 250
+  - id: safeguards
+    label: |-
+      为可能变化的答案加入日期
+      移除Yes/No二元问题
+      来源限定为可解释的Wikipedia页面
     type: process
     size: xl
     position:
+      x: 1080
+      'y': 250
+  - id: dataset
+    label: |-
+      最终FRAMES评测集
+      824道跨主题多跳问题
+      每题需要2–15篇Wikipedia文章
+    type: database
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 答案评分
-    type: terminal
+      'y': 250
+  - id: single_step
+    label: |-
+      比较单步证据设置
+      仅问题 · BM25 Top 2 / Top 4
+      真值文章oracle作为上界
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: multi_step
+    label: |-
+      迭代生成BM25查询并检索
+      最优：5步×5查询；每次Top 10文档
+      规划示例 + 查询去重 + 逐步思考
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: scoring
+    label: |-
+      Gemini 1.5 Pro对照金标自动评分
+      人工验证准确率0.96 · κ=0.889
+      报告总体与五类推理准确率
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: wiki
-    to: annotate
+  - from: synthetic_pilot
+    to: human_authoring
     type: primary
-  - from: annotate
-    to: clean
+  - from: human_authoring
+    to: reasoning_labels
     type: primary
-  - from: clean
-    to: verify
+  - from: reasoning_labels
+    to: reannotation
     type: primary
-  - from: verify
-    to: labels
+  - from: reannotation
+    to: safeguards
     type: primary
-  - from: labels
-    to: rag
+  - from: safeguards
+    to: dataset
     type: primary
-  - from: rag
-    to: score
+  - from: dataset
+    to: single_step
+    type: primary
+  - from: single_step
+    to: multi_step
+    type: primary
+  - from: multi_step
+    to: scoring
     type: primary
 modules: []

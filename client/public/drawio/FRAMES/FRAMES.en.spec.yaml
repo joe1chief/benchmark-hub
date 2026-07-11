@@ -5,77 +5,124 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FRAMES Build Process
-  description: Paper-aligned FRAMES flow from Wikipedia-backed human annotation to factuality, retrieval, and reasoning evaluation.
+  description: Paper-aligned human construction, temporal quality control, and single/multi-step RAG evaluation of FRAMES.
   legend: >-
-    Solid arrows show article selection, human question writing, quality checks, reasoning labels, RAG execution, and
-    answer scoring.
+    Solid arrows distinguish the rejected synthetic pilot from the final human-authored 824-item set, then follow
+    reproducible Wikipedia retrieval, iterative query planning, autorating, and accuracy reporting.
 nodes:
-  - id: wiki
-    label: Wiki Articles
-    type: database
+  - id: synthetic_pilot
+    label: |-
+      Pilot LLM multi-article question generation
+      more than 30% hallucinated questions/answers
+      struggled to require more than 4 articles
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: annotate
-    label: Human QAs
+      'y': 250
+  - id: human_authoring
+    label: |-
+      Replace pilot with vetted human annotation
+      write question, correct free-form answer
+      list every required Wikipedia article
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: clean
-    label: Clean Halluc
-    type: process
+      'y': 250
+  - id: reasoning_labels
+    label: |-
+      Assign one or more of 5 reasoning labels
+      numerical · tabular · multiple constraints
+      temporal · post-processing
+    type: document
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: verify
-    label: Re-annotate
+      'y': 250
+  - id: reannotation
+    label: |-
+      Re-annotate after three months
+      verify correctness and Wikipedia grounding
+      remove 5.5% whose answers no longer hold
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: labels
-    label: Reason Labels
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: rag
-    label: RAG System
+      'y': 250
+  - id: safeguards
+    label: |-
+      Add dates for temporally changing answers
+      remove binary Yes/No questions
+      restrict sources to interpretable Wikipedia pages
     type: process
     size: xl
     position:
+      x: 1080
+      'y': 250
+  - id: dataset
+    label: |-
+      Final FRAMES evaluation set
+      824 multi-hop questions across diverse topics
+      each requires 2–15 Wikipedia articles
+    type: database
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Answer Score
-    type: terminal
+      'y': 250
+  - id: single_step
+    label: |-
+      Compare single-step evidence settings
+      naive question only · BM25 top 2 / top 4
+      oracle ground-truth articles as upper bound
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: multi_step
+    label: |-
+      Iterate BM25 query generation and retrieval
+      best: 5 steps × 5 queries; retrieve top 10 docs
+      planning examples + unique-query / stepwise rules
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: scoring
+    label: |-
+      Gemini 1.5 Pro autorates against gold answer
+      human validation: 0.96 accuracy · κ=0.889
+      report overall and five reasoning-type accuracies
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: wiki
-    to: annotate
+  - from: synthetic_pilot
+    to: human_authoring
     type: primary
-  - from: annotate
-    to: clean
+  - from: human_authoring
+    to: reasoning_labels
     type: primary
-  - from: clean
-    to: verify
+  - from: reasoning_labels
+    to: reannotation
     type: primary
-  - from: verify
-    to: labels
+  - from: reannotation
+    to: safeguards
     type: primary
-  - from: labels
-    to: rag
+  - from: safeguards
+    to: dataset
     type: primary
-  - from: rag
-    to: score
+  - from: dataset
+    to: single_step
+    type: primary
+  - from: single_step
+    to: multi_step
+    type: primary
+  - from: multi_step
+    to: scoring
     type: primary
 modules: []
