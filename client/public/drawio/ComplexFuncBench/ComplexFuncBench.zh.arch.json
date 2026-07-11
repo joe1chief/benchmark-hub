@@ -1,56 +1,98 @@
 {
   "version": 1,
-  "title": "ComplexFuncBench 构建流程",
+  "title": "ComplexFuncBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
       "id": "apis",
-      "label": "真实API",
+      "label": "Booking.com（经 RapidAPI）\n五个领域的 43 个实时 API\n人工修正函数描述",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "schema",
-      "label": "修正描述",
+      "id": "coarse",
+      "label": "阶段一：GPT-4o 粗粒度生成\n采样函数并生成 1,000 个问题\n以及初始函数调用路径",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "draft",
-      "label": "GPT草稿",
+      "id": "select",
+      "label": "选择 100 个相对完整样本\n覆盖不同步数与调用路径",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "人工路径",
+      "id": "correct",
+      "label": "阶段二：资深标注\n改写问题并修正参数\n构造最短且完整的调用路径",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "clean",
-      "label": "消除歧义",
+      "id": "disambiguate",
+      "label": "消除歧义\n排除功能重叠函数并删除\n产生多个有效参数的 API 结果",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "expand",
-      "label": "泛化1000",
+      "id": "templates",
+      "label": "质检后的模板集\n100 条无错误复杂调用路径",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "generalize",
+      "label": "阶段三：十倍泛化\nGPT-4o 修改地点与约束\n初级标注员填写参数",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "ComplexFuncBench\n1,000 条样本\n600 单域 + 400 跨域",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "model",
+      "label": "模型迭代预测函数调用\n接收已标注的 API 响应\n直至生成最终回答",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "ComplexEval",
+      "id": "format",
+      "label": "格式检查\n有效函数 / 必需参数 / 参数类型\n返回具体错误供模型自我修正",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "mapping",
+      "label": "将预测调用映射到标准调用\nbge-large-en 向量\n余弦相似度 + 匈牙利算法",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "matching",
+      "label": "多维等价判断\n精确规则 / 相同 API 响应\nGPT-4o 参数语义匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "call_metrics",
+      "label": "函数调用指标\n任务成功率\n调用准确率",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "response",
+      "label": "GPT-4o 最终回答评审\n完整性与正确性\n评分范围 0 到 2",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,37 +101,79 @@
     {
       "id": "edge-1",
       "from": "apis",
-      "to": "schema",
+      "to": "coarse",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "schema",
-      "to": "draft",
+      "from": "coarse",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "draft",
-      "to": "human",
+      "from": "select",
+      "to": "correct",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "human",
-      "to": "clean",
+      "from": "correct",
+      "to": "disambiguate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "clean",
-      "to": "expand",
+      "from": "disambiguate",
+      "to": "templates",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "expand",
-      "to": "eval",
+      "from": "templates",
+      "to": "generalize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "generalize",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dataset",
+      "to": "model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "model",
+      "to": "format",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "format",
+      "to": "mapping",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "mapping",
+      "to": "matching",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "matching",
+      "to": "call_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "matching",
+      "to": "response",
       "type": "primary"
     }
   ],

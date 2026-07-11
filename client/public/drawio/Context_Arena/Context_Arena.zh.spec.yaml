@@ -1,0 +1,148 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Context Arena OpenAI-MRCR 评测流程
+  description: 按来源还原 OpenAI MRCR v2 外部评测与看板流程，重点展示八针序数检索、随机哈希约束、平均匹配率、长度分桶与归一化 AUC。
+  legend: 实线表示合成样本构建与评分；哈希失败分支直接记为零分。
+nodes:
+  - id: source
+    label: |-
+      已发布 OpenAI MRCR v2 数据
+      源自 Google DeepMind MRCR 思路
+      Context Arena 使用外部评测结果
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 190
+  - id: generation
+    label: |-
+      GPT-4o 生成针与干扰项
+      多种写作体裁和主题
+      每次测试使用独特合成长对话
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 190
+  - id: conversation
+    label: |-
+      长多轮对话
+      2 / 4 / 8 个相同请求
+      回答散布在干扰请求之间
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 190
+  - id: query
+    label: |-
+      最终序数检索问题
+      返回第 N 个匹配回答
+      前置本次测试随机哈希
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 190
+  - id: bins
+    label: |-
+      按 o200k_base 计算长度分桶
+      8K / 16K / 32K / 64K / 128K
+      256K / 512K / 1M；每桶 100 题
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 190
+  - id: run
+    label: |-
+      外部模型评测
+      Claude 系统卡采用最难八针版本
+      其内部表格运行五次
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 190
+  - id: hash
+    label: 哈希正确？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 190
+  - id: zero
+    label: 缺失或错误哈希 → 记 0 分
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 60
+  - id: compare
+    label: |-
+      移除正确哈希
+      Python difflib SequenceMatcher
+      将回答与标准针内容比较
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 300
+  - id: bin_score
+    label: |-
+      每个长度桶的平均匹配率
+      对桶内 100 个测试取平均
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 300
+  - id: report
+    label: |-
+      Context Arena 看板
+      128K / 1M 得分与归一化 AUC
+      模型 AUC、Token 效率与成本
+    type: terminal
+    size: xl
+    position:
+      x: 2540
+      'y': 190
+edges:
+  - from: source
+    to: generation
+    type: primary
+  - from: generation
+    to: conversation
+    type: primary
+  - from: conversation
+    to: query
+    type: primary
+  - from: query
+    to: bins
+    type: primary
+  - from: bins
+    to: run
+    type: primary
+  - from: run
+    to: hash
+    type: primary
+  - from: hash
+    to: zero
+    type: primary
+  - from: hash
+    to: compare
+    type: primary
+  - from: zero
+    to: report
+    type: primary
+  - from: compare
+    to: bin_score
+    type: primary
+  - from: bin_score
+    to: report
+    type: primary
+modules: []

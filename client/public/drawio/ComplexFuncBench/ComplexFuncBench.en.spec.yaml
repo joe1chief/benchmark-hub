@@ -4,78 +4,190 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ComplexFuncBench Build Process
+  title: ComplexFuncBench Build and Evaluation Process
   description: >-
-    Paper-aligned construction flow for complex function-calling tasks across Booking.com API domains and ComplexEval
-    scoring.
-  legend: Solid arrows show API curation, annotation, generalization, and automatic evaluation.
+    Paper-aligned three-stage construction of 1,000 complex travel function-calling samples and the full ComplexEval
+    procedure for call-level and final-response scoring.
+  legend: >-
+    Solid arrows trace API curation, coarse generation, human refinement, tenfold generalization, and automatic
+    evaluation.
 nodes:
   - id: apis
-    label: Real APIs
+    label: |-
+      Booking.com via RapidAPI
+      43 Real-Time APIs / 5 Domains
+      Manually Correct Function Descriptions
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: schema
-    label: Fix Schemas
+      'y': 100
+  - id: coarse
+    label: |-
+      Stage 1: GPT-4o Coarse Generation
+      Sample Functions and Generate 1,000 Queries
+      plus Preliminary Function-Call Paths
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: draft
-    label: GPT Drafts
+      x: 320
+      'y': 100
+  - id: select
+    label: |-
+      Select 100 Relatively Complete Samples
+      Cover Diverse Steps and Call Paths
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: human
-    label: Human Paths
+      x: 600
+      'y': 100
+  - id: correct
+    label: |-
+      Stage 2: Senior Annotation
+      Rewrite Queries and Correct Parameters
+      Build the Shortest Complete Call Path
     type: user
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: clean
-    label: Disambiguate
+      x: 880
+      'y': 100
+  - id: disambiguate
+    label: |-
+      Remove Ambiguity
+      Exclude Overlapping Functions and Delete
+      API Results with Multiple Valid Values
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: expand
-    label: Generalize 1k
+      x: 1160
+      'y': 100
+  - id: templates
+    label: |-
+      Quality-Checked Templates
+      100 Error-Free Complex Call Paths
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: generalize
+    label: |-
+      Stage 3: Tenfold Generalization
+      GPT-4o Changes Locations and Constraints
+      Junior Annotators Fill Parameters
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: dataset
+    label: |-
+      ComplexFuncBench
+      1,000 Samples
+      600 Single-Domain + 400 Cross-Domain
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 100
+  - id: model
+    label: |-
+      Model Iteratively Predicts Calls
+      Receive Annotated API Responses
+      Continue until Final Response
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: ComplexEval
+      x: 2000
+      'y': 440
+  - id: format
+    label: |-
+      Format Check
+      Valid Function / Required Parameters / Types
+      Return Specific Error for Self-Correction
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: mapping
+    label: |-
+      Map Predicted to Gold Calls
+      bge-large-en Embeddings
+      Cosine Similarity + Hungarian Algorithm
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: matching
+    label: |-
+      Multi-Dimensional Equivalence
+      Exact Rule / Same API Response
+      GPT-4o Semantic Parameter Match
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: call_metrics
+    label: |-
+      Function-Calling Metrics
+      Task Success Rate
+      Call Accuracy
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 880
+      'y': 330
+  - id: response
+    label: |-
+      GPT-4o Final-Response Review
+      Completeness and Correctness
+      Scores from 0 to 2
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 550
 edges:
   - from: apis
-    to: schema
+    to: coarse
     type: primary
-  - from: schema
-    to: draft
+  - from: coarse
+    to: select
     type: primary
-  - from: draft
-    to: human
+  - from: select
+    to: correct
     type: primary
-  - from: human
-    to: clean
+  - from: correct
+    to: disambiguate
     type: primary
-  - from: clean
-    to: expand
+  - from: disambiguate
+    to: templates
     type: primary
-  - from: expand
-    to: eval
+  - from: templates
+    to: generalize
+    type: primary
+  - from: generalize
+    to: dataset
+    type: primary
+  - from: dataset
+    to: model
+    type: primary
+  - from: model
+    to: format
+    type: primary
+  - from: format
+    to: mapping
+    type: primary
+  - from: mapping
+    to: matching
+    type: primary
+  - from: matching
+    to: call_metrics
+    type: primary
+  - from: matching
+    to: response
     type: primary
 modules: []

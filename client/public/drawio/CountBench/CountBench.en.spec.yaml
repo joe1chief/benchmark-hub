@@ -4,78 +4,135 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CountBench Build Process
+  title: CountBench Build and Evaluation Process
   description: >-
-    Paper-aligned CountBench flow from LAION-400M filtering to manually verified 540-image count classification
-    evaluation.
-  legend: Solid arrows show number filtering, object-count verification, balancing, and zero-shot evaluation.
+    Paper-aligned construction of a balanced, manually verified 540-image counting benchmark from LAION-400M and its
+    nine-way zero-shot image-text similarity evaluation.
+  legend: Solid arrows trace automated filtering, balancing, manual verification, held-out release, and zero-shot scoring.
 nodes:
   - id: laion
-    label: LAION-400M
+    label: |-
+      Public LAION-400M
+      Image-Caption Pairs
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: num
-    label: Number Filter
+      'y': 190
+  - id: number_filter
+    label: |-
+      Keep Spelled Counts Two through Ten
+      Remove Dates, Ages, Times, Addresses
+      and Other Non-Visible Number Uses
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: detect
-    label: Detector Check
+      x: 320
+      'y': 190
+  - id: detector
+    label: |-
+      Off-the-Shelf Object Detector
+      Count Each Detected Object Class
+      Match Caption to Most Prevalent Class
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 600
+      'y': 190
+  - id: candidate
+    label: |-
+      Automatically Filtered Candidates
+      Severe Imbalance: 158K+ Two
+      versus about 100 Ten
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 190
   - id: balance
-    label: Balance Counts
+    label: |-
+      Pre-Balance Counts
+      100 to 200 Candidates per Number
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: human
-    label: Human Verify
+      x: 1160
+      'y': 190
+  - id: verify
+    label: |-
+      Manual Verification
+      Caption Count Must Match
+      Clearly Visible Objects
     type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: 540 Images
-    type: document
+      x: 1440
+      'y': 190
+  - id: dataset
+    label: |-
+      CountBench Test Only
+      60 Pairs per Count x 9 = 540
+      No Overlap with Counting Training Set
+    type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Zero-shot Eval
+      x: 1720
+      'y': 190
+  - id: captions
+    label: |-
+      Create Nine Candidate Captions
+      Replace Number with Two through Ten
+      One Correct + Eight Counterfactuals
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 190
+  - id: similarity
+    label: |-
+      Zero-Shot VLM Inference
+      Compute Image-Text Similarity
+      Choose Highest-Scoring Number
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 190
+  - id: report
+    label: |-
+      Report Counting Accuracy
+      and Mean Count Deviation
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2560
+      'y': 190
 edges:
   - from: laion
-    to: num
+    to: number_filter
     type: primary
-  - from: num
-    to: detect
+  - from: number_filter
+    to: detector
     type: primary
-  - from: detect
+  - from: detector
+    to: candidate
+    type: primary
+  - from: candidate
     to: balance
     type: primary
   - from: balance
-    to: human
+    to: verify
     type: primary
-  - from: human
-    to: bench
+  - from: verify
+    to: dataset
     type: primary
-  - from: bench
-    to: eval
+  - from: dataset
+    to: captions
+    type: primary
+  - from: captions
+    to: similarity
+    type: primary
+  - from: similarity
+    to: report
     type: primary
 modules: []
