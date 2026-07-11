@@ -5,75 +5,149 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DeepResearchEval 构建流程
-  description: 对齐论文的 DeepResearchEval 流程：角色驱动任务生成和自适应智能体报告评测。
-  legend: 实线箭头连接任务构建、报告生成、自适应质量评分和主动事实核查。
+  description: 对齐论文的角色驱动动态任务生成和无参考智能体报告评测流程。
+  legend: 实线箭头表示自动任务构建、双重过滤、专家验证与两个评测智能体。
 nodes:
   - id: domains
-    label: 领域角色
+    label: 10 个深度研究领域
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: candidates
-    label: 候选任务
+      'y': 210
+  - id: personas
+    label: |-
+      生成 50 个角色
+      每领域 5 个 · 职位 · 机构 · 背景 · 子领域
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: quality
-    label: 任务过滤
-    type: decision
+      'y': 210
+  - id: candidates
+    label: |-
+      生成 200 个候选任务
+      每角色 4 个 · 多轮 · 多源 · 明确交付物
+    type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: search
-    label: 搜索过滤
+      'y': 210
+  - id: qualification
+    label: |-
+      任务资格过滤
+      四项深度研究标准 · 置信度大于 0.7
     type: decision
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: verify
-    label: 专家验证
-    type: process
+      'y': 210
+  - id: necessity
+    label: |-
+      搜索必要性过滤
+      移除无搜索也能高质量完成的任务
+      保留 155 个
+    type: decision
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: reports
-    label: 研究报告
-    type: document
+      'y': 210
+  - id: experts
+    label: |-
+      七位博士专家验证排序
+      80% 获至少四位专家认可
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: eval
-    label: 自适应评测
-    type: terminal
+      'y': 210
+  - id: benchmark
+    label: |-
+      DeepResearchEval
+      前 100 个英文任务 · 可持续刷新
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: report
+    label: 深度研究系统生成长报告
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: route
+    label: 两个无参考评测器
+    type: decision
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: quality
+    label: |-
+      自适应逐点评质
+      四个通用维度 + 任务特定维度
+      归一化维度/标准权重 · 1–10 分
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 70
+  - id: fact
+    label: |-
+      主动事实核查
+      分段 → 陈述 → MCP 网络证据
+      正确 · 错误 · 未知
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 350
+  - id: metrics
+    label: |-
+      智能体评测报告
+      加权质量分 + 正确陈述占比
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 210
 edges:
   - from: domains
+    to: personas
+    type: primary
+  - from: personas
     to: candidates
     type: primary
   - from: candidates
+    to: qualification
+    type: primary
+  - from: qualification
+    to: necessity
+    type: primary
+  - from: necessity
+    to: experts
+    type: primary
+  - from: experts
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: report
+    type: primary
+  - from: report
+    to: route
+    type: primary
+  - from: route
     to: quality
     type: primary
+  - from: route
+    to: fact
+    type: primary
   - from: quality
-    to: search
+    to: metrics
     type: primary
-  - from: search
-    to: verify
-    type: primary
-  - from: verify
-    to: reports
-    type: primary
-  - from: reports
-    to: eval
+  - from: fact
+    to: metrics
     type: primary
 modules: []

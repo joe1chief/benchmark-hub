@@ -5,75 +5,140 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DeepSearchQA 构建流程
-  description: 对齐论文的 DeepSearchQA 流程：从开放网络手工问题到集合式精确率、召回率和 F1 评测。
-  legend: 实线箭头表示问题设计、答案集构建、智能体搜索和结果评分。
+  description: 对齐论文的穷举答案网络任务专家构建与黑盒集合评测流程。
+  legend: 实线箭头表示客观任务构建、稳定真值、智能体答案集合和两类指标。
 nodes:
-  - id: domains
-    label: 17个领域
+  - id: sources
+    label: |-
+      真实高价值查询
+      多样开放网络来源
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
-    label: 900个问题
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: chains
-    label: 因果链
+      'y': 210
+  - id: experts
+    label: |-
+      专家标注员构建
+      高难多步信息检索
     type: process
     size: xl
     position:
+      x: 300
+      'y': 210
+  - id: objective
+    label: |-
+      是否客观且真值确定？
+      单一实体或穷举答案集
+    type: decision
+    size: xl
+    position:
       x: 560
-      'y': 160
-  - id: answers
-    label: 答案集合
-    type: database
+      'y': 210
+  - id: stable
+    label: |-
+      稳定真值
+      时间锚定提示或引用静态数据集
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: search
-    label: 智能体搜索
+      'y': 210
+  - id: chain
+    label: |-
+      构建因果搜索链
+      检索 → 组装 → 推理
+      去重 · 实体解析 · 停止判断
     type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: score
-    label: 集合评分
-    type: terminal
+      'y': 210
+  - id: benchmark
+    label: |-
+      DeepSearchQA
+      900 个提示 · 17 领域 · 答案集合
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: analysis
-    label: 失败模式
-    type: document
+      'y': 210
+  - id: agent
+    label: |-
+      黑盒研究智能体
+      搜索开放网络 → 提交去重答案集
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: route
+    label: 两级结果评测
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: continuous
+    label: |-
+      连续检索指标
+      精确率 · 召回率 · F1 主指标
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 70
+  - id: categorical
+    label: |-
+      分类结果
+      完全正确 · 完全错误
+      部分正确 · 正确但有多余项
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 350
+  - id: report
+    label: |-
+      全面性报告
+      漏检、撒网和停止失败模式
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 210
 edges:
-  - from: domains
-    to: prompts
+  - from: sources
+    to: experts
     type: primary
-  - from: prompts
-    to: chains
+  - from: experts
+    to: objective
     type: primary
-  - from: chains
-    to: answers
+  - from: objective
+    to: stable
     type: primary
-  - from: answers
-    to: search
+  - from: stable
+    to: chain
     type: primary
-  - from: search
-    to: score
+  - from: chain
+    to: benchmark
     type: primary
-  - from: score
-    to: analysis
+  - from: benchmark
+    to: agent
+    type: primary
+  - from: agent
+    to: route
+    type: primary
+  - from: route
+    to: continuous
+    type: primary
+  - from: route
+    to: categorical
+    type: primary
+  - from: continuous
+    to: report
+    type: primary
+  - from: categorical
+    to: report
     type: primary
 modules: []
