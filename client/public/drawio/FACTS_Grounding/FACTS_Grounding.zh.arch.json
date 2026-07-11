@@ -7,50 +7,62 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 9,
+    "edges": 8,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "docs",
-      "label": "长文档",
+      "id": "documents",
+      "label": "收集网页文档与评论\n金融 · 科技 · 零售 · 医疗 · 法律\n平均 2.5k tokens；最长 32k",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompts",
-      "label": "人工提示",
-      "type": "document",
+      "id": "authoring",
+      "label": "第三方标注员编写仅依赖上下文的任务\n问答 · 摘要 · 文档改写\n非平凡请求并要求长篇回答",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "人工核验",
+      "id": "quality",
+      "label": "人工核验每个样本\n排除创作 / 专业知识 / 数学推理任务\n去除 OCR 不可读 PDF 与无效上下文",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "splits",
-      "label": "公开盲测",
+      "label": "按任务属性做平衡随机采样\nOpen 公开集 860 条\nBlind 私有集 859 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "response",
-      "label": "模型回答",
+      "id": "responses",
+      "label": "生成长篇模型回答\n仅用给定上下文满足用户请求\n不应依赖外部知识",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eligible",
-      "label": "资格过滤",
-      "type": "decision",
+      "id": "eligibility",
+      "label": "在 N=450 金标集校准资格评判\n每位评委从2个提示中按宏F1选优\n仅当3位评委一致时判为不合格",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "多评委评分",
+      "id": "factuality_setup",
+      "label": "在 N=402 金标集校准事实性\n每位评委测试7个提示模板\n选择宏F1最高的提示",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "factuality",
+      "label": "Gemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet\n仅当每一条有效信息都被文档支持\n才把回答判为准确",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "不合格回答按不准确计\n平均三位评委的准确回答百分比\n得到最终 FACTS Grounding 事实性分数",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +70,50 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "docs",
-      "to": "prompts",
+      "from": "documents",
+      "to": "authoring",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "prompts",
-      "to": "verify",
+      "from": "authoring",
+      "to": "quality",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "verify",
+      "from": "quality",
       "to": "splits",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "splits",
-      "to": "response",
+      "to": "responses",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "response",
-      "to": "eligible",
+      "from": "responses",
+      "to": "eligibility",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "eligible",
-      "to": "judge",
+      "from": "eligibility",
+      "to": "factuality_setup",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "factuality_setup",
+      "to": "factuality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "factuality",
+      "to": "score",
       "type": "primary"
     }
   ],

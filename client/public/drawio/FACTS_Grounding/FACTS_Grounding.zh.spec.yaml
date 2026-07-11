@@ -5,75 +5,122 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FACTS Grounding 构建流程
-  description: 对齐论文的 FACTS Grounding 流程：从人工长文档提示到资格过滤和多评委事实性评分。
-  legend: 实线箭头表示提示标注、划分构建、响应生成、资格过滤和事实性聚合。
+  description: 按论文还原 FACTS Grounding 的数据构建、评委校准、资格过滤与事实性评分。
+  legend: 实线箭头区分数据集构建和两套独立校准的评测阶段；不合格回答在最终分数中按不准确计。
 nodes:
-  - id: docs
-    label: 长文档
+  - id: documents
+    label: |-
+      收集网页文档与评论
+      金融 · 科技 · 零售 · 医疗 · 法律
+      平均 2.5k tokens；最长 32k
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
-    label: 人工提示
-    type: document
+      'y': 250
+  - id: authoring
+    label: |-
+      第三方标注员编写仅依赖上下文的任务
+      问答 · 摘要 · 文档改写
+      非平凡请求并要求长篇回答
+    type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: verify
-    label: 人工核验
+      'y': 250
+  - id: quality
+    label: |-
+      人工核验每个样本
+      排除创作 / 专业知识 / 数学推理任务
+      去除 OCR 不可读 PDF 与无效上下文
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
+      'y': 250
   - id: splits
-    label: 公开盲测
+    label: |-
+      按任务属性做平衡随机采样
+      Open 公开集 860 条
+      Blind 私有集 859 条
     type: database
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: response
-    label: 模型回答
+      'y': 250
+  - id: responses
+    label: |-
+      生成长篇模型回答
+      仅用给定上下文满足用户请求
+      不应依赖外部知识
     type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eligible
-    label: 资格过滤
-    type: decision
+      'y': 250
+  - id: eligibility
+    label: |-
+      在 N=450 金标集校准资格评判
+      每位评委从2个提示中按宏F1选优
+      仅当3位评委一致时判为不合格
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: judge
-    label: 多评委评分
-    type: terminal
+      'y': 250
+  - id: factuality_setup
+    label: |-
+      在 N=402 金标集校准事实性
+      每位评委测试7个提示模板
+      选择宏F1最高的提示
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: factuality
+    label: |-
+      Gemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet
+      仅当每一条有效信息都被文档支持
+      才把回答判为准确
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: score
+    label: |-
+      不合格回答按不准确计
+      平均三位评委的准确回答百分比
+      得到最终 FACTS Grounding 事实性分数
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: docs
-    to: prompts
+  - from: documents
+    to: authoring
     type: primary
-  - from: prompts
-    to: verify
+  - from: authoring
+    to: quality
     type: primary
-  - from: verify
+  - from: quality
     to: splits
     type: primary
   - from: splits
-    to: response
+    to: responses
     type: primary
-  - from: response
-    to: eligible
+  - from: responses
+    to: eligibility
     type: primary
-  - from: eligible
-    to: judge
+  - from: eligibility
+    to: factuality_setup
+    type: primary
+  - from: factuality_setup
+    to: factuality
+    type: primary
+  - from: factuality
+    to: score
     type: primary
 modules: []

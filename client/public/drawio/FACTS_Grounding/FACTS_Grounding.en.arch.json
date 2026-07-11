@@ -7,50 +7,62 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 9,
+    "edges": 8,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "docs",
-      "label": "Long Docs",
+      "id": "documents",
+      "label": "Collect web documents and reviews\nfinance · technology · retail · medical · legal\nmean 2.5k tokens; maximum 32k",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompts",
-      "label": "Human Prompts",
-      "type": "document",
+      "id": "authoring",
+      "label": "Third-party raters author context-only tasks\nQ&A · summarization · document rewriting\nnon-trivial requests with long-form answers",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "Manual Check",
+      "id": "quality",
+      "label": "Manually verify every example\nexclude creative / expert-knowledge / math tasks\nremove OCR-unreadable PDFs and invalid contexts",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "splits",
-      "label": "Open Blind",
+      "label": "Balanced random sampling by task attributes\nOpen public set: 860 examples\nBlind private set: 859 examples",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "response",
-      "label": "Model Reply",
+      "id": "responses",
+      "label": "Generate long-form model responses\nanswer the request using only supplied context\nno external knowledge should be required",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eligible",
-      "label": "Elig Filter",
-      "type": "decision",
+      "id": "eligibility",
+      "label": "Calibrate eligibility on N=450 golden labels\nchoose per-judge best of 2 prompts by Macro-F1\ndisqualify only when all 3 judges agree",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "Multi Judge",
+      "id": "factuality_setup",
+      "label": "Calibrate factuality on N=402 golden labels\ntest 7 prompt templates per judge\nselect each judge's highest Macro-F1 prompt",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "factuality",
+      "label": "Gemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet\nmark accurate only if every informative claim\nis supported by the supplied document",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Count ineligible responses as inaccurate\naverage judges' percentages of accurate answers\nreport final FACTS Grounding factuality score",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +70,50 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "docs",
-      "to": "prompts",
+      "from": "documents",
+      "to": "authoring",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "prompts",
-      "to": "verify",
+      "from": "authoring",
+      "to": "quality",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "verify",
+      "from": "quality",
       "to": "splits",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "splits",
-      "to": "response",
+      "to": "responses",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "response",
-      "to": "eligible",
+      "from": "responses",
+      "to": "eligibility",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "eligible",
-      "to": "judge",
+      "from": "eligibility",
+      "to": "factuality_setup",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "factuality_setup",
+      "to": "factuality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "factuality",
+      "to": "score",
       "type": "primary"
     }
   ],
