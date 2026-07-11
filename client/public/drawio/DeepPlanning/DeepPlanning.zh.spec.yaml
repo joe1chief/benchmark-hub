@@ -5,75 +5,180 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DeepPlanning 构建流程
-  description: 按论文对齐的 DeepPlanning 构建流程：从离线规划沙箱到可验证长程 Agent 评测。
-  legend: 实线箭头表示数据库/工具箱设计、分层任务生成、人工质检、沙箱执行、约束校验和规划准确率统计。
+  description: 对齐论文的三阶段构建流程，生成具有唯一可达最优解的旅行和购物任务，并采用代码化评测。
+  legend: 实线箭头表示领域数据、分层逆向任务生成、人工质检、沙盒执行与规则检查。
 nodes:
-  - id: db
-    label: 任务数据库
-    type: database
+  - id: domains
+    label: 两个规划领域
+    type: decision
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tools
-    label: 工具箱
-    type: process
+      'y': 210
+  - id: travel_data
+    label: |-
+      旅行真实数据
+      飞猪 · 高德地图 · 网络搜索
+      交通 · 酒店 · 餐饮 · 景点
+    type: database
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: gen
-    label: 分层任务
+      'y': 70
+  - id: shopping_data
+    label: |-
+      合成购物数据
+      价格 · 库存 · 销量 · 评分 · 促销
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 350
+  - id: sandbox
+    label: |-
+      阶段一：数据库与工具箱
+      旅行 9 个接口 · 购物 15 个接口
+      隔离离线沙盒
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: qc
-    label: 人工质检
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: run
-    label: 沙箱执行
+      'y': 210
+  - id: layered
+    label: |-
+      阶段二：以解为中心逆向生成
+      基础骨架 → 个性化约束
+      → 隐式环境约束
     type: process
     size: xl
     position:
+      x: 820
+      'y': 210
+  - id: unique
+    label: |-
+      调整数据库候选项
+      保证唯一且可达的最优解
+    type: decision
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: check
-    label: 约束校验
-    type: terminal
+      'y': 210
+  - id: query
+    label: |-
+      大模型自然语言化
+      结构化约束 → 对话式用户请求
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 案例准确
-    type: document
+      'y': 210
+  - id: qc
+    label: |-
+      阶段三：人工质量控制
+      语言流畅 · 逻辑明确 · 解可达
+    type: decision
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: benchmark
+    label: |-
+      DeepPlanning
+      旅行：120 中文 + 120 英文
+      购物：120 英文
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: agent
+    label: |-
+      智能体迭代调用工具
+      输出行程报告或购物车 JSON
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: route
+    label: 按规划领域分流
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 210
+  - id: travel_eval
+    label: |-
+      旅行代码检查
+      Qwen-Plus-2507 解析 → 八维常识分
+      个性化分 · 综合分 · 案例准确率
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 70
+  - id: shopping_eval
+    label: |-
+      购物代码检查
+      购物车匹配分 · 严格案例准确率
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 350
+  - id: report
+    label: |-
+      可复现规划报告
+      领域指标 + 平均案例准确率
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 210
 edges:
-  - from: db
-    to: tools
+  - from: domains
+    to: travel_data
     type: primary
-  - from: tools
-    to: gen
+  - from: domains
+    to: shopping_data
     type: primary
-  - from: gen
+  - from: travel_data
+    to: sandbox
+    type: primary
+  - from: shopping_data
+    to: sandbox
+    type: primary
+  - from: sandbox
+    to: layered
+    type: primary
+  - from: layered
+    to: unique
+    type: primary
+  - from: unique
+    to: query
+    type: primary
+  - from: query
     to: qc
     type: primary
   - from: qc
-    to: run
+    to: benchmark
     type: primary
-  - from: run
-    to: check
+  - from: benchmark
+    to: agent
     type: primary
-  - from: check
-    to: score
+  - from: agent
+    to: route
+    type: primary
+  - from: route
+    to: travel_eval
+    type: primary
+  - from: route
+    to: shopping_eval
+    type: primary
+  - from: travel_eval
+    to: report
+    type: primary
+  - from: shopping_eval
+    to: report
     type: primary
 modules: []

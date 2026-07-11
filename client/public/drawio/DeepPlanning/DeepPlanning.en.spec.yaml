@@ -5,77 +5,182 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DeepPlanning Build Process
-  description: Paper-aligned DeepPlanning flow from offline planning sandboxes to verifiable long-horizon agent evaluation.
+  description: Paper-aligned three-stage construction of uniquely solvable travel and shopping tasks with code-based evaluation.
   legend: >-
-    Solid arrows show database/toolbox design, layered task generation, manual quality control, sandboxed agent
-    execution, constraint validation, and planning accuracy reporting.
+    Solid arrows trace domain data, layered reverse task generation, manual quality control, sandbox execution, and rule
+    checks.
 nodes:
-  - id: db
-    label: Task DBs
-    type: database
+  - id: domains
+    label: Two planning domains
+    type: decision
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tools
-    label: Toolboxes
-    type: process
+      'y': 210
+  - id: travel_data
+    label: |-
+      Travel data
+      Fliggy · Amap · Web Search
+      transport · hotels · dining · attractions
+    type: database
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: gen
-    label: Layered Tasks
+      'y': 70
+  - id: shopping_data
+    label: |-
+      Synthetic shopping data
+      price · stock · sales · rating · promotions
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 350
+  - id: sandbox
+    label: |-
+      Stage 1: database + toolbox
+      Travel: 9 APIs · Shopping: 15 APIs
+      isolated offline sandboxes
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: qc
-    label: Manual QC
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: run
-    label: Sandbox Run
+      'y': 210
+  - id: layered
+    label: |-
+      Stage 2: solution-centric reverse generation
+      base skeleton → personalized constraints
+      → hidden environment constraints
     type: process
     size: xl
     position:
+      x: 820
+      'y': 210
+  - id: unique
+    label: |-
+      Adjust database candidates
+      exactly one reachable optimal solution
+    type: decision
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: check
-    label: Rule Check
-    type: terminal
+      'y': 210
+  - id: query
+    label: |-
+      LLM verbalization
+      structured constraints → conversational query
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Case Acc
-    type: document
+      'y': 210
+  - id: qc
+    label: |-
+      Stage 3: manual quality control
+      fluency · unambiguous logic · reachable solution
+    type: decision
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: benchmark
+    label: |-
+      DeepPlanning
+      Travel: 120 ZH + 120 EN
+      Shopping: 120 EN
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: agent
+    label: |-
+      Agent iteratively calls tools
+      returns itinerary report or JSON cart
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: route
+    label: Route by planning domain
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 210
+  - id: travel_eval
+    label: |-
+      Travel code checks
+      Qwen-Plus-2507 parse → 8-dimension CS
+      personalized score · composite · case accuracy
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 70
+  - id: shopping_eval
+    label: |-
+      Shopping code checks
+      cart match score · strict case accuracy
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 350
+  - id: report
+    label: |-
+      Reproducible planning report
+      domain scores + mean case accuracy
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 210
 edges:
-  - from: db
-    to: tools
+  - from: domains
+    to: travel_data
     type: primary
-  - from: tools
-    to: gen
+  - from: domains
+    to: shopping_data
     type: primary
-  - from: gen
+  - from: travel_data
+    to: sandbox
+    type: primary
+  - from: shopping_data
+    to: sandbox
+    type: primary
+  - from: sandbox
+    to: layered
+    type: primary
+  - from: layered
+    to: unique
+    type: primary
+  - from: unique
+    to: query
+    type: primary
+  - from: query
     to: qc
     type: primary
   - from: qc
-    to: run
+    to: benchmark
     type: primary
-  - from: run
-    to: check
+  - from: benchmark
+    to: agent
     type: primary
-  - from: check
-    to: score
+  - from: agent
+    to: route
+    type: primary
+  - from: route
+    to: travel_eval
+    type: primary
+  - from: route
+    to: shopping_eval
+    type: primary
+  - from: travel_eval
+    to: report
+    type: primary
+  - from: shopping_eval
+    to: report
     type: primary
 modules: []
