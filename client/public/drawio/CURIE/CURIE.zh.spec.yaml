@@ -5,118 +5,182 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CURIE 构建流程
-  description: 基于 arXiv:2503.13517 论文整理的 CURIE 构建与评测流程。
-  legend: 实线表示基准构建与评分主流程；虚线表示专家抽检和指标校准。
+  description: 与论文对齐的专家构建、长上下文任务执行和异构指标评分流程。
+  legend: 实线表示构建与评分主流程；虚线表示专家抽样验证路径。
 nodes:
   - id: domains
     label: |-
-      六个领域
-      科研流程
+      六个科学领域
+      实验 + 理论工作流
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 210
   - id: experts
     label: |-
       领域专家
-      每领域 1-3 人
+      每领域 1–3 名博士专家
     type: user
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: tasks
+      'y': 210
+  - id: criteria
     label: |-
-      十个任务
-      七类能力
+      任务设计准则
+      真实 · 上下文可解 · 专家可评
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: papers
+      'y': 210
+  - id: sources
     label: |-
-      论文来源
-      429 篇
+      宽松许可来源
+      论文 · 地图图像 · PDB 结构
     type: document
     size: xl
     position:
       x: 820
-      'y': 70
-  - id: answers
+      'y': 210
+  - id: annotation
     label: |-
-      真值答案
-      580 组
-    type: database
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: metrics
-    label: 指标
+      专家标注
+      标准答案 · 难度 · 交叉复核
     type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: prompt
+      'y': 210
+  - id: dataset
     label: |-
-      零样本提示
-      完整论文上下文
-    type: process
+      CURIE
+      10 个任务 · 429 篇文档 · 580 对样例
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: scoring
+      'y': 210
+  - id: input
     label: |-
-      自动评分
-      归一化指标
-    type: terminal
-    size: xl
-    position:
-      x: 1600
-      'y': 70
-  - id: audit
-    label: 抽检
+      按任务选择输入
+      完整论文 · 图像/图注 · PDB 文本
     type: decision
     size: xl
     position:
       x: 1600
-      'y': 250
+      'y': 210
+  - id: prompt
+    label: |-
+      标准零样本提示
+      任务 + 输出格式 + 完整上下文
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 210
+  - id: outputs
+    label: |-
+      混合输出
+      JSON · 文本/代码 · LaTeX · YAML · FASTA
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: llmsim
+    label: |-
+      DFT-S · DFT-P · MPV
+      LLMSim 精确率 / 召回率 / F1
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 30
+  - id: rouge
+    label: |-
+      DFT-C · HFD · HFE · QECC · GEO
+      ROUGE-L
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 150
+  - id: special
+    label: |-
+      BIOGR · PDB
+      边界框 IoU · 序列一致率
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 330
+  - id: aggregate
+    label: |-
+      CURIE 总分
+      归一化至 [0,1] · 十任务平均
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 210
+  - id: audit
+    label: |-
+      专家验证
+      Rubric + 10–12% 好/尚可/差抽检
+    type: user
+    size: xl
+    position:
+      x: 2900
+      'y': 210
 edges:
   - from: domains
     to: experts
     type: primary
   - from: experts
-    to: tasks
+    to: criteria
     type: primary
-  - from: tasks
-    to: papers
+  - from: criteria
+    to: sources
     type: primary
-  - from: tasks
-    to: answers
+  - from: sources
+    to: annotation
     type: primary
-  - from: papers
-    to: answers
-    type: data
-    label: 来源证据
-  - from: answers
-    to: metrics
+  - from: annotation
+    to: dataset
     type: primary
-  - from: metrics
+  - from: dataset
+    to: input
+    type: primary
+  - from: input
     to: prompt
     type: primary
   - from: prompt
-    to: scoring
+    to: outputs
     type: primary
-  - from: prompt
+  - from: outputs
+    to: llmsim
+    type: primary
+  - from: outputs
+    to: rouge
+    type: primary
+  - from: outputs
+    to: special
+    type: primary
+  - from: llmsim
+    to: aggregate
+    type: primary
+  - from: rouge
+    to: aggregate
+    type: primary
+  - from: special
+    to: aggregate
+    type: primary
+  - from: outputs
     to: audit
     type: optional
-    label: 抽样输出
   - from: audit
-    to: metrics
+    to: aggregate
     type: optional
-    label: 校准
 modules: []
