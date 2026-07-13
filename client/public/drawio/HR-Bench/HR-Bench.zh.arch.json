@@ -7,50 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
       "id": "images",
-      "label": "8K图像",
+      "label": "收集 200 张高分辨率图像\n来源为开放 DIV8K 与互联网\n原始图像平均分辨率约 8K",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "tasks",
-      "label": "FSP+FCP",
+      "id": "boxes",
+      "label": "人工标记相关目标\n在每张 8K 图像中标注边界框\n保留目标的原始坐标",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "annotate",
-      "label": "人工问答",
+      "id": "generate",
+      "label": "按标注边界框裁剪图像\n使用 GPT-4o 生成问题与答案\n聚焦必须依赖视觉定位的细节",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "coords",
-      "label": "目标坐标",
-      "type": "document",
+      "id": "review",
+      "label": "人类专家审核生成问答\n删除错误或含歧义的问题\n保留无法脱离图像猜测的题目",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "crops",
-      "label": "4K裁剪",
+      "id": "route",
+      "label": "分配细粒度任务\n单实例属性或文本感知\n与跨实例关系感知",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "fsp",
+      "label": "FSP · 100 个样本\n属性识别 · OCR\n视觉提示",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fcp",
+      "label": "FCP · 100 个样本\n地图分析 · 图表分析\n空间关系",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "versions",
+      "label": "构建两种分辨率视图\nHR-Bench 8K 保留原始图像\nHR-Bench 4K 围绕相关目标裁剪",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "options",
-      "label": "多选项",
+      "label": "创建多项选择选项\n两种视图绑定相同标准答案\n保持问题与目标的视觉对应",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "准确+不确定",
+      "id": "rotate",
+      "label": "应用循环置换\n轮换所有答案选项的位置\n每种选项顺序各运行一次",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "汇总 HR-Bench 结果\n对所有置换的准确率取平均\n先导分析还报告不确定性分数",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,37 +83,67 @@
     {
       "id": "edge-1",
       "from": "images",
-      "to": "tasks",
+      "to": "boxes",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "tasks",
-      "to": "annotate",
+      "from": "boxes",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "annotate",
-      "to": "coords",
+      "from": "generate",
+      "to": "review",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "coords",
-      "to": "crops",
+      "from": "review",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "crops",
-      "to": "options",
+      "from": "route",
+      "to": "fsp",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "route",
+      "to": "fcp",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "fsp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "fcp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "versions",
+      "to": "options",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
       "from": "options",
-      "to": "metrics",
+      "to": "rotate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "rotate",
+      "to": "score",
       "type": "primary"
     }
   ],

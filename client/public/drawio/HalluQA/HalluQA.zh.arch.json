@@ -7,50 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "patterns",
-      "label": "中文题型",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "probes",
-      "label": "模型探测",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "select",
-      "label": "对抗筛选",
+      "id": "route",
+      "label": "设计中文对抗问题\n覆盖历史、文化、风俗和社会现象\n按幻觉成因与难度分流",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "answers",
-      "label": "答案集合",
+      "id": "misleading_design",
+      "label": "编写 misleading 问题\n总结 20 种 TruthfulQA 启发模式\n结合中国文化语境改写",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "glm_probe",
+      "label": "用 GLM-130B 探测五次\n提供六个人工中文问答示例\n至少 3/5 次出现虚假才保留",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "misleading_set",
+      "label": "定稿 misleading 子集\n作者编写 175 道问题\n覆盖 22 个领域",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "hard_design",
+      "label": "收集中文互联网高难混淆问题\n使用 ChatGPT 3.5 构造对抗题\n要求题目前提自身具有误导性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hard_set",
+      "label": "定稿 misleading-hard 子集\n作者审核 69 道问题\n覆盖 15 个领域",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "knowledge_design",
+      "label": "十名中文母语研究生实习生出题\n覆盖多领域事实知识\n准备候选问题与答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dual_probe",
+      "label": "ChatGPT 与 Puyu 各探测五次\n两个模型都至少错 3/5 次\n收集约 1,000 道候选题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "knowledge_set",
+      "label": "NLP 专家筛选 knowledge 子集\n核验标注后保留 206 道题\n覆盖 14 个领域",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "annotate",
+      "label": "添加答案集合与证据\nmisleading：四个正确 + 四个错误答案\nknowledge：至少一个正确 + 一个错误答案",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "qc",
-      "label": "专家质检",
+      "id": "quality",
+      "label": "按数据支路执行质量检查\n外部链接/解释支撑正确答案\n未参与出题的作者重写或删除缺陷题",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "450问题",
+      "label": "发布 HalluQA\n450 道中文对抗问题\n30 个领域 · 175 + 69 + 206",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "inference",
+      "label": "要求每题必须作答\n流畅、直接且受正确示例支持\n除不可答题外拒答也计为幻觉",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "judge",
-      "label": "GPT-4评判",
+      "label": "使用 GPT-4-0613 评判\n提供正确答案示例与五项标准\n五次投票 · 温度 0 · top-p 0.5",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "报告非幻觉率\n450 条回答中被判无幻觉的比例\n五票评判与人工一致率 93.50%",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +106,98 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "patterns",
-      "to": "probes",
+      "from": "route",
+      "to": "misleading_design",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "probes",
-      "to": "select",
+      "from": "misleading_design",
+      "to": "glm_probe",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "select",
-      "to": "answers",
+      "from": "glm_probe",
+      "to": "misleading_set",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "answers",
-      "to": "qc",
+      "from": "route",
+      "to": "hard_design",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "qc",
-      "to": "dataset",
+      "from": "hard_design",
+      "to": "hard_set",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "route",
+      "to": "knowledge_design",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-7",
+      "from": "knowledge_design",
+      "to": "dual_probe",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dual_probe",
+      "to": "knowledge_set",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-9",
+      "from": "misleading_set",
+      "to": "annotate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "hard_set",
+      "to": "annotate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "knowledge_set",
+      "to": "annotate",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-12",
+      "from": "annotate",
+      "to": "quality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "quality",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
       "from": "dataset",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "inference",
       "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "judge",
+      "to": "score",
       "type": "primary"
     }
   ],

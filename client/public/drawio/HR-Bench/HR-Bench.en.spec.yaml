@@ -5,79 +5,153 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HR-Bench Build Process
-  description: >-
-    Paper-aligned HR-Bench construction flow from 8K image sourcing and human task design to object-centered crops,
-    multiple-choice prompts, cyclic permutation, and accuracy/uncertainty reporting.
+  description: Paper-aligned curation of the 200-question HR-Bench and its 8K/4K cyclic-permutation evaluation views.
   legend: >-
-    Solid arrows show benchmark curation and evaluation. The DC2 inference method is not mixed into dataset
-    construction.
+    HR-Bench has 200 unique image questions: 100 FSP and 100 FCP. HR-Bench 8K and 4K reuse those questions with
+    different image resolutions; cyclic option rotations are evaluation passes, not additional unique questions.
 nodes:
   - id: images
-    label: 8K Images
+    label: |-
+      Collect 200 high-resolution images
+      open DIV8K plus Internet sources
+      average source resolution around 8K
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
-    label: FSP+FCP
+      'y': 300
+  - id: boxes
+    label: |-
+      Manually mark relevant objects
+      annotate bounding boxes in each 8K image
+      preserve original object coordinates
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: annotate
-    label: Human QA
+      x: 340
+      'y': 300
+  - id: generate
+    label: |-
+      Crop within annotated boxes
+      ask GPT-4o to generate query-answer pairs
+      target details that require visual grounding
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: coords
-    label: Object Coords
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: crops
-    label: 4K Crops
+      x: 640
+      'y': 300
+  - id: review
+    label: |-
+      Human experts review generated pairs
+      remove incorrect or ambiguous queries
+      retain questions resistant to blind guessing
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 940
+      'y': 300
+  - id: route
+    label: |-
+      Assign the fine-grained task
+      single-instance attributes or text
+      versus cross-instance relations
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: fsp
+    label: |-
+      FSP · 100 samples
+      attribute recognition · OCR
+      visual prompting
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 80
+  - id: fcp
+    label: |-
+      FCP · 100 samples
+      map analysis · chart analysis
+      spatial relationships
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 520
+  - id: versions
+    label: |-
+      Build two resolution views
+      HR-Bench 8K keeps the source image
+      HR-Bench 4K crops around relevant objects
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
   - id: options
-    label: MC Options
+    label: |-
+      Create multiple-choice options
+      bind the same gold answer to each view
+      preserve question-object grounding
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: Acc+Uncert
+      x: 2140
+      'y': 300
+  - id: rotate
+    label: |-
+      Apply cyclic permutation
+      rotate all answer-option positions
+      run once per option order
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: score
+    label: |-
+      Aggregate HR-Bench results
+      average accuracy across rotations
+      pilot analysis also reports uncertainty score
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2740
+      'y': 300
 edges:
   - from: images
-    to: tasks
+    to: boxes
     type: primary
-  - from: tasks
-    to: annotate
+  - from: boxes
+    to: generate
     type: primary
-  - from: annotate
-    to: coords
+  - from: generate
+    to: review
     type: primary
-  - from: coords
-    to: crops
+  - from: review
+    to: route
     type: primary
-  - from: crops
+  - from: route
+    to: fsp
+    type: primary
+  - from: route
+    to: fcp
+    type: primary
+  - from: fsp
+    to: versions
+    type: primary
+  - from: fcp
+    to: versions
+    type: primary
+  - from: versions
     to: options
     type: primary
   - from: options
-    to: metrics
+    to: rotate
+    type: primary
+  - from: rotate
+    to: score
     type: primary
 modules: []

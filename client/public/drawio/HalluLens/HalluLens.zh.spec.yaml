@@ -5,74 +5,185 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HalluLens 构建流程
-  description: 对齐论文的 HalluLens 流程：幻觉分类法、动态外源任务、内源基准覆盖、模型推理和 幻觉/拒答指标。
-  legend: 实线箭头表示分类、动态任务生成、基准整合、模型推理和评分。
+  description: 与论文一致的 HalluLens 分类体系、四条动态外在幻觉数据流与三个整合的内在幻觉基准。
+  legend: 新构建的外在幻觉套件共 15,200 个动态样本：PreciseWikiQA 5,000、LongWiki 250、 MixedEntities 8,000、GeneratedEntities 1,950。内在分支整合三个既有基准。
 nodes:
   - id: taxonomy
-    label: 分类体系
-    type: document
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: wiki
-    label: Wiki任务
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: dynamic
-    label: 动态生成
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: refusal
-    label: 拒答任务
+    label: |-
+      定义 HalluLens 分类体系
+      区分幻觉与事实性问题
+      按核验来源分成两支
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: intrinsic
-    label: 内源基准
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: inference
-    label: 模型推理
+      x: 40
+      'y': 360
+  - id: extrinsic
+    label: |-
+      外在幻觉
+      输出与训练数据不一致
+      构建动态防泄漏任务
     type: process
     size: xl
     position:
-      x: 1340
+      x: 340
       'y': 160
+  - id: intrinsic
+    label: |-
+      内在幻觉
+      输出与输入上下文不一致
+      复用仍有区分度的相关基准
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 720
+  - id: wiki_pool
+    label: |-
+      构建受控 Wikipedia 来源池
+      44,754 个 GoodWiki 页面
+      按 WikiRank 调和中心性划分难度
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: nonexistent
+    label: |-
+      生成不存在的实体
+      来自固定科学/药品库或 LLM 命名
+      逐一确认名称不存在
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 360
+  - id: precise
+    label: |-
+      PreciseWikiQA · 5,000 对
+      10 个难度区间各抽 500 页
+      客观答案不超过 10 个词
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 0
+  - id: longwiki
+    label: |-
+      LongWiki · 250 个提示
+      难度 5-9 每档各 50 个
+      可回答且模拟答案至少四句
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 180
+  - id: mixed
+    label: |-
+      MixedEntities · 8,000 个名称
+      动物、植物、细菌、药品各 2,000
+      混合词元并查询 ITIS/药品库排重
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 360
+  - id: generated
+    label: |-
+      GeneratedEntities · 1,950 个名称
+      三个 LLM 轮转 · 三组各 650 个
+      每组企业 300 · 事件 300 · 产品 50
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 540
+  - id: dynamic_suite
+    label: |-
+      汇总动态外在幻觉套件
+      可重新生成提示以抵抗泄漏
+      四条数据流共 15,200 个样本
+    type: database
+    size: xl
+    position:
+      x: 1280
+      'y': 270
+  - id: intrinsic_set
+    label: |-
+      整合三个既有基准
+      HHEM 摘要 · 带参考的 ANAH 2.0
+      FaithEval 噪声/冲突上下文
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 760
+  - id: inference
+    label: |-
+      运行模型与自动评判器
+      拒答/正确性判断 · 事实声明拆分
+      LongWiki 仅用 Wikipedia 核验
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 360
   - id: metrics
-    label: 幻觉指标
+    label: |-
+      报告各任务幻觉指标
+      拒答 · 幻觉 · 正确回答
+      精确率 · Recall/F1@32 · 错误接受率
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1880
+      'y': 360
 edges:
   - from: taxonomy
-    to: wiki
+    to: extrinsic
     type: primary
-  - from: wiki
-    to: dynamic
-    type: primary
-  - from: dynamic
-    to: refusal
-    type: primary
-  - from: refusal
+  - from: taxonomy
     to: intrinsic
+    type: secondary
+  - from: extrinsic
+    to: wiki_pool
+    type: primary
+  - from: extrinsic
+    to: nonexistent
+    type: primary
+  - from: wiki_pool
+    to: precise
+    type: primary
+  - from: wiki_pool
+    to: longwiki
+    type: primary
+  - from: nonexistent
+    to: mixed
+    type: primary
+  - from: nonexistent
+    to: generated
+    type: primary
+  - from: precise
+    to: dynamic_suite
+    type: primary
+  - from: longwiki
+    to: dynamic_suite
+    type: primary
+  - from: mixed
+    to: dynamic_suite
+    type: primary
+  - from: generated
+    to: dynamic_suite
     type: primary
   - from: intrinsic
+    to: intrinsic_set
+    type: secondary
+  - from: dynamic_suite
     to: inference
     type: primary
+  - from: intrinsic_set
+    to: inference
+    type: secondary
   - from: inference
     to: metrics
     type: primary

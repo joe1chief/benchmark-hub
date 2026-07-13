@@ -5,76 +5,187 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HalluLens Build Process
-  description: >-
-    Paper-aligned HalluLens pipeline from hallucination taxonomy design through dynamic extrinsic tasks, intrinsic
-    benchmark coverage, and hallucination/refusal metrics.
-  legend: Solid arrows show taxonomy, dynamic task generation, benchmark integration, model inference, and scoring.
+  description: Paper-aligned HalluLens taxonomy, four dynamic extrinsic data streams, and three integrated intrinsic benchmarks.
+  legend: >-
+    The newly generated extrinsic suite totals 15,200 dynamic samples: 5,000 PreciseWikiQA, 250 LongWiki, 8,000
+    MixedEntities, and 1,950 GeneratedEntities. The intrinsic branch integrates three existing benchmarks.
 nodes:
   - id: taxonomy
-    label: Taxonomy
-    type: document
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: wiki
-    label: Wiki Tasks
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: dynamic
-    label: Dynamic Gen
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: refusal
-    label: Refusal Task
+    label: |-
+      Define the HalluLens taxonomy
+      separate hallucination from factuality
+      branch by verification source
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: intrinsic
-    label: Intrinsic Set
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: inference
-    label: Model Runs
+      x: 40
+      'y': 360
+  - id: extrinsic
+    label: |-
+      Extrinsic hallucination
+      output inconsistent with training data
+      build dynamic anti-leakage tasks
     type: process
     size: xl
     position:
-      x: 1340
+      x: 340
       'y': 160
+  - id: intrinsic
+    label: |-
+      Intrinsic hallucination
+      output inconsistent with input context
+      reuse relevant unsaturated benchmarks
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 720
+  - id: wiki_pool
+    label: |-
+      Create a controlled Wikipedia pool
+      44,754 GoodWiki pages
+      WikiRank harmonic-centrality difficulty bins
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: nonexistent
+    label: |-
+      Generate nonexistent entities
+      fixed scientific/drug sources or LLM names
+      verify every name is absent
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 360
+  - id: precise
+    label: |-
+      PreciseWikiQA · 5,000 pairs
+      500 pages from each of 10 difficulty bins
+      objective answer of at most 10 words
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 0
+  - id: longwiki
+    label: |-
+      LongWiki · 250 prompts
+      50 from each difficulty level 5-9
+      answerable and at least four mock sentences
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 180
+  - id: mixed
+    label: |-
+      MixedEntities · 8,000 names
+      2,000 each: animal · plant · bacteria · medicine
+      mix tokens and check ITIS/drug databases
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 360
+  - id: generated
+    label: |-
+      GeneratedEntities · 1,950 names
+      three-LLM round robin · three 650-name sets
+      business 300 · event 300 · product 50 per set
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 540
+  - id: dynamic_suite
+    label: |-
+      Assemble dynamic extrinsic suite
+      regenerate prompts to resist leakage
+      15,200 samples across four streams
+    type: database
+    size: xl
+    position:
+      x: 1280
+      'y': 270
+  - id: intrinsic_set
+    label: |-
+      Integrate three existing benchmarks
+      HHEM summarization · ANAH 2.0 with reference
+      FaithEval noisy/contradictory context
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 760
+  - id: inference
+    label: |-
+      Run model and automatic evaluators
+      refusal/correctness judges · claim extraction
+      Wikipedia-only checks for LongWiki
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 360
   - id: metrics
-    label: Hallu Metrics
+    label: |-
+      Report task-specific hallucination metrics
+      refusal · hallucination · correct answer
+      precision · recall/F1@32 · false acceptance
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1880
+      'y': 360
 edges:
   - from: taxonomy
-    to: wiki
+    to: extrinsic
     type: primary
-  - from: wiki
-    to: dynamic
-    type: primary
-  - from: dynamic
-    to: refusal
-    type: primary
-  - from: refusal
+  - from: taxonomy
     to: intrinsic
+    type: secondary
+  - from: extrinsic
+    to: wiki_pool
+    type: primary
+  - from: extrinsic
+    to: nonexistent
+    type: primary
+  - from: wiki_pool
+    to: precise
+    type: primary
+  - from: wiki_pool
+    to: longwiki
+    type: primary
+  - from: nonexistent
+    to: mixed
+    type: primary
+  - from: nonexistent
+    to: generated
+    type: primary
+  - from: precise
+    to: dynamic_suite
+    type: primary
+  - from: longwiki
+    to: dynamic_suite
+    type: primary
+  - from: mixed
+    to: dynamic_suite
+    type: primary
+  - from: generated
+    to: dynamic_suite
     type: primary
   - from: intrinsic
+    to: intrinsic_set
+    type: secondary
+  - from: dynamic_suite
     to: inference
     type: primary
+  - from: intrinsic_set
+    to: inference
+    type: secondary
   - from: inference
     to: metrics
     type: primary

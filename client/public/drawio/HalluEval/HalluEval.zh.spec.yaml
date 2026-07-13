@@ -4,76 +4,149 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HalluEval 构建流程
-  description: 对齐论文的 HaluEval 构建流程：任务数据种子、幻觉样本生成、难例过滤、通用查询筛选、 人工标注、35K 样本组装和幻觉识别评测。
-  legend: 实线箭头表示种子选择、采样、过滤、人工标注、数据集组装和识别评测。
+  title: HaluEval 构建流程
+  description: 与论文一致的双分支构建流程：30,000 个任务样本与 5,000 个人工标注样本。
+  legend: 官方名称为 HaluEval。35,000 个样本由 30,000 个 ChatGPT 采样/过滤样本和另一条独立的 5,000 个通用查询人工标注分支汇合而成。
 nodes:
-  - id: seeds
-    label: 任务种子
+  - id: task_seeds
+    label: |-
+      抽取 30,000 个任务种子
+      HotpotQA · OpenDialKG · CNN/DailyMail
+      问答、对话、摘要各 10,000 个
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 80
   - id: sample
-    label: 幻觉采样
+    label: |-
+      生成两个幻觉候选
+      ChatGPT 一次性完整指令
+      加逐步学习指令的对话式生成
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 80
   - id: filter
-    label: 难例过滤
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: general
-    label: 通用查询
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: labels
-    label: 人工标注
+    label: |-
+      筛选高难幻觉
+      由含标准答案示例的 ChatGPT 评判
+      保留最可信的候选答案
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
-    label: 35K样本
+      x: 640
+      'y': 80
+  - id: auto_set
+    label: |-
+      定稿 30,000 个任务样本
+      事实/正常答案与选中的
+      幻觉对应答案配对
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 识别评测
+      x: 940
+      'y': 80
+  - id: alpaca
+    label: |-
+      从 Alpaca 52K 查询开始
+      每个查询采样三条 ChatGPT 回答
+      面向通用指令跟随场景
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: divergence
+    label: |-
+      按回答分歧排序
+      计算两两 BERTScore 平均相似度
+      保留相似度最低的 5,000 个查询
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 520
+  - id: annotate
+    label: |-
+      每条保留回答由三人标注
+      幻觉是/否与对应文本片段
+      不可验证 · 非事实 · 不相关
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 520
+  - id: human_set
+    label: |-
+      对人工标签做多数投票
+      30 名合格标注员 · Fleiss kappa 0.811
+      5,000 条回答 · 977 条含幻觉
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 520
+  - id: merge
+    label: |-
+      汇总 HaluEval
+      30,000 个任务样本 + 5,000 个通用样本
+      共 35,000 个幻觉/正常样本
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: inference
+    label: |-
+      构造幻觉识别输入
+      随机呈现正常或幻觉输出
+      要求判断内容是否含幻觉
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: score
+    label: |-
+      报告幻觉识别准确率
+      问答 · 知识支撑对话
+      摘要 · 通用查询
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 300
 edges:
-  - from: seeds
+  - from: task_seeds
     to: sample
     type: primary
   - from: sample
     to: filter
     type: primary
   - from: filter
-    to: general
+    to: auto_set
     type: primary
-  - from: general
-    to: labels
+  - from: auto_set
+    to: merge
     type: primary
-  - from: labels
-    to: dataset
+  - from: alpaca
+    to: divergence
+    type: secondary
+  - from: divergence
+    to: annotate
+    type: secondary
+  - from: annotate
+    to: human_set
+    type: secondary
+  - from: human_set
+    to: merge
+    type: secondary
+  - from: merge
+    to: inference
     type: primary
-  - from: dataset
-    to: eval
+  - from: inference
+    to: score
     type: primary
 modules: []

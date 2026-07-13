@@ -4,78 +4,151 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HalluEval Build Process
-  description: >-
-    Paper-aligned HaluEval construction pipeline combining task-specific hallucination sampling and filtering with
-    general-query human annotations for hallucination recognition.
-  legend: Solid arrows show seed selection, sampling, filtering, human labeling, dataset assembly, and recognition evaluation.
+  title: HaluEval Build Process
+  description: Paper-aligned two-branch construction of 30,000 task-specific and 5,000 human-annotated HaluEval samples.
+  legend: >-
+    The official name is HaluEval. Its 35,000 samples combine a 30,000-example ChatGPT sampling/filtering branch with a
+    separate 5,000-query human-annotation branch.
 nodes:
-  - id: seeds
-    label: Seed Tasks
+  - id: task_seeds
+    label: |-
+      Sample 30,000 task seeds
+      HotpotQA · OpenDialKG · CNN/DailyMail
+      10,000 each for QA · dialogue · summarization
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 80
   - id: sample
-    label: Hallucination
+    label: |-
+      Generate two hallucinated candidates
+      ChatGPT one-pass instruction
+      plus conversational instruction learning
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 80
   - id: filter
-    label: Hard Filter
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: general
-    label: Gen Queries
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: labels
-    label: Human Labels
+    label: |-
+      Filter for difficult hallucinations
+      ground-truth-enhanced ChatGPT judge
+      keep the most plausible candidate
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
-    label: 35K Samples
+      x: 640
+      'y': 80
+  - id: auto_set
+    label: |-
+      Finalize 30,000 task samples
+      factual/normal answer paired with
+      its selected hallucinated counterpart
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Recog Eval
+      x: 940
+      'y': 80
+  - id: alpaca
+    label: |-
+      Start from Alpaca 52K queries
+      sample three ChatGPT responses per query
+      target general instruction-following use
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: divergence
+    label: |-
+      Rank response divergence
+      average pairwise BERTScore similarity
+      retain 5,000 lowest-similarity queries
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 520
+  - id: annotate
+    label: |-
+      Label each retained response three times
+      Yes/No plus hallucinated spans
+      unverifiable · non-factual · irrelevant
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 520
+  - id: human_set
+    label: |-
+      Majority-vote human labels
+      30 qualified labelers · Fleiss kappa 0.811
+      5,000 responses · 977 hallucinated
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 520
+  - id: merge
+    label: |-
+      Assemble HaluEval
+      30,000 task-specific + 5,000 general
+      35,000 hallucinated/normal samples
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: inference
+    label: |-
+      Build recognition instances
+      randomly present normal or hallucinated output
+      ask whether the content hallucinates
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: score
+    label: |-
+      Report recognition accuracy
+      QA · knowledge-grounded dialogue
+      summarization · general queries
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 300
 edges:
-  - from: seeds
+  - from: task_seeds
     to: sample
     type: primary
   - from: sample
     to: filter
     type: primary
   - from: filter
-    to: general
+    to: auto_set
     type: primary
-  - from: general
-    to: labels
+  - from: auto_set
+    to: merge
     type: primary
-  - from: labels
-    to: dataset
+  - from: alpaca
+    to: divergence
+    type: secondary
+  - from: divergence
+    to: annotate
+    type: secondary
+  - from: annotate
+    to: human_set
+    type: secondary
+  - from: human_set
+    to: merge
+    type: secondary
+  - from: merge
+    to: inference
     type: primary
-  - from: dataset
-    to: eval
+  - from: inference
+    to: score
     type: primary
 modules: []

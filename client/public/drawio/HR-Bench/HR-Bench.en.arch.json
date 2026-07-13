@@ -7,50 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
       "id": "images",
-      "label": "8K Images",
+      "label": "Collect 200 high-resolution images\nopen DIV8K plus Internet sources\naverage source resolution around 8K",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "tasks",
-      "label": "FSP+FCP",
+      "id": "boxes",
+      "label": "Manually mark relevant objects\nannotate bounding boxes in each 8K image\npreserve original object coordinates",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "annotate",
-      "label": "Human QA",
+      "id": "generate",
+      "label": "Crop within annotated boxes\nask GPT-4o to generate query-answer pairs\ntarget details that require visual grounding",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "coords",
-      "label": "Object Coords",
-      "type": "document",
+      "id": "review",
+      "label": "Human experts review generated pairs\nremove incorrect or ambiguous queries\nretain questions resistant to blind guessing",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "crops",
-      "label": "4K Crops",
+      "id": "route",
+      "label": "Assign the fine-grained task\nsingle-instance attributes or text\nversus cross-instance relations",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "fsp",
+      "label": "FSP · 100 samples\nattribute recognition · OCR\nvisual prompting",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fcp",
+      "label": "FCP · 100 samples\nmap analysis · chart analysis\nspatial relationships",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "versions",
+      "label": "Build two resolution views\nHR-Bench 8K keeps the source image\nHR-Bench 4K crops around relevant objects",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "options",
-      "label": "MC Options",
+      "label": "Create multiple-choice options\nbind the same gold answer to each view\npreserve question-object grounding",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "Acc+Uncert",
+      "id": "rotate",
+      "label": "Apply cyclic permutation\nrotate all answer-option positions\nrun once per option order",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Aggregate HR-Bench results\naverage accuracy across rotations\npilot analysis also reports uncertainty score",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,37 +83,67 @@
     {
       "id": "edge-1",
       "from": "images",
-      "to": "tasks",
+      "to": "boxes",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "tasks",
-      "to": "annotate",
+      "from": "boxes",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "annotate",
-      "to": "coords",
+      "from": "generate",
+      "to": "review",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "coords",
-      "to": "crops",
+      "from": "review",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "crops",
-      "to": "options",
+      "from": "route",
+      "to": "fsp",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "route",
+      "to": "fcp",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "fsp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "fcp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "versions",
+      "to": "options",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
       "from": "options",
-      "to": "metrics",
+      "to": "rotate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "rotate",
+      "to": "score",
       "type": "primary"
     }
   ],

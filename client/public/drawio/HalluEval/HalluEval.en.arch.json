@@ -1,56 +1,80 @@
 {
   "version": 1,
-  "title": "HalluEval Build Process",
+  "title": "HaluEval Build Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "seeds",
-      "label": "Seed Tasks",
+      "id": "task_seeds",
+      "label": "Sample 30,000 task seeds\nHotpotQA · OpenDialKG · CNN/DailyMail\n10,000 each for QA · dialogue · summarization",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "Hallucination",
+      "label": "Generate two hallucinated candidates\nChatGPT one-pass instruction\nplus conversational instruction learning",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "filter",
-      "label": "Hard Filter",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "general",
-      "label": "Gen Queries",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "labels",
-      "label": "Human Labels",
+      "label": "Filter for difficult hallucinations\nground-truth-enhanced ChatGPT judge\nkeep the most plausible candidate",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "35K Samples",
+      "id": "auto_set",
+      "label": "Finalize 30,000 task samples\nfactual/normal answer paired with\nits selected hallucinated counterpart",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "Recog Eval",
+      "id": "alpaca",
+      "label": "Start from Alpaca 52K queries\nsample three ChatGPT responses per query\ntarget general instruction-following use",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "divergence",
+      "label": "Rank response divergence\naverage pairwise BERTScore similarity\nretain 5,000 lowest-similarity queries",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "annotate",
+      "label": "Label each retained response three times\nYes/No plus hallucinated spans\nunverifiable · non-factual · irrelevant",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_set",
+      "label": "Majority-vote human labels\n30 qualified labelers · Fleiss kappa 0.811\n5,000 responses · 977 hallucinated",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "merge",
+      "label": "Assemble HaluEval\n30,000 task-specific + 5,000 general\n35,000 hallucinated/normal samples",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "Build recognition instances\nrandomly present normal or hallucinated output\nask whether the content hallucinates",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Report recognition accuracy\nQA · knowledge-grounded dialogue\nsummarization · general queries",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,7 +82,7 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "seeds",
+      "from": "task_seeds",
       "to": "sample",
       "type": "primary"
     },
@@ -71,25 +95,49 @@
     {
       "id": "edge-3",
       "from": "filter",
-      "to": "general",
+      "to": "auto_set",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "general",
-      "to": "labels",
+      "from": "auto_set",
+      "to": "merge",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "labels",
-      "to": "dataset",
-      "type": "primary"
+      "from": "alpaca",
+      "to": "divergence",
+      "type": "secondary"
     },
     {
       "id": "edge-6",
-      "from": "dataset",
-      "to": "eval",
+      "from": "divergence",
+      "to": "annotate",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-7",
+      "from": "annotate",
+      "to": "human_set",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "human_set",
+      "to": "merge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-9",
+      "from": "merge",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "inference",
+      "to": "score",
       "type": "primary"
     }
   ],
