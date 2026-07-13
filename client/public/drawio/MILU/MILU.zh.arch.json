@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "MILU Build Process (Chinese)",
+  "title": "MILU 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "sources",
-      "label": "考试来源",
+      "id": "collect",
+      "label": "抓取已发布考试试卷\n超过 40 类考试\n国家级 · 邦级 · 区域级网站\n超过 15 万道原始问题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "langs",
-      "label": "11语言",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "subjects",
-      "label": "41学科",
+      "id": "coverage",
+      "label": "保留印度本土覆盖\n11 种印度语言\n通识与文化知识\n邦史 · 艺术 · 法律 · 理工",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "domains",
-      "label": "8领域",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "translate",
-      "label": "翻译补齐",
+      "id": "format_filter",
+      "label": "统一多项选择格式\n去除阅读理解题\n去除图像问题\n去除超过 4 个选项的题目",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "clean",
-      "label": "清洗检查",
-      "type": "decision",
+      "label": "执行多层清洗\n人工检查大规模样本\nIndicLID 加 Unicode 语言过滤\n去除重复问题",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "验证/测试",
+      "id": "recover_tags",
+      "label": "恢复缺失主题标签\n初始仅 45% 标签准确\n用 IndicTrans2 翻译成英文\nGPT-4o-mini 生成约 2 万标签",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "taxonomy",
+      "label": "归并主题分类体系\nNV-Embed-v2 标签向量\nK-means 聚为 50 簇\n人工合并为 41 学科 · 8 领域",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "gap_fill",
+      "label": "补齐学科-语言缺口\n每个组合至少 100 题\n从相同英文科目抽题\n用任务感知 GPT-4o 翻译",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "final_audit",
+      "label": "执行最终语言审计\n从每种语言抽样\n人工验证准确性\n修正剩余错误",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "发布 MILU 测试集\n79,617 道四选一问题\n11 种语言 · 41 个学科\n八个主要领域",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "validation",
+      "label": "保留独立验证集\n8,933 个样本\n提供上下文示例\n不与测试计分混合",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "metric",
-      "label": "准确率",
+      "id": "evaluate",
+      "label": "评测多项选择模型\n零样本 · 一样本 · 五样本\n解析所选选项\n对照标准答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告准确率\n按语言与领域汇总\n分析学科与资源等级\n比较 42 个模型",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +88,68 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "sources",
-      "to": "langs",
+      "from": "collect",
+      "to": "coverage",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "langs",
-      "to": "subjects",
+      "from": "coverage",
+      "to": "format_filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "subjects",
-      "to": "domains",
-      "type": "primary"
-    },
-    {
-      "id": "edge-4",
-      "from": "domains",
-      "to": "translate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "translate",
+      "from": "format_filter",
       "to": "clean",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-4",
       "from": "clean",
-      "to": "splits",
+      "to": "recover_tags",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "recover_tags",
+      "to": "taxonomy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "taxonomy",
+      "to": "gap_fill",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "splits",
-      "to": "metric",
+      "from": "gap_fill",
+      "to": "final_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "final_audit",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "dataset",
+      "to": "validation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "validation",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "evaluate",
+      "to": "report",
       "type": "primary"
     }
   ],

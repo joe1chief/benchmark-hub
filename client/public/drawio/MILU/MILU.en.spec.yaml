@@ -6,87 +6,176 @@ meta:
   routing: orthogonal
   title: MILU Build Process
   description: >-
-    Paper-aligned construction of MILU: India-centric multiple-choice questions are collected across Indic languages,
-    subjects, and domains, cleaned and translated where needed, held out into validation and test sets, and evaluated by
-    accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Reconstructs MILU's collection of India-centric examination questions, layered cleaning, subject induction,
+    low-resource gap filling, released splits, and zero-/few-shot accuracy evaluation.
+  legend: >-
+    MILU contains 79,617 test MCQs and a separate 8,933-example validation set across 11 languages, 41 subjects, and
+    eight domains. GPT-4o fills subject-language gaps; IndicTrans2 is used only in topic-label recovery.
 nodes:
-  - id: sources
-    label: Exam Sources
+  - id: collect
+    label: |-
+      Scrape Released Examination Papers
+      More than 40 Exam Types
+      National · State · Regional Portals
+      More than 150K Raw Questions
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: langs
-    label: 11 Languages
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: subjects
-    label: 41 Subjects
+      x: 20
+      'y': 40
+  - id: coverage
+    label: |-
+      Preserve India-centric Coverage
+      11 Indian Languages
+      General and Cultural Knowledge
+      State History · Arts · Laws · STEM
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: domains
-    label: 8 Domains
+      x: 300
+      'y': 40
+  - id: format_filter
+    label: |-
+      Enforce Uniform MCQ Format
+      Remove Reading Comprehension
+      Remove Image-based Questions
+      Remove Items with More than 4 Options
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: translate
-    label: Translate Gaps
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
+      x: 580
+      'y': 40
   - id: clean
-    label: Clean + Check
-    type: decision
+    label: |-
+      Apply Layered Cleaning
+      Manual Review of a Large Sample
+      IndicLID plus Unicode Language Filter
+      Remove Duplicate Questions
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: splits
-    label: Val/Test
+      x: 860
+      'y': 40
+  - id: recover_tags
+    label: |-
+      Recover Missing Topic Labels
+      Only 45% Initially Well-tagged
+      IndicTrans2 to English
+      GPT-4o-mini Assigns about 20K Tags
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: taxonomy
+    label: |-
+      Consolidate the Topic Taxonomy
+      NV-Embed-v2 Tag Embeddings
+      K-means into 50 Clusters
+      Manual Merge · 41 Subjects · 8 Domains
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: gap_fill
+    label: |-
+      Fill Subject-Language Gaps
+      Target at Least 100 per Pair
+      Sample the Same English Subject
+      Translate with Task-aware GPT-4o
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: final_audit
+    label: |-
+      Perform the Final Language Audit
+      Sample Questions from Every Language
+      Manually Verify Accuracy
+      Correct Remaining Errors
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: dataset
+    label: |-
+      Release MILU Test Set
+      79,617 Four-option MCQs
+      11 Languages · 41 Subjects
+      Eight Broad Domains
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: validation
+    label: |-
+      Keep a Separate Validation Set
+      8,933 Examples
+      Supply In-context Demonstrations
+      Never Mix with Test Scoring
     type: document
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: Accuracy
+      x: 580
+      'y': 420
+  - id: evaluate
+    label: |-
+      Evaluate Multiple-choice Models
+      Zero-shot · One-shot · Five-shot
+      Parse the Selected Option
+      Compare with the Gold Answer
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      Report Accuracy
+      Aggregate by Language and Domain
+      Analyze Subject and Resource Level
+      Compare 42 Models
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: sources
-    to: langs
+  - from: collect
+    to: coverage
     type: primary
-  - from: langs
-    to: subjects
+  - from: coverage
+    to: format_filter
     type: primary
-  - from: subjects
-    to: domains
-    type: primary
-  - from: domains
-    to: translate
-    type: primary
-  - from: translate
+  - from: format_filter
     to: clean
     type: primary
   - from: clean
-    to: splits
+    to: recover_tags
     type: primary
-  - from: splits
-    to: metric
+  - from: recover_tags
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: gap_fill
+    type: primary
+  - from: gap_fill
+    to: final_audit
+    type: primary
+  - from: final_audit
+    to: dataset
+    type: primary
+  - from: dataset
+    to: validation
+    type: primary
+  - from: validation
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []
