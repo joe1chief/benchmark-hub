@@ -1,0 +1,177 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OpenAI MRCR 构建流程
+  description: 按 OpenAI 官方数据卡构建覆盖三种针数量和八个长度桶的 2,400 条合成长上下文对话，并以哈希门控的 SequenceMatcher 相似度计分。
+  legend: 目标针与干扰项来自相同生成分布，模型必须按出现顺序找回指定回答。
+nodes:
+  - id: schema
+    label: |-
+      定义写作任务空间
+      438 个不同实体
+      10 种写作格式
+      组合主题与写作形式
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: responses
+    label: |-
+      生成助手回答
+      全部回答由 GPT-4o 生成
+      同时覆盖目标与干扰项
+      保持相同生成分布
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: conversation
+    label: |-
+      构建多轮对话
+      交替排列用户与助手消息
+      混合大量写作请求
+      形成长上下文干草堆
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: needles
+    label: |-
+      插入重复目标针
+      选择 2 · 4 · 8 个针
+      重复完全相同的用户请求
+      穿插同源干扰请求
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: target
+    label: |-
+      选择顺序目标
+      指定第 i 次出现
+      使用从一开始的序号
+      保存对应助手回答
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: query
+    label: |-
+      追加检索指令
+      要求返回第 i 个回答
+      要求随机 10 字符前缀
+      禁止输出任何其他文本
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: bins
+    label: |-
+      计算提示加答案长度
+      对总上下文执行分词
+      划分八个长度桶
+      覆盖 4,096 至 1,048,576
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: sample
+    label: |-
+      平衡数据集规模
+      每个长度桶抽取 100 条
+      分别覆盖 2 · 4 · 8 个针
+      总数为 3 × 8 × 100
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: release
+    label: |-
+      发布 OpenAI MRCR
+      共 2,400 个样本
+      保留提示 · 答案 · 前缀
+      存储针数量与长度元数据
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: correction
+    label: |-
+      维护已修正版本
+      替换目标针过多的样本
+      修复错误标准答案
+      以 date_added 标记变更
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: prefix_gate
+    label: |-
+      应用前缀门控
+      回答必须以前缀开头
+      缺少前缀时直接记零分
+      否则从回答与真值移除前缀
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: score
+    label: |-
+      计算文本相似度
+      Python difflib SequenceMatcher
+      比较模型回答与标准文本
+      按长度桶与针数量报告比率
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: schema
+    to: responses
+    type: primary
+  - from: responses
+    to: conversation
+    type: primary
+  - from: conversation
+    to: needles
+    type: primary
+  - from: needles
+    to: target
+    type: primary
+  - from: target
+    to: query
+    type: primary
+  - from: query
+    to: bins
+    type: primary
+  - from: bins
+    to: sample
+    type: primary
+  - from: sample
+    to: release
+    type: primary
+  - from: release
+    to: correction
+    type: primary
+  - from: correction
+    to: prefix_gate
+    type: primary
+  - from: prefix_gate
+    to: score
+    type: primary
+modules: []
