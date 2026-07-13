@@ -4,86 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MCP-Bench Build Process (Chinese)
-  description: MCP-Bench 的论文对齐构建流程：分析实时 MCP 服务器与工具依赖，生成模糊多步任务，让智能体执行，并用规则检查与 LLM 评判联合评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MCP-Bench 构建流程
+  description: 按论文还原 MCP-Bench 以 o4-mini 和工具依赖为基础的任务合成、质量过滤、指令模糊化、干扰工具配置、多轮执行与规则加评判器的混合评测。
+  legend: 104 个任务由 56 个单服务器、30 个双服务器和 18 个三服务器任务组成；每个样本的评判会独立打乱五次评分维度顺序后取平均。
 nodes:
   - id: servers
-    label: 实时服务器
+    label: |-
+      收集在线 MCP 服务器
+      28 个服务器 · 250 个结构化工具
+      覆盖 11 个功能领域
+      保留生产级真实行为
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
+      x: 20
+      'y': 40
   - id: schemas
-    label: 工具Schema
+    label: |-
+      整理工具语义
+      输入与输出签名
+      必选和可选参数
+      嵌套 Schema 与取值约束
     type: document
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: chains
-    label: 依赖链
+      x: 300
+      'y': 40
+  - id: dependencies
+    label: |-
+      发现工具依赖链
+      固有依赖与场景依赖
+      服务器内与跨服务器流转
+      线性 · 并行 · 混合结构
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: tasks
-    label: 模糊任务
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: runs
-    label: 智能体运行
+      x: 580
+      'y': 40
+  - id: synthesize
+    label: |-
+      用 o4-mini 合成任务
+      目标基于已分析的依赖链
+      单服务器 56 · 双服务器 30
+      三服务器 18 · 共 104 题
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: rules
-    label: 规则检查
+      x: 860
+      'y': 40
+  - id: filter
+    label: |-
+      执行自动质量门槛
+      可解性必须达到 9.0 / 10
+      实用性必须达到 5.0 / 10
+      任一项不达标即丢弃
     type: decision
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: judge
-    label: LLM评判
+      x: 1140
+      'y': 40
+  - id: inspect
+    label: |-
+      人工检查任务
+      核对真实性与可执行性
+      审查依赖链分析是否合理
+      只保留高质量工作流
     type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: scores
-    label: 分数
+      x: 1420
+      'y': 40
+  - id: fuzz
+    label: |-
+      模糊化任务描述
+      改写成会话式高层目标
+      省略工具名和执行步骤
+      保留必要数值与具体参数
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: distract
+    label: |-
+      为每题加入检索噪声
+      附加 10 个干扰服务器
+      引入 100 多个额外工具
+      迫使智能体仅凭语境选工具
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: execute
+    label: |-
+      运行多轮 MCP 智能体
+      规划 · 调用 · 观察 · 压缩
+      最多 20 轮并持续更新状态
+      根据完整轨迹生成最终答案
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: rules
+    label: |-
+      计算规则检查指标
+      工具名有效性
+      Schema 合规率 · 运行成功率
+      依赖顺序合规性
+    type: decision
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: judge
+    label: |-
+      使用 o4-mini 评分评判器
+      任务完成 · 工具使用
+      规划有效性
+      每个子维度按 1 到 10 分评分
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      稳定并汇报分数
+      五次随机打乱评分维度顺序
+      归一化到 [0, 1] 后取平均
+      汇报规则指标与评判维度
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
   - from: servers
     to: schemas
     type: primary
   - from: schemas
-    to: chains
+    to: dependencies
     type: primary
-  - from: chains
-    to: tasks
+  - from: dependencies
+    to: synthesize
     type: primary
-  - from: tasks
-    to: runs
+  - from: synthesize
+    to: filter
     type: primary
-  - from: runs
+  - from: filter
+    to: inspect
+    type: primary
+  - from: inspect
+    to: fuzz
+    type: primary
+  - from: fuzz
+    to: distract
+    type: primary
+  - from: distract
+    to: execute
+    type: primary
+  - from: execute
     to: rules
     type: primary
   - from: rules
     to: judge
     type: primary
   - from: judge
-    to: scores
+    to: report
     type: primary
 modules: []

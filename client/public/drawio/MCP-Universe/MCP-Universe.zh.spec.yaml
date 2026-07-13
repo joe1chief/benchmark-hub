@@ -4,86 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MCP-Universe Build Process (Chinese)
-  description: MCP-Universe 的论文对齐构建流程：任务基于六大领域的 11 个真实 MCP 服务器，配合 ReAct 智能体经 MCP 协议执行，并由格式、静态、动态评估器评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MCP-Universe 构建流程
+  description: 按论文还原 MCP-Universe 的真实场景人工任务设计、作者交叉核验、执行式评估器编写、自动运行配置、MCP 交互和二元成功率计算。
+  legend: 公开基准包含 231 个任务、11 个真实 MCP 服务器与 133 个工具，以及 84 个独立评估器：格式 4 个、静态 32 个、动态 48 个。
 nodes:
   - id: domains
-    label: 六大领域
+    label: |-
+      选择六个真实应用领域
+      位置导航 · 代码仓库管理 · 金融
+      3D 设计 · 浏览器自动化
+      网页搜索
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
+      x: 20
+      'y': 40
   - id: servers
-    label: 11服务器
+    label: |-
+      集成真实 MCP 服务
+      11 个服务器 · 133 个工具
+      真实 API · 数据 · 环境
+      支持单服务器与多服务器任务
     type: database
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: tasks
-    label: 231任务
-    type: document
+      x: 300
+      'y': 40
+  - id: scenarios
+    label: |-
+      构思常见使用场景
+      每个领域设计四至五类任务
+      覆盖实用工作模式
+      强制依赖真实工具交互
+    type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: config
-    label: 自动配置
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: agents
-    label: 智能体构建
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: runs
-    label: MCP运行
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: evals
-    label: 三类评估器
+      x: 580
+      'y': 40
+  - id: challenge
+    label: |-
+      淘汰简单候选题
+      无需 MCP 即可完成则丢弃
+      使用 MCP 在五次重试内
+      均能稳定解出也重新构思
     type: decision
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: sr
-    label: 成功率
+      x: 860
+      'y': 40
+  - id: author
+    label: |-
+      人工编写 231 个任务
+      目标 · 初始上下文
+      可访问工具与服务器
+      具有挑战的真实场景指令
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: task_review
+    label: |-
+      交叉核验每个任务
+      可行性
+      歧义性
+      正确性
+    type: decision
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: evaluators
+    label: |-
+      编写 84 个执行式评估器
+      格式 4 个 · 静态 32 个
+      动态 48 个
+      固化预定义成功条件
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: eval_review
+    label: |-
+      交叉核验每个评估器
+      可行性 · 歧义性 · 正确性
+      人工保存不随时间变化的答案
+      自动获取实时动态真值
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: configure
+    label: |-
+      自动配置每次评测
+      构建 LLM 与智能体组合
+      选择服务器和评估器
+      分配资源并管理 API 端点
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: execute
+    label: |-
+      通过 MCP 执行任务
+      ReAct 或带探索阶段的 ReAct
+      识别并编排未知工具
+      记录完整交互日志
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: assess
+    label: |-
+      执行客观检查
+      格式合规
+      时间不变内容匹配
+      动态实时真值验证
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      汇总 MCP-Universe 结果
+      每题二元通过或失败
+      全部任务成功率
+      平均评估器得分 · 执行效率
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
   - from: domains
     to: servers
     type: primary
   - from: servers
-    to: tasks
+    to: scenarios
     type: primary
-  - from: tasks
-    to: config
+  - from: scenarios
+    to: challenge
     type: primary
-  - from: config
-    to: agents
+  - from: challenge
+    to: author
     type: primary
-  - from: agents
-    to: runs
+  - from: author
+    to: task_review
     type: primary
-  - from: runs
-    to: evals
+  - from: task_review
+    to: evaluators
     type: primary
-  - from: evals
-    to: sr
+  - from: evaluators
+    to: eval_review
+    type: primary
+  - from: eval_review
+    to: configure
+    type: primary
+  - from: configure
+    to: execute
+    type: primary
+  - from: execute
+    to: assess
+    type: primary
+  - from: assess
+    to: report
     type: primary
 modules: []

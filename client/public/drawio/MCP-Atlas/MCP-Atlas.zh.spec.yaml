@@ -4,77 +4,159 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MCP-Atlas Build Process (Chinese)
-  description: MCP-Atlas 的论文对齐构建流程：容器化真实 MCP 服务器和工具，任务隐藏工具名并加入干扰项，编写参考轨迹和声明评分标准，经多层质检后按声明覆盖率评估最终答案。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MCP-Atlas 构建流程
+  description: 按 arXiv:2602.00933v3 还原专家编写的真实服务器任务、五层质检、声明级评分以及公有与私有集发布流程。
+  legend: 参考轨迹只用于确认可解性和故障诊断，从不参与通过判定；任务是否通过仅取决于最终答案的声明覆盖率是否达到 0.75。
 nodes:
-  - id: servers
-    label: 真实服务器
+  - id: ecosystem
+    label: |-
+      选择生产级生态
+      36 个真实 MCP 服务器 · 220 工具
+      覆盖五个应用领域
+      使用真实端点而非模拟桩
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: prompts
-    label: 任务提示
+      x: 20
+      'y': 40
+  - id: contain
+    label: |-
+      保证运行可复现
+      容器化并固定版本
+      沙盒文件系统 · 网络出口白名单
+      每次评测后重启服务器
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: author
+    label: |-
+      专家编写 1,000 个任务
+      单轮自然语言请求
+      不点名服务器或工具
+      不泄露调用参数
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: tools
+    label: |-
+      配置每个工具环境
+      暴露 6–37 个工具 · 均值 15.2
+      仅 2–8 个相关 · 均值 4.1
+      加入语义相近的可信干扰项
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: workflows
+    label: |-
+      要求真实复杂工作流
+      多跳输出依赖
+      分支与条件逻辑
+      98.6% 任务使用至少两个服务器
     type: document
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: noise
-    label: 工具干扰
+      x: 1140
+      'y': 40
+  - id: reference
+    label: |-
+      执行参考轨迹
+      最小正确求解路径
+      平均 9.8 步工具调用
+      检查可解性与工具依赖
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: ref
-    label: 参考轨迹
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
+      x: 1420
+      'y': 40
   - id: claims
-    label: 声明评分
+    label: |-
+      编写声明评分标准
+      基于工具输出的原子事实
+      平均 4.7 条 · 范围 1–23 条
+      允许其他有效调用轨迹
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
+      x: 1420
+      'y': 420
   - id: qa
-    label: 五层质检
+    label: |-
+      执行五层质量检查
+      专家执行 · 领域复审
+      泄露复审 · LLM 自动核验
+      随机样本人工审计
     type: decision
     size: xl
     position:
-      x: 1240
-      'y': 160
+      x: 1140
+      'y': 420
   - id: split
-    label: 500/500拆分
-    type: document
+    label: |-
+      随机拆分全部任务
+      500 题公开集
+      500 题私有集
+      维护榜单完整性并监控泄露
+    type: database
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: pass
-    label: Pass@0.75
+      x: 860
+      'y': 420
+  - id: execute
+    label: |-
+      在一致条件下运行智能体
+      相同提示和暴露工具集
+      相同工具调用预算与评分标准
+      相同最终答案协议
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: score
+    label: |-
+      按声明评分最终答案
+      三个独立 LLM 评判器
+      满足 1 · 部分满足 0.5 · 未满足 0
+      覆盖率为声明得分均值
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      汇报 MCP-Atlas 结果
+      覆盖率 ≥ 0.75 即通过
+      通过率附 95% 置信区间
+      用 11 类故障体系诊断失败
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: servers
-    to: prompts
+  - from: ecosystem
+    to: contain
     type: primary
-  - from: prompts
-    to: noise
+  - from: contain
+    to: author
     type: primary
-  - from: noise
-    to: ref
+  - from: author
+    to: tools
     type: primary
-  - from: ref
+  - from: tools
+    to: workflows
+    type: primary
+  - from: workflows
+    to: reference
+    type: primary
+  - from: reference
     to: claims
     type: primary
   - from: claims
@@ -84,6 +166,12 @@ edges:
     to: split
     type: primary
   - from: split
-    to: pass
+    to: execute
+    type: primary
+  - from: execute
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []
