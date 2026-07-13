@@ -5,75 +5,135 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GMAI-MMBench 构建流程
-  description: 对齐论文的 GMAI-MMBench 流程：从全球医学数据集到词汇树 VQA 和宏平均准确率评测。
-  legend: 实线箭头表示数据收集、标准化、词汇树标注、VQA生成、人工验证和 LVLM 评分。
+  description: 与论文一致的 GMAI-MMBench 医疗数据整合、VQA 生成、验证、平衡和评测流程。
+  legend: 实线箭头对应 arXiv:2408.03361。保留的 284 个数据源包含 268 个公开数据集和 16 个通过伦理审批的 医院数据集；测试答案不公开，需由组织方评测。
 nodes:
-  - id: sources
-    label: 284数据集
+  - id: collect
+    label: |-
+      调研数百个医疗数据集
+      公开来源 + 获批医院数据
+      覆盖多种影像模态与临床专科
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: standard
-    label: 统一标准
+      'y': 250
+  - id: retain
+    label: |-
+      按标签质量与可用性筛选
+      最终保留 284 个数据集
+      268 个公开集 + 16 个伦理审批医院集
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: tree
-    label: 词汇树
+      'y': 250
+  - id: standardize
+    label: |-
+      标准化图像与标签表述
+      转换异构医疗输入以统一呈现
+      归一化歧义或重复的标签措辞
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: qa
-    label: VQA问答
+      'y': 250
+  - id: lexical
+    label: |-
+      组织可定制词汇树
+      38 种模态 · 18 项临床任务
+      18 个科室 · 4 个感知粒度
     type: document
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: validate
-    label: 人工校验
-    type: decision
+      'y': 250
+  - id: pools
+    label: |-
+      构建局部视角问题与选项池
+      按模态 × 任务 × 粒度分组
+      每个问题必须包含这三类线索
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eval
-    label: LVLM评测
+      'y': 250
+  - id: qa
+    label: |-
+      生成候选 VQA 对
+      随机选择一个问题和最多四个选项
+      将医疗图像与有依据的答案配对
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 准确率
-    type: terminal
+      'y': 250
+  - id: validate
+    label: |-
+      人工删除无效问题
+      缺少关键线索或无需图像即可作答
+      答案错误 · 目标不清 · 图像质量差
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: balance
+    label: |-
+      为每类答案选择多样实例
+      上限 30 个，并变化外观与来源
+      兼顾年龄、性别等相关因素
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: release
+    label: |-
+      汇总 25,831 个 VQA 对
+      验证集 4,550 · 测试集 21,281
+      隐藏测试答案并交由组织方评测
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: evaluate
+    label: |-
+      通过 VLMEvalKit 零样本运行 LVLM
+      提取模型选择的选项或答案
+      报告总体和词汇树切片准确率
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 250
 edges:
-  - from: sources
-    to: standard
+  - from: collect
+    to: retain
     type: primary
-  - from: standard
-    to: tree
+  - from: retain
+    to: standardize
     type: primary
-  - from: tree
+  - from: standardize
+    to: lexical
+    type: primary
+  - from: lexical
+    to: pools
+    type: primary
+  - from: pools
     to: qa
     type: primary
   - from: qa
     to: validate
     type: primary
   - from: validate
-    to: eval
+    to: balance
     type: primary
-  - from: eval
-    to: score
+  - from: balance
+    to: release
+    type: primary
+  - from: release
+    to: evaluate
     type: primary
 modules: []

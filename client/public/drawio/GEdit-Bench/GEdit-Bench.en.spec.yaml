@@ -6,78 +6,125 @@ meta:
   routing: orthogonal
   title: GEdit-Bench Build Process
   description: >-
-    Paper-aligned GEdit-Bench flow from real user editing cases to de-identified benchmark images and VIEScore
-    evaluation.
+    Paper-aligned real-user collection, privacy filtering, bilingualization, and VIEScore evaluation flow for
+    GEdit-Bench.
   legend: >-
-    Solid arrows show real-user collection, taxonomy assignment, similarity filtering, de-identification, model editing,
-    and VIEScore judging.
+    Solid arrows follow the Step1X-Edit paper (arXiv:2504.17761). The full 606-example benchmark is distinct from the
+    smaller intersections used when only valid outputs from every compared model are scored.
 nodes:
-  - id: users
-    label: Real Users
+  - id: collect
+    label: |-
+      Collect more than 1K real editing instances
+      Internet sources including Reddit-style requests
+      preserve genuine user images and intentions
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: collect
-    label: 1K+ Edits
+      'y': 250
+  - id: taxonomy
+    label: |-
+      Manually organize instructions
+      assign 11 real-world editing categories
+      filter similar-purpose requests for diversity
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: taxonomy
-    label: 11 Categories
+      'y': 250
+  - id: privacy
+    label: |-
+      De-identify user-uploaded images
+      reverse-search multiple public search engines
+      replace with a public visual/semantic match
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: filter
-    label: Dedup Filter
-    type: decision
+      'y': 250
+  - id: fallback
+    label: |-
+      Preserve intent when no substitute exists
+      minimally modify the instruction instead
+      maintain image–instruction fidelity
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: bench
-    label: 606 Tests
+      'y': 250
+  - id: bilingual
+    label: |-
+      Pair every image with two instructions
+      one English and one Chinese formulation
+      human-filter wording and image suitability
     type: document
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: models
-    label: Edit Models
-    type: process
+      'y': 250
+  - id: release
+    label: |-
+      Assemble 606 real-world test examples
+      reference image + genuine editing request
+      public benchmark spanning 11 categories
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: VIEScore
-    type: terminal
+      'y': 250
+  - id: edit
+    label: |-
+      Run open and proprietary editors
+      submit source image plus EN or ZH instruction
+      retain successfully generated edited images
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: subsets
+    label: |-
+      Separate full-set and valid-output views
+      full benchmark: 606 examples
+      common valid-output intersections: EN 434 · ZH 422
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: score
+    label: |-
+      Apply VIEScore with two VLM judges
+      GPT-4.1 and Qwen2.5-VL-72B
+      Semantic Consistency · Perceptual Quality · Overall
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: users
-    to: collect
-    type: primary
   - from: collect
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: filter
+    to: privacy
     type: primary
-  - from: filter
-    to: bench
+  - from: privacy
+    to: fallback
     type: primary
-  - from: bench
-    to: models
+  - from: fallback
+    to: bilingual
     type: primary
-  - from: models
+  - from: bilingual
+    to: release
+    type: primary
+  - from: release
+    to: edit
+    type: primary
+  - from: edit
+    to: subsets
+    type: primary
+  - from: subsets
     to: score
     type: primary
 modules: []

@@ -5,75 +5,141 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GENIUS 构建流程
-  description: 对齐论文的 GENIUS 流程：从生成式流体智能理论到专家多模态任务构建和混合 LMM 评分。
-  legend: 实线箭头表示理论拆解、专家样本策划、上下文与评测提示设计、模型出图、RC/VC/AQ 评分。
+  description: 与论文一致的 GENIUS 510 样本构建和混合评测流程。
+  legend: 三条分支对应论文基于 CHC 理论定义的生成式流体智能维度，最终汇入共同的专家策划数据集， 并按 arXiv:2602.11144 披露的 Gemini-3-Pro 混合评分协议评测。
 nodes:
-  - id: theory
-    label: GFI框架
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: dims
-    label: 三类维度
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: tasks
-    label: 五类任务
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: items
-    label: 专家样本
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: hints
-    label: 评测提示
+  - id: framework
+    label: |-
+      操作化定义生成式流体智能
+      基于 CHC 理论划分三个维度
+      测试从即时上下文证据中适应的能力
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: outputs
-    label: 模型出图
+      x: 40
+      'y': 300
+  - id: implicit
+    label: |-
+      隐式模式归纳 · 86 个样本
+      隐式模式生成任务
+      从未显式说明的上下文中归纳规则
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 340
+      'y': 80
+  - id: constraint
+    label: |-
+      即时约束执行 · 213 个样本
+      视觉约束 + 符号约束生成
+      组合上下文临时给出的新规则
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: adaptation
+    label: |-
+      情境知识适应 · 211 个样本
+      先验冲突 + 多语义生成
+      抑制记忆先验并遵循局部语义
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 520
+  - id: curate
+    label: |-
+      专家策划交错式多模态样本
+      缺少任一模态都会导致任务不可解
+      避免语义捷径和既有知识关联
+    type: process
+    size: xl
+    position:
+      x: 680
+      'y': 300
+  - id: release
+    label: |-
+      汇总 510 个样本、20 个子任务
+      三个维度下共五类生成任务
+      人工标注任务专用评测提示
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 300
+  - id: generate
+    label: |-
+      向模型提供多模态上下文证据
+      统一多模态模型生成图像
+      单靠外部先验知识无法完成任务
+    type: process
+    size: xl
+    position:
+      x: 1280
+      'y': 300
+  - id: judge
+    label: |-
+      使用 Gemini-3-Pro 混合评分
+      比较输出、参考图和人工评测提示
+      相关任务先做像素同一性抄袭检查
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 300
+  - id: dimensions
+    label: |-
+      各维度按 0–2 分评分
+      规则遵循 · 视觉一致性
+      美学质量
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 300
   - id: score
-    label: 三维评分
+    label: |-
+      计算加权总分
+      规则:一致性:美学 = 6:3.5:0.5
+      完全复制参考图时视觉一致性记 0 分
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2180
+      'y': 300
 edges:
-  - from: theory
-    to: dims
+  - from: framework
+    to: implicit
     type: primary
-  - from: dims
-    to: tasks
+  - from: framework
+    to: constraint
     type: primary
-  - from: tasks
-    to: items
+  - from: framework
+    to: adaptation
     type: primary
-  - from: items
-    to: hints
+  - from: implicit
+    to: curate
     type: primary
-  - from: hints
-    to: outputs
+  - from: constraint
+    to: curate
     type: primary
-  - from: outputs
+  - from: adaptation
+    to: curate
+    type: primary
+  - from: curate
+    to: release
+    type: primary
+  - from: release
+    to: generate
+    type: primary
+  - from: generate
+    to: judge
+    type: primary
+  - from: judge
+    to: dimensions
+    type: primary
+  - from: dimensions
     to: score
     type: primary
 modules: []
