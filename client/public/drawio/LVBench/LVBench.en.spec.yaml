@@ -6,86 +6,190 @@ meta:
   routing: orthogonal
   title: LVBench Build Process
   description: >-
-    Paper-aligned LVBench pipeline from YouTube long-video collection through quality filtering, six-skill annotation,
-    text-only filtering, and QA scoring.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned construction of a long-video benchmark from 500 candidate videos through five-part screening,
+    two-stage annotation, text-only leakage filtering, and exact multiple-choice evaluation.
+  legend: >-
+    Counts and procedures follow the paper release: 103 videos, 117 hours, and 1,549 questions spanning six video
+    categories and six long-video understanding capabilities.
 nodes:
-  - id: youtube_pool
-    label: YouTube Pool
-    type: document
+  - id: source
+    label: |-
+      Gather 500 YouTube Candidates
+      Search and Recommendation Discovery
+      Six Categories of Long-form Video
+      Sports to Documentary · Drama to Cartoon
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: quality_filter
-    label: Quality Filter
+      x: 20
+      'y': 40
+  - id: long_rich
+    label: |-
+      Require Long and Content-rich Videos
+      Duration at Least 30 Minutes
+      Dynamic Visual Content and Multiple Events
+      Preserve Transitions across the Full Timeline
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: video_set
-    label: 103 Videos
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: skill_taxonomy
-    label: Skill Taxonomy
+      x: 300
+      'y': 40
+  - id: screen
+    label: |-
+      Apply Five Video-screening Rules
+      Clear Protagonist · Coherent Structure
+      At Least One Significant Event per 5 Minutes
+      720p Stable Video · Critical Information Visual
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: full_watch
-    label: Full Watch
+      x: 580
+      'y': 40
+  - id: corpus
+    label: |-
+      Retain 103 Videos · 117 Hours
+      Average Duration 4,101 Seconds
+      Six Balanced Video Categories
+      Full Videos Remain the Evaluation Context
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: annotate_events
+    label: |-
+      Stage 1 · Watch Each Full Video
+      Mark Significant Events and Scenes
+      Record Entities · Temporal Relations
+      Record Causal Relations across Events
     type: user
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: qa_authoring
-    label: QA Authoring
+      x: 1140
+      'y': 40
+  - id: write_questions
+    label: |-
+      Stage 2 · Write Distributed Questions
+      Average 24 Questions per Video Hour
+      Cover the Entire Video Timeline
+      Require Specific and Unique References
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: capabilities
+    label: |-
+      Cover Six Long-video Capabilities
+      Temporal Grounding · Summarization · Reasoning
+      Entity Recognition · Event Understanding
+      Key-information Retrieval
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: text_filter
-    label: Text Filter
+      x: 1700
+      'y': 40
+  - id: choices
+    label: |-
+      Stage 3 · Author Four Choices
+      One Correct and Three Plausible Distractors
+      Match Choice Length and Format
+      Limit Excessive Temporal-grounding Questions
+    type: user
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: clue
+    label: |-
+      Annotate Minimal Evidence Segments
+      Exact Start and End Timestamps
+      Segment Sufficient to Answer the Question
+      Retain Full-video Context for Evaluation
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: leakage
+    label: |-
+      Filter Text-only Answerable Items
+      Ask GLM-4 and GPT-4 without Video
+      Remove Items When Both Match Ground Truth
+      Reduce Language-only Knowledge Leakage
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: qa_set
-    label: 1549 QAs
+      x: 1140
+      'y': 380
+  - id: release
+    label: |-
+      Release LVBench · 1,549 Questions
+      103 Videos · 117 Total Hours
+      Six Video Categories · Six Capabilities
+      Human Accuracy Reported as 94.4%
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 380
+  - id: evaluate
+    label: |-
+      Evaluate Long-video Models
+      Native Models Receive the Full Video
+      Others Sample Fixed Frames such as 32 or 96
+      Decode One of Four Answer Choices
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 380
+  - id: report
+    label: |-
+      Report Exact Multiple-choice Accuracy
+      Overall Score over 1,549 Questions
+      Break Down by Six Capabilities
+      Break Down by Six Video Categories
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 300
+      'y': 380
 edges:
-  - from: youtube_pool
-    to: quality_filter
+  - from: source
+    to: long_rich
     type: primary
-  - from: quality_filter
-    to: video_set
+  - from: long_rich
+    to: screen
     type: primary
-  - from: video_set
-    to: skill_taxonomy
+  - from: screen
+    to: corpus
     type: primary
-  - from: skill_taxonomy
-    to: full_watch
+  - from: corpus
+    to: annotate_events
     type: primary
-  - from: full_watch
-    to: qa_authoring
+  - from: annotate_events
+    to: write_questions
     type: primary
-  - from: qa_authoring
-    to: text_filter
+  - from: write_questions
+    to: capabilities
     type: primary
-  - from: text_filter
-    to: qa_set
+  - from: capabilities
+    to: choices
+    type: primary
+  - from: choices
+    to: clue
+    type: primary
+  - from: clue
+    to: leakage
+    type: primary
+  - from: leakage
+    to: release
+    type: primary
+  - from: release
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []

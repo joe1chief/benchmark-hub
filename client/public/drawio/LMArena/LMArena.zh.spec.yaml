@@ -1,0 +1,163 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LMArena / Chatbot Arena 构建流程
+  description: 对齐论文的匿名多轮模型对战、人类众包偏好、投票质量控制、Bradley–Terry 估计、 不确定性感知排名与自适应模型对采样流程。
+  legend: 数量采用 arXiv:2403.04132 的 2024 年 1 月论文快照；在线 LMArena 持续增加模型和投票。 论文以 Bradley–Terry 系数取代早期在线 Elo 显示。
+nodes:
+  - id: pool
+    label: |-
+      维护在线模型池
+      包含开放与闭源聊天模型
+      论文快照超过 50 个模型
+      持续接入新模型
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: sample
+    label: |-
+      匿名采样两个模型
+      对用户隐藏模型身份
+      随机安排左右位置
+      主动采样优先选择高不确定性模型对
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: prompt
+    label: |-
+      众包自由形式用户提示
+      不预设问题或固定评分量表
+      支持多轮对话
+      覆盖真实用法与百余种语言
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: respond
+    label: |-
+      生成并排模型回答
+      向两模型发送相同对话轮次
+      用户无法判断时可继续对话
+      保留完整对战轨迹
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: vote
+    label: |-
+      收集一条人工偏好
+      左侧更好 · 右侧更好
+      平局 · 两者都差
+      投票后才显示模型身份
+    type: user
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: controls
+    label: |-
+      应用数据质量控制
+      过滤模型身份关键词
+      用内容审核标记不安全请求
+      检测异常投票用户
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: corpus
+    label: |-
+      构建论文快照投票语料
+      243,329 场对战 · 90,051 位用户
+      50 个模型 · 149 种语言
+      模型对结果与多轮轨迹
+    type: database
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: validate
+    label: |-
+      验证众包投票质量
+      专家盲标复核 160 场对战
+      允许使用外部资源核查事实
+      众包与专家一致率 72–83%
+    type: user
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: win_matrix
+    label: |-
+      估计模型对获胜矩阵
+      校正非均匀模型对采样
+      在成对反馈中处理平局
+      目标为均匀模型对分布
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: rank
+    label: |-
+      拟合 Bradley–Terry 得分
+      加权最大似然估计
+      稳健三明治置信区间
+      生成不确定性感知近似排名
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: report
+    label: |-
+      发布在线 LMArena 排行榜
+      Bradley–Terry 得分 · 胜率 · 排名
+      置信区间与对战次数
+      随新人工投票持续刷新
+    type: terminal
+    size: xl
+    position:
+      x: 860
+      'y': 380
+edges:
+  - from: pool
+    to: sample
+    type: primary
+  - from: sample
+    to: prompt
+    type: primary
+  - from: prompt
+    to: respond
+    type: primary
+  - from: respond
+    to: vote
+    type: primary
+  - from: vote
+    to: controls
+    type: primary
+  - from: controls
+    to: corpus
+    type: primary
+  - from: corpus
+    to: validate
+    type: primary
+  - from: validate
+    to: win_matrix
+    type: primary
+  - from: win_matrix
+    to: rank
+    type: primary
+  - from: rank
+    to: report
+    type: primary
+modules: []
