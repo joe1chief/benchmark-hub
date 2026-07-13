@@ -1,0 +1,203 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OK-VQA 构建与评测流程
+  description: 对齐论文的 OK-VQA 构建流程：在 COCO 图像上众包需要外部知识的视觉问题，经过人工筛选与去偏，并按官方五答案 VQA 协议评分。
+  legend: OK-VQA 要求答案不能仅从图像和问题得到。评分前使用 Porter 词干化，并将五份答案各计两次以对齐标准十答案 VQA 指标。
+nodes:
+  - id: images
+    label: |-
+      抽取自然场景 COCO 图像
+      使用原始训练与验证划分
+      约 8 万与 4 万张图像
+      保留视觉复杂场景
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 70
+  - id: questions
+    label: |-
+      众包外部知识问题
+      MTurk 第一轮
+      编写能难住智能机器人的问题
+      必须关联图像并需要外部知识
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: answers
+    label: |-
+      收集开放式答案
+      MTurk 第二轮
+      每个图文对由五人独立作答
+      保留多个有效答案
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: knowledge_filter
+    label: |-
+      人工筛选知识依赖性
+      删除计数与识别类问题
+      删除无图可答或无意义问题
+      86,700 → 34,921 题
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: bias_filter
+    label: |-
+      降低答案频率偏差
+      限制重复的众数答案
+      删除超过五次的对应样本
+      强化长尾答案分布
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: agreement
+    label: |-
+      答案存在一致？
+      删除零一致项
+    type: decision
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: split
+    label: |-
+      保持 COCO 来源划分
+      9,009 道训练题
+      5,046 道测试题
+      不绑定人工知识库
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: categories
+    label: |-
+      标注知识类别
+      每题由五人分类
+      十个预定义类别
+      取相对多数否则归为其他
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: release
+    label: |-
+      发布 OK-VQA
+      14,055 题 · 14,031 张图像
+      每题五份答案
+      开放式外部知识视觉问答
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 450
+  - id: input
+    label: |-
+      输入图像与问题
+      识别相关视觉内容
+      判断缺失的知识
+      检索并融合外部事实
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: predict
+    label: |-
+      生成开放式答案
+      不提供多选项
+      结合图像与外部知识
+      与人工答案比较
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: stem
+    label: |-
+      规范化答案词形
+      应用 Porter 词干化
+      合并复数与动词变形
+      保留答案语义内容
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: score
+    label: |-
+      应用标准 VQA 评分
+      五份答案各重复计算两次
+      对齐十标注答案惯例
+      按人工一致度给分
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      报告 OK-VQA 结果
+      总体 VQA 分数
+      十个知识类别
+      加其他类别分项结果
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: images
+    to: questions
+    type: primary
+  - from: questions
+    to: answers
+    type: primary
+  - from: answers
+    to: knowledge_filter
+    type: primary
+  - from: knowledge_filter
+    to: bias_filter
+    type: primary
+  - from: bias_filter
+    to: agreement
+    type: primary
+  - from: agreement
+    to: split
+    type: primary
+  - from: split
+    to: categories
+    type: primary
+  - from: categories
+    to: release
+    type: primary
+  - from: release
+    to: input
+    type: primary
+  - from: input
+    to: predict
+    type: primary
+  - from: predict
+    to: stem
+    type: primary
+  - from: stem
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
+modules: []
