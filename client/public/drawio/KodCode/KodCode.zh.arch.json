@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "title": "KodCode 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 15,
+    "edges": 15,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "sources",
+      "label": "合成十二类问题子集\nPrefill · 五个编程评测来源\n算法 · 数据结构 · 技术文档\nFilter · Package · Evol",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "dedup",
+      "label": "语义去重\nall-mpnet-base-v2 向量\nFAISS 最近邻搜索\n删除超过相似度阈值的问题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "synthesize",
+      "label": "生成解答与测试\nGPT-4o-0513 每次同时重新生成\nPython 解答 + Pytest 用例\n启动自验证尝试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "execute",
+      "label": "执行单元测试\n用生成测试运行解答\n通过 pytest-cov 测量分支\n拒绝运行或断言失败项",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "verify",
+      "label": "自验证与扩展重试\n要求测试全过且分支覆盖率 100%\n最多十次全新解答-测试尝试\n只保留覆盖率不下降的尝试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "verified",
+      "label": "保留 279K 个已验证三元组\n丢弃所有尝试均失败的问题\n按尝试成功率标记难度\n问题 + 解答 + 单元测试",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "convert",
+      "label": "转换问题风格\n以解答和测试作为上下文\n添加函数签名与示例\n新增 168K 个三元组",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "final",
+      "label": "发布 KodCode-V1 · 447K\n已验证问题-解答-测试三元组\n279K 原始 + 168K 转换\n十二子集 · 简单 / 中等 / 困难",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "rl",
+      "label": "RL 就绪数据路径\n使用配套单元测试作为可验证奖励\n保留完整 447K 三元组\n支持基于测试的强化学习",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "r1",
+      "label": "生成推理回答\n每题提示 DeepSeek-R1\n生成思维链与代码\n每题采样三个回答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reject",
+      "label": "基于测试的拒绝采样\n在单元测试上执行每个 R1 回答\n仅保留可验证正确输出\n形成高质量 SFT 样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sft",
+      "label": "KodCode-SFT 路径\n问题 + 通过测试的推理回答\n可验证思维链代码数据\n可用于监督微调",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "train",
+      "label": "后训练代码模型\n用通过测试的 R1 回答进行 SFT\n直接用 447K 已验证三元组做 RL\n分析中排除 94 个疑似重叠项",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "评估数据效用\nHumanEval 与 HumanEval+\nMBPP 与 MBPP+ · BigCodeBench\nLiveCodeBench V5 · 贪心解码",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "汇报代码正确性\n标准基准上的 Pass@1\n比较 SFT 与 RL 模型\n自验证错误率低于 2.5%",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "sources",
+      "to": "dedup",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "dedup",
+      "to": "synthesize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "synthesize",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "execute",
+      "to": "verify",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "verify",
+      "to": "verified",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "verified",
+      "to": "convert",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "convert",
+      "to": "final",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "final",
+      "to": "rl",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "final",
+      "to": "r1",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-10",
+      "from": "r1",
+      "to": "reject",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "reject",
+      "to": "sft",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "rl",
+      "to": "train",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "sft",
+      "to": "train",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "train",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "benchmark",
+      "to": "report",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

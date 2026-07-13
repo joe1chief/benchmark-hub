@@ -6,86 +6,179 @@ meta:
   routing: orthogonal
   title: JailJudge Build Process
   description: >-
-    Paper-aligned JailJudge pipeline from complex harmful scenarios and LLM responses through human labels, train/test
-    splits, MultiAgent fine-grained scoring, Guard tuning, and judge metrics.
-  legend: Solid arrows show benchmark data construction, multi-agent judging, guard training, and evaluation.
+    Paper-aligned JailJudge construction from six harmful-prompt sources and diverse model responses through separate
+    human-labeled test and MultiAgent supervision branches, JAILJUDGE Guard tuning, and judge evaluation.
+  legend: >-
+    The prompt-response pool branches into human-annotated ID/OOD tests and MultiAgent-generated training ground truth;
+    both branches meet only during judge evaluation.
 nodes:
-  - id: scenes
-    label: Risk Scenarios
-    type: document
+  - id: prompts
+    label: |-
+      Build Six Harmful-prompt Sources
+      Vanilla · Synthetic Vanilla · Adversarial
+      Multilingual · In-the-wild · Deceptive
+      Refine into 14 Hazard Categories
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: labels
-    label: Human Labels
+      x: 20
+      'y': 40
+  - id: responses
+    label: |-
+      Collect Diverse Target Responses
+      Closed-source and Open-source LLMs
+      System-level and Model-level Defenses
+      Include Both Safe and Unsafe Outputs
+    type: cloud
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: pool
+    label: |-
+      Form Prompt-response Pair Pool
+      Coverage · Diversity · Balance
+      JAILJUDGETRAIN Source Pairs
+      35K+ Instruction-tuning Items
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: annotation
+    label: |-
+      Human Test Annotation
+      Train Annotators on MLCommons Policies
+      Manual Label + GPT-4 Cross-comparison
+      Re-label Mismatches and Majority Vote
     type: user
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: test
-    label: JailJudgeTest
-    type: document
+      x: 860
+      'y': 40
+  - id: testsets
+    label: |-
+      Release JAILJUDGETEST
+      ID: 4.5K+ Broad-risk Pairs
+      OOD: 6K+ Pairs in 10 Languages
+      Binary Human Gold Labels
+    type: database
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: train
-    label: Train Data
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: multi
-    label: MultiAgent
+      x: 1140
+      'y': 40
+  - id: judging
+    label: |-
+      MultiAgent Judging Stage
+      Multiple Judging Agents
+      Reasoning Explanation + Score 1–10
+      Convert Scores to Evidence Masses
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: score
-    label: Fine Scores
+      x: 580
+      'y': 380
+  - id: voting
+    label: |-
+      Evidence Aggregation and Voting
+      Combine Judges with Dempster's Rule
+      Voting Agents Accept or Reject
+      Preserve Reasons and Uncertainty
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
+      x: 860
+      'y': 380
+  - id: inference
+    label: |-
+      Inference Agent
+      Consume Aggregated Judge Results
+      Consume All Voting Results
+      Produce Final Reason + 1–10 Score
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: groundtruth
+    label: |-
+      Construct Explainable Ground Truth
+      Fine-grained Score and Reasoning
+      Threshold alpha Gives Binary Label
+      Supervise JAILJUDGETRAIN
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 380
   - id: guard
-    label: Guard Model
+    label: |-
+      Instruction-tune JAILJUDGE Guard
+      Llama-2-7B Base Model
+      Input: User Prompt + Target Response
+      Output: Explanation + Score 1–10
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
+      x: 1700
+      'y': 380
+  - id: evaluate
+    label: |-
+      Evaluate Jailbreak Judges
+      JAILJUDGE ID and OOD
+      Also JBB Behaviors and WILDTEST
+      Compare MultiAgent, Guard, and Baselines
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 40
   - id: metrics
-    label: Judge Metrics
+    label: |-
+      Report Judge Quality
+      Accuracy · Precision · Recall · F1
+      GPT-4 Explainability Quality: 1–5
+      Breakdown by Scenario and Language
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2260
+      'y': 40
 edges:
-  - from: scenes
-    to: labels
+  - from: prompts
+    to: responses
     type: primary
-  - from: labels
-    to: test
+  - from: responses
+    to: pool
     type: primary
-  - from: test
-    to: train
+  - from: pool
+    to: annotation
     type: primary
-  - from: train
-    to: multi
+  - from: annotation
+    to: testsets
     type: primary
-  - from: multi
-    to: score
+  - from: pool
+    to: judging
+    type: secondary
+  - from: judging
+    to: voting
     type: primary
-  - from: score
+  - from: voting
+    to: inference
+    type: primary
+  - from: inference
+    to: groundtruth
+    type: primary
+  - from: groundtruth
     to: guard
     type: primary
+  - from: testsets
+    to: evaluate
+    type: primary
   - from: guard
+    to: evaluate
+    type: primary
+  - from: evaluate
     to: metrics
     type: primary
 modules: []

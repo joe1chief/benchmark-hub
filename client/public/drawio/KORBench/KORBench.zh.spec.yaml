@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: KORBench 构建流程
-  description: 根据论文整理的 KOR-Bench 流程：规则设计、规则驱动问答、答案格式和人机质量校验。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 对齐论文的 KOR-Bench 构建流程：人工设计规则与规则驱动问答，经人工和大模型迭代质检， 最后在五类知识正交推理任务上进行格式感知的精确评测。
+  legend: 官方版本五类任务各含 25 条规则和 250 题，总计 125 条规则、1,250 题，每条规则对应十道题。
 nodes:
-  - id: source_rules
-    label: 规则来源
-    type: document
+  - id: sources
+    label: |-
+      汇集规则来源
+      逻辑谜题与谜题网站
+      教材 · 领域知识
+      先验知识与虚拟世界
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: rule_design
-    label: 规则设计
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: rule_redefine
-    label: 规则重定义
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: qa_adapt
-    label: 问答改写
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: qa_generate
-    label: 问答生成
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: answer_format
-    label: 答案格式
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: quality_check
-    label: 人机校验
+      x: 20
+      'y': 40
+  - id: extract
+    label: |-
+      人工提取核心规则
+      自然语言规则描述
+      五个类别 · 每类 25 条规则
+      运算 · 逻辑 · 密码 · 谜题 · 反事实
     type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: accuracy
-    label: 准确率
+      x: 300
+      'y': 40
+  - id: redefine
+    label: |-
+      重定义以实现知识正交
+      新符号 · 新概念 · 新约束
+      调整执行步骤
+      引入全新故事背景
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: qa
+    label: |-
+      设计规则驱动问答
+      改写现有问题与答案
+      人工编写反事实题
+      程序化生成密码题
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: formats
+    label: |-
+      指定精确答案格式
+      NR 数值 · ME 数学表达式
+      TR 文本 · MC 选择题
+      SD 结构化数据
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: human
+    label: |-
+      人工质量核验
+      检查每条规则与问答对
+      核对正确性与清晰度
+      修复无效或歧义条目
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: llm
+    label: |-
+      大模型难度核验
+      评估难度与区分能力
+      标记模型普遍失败的任务
+      标记普遍答对或疑似泄漏任务
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: revise
+    label: |-
+      迭代修订被标记数据
+      澄清过难规则
+      增强过于简单的问题
+      重新执行人工与模型检查
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: dataset
+    label: |-
+      发布 KOR-Bench · 1,250 题
+      125 条规则 · 每条十题
+      五个平衡类别各 250 题
+      规则 + 问题 + 标准答案
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 380
+  - id: prompt
+    label: |-
+      执行规则条件推理
+      输入新规则与规则驱动问题
+      分类别零样本提示
+      三样本及分析变体
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 380
+  - id: parse
+    label: |-
+      解析并归一化回答
+      提取双中括号或 boxed 输出
+      使用格式与规则专属逻辑
+      比较数学文本选项或结构
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 380
+  - id: metric
+    label: |-
+      汇报精确准确率
+      1,250 题中的正确数量
+      总体及五类别得分
+      另报混合任务通过率
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 380
 edges:
-  - from: source_rules
-    to: rule_design
+  - from: sources
+    to: extract
     type: primary
-  - from: rule_design
-    to: rule_redefine
+  - from: extract
+    to: redefine
     type: primary
-  - from: rule_redefine
-    to: qa_adapt
+  - from: redefine
+    to: qa
     type: primary
-  - from: qa_adapt
-    to: qa_generate
+  - from: qa
+    to: formats
     type: primary
-  - from: qa_generate
-    to: answer_format
+  - from: formats
+    to: human
     type: primary
-  - from: answer_format
-    to: quality_check
+  - from: human
+    to: llm
     type: primary
-  - from: quality_check
-    to: accuracy
+  - from: llm
+    to: revise
+    type: primary
+  - from: revise
+    to: dataset
+    type: primary
+  - from: dataset
+    to: prompt
+    type: primary
+  - from: prompt
+    to: parse
+    type: primary
+  - from: parse
+    to: metric
     type: primary
 modules: []

@@ -7,56 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 13,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "patient_queries",
-      "label": "患者问题",
-      "type": "document",
+      "id": "interactions",
+      "label": "获取真实患者互动\n去标识化 K Health 对话\n来自 1,055 名独立用户\n人工复核隐私泄露",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "question_filter",
-      "label": "问题过滤",
+      "id": "prefilter",
+      "label": "自动预筛问题\nBERT 区分问题与陈述\n正则排除账单和物流问题\n保留候选患者问题",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "doctor_review",
-      "label": "医生复核",
+      "id": "candidates",
+      "label": "候选池 · 约 26K\n真实消费者健康表达\n含模糊术语与多种病情\n潜在可独立回答问题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "medical_review",
+      "label": "医疗专业人员复核\n要求问题可独立回答\n不依赖患者既往病史\n标注 ICD-10 病情类别",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "question_set",
-      "label": "1212题",
-      "type": "document",
+      "id": "questions",
+      "label": "发布 K-QA 问题 · 1,212 题\n覆盖一百多种医疗状况\n真实世界长答案医学问答\n完整问题集并非都有标准答案",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "phys_answers",
-      "label": "医生答案",
+      "id": "answers",
+      "label": "编写 201 个医生答案\n六位医生加资深复核医生\n查阅 UpToDate 与 PubMed\n禁用生成式 AI · 约 400 小时",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "statement_split",
-      "label": "陈述拆分",
+      "id": "decomposition",
+      "label": "拆分为原子陈述\n另六位医疗医生负责拆分\nGPT-4 少样本建议\n可修改删除或补充缺失事实",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "must_nice",
-      "label": "必需/可选",
+      "id": "statements",
+      "label": "产出 1,589 条陈述\n每个医生答案平均 7.9 条\n简洁 · 准确 · 可独立判断\n892 条必需 + 697 条可选",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "importance",
+      "label": "临床重要性共识\n必需：临床关键内容\n可选：补充信息\n医疗小组协作决策",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "predict",
+      "label": "生成模型答案\n评测 201 个有参考答案的问题\n可配置模型使用零温度\n可选 ICL 与医疗 RAG 变体",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "nli_metrics",
-      "label": "NLI指标",
+      "id": "nli",
+      "label": "自动 NLI 比较\n模型答案作为前提\n每条标准陈述作为假设\nGPT-4 少样本 CoT：蕴含或矛盾",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "验证 NLI 裁判\n50 个问答对 · 402 条陈述\n三位医生加多数投票\nFleiss Kappa 为 0.70",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "汇报医学答案质量\n全面性：被蕴含的必需陈述\n幻觉率：与标准事实矛盾的比例\n全面性越高且幻觉率越低越好",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +94,74 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "patient_queries",
-      "to": "question_filter",
+      "from": "interactions",
+      "to": "prefilter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "question_filter",
-      "to": "doctor_review",
+      "from": "prefilter",
+      "to": "candidates",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "doctor_review",
-      "to": "question_set",
+      "from": "candidates",
+      "to": "medical_review",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "question_set",
-      "to": "phys_answers",
+      "from": "medical_review",
+      "to": "questions",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "phys_answers",
-      "to": "statement_split",
+      "from": "questions",
+      "to": "answers",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "statement_split",
-      "to": "must_nice",
+      "from": "answers",
+      "to": "decomposition",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "must_nice",
-      "to": "nli_metrics",
+      "from": "decomposition",
+      "to": "statements",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "statements",
+      "to": "importance",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "importance",
+      "to": "predict",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "predict",
+      "to": "nli",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "nli",
+      "to": "validate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "validate",
+      "to": "metrics",
       "type": "primary"
     }
   ],
