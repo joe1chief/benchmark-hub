@@ -1,0 +1,129 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Global-MMLU 构建流程
+  description: 与论文一致的 Global-MMLU 文化标注、多语言翻译、子集构建和评测流程。
+  legend: 两条分支分别改进翻译质量并标注文化敏感性，随后汇入 arXiv:2412.03304 的 42 语言版本； Global-MMLU 仍保留 MMLU 原始的英语中心题目内容。
+nodes:
+  - id: source
+    label: |-
+      从英文 MMLU 出发
+      约 1.4 万道四选一题
+      覆盖 57 个考试学科
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: cultural_sample
+    label: |-
+      均匀抽取 2,850 道题
+      每学科随机 50 题
+      200 名专业及社区标注员参与
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 80
+  - id: cultural_labels
+    label: |-
+      每题至少 3 人标注
+      判断文化 · 地理 · 方言知识需求
+      派生文化敏感 CS 或文化无关 CA 标签
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 80
+  - id: machine_translate
+    label: |-
+      将英文 MMLU 翻译为 41 种语言
+      统一使用 Google Translate
+      避免模型自译带来的评测偏差
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 520
+  - id: human_improve
+    label: |-
+      尽可能采用人工核验翻译
+      专业 MMMLU + 付费 Gold Set
+      母语社区后编辑；改进 25 种语言
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 520
+  - id: full
+    label: |-
+      汇总完整 Global-MMLU
+      42 种语言、589,764 个样本
+      含人工、后编辑、机器和英文版本
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 300
+  - id: lite
+    label: |-
+      派生 Global-MMLU Lite
+      15 种人工翻译或后编辑语言
+      每语言 CS 200 + CA 200 = 共 6,000 题
+    type: database
+    size: xl
+    position:
+      x: 1280
+      'y': 300
+  - id: run
+    label: |-
+      运行多语言选择题评测
+      保留原题与四个选项
+      在各目标语言中选择一个答案
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 300
+  - id: score
+    label: |-
+      精确匹配所选选项
+      按语言与资源水平报告准确率
+      比较完整、CS、CA 与平衡 Lite 切片
+    type: terminal
+    size: xl
+    position:
+      x: 1880
+      'y': 300
+edges:
+  - from: source
+    to: cultural_sample
+    type: primary
+  - from: cultural_sample
+    to: cultural_labels
+    type: primary
+  - from: cultural_labels
+    to: full
+    type: primary
+  - from: source
+    to: machine_translate
+    type: primary
+  - from: machine_translate
+    to: human_improve
+    type: primary
+  - from: human_improve
+    to: full
+    type: primary
+  - from: full
+    to: lite
+    type: primary
+  - from: lite
+    to: run
+    type: primary
+  - from: run
+    to: score
+    type: primary
+modules: []

@@ -5,79 +5,150 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GaRAGe Build Process
-  description: >-
-    Paper-aligned GaRAGe pipeline from complex RAG question generation to human-grounded long-form answers and
-    relevance-aware factuality scoring.
+  description: Paper-aligned complex-question, mixed-grounding, professional-annotation, and RAG evaluation flow for GaRAGe.
   legend: >-
-    Solid arrows show question generation, grounding retrieval, reranking, human annotations, answer writing, and
-    RAF/attribution evaluation.
+    Solid arrows follow arXiv:2506.07671. Every grounding passage is annotated before answer writing, so factuality can
+    be restricted to relevant evidence and insufficient-grounding cases can require deflection.
 nodes:
   - id: topics
-    label: Seed Topics
+    label: |-
+      Seed diverse RAG topics
+      static, slow-changing, and fast-changing facts
+      trending and tail domains
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 250
   - id: questions
-    label: Complex Qs
+    label: |-
+      Four-pass LLM question construction
+      plan Web exploration · search resources
+      blend multiple snippets · filter and refine
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: retrieve
-    label: Grounding
+      'y': 250
+  - id: qfilter
+    label: |-
+      Enforce complex information seeking
+      well-formedness classifier · named entities
+      SentenceTransformer deduplication
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: rerank
-    label: Rerank
+      'y': 250
+  - id: ground
+    label: |-
+      Collect mixed grounding per question
+      standalone Web or Web + private knowledge base
+      decompose queries for source-specific retrieval
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: annotate
-    label: Human Tags
-    type: decision
+      'y': 250
+  - id: rerank
+    label: |-
+      Retrieve and cross-encoder rerank passages
+      score snippets against the original question
+      retain realistic irrelevant or outdated noise
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: answers
-    label: Long Answers
-    type: document
+      'y': 250
+  - id: validate
+    label: |-
+      Professional annotators validate questions
+      reject invalid, false-premise, harmful, or non-IS
+      tag time · complexity · popularity · category
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: RAF Score
-    type: terminal
+      'y': 250
+  - id: annotate
+    label: |-
+      Label every grounding passage
+      4,752 private + 30,599 Web passages
+      answer · related · outdated · unknown relevance
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: answer
+    label: |-
+      Write a cited long-form reference answer
+      use only passages annotated as relevant
+      deflect when evidence is insufficient; mean 192 words
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: release
+    label: |-
+      Assemble GaRAGe
+      2,366 professionally validated questions
+      more than 35K annotated mixed-source passages
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: run
+    label: |-
+      Generate from question plus grounding
+      same prompt and greedy decoding across models
+      answer with citations or a justified deflection
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: score
+    label: |-
+      Score eligibility · factuality · uRAF/RAF
+      deflection true/false positive rates
+      attribution precision, recall, and F1
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 250
 edges:
   - from: topics
     to: questions
     type: primary
   - from: questions
-    to: retrieve
+    to: qfilter
     type: primary
-  - from: retrieve
+  - from: qfilter
+    to: ground
+    type: primary
+  - from: ground
     to: rerank
     type: primary
   - from: rerank
+    to: validate
+    type: primary
+  - from: validate
     to: annotate
     type: primary
   - from: annotate
-    to: answers
+    to: answer
     type: primary
-  - from: answers
+  - from: answer
+    to: release
+    type: primary
+  - from: release
+    to: run
+    type: primary
+  - from: run
     to: score
     type: primary
 modules: []

@@ -5,75 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GaRAGe 构建流程
-  description: 对齐论文的 GaRAGe 流程：从复杂 RAG 问题生成到人工 grounded 长答案和相关性感知事实性评分。
-  legend: 实线箭头表示问题生成、依据检索、重排、人工标注、答案撰写和 RAF/引用评估。
+  description: 与论文一致的 GaRAGe 复杂问题、混合依据、专业标注和 RAG 评测流程。
+  legend: 实线箭头对应 arXiv:2506.07671。每段依据都先标注再写答案，因此事实性可限定在相关证据上， 依据不足的样本则可要求拒答。
 nodes:
   - id: topics
-    label: 种子主题
+    label: |-
+      选择多样 RAG 种子主题
+      静态、慢变和快变事实
+      热门与长尾领域
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 250
   - id: questions
-    label: 复杂问题
+    label: |-
+      LLM 四阶段构造问题
+      规划网页探索 · 搜索资源
+      融合多段信息 · 过滤并精炼
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: retrieve
-    label: 依据检索
+      'y': 250
+  - id: qfilter
+    label: |-
+      保证复杂信息检索需求
+      良构分类器 · 命名实体检查
+      SentenceTransformer 去重
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: rerank
-    label: 重排
+      'y': 250
+  - id: ground
+    label: |-
+      为每题收集混合依据
+      纯网页或网页 + 私有知识库
+      分解查询以适配不同来源检索
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: annotate
-    label: 人工标注
-    type: decision
+      'y': 250
+  - id: rerank
+    label: |-
+      检索并用交叉编码器重排段落
+      按原始问题对片段打相关分
+      保留真实的无关或过时噪声
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: answers
-    label: 长答案
-    type: document
+      'y': 250
+  - id: validate
+    label: |-
+      专业标注员验证问题
+      删除无效、假前提、有害或非信息检索题
+      标注时效 · 复杂度 · 热度 · 类别
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: RAF评分
-    type: terminal
+      'y': 250
+  - id: annotate
+    label: |-
+      标注每一段依据
+      私有 4,752 段 + 网页 30,599 段
+      可回答 · 相关 · 过时 · 未知相关性
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: answer
+    label: |-
+      编写带引用的长参考答案
+      仅使用标为相关的依据段落
+      证据不足则拒答；平均 192 词
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: release
+    label: |-
+      汇总 GaRAGe
+      2,366 个专业验证问题
+      超过 3.5 万段混合来源标注依据
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: run
+    label: |-
+      根据问题与依据生成回答
+      所有模型使用同一提示和贪心解码
+      带引用作答或有依据地拒答
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: score
+    label: |-
+      评分完整性 · 事实性 · uRAF/RAF
+      拒答真阳性与假阳性率
+      归因精确率、召回率和 F1
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 250
 edges:
   - from: topics
     to: questions
     type: primary
   - from: questions
-    to: retrieve
+    to: qfilter
     type: primary
-  - from: retrieve
+  - from: qfilter
+    to: ground
+    type: primary
+  - from: ground
     to: rerank
     type: primary
   - from: rerank
+    to: validate
+    type: primary
+  - from: validate
     to: annotate
     type: primary
   - from: annotate
-    to: answers
+    to: answer
     type: primary
-  - from: answers
+  - from: answer
+    to: release
+    type: primary
+  - from: release
+    to: run
+    type: primary
+  - from: run
     to: score
     type: primary
 modules: []
