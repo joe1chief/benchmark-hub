@@ -1,0 +1,191 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MathCanvas-Bench 构建流程
+  description: 与论文对齐地展示 MathCanvas-Bench 从多模态数学题池筛选到三千题发布及双指标评测的流程。
+  legend: 实线箭头依次表示 632K 原始题采集、两轮 GPT-5 清洗、去重增强、非选择题加权抽样、泄漏控制和答案级评分。
+nodes:
+  - id: collect
+    label: |-
+      收集多模态数学题
+      来源含教材考试与网站
+      覆盖初中和高中内容
+      初始 632K 题及解答
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: relevance_filter
+    label: |-
+      第一轮 GPT-5 清洗
+      移除图像与问题无关项
+      统一数学表达为 LaTeX
+      保留约 367K 题
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: quality_filter
+    label: |-
+      第二轮 GPT-5 清洗
+      移除错误与无明确答案
+      移除低质图及纯绘图题
+      保留约 303K 题
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: deduplicate
+    label: |-
+      执行文本和图像去重
+      比较问题与视觉内容
+      合并或移除近重复项
+      得到约 222K 题池
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: image_enhance
+    label: |-
+      标准化视觉输入
+      使用 SwinIR 超分辨率
+      统一缩放至 512 × 512
+      改善低清数学图像
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: taxonomy
+    label: |-
+      标注数学类别
+      使用 GPT-4.1 分类
+      划分八个主要类别
+      继续标注细粒度子类
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: benchmark_sample
+    label: |-
+      建立 benchmark 候选池
+      从 222K 题池划出候选
+      排除全部多项选择题
+      保留开放式视觉推理题
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: weighted_sample
+    label: |-
+      加权抽取 3K 道题
+      类别原占比取 0.7 次方
+      提升稀有数学类型占比
+      同时保留自然分布特征
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: leakage
+    label: |-
+      控制训练测试泄漏
+      计算五元词组 Jaccard
+      相似度超过 0.4 时
+      从训练集移除对应题目
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: release
+    label: |-
+      发布 MathCanvas-Bench
+      共 3,000 道开放式题
+      要求图文交错解决方案
+      训练余集约 219K 题
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: infer
+    label: |-
+      运行多模态模型
+      输入题目与原始图像
+      模型可生成视觉中间结果
+      输出图文交错推理过程
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: extract
+    label: |-
+      提取并核对所有子问
+      GPT-4.1 提取最终答案
+      逐项对照标准答案
+      记录每个子问是否正确
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: metrics
+    label: |-
+      汇总双指标结果
+      全部子问正确才得完整分
+      加权评分采用递增子问权重
+      报告总体与类别表现
+    type: terminal
+    size: xl
+    position:
+      x: 260
+      'y': 420
+edges:
+  - from: collect
+    to: relevance_filter
+    type: primary
+  - from: relevance_filter
+    to: quality_filter
+    type: primary
+  - from: quality_filter
+    to: deduplicate
+    type: primary
+  - from: deduplicate
+    to: image_enhance
+    type: primary
+  - from: image_enhance
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: benchmark_sample
+    type: primary
+  - from: benchmark_sample
+    to: weighted_sample
+    type: primary
+  - from: weighted_sample
+    to: leakage
+    type: primary
+  - from: leakage
+    to: release
+    type: primary
+  - from: release
+    to: infer
+    type: primary
+  - from: infer
+    to: extract
+    type: primary
+  - from: extract
+    to: metrics
+    type: primary
+modules: []
