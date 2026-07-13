@@ -1,0 +1,177 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LongText-Bench 构建流程
+  description: 重建 X-Omni 论文的中英双语长文本提示词整理流程，以及官方发布的基于 OCR 的文字准确率评测器。
+  legend: 官方发布含 160 个英文提示和 160 个共享 prompt ID 的对应中文记录，即 160 个双语提示概念或 320 条语言记录。 评测时每个提示-语言组合生成 4 张图像。
+nodes:
+  - id: scenarios
+    label: |-
+      定义八类富文本场景
+      标牌 · 物体标签 · 印刷品 · 网页
+      幻灯片 · 海报 · 字幕 · 对话
+      覆盖实用长文本布局
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: generate
+    label: |-
+      生成英文候选提示
+      每类使用GPT-4o生成
+      每个场景20个提示
+      10个短文本 + 10个长文本
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: bilingual
+    label: |-
+      构建对应中文记录
+      共享类别 · 长度 · prompt ID
+      保留预期渲染文字
+      分开保存中英文视图
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: lengths
+    label: |-
+      平衡文字长度分档
+      英文短10–30词 · 长30–50词
+      中文短20–40字
+      中文长文本通常超过60字
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: review
+    label: |-
+      人工复核每个提示
+      检查场景与文字一致性
+      调整待渲染文字长度
+      改善长度分布平衡
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: release
+    label: |-
+      发布LongText-Bench
+      160个双语提示概念
+      160条英文 + 160条中文记录
+      prompt · text · category · length · ID
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: render
+    label: |-
+      生成评测图像
+      使用各语言专用提示词
+      每个提示采样4张图像
+      保存为prompt_id_repeat_id.png
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: ocr
+    label: |-
+      用Qwen2.5-VL-7B识别文字
+      要求仅返回文字内容
+      避免重复已识别内容
+      最多生成1,024个新词元
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: normalize
+    label: |-
+      归一化OCR与标准文字
+      删除标点与符号
+      英文 · 小写化并合并空格
+      中文 · 保留汉字与字母数字
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: match
+    label: |-
+      按无序多重集合匹配
+      英文单位 · 单词
+      中文单位 · 字符
+      忽略文字片段相对顺序
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: score
+    label: |-
+      计算单图文字准确率
+      匹配到的标准文字单位数
+      除以全部标准文字单位数
+      不使用编辑距离
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告LongText-Bench得分
+      对全部图像做微平均
+      汇总每个提示的4次采样
+      报告英文 · 中文 · 总平均
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: scenarios
+    to: generate
+    type: primary
+  - from: generate
+    to: bilingual
+    type: primary
+  - from: bilingual
+    to: lengths
+    type: primary
+  - from: lengths
+    to: review
+    type: primary
+  - from: review
+    to: release
+    type: primary
+  - from: release
+    to: render
+    type: primary
+  - from: render
+    to: ocr
+    type: primary
+  - from: ocr
+    to: normalize
+    type: primary
+  - from: normalize
+    to: match
+    type: primary
+  - from: match
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
+modules: []

@@ -1,0 +1,177 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LitQA2 构建流程
+  description: 根据 arXiv:2409.13740 重建 LitQA2 的专家出题流程与论文报告的 PaperQA2 精确测量协议。
+  legend: LitQA2 在原始 47 题 LitQA 上先增加 100 题再增加 101 题。准确率按全部问题计算，精确率按已作答问题计算， 召回率衡量系统是否把答案归因到基准记录的正确来源 DOI。
+nodes:
+  - id: papers
+    label: |-
+      确定近期科学论文
+      发布时间在过去36个月内
+      优先选择冷门的中间发现
+      记录预期来源DOI
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: draft
+    label: |-
+      专家起草多项选择题
+      答案必须依赖论文正文
+      不能仅凭标题或摘要回答
+      需要推理且不是原文直接引用
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: choices
+    label: |-
+      构造可信的答案选项
+      干扰项符合论文或领域语境
+      加入“信息不足”选项
+      允许有意设计不可回答题
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: challenge
+    label: |-
+      对每道草稿题做挑战测试
+      关闭日志后测试ChatGPT 3.5或4
+      在Google Scholar搜索题目表述
+      改写易答或可直接检索的问题
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: review
+    label: |-
+      校准并持续审核出题者
+      细审每位新作者最初约10题
+      返工或淘汰薄弱问题
+      合入题库前继续由作者审核
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: release
+    label: |-
+      汇总LitQA2
+      原始LitQA · 47题
+      首批增加100题 → 147题
+      再增加101题 → 共248题
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: randomize
+    label: |-
+      随机排列答案顺序
+      每次调用都打乱选项
+      保留理想答案映射
+      避免利用固定选项位置
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: run
+    label: |-
+      运行待评系统
+      每题调用一次PaperQA
+      对全部问题完整运行三次
+      论文测试温度均为0
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: extract
+    label: |-
+      抽取单个字母答案
+      使用GPT-4-0613
+      应用论文公布的抽取提示词
+      解析返回的选项字母
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: grade
+    label: |-
+      判定解析后的选项
+      命中标准答案 · 正确
+      选择信息不足 · 不确定
+      标答为空且选信息不足 · 正确
+    type: decision
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: metrics
+    label: |-
+      计算三项指标
+      准确率 · 正确数 / 全部题数
+      精确率 · 正确数 / 已作答数
+      召回率 · 归因到正确来源DOI
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告LitQA2结果
+      汇总三次运行波动
+      比较旧147题与新101题
+      单独报告允许工具的人类基线
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: papers
+    to: draft
+    type: primary
+  - from: draft
+    to: choices
+    type: primary
+  - from: choices
+    to: challenge
+    type: primary
+  - from: challenge
+    to: review
+    type: primary
+  - from: review
+    to: release
+    type: primary
+  - from: release
+    to: randomize
+    type: primary
+  - from: randomize
+    to: run
+    type: primary
+  - from: run
+    to: extract
+    type: primary
+  - from: extract
+    to: grade
+    type: primary
+  - from: grade
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
+modules: []
