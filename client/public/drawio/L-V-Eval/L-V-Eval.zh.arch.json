@@ -1,62 +1,92 @@
 {
   "version": 1,
-  "title": "L-V-Eval 构建流程",
+  "title": "LV-Eval 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 13,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "public_qa",
-      "label": "公开QA",
-      "type": "document",
+      "id": "sources",
+      "label": "选择公开问答与文本来源\nHotpotQA · 2Wiki · DuReader · LooGLE\nLongBench · CMRC · MultiFieldQA\nPG-19 · 西游记 · 长指令数据",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "qa_pairs",
-      "label": "问答对",
+      "id": "qa",
+      "label": "构建 11 个双语问答集\n改造 9 个公开问答数据集\n合成 2 个事实召回数据集\n英文 6 个 · 中文 5 个",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "length_levels",
-      "label": "长度层级",
-      "type": "document",
+      "id": "pool",
+      "label": "固定 1,729 个问答对\n单跳与多跳任务\n两种语言各写一个事实问答\n各长度复用完全相同的问答",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "context_mix",
-      "label": "上下文混合",
+      "id": "mix",
+      "label": "混合支持文档与干扰文档\n逐篇采样干扰文档至目标长度\n打散多跳任务的支持段落\n随机排序并添加段落编号",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "confusing_facts",
-      "label": "混淆事实",
+      "id": "lengths",
+      "label": "构建五档可控长度\n16K · 32K · 64K · 128K · 256K\n每个问答与长度对应一个上下文\n平均 102,380 词或汉字",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "keyword_replace",
-      "label": "关键词替换",
+      "id": "cfi",
+      "label": "六个数据集插入混淆事实\nGPT-4 生成两条相似事实\n语言学标注员消解冲突\n随机插入不矛盾的混淆事实",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "answer_keywords",
-      "label": "答案关键词",
+      "id": "kpr",
+      "label": "应用关键词与短语替换\n六个数据集 · 1,924 个替换对\n人工制定替换规则\n通读修改后上下文消解新冲突",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "annotation",
+      "label": "完成人工标注\n五名全职硕士标注员\n复核 557 条混淆事实实例\n标注 955 条答案关键词实例",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "lv_eval",
-      "label": "LV-Eval",
+      "id": "dataset",
+      "label": "发布 LV-Eval · 8,645 个上下文\n1,729 个问答对 × 五档长度\n上下文 · 问题 · 标准答案\n混淆事实与答案关键词",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "执行长上下文推理\n各数据集专用零样本提示\n贪心生成答案\n超窗时截断上下文中部",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recall",
+      "label": "第一阶段 · 答案关键词召回\n匹配人工标注的关键内容\n要求达到数据集阈值\n拒绝缺少关键词的回答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "f1",
+      "label": "第二阶段 · 黑名单感知相似度\n去除常见无信息词\n计算中英文问答 F1\n指定任务使用原生 Rouge 指标",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "汇报可控长上下文得分\n11 个数据集级指标\n五档长度平均分\n单跳与多跳分析",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +94,74 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "public_qa",
-      "to": "qa_pairs",
+      "from": "sources",
+      "to": "qa",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "qa_pairs",
-      "to": "length_levels",
+      "from": "qa",
+      "to": "pool",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "length_levels",
-      "to": "context_mix",
+      "from": "pool",
+      "to": "mix",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "context_mix",
-      "to": "confusing_facts",
+      "from": "mix",
+      "to": "lengths",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "confusing_facts",
-      "to": "keyword_replace",
+      "from": "lengths",
+      "to": "cfi",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "keyword_replace",
-      "to": "answer_keywords",
+      "from": "cfi",
+      "to": "kpr",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "answer_keywords",
-      "to": "lv_eval",
+      "from": "kpr",
+      "to": "annotation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "annotation",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "dataset",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "inference",
+      "to": "recall",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "recall",
+      "to": "f1",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "f1",
+      "to": "report",
       "type": "primary"
     }
   ],

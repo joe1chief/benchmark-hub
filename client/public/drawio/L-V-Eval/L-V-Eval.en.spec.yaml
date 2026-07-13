@@ -4,88 +4,192 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: L-V-Eval Build Process
+  title: LV-Eval Build Process
   description: >-
-    Paper-aligned LV-Eval pipeline from public QA pairs through length-controlled context mixing, confusing facts, KPR,
-    and keyword-aware scoring.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned construction of 11 bilingual long-context QA datasets through controlled context mixing, confusing
+    fact insertion, leakage-reducing replacements, human annotation, and keyword-aware two-stage scoring.
+  legend: >-
+    The same 1,729 QA pairs are reused at five length levels, yielding 8,645 synthetic contexts from 16K to 256K words
+    or Chinese characters. Six datasets are English and five are Chinese.
 nodes:
-  - id: public_qa
-    label: Public QA
-    type: document
+  - id: sources
+    label: |-
+      Select Public QA and Text Sources
+      HotpotQA · 2Wiki · DuReader · LooGLE
+      LongBench · CMRC · MultiFieldQA
+      PG-19 · Journey to the West · LIC
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: qa_pairs
-    label: QA Pairs
+      x: 20
+      'y': 40
+  - id: qa
+    label: |-
+      Construct 11 Bilingual QA Sets
+      9 Adapted Public QA Datasets
+      2 Synthetic Fact-recall Datasets
+      6 English · 5 Chinese
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: length_levels
-    label: Length Levels
-    type: document
+      x: 300
+      'y': 40
+  - id: pool
+    label: |-
+      Fix 1,729 QA Pairs
+      Single-hop and Multi-hop Tasks
+      One Fact QA per Fact-recall Language
+      Reuse Identical QA Across Lengths
+    type: database
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: context_mix
-    label: Context Mix
+      x: 580
+      'y': 40
+  - id: mix
+    label: |-
+      Mix Supporting and Distractor Documents
+      Sample Distractors to Target Length
+      Disperse Multi-hop Supporting Passages
+      Shuffle and Prefix Passage Indices
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: confusing_facts
-    label: Confuse Facts
+      x: 860
+      'y': 40
+  - id: lengths
+    label: |-
+      Build Five Controlled Length Levels
+      16K · 32K · 64K · 128K · 256K
+      One Context per QA and Length
+      Average 102,380 Words or Characters
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: keyword_replace
-    label: KPR Rules
+      x: 1140
+      'y': 40
+  - id: cfi
+    label: |-
+      Insert Confusing Facts · 6 Datasets
+      GPT-4 Generates Two Similar Facts
+      Human Linguists Resolve Conflicts
+      Randomly Insert Non-contradictory Facts
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: answer_keywords
-    label: Answer Keys
+      x: 1420
+      'y': 40
+  - id: kpr
+    label: |-
+      Apply Keyword and Phrase Replacement
+      Six Datasets · 1,924 Replaced Pairs
+      Human-authored Replacement Rules
+      Review Full Context for New Conflicts
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: annotation
+    label: |-
+      Complete Human Annotation
+      Five Full-time Master's Annotators
+      Review 557 Confusing-fact Instances
+      Mark 955 Answer-keyword Instances
     type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: lv_eval
-    label: LV-Eval
+      x: 1700
+      'y': 380
+  - id: dataset
+    label: |-
+      Release LV-Eval · 8,645 Contexts
+      1,729 QA Pairs × Five Lengths
+      Context · Question · Ground Truth
+      Confusing Facts and Answer Keywords
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: inference
+    label: |-
+      Run Long-context Inference
+      Dataset-specific Zero-shot Prompts
+      Greedy Token Generation
+      Middle-truncate Unsupported Contexts
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: recall
+    label: |-
+      Stage 1 · Answer-keyword Recall
+      Match Manually Marked Critical Content
+      Require the Dataset Threshold
+      Reject Missing-keyword Responses
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 380
+  - id: f1
+    label: |-
+      Stage 2 · Blacklist-aware Similarity
+      Remove Common Non-informative Words
+      Compute English or Chinese QA F1
+      Use Task-native Rouge Where Defined
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 380
+  - id: report
+    label: |-
+      Report Controlled Long-context Scores
+      Eleven Dataset-level Metrics
+      Five Length-level Averages
+      Single-hop and Multi-hop Analysis
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 300
+      'y': 380
 edges:
-  - from: public_qa
-    to: qa_pairs
+  - from: sources
+    to: qa
     type: primary
-  - from: qa_pairs
-    to: length_levels
+  - from: qa
+    to: pool
     type: primary
-  - from: length_levels
-    to: context_mix
+  - from: pool
+    to: mix
     type: primary
-  - from: context_mix
-    to: confusing_facts
+  - from: mix
+    to: lengths
     type: primary
-  - from: confusing_facts
-    to: keyword_replace
+  - from: lengths
+    to: cfi
     type: primary
-  - from: keyword_replace
-    to: answer_keywords
+  - from: cfi
+    to: kpr
     type: primary
-  - from: answer_keywords
-    to: lv_eval
+  - from: kpr
+    to: annotation
+    type: primary
+  - from: annotation
+    to: dataset
+    type: primary
+  - from: dataset
+    to: inference
+    type: primary
+  - from: inference
+    to: recall
+    type: primary
+  - from: recall
+    to: f1
+    type: primary
+  - from: f1
+    to: report
     type: primary
 modules: []

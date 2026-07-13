@@ -4,86 +4,188 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: L-V-Eval 构建流程
-  description: 根据论文整理的 L-V-Eval 流程：公开问答、长度控制、上下文混合、混淆事实、关键词替换与关键词评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LV-Eval 构建流程
+  description: 对齐论文的 11 个中英双语长上下文问答数据集构建流程，包括可控上下文混合、混淆事实插入、 降低知识泄漏的替换、人工标注和关键词感知的两阶段评分。
+  legend: 同一组 1,729 个问答对复用于五个长度等级，形成 8,645 个从 16K 到 256K 词或汉字的合成上下文； 其中六个数据集为英文，五个为中文。
 nodes:
-  - id: public_qa
-    label: 公开QA
-    type: document
+  - id: sources
+    label: |-
+      选择公开问答与文本来源
+      HotpotQA · 2Wiki · DuReader · LooGLE
+      LongBench · CMRC · MultiFieldQA
+      PG-19 · 西游记 · 长指令数据
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: qa_pairs
-    label: 问答对
+      x: 20
+      'y': 40
+  - id: qa
+    label: |-
+      构建 11 个双语问答集
+      改造 9 个公开问答数据集
+      合成 2 个事实召回数据集
+      英文 6 个 · 中文 5 个
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: length_levels
-    label: 长度层级
-    type: document
+      x: 300
+      'y': 40
+  - id: pool
+    label: |-
+      固定 1,729 个问答对
+      单跳与多跳任务
+      两种语言各写一个事实问答
+      各长度复用完全相同的问答
+    type: database
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: context_mix
-    label: 上下文混合
+      x: 580
+      'y': 40
+  - id: mix
+    label: |-
+      混合支持文档与干扰文档
+      逐篇采样干扰文档至目标长度
+      打散多跳任务的支持段落
+      随机排序并添加段落编号
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: confusing_facts
-    label: 混淆事实
+      x: 860
+      'y': 40
+  - id: lengths
+    label: |-
+      构建五档可控长度
+      16K · 32K · 64K · 128K · 256K
+      每个问答与长度对应一个上下文
+      平均 102,380 词或汉字
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: keyword_replace
-    label: 关键词替换
+      x: 1140
+      'y': 40
+  - id: cfi
+    label: |-
+      六个数据集插入混淆事实
+      GPT-4 生成两条相似事实
+      语言学标注员消解冲突
+      随机插入不矛盾的混淆事实
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: answer_keywords
-    label: 答案关键词
+      x: 1420
+      'y': 40
+  - id: kpr
+    label: |-
+      应用关键词与短语替换
+      六个数据集 · 1,924 个替换对
+      人工制定替换规则
+      通读修改后上下文消解新冲突
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: annotation
+    label: |-
+      完成人工标注
+      五名全职硕士标注员
+      复核 557 条混淆事实实例
+      标注 955 条答案关键词实例
     type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: lv_eval
-    label: LV-Eval
+      x: 1700
+      'y': 380
+  - id: dataset
+    label: |-
+      发布 LV-Eval · 8,645 个上下文
+      1,729 个问答对 × 五档长度
+      上下文 · 问题 · 标准答案
+      混淆事实与答案关键词
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: inference
+    label: |-
+      执行长上下文推理
+      各数据集专用零样本提示
+      贪心生成答案
+      超窗时截断上下文中部
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: recall
+    label: |-
+      第一阶段 · 答案关键词召回
+      匹配人工标注的关键内容
+      要求达到数据集阈值
+      拒绝缺少关键词的回答
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 380
+  - id: f1
+    label: |-
+      第二阶段 · 黑名单感知相似度
+      去除常见无信息词
+      计算中英文问答 F1
+      指定任务使用原生 Rouge 指标
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 380
+  - id: report
+    label: |-
+      汇报可控长上下文得分
+      11 个数据集级指标
+      五档长度平均分
+      单跳与多跳分析
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 300
+      'y': 380
 edges:
-  - from: public_qa
-    to: qa_pairs
+  - from: sources
+    to: qa
     type: primary
-  - from: qa_pairs
-    to: length_levels
+  - from: qa
+    to: pool
     type: primary
-  - from: length_levels
-    to: context_mix
+  - from: pool
+    to: mix
     type: primary
-  - from: context_mix
-    to: confusing_facts
+  - from: mix
+    to: lengths
     type: primary
-  - from: confusing_facts
-    to: keyword_replace
+  - from: lengths
+    to: cfi
     type: primary
-  - from: keyword_replace
-    to: answer_keywords
+  - from: cfi
+    to: kpr
     type: primary
-  - from: answer_keywords
-    to: lv_eval
+  - from: kpr
+    to: annotation
+    type: primary
+  - from: annotation
+    to: dataset
+    type: primary
+  - from: dataset
+    to: inference
+    type: primary
+  - from: inference
+    to: recall
+    type: primary
+  - from: recall
+    to: f1
+    type: primary
+  - from: f1
+    to: report
     type: primary
 modules: []
