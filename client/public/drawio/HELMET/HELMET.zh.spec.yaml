@@ -5,75 +5,170 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HELMET 构建流程
-  description: 对齐论文的 HELMET 流程：从长上下文评测目标到七类任务、可控长度和可靠指标。
-  legend: 实线箭头表示任务策划、长度控制、提示设计、模型/参考指标和整体长上下文评分。
+  description: 按论文呈现 HELMET 七类应用导向长上下文任务、长度控制、提示与指标的组装流程。
+  legend: 三条分支分别呈现证据密集应用、学习/长文档任务和合成召回如何控制上下文长度，再汇入稳健提示与任务适配指标。
 nodes:
-  - id: goals
-    label: 评测目标
+  - id: flaws
+    label: |-
+      诊断既有长上下文基准缺陷
+      应用覆盖有限 · 上下文过短
+      指标不可靠 · 不兼容基础模型
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
-    label: 七类任务
+      'y': 300
+  - id: curate
+    label: |-
+      确立 HELMET 设计要求
+      多样应用覆盖 · 长度可控
+      稳健评测基础/指令模型
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: datasets
-    label: 任务集合
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: length
-    label: 长度控制
+      x: 340
+      'y': 300
+  - id: evidence_tasks
+    label: |-
+      策划三类证据密集任务
+      RAG：NQ/TQA/PopQA/HotpotQA
+      ALCE 引用生成 · MS MARCO 重排
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: prompts
-    label: 少样本提示
+      x: 680
+      'y': 40
+  - id: document_tasks
+    label: |-
+      策划学习与长文档任务
+      多样本 ICL：TREC/NLU/BANKING77/CLINC150
+      NarrativeQA/InfiniteBench QA · 两类摘要
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: metrics
-    label: 参考指标
-    type: decision
+      x: 680
+      'y': 300
+  - id: recall_tasks
+    label: |-
+      策划合成召回任务
+      JSON 键值检索
+      RULER MK Needle · MK UUID · MV
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 680
+      'y': 560
+  - id: evidence_length
+    label: |-
+      控制证据上下文长度
+      改变检索/重排段落数量
+      均匀放置金段或打乱 Hotpot 双段
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 40
+  - id: document_length
+    label: |-
+      控制学习/文档上下文长度
+      改变类别均衡的 ICL 样例数
+      从末尾截断长文档
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 300
+  - id: recall_length
+    label: |-
+      控制合成长度与目标位置
+      按目标长度生成 JSON/RULER 上下文
+      支持 128K tokens 及更长输入
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 560
+  - id: prompt
+    label: |-
+      应用稳健的任务特定提示
+      除可变样例 ICL/RULER 默认外均为 2-shot
+      占位示例并强化摘要指令
+    type: process
+    size: xl
+    position:
+      x: 1380
+      'y': 300
+  - id: direct_metrics
+    label: |-
+      对适合任务采用直接/参考指标
+      SubEM · 引用指标平均 · NDCG@10
+      准确率 · ROUGE F1
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: model_metrics
+    label: |-
+      使用 GPT-4o 参考式模型指标
+      NarrativeQA 流畅度 × 归一化正确性
+      摘要原子声明精确/召回 F1 × 流畅度
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
   - id: score
-    label: 长上下文分
+    label: |-
+      按长度汇总任务/类别结果
+      比较 59 个长上下文语言模型
+      报告整体画像而非单一合成代理
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2080
+      'y': 300
 edges:
-  - from: goals
-    to: tasks
+  - from: flaws
+    to: curate
     type: primary
-  - from: tasks
-    to: datasets
+  - from: curate
+    to: evidence_tasks
     type: primary
-  - from: datasets
-    to: length
+  - from: curate
+    to: document_tasks
     type: primary
-  - from: length
-    to: prompts
+  - from: curate
+    to: recall_tasks
     type: primary
-  - from: prompts
-    to: metrics
+  - from: evidence_tasks
+    to: evidence_length
     type: primary
-  - from: metrics
+  - from: document_tasks
+    to: document_length
+    type: primary
+  - from: recall_tasks
+    to: recall_length
+    type: primary
+  - from: evidence_length
+    to: prompt
+    type: primary
+  - from: document_length
+    to: prompt
+    type: primary
+  - from: recall_length
+    to: prompt
+    type: primary
+  - from: prompt
+    to: direct_metrics
+    type: primary
+  - from: prompt
+    to: model_metrics
+    type: primary
+  - from: direct_metrics
+    to: score
+    type: primary
+  - from: model_metrics
     to: score
     type: primary
 modules: []

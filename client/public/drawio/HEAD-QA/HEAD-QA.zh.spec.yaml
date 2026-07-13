@@ -5,75 +5,151 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HEAD-QA 构建流程
-  description: 对齐论文的 HEAD-QA 流程：从西班牙医疗专科考试到双语选择题 QA 和 accuracy/points 评测。
-  legend: 实线箭头表示考试收集、无效题移除、JSON结构化、时间切分、英文翻译和选择题评测。
+  description: 按论文呈现 HEAD-QA 西班牙文、英文版本的构建流程及官方评测视图。
+  legend: HEAD-QA 全集共 6,765 题；2,742 是测试集而非全集规模。两条语言分支使用相同的按年份切分，仅语言不同。
 nodes:
   - id: exams
-    label: 医疗考试
+    label: |-
+      收集西班牙公共医疗年度考试
+      用于申请医疗系统专科职位
+      采用 2013 年以来的官方试题
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: areas
-    label: 六类领域
+      'y': 300
+  - id: domains
+    label: |-
+      保留六类医疗领域
+      医学 · 药学 · 心理学
+      护理学 · 生物学 · 化学
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 300
   - id: clean
-    label: 清理题目
-    type: decision
+    label: |-
+      按来源规则排除题目
+      PDF 公式难解析，故不含放射物理
+      删除官方考试后被判无效的题目
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: json
-    label: QA JSON
+      x: 640
+      'y': 300
+  - id: schema
+    label: |-
+      将每道选择题序列化
+      题目 ID/文本 · 可选图片路径
+      选项 ID/文本 · 正确答案 ID
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 300
   - id: split
-    label: 年份切分
+    label: |-
+      保留官方按年份切分
+      2013-14 训练 2,657 · 2015 开发 1,366
+      之后考试测试 2,742 · 总计 6,765
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: spanish
+    label: |-
+      保留西班牙文 HEAD-QA
+      2013-14 每题五个选项
+      之后每题四个选项
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1580
+      'y': 80
   - id: translate
-    label: 英文版本
+    label: |-
+      用 Google API 构造 HEAD-QA-EN
+      翻译题干和答案选项
+      保留 ID、标签、图片和年份切分
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1580
+      'y': 520
+  - id: audit
+    label: |-
+      抽检 60 道随机翻译
+      两名双语人员评分语义充分性
+      一名英语母语者评分流畅度
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 520
+  - id: run_es
+    label: |-
+      运行西班牙文选择题评测
+      论文基线未利用图片
+      每题选择唯一答案选项
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 80
+  - id: run_en
+    label: |-
+      运行英文/跨语言评测
+      输入翻译后的题目和选项
+      每题选择唯一答案选项
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 520
   - id: score
-    label: 准确率/分数
+    label: |-
+      与官方答案 ID 比较
+      报告准确率与 POINTS
+      答对 +3 · 答错 -1
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2480
+      'y': 300
 edges:
   - from: exams
-    to: areas
+    to: domains
     type: primary
-  - from: areas
+  - from: domains
     to: clean
     type: primary
   - from: clean
-    to: json
+    to: schema
     type: primary
-  - from: json
+  - from: schema
     to: split
+    type: primary
+  - from: split
+    to: spanish
     type: primary
   - from: split
     to: translate
     type: primary
+  - from: spanish
+    to: run_es
+    type: primary
   - from: translate
+    to: audit
+    type: primary
+  - from: audit
+    to: run_en
+    type: primary
+  - from: run_es
+    to: score
+    type: primary
+  - from: run_en
     to: score
     type: primary
 modules: []

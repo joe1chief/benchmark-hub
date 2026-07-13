@@ -5,79 +5,153 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HEAD-QA Build Process
-  description: >-
-    Paper-aligned HEAD-QA flow from Spanish healthcare specialization exams to bilingual multiple-choice QA and
-    accuracy/points evaluation.
+  description: Paper-aligned construction of the Spanish and English HEAD-QA releases and their official evaluation views.
   legend: >-
-    Solid arrows show exam collection, invalid-item removal, JSON structuring, temporal splits, English translation, and
-    MCQ evaluation.
+    HEAD-QA contains 6,765 questions in total; 2,742 is the test split, not the full dataset size. The two branches
+    preserve the same year-based split and differ only in language.
 nodes:
   - id: exams
-    label: Health Exams
+    label: |-
+      Collect annual Spanish public-health exams
+      access to specialized healthcare positions
+      use official examinations from 2013 onward
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: areas
-    label: 6 Areas
+      'y': 300
+  - id: domains
+    label: |-
+      Retain six healthcare areas
+      medicine · pharmacology · psychology
+      nursing · biology · chemistry
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 300
   - id: clean
-    label: Clean Items
-    type: decision
+    label: |-
+      Apply source-faithful exclusions
+      omit radiophysics because PDF equations resist parsing
+      remove items invalidated after the official exams
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: json
-    label: QA JSON
+      x: 640
+      'y': 300
+  - id: schema
+    label: |-
+      Serialize each multiple-choice item
+      question ID/text · optional image path
+      answer IDs/text · correct-answer ID
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 300
   - id: split
-    label: Year Splits
+    label: |-
+      Keep chronological official splits
+      2013-14 train 2,657 · 2015 dev 1,366
+      later exams test 2,742 · total 6,765
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: spanish
+    label: |-
+      Preserve original Spanish HEAD-QA
+      2013-14 items have five choices
+      later items have four choices
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1580
+      'y': 80
   - id: translate
-    label: EN Version
+    label: |-
+      Create HEAD-QA-EN with Google API
+      translate questions and answer choices
+      retain IDs, labels, images, and year splits
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1580
+      'y': 520
+  - id: audit
+    label: |-
+      Audit 60 random translations
+      two bilingual reviewers score adequacy
+      one native speaker scores English fluency
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 520
+  - id: run_es
+    label: |-
+      Run Spanish multiple-choice QA
+      paper baselines do not exploit images
+      select exactly one answer option
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 80
+  - id: run_en
+    label: |-
+      Run English/cross-lingual QA
+      use the translated question and options
+      select exactly one answer option
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 520
   - id: score
-    label: Acc/Points
+    label: |-
+      Compare with the official answer ID
+      report accuracy and POINTS
+      correct +3 · wrong -1
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2480
+      'y': 300
 edges:
   - from: exams
-    to: areas
+    to: domains
     type: primary
-  - from: areas
+  - from: domains
     to: clean
     type: primary
   - from: clean
-    to: json
+    to: schema
     type: primary
-  - from: json
+  - from: schema
     to: split
+    type: primary
+  - from: split
+    to: spanish
     type: primary
   - from: split
     to: translate
     type: primary
+  - from: spanish
+    to: run_es
+    type: primary
   - from: translate
+    to: audit
+    type: primary
+  - from: audit
+    to: run_en
+    type: primary
+  - from: run_es
+    to: score
+    type: primary
+  - from: run_en
     to: score
     type: primary
 modules: []
