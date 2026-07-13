@@ -5,85 +5,208 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: IFBench 构建流程
-  description: 对齐论文的 IFBench 流程：从未见过的可验证约束策划，到 held-out WildChat prompt 实例化、 人工兼容性检查、IFTrain/RLVR 数据和严格/宽松准确率。
-  legend: 实线箭头表示约束策划、验证函数过滤、prompt 构造、训练数据和评测。
+  description: >-
+    与论文一致的 IFBench 流程：人工编写域外约束并实现可执行验证器，在保留的 WildChat 任务上实例化和人工兼容性检查， 分别形成 300 条单轮提示和 1,387
+    条多轮对话；严格与宽松验证器准确率衡量泛化能力，IFTrain 则作为独立可选训练支线。
+  legend: 实线表示基准构建与验证器评测；下方虚线支线把 29 约束的 IFTrain / IF-RLVR 训练发布与 58 约束的保留 IFBench 测试明确分开。
 nodes:
-  - id: taxonomy
-    label: 约束分类
-    type: database
+  - id: author
+    label: |-
+      人工编写新约束
+      来源于模型用户反馈与核心指令技能
+      新颖困难且域外
+    type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: constraints
-    label: 58约束
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: verifier
-    label: 验证函数
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: prompts
-    label: WildChat
+      'y': 180
+  - id: taxonomy
+    label: |-
+      定义约束分类
+      划分训练与测试模板
+      七个大类
     type: database
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: compatibility
-    label: 兼容检查
-    type: decision
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: train
-    label: IFTrain
+      x: 300
+      'y': 180
+  - id: test_constraints
+    label: |-
+      策划 IFBench 测试约束
+      58 个未见模板
+      每个配一个可执行验证器
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: rlvr
-    label: RLVR数据
+      x: 560
+      'y': 180
+  - id: verifier
+    label: |-
+      实现 Python 验证
+      实例化约束变量
+      仅保留可自动检查规则
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: 严格/宽松
+      x: 820
+      'y': 180
+  - id: wildchat
+    label: |-
+      抽取保留 WildChat 任务
+      使用发布中未见的提示
+      组合 1 或 2 个约束
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 180
+  - id: compatibility
+    label: |-
+      人工兼容性复核
+      主任务与约束可同时满足
+      删除指令冲突
+    type: decision
+    size: xl
+    position:
+      x: 1340
+      'y': 180
+  - id: single
+    label: |-
+      单轮 IFBench
+      300 条提示
+      256 条单约束 + 44 条双约束
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 40
+  - id: multi
+    label: |-
+      多轮 IFBench
+      用户任务 → 助手回答 → 改写要求
+      1,387 条 IFBench 约束对话
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 340
+  - id: generate
+    label: |-
+      生成最终回答
+      官方评测温度为 0
+      推理模型按需抽取最终答案
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 180
+  - id: strict
+    label: |-
+      严格验证
+      直接检查原始输出
+      所附约束必须全部通过
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 40
+  - id: loose
+    label: |-
+      宽松验证
+      去除首尾行
+      清理指定字体修饰
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 340
+  - id: report
+    label: |-
+      报告 IFBench 准确率
+      论文默认提示级宽松准确率
+      分列单轮与多轮结果
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2400
+      'y': 180
+  - id: iftrain
+    label: |-
+      独立 IFTrain 发布
+      29 个未见训练约束
+      配套验证函数
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 560
+  - id: rlvr
+    label: |-
+      可选 IF-RLVR 数据
+      Tulu-3-SFT 任务与约束组合
+      避免互相矛盾的组合
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 560
+  - id: reward
+    label: |-
+      使用可验证奖励训练
+      GRPO / DPO 实验
+      测量对保留 IFBench 的迁移
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 560
 edges:
-  - from: taxonomy
-    to: constraints
+  - from: author
+    to: taxonomy
     type: primary
-  - from: constraints
+  - from: taxonomy
+    to: test_constraints
+    type: primary
+  - from: test_constraints
     to: verifier
     type: primary
   - from: verifier
-    to: prompts
+    to: wildchat
     type: primary
-  - from: prompts
+  - from: wildchat
     to: compatibility
     type: primary
   - from: compatibility
-    to: train
+    to: single
     type: primary
-  - from: train
+  - from: compatibility
+    to: multi
+    type: primary
+  - from: single
+    to: generate
+    type: primary
+  - from: multi
+    to: generate
+    type: primary
+  - from: generate
+    to: strict
+    type: primary
+  - from: generate
+    to: loose
+    type: primary
+  - from: strict
+    to: report
+    type: primary
+  - from: loose
+    to: report
+    type: primary
+  - from: taxonomy
+    to: iftrain
+    type: optional
+  - from: iftrain
     to: rlvr
-    type: primary
+    type: optional
   - from: rlvr
-    to: metric
-    type: primary
+    to: reward
+    type: optional
 modules: []

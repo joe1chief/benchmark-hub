@@ -6,86 +6,211 @@ meta:
   routing: orthogonal
   title: IFBench Build Process
   description: >-
-    Paper-aligned IFBench workflow from unseen verifiable constraint curation to held-out WildChat prompt instantiation,
-    human compatibility checks, IFTrain/RLVR data, and strict/loose accuracy.
-  legend: Solid arrows show constraint curation, verifier filtering, prompt construction, training data, and evaluation.
+    Paper-aligned IFBench workflow: manually authored out-of-domain constraints receive executable verifiers, are
+    instantiated on held-out WildChat tasks and human-checked, then form separate 300-prompt single-turn and
+    1,387-conversation multi-turn tests; strict and loose verifier accuracy assess generalization, while IFTrain is a
+    distinct optional training branch.
+  legend: >-
+    Solid arrows show benchmark construction and verifier-based evaluation; the lower dashed branch separates the
+    29-constraint IFTrain / IF-RLVR training release from the 58-constraint held-out IFBench test.
 nodes:
-  - id: taxonomy
-    label: Taxonomy
-    type: database
+  - id: author
+    label: |-
+      Manually Author New Constraints
+      LM-user Feedback + Core IF Skills
+      Challenging and Out of Domain
+    type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: constraints
-    label: 58 Constraints
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: verifier
-    label: Verifiers
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: prompts
-    label: WildChat
+      'y': 180
+  - id: taxonomy
+    label: |-
+      Define Constraint Taxonomy
+      Split Train vs Test Templates
+      Seven Broad Categories
     type: database
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: compatibility
-    label: Compat Check
-    type: decision
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: train
-    label: IFTrain
+      x: 300
+      'y': 180
+  - id: test_constraints
+    label: |-
+      Curate IFBench Test Constraints
+      58 Unseen Templates
+      One Executable Verifier Each
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: rlvr
-    label: RLVR Data
+      x: 560
+      'y': 180
+  - id: verifier
+    label: |-
+      Implement Python Verification
+      Instantiate Constraint Variables
+      Retain Automatically Checkable Rules
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: Strict/Loose
+      x: 820
+      'y': 180
+  - id: wildchat
+    label: |-
+      Sample Held-out WildChat Tasks
+      Prompts Unseen in the Release
+      Combine with 1 or 2 Constraints
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 180
+  - id: compatibility
+    label: |-
+      Human Compatibility Review
+      Task and Constraint Can Coexist
+      Remove Instruction Conflicts
+    type: decision
+    size: xl
+    position:
+      x: 1340
+      'y': 180
+  - id: single
+    label: |-
+      Single-turn IFBench
+      300 Prompts
+      256 One-constraint + 44 Two-constraint
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 40
+  - id: multi
+    label: |-
+      Multi-turn IFBench
+      User Task → Assistant Response → Rewrite
+      1,387 IFBench-constraint Conversations
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 340
+  - id: generate
+    label: |-
+      Generate the Final Response
+      Temperature 0 in Official Evaluation
+      Extract Answer after Reasoning if Needed
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 180
+  - id: strict
+    label: |-
+      Strict Verification
+      Check Raw Output
+      All Attached Constraints Must Pass
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 40
+  - id: loose
+    label: |-
+      Loose Verification
+      Strip First / Last Lines
+      Remove Selected Font Modifiers
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 340
+  - id: report
+    label: |-
+      Report IFBench Accuracy
+      Prompt-level Loose Is the Paper Default
+      Single-turn and Multi-turn Results
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2400
+      'y': 180
+  - id: iftrain
+    label: |-
+      Separate IFTrain Release
+      29 Unseen Training Constraints
+      Corresponding Verifiers
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 560
+  - id: rlvr
+    label: |-
+      Optional IF-RLVR Data
+      Tulu-3-SFT Tasks + Constraint Mixes
+      Avoid Contradictory Combinations
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 560
+  - id: reward
+    label: |-
+      Train with Verifiable Rewards
+      GRPO / DPO Experiments
+      Measure Transfer to Held-out IFBench
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 560
 edges:
-  - from: taxonomy
-    to: constraints
+  - from: author
+    to: taxonomy
     type: primary
-  - from: constraints
+  - from: taxonomy
+    to: test_constraints
+    type: primary
+  - from: test_constraints
     to: verifier
     type: primary
   - from: verifier
-    to: prompts
+    to: wildchat
     type: primary
-  - from: prompts
+  - from: wildchat
     to: compatibility
     type: primary
   - from: compatibility
-    to: train
+    to: single
     type: primary
-  - from: train
+  - from: compatibility
+    to: multi
+    type: primary
+  - from: single
+    to: generate
+    type: primary
+  - from: multi
+    to: generate
+    type: primary
+  - from: generate
+    to: strict
+    type: primary
+  - from: generate
+    to: loose
+    type: primary
+  - from: strict
+    to: report
+    type: primary
+  - from: loose
+    to: report
+    type: primary
+  - from: taxonomy
+    to: iftrain
+    type: optional
+  - from: iftrain
     to: rlvr
-    type: primary
+    type: optional
   - from: rlvr
-    to: metric
-    type: primary
+    to: reward
+    type: optional
 modules: []

@@ -5,85 +5,208 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: INCLUDE 构建流程
-  description: 对齐论文的 INCLUDE 流程：母语考试源采集、MCQA 抽取、母语者质检、元数据和地域标签、 既有数据集合并，以及 BASE/LITE 评测子集。
-  legend: 实线箭头表示来源采集、抽取、质控、标注、合并和子集策划。
+  description: >-
+    与论文一致的 INCLUDE 流程：母语者收集并核验本地学术、职业和执照考试；118,606 道新解析题与 78,637 道既有数据题合并为 197,243 道原生语言选择题，再标注学科与地域性并抽取标准化 BASE 和 LITE
+    评测子集。
+  legend: 实线表示采集、抽取、质检、合并、标注、子集抽样与准确率评测；两条并行数据分支精确相加为论文完整数据集。
 nodes:
-  - id: sources
-    label: 考试来源
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: extract
-    label: QA抽取
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: native
-    label: 母语质检
+  - id: community
+    label: |-
+      母语者与地区协会
+      收集本地语言来源
+      保留原生文字与语境
     type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: filter
-    label: 上下文检查
-    type: decision
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: metadata
-    label: 元数据
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: existing
-    label: 既有数据
+      x: 40
+      'y': 240
+  - id: sources
+    label: |-
+      三类考试来源
+      学术考试
+      职业认证 + 地区执照
     type: database
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: labels
-    label: 地域标签
+      x: 300
+      'y': 240
+  - id: extract
+    label: |-
+      多格式选择题抽取
+      PDF + JavaScript / HTML + 其他表单
+      题目 + 选项 + 正确答案
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: subsets
-    label: BASE/LITE
+      x: 560
+      'y': 240
+  - id: native_qc
+    label: |-
+      母语者质量检查
+      对照原始文档
+      人工修正解析错误
+    type: user
+    size: xl
+    position:
+      x: 820
+      'y': 240
+  - id: filter
+    label: |-
+      内容质量门
+      删除依赖图像或表格的题
+      补齐所需参考上下文
+    type: decision
+    size: xl
+    position:
+      x: 1080
+      'y': 240
+  - id: new_data
+    label: |-
+      新解析并核验的数据
+      118,606 道选择题
+      来自 1,926 个考试来源
+    type: database
+    size: xl
+    position:
+      x: 1360
+      'y': 60
+  - id: existing
+    label: |-
+      合并既有基准
+      阿拉伯 / 中文 / 土耳其 / 波斯 MMLU
+      VNHSGE + EXAMS · 78,637 题
+    type: database
+    size: xl
+    position:
+      x: 1360
+      'y': 440
+  - id: complete
+    label: |-
+      完整 INCLUDE 数据集
+      197,243 题 · 44 种语言
+      15 种文字 · 52 国 · 58 领域
+    type: database
+    size: xl
+    position:
+      x: 1640
+      'y': 240
+  - id: metadata
+    label: |-
+      标注考试级元数据
+      语言 + 主题 + 层级 + 国家
+      两级学科分类
+    type: document
+    size: xl
+    position:
+      x: 1920
+      'y': 240
+  - id: regionality
+    label: |-
+      标注地域知识
+      地域无关 / 显式地域 / 文化
+      隐式地域
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 240
+  - id: base
+    label: |-
+      论文版 INCLUDE-BASE
+      均匀抽样 22,635 道四选题
+      每种语言最多 550 道
+    type: database
+    size: xl
+    position:
+      x: 2480
+      'y': 60
+  - id: lite
+    label: |-
+      论文版 INCLUDE-LITE
+      10,770 道四选题
+      每语言最多 250 道 · 仅地域题
+    type: database
+    size: xl
+    position:
+      x: 2480
+      'y': 440
+  - id: prompt
+    label: |-
+      多种提示设置评测
+      五样本或零样本思维链
+      原语言 / 英文 ± 地区前缀
+    type: process
+    size: xl
+    position:
+      x: 2760
+      'y': 240
+  - id: parse
+    label: |-
+      抽取四个选项之一
+      单独统计格式失败
+      保留逐语言切片
+    type: decision
+    size: xl
+    position:
+      x: 3040
+      'y': 240
+  - id: report
+    label: |-
+      报告准确率
+      总准确率与已抽取答案准确率
+      语言 / 领域 / 地域性分析
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 3320
+      'y': 240
 edges:
+  - from: community
+    to: sources
+    type: primary
   - from: sources
     to: extract
     type: primary
   - from: extract
-    to: native
+    to: native_qc
     type: primary
-  - from: native
+  - from: native_qc
     to: filter
     type: primary
   - from: filter
+    to: new_data
+    type: primary
+  - from: sources
+    to: existing
+    type: secondary
+  - from: new_data
+    to: complete
+    type: primary
+  - from: existing
+    to: complete
+    type: secondary
+  - from: complete
     to: metadata
     type: primary
   - from: metadata
-    to: existing
+    to: regionality
     type: primary
-  - from: existing
-    to: labels
+  - from: regionality
+    to: base
     type: primary
-  - from: labels
-    to: subsets
+  - from: regionality
+    to: lite
+    type: primary
+  - from: base
+    to: prompt
+    type: primary
+  - from: lite
+    to: prompt
+    type: primary
+  - from: prompt
+    to: parse
+    type: primary
+  - from: parse
+    to: report
     type: primary
 modules: []
