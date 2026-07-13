@@ -6,86 +6,176 @@ meta:
   routing: orthogonal
   title: MMLU-ProX Build Process
   description: >-
-    Paper-aligned construction of MMLU-ProX: MMLU-Pro is translated into parallel multilingual versions using
-    LLM-assisted translation plus expert review, covering 29 languages and enabling cross-lingual reasoning evaluation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned four-stage translation and expert-verification pipeline for parallelizing MMLU-Pro into 29 languages,
+    with 11,829 full and 658 lite questions per language.
+  legend: >-
+    Seventy validation questions are reserved for prompt construction, leaving 11,759 full and 588 lite evaluation
+    items.
 nodes:
-  - id: n1
-    label: MMLU-Pro
+  - id: source
+    label: |-
+      Start from MMLU-Pro
+      57 Subjects · 14 Disciplines
+      Ten Choices per Question
+      Reasoning-focused English Items
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: Translate
+      x: 20
+      'y': 40
+  - id: clean
+    label: |-
+      Curate the English Source
+      Remove or Merge Duplicates
+      Fix Grammar and Symbols
+      Align Questions and Options
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Expert Review
+      x: 300
+      'y': 40
+  - id: translate
+    label: |-
+      Stage One: Initial Translation
+      Use Claude 3.7 Sonnet
+      Preserve Terms and Culture
+      Keep Math · Code · Formatting
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: reflect
+    label: |-
+      Stage Two: Self-reflection
+      Check Source Correspondence
+      Verify Names and Terminology
+      Detect Additions or Omissions
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: improve
+    label: |-
+      Stage Three: Improve Translation
+      Apply Reflection Feedback
+      Explain Only Missing Equivalents
+      Preserve Quotes and Units
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: examine
+    label: |-
+      Stage Four: External Examination
+      o3 Checks Four African Languages
+      GPT-4.1 Checks the Other 25
+      Flag Major Discrepancies
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: verify
+    label: |-
+      Run Expert Verification
+      Sample 20 Items × 14 Disciplines
+      Cover 15 Languages
+      Two Native Translators Each
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: ratings
+    label: |-
+      Rate Three Dimensions from 1–5
+      Accuracy · Fluency · Completeness
+      Retranslate if Both Rate Below 3
+      Require Category Means Above Four
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: full
+    label: |-
+      Assemble 29 Parallel Languages
+      11,829 Questions per Language
+      Identical Question Coverage
+      More Than 30 Experts · 400 Hours
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: lite
+    label: |-
+      Build MMLU-ProX Lite
+      Uniformly Sample 5 Percent
+      Keep All 14 Disciplines
+      658 Questions per Language
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: reserve
+    label: |-
+      Reserve Prompt Examples
+      Hold Out 70 Validation Items
+      Full Evaluation Uses 11,759
+      Lite Evaluation Uses 588
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 29 Langs
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Parallel Qs
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Lite Set
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: LLM Eval
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Avg Acc
+      x: 300
+      'y': 420
+  - id: evaluate
+    label: |-
+      Evaluate Multilingual Models
+      Zero-shot and Five-shot CoT
+      Parse the Selected Option
+      Report Accuracy per Language
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: clean
     type: primary
-  - from: n2
-    to: n3
+  - from: clean
+    to: translate
     type: primary
-  - from: n3
-    to: n4
+  - from: translate
+    to: reflect
     type: primary
-  - from: n4
-    to: n5
+  - from: reflect
+    to: improve
     type: primary
-  - from: n5
-    to: n6
+  - from: improve
+    to: examine
     type: primary
-  - from: n6
-    to: n7
+  - from: examine
+    to: verify
     type: primary
-  - from: n7
-    to: n8
+  - from: verify
+    to: ratings
+    type: primary
+  - from: ratings
+    to: full
+    type: primary
+  - from: full
+    to: lite
+    type: primary
+  - from: lite
+    to: reserve
+    type: primary
+  - from: reserve
+    to: evaluate
     type: primary
 modules: []
