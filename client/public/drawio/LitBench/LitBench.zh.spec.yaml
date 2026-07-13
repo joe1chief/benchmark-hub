@@ -5,85 +5,182 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: LitBench 构建流程
-  description: 根据论文整理的 LitBench 流程：Reddit 写作样本、偏好对过滤、长度去偏、验证器训练和人类验证。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文复原 LitBench：从 r/WritingPrompts 独立构建 2023 年后的留出测试集与 2023 年前的训练集，控制参与度、 时间和长度偏差，并以奖励模型评测与在线人工实验验证。
+  legend: 数量依据 arXiv:2507.00769 / EACL 2026：测试集含 2,480 对、3,543 篇故事；训练集含 43,827 对、 50,309 篇故事。社区赞数仅在多重去偏和过滤后作为偏好信号。
 nodes:
-  - id: reddit_stories
-    label: Reddit故事
-    type: document
+  - id: source
+    label: |-
+      从 r/WritingPrompts 出发
+      同一写作提示下有多篇故事
+      以 Reddit 赞数作为偏好信号
+      保留故事、提示与发布时间元数据
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
+      x: 20
+      'y': 260
+  - id: test_raw
+    label: |-
+      收集留出测试基准
+      使用 PRAW 查询 Reddit
+      对 5,000+ 提示 ID 搜索前 100 项
+      仅保留 2023-01-02 之后的故事
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: train_raw
+    label: |-
+      引入训练语料
+      使用 MIT 许可的 WritingPrompts 偏好集
+      选取 2023 年前发布的故事
+      与留出测试集严格分离
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 480
   - id: story_filter
-    label: 故事过滤
+    label: |-
+      在两份数据上分别过滤故事
+      要求至少 10 个赞
+      词数不少于 50 且不超过 2,048 token
+      去除低信号或过长样本
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: pair_filter
-    label: 偏好配对
+      x: 620
+      'y': 260
+  - id: pairs
+    label: |-
+      在同一提示内组成故事对
+      比较对同一提示的两篇回答
+      将赞数更高者标为偏好故事
+      保留配对相关元数据
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 900
+      'y': 260
+  - id: preference_filter
+    label: |-
+      增强偏好信号可靠性
+      要求赞数差至少达到 25%
+      偏好故事必须发布时间更晚
+      降低边缘差异与曝光时长偏差
+    type: decision
+    size: xl
+    position:
+      x: 1180
+      'y': 260
   - id: length_debias
-    label: 长度去偏
+    label: |-
+      消除故事长度差偏差
+      构建 100 桶长度差直方图
+      剪枝至近似对称分布
+      平衡偏好故事更长与更短的比例
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: train_test
-    label: 训练/测试
-    type: document
+      x: 1460
+      'y': 260
+  - id: release
+    label: |-
+      发布 LitBench 数据资源
+      测试集 · 2,480 对 / 3,543 篇故事
+      训练集 · 43,827 对 / 50,309 篇故事
+      两份数据分别执行同一套筛选流程
+    type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: reward_models
-    label: 奖励模型
+      x: 1740
+      'y': 260
+  - id: judges
+    label: |-
+      评测零样本 LLM 裁判
+      输入未标注的故事 A 与 B
+      交换两种顺序以控制位置偏差
+      将裁决与人类偏好对比
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: llm_judges
-    label: LLM裁判
+      x: 2040
+      'y': 40
+  - id: rewards
+    label: |-
+      训练创意写作奖励模型
+      Bradley–Terry 判别式模型
+      带或不带推理说明的生成式模型
+      在去偏测试集上计算一致率
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
+      x: 2040
+      'y': 260
   - id: human_study
-    label: 人类研究
+    label: |-
+      通过在线人工实验验证排序
+      用 GPT-4.1 与 GPT-4o 生成新故事
+      由训练后的奖励模型排序
+      请标注者进行成对偏好选择
+    type: user
+    size: xl
+    position:
+      x: 2040
+      'y': 480
+  - id: report
+    label: |-
+      报告与人类偏好的一致率
+      比较现成裁判与训练后模型
+      最佳零样本裁判达到 73%
+      Bradley–Terry 与生成式模型达到 78%
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2340
+      'y': 260
 edges:
-  - from: reddit_stories
+  - from: source
+    to: test_raw
+    type: primary
+  - from: source
+    to: train_raw
+    type: primary
+  - from: test_raw
+    to: story_filter
+    type: primary
+  - from: train_raw
     to: story_filter
     type: primary
   - from: story_filter
-    to: pair_filter
+    to: pairs
     type: primary
-  - from: pair_filter
+  - from: pairs
+    to: preference_filter
+    type: primary
+  - from: preference_filter
     to: length_debias
     type: primary
   - from: length_debias
-    to: train_test
+    to: release
     type: primary
-  - from: train_test
-    to: reward_models
+  - from: release
+    to: judges
     type: primary
-  - from: reward_models
-    to: llm_judges
+  - from: release
+    to: rewards
     type: primary
-  - from: llm_judges
+  - from: release
     to: human_study
+    type: primary
+  - from: judges
+    to: report
+    type: primary
+  - from: rewards
+    to: report
+    type: primary
+  - from: human_study
+    to: report
     type: primary
 modules: []

@@ -7,56 +7,80 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 12,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "reddit_stories",
-      "label": "Reddit Stories",
-      "type": "document",
+      "id": "source",
+      "label": "Start from r/WritingPrompts\nStories Share a Writing Prompt\nReddit Upvotes Supply Preference Signals\nPreserve Story · Prompt · Time Metadata",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "test_raw",
+      "label": "Collect the Held-out Benchmark\nQuery Reddit with PRAW\nSearch Top 100 Results for 5,000+ Prompt IDs\nKeep Stories Posted after 2 January 2023",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "train_raw",
+      "label": "Source the Training Corpus\nUse MIT-licensed WritingPrompts Preferences\nTake Stories Posted before 2023\nKeep Training Separate from the Held-out Test",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "story_filter",
-      "label": "Story Filter",
+      "label": "Filter Stories Independently in Each Split\nRequire at Least 10 Upvotes\nKeep 50+ Words and at Most 2,048 Tokens\nRemove Low-signal or Excessively Long Entries",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "pair_filter",
-      "label": "Pair Filter",
+      "id": "pairs",
+      "label": "Form Within-prompt Story Pairs\nCompare Two Responses to the Same Prompt\nMark Higher-upvote Story as Chosen\nRetain the Pair Metadata",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "preference_filter",
+      "label": "Strengthen the Preference Signal\nRequire at Least 25% Upvote Difference\nChosen Story Must Have Been Posted Later\nReduce Marginal and Exposure-time Bias",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "length_debias",
-      "label": "Length Debias",
+      "label": "Debias Story-length Differences\nBuild a 100-bin Length-difference Histogram\nPrune Pairs toward a Symmetric Distribution\nBalance Longer and Shorter Chosen Stories",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "train_test",
-      "label": "Train/Test",
-      "type": "document",
+      "id": "release",
+      "label": "Release LitBench Data Resources\nTest · 2,480 Pairs from 3,543 Stories\nTrain · 43,827 Pairs from 50,309 Stories\nApply the Same Curation Separately to Both",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "reward_models",
-      "label": "Reward Models",
+      "id": "judges",
+      "label": "Evaluate Zero-shot LLM Judges\nPresent Unlabeled Stories A and B\nSwap Both Orders to Control Position Bias\nCompare the Verdict with Human Preference",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "llm_judges",
-      "label": "LLM Judges",
+      "id": "rewards",
+      "label": "Train Creative-writing Reward Models\nBradley–Terry Discriminative Models\nGenerative Models with or without Rationale\nTest Agreement on the Debiased Benchmark",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human_study",
-      "label": "Human Study",
+      "label": "Validate Rankings Online with Humans\nGenerate New Stories with GPT-4.1 and GPT-4o\nRank Them with the Trained Reward Model\nAsk Annotators for Pairwise Preferences",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Report Agreement with Human Preferences\nCompare Off-the-shelf and Trained Judges\nBest Zero-shot Judge Reaches 73%\nBradley–Terry and Generative Models Reach 78%",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +88,86 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "reddit_stories",
-      "to": "story_filter",
+      "from": "source",
+      "to": "test_raw",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "story_filter",
-      "to": "pair_filter",
+      "from": "source",
+      "to": "train_raw",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "pair_filter",
-      "to": "length_debias",
+      "from": "test_raw",
+      "to": "story_filter",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "length_debias",
-      "to": "train_test",
+      "from": "train_raw",
+      "to": "story_filter",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "train_test",
-      "to": "reward_models",
+      "from": "story_filter",
+      "to": "pairs",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "reward_models",
-      "to": "llm_judges",
+      "from": "pairs",
+      "to": "preference_filter",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "llm_judges",
+      "from": "preference_filter",
+      "to": "length_debias",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "length_debias",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "release",
+      "to": "judges",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "release",
+      "to": "rewards",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "release",
       "to": "human_study",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "judges",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "rewards",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "human_study",
+      "to": "report",
       "type": "primary"
     }
   ],

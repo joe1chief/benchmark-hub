@@ -4,86 +4,202 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongVideoBench Build Process (Chinese)
-  description: LongVideoBench 的论文对齐构建流程：从网页视频按时长和内容类别收集，经过字幕、质量和人工过滤，标注引用推理多选题，并以准确率评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LongVideoBench 构建流程
+  description: 按论文复原 LongVideoBench：收集多样长视频与时间对齐字幕，经 Q-Align 和人工过滤，以三角色流程标注引用推理题， 构造交错多模态输入，并按时长与题型报告准确率。
+  legend: 数量依据 arXiv:2407.15754：119 个频道、10 个内容类别、四个非连续时长区间，共 3,763 个视频； 6,678 道题覆盖 17 个细类，其中验证集 1,337 题、测试集 5,341 题。
 nodes:
-  - id: sources
-    label: 视频来源
+  - id: groups
+    label: |-
+      定义视频采样分组
+      时长 · (8秒,15秒] · (15秒,60秒]
+      (180秒,600秒] · (900秒,3,600秒]
+      覆盖 10 个多样内容类别
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: channels
+    label: |-
+      选择 119 个网络视频频道
+      横屏 99 个 · 竖屏 20 个
+      电影、生活、新闻、知识四大组
+      在各组内均匀采样主题
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: subs
-    label: 字幕过滤
+      x: 300
+      'y': 40
+  - id: download
+    label: |-
+      下载候选视频
+      要求分辨率至少为 720P
+      保留版式、主题与时长元数据
+      分配至四个时长组
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: whisper
-    label: Whisper字幕
+      x: 580
+      'y': 40
+  - id: subtitles
+    label: |-
+      确保具备英文字幕
+      对提供字幕的平台删除缺失或非英文视频
+      其余平台用 Whisper-V3-Large 生成
+      保留带时间戳的字幕片段
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 860
+      'y': 40
   - id: quality
-    label: 质量评分
+    label: |-
+      过滤视觉与内容质量
+      使用 Q-Align 评估视频质量
+      删除质量特别低的候选项
+      人工剔除无法标注的视频
     type: decision
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: manual
-    label: 人工过滤
+      x: 1140
+      'y': 40
+  - id: video_set
+    label: |-
+      确定 3,763 个最终视频
+      保留全部 10 个内容类别
+      覆盖四个目标时长区间
+      视频与字幕均完整可用
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: train_annotators
+    label: |-
+      培训有经验的标注者
+      讲解每一种问题类别
+      在视频上显示时间对齐字幕
+      要求先完整观看视频
     type: user
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: queries
-    label: 引用问题
+      x: 1700
+      'y': 40
+  - id: questions
+    label: |-
+      编写引用推理多选题
+      L1 感知 · L2 关系
+      覆盖 17 个细粒度问题类别
+      加入 3–4 个相关干扰选项
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: mcq
-    label: 人工选择题
-    type: document
+      x: 1700
+      'y': 420
+  - id: grounding
+    label: |-
+      定位每道题的引用上下文
+      在问题中突出引用查询
+      标注所有引用时刻的帧索引
+      覆盖单个或多个视频时刻
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: 准确率
+      x: 1420
+      'y': 420
+  - id: qc
+    label: |-
+      执行三角色标注质检
+      主标注者创建问题并过滤视频
+      检查者核对类别与要求
+      修订者修正约 20% 的问题标注
+    type: user
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: release
+    label: |-
+      发布 6,678 道人工多选题
+      验证集 · 752 视频 / 1,337 题
+      测试集 · 3,011 视频 / 5,341 题
+      保留时长组与题型标签
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: interleave
+    label: |-
+      构造交错多模态输入
+      沿时间轴采样视频帧
+      将字幕插入其前后相邻帧之间
+      以字幕中点时间戳对齐
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: evaluate
+    label: |-
+      运行零样本多模态模型评测
+      在验证集上选择帧采样设置
+      每道题输出一个多选答案
+      以选定设置运行测试集
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告多项选择准确率
+      验证集与测试集总体准确率
+      分解四个时长组
+      分解 17 个问题类别
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: sources
-    to: subs
+  - from: groups
+    to: channels
     type: primary
-  - from: subs
-    to: whisper
+  - from: channels
+    to: download
     type: primary
-  - from: whisper
+  - from: download
+    to: subtitles
+    type: primary
+  - from: subtitles
     to: quality
     type: primary
   - from: quality
-    to: manual
+    to: video_set
     type: primary
-  - from: manual
-    to: queries
+  - from: video_set
+    to: train_annotators
     type: primary
-  - from: queries
-    to: mcq
+  - from: train_annotators
+    to: questions
     type: primary
-  - from: mcq
-    to: metric
+  - from: questions
+    to: grounding
+    type: primary
+  - from: grounding
+    to: qc
+    type: primary
+  - from: qc
+    to: release
+    type: primary
+  - from: release
+    to: interleave
+    type: primary
+  - from: interleave
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []

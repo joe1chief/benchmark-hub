@@ -5,85 +5,190 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: LogicGame 构建流程
-  description: 根据论文整理的 LogicGame 流程：规则游戏问题、JSON 输出约束、难度等级、双语版本、自动过程校验和 AP-Acc 评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文复原 LogicGame：从现实场景启发的规则游戏出发，分别构建确定性执行与策略规划任务，加入 JSON 答案/过程约束、 四级难度、双语样例，并以过程感知的自动指标评分。
+  legend: 数量与协议依据 arXiv:2408.15778v4：304 道题、Execution 与 Planning 两域、0–3 级难度；报告答案、过程、 答案-过程准确率以及 JSON/指令遵循错误。
 nodes:
-  - id: game_ideas
-    label: 游戏想法
-    type: document
+  - id: scenarios
+    label: |-
+      调研游戏化现实场景
+      结合广泛调研与众包
+      聚焦明确规则与决策过程
+      原创设计网上不可检索的问题
+    type: user
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: rule_tasks
-    label: 规则任务
+      x: 20
+      'y': 260
+  - id: taxonomy
+    label: |-
+      定义两域任务分类
+      执行域按规则变换当前状态
+      规划域搜索未来动作序列
+      覆盖字符串、矩阵、路径与逻辑游戏
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: json_format
-    label: JSON格式
+      x: 300
+      'y': 260
+  - id: execution
+    label: |-
+      编写执行域问题
+      使用确定性的单步推断
+      按固定规则操作字符串或状态
+      每个中间步骤均可验证
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: planning
+    label: |-
+      编写规划域问题
+      要求多步策略决策
+      搜索潜在未来状态
+      必要时加入检查点或状态变量
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 480
+  - id: references
+    label: |-
+      构建可验证参考答案
+      记录正确的最终答案
+      记录逐步求解过程
+      保留确定性中间状态
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 900
+      'y': 260
+  - id: format
+    label: |-
+      统一结构化输出格式
+      强制返回 JSON 对象
+      answer 为字符串列表
+      需要时 process 为字符串列表
+    type: document
+    size: xl
+    position:
+      x: 1180
+      'y': 260
   - id: difficulty
-    label: L0-L3
+    label: |-
+      构建 0–3 四级难度
+      逐级增加规则复杂度与推理步数
+      单步 0 级题可只输出答案
+      复杂 0 级与 1–3 级需输出过程
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
+      x: 1460
+      'y': 260
   - id: exemplars
-    label: 样例构造
+    label: |-
+      每道题加入两个示例
+      包含题目与正确答案
+      包含逐步求解过程
+      解释规则如何应用
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: translate_en
-    label: 英文翻译
+      x: 1740
+      'y': 260
+  - id: bilingual
+    label: |-
+      制作中英文双语版本
+      仔细翻译问题文本
+      翻译指令与输出约束
+      保持规则和参考答案语义一致
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: auto_check
-    label: 自动校验
+      x: 2020
+      'y': 260
+  - id: release
+    label: |-
+      发布 304 道 LogicGame 问题
+      保留执行域与规划域标签
+      附带难度、示例与参考过程
+      对齐两种语言版本
+    type: database
+    size: xl
+    position:
+      x: 2300
+      'y': 260
+  - id: infer
+    label: |-
+      运行确定性模型评测
+      温度 0 · 最大 2,048 token
+      使用零样例或两个示例提示
+      解析规定的 JSON 响应
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: ap_acc
-    label: AP准确率
+      x: 2300
+      'y': 600
+  - id: score
+    label: |-
+      分别评分答案与推理过程
+      A-Acc 二值判断答案正确性
+      P-Acc 按字符级匹配过程
+      AP-Acc 对两者执行逻辑与
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 600
+  - id: report
+    label: |-
+      报告准确率与格式失败
+      A-Acc · P-Acc · AP-Acc
+      JSError · IFError
+      NIJ-Acc 排除两类格式错误
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1740
+      'y': 600
 edges:
-  - from: game_ideas
-    to: rule_tasks
+  - from: scenarios
+    to: taxonomy
     type: primary
-  - from: rule_tasks
-    to: json_format
+  - from: taxonomy
+    to: execution
     type: primary
-  - from: json_format
+  - from: taxonomy
+    to: planning
+    type: primary
+  - from: execution
+    to: references
+    type: primary
+  - from: planning
+    to: references
+    type: primary
+  - from: references
+    to: format
+    type: primary
+  - from: format
     to: difficulty
     type: primary
   - from: difficulty
     to: exemplars
     type: primary
   - from: exemplars
-    to: translate_en
+    to: bilingual
     type: primary
-  - from: translate_en
-    to: auto_check
+  - from: bilingual
+    to: release
     type: primary
-  - from: auto_check
-    to: ap_acc
+  - from: release
+    to: infer
+    type: primary
+  - from: infer
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []
