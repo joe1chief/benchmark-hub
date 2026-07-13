@@ -1,0 +1,194 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: NExT-QA 构建与评测流程
+  description: 对齐论文的高交互 VidOR 视频筛选、三阶段人工标注、质量控制、困难多选干扰项生成、开放式回答生成与分题型评测流程。
+  legend: NExT-QA 含 5,440 个视频和 52,044 条开放式问答，其中因果、时序和描述问题分别占 48%、29% 和 23%。
+nodes:
+  - id: goal
+    label: |-
+      定义解释型视频问答
+      因果与时序动作
+      丰富物体交互
+      真实日常活动
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 230
+  - id: videos
+    label: |-
+      筛选 6,000 个 VidOR 视频
+      原始来源为 YFCC-100M
+      优先较长且交互丰富的片段
+      训练验证测试按 7:1:2 划分
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 230
+  - id: annotation
+    label: |-
+      执行三阶段标注
+      100 名受训本科生
+      在监督下持续一年
+      依次标注因果时序与描述问题
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 230
+  - id: qa_control
+    label: |-
+      分离问题与答案标注角色
+      回答者修复或删除坏问题
+      要求证据可见且答案客观
+      建议题干 22 词 · 答案 6 词
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 230
+  - id: postprocess
+    label: |-
+      后处理标注数据
+      删除确认无聊的视频
+      均衡验证测试中的是否答案
+      删除答案超过二十的计数题
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 230
+  - id: release
+    label: |-
+      保留 5,440 视频 · 52,044 问答
+      训练 3,870 · 验证 570 · 测试 1,000
+      因果 48% · 时序 29% · 描述 23%
+      保留简短自由文本答案
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 230
+  - id: mc_group
+    label: |-
+      按题型分组非二元问题
+      检索 50 个最相似问题
+      使用 Sentence-BERT 余弦相似度
+      收集其答案作为候选干扰项
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: open_task
+    label: |-
+      定义开放式问答
+      不提供候选选项
+      生成简短短语答案
+      使用全部 52,044 条问答
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: mc_filter
+    label: |-
+      过滤干扰项候选
+      删除词形重复项
+      删除相似度高于 0.9 的答案
+      保留相似度高于 0.2 的困难负例
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: open_eval
+    label: |-
+      评测生成答案
+      删除停用词并词形还原
+      使用 WUPS 语义相似度
+      二元与计数题使用准确率
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 420
+  - id: mc_manual
+    label: |-
+      组成并检查五个选项
+      采样四个合格干扰项
+      均匀插入正确答案
+      人工修订每组题目与选项
+    type: process
+    size: xl
+    position:
+      x: 1940
+      'y': 40
+  - id: mc_eval
+    label: |-
+      评测多项选择问答
+      47,692 道五选一问题
+      精确选项准确率
+      比较视觉与盲问答基线
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 40
+  - id: report
+    label: |-
+      报告 NExT-QA 结果
+      因果 · 时序 · 描述
+      多选准确率 · 开放式 WUPS
+      与人类表现比较
+    type: terminal
+    size: xl
+    position:
+      x: 2420
+      'y': 230
+edges:
+  - from: goal
+    to: videos
+    type: primary
+  - from: videos
+    to: annotation
+    type: primary
+  - from: annotation
+    to: qa_control
+    type: primary
+  - from: qa_control
+    to: postprocess
+    type: primary
+  - from: postprocess
+    to: release
+    type: primary
+  - from: release
+    to: mc_group
+    type: primary
+  - from: release
+    to: open_task
+    type: primary
+  - from: mc_group
+    to: mc_filter
+    type: primary
+  - from: open_task
+    to: open_eval
+    type: primary
+  - from: mc_filter
+    to: mc_manual
+    type: primary
+  - from: mc_manual
+    to: mc_eval
+    type: primary
+  - from: mc_eval
+    to: report
+    type: primary
+  - from: open_eval
+    to: report
+    type: primary
+modules: []
