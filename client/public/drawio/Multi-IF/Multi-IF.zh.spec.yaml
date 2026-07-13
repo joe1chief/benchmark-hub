@@ -1,0 +1,177 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Multi-IF 构建与评测流程
+  description: 对齐论文展示把英文 IFEval 提示扩展为兼容的三轮对话和另外七种语言，再经双阶段质检、累计式对话生成和严格/宽松规则指标评测。
+  legend: Multi-IF 含 4,501 段三轮对话，覆盖英语、法语、印地语、意大利语、葡萄牙语、中文、西班牙语和俄语。
+nodes:
+  - id: goal
+    label: |-
+      扩展规则式 IFEval
+      加入多轮指令保持
+      加入多语言覆盖
+      保留脚本可验证约束
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 230
+  - id: source
+    label: |-
+      从英文 IFEval 开始
+      原始提示作为第 1 轮
+      保留其中可验证指令
+      准备生成后续两轮
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 230
+  - id: expand
+    label: |-
+      生成第 2 轮和第 3 轮
+      每轮从 30 类指令中采样
+      Llama 3.1 405B 读取既往提示
+      写出自然的后续用户提示
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 230
+  - id: conflict_scan
+    label: |-
+      扫描跨轮冲突
+      Llama 3.1 405B 检查指令
+      识别互不兼容的要求
+      形成英文候选对话
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 230
+  - id: conflict_human
+    label: |-
+      人工确认兼容性
+      移除互相矛盾的提示
+      保留可持续遵循的指令
+      产出黄金英文集合
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 230
+  - id: translate
+    label: |-
+      翻译为另外七种语言
+      Llama 3.1 405B 生成初稿
+      法 · 印地 · 意 · 葡 · 中 · 西 · 俄
+      跳过不适用于目标语言的约束
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 230
+  - id: audit
+    label: |-
+      审核每条翻译
+      多语言专业标注员参与
+      检查忠实度与母语风格
+      平均重写 15% 的翻译
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 230
+  - id: sensitive
+    label: |-
+      删除敏感提示
+      LLM 标记潜在敏感内容
+      人工复核被标记项
+      删除确有敏感内容的数据
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 500
+  - id: release
+    label: |-
+      发布 Multi-IF
+      4,501 段对话
+      每段包含三轮用户提示
+      覆盖八种语言
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 500
+  - id: rollout
+    label: |-
+      运行累计式多轮对话
+      收集第 1 轮回答
+      拼接历史提示与回答
+      逐轮生成后续回答
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 500
+  - id: metrics
+    label: |-
+      计算四项规则指标
+      指令级与对话级
+      严格口径与宽松口径
+      宽松模式去除边缘文本
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 500
+  - id: report
+    label: |-
+      报告多轮准确率
+      对四项指标取平均
+      按轮次与语言拆分
+      比较 14 个领先模型
+    type: terminal
+    size: xl
+    position:
+      x: 500
+      'y': 500
+edges:
+  - from: goal
+    to: source
+    type: primary
+  - from: source
+    to: expand
+    type: primary
+  - from: expand
+    to: conflict_scan
+    type: primary
+  - from: conflict_scan
+    to: conflict_human
+    type: primary
+  - from: conflict_human
+    to: translate
+    type: primary
+  - from: translate
+    to: audit
+    type: primary
+  - from: audit
+    to: sensitive
+    type: primary
+  - from: sensitive
+    to: release
+    type: primary
+  - from: release
+    to: rollout
+    type: primary
+  - from: rollout
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
+modules: []
