@@ -1,0 +1,156 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HealthBench Hard Build Process
+  description: >-
+    Paper-aligned selection of the 1,000-example difficult HealthBench subset and reuse of the official rubric-scoring
+    protocol.
+  legend: >-
+    HealthBench Hard is a selected subset of HealthBench, not newly authored data. Selection uses five frontier models,
+    removes examples where every model scores zero, then takes the 1,000 lowest cross-provider average scores.
+nodes:
+  - id: full
+    label: |-
+      Start from full HealthBench
+      5,000 conversations and physician rubrics
+      preserve themes · axes · rubric weights
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: models
+    label: |-
+      Run five frontier models
+      o3 · Grok 3 · Gemini 2.5 Pro
+      Claude 3.7 Sonnet · Llama 4 Maverick
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: score_candidates
+    label: |-
+      Compute per-example scores
+      model grader checks each rubric criterion
+      use official positive/negative point formula
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: all_zero
+    label: |-
+      Remove all-zero examples
+      filter when no model has a positive score
+      about 1.5% removed as possibly over-difficult
+    type: decision
+    size: xl
+    position:
+      x: 940
+      'y': 300
+  - id: average
+    label: |-
+      Average across model providers
+      reduce single-model adversarial selection
+      rank remaining examples by difficulty
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: select
+    label: |-
+      Select lowest 1,000 averages
+      difficult for current frontier models
+      retain headroom for future systems
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: hard_set
+    label: |-
+      Release HealthBench Hard
+      1,000 original conversations and rubrics
+      no new conversation or rubric annotation
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: inference
+    label: |-
+      Generate evaluated response
+      answer the final user message
+      preserve the full conversation context
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: grade
+    label: |-
+      Reuse official rubric grader
+      judge every criterion true or false
+      apply full points or zero per criterion
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: example_score
+    label: |-
+      Compute original example score
+      met weighted points over positive maximum
+      negative criteria may lower the score
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: aggregate
+    label: |-
+      Report HealthBench Hard score
+      mean over 1,000 examples clipped to 0-1
+      same axis slices and bootstrap uncertainty
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 300
+edges:
+  - from: full
+    to: models
+    type: primary
+  - from: models
+    to: score_candidates
+    type: primary
+  - from: score_candidates
+    to: all_zero
+    type: primary
+  - from: all_zero
+    to: average
+    type: primary
+  - from: average
+    to: select
+    type: primary
+  - from: select
+    to: hard_set
+    type: primary
+  - from: hard_set
+    to: inference
+    type: primary
+  - from: inference
+    to: grade
+    type: primary
+  - from: grade
+    to: example_score
+    type: primary
+  - from: example_score
+    to: aggregate
+    type: primary
+modules: []

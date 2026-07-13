@@ -5,75 +5,196 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HealthBench 构建流程
-  description: 对齐论文的 HealthBench 构建流程：医生队伍筛选、健康场景种子、多轮对话生成、 相关性过滤、医生评分准则、模型裁判和 rubric 分数聚合。
-  legend: 实线箭头表示医生输入、对话生成、过滤、评分准则编写、模型评分和分数聚合。
+  description: 与论文一致的医生队伍、三源对话生成、过滤、评分准则标注、模型判分与分数聚合流程。
+  legend: HealthBench 含 5,000 段对话和 48,562 条唯一医生评分准则，覆盖七个主题与五个行为维度。 评分准则既可给正分，也可施加负分惩罚。
 nodes:
-  - id: doctors
-    label: 医生队伍
+  - id: cohort
+    label: |-
+      筛选并维护医生队伍
+      1,021 人申请 · 付费试做 · 保留 262 人
+      60 国 · 26 专科 · 持续 11 个月
     type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: seeds
-    label: 场景种子
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: convs
-    label: 多轮对话
+      'y': 300
+  - id: advisors
+    label: |-
+      医生顾问定义覆盖范围
+      选择领域与重要场景
+      编写种子 · 培训材料 · 共识准则
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 340
+      'y': 300
+  - id: synthetic
+    label: |-
+      合成主分支
+      枚举现实健康场景
+      定制 LM 流水线生成对话
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 0
+  - id: redteam
+    label: |-
+      医生红队分支
+      探测模型弱点与不安全行为
+      保留现实困难交互
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: searchqa
+    label: |-
+      HealthSearchQA 分支
+      从高频健康搜索问题出发
+      LM 将每题改写为现实对话
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 600
+  - id: merge
+    label: |-
+      合并候选对话
+      用户/模型消息交替
+      始终由用户开始并结束
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 300
   - id: filter
-    label: 相关性过滤
+    label: |-
+      使用 o1-preview 过滤
+      现实且自洽 · 与身体健康相关
+      删除含不完整消息的对话
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1240
+      'y': 300
   - id: rubrics
-    label: 医生Rubric
+    label: |-
+      医生标注每个样本
+      编写专属正向/负向评分准则
+      在各主题内为样本分类
     type: document
     size: xl
     position:
-      x: 1080
+      x: 1540
       'y': 160
-  - id: grader
-    label: 模型裁判
+  - id: consensus
+    label: |-
+      附加共识准则
+      至少两名医生形成多数意见
+      34 条可复用关键行为准则
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Rubric分数
+      x: 1540
+      'y': 500
+  - id: dataset
+    label: |-
+      发布 HealthBench
+      5,000 段对话 · 48,562 条唯一准则
+      七个主题 · 五个行为维度
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: inference
+    label: |-
+      生成被测响应
+      输入至对话最后一个用户回合
+      生成一次开放式助手回答
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: grader
+    label: |-
+      逐条判定评分准则
+      模型裁判返回是否满足 true/false
+      满足给全分 · 否则零分
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: example_score
+    label: |-
+      计算单样本分数
+      汇总已满足正分与负分惩罚
+      除以最大可能正分
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: aggregate
+    label: |-
+      报告 HealthBench 分数
+      单样本均值裁剪至 0-1
+      自助法不确定性 · 主题/维度拆分
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3040
+      'y': 300
 edges:
-  - from: doctors
-    to: seeds
+  - from: cohort
+    to: advisors
     type: primary
-  - from: seeds
-    to: convs
+  - from: advisors
+    to: synthetic
     type: primary
-  - from: convs
+  - from: advisors
+    to: redteam
+    type: primary
+  - from: advisors
+    to: searchqa
+    type: secondary
+  - from: synthetic
+    to: merge
+    type: primary
+  - from: redteam
+    to: merge
+    type: primary
+  - from: searchqa
+    to: merge
+    type: secondary
+  - from: merge
     to: filter
     type: primary
   - from: filter
     to: rubrics
     type: primary
   - from: rubrics
+    to: consensus
+    type: secondary
+  - from: rubrics
+    to: dataset
+    type: primary
+  - from: consensus
+    to: dataset
+    type: secondary
+  - from: dataset
+    to: inference
+    type: primary
+  - from: inference
     to: grader
     type: primary
   - from: grader
-    to: score
+    to: example_score
+    type: primary
+  - from: example_score
+    to: aggregate
     type: primary
 modules: []

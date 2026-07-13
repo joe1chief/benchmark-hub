@@ -7,50 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "doctors",
-      "label": "医生队伍",
+      "id": "cohort",
+      "label": "筛选并维护医生队伍\n1,021 人申请 · 付费试做 · 保留 262 人\n60 国 · 26 专科 · 持续 11 个月",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "seeds",
-      "label": "场景种子",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "convs",
-      "label": "多轮对话",
+      "id": "advisors",
+      "label": "医生顾问定义覆盖范围\n选择领域与重要场景\n编写种子 · 培训材料 · 共识准则",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "synthetic",
+      "label": "合成主分支\n枚举现实健康场景\n定制 LM 流水线生成对话",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "redteam",
+      "label": "医生红队分支\n探测模型弱点与不安全行为\n保留现实困难交互",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "searchqa",
+      "label": "HealthSearchQA 分支\n从高频健康搜索问题出发\nLM 将每题改写为现实对话",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "merge",
+      "label": "合并候选对话\n用户/模型消息交替\n始终由用户开始并结束",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "filter",
-      "label": "相关性过滤",
+      "label": "使用 o1-preview 过滤\n现实且自洽 · 与身体健康相关\n删除含不完整消息的对话",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "rubrics",
-      "label": "医生Rubric",
+      "label": "医生标注每个样本\n编写专属正向/负向评分准则\n在各主题内为样本分类",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "grader",
-      "label": "模型裁判",
+      "id": "consensus",
+      "label": "附加共识准则\n至少两名医生形成多数意见\n34 条可复用关键行为准则",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Rubric分数",
+      "id": "dataset",
+      "label": "发布 HealthBench\n5,000 段对话 · 48,562 条唯一准则\n七个主题 · 五个行为维度",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "生成被测响应\n输入至对话最后一个用户回合\n生成一次开放式助手回答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "grader",
+      "label": "逐条判定评分准则\n模型裁判返回是否满足 true/false\n满足给全分 · 否则零分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "example_score",
+      "label": "计算单样本分数\n汇总已满足正分与负分惩罚\n除以最大可能正分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "报告 HealthBench 分数\n单样本均值裁剪至 0-1\n自助法不确定性 · 主题/维度拆分",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +100,98 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "doctors",
-      "to": "seeds",
+      "from": "cohort",
+      "to": "advisors",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "seeds",
-      "to": "convs",
+      "from": "advisors",
+      "to": "synthetic",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "convs",
-      "to": "filter",
+      "from": "advisors",
+      "to": "redteam",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "advisors",
+      "to": "searchqa",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-5",
+      "from": "synthetic",
+      "to": "merge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "redteam",
+      "to": "merge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "searchqa",
+      "to": "merge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "merge",
+      "to": "filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
       "from": "filter",
       "to": "rubrics",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-10",
       "from": "rubrics",
+      "to": "consensus",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-11",
+      "from": "rubrics",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "consensus",
+      "to": "dataset",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-13",
+      "from": "dataset",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "inference",
       "to": "grader",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-15",
       "from": "grader",
-      "to": "score",
+      "to": "example_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "example_score",
+      "to": "aggregate",
       "type": "primary"
     }
   ],

@@ -6,78 +6,199 @@ meta:
   routing: orthogonal
   title: HealthBench Build Process
   description: >-
-    Paper-aligned HealthBench construction pipeline from physician cohort selection and seed situations to realistic
-    health conversations, physician rubrics, model grading, and rubric score reporting.
+    Paper-aligned physician cohort, three-source conversation generation, filtering, rubric annotation, model grading,
+    and score aggregation.
   legend: >-
-    Solid arrows show physician input, conversation generation, filtering, rubric writing, grading, and score
-    aggregation.
+    HealthBench contains 5,000 conversations and 48,562 unique physician-written rubric criteria across seven themes and
+    five axes. Rubric criteria may award positive points or impose negative penalties.
 nodes:
-  - id: doctors
-    label: Physicians
+  - id: cohort
+    label: |-
+      Select and maintain physician cohort
+      1,021 applicants · paid trial · 262 retained
+      60 countries · 26 specialties · 11 months
     type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: seeds
-    label: Seed Cases
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: convs
-    label: Conversations
+      'y': 300
+  - id: advisors
+    label: |-
+      Physician advisors define coverage
+      choose domains and important situations
+      write seeds · training · consensus criteria
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 340
+      'y': 300
+  - id: synthetic
+    label: |-
+      Synthetic majority branch
+      enumerate realistic health situations
+      tailored LM pipeline creates conversations
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 0
+  - id: redteam
+    label: |-
+      Physician red-team branch
+      probe model weaknesses and unsafe behavior
+      retain realistic difficult interactions
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: searchqa
+    label: |-
+      HealthSearchQA branch
+      start from frequently searched queries
+      LM rewrites each as a realistic conversation
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 600
+  - id: merge
+    label: |-
+      Merge conversation candidates
+      alternating user/model messages
+      always start and end with the user
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 300
   - id: filter
-    label: Filter
+    label: |-
+      Filter with o1-preview
+      realism and self-consistency · physical health
+      remove conversations with incomplete messages
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1240
+      'y': 300
   - id: rubrics
-    label: Rubrics
+    label: |-
+      Physicians annotate each example
+      write specific positive/negative criteria
+      categorize examples within each theme
     type: document
     size: xl
     position:
-      x: 1080
+      x: 1540
       'y': 160
-  - id: grader
-    label: Model Grader
+  - id: consensus
+    label: |-
+      Attach consensus criteria
+      at least two physicians form a majority
+      34 reusable critical behavior criteria
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Rubric Score
+      x: 1540
+      'y': 500
+  - id: dataset
+    label: |-
+      Release HealthBench
+      5,000 conversations · 48,562 unique criteria
+      seven themes · five behavior axes
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: inference
+    label: |-
+      Generate evaluated response
+      give conversation through final user turn
+      produce one open-ended assistant answer
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: grader
+    label: |-
+      Grade every rubric criterion
+      model judge returns criteria_met true/false
+      full points when met · otherwise zero
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: example_score
+    label: |-
+      Compute example score
+      sum met positive points and penalties
+      divide by maximum possible positive points
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: aggregate
+    label: |-
+      Report HealthBench score
+      mean example score clipped to 0-1
+      bootstrap uncertainty · theme/axis slices
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3040
+      'y': 300
 edges:
-  - from: doctors
-    to: seeds
+  - from: cohort
+    to: advisors
     type: primary
-  - from: seeds
-    to: convs
+  - from: advisors
+    to: synthetic
     type: primary
-  - from: convs
+  - from: advisors
+    to: redteam
+    type: primary
+  - from: advisors
+    to: searchqa
+    type: secondary
+  - from: synthetic
+    to: merge
+    type: primary
+  - from: redteam
+    to: merge
+    type: primary
+  - from: searchqa
+    to: merge
+    type: secondary
+  - from: merge
     to: filter
     type: primary
   - from: filter
     to: rubrics
     type: primary
   - from: rubrics
+    to: consensus
+    type: secondary
+  - from: rubrics
+    to: dataset
+    type: primary
+  - from: consensus
+    to: dataset
+    type: secondary
+  - from: dataset
+    to: inference
+    type: primary
+  - from: inference
     to: grader
     type: primary
   - from: grader
-    to: score
+    to: example_score
+    type: primary
+  - from: example_score
+    to: aggregate
     type: primary
 modules: []

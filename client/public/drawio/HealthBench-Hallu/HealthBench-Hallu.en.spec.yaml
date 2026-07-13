@@ -1,0 +1,191 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HealthBench-Hallu Build Process
+  description: >-
+    Paper-aligned high-precision atomic-claim extraction, real-time authoritative search, evidence labeling, and
+    weighted medical hallucination scoring.
+  legend: >-
+    HealthBench-Hallu is an evaluation framework over model responses to HealthBench tasks, not a separately constructed
+    question set. The report does not disclose an independent item count for this evaluation.
+nodes:
+  - id: healthbench
+    label: |-
+      Reuse HealthBench tasks
+      open-ended healthcare conversations
+      no independent question set is introduced
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: response
+    label: |-
+      Generate long-form model responses
+      evaluate internal medical knowledge
+      preserve specialized claims and context
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: scope
+    label: |-
+      Define factual-error scope
+      medical misconceptions in generated content
+      route two primary failure modes
+    type: decision
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: knowledge_error
+    label: |-
+      Knowledge errors
+      incorrect clinical fact or rule
+      correct knowledge misapplied to context
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 80
+  - id: evidence_error
+    label: |-
+      Evidence errors
+      fabricated reference or clinical data
+      distorted causal relationship
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 520
+  - id: extract
+    label: |-
+      Extract atomic claims with GPT-5
+      high-precision evaluation configuration
+      maximize fine-grained claim coverage
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: normalize
+    label: |-
+      Normalize verifiable units
+      split facts and resolve coreference
+      remove noise/distractors · deduplicate in order
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: search
+    label: |-
+      Verify each claim in real time
+      multi-turn search over authoritative sources
+      require sufficient clinical evidence · no cache
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: verdict
+    label: |-
+      Assign evidence verdict
+      compare claim with collected evidence
+      Supported · Uncertain · Refuted
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: supported
+    label: |-
+      Supported · weight 0.0
+      authoritative evidence supports claim
+      counted as factually correct
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 0
+  - id: uncertain
+    label: |-
+      Uncertain · weight 0.5
+      insufficient evidence or ambiguity
+      represents intermediate factual risk
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: refuted
+    label: |-
+      Refuted · weight 1.0
+      evidence contradicts the claim
+      represents severe factual error
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 600
+  - id: score
+    label: |-
+      Report medical hallucination risk
+      weighted hallucination rate over claims
+      also expose refuted and uncertain rates
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+edges:
+  - from: healthbench
+    to: response
+    type: primary
+  - from: response
+    to: scope
+    type: primary
+  - from: scope
+    to: knowledge_error
+    type: primary
+  - from: scope
+    to: evidence_error
+    type: secondary
+  - from: knowledge_error
+    to: extract
+    type: primary
+  - from: evidence_error
+    to: extract
+    type: secondary
+  - from: extract
+    to: normalize
+    type: primary
+  - from: normalize
+    to: search
+    type: primary
+  - from: search
+    to: verdict
+    type: primary
+  - from: verdict
+    to: supported
+    type: primary
+  - from: verdict
+    to: uncertain
+    type: primary
+  - from: verdict
+    to: refuted
+    type: secondary
+  - from: supported
+    to: score
+    type: primary
+  - from: uncertain
+    to: score
+    type: primary
+  - from: refuted
+    to: score
+    type: secondary
+modules: []

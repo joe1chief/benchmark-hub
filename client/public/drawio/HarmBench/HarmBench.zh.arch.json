@@ -7,50 +7,104 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 16,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
       "id": "policies",
-      "label": "政策种子",
+      "label": "收集主要实验室使用政策\nOpenAI · Anthropic · Meta · Inflection\nGPT-4 提炼联合安全摘要",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "510行为",
+      "id": "curate",
+      "label": "作者人工设计有害行为\n违反法律或广泛认同的规范\n强调现实且具有差异化的危害",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter",
+      "label": "多轮策划与过滤\n删除或改写双重用途请求\n保留目标明确的不良行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "分配功能类别\n保留七个语义危害类别\n需要时附加上下文或图像",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "standard",
+      "label": "标准类 · 200\n自包含有害请求\n无外部上下文或图像",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "copyright",
+      "label": "版权类 · 100\n请求受保护段落或歌词\n保留内容哈希用于判定",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "contextual",
+      "label": "上下文类 · 100\n行为字符串加特定上下文\n难以通过网页搜索直接复现",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "multimodal",
+      "label": "多模态类 · 110\n行为字符串引用图像\n测试图像条件攻击",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "汇总 510 个 HarmBench 行为\n四个功能类 · 七个语义类\n行为 ID 与类别元数据",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "验证/测试",
+      "label": "建立官方保留划分\n验证 100 · 测试 410\n按类别交集分层后人工调整",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "attacks",
-      "label": "攻击生成",
+      "id": "attack",
+      "label": "生成攻击测试样本\n红队方法接收每个行为\n禁止在测试行为或语义重复项上调参",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "targets",
-      "label": "目标补全",
+      "id": "target",
+      "label": "运行目标模型或防御\n使用标准化生成参数\n贪心补全保证可比性",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "分类判定",
+      "id": "judge_route",
+      "label": "判定行为是否成功\n已实施或明确尝试实施行为\n使用独立验证/测试分类器",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "ASR报告",
+      "id": "open_judge",
+      "label": "非版权分类器\n开源 Llama-2-13B-chat 分类器\n基于人工标注补全训练",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hash_judge",
+      "label": "版权分类器\n将补全与存储哈希比对\n直接检测受保护文本生成",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "报告攻击成功率\n成功测试样本数除以全部样本数\n按攻击 · 目标 · 类别拆分",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,38 +113,116 @@
     {
       "id": "edge-1",
       "from": "policies",
-      "to": "behaviors",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "behaviors",
-      "to": "split",
+      "from": "curate",
+      "to": "filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "split",
-      "to": "attacks",
+      "from": "filter",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attacks",
-      "to": "targets",
+      "from": "route",
+      "to": "standard",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "targets",
-      "to": "judge",
+      "from": "route",
+      "to": "copyright",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "judge",
-      "to": "metrics",
+      "from": "route",
+      "to": "contextual",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "route",
+      "to": "multimodal",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "standard",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "copyright",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "contextual",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "multimodal",
+      "to": "dataset",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-12",
+      "from": "dataset",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "split",
+      "to": "attack",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "attack",
+      "to": "target",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "target",
+      "to": "judge_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "judge_route",
+      "to": "open_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "judge_route",
+      "to": "hash_judge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-18",
+      "from": "open_judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "hash_judge",
+      "to": "score",
+      "type": "secondary"
     }
   ],
   "modules": []
