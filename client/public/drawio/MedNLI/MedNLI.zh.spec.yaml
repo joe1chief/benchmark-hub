@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedNLI 构建与评测流程
+  description: 对齐论文展示从去标识化 MIMIC-III 病历、章节和句子抽取，到临床医生撰写假设、试点一致性、无效前提清理、 无泄漏数据划分及准确率评测的临床自然语言推理流程。
+  legend: 四名临床医生在六周内标注 4,683 个前提；每个保留前提对应蕴含、中立、矛盾各一条假设，形成 14,049 个唯一句对， 三个数据子集之间没有共享前提。
+nodes:
+  - id: source
+    label: |-
+      获取 MIMIC-III v1.3
+      38,597 名去标识化患者
+      2,078,705 份英文临床病历
+      通过衍生数据仓库受限开放
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: sections
+    label: |-
+      切分病历章节
+      使用基于标题格式的规则
+      识别临床病历结构
+      选取既往病史章节
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: sentences
+    label: |-
+      创建候选前提
+      应用生物医学 LingPipe 分句器
+      形成候选句池
+      随机抽取前提句
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: prompt
+    label: |-
+      仅展示前提句
+      允许使用医学知识
+      允许使用常识
+      不提供病历其他上下文
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: hypotheses
+    label: |-
+      临床医生撰写三条假设
+      肯定为真：蕴含
+      可能为真：中立
+      肯定为假：矛盾
+    type: user
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: pilot
+    label: |-
+      开展标注试点
+      两名专科认证放射科医生
+      每人处理 100 个唯一前提
+      完善临床标注指南
+    type: user
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: discard
+    label: |-
+      移除无效前提
+      依据临床医生判断
+      排除无信息的去标识化伪迹
+      试点移除 16 个前提
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: agreement
+    label: |-
+      交叉标注试点句对
+      比较 552 个已生成句对
+      肯定 · 可能 · 肯定不成立
+      Cohen Kappa：0.78
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: annotate
+    label: |-
+      完成专家标注
+      再招募两名临床医生
+      共四名临床医生
+      六周处理 4,683 个前提
+    type: user
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: dataset
+    label: |-
+      形成 MedNLI
+      14,049 个唯一句对
+      三类 NLI 标签均衡
+      包含临床术语与推理
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: splits
+    label: |-
+      按前提不重叠划分
+      训练集：11,232 对
+      开发集：1,395 对
+      测试集：1,422 对
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: baselines
+    label: |-
+      训练临床 NLI 基线
+      特征模型 · 词袋模型
+      InferSent · ESIM
+      保持超参数可比
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: transfer
+    label: |-
+      加入迁移与领域知识
+      从 SNLI 和 MultiNLI 迁移
+      使用生物医学及 MIMIC 词向量
+      测试 UMLS 知识增强方法
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      在留出测试集评测
+      预测三类 NLI 标签
+      报告分类准确率
+      比较领域适配增益
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: source
+    to: sections
+    type: primary
+  - from: sections
+    to: sentences
+    type: primary
+  - from: sentences
+    to: prompt
+    type: primary
+  - from: prompt
+    to: hypotheses
+    type: primary
+  - from: hypotheses
+    to: pilot
+    type: primary
+  - from: pilot
+    to: discard
+    type: primary
+  - from: discard
+    to: agreement
+    type: primary
+  - from: agreement
+    to: annotate
+    type: primary
+  - from: annotate
+    to: dataset
+    type: primary
+  - from: dataset
+    to: splits
+    type: primary
+  - from: splits
+    to: baselines
+    type: primary
+  - from: baselines
+    to: transfer
+    type: primary
+  - from: transfer
+    to: report
+    type: primary
+modules: []

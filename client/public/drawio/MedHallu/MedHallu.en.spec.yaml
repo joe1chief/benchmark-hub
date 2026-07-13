@@ -1,0 +1,245 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedHallu Build and Evaluation Process
+  description: >-
+    Paper-aligned construction from 10,000 PubMedQA records through controlled hallucination generation, multi-model
+    quality filtering, entailment checking, TextGrad refinement, difficulty assignment, and binary detection.
+  legend: >-
+    The source mix is exactly 1,000 pqa_labeled and 9,000 randomly selected pqa_artificial records; failed candidates
+    receive at most five generation attempts before the semantic-similarity fallback.
+nodes:
+  - id: source
+    label: |-
+      Source PubMedQA Records
+      pqa_labeled: 1,000 Expert Items
+      pqa_artificial: 9,000 Random Items
+      Total Input: 10,000 QA Pairs
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: inputs
+    label: |-
+      Assemble Generation Inputs
+      Medical Question
+      Relevant Knowledge Context
+      Ground-truth Answer
+    type: document
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: categories
+    label: |-
+      Define Four Hallucination Types
+      Question Misinterpretation
+      Incomplete Information
+      Mechanism Misattribution · Fabrication
+    type: document
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: generate
+    label: |-
+      Generate Candidate Answers
+      Qwen2.5-14B Chooses a Type
+      Temperature 0.3 to 0.7 · top-p 0.95
+      Max 512 Tokens · Gold Length ±10%
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: quality
+    label: |-
+      Run Discriminative Quality Check
+      Compare Candidate with Ground Truth
+      GPT-4o mini · Gemma2-9B
+      Qwen2.5-7B Vote Independently
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: correctness
+    label: |-
+      Do Both Filters Pass?
+      Quality: Fool at Least One Model
+      Correctness: No Equivalent Meaning
+      Bidirectional DeBERTa at 0.75
+    type: decision
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: difficulty
+    label: |-
+      Pass or Qualified: Grade Difficulty
+      Count Discriminator Models Fooled
+      One: Easy · Two: Medium
+      All Three: Hard
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 280
+  - id: refine
+    label: |-
+      Fail: Refine the Candidate
+      GPT-4o mini-backed TextGrad
+      Apply Quality and Correctness Feedback
+      Improve Plausibility and Naturalness
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: retry
+    label: |-
+      Retry Failed Candidates Only
+      Regenerate with TextGrad Feedback
+      Repeat Both Filters
+      Stop at First Pass · At Most Five Attempts
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: fallback
+    label: |-
+      Five Attempts Exhausted: Fallback
+      Keep All Failed Attempts
+      Select Highest Cosine Similarity to Gold
+      Assign the Selected Example as Easy
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 560
+  - id: dataset
+    label: |-
+      Release MedHallu
+      10,000 Medical QA Pairs
+      Correct and Hallucinated Answers
+      Easy · Medium · Hard Tiers
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: settings
+    label: |-
+      Run Two Detection Settings
+      Zero-shot without Knowledge
+      Context-aware with Gold Knowledge
+      Compare General and Medical LLMs
+    type: document
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: detect
+    label: |-
+      Judge Each Question and Answer
+      Hallucinated or Non-hallucinated
+      Analyze Optional Not-sure Class
+      Break Down by Difficulty Tier
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      Report Detection Performance
+      F1 and Precision
+      Overall and Tier-specific Scores
+      Measure Knowledge and Abstention Gains
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: source
+    to: inputs
+    type: primary
+  - from: inputs
+    to: categories
+    type: primary
+  - from: categories
+    to: generate
+    type: primary
+  - from: generate
+    to: quality
+    type: primary
+  - from: quality
+    to: correctness
+    type: primary
+  - from: correctness
+    to: difficulty
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 1
+      entryY: 0.25
+  - from: correctness
+    to: refine
+    type: primary
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: refine
+    to: retry
+    type: primary
+  - from: retry
+    to: difficulty
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.75
+  - from: retry
+    to: fallback
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.25
+  - from: fallback
+    to: dataset
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.75
+  - from: difficulty
+    to: dataset
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.25
+  - from: dataset
+    to: settings
+    type: primary
+  - from: settings
+    to: detect
+    type: primary
+  - from: detect
+    to: report
+    type: primary
+modules: []

@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "title": "MedHallu 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 14,
+    "edges": 15,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "source",
+      "label": "获取 PubMedQA 记录\npqa_labeled：1,000 条专家样本\npqa_artificial：随机 9,000 条\n输入共 10,000 个问答对",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inputs",
+      "label": "组装生成输入\n医学问题\n相关知识上下文\n标准答案",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "categories",
+      "label": "定义四类医学幻觉\n误解问题\n信息不完整\n机制错配 · 方法或证据捏造",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "生成候选幻觉答案\nQwen2.5-14B 自选幻觉类型\n温度 0.3 至 0.7 · top-p 0.95\n最长 512 词元 · 答案长度 ±10%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality",
+      "label": "执行判别式质量检查\n比较候选答案与标准答案\nGPT-4o mini · Gemma2-9B\nQwen2.5-7B 独立投票",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correctness",
+      "label": "两层过滤是否均通过？\n质量：至少骗过一个模型\n正确性：不与标答语义等价\n双向 DeBERTa 阈值 0.75",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "difficulty",
+      "label": "通过或重试合格：划分难度\n按骗过的判别模型数计\n一个：简单 · 两个：中等\n三个：困难",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "refine",
+      "label": "未通过：优化候选\n使用 GPT-4o mini 驱动 TextGrad\n应用质量与正确性反馈\n提升可信度与自然度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "retry",
+      "label": "仅重试未通过候选\n根据 TextGrad 反馈重新生成\n重复两层过滤\n首次通过即停 · 最多五次尝试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fallback",
+      "label": "五次尝试耗尽：执行回退\n保留全部失败尝试\n选择与标准答案余弦相似度最高者\n将所选样本标为简单",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "发布 MedHallu\n10,000 个医学问答对\n正确答案与幻觉答案\n简单 · 中等 · 困难三档",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "settings",
+      "label": "运行两类检测设置\n无知识零样本\n提供标准知识的上下文设置\n比较通用与医学大模型",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "detect",
+      "label": "判断每个问题与答案\n幻觉或非幻觉\n分析可选的不确定类别\n按难度层级拆分结果",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告检测表现\nF1 与精确率\n总体及分难度成绩\n衡量知识与拒答带来的增益",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "source",
+      "to": "inputs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "inputs",
+      "to": "categories",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "categories",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "generate",
+      "to": "quality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "quality",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "correctness",
+      "to": "difficulty",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "correctness",
+      "to": "refine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "refine",
+      "to": "retry",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "retry",
+      "to": "difficulty",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "retry",
+      "to": "fallback",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "fallback",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "difficulty",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "dataset",
+      "to": "settings",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "settings",
+      "to": "detect",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "detect",
+      "to": "report",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}
