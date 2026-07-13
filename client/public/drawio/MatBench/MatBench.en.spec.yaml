@@ -1,0 +1,181 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MatBench Build Process
+  description: >-
+    Separates the original 13-task materials-property benchmark and fixed nested-cross-validation protocol from the
+    four-task generative LLM adapter used by Intern-S1 and OpenCompass, preventing their metrics from being conflated.
+  legend: >-
+    The original MatBench paper (arXiv:2005.00707) defines 13 tasks and reports MAE or ROC-AUC. The Intern-S1
+    OpenCompass adapter selects four tasks, uses LLM extraction/judging, and converts results to a normalized aggregate.
+nodes:
+  - id: sources
+    label: |-
+      Collect 10 Materials Data Sources
+      DFT-derived + Experimental Records
+      Optical · Thermal · Electronic
+      Thermodynamic · Tensile · Elastic
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: clean
+    label: |-
+      Standardize and Clean Each Source
+      Keep Material Input + One Target
+      Remove Auxiliary Metadata
+      Drop Unphysical / Rare / Irrelevant Rows
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: tasks
+    label: |-
+      Define 13 MatBench Tasks
+      10 Regression · 3 Classification
+      Composition or Crystal-structure Input
+      312–132,752 Samples per Task
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: folds
+    label: |-
+      Fix Five Outer Folds
+      Seed · 18012019
+      80% Train/Validation · 20% Test
+      Stratify Classification Tasks
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: fit
+    label: |-
+      Tune Only inside Each Training Fold
+      Use Nested Cross-validation
+      Fit on the Outer Training Partition
+      Predict Its Held-out Test Partition
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: original_metrics
+    label: |-
+      Apply Original Task Metrics
+      Regression · Mean Absolute Error
+      Classification · ROC-AUC
+      Average Scores across Five Folds
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: baselines
+    label: |-
+      Publish Reproducible References
+      Dummy · Random Forest
+      Automatminer · CGCNN · MEGNet
+      Compare under Identical Outer Folds
+    type: terminal
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: select_four
+    label: |-
+      Intern-S1 Adapter Selects 4 Tasks
+      Steels · Experimental Band Gap
+      Experimental Is-metal · Glass
+      Use OpenCompass Task Files
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: prompt
+    label: |-
+      Build Zero-shot Generative Prompts
+      Insert Each Material Problem
+      Request a Free-form Model Response
+      Preserve Numeric or Class Ground Truth
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: parse
+    label: |-
+      Judge Responses by Target Type
+      Numeric · LLM Extracts a Float
+      Classification · LLM Judges Correctness
+      Aggregate Task-level Predictions
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: adapter_metrics
+    label: |-
+      Compute Adapter Task Scores
+      Numeric Tasks · MAE
+      Classification Tasks · Accuracy
+      Keep the Four Results Separate
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: aggregate
+    label: |-
+      Form the Intern-S1 Aggregate
+      Gap · (2 − MAE) / 2 × 100
+      Steels · (2000 − MAE) / 2000 × 100
+      Combine with Two Accuracy Scores
+    type: terminal
+    size: xl
+    position:
+      x: 1700
+      'y': 420
+edges:
+  - from: sources
+    to: clean
+    type: primary
+  - from: clean
+    to: tasks
+    type: primary
+  - from: tasks
+    to: folds
+    type: primary
+  - from: folds
+    to: fit
+    type: primary
+  - from: fit
+    to: original_metrics
+    type: primary
+  - from: original_metrics
+    to: baselines
+    type: primary
+  - from: tasks
+    to: select_four
+    type: secondary
+  - from: select_four
+    to: prompt
+    type: primary
+  - from: prompt
+    to: parse
+    type: primary
+  - from: parse
+    to: adapter_metrics
+    type: primary
+  - from: adapter_metrics
+    to: aggregate
+    type: primary
+modules: []

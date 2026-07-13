@@ -6,87 +6,175 @@ meta:
   routing: orthogonal
   title: MATH500 Build Process
   description: >-
-    Paper-aligned construction of MATH500 as a practical 500-problem evaluation slice inheriting the MATH
-    competition-problem construction, subject and difficulty metadata, step-by-step solutions, boxed answer
-    normalization, and exact-match evaluation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Traces MATH500 from the original MATH test split through the random 500-problem holdout documented by Let's Verify
+    Step by Step, then applies the official PRM800K answer-normalization and symbolic-equivalence grader.
+  legend: >-
+    MATH (arXiv:2103.03874) contains 12,500 problems. arXiv:2305.20050 adds 4,500 original test problems to
+    process-supervision training and reserves a uniformly random 500-problem MATH500 test set.
 nodes:
-  - id: source
-    label: MATH Source
+  - id: parent
+    label: |-
+      Start from the MATH Dataset
+      12,500 Competition Problems
+      7 Subjects · 5 Difficulty Levels
+      Step-by-step Reference Solutions
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: slice
-    label: 500 Slice
+      x: 20
+      'y': 40
+  - id: split
+    label: |-
+      Use the Original MATH Split
+      7,500 Training Problems
+      5,000 Test Problems
+      Preserve Problem / Solution / Metadata
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: subjects
-    label: 7 Subjects
+      x: 300
+      'y': 40
+  - id: expand
+    label: |-
+      Expand Process-supervision Training
+      Move 4,500 Original Test Problems
+      Add Them to the Training Pool
+      Avoid Tuning on the Final Holdout
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: levels
-    label: Level Tags
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: format
-    label: LaTeX/Asy
+      x: 580
+      'y': 40
+  - id: sample
+    label: |-
+      Select the Final Holdout
+      Sample Uniformly at Random
+      Reserve the Remaining 500 Problems
+      Never Use Them for Training
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: solve
-    label: Step Solve
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: norm
-    label: Answer Norm
+      x: 860
+      'y': 40
+  - id: check
+    label: |-
+      Check Holdout Composition
+      Compare Subject Distribution
+      Compare Difficulty Distribution
+      Confirm It Represents the MATH Test Set
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: Accuracy
+      x: 1140
+      'y': 40
+  - id: release
+    label: |-
+      Publish MATH500
+      500 Held-out Problems
+      Official Split in the PRM800K Repository
+      Retain Full Reference Solutions
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: response
+    label: |-
+      Generate a Model Solution
+      Supply One Competition Problem
+      Allow Free-form Reasoning
+      Require a Final Answer
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: extract
+    label: |-
+      Extract the Candidate Final Answer
+      Locate the Answer Span
+      Strip Non-answer Wording
+      Preserve Mathematical Expressions
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: normalize
+    label: |-
+      Normalize Both Answer Forms
+      Apply Hendrycks-style Normalization
+      Handle LaTeX · Units · Percent · Tuples
+      Apply PRM800K Custom Rules
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: equivalent
+    label: |-
+      Equivalent Answers?
+      Normalized Strings Match
+      or SymPy Difference = 0
+    type: decision
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: score
+    label: |-
+      Compute Problem Correctness
+      Correct · 1
+      Incorrect / Unparseable · 0
+      Keep One Score per Problem
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      Report MATH500 Accuracy
+      Mean Correctness over 500 Problems
+      Optionally Break Down Subject / Difficulty
+      Preserve the Fixed Held-out Set
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: source
-    to: slice
+  - from: parent
+    to: split
     type: primary
-  - from: slice
-    to: subjects
+  - from: split
+    to: expand
     type: primary
-  - from: subjects
-    to: levels
+  - from: expand
+    to: sample
     type: primary
-  - from: levels
-    to: format
+  - from: sample
+    to: check
     type: primary
-  - from: format
-    to: solve
+  - from: check
+    to: release
     type: primary
-  - from: solve
-    to: norm
+  - from: release
+    to: response
     type: primary
-  - from: norm
-    to: metric
+  - from: response
+    to: extract
+    type: primary
+  - from: extract
+    to: normalize
+    type: primary
+  - from: normalize
+    to: equivalent
+    type: primary
+  - from: equivalent
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

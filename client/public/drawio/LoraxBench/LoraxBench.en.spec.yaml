@@ -6,78 +6,180 @@ meta:
   routing: orthogonal
   title: LoraxBench Build Process
   description: >-
-    Paper-aligned construction of LoraxBench: Indonesian-source NLP datasets are selected for six tasks, cleaned,
-    translated by native speakers into low-resource Indonesian languages and registers, validated by human and automatic
-    checks, and assembled into 84,895 examples.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper- and release-aligned adaptation of six Indonesian NLP tasks into Indonesian and 19 local languages, with
+    register variants, native-speaker translation review, task-specific evaluation, and explicit count provenance.
+  legend: >-
+    arXiv:2508.12459 Table 3 sums to 84,711 test items although the prose reports 84,895. The official Hugging Face
+    release has 87,011 rows because it additionally includes 2,300 TyDi-QA training examples.
 nodes:
+  - id: languages
+    label: |-
+      Define Language Coverage
+      Indonesian + 19 Local Languages
+      Add Formal and Casual Registers
+      23 Language/Register Subsets
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 40
   - id: sources
-    label: Indo Sources
+    label: |-
+      Gather Indonesian-source Tasks
+      TyDi-QA · IndoNLI · COPAL-ID
+      IndoCulture
+      Preserve Native Cultural Context
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: tasks
-    label: Task Select
+      x: 300
+      'y': 40
+  - id: tydi
+    label: |-
+      Adapt TyDi-QA
+      Reading Comprehension Keeps Passages
+      Open QA Removes the Passage
+      Retain Test + 100 Train Items per Subset
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
+      x: 580
+      'y': 40
+  - id: other_tasks
+    label: |-
+      Form Four Additional Tasks
+      NLI from Expert-written IndoNLI Test
+      Translation from IndoNLI Premises
+      Causal and Cultural Multiple Choice
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
   - id: cleanup
-    label: Data Cleanup
+    label: |-
+      Apply Source-specific Cleanup
+      Remove 6 Unanswerable Open-QA Items
+      Remove Jakarta-centric COPAL-ID Items
+      Curate IndoCulture to 510 Questions
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: subsets
-    label: 23 Subsets
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
+      x: 1140
+      'y': 40
   - id: translate
-    label: Pro Translate
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: review
-    label: Native Review
+    label: |-
+      Translate with Native Speakers
+      Professional Translators per Language
+      Local Language ↔ Indonesian as Required
+      Use Shared Task Guidelines
     type: user
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: checks
-    label: Auto Checks
-    type: decision
+      x: 1420
+      'y': 40
+  - id: review
+    label: |-
+      Conduct Second-speaker Review
+      Check Linguistic and Cultural Validity
+      Align Decisions in Team Meetings
+      8–31 Annotators per Language
+    type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: items
-    label: 84995 Items
+      x: 1700
+      'y': 40
+  - id: checks
+    label: |-
+      Run Automated Translation Checks
+      Flag Abnormal Lengths
+      Flag Numeric Inconsistencies
+      Send Flagged Items for Correction
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 420
+  - id: retranslate
+    label: |-
+      Correct Flagged Translations
+      Re-translate Confirmed Errors
+      Recheck Corrected Records
+      Preserve Language/Register Labels
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: release
+    label: |-
+      Publish the Official Release
+      87,011 Hugging Face Rows
+      Includes 2,300 TyDi-QA Train Rows
+      Test-table Sum · 84,711
+    type: database
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: formats
+    label: |-
+      Build Six Task Inputs
+      Classification / Multiple Choice
+      Span and Open-ended Generation
+      Local-language → Indonesian Translation
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: evaluate
+    label: |-
+      Run Model Evaluation
+      Zero-shot for Five Tasks
+      Few-shot Examples for Reading Comprehension
+      Standard / Language / Lexicon Prompts
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: metrics
+    label: |-
+      Score with Task-specific Metrics
+      Accuracy for Non-translation Tasks
+      Open QA · Answer-substring Match
+      Translation · ChrF++
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      Report Multilingual Results
+      Break Down Task and Language
+      Compare Formal and Casual Registers
+      Analyze Prompt-strategy Gaps
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: sources
-    to: tasks
+  - from: languages
+    to: sources
     type: primary
-  - from: tasks
+  - from: sources
+    to: tydi
+    type: primary
+  - from: tydi
+    to: other_tasks
+    type: primary
+  - from: other_tasks
     to: cleanup
     type: primary
   - from: cleanup
-    to: subsets
-    type: primary
-  - from: subsets
     to: translate
     type: primary
   - from: translate
@@ -87,6 +189,21 @@ edges:
     to: checks
     type: primary
   - from: checks
-    to: items
+    to: retranslate
+    type: primary
+  - from: retranslate
+    to: release
+    type: primary
+  - from: release
+    to: formats
+    type: primary
+  - from: formats
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

@@ -4,86 +4,173 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MATH500 Build Process (Chinese)
-  description: MATH500 作为 MATH 的 500 题实用评测子集，继承竞赛题构建、学科与难度信息、分步解答、框选答案归一化和精确匹配评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MATH500 构建流程
+  description: 从原始 MATH 测试集出发，按《Let’s Verify Step by Step》记录的方式随机留出 500 道题， 再使用 PRM800K 官方答案归一化与符号等价判分器完成评测。
+  legend: MATH（arXiv:2103.03874）共 12,500 题；arXiv:2305.20050 将原测试集中的 4,500 题加入 过程监督训练，并从余下题目中均匀随机保留 500 题作为 MATH500 测试集。
 nodes:
-  - id: source
-    label: MATH来源
+  - id: parent
+    label: |-
+      从 MATH 数据集出发
+      共 12,500 道竞赛数学题
+      7 个学科 · 5 个难度等级
+      带分步参考解答
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: slice
-    label: 500子集
+      x: 20
+      'y': 40
+  - id: split
+    label: |-
+      使用原始 MATH 划分
+      训练集 7,500 题
+      测试集 5,000 题
+      保留题目、解答和元数据
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: subjects
-    label: 七类学科
+      x: 300
+      'y': 40
+  - id: expand
+    label: |-
+      扩充过程监督训练集
+      移入原测试集的 4,500 题
+      将其加入训练池
+      避免在最终留出集上调参
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: levels
-    label: 难度标签
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: format
-    label: LaTeX/Asy
+      x: 580
+      'y': 40
+  - id: sample
+    label: |-
+      选择最终留出集
+      采用均匀随机抽样
+      保留余下 500 道题
+      不将这些题用于训练
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: solve
-    label: 步骤解答
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: norm
-    label: 答案归一
+      x: 860
+      'y': 40
+  - id: check
+    label: |-
+      检查留出集组成
+      比较学科分布
+      比较难度分布
+      确认其代表 MATH 测试集
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: 准确率
+      x: 1140
+      'y': 40
+  - id: release
+    label: |-
+      发布 MATH500
+      共 500 道留出题
+      官方划分位于 PRM800K 仓库
+      保留完整参考解答
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: response
+    label: |-
+      生成模型解答
+      每次输入一道竞赛题
+      允许自由形式推理
+      要求给出最终答案
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: extract
+    label: |-
+      抽取候选最终答案
+      定位答案片段
+      删除非答案措辞
+      保留数学表达式
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: normalize
+    label: |-
+      归一化两侧答案
+      使用 Hendrycks 风格规则
+      处理 LaTeX、单位、百分比与元组
+      再应用 PRM800K 自定义规则
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: equivalent
+    label: |-
+      两侧答案等价？
+      归一化字符串相同
+      或 SymPy 差为 0
+    type: decision
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: score
+    label: |-
+      计算单题正确性
+      正确 · 1
+      错误或不可解析 · 0
+      每道题保留一个得分
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告 MATH500 准确率
+      500 题平均正确率
+      可按学科与难度分解
+      始终使用固定留出集
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: source
-    to: slice
+  - from: parent
+    to: split
     type: primary
-  - from: slice
-    to: subjects
+  - from: split
+    to: expand
     type: primary
-  - from: subjects
-    to: levels
+  - from: expand
+    to: sample
     type: primary
-  - from: levels
-    to: format
+  - from: sample
+    to: check
     type: primary
-  - from: format
-    to: solve
+  - from: check
+    to: release
     type: primary
-  - from: solve
-    to: norm
+  - from: release
+    to: response
     type: primary
-  - from: norm
-    to: metric
+  - from: response
+    to: extract
+    type: primary
+  - from: extract
+    to: normalize
+    type: primary
+  - from: normalize
+    to: equivalent
+    type: primary
+  - from: equivalent
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []
