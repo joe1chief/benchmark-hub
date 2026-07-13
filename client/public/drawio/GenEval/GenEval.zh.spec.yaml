@@ -1,0 +1,139 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GenEval 构建流程
+  description: 按论文呈现 GenEval 的提示构造、图像生成、面向对象验证与评分流程。
+  legend: GenEval 使用结构化提示与判别式视觉模型检验精确组合对齐，而非整体美学；计数和阈值均对应 arXiv:2310.11513。
+nodes:
+  - id: tasks
+    label: |-
+      定义六类组合任务
+      单/双对象 · 计数 · 颜色
+      位置 · 颜色属性绑定
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: vocabulary
+    label: |-
+      建立模板词表
+      80 个 MS-COCO 对象类别
+      10 种生成颜色 · 3 个数量 · 4 种位置
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: prompts
+    label: |-
+      每类随机生成 100 条提示
+      均匀填充任务专用模板
+      去重后共 553 条提示
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: generate
+    label: |-
+      运行每个文生图模型
+      每条提示生成 4 张图
+      保留提示元数据供后续验证
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 300
+  - id: detect
+    label: |-
+      检测并分割对象
+      COCO Mask2Former 阈值 0.3
+      仅计数任务使用 0.9
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: geometry
+    label: |-
+      验证对象要求
+      对象存在性与精确数量
+      用框中心几何关系判断相对位置
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: color
+    label: |-
+      验证颜色与属性绑定
+      按检测框裁剪 · 将背景遮为灰色
+      CLIP ViT-L/14 零样本分类候选颜色
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: binary
+    label: |-
+      为每张图判定二值正确性
+      仅当全部指定元素、属性
+      与关系均正确时通过
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: aggregate
+    label: |-
+      对四次生成取平均
+      报告六类任务各自得分
+      再平均为总体 GenEval 分数
+    type: terminal
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: human
+    label: |-
+      与人工判断验证一致性
+      1,200 张图共 6,000 条标注
+      一致率 83% · 人间 88% · 全同意样本 91%
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+edges:
+  - from: tasks
+    to: vocabulary
+    type: primary
+  - from: vocabulary
+    to: prompts
+    type: primary
+  - from: prompts
+    to: generate
+    type: primary
+  - from: generate
+    to: detect
+    type: primary
+  - from: detect
+    to: geometry
+    type: primary
+  - from: geometry
+    to: color
+    type: primary
+  - from: color
+    to: binary
+    type: primary
+  - from: binary
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: human
+    type: primary
+modules: []

@@ -1,0 +1,155 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GraphWalks 构建流程
+  description: 按官方发布呈现数据构造、提示封装、标签修正、答案解析与集合评分流程。
+  legend: GraphWalks 没有配套构造论文。本图仅依据 OpenAI 官方数据卡、发布记录和变更日志；不推断未公开的随机图采样算法。
+nodes:
+  - id: graphs
+    label: |-
+      将有向图封装为边列表
+      节点使用哈希标识 · 每个节点度数至少为 1
+      采样算法未在公开材料中说明
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: bfs
+    label: |-
+      构造 BFS 操作
+      选择起点和目标深度
+      答案为恰好该深度可达的节点
+    type: process
+    size: xl
+    position:
+      x: 360
+      'y': 80
+  - id: parents
+    label: |-
+      构造父节点操作
+      选择一个目标节点
+      答案为有边指向它的节点
+    type: process
+    size: xl
+    position:
+      x: 360
+      'y': 520
+  - id: targets
+    label: |-
+      计算标准答案集合
+      BFS 答案排除起始节点
+      父节点答案排除目标节点本身
+    type: process
+    size: xl
+    position:
+      x: 720
+      'y': 300
+  - id: prompt
+    label: |-
+      序列化长上下文用户提示
+      操作规则 + 固定示例
+      完整边列表 + 目标操作 + 输出契约
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 300
+  - id: schema
+    label: |-
+      保存 5 个官方字段
+      prompt · answer_nodes · prompt_chars
+      problem_type（bfs/parents）· date_added
+    type: database
+    size: xl
+    position:
+      x: 1320
+      'y': 300
+  - id: release
+    label: |-
+      发布两组上下文长度 parquet
+      单个 train 分集共 1,150 行
+      当前数据为 550 BFS + 600 parents
+    type: database
+    size: xl
+    position:
+      x: 1620
+      'y': 300
+  - id: repair
+    label: |-
+      应用 2026 年正确性修复
+      修正短集 400 个父节点样本中的 24 个标签
+      明确 BFS 为不重复访问的精确深度
+    type: process
+    size: xl
+    position:
+      x: 1920
+      'y': 300
+  - id: run
+    label: |-
+      要求模型逐步推理
+      响应最后一行必须为
+      Final Answer: [node1, node2, ...]
+    type: process
+    size: xl
+    position:
+      x: 2220
+      'y': 300
+  - id: parse
+    label: |-
+      仅解析响应最后一行
+      必须匹配 Final Answer 列表格式
+      格式错误时预测为空集合
+    type: process
+    size: xl
+    position:
+      x: 2520
+      'y': 300
+  - id: score
+    label: |-
+      比较预测与标准节点集合
+      计算精确率 · 召回率 · F1
+      双方均为空时 F1 = 1
+    type: terminal
+    size: xl
+    position:
+      x: 2820
+      'y': 300
+edges:
+  - from: graphs
+    to: bfs
+    type: primary
+  - from: graphs
+    to: parents
+    type: primary
+  - from: bfs
+    to: targets
+    type: primary
+  - from: parents
+    to: targets
+    type: primary
+  - from: targets
+    to: prompt
+    type: primary
+  - from: prompt
+    to: schema
+    type: primary
+  - from: schema
+    to: release
+    type: primary
+  - from: release
+    to: repair
+    type: primary
+  - from: repair
+    to: run
+    type: primary
+  - from: run
+    to: parse
+    type: primary
+  - from: parse
+    to: score
+    type: primary
+modules: []

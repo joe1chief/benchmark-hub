@@ -1,0 +1,157 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GraphWalks Build Process
+  description: Official-release construction, prompt packaging, corrected labels, answer extraction, and set-based grading flow.
+  legend: >-
+    GraphWalks has no accompanying construction paper. This figure uses only the official OpenAI dataset card, released
+    records, and changelog; the unpublished random-graph sampling algorithm is intentionally not inferred.
+nodes:
+  - id: graphs
+    label: |-
+      Package directed graphs as edge lists
+      hashed node identifiers · every node degree ≥1
+      sampling algorithm is not documented publicly
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: bfs
+    label: |-
+      Create BFS operations
+      choose a start node and target depth
+      answer nodes reachable at exactly that depth
+    type: process
+    size: xl
+    position:
+      x: 360
+      'y': 80
+  - id: parents
+    label: |-
+      Create parent operations
+      choose one target node
+      answer nodes with an incoming edge to it
+    type: process
+    size: xl
+    position:
+      x: 360
+      'y': 520
+  - id: targets
+    label: |-
+      Compute gold answer sets
+      exclude the BFS start node
+      exclude the target from its own parent answer
+    type: process
+    size: xl
+    position:
+      x: 720
+      'y': 300
+  - id: prompt
+    label: |-
+      Serialize a long-context user prompt
+      operation rules + fixed worked examples
+      full edge list + target operation + output contract
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 300
+  - id: schema
+    label: |-
+      Store five official fields
+      prompt · answer_nodes · prompt_chars
+      problem_type (bfs/parents) · date_added
+    type: database
+    size: xl
+    position:
+      x: 1320
+      'y': 300
+  - id: release
+    label: |-
+      Release two context-length parquet groups
+      1,150 rows in one train split
+      current data: 550 BFS + 600 parents
+    type: database
+    size: xl
+    position:
+      x: 1620
+      'y': 300
+  - id: repair
+    label: |-
+      Apply the 2026 correctness repair
+      fix 24/400 short-set parent labels
+      clarify BFS as exact depth without revisits
+    type: process
+    size: xl
+    position:
+      x: 1920
+      'y': 300
+  - id: run
+    label: |-
+      Ask the model to reason step by step
+      require the very last line to be
+      Final Answer: [node1, node2, ...]
+    type: process
+    size: xl
+    position:
+      x: 2220
+      'y': 300
+  - id: parse
+    label: |-
+      Parse only the response's last line
+      require the Final Answer list pattern
+      malformed output becomes an empty prediction
+    type: process
+    size: xl
+    position:
+      x: 2520
+      'y': 300
+  - id: score
+    label: |-
+      Compare predicted and gold node sets
+      compute precision · recall · F1
+      perfect empty/empty receives F1 = 1
+    type: terminal
+    size: xl
+    position:
+      x: 2820
+      'y': 300
+edges:
+  - from: graphs
+    to: bfs
+    type: primary
+  - from: graphs
+    to: parents
+    type: primary
+  - from: bfs
+    to: targets
+    type: primary
+  - from: parents
+    to: targets
+    type: primary
+  - from: targets
+    to: prompt
+    type: primary
+  - from: prompt
+    to: schema
+    type: primary
+  - from: schema
+    to: release
+    type: primary
+  - from: release
+    to: repair
+    type: primary
+  - from: repair
+    to: run
+    type: primary
+  - from: run
+    to: parse
+    type: primary
+  - from: parse
+    to: score
+    type: primary
+modules: []

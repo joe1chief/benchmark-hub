@@ -1,0 +1,141 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GenEval Build Process
+  description: Paper-aligned prompt construction, image generation, object-focused verification, and scoring flow for GenEval.
+  legend: >-
+    GenEval uses structured prompts and discriminative vision models to test exact compositional alignment rather than
+    holistic aesthetics; all counts and thresholds follow arXiv:2310.11513.
+nodes:
+  - id: tasks
+    label: |-
+      Define six compositional tasks
+      single/two object · counting · color
+      position · color attribute binding
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: vocabulary
+    label: |-
+      Build template vocabularies
+      80 MS-COCO object classes
+      10 generation colors · 3 counts · 4 positions
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: prompts
+    label: |-
+      Sample 100 prompts per task
+      fill task-specific templates uniformly
+      remove duplicates → 553 prompts total
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: generate
+    label: |-
+      Run each text-to-image model
+      generate 4 images for every prompt
+      preserve prompt metadata for verification
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 300
+  - id: detect
+    label: |-
+      Detect and segment objects
+      COCO Mask2Former threshold 0.3
+      use 0.9 only for counting
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: geometry
+    label: |-
+      Verify object requirements
+      presence and exact count
+      centroid geometry for relative position
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: color
+    label: |-
+      Verify color and attribute binding
+      crop by box · mask background gray
+      zero-shot CLIP ViT-L/14 over candidate colors
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: binary
+    label: |-
+      Assign binary correctness per image
+      pass only when every requested element
+      property and relation is correct
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: aggregate
+    label: |-
+      Average the four generations
+      report each of the six task scores
+      average task scores for overall GenEval
+    type: terminal
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: human
+    label: |-
+      Validate against human judgment
+      6,000 annotations on 1,200 images
+      83% agreement · 88% inter-annotator · 91% unanimous
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+edges:
+  - from: tasks
+    to: vocabulary
+    type: primary
+  - from: vocabulary
+    to: prompts
+    type: primary
+  - from: prompts
+    to: generate
+    type: primary
+  - from: generate
+    to: detect
+    type: primary
+  - from: detect
+    to: geometry
+    type: primary
+  - from: geometry
+    to: color
+    type: primary
+  - from: color
+    to: binary
+    type: primary
+  - from: binary
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: human
+    type: primary
+modules: []
