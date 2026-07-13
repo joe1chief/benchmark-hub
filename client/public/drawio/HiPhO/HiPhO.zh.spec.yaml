@@ -4,86 +4,223 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HiPhO Build Process (ZH)
-  description: 对齐论文的 HiPhO 构建流程：从官方奥赛试卷 PDF 到结构抽取、人工核验、官方评分 rubric、模型作答和奖牌分数评测。
-  legend: 实线箭头表示主要数据构建与评测流程。
+  title: HiPhO 构建流程
+  description: 对齐论文的 HiPhO 构建流程：从具有选手成绩的 2024-2025 年高影响力物理奥赛出发，经 OCR、全量专家核验、 官方评分细则结构化、多模态标注、答案与步骤评分，最终与奖牌线比较。
+  legend: 13 套考试中 7 套提供官方评分细则，4 套允许多种官方解法；其余 6 套走仅答案级评分路径。每个抽取的题解对均经人工核验。
 nodes:
-  - id: exam
-    label: 考试PDF
-    type: document
+  - id: select
+    label: |-
+      选择最新物理奥赛
+      2024-2025 年 7 项高影响力竞赛
+      要求存在可用人类选手成绩
+    type: decision
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: extract
-    label: 结构抽取
+      'y': 420
+  - id: source
+    label: |-
+      收集 13 套官方试卷
+      题目 PDF · 官方答案
+      每套考试的奖牌分数线
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 420
+  - id: ocr
+    label: |-
+      使用 OCR 工具抽取 PDF
+      将文本重排为可编辑 Markdown
+      保留物理表达式的 LaTeX 格式
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
+      x: 640
+      'y': 420
   - id: match
-    label: 题解匹配
+    label: |-
+      匹配题目与答案
+      对齐索引与编号模式
+      关联所需图像和考试上下文
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 940
+      'y': 420
   - id: verify
-    label: 人工核验
+    label: |-
+      人工核验每个题解对
+      专家修正 OCR 错误与错配
+      对照原始试卷验证答案
     type: user
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: rubric
-    label: 评分rubric
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: subq
-    label: 小题集合
-    type: document
-    size: xl
-    position:
       x: 1240
+      'y': 420
+  - id: marking
+    label: |-
+      结构化官方评分细则
+      7 套考试提供步骤级标准
+      转换为模型可读 Rubric
+    type: document
+    size: xl
+    position:
+      x: 1540
       'y': 160
-  - id: answers
-    label: 模型作答
+  - id: refine
+    label: |-
+      精炼已核验题目
+      补全上下文 · 结构化小题
+      明确单位但不降低题目难度
     type: process
     size: xl
     position:
-      x: 1480
+      x: 1540
+      'y': 680
+  - id: annotate
+    label: |-
+      增加细粒度标注
+      5 个物理领域 · 4 种模态类型
+      6 种答案类型 · 3 个难度等级
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 420
+  - id: benchmark
+    label: |-
+      发布统一 HiPhO JSON
+      360 道题 · 519 个小题
+      308 道英文题 + 52 道中文题
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 420
+  - id: model
+    label: |-
+      生成完整模型解答
+      输入为纯文本或文本加图像
+      保持小题回答顺序
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 420
+  - id: answer_grade
+    label: |-
+      执行答案级评分
+      先用规则数学验证器
+      失败的等价表达式交强模型复核
+    type: decision
+    size: xl
+    position:
+      x: 2740
       'y': 160
+  - id: route
+    label: |-
+      是否有官方评分细则
+      7 套考试进入步骤级路径
+      6 套考试进入仅答案级路径
+    type: decision
+    size: xl
+    position:
+      x: 2740
+      'y': 680
+  - id: step_grade
+    label: |-
+      授予步骤级部分分
+      强模型逐条核对官方评分点
+      4 套多解考试取最高方案分
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 500
+  - id: answer_only
+    label: |-
+      仅使用答案级结果
+      用于 6 套无评分细则的考试
+      最终答案正确即得满分
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 820
+  - id: problem_score
+    label: |-
+      计算每题分数
+      最终答案正确 = 满分
+      否则保留已完成中间步骤得分
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 420
   - id: medal
-    label: 奖牌分数
+    label: |-
+      报告考试分数与奖牌
+      汇总 13 套考试的逐题分数
+      映射官方金牌 · 银牌 · 铜牌线
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 3640
+      'y': 420
 edges:
-  - from: exam
-    to: extract
+  - from: select
+    to: source
     type: primary
-  - from: extract
+  - from: source
+    to: ocr
+    type: primary
+  - from: ocr
     to: match
     type: primary
   - from: match
     to: verify
     type: primary
   - from: verify
-    to: rubric
+    to: marking
+    type: secondary
+  - from: verify
+    to: refine
     type: primary
-  - from: rubric
-    to: subq
+  - from: marking
+    to: annotate
+    type: secondary
+  - from: refine
+    to: annotate
     type: primary
-  - from: subq
-    to: answers
+  - from: annotate
+    to: benchmark
     type: primary
-  - from: answers
+  - from: benchmark
+    to: model
+    type: primary
+  - from: model
+    to: answer_grade
+    type: primary
+  - from: model
+    to: route
+    type: secondary
+  - from: route
+    to: step_grade
+    type: primary
+  - from: route
+    to: answer_only
+    type: secondary
+  - from: answer_grade
+    to: problem_score
+    type: primary
+  - from: step_grade
+    to: problem_score
+    type: primary
+  - from: answer_only
+    to: problem_score
+    type: secondary
+  - from: problem_score
     to: medal
     type: primary
 modules: []
