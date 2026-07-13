@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedAgentBench 构建流程
+  description: 与论文及官方代码对齐地展示 MedAgentBench 的医生任务设计、STARR 患者数据处理、FHIR 环境构建、智能体交互和成功率评分。
+  legend: 实线箭头依次表示 300 个任务、100 名患者与 785207 条记录的构造、九个 FHIR 函数、150 个查询与 150 个动作任务，以及三类成功率。
+nodes:
+  - id: tasks
+    label: |-
+      由两名内科医生设计任务
+      提交 300 个临床任务
+      按复杂度与临床价值策展
+      覆盖住院与门诊场景
+    type: user
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: taxonomy
+    label: |-
+      组织临床任务体系
+      10 个具体任务类别
+      归并为 7 个广义类别
+      覆盖检索记录和医嘱动作
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: cohort
+    label: |-
+      从 STARR 选择患者队列
+      使用去标识临床数据仓库
+      随机抽取 100 名患者
+      以晨间住院钠检验为锚
+    type: database
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: extract
+    label: |-
+      抽取最近五年病历数据
+      检验与六类生命体征
+      诊断、操作和药物医嘱
+      截止至 2023-11-13
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: deid
+    label: |-
+      补充可用的虚拟身份
+      生成去重七位假 MRN
+      Faker 生成姓名电话地址
+      保留患者级时间扰动
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: resources
+    label: |-
+      映射到 FHIR 资源
+      Observation 与 Procedure
+      Condition 与 MedicationRequest
+      共形成 785207 条记录
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: environment
+    label: |-
+      构建交互式 EHR 环境
+      使用 HAPI FHIR JPA
+      持久化 H2 并批量 POST
+      封装为可复现 Docker 镜像
+    type: cloud
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: harness
+    label: |-
+      接入 AgentBench 框架
+      提供九个 FHIR 函数
+      每轮只允许一次函数调用
+      支持 GET、POST 与 FINISH
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: interaction
+    label: |-
+      智能体循环执行高层任务
+      规划请求并读取服务器响应
+      必要时修改虚拟病历
+      最后返回结构化结果
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: split
+    label: |-
+      区分两类评测任务
+      150 个查询型任务
+      150 个动作型任务
+      动作任务可先执行 GET
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: querygrade
+    label: |-
+      评分查询型任务
+      人工编写参考解决方案
+      比较智能体最终回复
+      检查预期值和格式
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: actiongrade
+    label: |-
+      评分动作型任务
+      检查 POST 请求负载
+      运行人工规则化健全检查
+      验证病历修改是否正确
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: score
+    label: |-
+      计算二元任务成功结果
+      每个任务成功或失败
+      汇总 Overall Success Rate
+      分别报告 Query 与 Action SR
+    type: decision
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      发布 MedAgentBench 结果
+      比较 12 个代表性模型
+      按任务类别分析表现差异
+      保留可复现实验轨迹
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: tasks
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: cohort
+    type: primary
+  - from: cohort
+    to: extract
+    type: primary
+  - from: extract
+    to: deid
+    type: primary
+  - from: deid
+    to: resources
+    type: primary
+  - from: resources
+    to: environment
+    type: primary
+  - from: environment
+    to: harness
+    type: primary
+  - from: harness
+    to: interaction
+    type: primary
+  - from: interaction
+    to: split
+    type: primary
+  - from: split
+    to: querygrade
+    type: primary
+  - from: querygrade
+    to: actiongrade
+    type: primary
+  - from: actiongrade
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
+modules: []
