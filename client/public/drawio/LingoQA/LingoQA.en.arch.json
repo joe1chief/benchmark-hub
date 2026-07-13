@@ -7,56 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "drive_clips",
-      "label": "Drive Clips",
-      "type": "document",
+      "id": "sessions",
+      "label": "Record Autonomous-driving Sessions\nCapture Forward-facing Video and Vehicle State\nRetain Perception and Policy Context\nIdentify Notable Driving Behaviors",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "action_data",
-      "label": "Action Data",
+      "id": "clips",
+      "label": "Extract Four-second Video Scenarios\nSample Frames at 1 Hz\nAverage Ground-truth Answer Is 17.2 Words\nRoute Clips to Two Construction Pipelines",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "gpt_rewrite",
-      "label": "GPT Rewrite",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "scenery_data",
-      "label": "Scenery Data",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "gpt4_qa",
-      "label": "GPT-4 QA",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "eval_labels",
-      "label": "Eval Labels",
+      "id": "action_seed",
+      "label": "Action Branch · Author Behavior Seeds\nOperator Describes Situation and Action\nAdd Lights · Detections · Weather\nAdd Speed · Steering · Road Metadata",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "lingo_judge",
-      "label": "LingoJudge",
+      "id": "action_qa",
+      "label": "Generate and Balance Action QA\nPrompt Action · Justification · Questions · Hints\nGPT-3.5 Rephrases · Answers · Extends\nCap Each Action and Policy Type at 500",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "vqa_scores",
-      "label": "VQA Scores",
+      "id": "scenery_seed",
+      "label": "Scenery Branch · Densely Annotate Video\nThree 30-minute Driving Sessions\nUse ELAN across about 15 Caption Categories\nAlign Captions to Every 1 Hz Frame",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "scenery_qa",
+      "label": "Generate Scenery-perception QA\nPrompt GPT-4 with Chain-of-thought Examples\nDerive Questions from Dense Captions\nProduce about 43 QA Items per Video",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "corpus",
+      "label": "Merge the LingoQA Training Corpus\n24,577 Action Snippets\n28K Unique Four-second Scenarios Overall\n419.9K QA Annotations Overall",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "competencies",
+      "label": "Cover Nine Driving Competencies\nAction · Justification · Attention\nIdentification · Localisation · Description\nCounting · Anticipation · Counterfactual",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "eval_questions",
+      "label": "Create a Separate Human Evaluation Set\nIn-house Labelers Write 500 Questions\nMore Than 20 Evaluators Participate\nKeep Questions Grounded in Driving Clips",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "references",
+      "label": "Collect Two Answers per Question\nAssign Different Workers for Double Labels\nReview Semantic Disagreements\nRelabel Twice and Resolve by Majority Semantics",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "Train the DeBERTaV3 Lingo-Judge\nInput Question · Human Answer · Model Answer\nLoRA-train on Human Correctness Labels\nAdd Active-learning Corrections from Old Models",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Score Answers without Video Input\nPredict Correctness against Each Reference\nTake the Maximum over 2 References per Question\nAverage Question Scores for the Model",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Validate and Report LingoQA Scores\nJudge Held-out Accuracy Is 95%\nSpearman 0.950 · Pearson 0.993 across 17 Models\nCompare with Human and Text Metrics",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +94,80 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "drive_clips",
-      "to": "action_data",
+      "from": "sessions",
+      "to": "clips",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "action_data",
-      "to": "gpt_rewrite",
+      "from": "clips",
+      "to": "action_seed",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "gpt_rewrite",
-      "to": "scenery_data",
+      "from": "clips",
+      "to": "scenery_seed",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "scenery_data",
-      "to": "gpt4_qa",
+      "from": "action_seed",
+      "to": "action_qa",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "gpt4_qa",
-      "to": "eval_labels",
+      "from": "scenery_seed",
+      "to": "scenery_qa",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "eval_labels",
-      "to": "lingo_judge",
+      "from": "action_qa",
+      "to": "corpus",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "lingo_judge",
-      "to": "vqa_scores",
+      "from": "scenery_qa",
+      "to": "corpus",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "corpus",
+      "to": "competencies",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "competencies",
+      "to": "eval_questions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "eval_questions",
+      "to": "references",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "references",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],

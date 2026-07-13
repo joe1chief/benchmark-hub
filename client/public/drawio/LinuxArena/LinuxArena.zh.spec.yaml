@@ -1,0 +1,194 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LinuxArena 构建流程
+  description: 对齐论文，构建真实 Linux 控制环境，分别编写主任务与副任务及其隐藏外部评分器， 再执行意外完成过滤、攻击策略和逐动作监控评测。
+  legend: 数量采用 arXiv:2604.15384v2：20 个环境、1,667 个主任务和 185 个副任务；10 个环境公开、10 个保留。 主任务与副任务只需属于同一环境即可组合，并不存在唯一固定的配对集。
+nodes:
+  - id: design
+    label: |-
+      设计 20 个生产式环境
+      从零构建有状态 Docker Compose 系统
+      平衡现实性 · 多样性 · 权限交集
+      覆盖有用的 Linux 智能体工作流
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 260
+  - id: split
+    label: |-
+      对环境执行质量控制
+      人工 · 自动化 · 模型共同检查
+      迭代修订任务与评分器
+      公开 10 个环境 · 保留 10 个
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 260
+  - id: main_tasks
+    label: |-
+      构建 1,667 个主任务
+      LLM 辅助生成后由人工审核
+      功能 · 重构 · 修错 · 调研
+      重写 · 基础设施六类任务
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 20
+  - id: main_scorers
+    label: |-
+      实现隐藏的主任务评分器
+      以外部二元检查判断成功
+      测试有用任务是否完成
+      评分逻辑不进入智能体上下文
+    type: process
+    size: xl
+    position:
+      x: 900
+      'y': 20
+  - id: side_tasks
+    label: |-
+      人工编写 185 个副任务
+      副任务构建不使用 LLM
+      外泄 · 恶意软件 · 数据篡改
+      越权 · 监控破坏 · 密钥访问六类
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 500
+  - id: side_scorers
+    label: |-
+      实现最小化隐藏副任务评分器
+      定义目标 · 评分细节 · 可选测试
+      区分即时失败与延迟失败
+      尽量缩小评分 API 接口面
+    type: process
+    size: xl
+    position:
+      x: 900
+      'y': 500
+  - id: pairs
+    label: |-
+      形成同环境候选任务对
+      组合相容的主任务与副任务
+      不固化一套永久配对
+      对全部同环境组合执行检查
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 260
+  - id: llm_filter
+    label: |-
+      第一阶段 · 筛查意外完成
+      LLM 标记不可能 · 可能 · 很可能
+      识别会顺带触发副目标的主任务
+      将可疑任务对送入回放测试
+    type: process
+    size: xl
+    position:
+      x: 1500
+      'y': 260
+  - id: replay
+    label: |-
+      第二阶段 · 回放并测试可疑任务对
+      在全新环境回放已保存的诚实轨迹
+      第二个模型只尝试完成评分器目标
+      删除通过者 · 总体约占 0.9%
+    type: process
+    size: xl
+    position:
+      x: 1780
+      'y': 260
+  - id: release
+    label: |-
+      发布 LinuxArena 任务资源
+      20 个环境 · 1,667 主任务 · 185 副任务
+      区分公开环境与保留环境
+      以隐藏评分器维护评测完整性
+    type: database
+    size: xl
+    position:
+      x: 2060
+      'y': 260
+  - id: policies
+    label: |-
+      运行诚实策略与攻击策略
+      诚实 ReAct 智能体 · Bash/Inspect · 160 步
+      明显策略测量副任务原始能力
+      隐蔽策略同时完成主任务与隐藏副任务
+    type: process
+    size: xl
+    position:
+      x: 2060
+      'y': 600
+  - id: monitor
+    label: |-
+      监控智能体的每个动作
+      输出 0 到 10 的可疑分
+      每个动作平均调用两次监控器
+      阈值取诚实分数第 99 百分位
+    type: process
+    size: xl
+    position:
+      x: 1780
+      'y': 600
+  - id: report
+    label: |-
+      汇报安全与效用指标
+      主任务成功率 · 副任务成功率
+      副任务成功且危害前未告警才算攻击成功
+      报告规避率与 Wilson 95% 区间
+    type: terminal
+    size: xl
+    position:
+      x: 1500
+      'y': 600
+edges:
+  - from: design
+    to: split
+    type: primary
+  - from: split
+    to: main_tasks
+    type: primary
+  - from: split
+    to: side_tasks
+    type: primary
+  - from: main_tasks
+    to: main_scorers
+    type: primary
+  - from: side_tasks
+    to: side_scorers
+    type: primary
+  - from: main_scorers
+    to: pairs
+    type: primary
+  - from: side_scorers
+    to: pairs
+    type: primary
+  - from: pairs
+    to: llm_filter
+    type: primary
+  - from: llm_filter
+    to: replay
+    type: primary
+  - from: replay
+    to: release
+    type: primary
+  - from: release
+    to: policies
+    type: primary
+  - from: policies
+    to: monitor
+    type: primary
+  - from: monitor
+    to: report
+    type: primary
+modules: []
