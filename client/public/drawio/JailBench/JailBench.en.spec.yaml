@@ -6,86 +6,215 @@ meta:
   routing: orthogonal
   title: JailBench Build Process
   description: >-
-    Paper-aligned JailBench construction pipeline from Chinese safety taxonomy and harmful seed data through
-    translation, labeling, augmentation, jailbreak templates, prompt scoring, final test cases, and ASR evaluation.
-  legend: Solid arrows show safety dataset construction and jailbreak enhancement flow.
+    Paper-aligned JailBench construction from a Chinese two-level safety taxonomy and a translated, labeled, augmented
+    harmful-query pool through AJPE template testing, in-context prompt generation, log-probability ranking, and
+    evaluation.
+  legend: >-
+    The large JailBench Seed construction pool exceeds 10,000 questions; the released evaluation design selects 540 seed
+    questions and crosses them with 20 high-performing jailbreak prompts to produce 10,800 cases.
 nodes:
+  - id: standard
+    label: |-
+      Chinese Generative-AI Safety Requirements
+      Training-data and Generated-content Risks
+      Security + Linguistics Expert Collaboration
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
   - id: taxonomy
-    label: Risk Taxonomy
-    type: document
+    label: |-
+      Define Two-level Safety Taxonomy
+      5 Risk Domains · 40 Specific Categories
+      Chinese Linguistic and Cultural Context
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: seed
-    label: Seed Data
-    type: document
+      x: 300
+      'y': 40
+  - id: collect
+    label: |-
+      Aggregate Harmful Queries
+      Public Red-team and Safety Datasets
+      Labeled and Unlabeled Sources
+      Preserve Original Category Information
+    type: cloud
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: zh
-    label: ZH Correction
+      x: 580
+      'y': 40
+  - id: translate
+    label: |-
+      Chinese Localization
+      Translate Source Queries into Chinese
+      Manually Correct Language and Meaning
+      Form Foundational Raw Data
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: expand
-    label: Auto Expand
+      x: 860
+      'y': 40
+  - id: label
+    label: |-
+      Align to JailBench Taxonomy
+      Map Existing Labeled Categories
+      ChatGPT Classifies Unlabeled Queries
+      Prompt Includes Criteria and Output Format
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: templates
-    label: Jail Templates
+      x: 1140
+      'y': 40
+  - id: verify
+    label: |-
+      Label Quality Control
+      Randomly Sample Classified Items
+      Manual Verification against Taxonomy
+      Correct Inaccurate Assignments
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: augment
+    label: |-
+      Fill Underrepresented Categories
+      ChatGPT Few-shot Unsafe-question Generation
+      Target Category + Sample Existing Examples
+      Iterate for Coverage and Diversity
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: seed_pool
+    label: |-
+      JailBench Seed Construction Pool
+      More Than 10,000 Chinese Questions
+      5 Domains · 40 Risk Types
+    type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 40
+  - id: prior_templates
+    label: |-
+      Collect Prior Jailbreak Templates
+      AutoDAN · GPTFuzzer · DeepInception etc.
+      Translate to Chinese + Manual Refinement
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
+      x: 1980
+      'y': 380
+  - id: test
+    label: |-
+      AJPE Template Testing
+      Random Template × Seed Query
+      Evaluate Target-LLM Output Harmfulness
+      Drop Templates Below ASR Threshold
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: generate
+    label: |-
+      AJPE Prompt Generation
+      Learn from Successful Harmful I/O Pairs
+      ChatGPT Produces Diverse Inducive Prompts
+      Mimic Effective Template Characteristics
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 380
   - id: score
-    label: Prompt Score
+    label: |-
+      Prompt Quality Screening
+      Score Effectiveness by Output Log Probability
+      Keep the Highest-performing Prompts
+      Expand Pool to More Than 1,000
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: set
-    label: Final Set
-    type: document
+      x: 1140
+      'y': 380
+  - id: combine
+    label: |-
+      Construct Final JailBench
+      Select 20 Effective Jailbreak Prompts
+      Select 540 JailBench Seed Questions
+      Cartesian Product → 10,800 Test Cases
+    type: database
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: asr
-    label: ASR Eval
+      x: 860
+      'y': 380
+  - id: evaluate
+    label: |-
+      Run Safety Evaluation
+      Query 13 Chinese-capable LLMs
+      MDJudge Classifies Output Harmfulness
+      Aggregate by 5 Domains and 40 Categories
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 380
+  - id: report
+    label: |-
+      Report Safety Vulnerability
+      Attack Success Rate = Harmful / Total
+      Attack Efficiency Adjusts for Prompt Length
+      Seed vs Jailbreak-enhanced Results
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 300
+      'y': 380
 edges:
+  - from: standard
+    to: taxonomy
+    type: primary
   - from: taxonomy
-    to: seed
+    to: collect
     type: primary
-  - from: seed
-    to: zh
+  - from: collect
+    to: translate
     type: primary
-  - from: zh
-    to: expand
+  - from: translate
+    to: label
     type: primary
-  - from: expand
-    to: templates
+  - from: label
+    to: verify
     type: primary
-  - from: templates
+  - from: verify
+    to: augment
+    type: primary
+  - from: augment
+    to: seed_pool
+    type: primary
+  - from: seed_pool
+    to: prior_templates
+    type: primary
+  - from: prior_templates
+    to: test
+    type: primary
+  - from: test
+    to: generate
+    type: primary
+  - from: generate
     to: score
     type: primary
   - from: score
-    to: set
+    to: combine
     type: primary
-  - from: set
-    to: asr
+  - from: combine
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []
