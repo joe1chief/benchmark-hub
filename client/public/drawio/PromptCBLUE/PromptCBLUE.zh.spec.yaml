@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PromptCBLUE 构建与评测流程
+  description: 按论文与官方仓库把16个中文医疗NLP任务统一为提示词响应接口通过隐藏标签在线评测任务专用解析及任务宏平均评分。
+  legend: PromptCBLUE v0.2使用94个指令模板，包含68,900条训练10,360条验证以及两份各10,320条测试数据，覆盖16个任务与五类能力。
+nodes:
+  - id: step_1
+    label: |-
+      汇集16个医疗NLP任务
+      基于CBLUE及配套任务
+      保留真实中文医疗文本
+      覆盖理解与生成
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: step_2
+    label: |-
+      组织五类任务组
+      医疗信息抽取
+      文本分类与自然语言推理
+      对话状态与内容生成
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: step_3
+    label: |-
+      为LLM改造每个任务
+      转换跨度标签与结构
+      全部目标表达为生成文本
+      保留任务专用语义
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: step_4
+    label: |-
+      编写94个指令模板
+      使用多样自然提示措辞
+      适用任务加入候选答案
+      任务身份不作为模型输入
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: step_5
+    label: |-
+      生成统一JSONL模式
+      input · target · task type
+      answer choices · sample ID
+      全任务共用提示响应合同
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: step_6
+    label: |-
+      保留数据切分
+      68,900训练 · 10,360验证
+      测试A与B各10,320条
+      每个切分混合全部任务
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: step_7
+    label: |-
+      隐藏测试集标准答案
+      发布固定测试输入
+      target字符串留空
+      减少直接标签泄漏
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: step_8
+    label: |-
+      定义评测设置
+      各任务固定少样本示例
+      全量与少样本微调
+      共用文本生成接口
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: step_9
+    label: |-
+      约束参评模型
+      一个共享LLM主干
+      一个共享语言模型头
+      PEFT参数低于主干1%
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: step_10
+    label: |-
+      生成全部测试响应
+      原样输入固定prompt
+      保持行顺序与sample ID
+      每条提交一个文本答案
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: step_11
+    label: |-
+      解析为任务结构
+      提供仅标准库后处理代码
+      文本转实体标签或章节
+      生成按任务分组results JSON
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: step_12
+    label: |-
+      评估理解类任务
+      抽取任务严格micro-F1
+      部分分类任务macro-F1
+      其余推理任务micro-F1
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: step_13
+    label: |-
+      评估生成类任务
+      ROUGE-1 · ROUGE-2 · ROUGE-L
+      评分前按汉字切分
+      IMCS-MRG六章节分数平均
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: step_14
+    label: |-
+      按总体分数排名
+      每任务选F1或ROUGE-L
+      平均16项任务主指标
+      在在线平台执行评测
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: step_1
+    to: step_2
+    type: primary
+  - from: step_2
+    to: step_3
+    type: primary
+  - from: step_3
+    to: step_4
+    type: primary
+  - from: step_4
+    to: step_5
+    type: primary
+  - from: step_5
+    to: step_6
+    type: primary
+  - from: step_6
+    to: step_7
+    type: primary
+  - from: step_7
+    to: step_8
+    type: primary
+  - from: step_8
+    to: step_9
+    type: primary
+  - from: step_9
+    to: step_10
+    type: primary
+  - from: step_10
+    to: step_11
+    type: primary
+  - from: step_11
+    to: step_12
+    type: primary
+  - from: step_12
+    to: step_13
+    type: primary
+  - from: step_13
+    to: step_14
+    type: primary
+modules: []
