@@ -1,0 +1,209 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PMC-VQA Build and Evaluation Process
+  description: >-
+    Paper-aligned caption-to-VQA generation, two-stage visual-dependence filtering, image-disjoint splitting, manual
+    test verification, and dual-task scoring.
+  legend: >-
+    The final 226,946 pairs are automatically cleaned; the 2,000-item PMC-VQA-test is a manually verified subset of the
+    image-disjoint 50,000-item initial test split.
+nodes:
+  - id: step_1
+    label: |-
+      Start from PMC-OA
+      1.6M biomedical image-caption pairs
+      PubMed Central Open Access
+      Collected from 2.4M papers
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: step_2
+    label: |-
+      Take 381K Figure-caption Pairs
+      Use first collection stage
+      Do not auto-separate subfigures
+      Preserve complex medical figures
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: step_3
+    label: |-
+      Generate Five QAs per Caption
+      Prompt ChatGPT from caption text
+      Four options · one correct
+      Randomize the correct position
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: step_4
+    label: |-
+      Clean Generation Outputs
+      Remove repeats refusals and dummy cases
+      Enforce required template
+      Keep 1,497,808 QA pairs
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: step_5
+    label: |-
+      Split Data into Two Halves
+      Prevent text-filter self-training
+      Train on one half
+      Infer on the opposite half
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: step_6
+    label: |-
+      Train Text-only LLaMA-7B
+      Use question and answer options
+      No corresponding image
+      Learn biomedical language shortcuts
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: step_7
+    label: |-
+      Filter Language-answerable QAs
+      Shuffle options and infer five times
+      Remove if correct at least 3 of 5
+      Retain 848,433 pairs
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: step_8
+    label: |-
+      Label Image Answerability
+      Manually annotate 2,192 pairs
+      1,752 train · 440 test
+      Binary image-answerable labels
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: step_9
+    label: |-
+      Train Question Classifier
+      Reach 81.77 percent accuracy
+      Detect caption-only information
+      Apply to remaining candidate pool
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: step_10
+    label: |-
+      Finalize Clean PMC-VQA
+      226,946 question-answer pairs
+      149,075 medical images
+      About 80 percent radiology
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: step_11
+    label: |-
+      Create Image-disjoint Split
+      Randomly select 50,000 pairs
+      PMC-VQA-test-initial
+      No image overlaps training
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: step_12
+    label: |-
+      Manually Verify Test Cases
+      Check image relevance and answerability
+      Check distractor complexity and image quality
+      Retain 2,000-item PMC-VQA-test
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: step_13
+    label: |-
+      Run Two Evaluation Tasks
+      Choice gives four candidate answers
+      Blanking omits the options
+      Generate A to D or free-form text
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: step_14
+    label: |-
+      Report Task-specific Metrics
+      Choice uses accuracy
+      Blanking uses accuracy and BLEU-1
+      Compare on the verified test set
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: step_1
+    to: step_2
+    type: primary
+  - from: step_2
+    to: step_3
+    type: primary
+  - from: step_3
+    to: step_4
+    type: primary
+  - from: step_4
+    to: step_5
+    type: primary
+  - from: step_5
+    to: step_6
+    type: primary
+  - from: step_6
+    to: step_7
+    type: primary
+  - from: step_7
+    to: step_8
+    type: primary
+  - from: step_8
+    to: step_9
+    type: primary
+  - from: step_9
+    to: step_10
+    type: primary
+  - from: step_10
+    to: step_11
+    type: primary
+  - from: step_11
+    to: step_12
+    type: primary
+  - from: step_12
+    to: step_13
+    type: primary
+  - from: step_13
+    to: step_14
+    type: primary
+modules: []
