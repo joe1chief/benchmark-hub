@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import {
+  basename,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REQUIRED_ASSET_FIELDS = [
@@ -14,6 +20,25 @@ const REQUIRED_ASSET_FIELDS = [
   'drawio_arch_en',
   'drawio_arch_zh',
 ];
+const TECHNICAL_LABEL_ALLOWLIST = new Set([
+  'BLEU-1、BLEU-4、ROUGE-1、ROUGE-2、ROUGE-L',
+  'BLEU-1、BLEU-4、ROUGE-L',
+  'ClinicalTrials.gov XML',
+  'D-LLaVA',
+  'DFT-C · HFD · HFE · QECC · GEO\nROUGE-L',
+  'F1、IoU、mAP',
+  'Grid-LLaVA',
+  'LongSeal 254',
+  'MIMIC、ChatDoctor、DrugBank、Drugs.com',
+  'Mean IoU',
+  'MiniGPT4-CoT',
+  'Open Images',
+  'Pass@1',
+  'Seal-Hard 254',
+  'SecureBio VMQA4',
+  'mG-Pass@16',
+  'score@k',
+]);
 
 function parseArgs(argv) {
   const args = {
@@ -78,9 +103,121 @@ function duplicateIdIssues(counts, issue) {
     .map(([id, count]) => ({ id, issue, count }));
 }
 
+function topologySignature(items, fields) {
+  return JSON.stringify(
+    (Array.isArray(items) ? items : [])
+      .map((item) => fields.map((field) => item?.[field] ?? '').join('\u0000'))
+      .sort(),
+  );
+}
+
+function resolveContainedAsset(publicDir, assetPath) {
+  if (
+    typeof assetPath !== 'string'
+    || !assetPath.trim()
+    || isAbsolute(assetPath)
+  ) return null;
+  const resolvedPublicDir = resolve(publicDir);
+  const target = resolve(resolvedPublicDir, assetPath);
+  const relativePath = relative(resolvedPublicDir, target);
+  if (
+    relativePath === '..'
+    || relativePath.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)
+    || isAbsolute(relativePath)
+  ) {
+    return null;
+  }
+  return target;
+}
+
+function architectureTopologyIssues(id, language, arch) {
+  const nodes = Array.isArray(arch?.nodes) ? arch.nodes : [];
+  const edges = Array.isArray(arch?.edges) ? arch.edges : [];
+  const nodeCounts = countIds(nodes);
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const issues = duplicateIdIssues(nodeCounts, 'duplicate_node_id')
+    .map(({ id: node, count, issue }) => ({
+      id,
+      language,
+      node,
+      count,
+      issue,
+    }));
+
+  for (const edge of edges) {
+    if (!nodeIds.has(edge.from)) {
+      issues.push({
+        id,
+        language,
+        edge: `${edge.from}->${edge.to}`,
+        issue: 'edge_source_missing',
+      });
+    }
+    if (!nodeIds.has(edge.to)) {
+      issues.push({
+        id,
+        language,
+        edge: `${edge.from}->${edge.to}`,
+        issue: 'edge_target_missing',
+      });
+    }
+  }
+  return issues;
+}
+
+function decisionTopologyIssues(id, arch) {
+  const nodeIds = new Set(
+    (Array.isArray(arch?.nodes) ? arch.nodes : []).map((node) => node.id),
+  );
+  const outgoingTargets = new Map();
+  for (const edge of Array.isArray(arch?.edges) ? arch.edges : []) {
+    if (!nodeIds.has(edge.from) || !nodeIds.has(edge.to)) continue;
+    if (!outgoingTargets.has(edge.from)) outgoingTargets.set(edge.from, new Set());
+    outgoingTargets.get(edge.from).add(edge.to);
+  }
+  return (Array.isArray(arch?.nodes) ? arch.nodes : [])
+    .filter((node) => node.type === 'decision')
+    .filter((node) => (outgoingTargets.get(node.id)?.size || 0) < 2)
+    .map((node) => ({
+      id,
+      node: node.id,
+      issue: 'decision_has_fewer_than_two_unique_targets',
+      outgoing_targets: outgoingTargets.get(node.id)?.size || 0,
+    }));
+}
+
+function isTechnicalIdentifierLabel(label) {
+  return TECHNICAL_LABEL_ALLOWLIST.has(label);
+}
+
+function edgeTopologyKey(edge) {
+  return `${edge?.from ?? ''}->${edge?.to ?? ''}:${edge?.type ?? ''}`;
+}
+
+function labeledEdgeCounts(edges) {
+  const counts = new Map();
+  for (const edge of Array.isArray(edges) ? edges : []) {
+    const key = edgeTopologyKey(edge);
+    if (!counts.has(key)) counts.set(key, 0);
+    if (String(edge?.label || '').trim()) {
+      counts.set(key, counts.get(key) + 1);
+    }
+  }
+  return counts;
+}
+
+function isLanguageExemptNode(node, exemptNodeIds) {
+  const label = String(node?.label || '').trim();
+  return exemptNodeIds.has(node?.id)
+    || node?.type === 'formula'
+    || !/\p{L}/u.test(label)
+    || isTechnicalIdentifierLabel(label);
+}
+
 export function auditBuildProcessAssets(root) {
   const publicDir = join(root, 'client/public');
   const detailDir = join(publicDir, 'benchmarks_detail');
+  const drawioDir = join(publicDir, 'drawio');
   const aggregatePath = join(publicDir, 'benchmarks.json');
   const manifestPath = join(publicDir, 'benchmarks_build_process_manifest.json');
   const detailFiles = readdirSync(detailDir)
@@ -106,6 +243,14 @@ export function auditBuildProcessAssets(root) {
   const aggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
   const aggregateIdCounts = countIds(aggregate);
   const aggregateById = new Map(aggregate.map((entry) => [entry.id, entry]));
+  const physicalDrawioIds = new Set(
+    existsSync(drawioDir)
+      ? readdirSync(drawioDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .filter((entry) => readdirSync(join(drawioDir, entry.name)).length > 0)
+        .map((entry) => entry.name)
+      : [],
+  );
   const aggregateIssues = duplicateIdIssues(
     aggregateIdCounts,
     'duplicate_list_record',
@@ -141,7 +286,15 @@ export function auditBuildProcessAssets(root) {
           expected_path: expectedPath,
           actual_path: actualPath,
         });
-      } else if (!existsSync(join(publicDir, actualPath))) {
+      } else if (!resolveContainedAsset(publicDir, actualPath)) {
+        entryIssues.push({
+          id: manifestEntry.id,
+          field,
+          issue: 'asset_path_outside_public_dir',
+          expected_path: expectedPath,
+          actual_path: actualPath,
+        });
+      } else if (!existsSync(resolveContainedAsset(publicDir, actualPath))) {
         entryIssues.push({
           id: manifestEntry.id,
           field,
@@ -166,6 +319,11 @@ export function auditBuildProcessAssets(root) {
   ];
   sourceIssues.push(
     ...manifest
+    .filter((entry) => !String(entry.source_url || '').trim())
+    .map((entry) => ({ id: entry.id, issue: 'missing_source_url' })),
+  );
+  sourceIssues.push(
+    ...manifest
     .filter((entry) => !String(entry.source_locator || '').trim())
     .map((entry) => ({ id: entry.id, issue: 'missing_source_locator' })),
   );
@@ -174,11 +332,61 @@ export function auditBuildProcessAssets(root) {
       .filter((entry) => !detailIds.has(entry.id))
       .map((entry) => ({ id: entry.id, issue: 'manifest_id_without_detail' })),
   );
+  const reviewIssues = [];
+  for (const entry of manifest) {
+    for (const language of ['en', 'zh']) {
+      if (entry.strict_validation?.[language] !== 'passed') {
+        reviewIssues.push({
+          id: entry.id,
+          language,
+          issue: 'strict_validation_not_passed',
+        });
+      }
+    }
+    if (entry.review_status !== 'visually_reviewed') {
+      reviewIssues.push({ id: entry.id, issue: 'visual_review_not_passed' });
+    }
+    if (entry.paper_alignment_review?.status !== 'passed') {
+      reviewIssues.push({
+        id: entry.id,
+        issue: 'paper_alignment_review_not_passed',
+      });
+    } else {
+      if (entry.paper_alignment_review.source_url !== entry.source_url) {
+        reviewIssues.push({
+          id: entry.id,
+          issue: 'paper_alignment_source_url_mismatch',
+          expected_source_url: entry.source_url,
+          reviewed_source_url: entry.paper_alignment_review.source_url ?? null,
+        });
+      }
+      if (entry.paper_alignment_review.source_locator !== entry.source_locator) {
+        reviewIssues.push({
+          id: entry.id,
+          issue: 'paper_alignment_source_mismatch',
+          expected_source_locator: entry.source_locator,
+          reviewed_source_locator: entry.paper_alignment_review.source_locator ?? null,
+        });
+      }
+    }
+  }
   const missingIds = [];
   const brokenReferences = [];
   const languageIssues = [];
   const svgIssues = [];
   const dataConsistencyIssues = [];
+  const topologyIssues = [];
+  const assetsWithoutManifestIds = new Set(
+    [
+      ...aggregate
+        .filter((entry) => !manifestIds.has(entry.id))
+        .filter((entry) => (
+          REQUIRED_ASSET_FIELDS.some((field) => Boolean(entry[field]))
+        ))
+        .map((entry) => entry.id),
+      ...[...physicalDrawioIds].filter((id) => !manifestIds.has(id)),
+    ],
+  );
   let completeBilingualTotal = 0;
 
   for (const { detailFile, detail } of details) {
@@ -186,11 +394,24 @@ export function auditBuildProcessAssets(root) {
     const manifestEntry = manifestById.get(id);
     const missingFields = REQUIRED_ASSET_FIELDS.filter((field) => !detail[field]);
     const hasStarted = manifestIds.has(id)
+      || physicalDrawioIds.has(id)
       || REQUIRED_ASSET_FIELDS.some((field) => Boolean(detail[field]));
+    if (hasStarted && !manifestIds.has(id)) {
+      assetsWithoutManifestIds.add(id);
+    }
     const missingFiles = REQUIRED_ASSET_FIELDS
       .filter((field) => detail[field])
-      .filter((field) => !existsSync(join(publicDir, detail[field])))
-      .map((field) => ({ field, path: detail[field] }));
+      .flatMap((field) => {
+        const assetPath = resolveContainedAsset(publicDir, detail[field]);
+        if (!assetPath) {
+          return [{
+            field,
+            path: detail[field],
+            issue: 'asset_path_outside_public_dir',
+          }];
+        }
+        return existsSync(assetPath) ? [] : [{ field, path: detail[field] }];
+      });
 
     if (!manifestIds.has(id) || missingFields.length > 0) {
       missingIds.push(id);
@@ -225,9 +446,131 @@ export function auditBuildProcessAssets(root) {
       }
     }
     dataConsistencyIssues.push(...entryConsistencyIssues);
+    const archByLanguage = {};
+    for (const language of ['en', 'zh']) {
+      const field = `drawio_arch_${language}`;
+      if (!detail[field]) continue;
+      const archPath = resolveContainedAsset(publicDir, detail[field]);
+      if (archPath && existsSync(archPath)) {
+        archByLanguage[language] = readJson(archPath);
+      }
+    }
+    if (archByLanguage.en && archByLanguage.zh) {
+      if (
+        topologySignature(archByLanguage.en.nodes, ['id', 'type'])
+        !== topologySignature(archByLanguage.zh.nodes, ['id', 'type'])
+      ) {
+        topologyIssues.push({
+          id,
+          issue: 'bilingual_node_topology_mismatch',
+        });
+      }
+      if (
+        topologySignature(archByLanguage.en.edges, ['from', 'to', 'type'])
+        !== topologySignature(archByLanguage.zh.edges, ['from', 'to', 'type'])
+      ) {
+        topologyIssues.push({
+          id,
+          issue: 'bilingual_edge_topology_mismatch',
+        });
+      }
+      topologyIssues.push(
+        ...architectureTopologyIssues(id, 'en', archByLanguage.en),
+        ...architectureTopologyIssues(id, 'zh', archByLanguage.zh),
+      );
+      topologyIssues.push(...decisionTopologyIssues(id, archByLanguage.en));
+      for (const language of ['en', 'zh']) {
+        for (const node of archByLanguage[language].nodes || []) {
+          if (!String(node.label || '').trim()) {
+            languageIssues.push({
+              id,
+              language,
+              field: `node:${node.id}`,
+              issue: 'missing_node_label',
+            });
+          }
+        }
+      }
+      const englishNodeText = archByLanguage.en.nodes
+        ?.map((node) => node.label || '')
+        .join(' ') || '';
+      if (/[㐀-鿿]/u.test(englishNodeText)) {
+        languageIssues.push({
+          id,
+          language: 'en',
+          field: 'nodes',
+          issue: 'contains_chinese_node_text',
+        });
+      }
+      const exemptNodeIds = new Set(
+        manifestEntry?.language_exempt_node_ids || [],
+      );
+      const translatableNodes = (archByLanguage.zh.nodes || [])
+        .filter((node) => String(node.label || '').trim())
+        .filter((node) => !isLanguageExemptNode(node, exemptNodeIds));
+      const translatedNodes = translatableNodes
+        .filter((node) => /[㐀-鿿]/u.test(String(node.label || '')));
+      if (translatableNodes.length > 0 && translatedNodes.length === 0) {
+        languageIssues.push({
+          id,
+          language: 'zh',
+          field: 'nodes',
+          issue: 'missing_chinese_node_text',
+        });
+      } else {
+        for (const node of translatableNodes) {
+          if (!/[㐀-鿿]/u.test(String(node.label || ''))) {
+            languageIssues.push({
+              id,
+              language: 'zh',
+              field: `node:${node.id}`,
+              issue: 'untranslated_chinese_node_label',
+            });
+          }
+        }
+      }
+      const enLabeledEdgeCounts = labeledEdgeCounts(archByLanguage.en.edges);
+      const zhLabeledEdgeCounts = labeledEdgeCounts(archByLanguage.zh.edges);
+      for (const [key, enCount] of enLabeledEdgeCounts) {
+        if ((zhLabeledEdgeCounts.get(key) || 0) !== enCount) {
+          languageIssues.push({
+            id,
+            language: 'zh',
+            field: `edge:${key}`,
+            issue: 'bilingual_edge_label_presence_mismatch',
+          });
+        }
+      }
+      for (const edge of archByLanguage.en.edges || []) {
+        if (/[㐀-鿿]/u.test(String(edge.label || ''))) {
+          languageIssues.push({
+            id,
+            language: 'en',
+            field: `edge:${edgeTopologyKey(edge)}`,
+            issue: 'contains_chinese_edge_text',
+          });
+        }
+      }
+      for (const edge of archByLanguage.zh.edges || []) {
+        const label = String(edge.label || '').trim();
+        if (
+          label
+          && /\p{L}/u.test(label)
+          && !/[㐀-鿿]/u.test(label)
+          && !isTechnicalIdentifierLabel(label)
+        ) {
+          languageIssues.push({
+            id,
+            language: 'zh',
+            field: `edge:${edgeTopologyKey(edge)}`,
+            issue: 'untranslated_chinese_edge_label',
+          });
+        }
+      }
+    }
     if (detail.drawio_spec_zh) {
-      const zhSpecPath = join(publicDir, detail.drawio_spec_zh);
-      if (existsSync(zhSpecPath)) {
+      const zhSpecPath = resolveContainedAsset(publicDir, detail.drawio_spec_zh);
+      if (zhSpecPath && existsSync(zhSpecPath)) {
         const zhSpec = readFileSync(zhSpecPath, 'utf8');
         for (const field of ['title', 'description', 'legend']) {
           if (!/[\u3400-\u9fff]/u.test(readMetaField(zhSpec, field))) {
@@ -242,8 +585,8 @@ export function auditBuildProcessAssets(root) {
       }
     }
     if (detail.drawio_spec_en) {
-      const enSpecPath = join(publicDir, detail.drawio_spec_en);
-      if (existsSync(enSpecPath)) {
+      const enSpecPath = resolveContainedAsset(publicDir, detail.drawio_spec_en);
+      if (enSpecPath && existsSync(enSpecPath)) {
         const enSpec = readFileSync(enSpecPath, 'utf8');
         for (const field of ['title', 'description', 'legend']) {
           if (/[\u3400-\u9fff]/u.test(readMetaField(enSpec, field))) {
@@ -260,14 +603,19 @@ export function auditBuildProcessAssets(root) {
     for (const language of ['en', 'zh']) {
       const field = `drawio_flowchart_${language}`;
       if (!detail[field]) continue;
-      const svgPath = join(publicDir, detail[field]);
-      if (!existsSync(svgPath)) continue;
+      const svgPath = resolveContainedAsset(publicDir, detail[field]);
+      if (!svgPath || !existsSync(svgPath)) continue;
       const svg = readFileSync(svgPath, 'utf8');
       if (!/<svg\b/iu.test(svg)) {
         svgIssues.push({ id, language, issue: 'invalid_svg_root' });
       }
       if (svg.includes('light-dark(')) {
         svgIssues.push({ id, language, issue: 'adaptive_color_scheme' });
+      }
+      if (
+        /(?:<(?:(?:[A-Za-z_][\w.-]*):)?(?:merror|mjx-merror)\b|<[A-Za-z][^>]*\bdata-mml-node\s*=\s*["']merror["']|<[A-Za-z][^>]*\bdata-mjx-error\s*=|<[A-Za-z][^>]*\bclass\s*=\s*["'][^"']*\bkatex-error\b)/iu.test(svg)
+      ) {
+        svgIssues.push({ id, language, issue: 'formula_render_error' });
       }
       const reviewedForeignObject = svg.includes('<foreignObject')
         && manifestById.get(id)?.svg_foreign_object_reviewed?.[language] === true;
@@ -289,6 +637,11 @@ export function auditBuildProcessAssets(root) {
       completeBilingualTotal += 1;
     }
   }
+  sourceIssues.push(
+    ...[...assetsWithoutManifestIds]
+      .sort()
+      .map((id) => ({ id, issue: 'assets_without_manifest_record' })),
+  );
 
   return {
     detail_total: detailFiles.length,
@@ -310,6 +663,8 @@ export function auditBuildProcessAssets(root) {
     svg_issues: svgIssues,
     aggregate_issues: aggregateIssues,
     data_consistency_issues: dataConsistencyIssues,
+    topology_issues: topologyIssues,
+    review_issues: reviewIssues,
   };
 }
 
@@ -328,6 +683,8 @@ function printHumanSummary(summary) {
   console.log(`SVG issues: ${summary.svg_issues.length}`);
   console.log(`Aggregate issues: ${summary.aggregate_issues.length}`);
   console.log(`Data consistency issues: ${summary.data_consistency_issues.length}`);
+  console.log(`Topology issues: ${summary.topology_issues.length}`);
+  console.log(`Review issues: ${summary.review_issues.length}`);
 }
 
 function main() {
@@ -346,6 +703,8 @@ function main() {
   const hasSvgIssues = summary.svg_issues.length > 0;
   const hasAggregateIssues = summary.aggregate_issues.length > 0;
   const hasDataConsistencyIssues = summary.data_consistency_issues.length > 0;
+  const hasTopologyIssues = summary.topology_issues.length > 0;
+  const hasReviewIssues = summary.review_issues.length > 0;
   if (
     hasBrokenReferences
     || hasSourceIssues
@@ -353,6 +712,8 @@ function main() {
     || hasSvgIssues
     || hasAggregateIssues
     || hasDataConsistencyIssues
+    || hasTopologyIssues
+    || hasReviewIssues
     || (isIncomplete && !args.allowIncomplete)
   ) {
     process.exitCode = 1;

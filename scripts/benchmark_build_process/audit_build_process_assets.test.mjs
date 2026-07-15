@@ -49,6 +49,11 @@ function createCompleteFixture() {
       evaluation_steps_zh: ['评测'],
       strict_validation: { en: 'passed', zh: 'passed' },
       review_status: 'visually_reviewed',
+      paper_alignment_review: {
+        status: 'passed',
+        source_url: 'https://arxiv.org/abs/1234.5678',
+        source_locator: 'Section 3',
+      },
       assets: assetFields,
     },
   ]);
@@ -83,6 +88,12 @@ function createCompleteFixture() {
   return root;
 }
 
+function writeArchPair(root, en, zh = en) {
+  const drawioDir = join(root, 'client/public/drawio/AlphaBench');
+  writeJson(join(drawioDir, 'AlphaBench.en.arch.json'), en);
+  writeJson(join(drawioDir, 'AlphaBench.zh.arch.json'), zh);
+}
+
 test('reports one complete bilingual benchmark when all required assets exist', () => {
   const root = createCompleteFixture();
   const result = spawnSync(
@@ -99,6 +110,615 @@ test('reports one complete bilingual benchmark when all required assets exist', 
   assert.equal(summary.strict_valid_total, 1);
   assert.deepEqual(summary.missing_ids, []);
   assert.deepEqual(summary.broken_references, []);
+});
+
+test('rejects English and Chinese architecture sidecars with different topology', () => {
+  const root = createCompleteFixture();
+  const en = {
+    nodes: [
+      { id: 'source', label: 'Source', type: 'document' },
+      { id: 'gate', label: 'Accepted?', type: 'decision' },
+      { id: 'yes', label: 'Release', type: 'terminal' },
+      { id: 'no', label: 'Revise', type: 'process' },
+    ],
+    edges: [
+      { from: 'source', to: 'gate', type: 'primary' },
+      { from: 'gate', to: 'yes', type: 'primary' },
+      { from: 'gate', to: 'no', type: 'optional' },
+    ],
+  };
+  const zh = {
+    nodes: [
+      { id: 'source', label: '来源', type: 'document' },
+      { id: 'gate', label: '通过？', type: 'decision' },
+      { id: 'yes', label: '发布', type: 'terminal' },
+      { id: 'no', label: '修订', type: 'process' },
+    ],
+    edges: [
+      { from: 'source', to: 'gate', type: 'primary' },
+      { from: 'gate', to: 'yes', type: 'primary' },
+      { from: 'no', to: 'gate', type: 'optional' },
+    ],
+  };
+  writeArchPair(root, en, zh);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.topology_issues, [
+    { id: 'AlphaBench', issue: 'bilingual_edge_topology_mismatch' },
+  ]);
+});
+
+test('rejects a decision node with only one unique outgoing target', () => {
+  const root = createCompleteFixture();
+  writeArchPair(root, {
+    nodes: [
+      { id: 'gate', label: 'Accepted?', type: 'decision' },
+      { id: 'next', label: 'Next', type: 'process' },
+    ],
+    edges: [
+      { from: 'gate', to: 'next', type: 'primary' },
+    ],
+  }, {
+    nodes: [
+      { id: 'gate', label: '通过？', type: 'decision' },
+      { id: 'next', label: '下一步', type: 'process' },
+    ],
+    edges: [
+      { from: 'gate', to: 'next', type: 'primary' },
+    ],
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.topology_issues, [
+    {
+      id: 'AlphaBench',
+      node: 'gate',
+      issue: 'decision_has_fewer_than_two_unique_targets',
+      outgoing_targets: 1,
+    },
+  ]);
+});
+
+test('rejects decision branches whose targets do not exist', () => {
+  const root = createCompleteFixture();
+  const en = {
+    nodes: [{ id: 'gate', label: 'Accepted?', type: 'decision' }],
+    edges: [
+      { from: 'gate', to: 'missing_yes', type: 'primary', label: 'Yes' },
+      { from: 'gate', to: 'missing_no', type: 'optional', label: 'No' },
+    ],
+  };
+  const zh = {
+    nodes: [{ id: 'gate', label: '通过？', type: 'decision' }],
+    edges: [
+      { from: 'gate', to: 'missing_yes', type: 'primary', label: '是' },
+      { from: 'gate', to: 'missing_no', type: 'optional', label: '否' },
+    ],
+  };
+  writeArchPair(root, en, zh);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.topology_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'en',
+      edge: 'gate->missing_yes',
+      issue: 'edge_target_missing',
+    },
+    {
+      id: 'AlphaBench',
+      language: 'en',
+      edge: 'gate->missing_no',
+      issue: 'edge_target_missing',
+    },
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      edge: 'gate->missing_yes',
+      issue: 'edge_target_missing',
+    },
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      edge: 'gate->missing_no',
+      issue: 'edge_target_missing',
+    },
+    {
+      id: 'AlphaBench',
+      node: 'gate',
+      issue: 'decision_has_fewer_than_two_unique_targets',
+      outgoing_targets: 0,
+    },
+  ]);
+});
+
+test('rejects duplicate node ids in architecture sidecars', () => {
+  const root = createCompleteFixture();
+  writeArchPair(root, {
+    nodes: [
+      { id: 'source', label: 'Source A', type: 'document' },
+      { id: 'source', label: 'Source B', type: 'process' },
+    ],
+    edges: [],
+  }, {
+    nodes: [
+      { id: 'source', label: '来源甲', type: 'document' },
+      { id: 'source', label: '来源乙', type: 'process' },
+    ],
+    edges: [],
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.topology_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'en',
+      node: 'source',
+      count: 2,
+      issue: 'duplicate_node_id',
+    },
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      node: 'source',
+      count: 2,
+      issue: 'duplicate_node_id',
+    },
+  ]);
+});
+
+test('rejects missing and untranslated Chinese edge labels', () => {
+  const root = createCompleteFixture();
+  const nodesEn = [
+    { id: 'source', label: 'Source', type: 'document' },
+    { id: 'review', label: 'Review', type: 'process' },
+    { id: 'release', label: 'Release', type: 'terminal' },
+  ];
+  const nodesZh = [
+    { id: 'source', label: '来源', type: 'document' },
+    { id: 'review', label: '复核', type: 'process' },
+    { id: 'release', label: '发布', type: 'terminal' },
+  ];
+  writeArchPair(root, {
+    nodes: nodesEn,
+    edges: [
+      { from: 'source', to: 'review', type: 'primary', label: 'Collected' },
+      { from: 'review', to: 'release', type: 'primary', label: 'Pass' },
+    ],
+  }, {
+    nodes: nodesZh,
+    edges: [
+      { from: 'source', to: 'review', type: 'primary', label: '' },
+      { from: 'review', to: 'release', type: 'primary', label: 'Pass' },
+    ],
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      field: 'edge:source->review:primary',
+      issue: 'bilingual_edge_label_presence_mismatch',
+    },
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      field: 'edge:review->release:primary',
+      issue: 'untranslated_chinese_edge_label',
+    },
+  ]);
+});
+
+test('rejects a wholly untranslated Chinese architecture sidecar', () => {
+  const root = createCompleteFixture();
+  const arch = {
+    nodes: [
+      { id: 'source', label: 'Source Records', type: 'document' },
+      { id: 'report', label: 'Report Accuracy', type: 'terminal' },
+    ],
+    edges: [
+      { from: 'source', to: 'report', type: 'primary' },
+    ],
+  };
+  writeArchPair(root, arch);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      field: 'nodes',
+      issue: 'missing_chinese_node_text',
+    },
+  ]);
+});
+
+test('rejects untranslated Chinese node labels hidden by one translated node', () => {
+  const root = createCompleteFixture();
+  writeArchPair(root, {
+    nodes: [
+      { id: 'source', label: 'Source Records', type: 'document' },
+      { id: 'review', label: 'Validate', type: 'process' },
+      { id: 'report', label: 'Report Accuracy', type: 'terminal' },
+    ],
+    edges: [
+      { from: 'source', to: 'review', type: 'primary' },
+      { from: 'review', to: 'report', type: 'primary' },
+    ],
+  }, {
+    nodes: [
+      { id: 'source', label: '原始记录', type: 'document' },
+      { id: 'review', label: 'Validate', type: 'process' },
+      { id: 'report', label: 'Report Accuracy', type: 'terminal' },
+    ],
+    edges: [
+      { from: 'source', to: 'review', type: 'primary' },
+      { from: 'review', to: 'report', type: 'primary' },
+    ],
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      field: 'node:review',
+      issue: 'untranslated_chinese_node_label',
+    },
+    {
+      id: 'AlphaBench',
+      language: 'zh',
+      field: 'node:report',
+      issue: 'untranslated_chinese_node_label',
+    },
+  ]);
+});
+
+test('allows a Chinese diagram whose non-Chinese nodes are formulas or explicit technical exemptions', () => {
+  const root = createCompleteFixture();
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].language_exempt_node_ids = ['bleu'];
+  writeJson(manifestPath, manifest);
+  const arch = {
+    nodes: [
+      { id: 'bleu', label: 'BLEU', type: 'terminal' },
+      { id: 'formula', label: 'F1=2PR/(P+R)', type: 'formula' },
+    ],
+    edges: [
+      { from: 'bleu', to: 'formula', type: 'primary' },
+    ],
+  };
+  writeArchPair(root, arch);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, []);
+});
+
+test('allows controlled metric and official dataset identifiers in Chinese diagrams', () => {
+  const root = createCompleteFixture();
+  const labels = [
+    'BLEU-1、BLEU-4、ROUGE-L',
+    'MIMIC、ChatDoctor、DrugBank、Drugs.com',
+    'Pass@1',
+    'mG-Pass@16',
+    'F1、IoU、mAP',
+    'score@k',
+    'MiniGPT4-CoT',
+    'Grid-LLaVA',
+    'Open Images',
+    'Mean IoU',
+    'ClinicalTrials.gov XML',
+    'SecureBio VMQA4',
+    'Seal-Hard 254',
+  ];
+  writeArchPair(root, {
+    nodes: labels.map((label, index) => ({
+      id: `technical_${index}`,
+      label,
+      type: 'process',
+    })),
+    edges: labels.slice(1).map((_, index) => ({
+      from: `technical_${index}`,
+      to: `technical_${index + 1}`,
+      type: 'primary',
+    })),
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, []);
+});
+
+test('rejects generic English labels even when they contain a number', () => {
+  const root = createCompleteFixture();
+  writeArchPair(root, {
+    nodes: [{ id: 'task', label: 'Task 1', type: 'process' }],
+    edges: [],
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, [{
+    id: 'AlphaBench',
+    language: 'zh',
+    field: 'nodes',
+    issue: 'missing_chinese_node_text',
+  }]);
+});
+
+test('rejects ordinary English disguised as technical identifiers', () => {
+  const root = createCompleteFixture();
+  const labels = [
+    ['translated', '已翻译'],
+    ['upper', 'SOURCE'],
+    ['camel', 'ValidateData'],
+    ['dotted', 'Collect.data'],
+    ['atSign', 'Report@Now'],
+    ['numbered', 'SourceData 1'],
+  ];
+  const englishArch = {
+    nodes: labels.map(([id]) => ({ id, label: 'English source', type: 'process' })),
+    edges: [],
+  };
+  const chineseArch = {
+    nodes: labels.map(([id, label]) => ({ id, label, type: 'process' })),
+    edges: [],
+  };
+  writeArchPair(root, englishArch, chineseArch);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(
+    summary.language_issues.map((issue) => issue.field),
+    ['node:upper', 'node:camel', 'node:dotted', 'node:atSign', 'node:numbered'],
+  );
+});
+
+test('rejects a blank Chinese node label', () => {
+  const root = createCompleteFixture();
+  writeArchPair(root, {
+    nodes: [{ id: 'source', label: 'Source', type: 'document' }],
+    edges: [],
+  }, {
+    nodes: [{ id: 'source', label: '   ', type: 'document' }],
+    edges: [],
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.language_issues, [{
+    id: 'AlphaBench',
+    language: 'zh',
+    field: 'node:source',
+    issue: 'missing_node_label',
+  }]);
+});
+
+for (const [name, label] of [
+  ['Cyrillic', 'Источник'],
+  ['Korean', '데이터셋'],
+]) {
+  test(`rejects ${name} text in a Chinese diagram unless explicitly exempted`, () => {
+    const root = createCompleteFixture();
+    writeArchPair(root, {
+      nodes: [{ id: 'source', label, type: 'document' }],
+      edges: [],
+    });
+
+    const result = spawnSync(
+      process.execPath,
+      [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout);
+    assert.deepEqual(summary.language_issues, [{
+      id: 'AlphaBench',
+      language: 'zh',
+      field: 'nodes',
+      issue: 'missing_chinese_node_text',
+    }]);
+  });
+}
+
+test('rejects a covered benchmark without a current paper-alignment review', () => {
+  const root = createCompleteFixture();
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].paper_alignment_review = {
+    status: 'pending',
+    source_locator: 'Section 3',
+  };
+  writeJson(manifestPath, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.review_issues, [
+    { id: 'AlphaBench', issue: 'paper_alignment_review_not_passed' },
+  ]);
+});
+
+test('rejects stale strict, visual, and paper-source review evidence', () => {
+  const root = createCompleteFixture();
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].strict_validation.en = 'pending';
+  manifest[0].review_status = 'pending_review';
+  manifest[0].paper_alignment_review.source_locator = 'Section 2';
+  writeJson(manifestPath, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.review_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'en',
+      issue: 'strict_validation_not_passed',
+    },
+    { id: 'AlphaBench', issue: 'visual_review_not_passed' },
+    {
+      id: 'AlphaBench',
+      issue: 'paper_alignment_source_mismatch',
+      expected_source_locator: 'Section 3',
+      reviewed_source_locator: 'Section 2',
+    },
+  ]);
+});
+
+test('rejects paper review evidence tied to a different source URL', () => {
+  const root = createCompleteFixture();
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].source_url = 'https://arxiv.org/abs/9999.9999';
+  writeJson(manifestPath, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.review_issues, [
+    {
+      id: 'AlphaBench',
+      issue: 'paper_alignment_source_url_mismatch',
+      expected_source_url: 'https://arxiv.org/abs/9999.9999',
+      reviewed_source_url: 'https://arxiv.org/abs/1234.5678',
+    },
+  ]);
+});
+
+test('rejects a manifest and paper review that both omit the primary source URL', () => {
+  const root = createCompleteFixture();
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  delete manifest[0].source_url;
+  delete manifest[0].paper_alignment_review.source_url;
+  writeJson(manifestPath, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.source_issues, [
+    { id: 'AlphaBench', issue: 'missing_source_url' },
+  ]);
 });
 
 test('rejects a missing aggregate asset field even when incomplete coverage is allowed', () => {
@@ -553,6 +1173,110 @@ test('rejects an SVG containing draw.io fallback text', () => {
   ]);
 });
 
+test('rejects an SVG containing a rendered math parse error', () => {
+  const root = createCompleteFixture();
+  const svgPath = join(
+    root,
+    'client/public/drawio/AlphaBench/AlphaBench.en.svg',
+  );
+  writeFileSync(
+    svgPath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><g data-mml-node="merror" data-mjx-error="Double subscripts: use braces to clarify"><text>Double subscript</text></g></svg>\n',
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.svg_issues, [
+    {
+      id: 'AlphaBench',
+      language: 'en',
+      issue: 'formula_render_error',
+    },
+  ]);
+});
+
+test('allows ordinary SVG text that mentions an unknown command', () => {
+  const root = createCompleteFixture();
+  const svgPath = join(
+    root,
+    'client/public/drawio/AlphaBench/AlphaBench.en.svg',
+  );
+  writeFileSync(
+    svgPath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><text>Unknown command examples</text></svg>\n',
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.svg_issues, []);
+});
+
+test('allows the MathJax stylesheet selector for merror nodes', () => {
+  const root = createCompleteFixture();
+  const svgPath = join(
+    root,
+    'client/public/drawio/AlphaBench/AlphaBench.en.svg',
+  );
+  writeFileSync(
+    svgPath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><style>g[data-mml-node="merror"] { fill: red; }</style><text>Valid formula</text></svg>\n',
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.svg_issues, []);
+});
+
+for (const errorElement of [
+  '<merror><mtext>bad math</mtext></merror>',
+  '<mathml:merror><mathml:mtext>bad math</mathml:mtext></mathml:merror>',
+  '<mjx-merror>bad math</mjx-merror>',
+]) {
+  test(`rejects rendered formula error element ${errorElement.split('>')[0]}>`, () => {
+    const root = createCompleteFixture();
+    const svgPath = join(
+      root,
+      'client/public/drawio/AlphaBench/AlphaBench.en.svg',
+    );
+    writeFileSync(
+      svgPath,
+      `<svg xmlns="http://www.w3.org/2000/svg">${errorElement}</svg>\n`,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout);
+    assert.deepEqual(summary.svg_issues, [{
+      id: 'AlphaBench',
+      language: 'en',
+      issue: 'formula_render_error',
+    }]);
+  });
+}
+
 test('rejects a referenced file that is not an SVG document', () => {
   const root = createCompleteFixture();
   const svgPath = join(
@@ -623,6 +1347,176 @@ test('allows a wholly uncovered benchmark only when incomplete coverage is allow
   assert.equal(summary.detail_total, 2);
   assert.deepEqual(summary.missing_ids, ['BetaBench']);
   assert.deepEqual(summary.broken_references, []);
+});
+
+test('rejects started benchmark assets that have no manifest review record', () => {
+  const root = createCompleteFixture();
+  writeJson(
+    join(root, 'client/public/benchmarks_build_process_manifest.json'),
+    [],
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.source_issues, [
+    { id: 'AlphaBench', issue: 'assets_without_manifest_record' },
+  ]);
+});
+
+test('rejects aggregate-only asset references that have no manifest review record', () => {
+  const root = createCompleteFixture();
+  writeJson(
+    join(root, 'client/public/benchmarks_build_process_manifest.json'),
+    [],
+  );
+  const detailPath = join(
+    root,
+    'client/public/benchmarks_detail/AlphaBench.json',
+  );
+  writeJson(detailPath, {
+    id: 'AlphaBench',
+    paper_url: 'https://arxiv.org/abs/1234.5678',
+  });
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.source_issues, [
+    { id: 'AlphaBench', issue: 'assets_without_manifest_record' },
+  ]);
+});
+
+test('rejects physical benchmark assets that have no manifest review record', () => {
+  const root = createCompleteFixture();
+  writeJson(
+    join(root, 'client/public/benchmarks_detail/BetaBench.json'),
+    { id: 'BetaBench', paper_url: 'https://arxiv.org/abs/2345.6789' },
+  );
+  const betaDir = join(root, 'client/public/drawio/BetaBench');
+  mkdirSync(betaDir, { recursive: true });
+  writeFileSync(
+    join(betaDir, 'BetaBench.en.svg'),
+    '<svg xmlns="http://www.w3.org/2000/svg"><text>BetaBench</text></svg>\n',
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.source_issues, [
+    { id: 'BetaBench', issue: 'assets_without_manifest_record' },
+  ]);
+});
+
+test('rejects asset paths that escape the public directory', () => {
+  const root = createCompleteFixture();
+  const escapedPath = '../../outside.en.svg';
+  writeFileSync(
+    join(root, 'outside.en.svg'),
+    '<svg xmlns="http://www.w3.org/2000/svg"><text>Outside</text></svg>\n',
+  );
+
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].assets.drawio_flowchart_en = escapedPath;
+  writeJson(manifestPath, manifest);
+
+  const listPath = join(root, 'client/public/benchmarks.json');
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  list[0].drawio_flowchart_en = escapedPath;
+  writeJson(listPath, list);
+
+  const detailPath = join(
+    root,
+    'client/public/benchmarks_detail/AlphaBench.json',
+  );
+  const detail = JSON.parse(readFileSync(detailPath, 'utf8'));
+  detail.drawio_flowchart_en = escapedPath;
+  writeJson(detailPath, detail);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.aggregate_issues, [
+    {
+      id: 'AlphaBench',
+      field: 'drawio_flowchart_en',
+      issue: 'asset_path_outside_public_dir',
+      expected_path: escapedPath,
+      actual_path: escapedPath,
+    },
+  ]);
+  assert.deepEqual(summary.broken_references, [
+    {
+      id: 'AlphaBench',
+      field: 'drawio_flowchart_en',
+      path: escapedPath,
+      issue: 'asset_path_outside_public_dir',
+    },
+  ]);
+});
+
+test('rejects absolute asset paths even when they point inside public', () => {
+  const root = createCompleteFixture();
+  const absolutePath = join(
+    root,
+    'client/public/drawio/AlphaBench/AlphaBench.en.svg',
+  );
+
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].assets.drawio_flowchart_en = absolutePath;
+  writeJson(manifestPath, manifest);
+
+  const listPath = join(root, 'client/public/benchmarks.json');
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  list[0].drawio_flowchart_en = absolutePath;
+  writeJson(listPath, list);
+
+  const detailPath = join(
+    root,
+    'client/public/benchmarks_detail/AlphaBench.json',
+  );
+  const detail = JSON.parse(readFileSync(detailPath, 'utf8'));
+  detail.drawio_flowchart_en = absolutePath;
+  writeJson(detailPath, detail);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.aggregate_issues[0].issue, 'asset_path_outside_public_dir');
+  assert.equal(summary.broken_references[0].issue, 'asset_path_outside_public_dir');
 });
 
 test('rejects adaptive dark colors in a light academic SVG', () => {
