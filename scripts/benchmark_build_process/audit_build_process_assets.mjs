@@ -63,6 +63,21 @@ function readMetaField(spec, field) {
   return '';
 }
 
+function countIds(records, getId = (record) => record.id) {
+  const counts = new Map();
+  for (const record of records) {
+    const id = getId(record);
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+  return counts;
+}
+
+function duplicateIdIssues(counts, issue) {
+  return [...counts]
+    .filter(([, count]) => count > 1)
+    .map(([id, count]) => ({ id, issue, count }));
+}
+
 export function auditBuildProcessAssets(root) {
   const publicDir = join(root, 'client/public');
   const detailDir = join(publicDir, 'benchmarks_detail');
@@ -75,17 +90,26 @@ export function auditBuildProcessAssets(root) {
     detailFile,
     detail: readJson(join(detailDir, detailFile)),
   }));
+  const detailIdCounts = countIds(
+    details,
+    ({ detailFile, detail }) => detail.id || basename(detailFile, '.json'),
+  );
   const detailIds = new Set(
     details.map(({ detailFile, detail }) => (
       detail.id || basename(detailFile, '.json')
     )),
   );
   const manifest = existsSync(manifestPath) ? readJson(manifestPath) : [];
+  const manifestIdCounts = countIds(manifest);
   const manifestIds = new Set(manifest.map((entry) => entry.id));
   const manifestById = new Map(manifest.map((entry) => [entry.id, entry]));
   const aggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
+  const aggregateIdCounts = countIds(aggregate);
   const aggregateById = new Map(aggregate.map((entry) => [entry.id, entry]));
-  const aggregateIssues = [];
+  const aggregateIssues = duplicateIdIssues(
+    aggregateIdCounts,
+    'duplicate_list_record',
+  );
   let completeAggregateTotal = 0;
   for (const manifestEntry of manifest) {
     const aggregateEntry = aggregateById.get(manifestEntry.id);
@@ -117,14 +141,34 @@ export function auditBuildProcessAssets(root) {
           expected_path: expectedPath,
           actual_path: actualPath,
         });
+      } else if (!existsSync(join(publicDir, actualPath))) {
+        entryIssues.push({
+          id: manifestEntry.id,
+          field,
+          issue: 'asset_file_missing',
+          expected_path: expectedPath,
+          actual_path: actualPath,
+        });
       }
     }
     aggregateIssues.push(...entryIssues);
-    if (entryIssues.length === 0) completeAggregateTotal += 1;
+    if (
+      entryIssues.length === 0
+      && aggregateIdCounts.get(manifestEntry.id) === 1
+      && manifestIdCounts.get(manifestEntry.id) === 1
+    ) {
+      completeAggregateTotal += 1;
+    }
   }
-  const sourceIssues = manifest
+  const sourceIssues = [
+    ...duplicateIdIssues(manifestIdCounts, 'duplicate_manifest_record'),
+    ...duplicateIdIssues(detailIdCounts, 'duplicate_detail_record'),
+  ];
+  sourceIssues.push(
+    ...manifest
     .filter((entry) => !String(entry.source_locator || '').trim())
-    .map((entry) => ({ id: entry.id, issue: 'missing_source_locator' }));
+    .map((entry) => ({ id: entry.id, issue: 'missing_source_locator' })),
+  );
   sourceIssues.push(
     ...manifest
       .filter((entry) => !detailIds.has(entry.id))
@@ -134,10 +178,12 @@ export function auditBuildProcessAssets(root) {
   const brokenReferences = [];
   const languageIssues = [];
   const svgIssues = [];
+  const dataConsistencyIssues = [];
   let completeBilingualTotal = 0;
 
   for (const { detailFile, detail } of details) {
     const id = detail.id || basename(detailFile, '.json');
+    const manifestEntry = manifestById.get(id);
     const missingFields = REQUIRED_ASSET_FIELDS.filter((field) => !detail[field]);
     const hasStarted = manifestIds.has(id)
       || REQUIRED_ASSET_FIELDS.some((field) => Boolean(detail[field]));
@@ -162,6 +208,23 @@ export function auditBuildProcessAssets(root) {
     for (const missingFile of missingFiles) {
       brokenReferences.push({ id, ...missingFile });
     }
+    const entryConsistencyIssues = [];
+    if (manifestEntry) {
+      for (const field of REQUIRED_ASSET_FIELDS) {
+        const expectedPath = manifestEntry.assets?.[field] ?? null;
+        const actualPath = detail[field] || null;
+        if (expectedPath && actualPath && expectedPath !== actualPath) {
+          entryConsistencyIssues.push({
+            id,
+            field,
+            issue: 'detail_asset_path_mismatch',
+            expected_path: expectedPath,
+            actual_path: actualPath,
+          });
+        }
+      }
+    }
+    dataConsistencyIssues.push(...entryConsistencyIssues);
     if (detail.drawio_spec_zh) {
       const zhSpecPath = join(publicDir, detail.drawio_spec_zh);
       if (existsSync(zhSpecPath)) {
@@ -217,8 +280,11 @@ export function auditBuildProcessAssets(root) {
     }
     if (
       manifestIds.has(id)
+      && manifestIdCounts.get(id) === 1
+      && detailIdCounts.get(id) === 1
       && missingFields.length === 0
       && missingFiles.length === 0
+      && entryConsistencyIssues.length === 0
     ) {
       completeBilingualTotal += 1;
     }
@@ -243,6 +309,7 @@ export function auditBuildProcessAssets(root) {
     source_issues: sourceIssues,
     svg_issues: svgIssues,
     aggregate_issues: aggregateIssues,
+    data_consistency_issues: dataConsistencyIssues,
   };
 }
 
@@ -260,6 +327,7 @@ function printHumanSummary(summary) {
   console.log(`Source issues: ${summary.source_issues.length}`);
   console.log(`SVG issues: ${summary.svg_issues.length}`);
   console.log(`Aggregate issues: ${summary.aggregate_issues.length}`);
+  console.log(`Data consistency issues: ${summary.data_consistency_issues.length}`);
 }
 
 function main() {
@@ -277,12 +345,14 @@ function main() {
   const hasLanguageIssues = summary.language_issues.length > 0;
   const hasSvgIssues = summary.svg_issues.length > 0;
   const hasAggregateIssues = summary.aggregate_issues.length > 0;
+  const hasDataConsistencyIssues = summary.data_consistency_issues.length > 0;
   if (
     hasBrokenReferences
     || hasSourceIssues
     || hasLanguageIssues
     || hasSvgIssues
     || hasAggregateIssues
+    || hasDataConsistencyIssues
     || (isIncomplete && !args.allowIncomplete)
   ) {
     process.exitCode = 1;

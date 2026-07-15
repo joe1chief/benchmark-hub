@@ -157,6 +157,184 @@ test('rejects an aggregate asset path that differs from the manifest', () => {
   ]);
 });
 
+test('rejects duplicate benchmark ids in the aggregate list', () => {
+  const root = createCompleteFixture();
+  const listPath = join(root, 'client/public/benchmarks.json');
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  list.push({ ...list[0] });
+  writeJson(listPath, list);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.complete_aggregate_total, 0);
+  assert.deepEqual(summary.aggregate_issues, [
+    {
+      id: 'AlphaBench',
+      issue: 'duplicate_list_record',
+      count: 2,
+    },
+  ]);
+});
+
+test('rejects duplicate benchmark ids in the manifest', () => {
+  const root = createCompleteFixture();
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest.push({ ...manifest[0] });
+  writeJson(manifestPath, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.complete_aggregate_total, 0);
+  assert.deepEqual(summary.source_issues, [
+    {
+      id: 'AlphaBench',
+      issue: 'duplicate_manifest_record',
+      count: 2,
+    },
+  ]);
+});
+
+test('rejects duplicate benchmark ids across detail files', () => {
+  const root = createCompleteFixture();
+  const detailDir = join(root, 'client/public/benchmarks_detail');
+  const detail = JSON.parse(
+    readFileSync(join(detailDir, 'AlphaBench.json'), 'utf8'),
+  );
+  writeJson(join(detailDir, 'AlphaBench-copy.json'), detail);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.complete_bilingual_total, 0);
+  assert.deepEqual(summary.source_issues, [
+    {
+      id: 'AlphaBench',
+      issue: 'duplicate_detail_record',
+      count: 2,
+    },
+  ]);
+});
+
+test('rejects an aggregate path that agrees with the manifest but has no file', () => {
+  const root = createCompleteFixture();
+  const missingPath = 'drawio/AlphaBench/Missing.en.svg';
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].assets.drawio_flowchart_en = missingPath;
+  writeJson(manifestPath, manifest);
+
+  const listPath = join(root, 'client/public/benchmarks.json');
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  list[0].drawio_flowchart_en = missingPath;
+  writeJson(listPath, list);
+
+  const detailPath = join(
+    root,
+    'client/public/benchmarks_detail/AlphaBench.json',
+  );
+  const detail = JSON.parse(readFileSync(detailPath, 'utf8'));
+  detail.drawio_flowchart_en = missingPath;
+  writeJson(detailPath, detail);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.complete_aggregate_total, 0);
+  assert.deepEqual(summary.aggregate_issues, [
+    {
+      id: 'AlphaBench',
+      field: 'drawio_flowchart_en',
+      issue: 'asset_file_missing',
+      expected_path: missingPath,
+      actual_path: missingPath,
+    },
+  ]);
+});
+
+test('rejects a detail asset path that differs from the manifest and aggregate list', () => {
+  const root = createCompleteFixture();
+  const detailPath = join(
+    root,
+    'client/public/benchmarks_detail/AlphaBench.json',
+  );
+  const detail = JSON.parse(readFileSync(detailPath, 'utf8'));
+  detail.drawio_flowchart_en = 'drawio/AlphaBench/Wrong.en.svg';
+  writeJson(detailPath, detail);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(summary.data_consistency_issues, [
+    {
+      id: 'AlphaBench',
+      field: 'drawio_flowchart_en',
+      issue: 'detail_asset_path_mismatch',
+      expected_path: 'drawio/AlphaBench/AlphaBench.en.svg',
+      actual_path: 'drawio/AlphaBench/Wrong.en.svg',
+    },
+  ]);
+});
+
+test('does not count a detail path mismatch as complete when both files exist', () => {
+  const root = createCompleteFixture();
+  const detailPath = join(
+    root,
+    'client/public/benchmarks_detail/AlphaBench.json',
+  );
+  const detail = JSON.parse(readFileSync(detailPath, 'utf8'));
+  detail.drawio_flowchart_en = 'drawio/AlphaBench/Alternate.en.svg';
+  writeJson(detailPath, detail);
+  writeFileSync(
+    join(root, 'client/public/drawio/AlphaBench/Alternate.en.svg'),
+    '<svg xmlns="http://www.w3.org/2000/svg"><text>Alternate</text></svg>\n',
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.complete_bilingual_total, 0);
+  assert.equal(summary.data_consistency_issues.length, 1);
+});
+
 test('rejects a manifest benchmark missing from the aggregate list', () => {
   const root = createCompleteFixture();
   writeJson(join(root, 'client/public/benchmarks.json'), []);
