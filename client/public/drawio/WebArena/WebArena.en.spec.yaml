@@ -1,0 +1,233 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WebArena Environment, Task Build, and Evaluation
+  description: >-
+    WebArena identifies four salient web domains from about 200 browser-history segments, implements resettable
+    self-hosted sites with realistic data and open-source frameworks, and asks annotators who explored the sites to
+    author high-level intent templates and variable instantiations. The release has 241 templates and 812 tasks spanning
+    information seeking, navigation, and content or configuration changes, including intentionally unachievable tasks.
+    Only information-seeking tasks receive reference-answer annotation: the answers are curated by the authors and an
+    external annotator, each question is annotated twice, and a third annotator resolves disagreements. Programs for the
+    remaining examples are contributed by three JavaScript-proficient authors; difficult cases are discussed
+    collectively, and annotation involves executing the full task and inspecting intermediate states. Evaluation routes
+    information tasks to exact, must-include, or GPT-4-0613 fuzzy matching; navigation and state-changing tasks use
+    locators plus database, API, or JavaScript state checks; unachievable tasks accept N/A. Each task receives binary
+    reward and the main metric is end-to-end task success rate.
+  legend: >-
+    Source: WebArena arXiv:2307.13854, Sections 2.1-2.4 and 3.1-3.2, especially Section 3.2 Table 1 and the Annotation
+    Process for the information-versus-remaining-example split; Appendices A.1, A.2, A.7, and A.8; official evaluator
+    implementation https://github.com/web-arena-x/webarena/blob/main/evaluation_harness/evaluators.py and repository
+    https://github.com/web-arena-x/webarena.. Solid arrows show the main flow explicitly supported by the paper or
+    official documentation.
+nodes:
+  - id: browser_history
+    label: ~200 Browser-History Segments
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: site_domains
+    label: Four Web Domains
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: self_hosted_sites
+    label: Resettable Self-Hosted Sites
+    type: service
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: intent_templates
+    label: High-Level Intent Templates
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: task_instances
+    label: Variable Task Instances
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: info_reference_review
+    label: Two Answer Annotations + Third Adjudication
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: program_evaluator_review
+    label: Programs by 3 JS Authors (Remaining Examples)
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: annotation_ready
+    label: Evaluation Annotation Ready?
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: revise_task
+    label: Revise Task or Evaluator
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: webarena_release
+    label: 812 Tasks / 241 Templates
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: agent_trajectory
+    label: Agent Trajectory + States
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: evaluator_router
+    label: Task Evaluator Route?
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: information_eval
+    label: Exact / Include / Fuzzy
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: state_eval
+    label: Locator + DB/API/JS State
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: unachievable_eval
+    label: Unachievable / N/A Check
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 760
+  - id: binary_reward
+    label: Binary Task Reward
+    type: formula
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: success_rate
+    label: End-to-End Task Success Rate
+    type: terminal
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: annotation_router
+    label: Information-Seeking Task?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+edges:
+  - from: browser_history
+    to: site_domains
+    type: data
+  - from: site_domains
+    to: self_hosted_sites
+    type: primary
+  - from: self_hosted_sites
+    to: intent_templates
+    type: primary
+  - from: intent_templates
+    to: task_instances
+    type: primary
+  - from: info_reference_review
+    to: annotation_ready
+    type: primary
+  - from: program_evaluator_review
+    to: annotation_ready
+    type: primary
+  - from: annotation_ready
+    to: webarena_release
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: annotation_ready
+    to: revise_task
+    type: optional
+    label: Fail
+    labelPosition: end
+  - from: revise_task
+    to: intent_templates
+    type: optional
+    label: Rebuild
+    labelPosition: start
+  - from: webarena_release
+    to: agent_trajectory
+    type: primary
+  - from: agent_trajectory
+    to: evaluator_router
+    type: primary
+  - from: evaluator_router
+    to: information_eval
+    type: primary
+    label: Information
+    labelPosition: end
+  - from: evaluator_router
+    to: state_eval
+    type: primary
+    label: Navigate / Change
+    labelPosition: end
+  - from: evaluator_router
+    to: unachievable_eval
+    type: primary
+    label: Unachievable
+    labelPosition: end
+  - from: information_eval
+    to: binary_reward
+    type: primary
+  - from: state_eval
+    to: binary_reward
+    type: primary
+  - from: unachievable_eval
+    to: binary_reward
+    type: primary
+  - from: binary_reward
+    to: success_rate
+    type: primary
+  - from: task_instances
+    to: annotation_router
+    type: primary
+  - from: annotation_router
+    to: info_reference_review
+    type: primary
+    label: Information
+    labelPosition: end
+  - from: annotation_router
+    to: program_evaluator_review
+    type: primary
+    label: Remaining examples
+    labelPosition: end
+modules: []

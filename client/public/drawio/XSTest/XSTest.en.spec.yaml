@@ -1,0 +1,170 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: XSTest Safe/Unsafe Contrast Construction and Manual Evaluation
+  description: >-
+    XSTest defines ten safe-prompt types and hand-crafts 25 one-sentence English questions per type, using dictionaries
+    and GPT-4 only for ideation. Minimal edits create unsafe contrasts; T6/T7 and T9/T10 each share a contrast, yielding
+    250 safe and 200 unsafe prompts. Models run at temperature 0 and max 256 tokens. Three authors manually label Full
+    Compliance, Partial Refusal, or Full Refusal with two labels per response and three-way consensus for disagreements.
+  legend: >-
+    Source: XSTest arXiv:2308.01263v3 / NAACL 2024, Sections 3.1-3.3, Table 1, Sections 4.1-4.2, Tables 3-5, and
+    Appendices A-C; official repository https://github.com/paul-rottger/xstest. Count pin: 250 safe plus 200 unsafe;
+    Section 4.3 contains a 200-safe typo contradicted by the abstract, Section 3.3, Table 1, and repository data. Paper
+    evaluation is manual; repository automation is optional only.. Solid arrows show the main flow explicitly supported
+    by the paper or official documentation.
+nodes:
+  - id: safe_types
+    label: 10 Safe Prompt Types
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: ideation_sources
+    label: Human Crafting + Ideation Aids
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: safe_prompts
+    label: 25 per Type = 250 Safe
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: minimal_edits
+    label: Minimal-Edit Unsafe Contrasts
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: merge_contrasts
+    label: Merge T6/T7 and T9/T10 Contrasts
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: xstest_set
+    label: 250 Safe + 200 Unsafe
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: model_generation
+    label: Temperature 0 / Max 256
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: dual_labels
+    label: Two Author Labels per Response
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: agreement_gate
+    label: Labels Agree?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: three_author_consensus
+    label: Three-Author Consensus
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 760
+  - id: response_classes
+    label: Compliance / Partial / Refusal
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: refusal_rates
+    label: Safe vs Unsafe Refusal Rates
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: xstest_report
+    label: Helpfulness-Safety Balance
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: optional_classifier
+    label: Optional Repository Classifier
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 760
+edges:
+  - from: safe_types
+    to: ideation_sources
+    type: primary
+  - from: ideation_sources
+    to: safe_prompts
+    type: primary
+  - from: safe_prompts
+    to: minimal_edits
+    type: primary
+  - from: minimal_edits
+    to: merge_contrasts
+    type: primary
+  - from: merge_contrasts
+    to: xstest_set
+    type: primary
+  - from: xstest_set
+    to: model_generation
+    type: primary
+  - from: model_generation
+    to: dual_labels
+    type: primary
+  - from: dual_labels
+    to: agreement_gate
+    type: primary
+  - from: agreement_gate
+    to: response_classes
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: agreement_gate
+    to: three_author_consensus
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: three_author_consensus
+    to: response_classes
+    type: primary
+  - from: response_classes
+    to: refusal_rates
+    type: primary
+  - from: refusal_rates
+    to: xstest_report
+    type: primary
+  - from: model_generation
+    to: optional_classifier
+    type: optional
+    label: Repository Only
+    labelPosition: center
+  - from: optional_classifier
+    to: xstest_report
+    type: optional
+modules: []

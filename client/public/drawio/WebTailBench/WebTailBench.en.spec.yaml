@@ -1,0 +1,288 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WebTailBench Live-Task Build, Refresh, and Evaluation
+  description: >-
+    WebTailBench manually verifies 609 achievable live-web tasks across 11 categories: eight single-skill categories and
+    three multi-site or compositional categories. A separate WebTailBench-Refusals set contains 111 manually curated
+    harmful tasks across seven safety categories. The paper emphasizes realistic high-traffic sites, coverage, objective
+    success conditions, and full credit when an agent correctly reports an external impossibility. Because live sites
+    drift, tasks require periodic refresh; the paper only claims validity through the end of November 2025. Main-task
+    evaluation uses fresh Playwright sessions, a 100-step budget, up to five retries only for environment errors, and
+    o4-mini Task Verification over three independent runs. It reports category macro and overall micro success rates
+    averaged across runs, while the refusal set separately reports safe-refusal rate.
+  legend: >-
+    Source: WebTailBench arXiv:2511.19663, Section 4, Sections 5.1.1, 5.1.3, and 5.4, and Appendix D.1; official dataset
+    https://huggingface.co/datasets/microsoft/WebTailBench. Freshness pin: the paper states that the live-site tasks
+    were designed to remain valid through the end of November 2025 and require periodic refresh thereafter.. Solid
+    arrows show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: live_task_sources
+    label: Realistic Live-Web Tasks
+    type: cloud
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: dataset_route
+    label: Main or Harmful?
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: main_categories
+    label: 11 Main Categories
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: harm_categories
+    label: Seven Harm Categories
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: achievable_gate
+    label: Achievable + Objective?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: harm_review_gate
+    label: Harm + Refusal Clear?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: revise_main
+    label: Revise Main Task
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: revise_harm
+    label: Revise Harmful Task
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 760
+  - id: main_set
+    label: 609 Main Tasks
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: refusal_set
+    label: 111 Refusal Tasks
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: freshness_gate
+    label: Live Task Still Valid?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: refresh_task
+    label: Refresh + Re-verify
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: fresh_session
+    label: Fresh Playwright Session
+    type: service
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: run_main
+    label: Run Main Task / 100 Steps
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: env_error_gate
+    label: Environment Error?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: retry_gate
+    label: Fewer Than Five Retries?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: count_incorrect
+    label: Count as Incorrect
+    type: loss
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: main_judge
+    label: |-
+      o4-mini: Success or Correctly Reported
+      External Impossibility
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 40
+  - id: three_run_aggregate
+    label: Three Independent Runs
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 40
+  - id: main_metrics
+    label: Macro + Micro Success Rates
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 40
+  - id: refusal_check
+    label: Safe Refusal Check
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: refusal_metric
+    label: Safe Refusal Rate
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+edges:
+  - from: live_task_sources
+    to: dataset_route
+    type: data
+  - from: dataset_route
+    to: main_categories
+    type: primary
+    label: Main
+    labelPosition: end
+  - from: dataset_route
+    to: harm_categories
+    type: primary
+    label: Harmful
+    labelPosition: end
+  - from: main_categories
+    to: achievable_gate
+    type: primary
+  - from: harm_categories
+    to: harm_review_gate
+    type: primary
+  - from: achievable_gate
+    to: main_set
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: achievable_gate
+    to: revise_main
+    type: optional
+    label: Revise
+    labelPosition: end
+  - from: revise_main
+    to: main_categories
+    type: optional
+    label: Recheck
+    labelPosition: start
+  - from: harm_review_gate
+    to: refusal_set
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: harm_review_gate
+    to: revise_harm
+    type: optional
+    label: Revise
+    labelPosition: end
+  - from: revise_harm
+    to: harm_categories
+    type: optional
+    label: Recheck
+    labelPosition: start
+  - from: main_set
+    to: freshness_gate
+    type: primary
+  - from: freshness_gate
+    to: fresh_session
+    type: primary
+    label: Valid
+    labelPosition: end
+  - from: freshness_gate
+    to: refresh_task
+    type: optional
+    label: Stale
+    labelPosition: end
+  - from: refresh_task
+    to: achievable_gate
+    type: optional
+    label: Re-verify
+    labelPosition: start
+  - from: fresh_session
+    to: run_main
+    type: primary
+  - from: run_main
+    to: env_error_gate
+    type: primary
+  - from: env_error_gate
+    to: retry_gate
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: env_error_gate
+    to: main_judge
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: retry_gate
+    to: fresh_session
+    type: optional
+    label: Retry
+    labelPosition: start
+  - from: retry_gate
+    to: count_incorrect
+    type: optional
+    label: Exhausted
+    labelPosition: end
+  - from: count_incorrect
+    to: three_run_aggregate
+    type: data
+  - from: main_judge
+    to: three_run_aggregate
+    type: primary
+  - from: three_run_aggregate
+    to: main_metrics
+    type: primary
+  - from: refusal_set
+    to: refusal_check
+    type: primary
+  - from: refusal_check
+    to: refusal_metric
+    type: primary
+modules: []

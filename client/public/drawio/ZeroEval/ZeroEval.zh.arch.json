@@ -1,0 +1,288 @@
+{
+  "version": 1,
+  "title": "ZeroEval 仓库执行与任务专属评分流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 19,
+    "edges": 25,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "repo_config",
+      "label": "官方仓库配置",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "task_loader",
+      "label": "任务与模板加载器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "model_loader",
+      "label": "模型后端配置",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "backend_router",
+      "label": "本地或API后端？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "local_backend",
+      "label": "本地vLLM / Hugging Face后端",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "api_backend",
+      "label": "已配置API提供商",
+      "type": "cloud",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_shards",
+      "label": "渲染提示并分片",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cache_resume",
+      "label": "缓存 / 续跑",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "batch_retry",
+      "label": "批量推理（仅API最多重试10次）",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "merge_outputs",
+      "label": "合并分片输出",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scorer_router",
+      "label": "任务专属评分路由",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "mmlu_parser",
+      "label": "MMLU：JSON/正则/boxed转字母",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "math_parser",
+      "label": "GSM/MATH：清洗后浮点相等",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "crux_parser",
+      "label": "CRUX：字符串精确匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "zebra_parser",
+      "label": "Zebra：JSON/解/单元格",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gplanet_parser",
+      "label": "G-PlanET任务评分器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "completeness_gate",
+      "label": "逐任务完整性门禁",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "zeroeval_report",
+      "label": "任务结果（无固定总规模）",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "incomplete_flag",
+      "label": "标记运行不完整",
+      "type": "loss",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "repo_config",
+      "to": "task_loader",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "repo_config",
+      "to": "model_loader",
+      "type": "data"
+    },
+    {
+      "id": "edge-3",
+      "from": "task_loader",
+      "to": "backend_router",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "model_loader",
+      "to": "backend_router",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "backend_router",
+      "to": "local_backend",
+      "type": "primary",
+      "label": "本地"
+    },
+    {
+      "id": "edge-6",
+      "from": "backend_router",
+      "to": "api_backend",
+      "type": "primary",
+      "label": "API提供商"
+    },
+    {
+      "id": "edge-7",
+      "from": "local_backend",
+      "to": "prompt_shards",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "api_backend",
+      "to": "prompt_shards",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "prompt_shards",
+      "to": "cache_resume",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "prompt_shards",
+      "to": "batch_retry",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "cache_resume",
+      "to": "batch_retry",
+      "type": "data",
+      "label": "复用"
+    },
+    {
+      "id": "edge-12",
+      "from": "batch_retry",
+      "to": "merge_outputs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "merge_outputs",
+      "to": "scorer_router",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "scorer_router",
+      "to": "mmlu_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "scorer_router",
+      "to": "math_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "scorer_router",
+      "to": "crux_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "scorer_router",
+      "to": "zebra_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "scorer_router",
+      "to": "gplanet_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "mmlu_parser",
+      "to": "completeness_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "math_parser",
+      "to": "completeness_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "crux_parser",
+      "to": "completeness_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "zebra_parser",
+      "to": "completeness_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "gplanet_parser",
+      "to": "completeness_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "completeness_gate",
+      "to": "zeroeval_report",
+      "type": "primary",
+      "label": "完整"
+    },
+    {
+      "id": "edge-25",
+      "from": "completeness_gate",
+      "to": "incomplete_flag",
+      "type": "optional",
+      "label": "不完整"
+    }
+  ],
+  "modules": []
+}

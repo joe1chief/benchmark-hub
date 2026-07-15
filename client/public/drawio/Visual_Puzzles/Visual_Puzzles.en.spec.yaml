@@ -1,0 +1,247 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Visual Puzzles — Multi-source Curation and Evaluation
+  description: >-
+    Visual Puzzles combines online and textbook puzzles, manually translated logic questions from Chinese civil-service
+    examinations, large-scale visual-data synthesis, and repurposed multimodal benchmarks. All items are normalized to
+    four choices, filtered to remove advanced-math or domain-knowledge dependence and to require visual solvability,
+    then repeatedly reviewed by humans for clarity, solvability, reasoning type, and difficulty. The final 1,168 items
+    span five categories with counts 262/211/200/209/286, difficulty proportions 46/39/15%, and visual/text answer
+    options 57/43%. Evaluation compares direct and chain-of-thought prompting, reporting the better result per model,
+    with accuracy and a 70-student human baseline.
+  legend: >-
+    Source: arXiv:2504.10342, Sections 2.2-2.3 (pp.3-4) and Section 3.1 (p.5); official project:
+    https://neulab.github.io/VisualPuzzles/; official dataset: https://huggingface.co/datasets/neulab/VisualPuzzles..
+    Solid arrows show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: online
+    label: Online + Textbook Puzzles
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: synthesis
+    label: Large Visual-data Synthesis
+    type: service
+    size: xl
+    position:
+      x: 60
+      'y': 200
+  - id: civilService
+    label: Human-translated Chinese Civil-Service Exam Logic Questions
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 520
+  - id: repurposed
+    label: Repurposed Multimodal Benchmarks
+    type: database
+    size: xl
+    position:
+      x: 60
+      'y': 360
+  - id: normalize
+    label: Normalize to Four Choices
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 200
+  - id: knowledgeGate
+    label: Needs advanced/domain knowledge?
+    type: decision
+    size: xl
+    position:
+      x: 620
+      'y': 200
+  - id: rejectKnowledge
+    label: Reject
+    type: terminal
+    size: xl
+    position:
+      x: 620
+      'y': 40
+  - id: visualGate
+    label: Visually solvable?
+    type: decision
+    size: xl
+    position:
+      x: 900
+      'y': 200
+  - id: rejectVisual
+    label: Reject
+    type: terminal
+    size: xl
+    position:
+      x: 900
+      'y': 40
+  - id: humanGate
+    label: Human validation passes?
+    type: decision
+    size: xl
+    position:
+      x: 1180
+      'y': 200
+  - id: revise
+    label: Revise clarity / solvability
+    type: process
+    size: xl
+    position:
+      x: 1180
+      'y': 520
+  - id: labels
+    label: Reasoning Category + Difficulty
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 200
+  - id: release
+    label: Release · 1,168 four-choice items
+    type: output
+    size: xl
+    position:
+      x: 1460
+      'y': 360
+  - id: promptMode
+    label: Prompt mode?
+    type: decision
+    size: xl
+    position:
+      x: 1180
+      'y': 360
+  - id: direct
+    label: Direct Answer
+    type: service
+    size: xl
+    position:
+      x: 900
+      'y': 360
+  - id: cot
+    label: Chain of Thought
+    type: service
+    size: xl
+    position:
+      x: 900
+      'y': 520
+  - id: better
+    label: Better result per model
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 360
+  - id: human
+    label: 70-student Human Baseline
+    type: user
+    size: xl
+    position:
+      x: 60
+      'y': 680
+  - id: accuracy
+    label: Accuracy
+    type: formula
+    size: xl
+    position:
+      x: 340
+      'y': 360
+edges:
+  - from: online
+    to: normalize
+    type: primary
+  - from: synthesis
+    to: normalize
+    type: primary
+  - from: civilService
+    to: normalize
+    type: primary
+    waypoints:
+      - x: -80
+        'y': 580
+      - x: -80
+        'y': 260
+      - x: 340
+        'y': 260
+  - from: repurposed
+    to: normalize
+    type: primary
+  - from: normalize
+    to: knowledgeGate
+    type: primary
+  - from: knowledgeGate
+    to: rejectKnowledge
+    type: optional
+    label: 'Yes'
+    labelPosition: center
+  - from: knowledgeGate
+    to: visualGate
+    type: primary
+    label: 'No'
+    labelPosition: center
+  - from: visualGate
+    to: rejectVisual
+    type: optional
+    label: 'No'
+    labelPosition: center
+  - from: visualGate
+    to: humanGate
+    type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: humanGate
+    to: revise
+    type: optional
+    label: 'No'
+    labelPosition: center
+  - from: humanGate
+    to: labels
+    type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: revise
+    to: humanGate
+    type: optional
+    label: Review again
+    labelPosition: center
+  - from: labels
+    to: release
+    type: primary
+  - from: release
+    to: promptMode
+    type: primary
+  - from: promptMode
+    to: direct
+    type: primary
+    label: Direct
+    labelPosition: center
+  - from: promptMode
+    to: cot
+    type: primary
+    label: CoT
+    labelPosition: center
+  - from: direct
+    to: better
+    type: primary
+  - from: cot
+    to: better
+    type: primary
+  - from: better
+    to: accuracy
+    type: primary
+  - from: human
+    to: accuracy
+    type: data
+    waypoints:
+      - x: 180
+        'y': 840
+      - x: 460
+        'y': 840
+      - x: 460
+        'y': 420
+modules: []

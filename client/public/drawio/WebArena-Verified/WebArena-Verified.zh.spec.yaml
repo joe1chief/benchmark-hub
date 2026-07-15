@@ -1,0 +1,248 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WebArena-Verified 论文版构建与评测流程（137题Hard）
+  description: >-
+    本图固定采用SEA论文版本。作者通过自动检测器、七个高性能智能体的轨迹、后端与参考答案核验，以及仅针对歧义任务的双人标注和裁决，对全部812题进行审计；四名标注者完成两轮校准。发现问题后修复意图、参考答案或评测器并重新审计。论文用结构化JSON动作/状态/结果协议、类型与归一化感知匹配、REST
+    API或数据库状态检查、显式失败码和网络活动核验替代脆弱评测。每题得到确定性结果，再以模板级宏平均和95%置信区间报告。论文通过污染过滤、Wilson下界难度标注、保留全部多站点任务以及按意图模板分层，得到137题Hard子集。后续维护包采用JSON+HAR离线回放并将Hard扩展为258题；这些维护版语义不进入本论文固定流程。
+  legend: >-
+    来源：WebArena-Verified, SEA @ NeurIPS 2025, OpenReview paper 94tlGxmqkN: Section 3.1 for the audit protocol; Section 4
+    and Table 3 for structured responses, type-aware matching, API/database state checks, explicit status reporting, and
+    network-activity verification; Section 4.4 for template-level reporting; Section 4.5 and Appendix H for the 137-task
+    Hard construction. Official repository https://github.com/ServiceNow/webarena-verified and documentation
+    https://servicenow.github.io/webarena-verified/latest/ are version context only: the maintained package documents
+    JSON+HAR offline evaluation and Hard=258, while this diagram follows the paper artifact and excludes those later
+    package semantics.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: original_tasks
+    label: 原始812个任务
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: auto_detector
+    label: 自动检测器
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: agent_log_audit
+    label: 七智能体日志审计
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: human_ambiguity
+    label: 四标注者歧义审计
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: backend_verify
+    label: 数据库与参考答案核验
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: issue_gate
+    label: 发现问题？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: repair_issue
+    label: 修复意图 / 答案 / 评测器
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: reaudit
+    label: 重新审计修复
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 760
+  - id: verified_tasks
+    label: 验证版812任务
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: hard_selection
+    label: 污染过滤 + Wilson难度 + 分层抽样
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: hard_137
+    label: SEA论文Hard：137题
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: agent_run
+    label: 运行网页智能体
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: structured_json
+    label: 结构化JSON：动作 / 状态 / 结果
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: task_router
+    label: JSON动作类型？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: retrieve_check
+    label: RETRIEVE类型感知匹配
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: navigate_check
+    label: NAVIGATE网址 / 网络核查
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: mutate_check
+    label: MUTATE API / 数据库状态核查
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: binary_score
+    label: 确定性二元得分
+    type: formula
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: template_macro
+    label: 模板宏平均 + 95%区间
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+edges:
+  - from: original_tasks
+    to: auto_detector
+    type: data
+  - from: original_tasks
+    to: agent_log_audit
+    type: data
+  - from: original_tasks
+    to: human_ambiguity
+    type: data
+  - from: auto_detector
+    to: backend_verify
+    type: primary
+  - from: agent_log_audit
+    to: backend_verify
+    type: primary
+  - from: human_ambiguity
+    to: backend_verify
+    type: primary
+  - from: backend_verify
+    to: issue_gate
+    type: primary
+  - from: issue_gate
+    to: repair_issue
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: issue_gate
+    to: verified_tasks
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: repair_issue
+    to: reaudit
+    type: optional
+  - from: reaudit
+    to: auto_detector
+    type: optional
+    label: 重复
+    labelPosition: start
+  - from: reaudit
+    to: agent_log_audit
+    type: optional
+  - from: reaudit
+    to: human_ambiguity
+    type: optional
+  - from: verified_tasks
+    to: agent_run
+    type: primary
+    label: 完整812
+    labelPosition: center
+  - from: verified_tasks
+    to: hard_selection
+    type: optional
+    label: 论文筛选
+    labelPosition: center
+  - from: hard_selection
+    to: hard_137
+    type: optional
+  - from: hard_137
+    to: agent_run
+    type: optional
+  - from: agent_run
+    to: structured_json
+    type: primary
+  - from: structured_json
+    to: task_router
+    type: primary
+  - from: task_router
+    to: retrieve_check
+    type: primary
+    label: 检索
+    labelPosition: end
+  - from: task_router
+    to: navigate_check
+    type: primary
+    label: 导航
+    labelPosition: end
+  - from: task_router
+    to: mutate_check
+    type: primary
+    label: 变更
+    labelPosition: end
+  - from: retrieve_check
+    to: binary_score
+    type: primary
+  - from: navigate_check
+    to: binary_score
+    type: primary
+  - from: mutate_check
+    to: binary_score
+    type: primary
+  - from: binary_score
+    to: template_macro
+    type: primary
+modules: []

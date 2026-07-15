@@ -1,0 +1,245 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ZeroEval Repository Execution and Task-Specific Scoring
+  description: >-
+    ZeroEval is an evaluation framework, not a fixed dataset. At official repository commit
+    8c1485edf12c6efb5f69135a562927c5ad484059, zero_eval_local.sh and zero_eval_api.sh route repository task/model
+    configuration through unified inference, task templates, sharding, cache/resume, output merging, and task-specific
+    evaluators. Local vLLM/Hugging Face backends generate directly, while only configured API-provider calls use the
+    bounded retry handler (retry_limit=10). Distinct scorers handle MMLU-Redux, GSM8K/MATH, CRUX, ZebraLogic, and
+    G-PlanET. Expected result counts are completeness gates, not a construction total; no paper-side annotator or QC
+    pipeline exists to draw.
+  legend: >-
+    Source: No independent ZeroEval benchmark paper was found. Primary source is the official WildEval/ZeroEval
+    repository pinned at commit 8c1485edf12c6efb5f69135a562927c5ad484059: README.md; CITATION.cff; zero_eval_local.sh;
+    zero_eval_api.sh; src/unified_infer.py; src/unified_utils.py; src/task_configs.py; src/_TEMPLATES.py;
+    src/templates/{MCQA,OEQA,ZEBRA_GRID}.py; src/merge_results.py; and
+    src/evaluation/{eval_utils,mcqa_eval,math_eval,crux_eval,zebra_grid_eval,summarize}.py. CITATION.cff dates the
+    software release to 2024-07-18. DeepSeek-V3 arXiv:2412.19437 Appendix/Table 19 is supporting evidence only: it
+    borrows the Zero-Eval prompt format for MMLU-Redux rather than defining ZeroEval or running this repository end to
+    end.. Solid arrows show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: repo_config
+    label: Official Repository Config
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: task_loader
+    label: Task + Template Loader
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: model_loader
+    label: Model Backend Config
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: backend_router
+    label: Local or API Backend?
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 160
+  - id: local_backend
+    label: vLLM / Hugging Face
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: api_backend
+    label: Configured API Providers
+    type: cloud
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: prompt_shards
+    label: Render Prompts + Shard
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 160
+  - id: cache_resume
+    label: Cache / Resume
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: batch_retry
+    label: Batch Inference (API Retries <= 10)
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: merge_outputs
+    label: Merge Shard Outputs
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 160
+  - id: scorer_router
+    label: Task-Specific Scorer
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: mmlu_parser
+    label: 'MMLU: JSON / Regex / Boxed -> Letter'
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 40
+  - id: math_parser
+    label: 'GSM/MATH: Sanitize -> Float Equality'
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 200
+  - id: crux_parser
+    label: 'CRUX: Exact String'
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: zebra_parser
+    label: 'Zebra: JSON / Solution / Cell'
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: gplanet_parser
+    label: G-PlanET Task Scorer
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 680
+  - id: completeness_gate
+    label: Per-Task Completeness Gate
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 360
+  - id: zeroeval_report
+    label: Task Results (No Fixed Total)
+    type: terminal
+    size: xl
+    position:
+      x: 3400
+      'y': 360
+  - id: incomplete_flag
+    label: Flag Incomplete Run
+    type: loss
+    size: xl
+    position:
+      x: 3400
+      'y': 600
+edges:
+  - from: repo_config
+    to: task_loader
+    type: data
+  - from: repo_config
+    to: model_loader
+    type: data
+  - from: task_loader
+    to: backend_router
+    type: primary
+  - from: model_loader
+    to: backend_router
+    type: primary
+  - from: backend_router
+    to: local_backend
+    type: primary
+    label: Local
+    labelPosition: end
+  - from: backend_router
+    to: api_backend
+    type: primary
+    label: API
+    labelPosition: end
+  - from: local_backend
+    to: prompt_shards
+    type: primary
+  - from: api_backend
+    to: prompt_shards
+    type: primary
+  - from: prompt_shards
+    to: cache_resume
+    type: data
+  - from: prompt_shards
+    to: batch_retry
+    type: primary
+  - from: cache_resume
+    to: batch_retry
+    type: data
+    label: Reuse
+    labelPosition: center
+  - from: batch_retry
+    to: merge_outputs
+    type: primary
+  - from: merge_outputs
+    to: scorer_router
+    type: primary
+  - from: scorer_router
+    to: mmlu_parser
+    type: primary
+  - from: scorer_router
+    to: math_parser
+    type: primary
+  - from: scorer_router
+    to: crux_parser
+    type: primary
+  - from: scorer_router
+    to: zebra_parser
+    type: primary
+  - from: scorer_router
+    to: gplanet_parser
+    type: primary
+  - from: mmlu_parser
+    to: completeness_gate
+    type: primary
+  - from: math_parser
+    to: completeness_gate
+    type: primary
+  - from: crux_parser
+    to: completeness_gate
+    type: primary
+  - from: zebra_parser
+    to: completeness_gate
+    type: primary
+  - from: gplanet_parser
+    to: completeness_gate
+    type: primary
+  - from: completeness_gate
+    to: zeroeval_report
+    type: primary
+    label: Complete
+    labelPosition: end
+  - from: completeness_gate
+    to: incomplete_flag
+    type: optional
+    label: Incomplete
+    labelPosition: end
+modules: []

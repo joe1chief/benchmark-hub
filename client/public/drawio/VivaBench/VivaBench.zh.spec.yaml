@@ -1,0 +1,415 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VivaBench — 临床病例构建与交互诊断流程
+  description: >-
+    VivaBench 将公开临床题材整理为病史/体检/影像/检验结构，使用 SNOMED-CT、LOINC 和 ICD-10 规范化并接受临床复核。评测包含三个诊断阶段：Review 后的初步诊断 dP、Investigation
+    后的最终诊断 dD，以及 Full Information 预检 dF。对 dP 和 dD，每个预测诊断分别被分类为精确（E）、近似（A）或未匹配（U）；E/A 得分还要求请求过支持该诊断的检查，精确与近似 Top-k
+    分开报告。dF 采用不检查 investigation 的独立匹配支路，且不进入 Sconf。dP/dD 的置信度归一化为 c′ 且 Σc′=1，并计算
+    Sconf=Σ(i∈E)c′ᵢ+Σ(i∈A)c′ᵢ−Σ(i∈U)c′ᵢ。信息查询精确率/召回率按 Review/Investigation × Matched/Full 四种配置报告。公开版本的总量不一致，因此图中固定为官方 HF
+    当前可核验的990条 reviewed 和约1.95k条 generated_raw。
+  legend: >-
+    来源：arXiv:2510.10278, Sections 3.1-3.2 and the evaluation equations; official dataset:
+    https://huggingface.co/datasets/chychiu/VivaBench. The paper defines diagnostic stages dP, dD, and dF; the
+    relevant-investigation condition for interactive top-k scoring; confidence normalization c′ and
+    exact/approximate/unmatched sets E/A/U; and four Review/Investigation by Matched/Full query configurations. Public
+    paper and dataset versions disagree on total size, so the diagram pins the currently verifiable HF views rather than
+    asserting one universal count.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: medqa
+    label: MedQA+医学院材料
+    type: input
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: pubmed
+    label: PubMed 文献
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: screen
+    label: 筛选病例
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: structure_case
+    label: |-
+      临床本体 + Schema
+      拆分病史 / 体检 / 影像 / 检验
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: codes
+    label: 标准编码：SNOMED-CT · LOINC · ICD-10
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: diagnosisRoute
+    label: 诊断可自动解析？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: autoParse
+    label: 自动解析诊断
+    type: service
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: expertAnnotate
+    label: 专家诊断标注
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: complete
+    label: 临床专家补齐隐含信息
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: physicianGate
+    label: 医生复核通过？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: reviseCase
+    label: 修订病例
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 220
+  - id: release
+    label: HF快照：990 reviewed · 约1.95k raw
+    type: output
+    size: xl
+    position:
+      x: 2560
+      'y': 40
+  - id: initialStem
+    label: 初始病例主诉
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 440
+  - id: hpQuery
+    label: Review：询问病史/体检
+    type: service
+    size: xl
+    position:
+      x: 2280
+      'y': 440
+  - id: hpGate
+    label: 病史/体检证据充分？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 440
+  - id: moreHp
+    label: 继续询问病史/体检
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 640
+  - id: provisional
+    label: 初步诊断 dP
+    type: output
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: ilQuery
+    label: Investigation：请求影像/检验
+    type: service
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: ilGate
+    label: 影像/检验证据充分？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: moreIl
+    label: 继续请求检查
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 640
+  - id: finalDiagnosis
+    label: 最终诊断 dD
+    type: output
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: fullInfo
+    label: Full Information 诊断 dF · 非交互
+    type: output
+    size: xl
+    position:
+      x: 2840
+      'y': 800
+  - id: metricRouter
+    label: 交互指标族？· dP / dD
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 820
+  - id: relevantIxGate
+    label: |-
+      逐预测匹配
+      诊断 + 支持性检查
+      → E 精确 · A 近似 · U 未匹配
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 820
+  - id: topk_accuracy
+    label: |-
+      交互式 dP / dD
+      精确 Top-k + 近似 Top-k
+      分别报告（k=1…5）
+    type: formula
+    size: xl
+    position:
+      x: 1120
+      'y': 1080
+  - id: sconf
+    label: |-
+      dP / dD 置信度分数
+      归一化 c′（Σc′=1）
+      Sconf=ΣE c′+ΣA c′−ΣU c′
+    type: formula
+    size: xl
+    position:
+      x: 1440
+      'y': 1080
+  - id: queryPr
+    label: P/R · Review / Investigation × Matched / Full
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 1080
+  - id: report
+    label: dP · dD · dF 诊断报告
+    type: output
+    size: xl
+    position:
+      x: 1720
+      'y': 1360
+  - id: df_match_topk
+    label: |-
+      dF 匹配 · 无检查门控
+      精确与近似 Top-k 分别报告
+    type: formula
+    size: xl
+    position:
+      x: 2400
+      'y': 1080
+  - id: relevantIxBranch
+    label: 分类为 E/A 还是 U？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 820
+edges:
+  - from: medqa
+    to: screen
+    type: primary
+  - from: pubmed
+    to: screen
+    type: primary
+  - from: screen
+    to: structure_case
+    type: primary
+  - from: structure_case
+    to: codes
+    type: primary
+  - from: codes
+    to: diagnosisRoute
+    type: primary
+  - from: diagnosisRoute
+    to: autoParse
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: diagnosisRoute
+    to: expertAnnotate
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: autoParse
+    to: complete
+    type: primary
+  - from: expertAnnotate
+    to: complete
+    type: primary
+  - from: complete
+    to: physicianGate
+    type: primary
+  - from: physicianGate
+    to: reviseCase
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: physicianGate
+    to: release
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: reviseCase
+    to: complete
+    type: optional
+    waypoints:
+      - x: 2400
+        'y': 360
+      - x: 2120
+        'y': 360
+      - x: 2120
+        'y': 150
+  - from: release
+    to: initialStem
+    type: primary
+  - from: initialStem
+    to: hpQuery
+    type: primary
+  - from: hpQuery
+    to: hpGate
+    type: primary
+  - from: hpGate
+    to: moreHp
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: hpGate
+    to: provisional
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: moreHp
+    to: hpQuery
+    type: bidirectional
+  - from: provisional
+    to: ilQuery
+    type: primary
+  - from: ilQuery
+    to: ilGate
+    type: primary
+  - from: ilGate
+    to: moreIl
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: ilGate
+    to: finalDiagnosis
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: moreIl
+    to: ilQuery
+    type: bidirectional
+  - from: release
+    to: fullInfo
+    type: data
+    label: 非交互对照
+    labelPosition: center
+    waypoints:
+      - x: 2800
+        'y': 100
+      - x: 2960
+        'y': 100
+      - x: 2960
+        'y': 760
+  - from: provisional
+    to: metricRouter
+    type: data
+    label: dP 指标
+    labelPosition: center
+  - from: finalDiagnosis
+    to: metricRouter
+    type: data
+    label: dD 指标
+    labelPosition: center
+    waypoints:
+      - x: 1000
+        'y': 740
+      - x: 1680
+        'y': 740
+  - from: metricRouter
+    to: relevantIxGate
+    type: primary
+    label: 逐个预测
+    labelPosition: center
+  - from: relevantIxBranch
+    to: topk_accuracy
+    type: primary
+    label: E 或 A
+    labelPosition: center
+  - from: metricRouter
+    to: queryPr
+    type: primary
+    label: 四种查询P/R配置
+    labelPosition: center
+    waypoints:
+      - x: 2120
+        'y': 900
+      - x: 2120
+        'y': 1040
+  - from: topk_accuracy
+    to: report
+    type: primary
+  - from: sconf
+    to: report
+    type: primary
+  - from: queryPr
+    to: report
+    type: primary
+  - from: fullInfo
+    to: df_match_topk
+    type: data
+    label: 仅 dF
+  - from: df_match_topk
+    to: report
+    type: primary
+  - from: topk_accuracy
+    to: sconf
+    type: data
+    label: E / A 置信度项
+  - from: relevantIxGate
+    to: relevantIxBranch
+    type: primary
+  - from: relevantIxBranch
+    to: sconf
+    type: data
+    label: U：无 Top-k · 惩罚项
+modules: []

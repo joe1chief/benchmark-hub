@@ -1,0 +1,282 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Video SimpleQA — 构建与评测流程
+  description: >-
+    论文以 Wikimedia 每日媒体及百科证据构建多跳视频问答。生成器与批评器最多迭代三轮，专家细化并拆解问题，四个模型共同筛选难度，两名标注员必须同时通过，答案还要接受权威性与安全终审。最终发布 1,079 个视频、1,504
+    组最终问答，其中二跳/三跳/四跳分别为 928/469/107 题，并同时提供逐事实子问答。最终多跳题与拆解子题使用同一套 o3 三分类事实性裁判和 F-score 协议，但分别汇报结果以定位各跳错误。
+  legend: >-
+    来源：arXiv:2503.18923, Sections 3.1-3.3, 4.1-4.2, and Table 4. Construction and evaluation are pinned to the paper
+    version represented by this identifier.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: media
+    label: Wikimedia 每日媒体
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: encyclopedia
+    label: 百科资料
+    type: database
+    size: xl
+    position:
+      x: 60
+      'y': 220
+  - id: termMining
+    label: 术语提取
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 40
+  - id: knowledge
+    label: 知识检索
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: generator
+    label: GPT-4o 问答生成器
+    type: service
+    size: xl
+    position:
+      x: 620
+      'y': 40
+  - id: critic
+    label: GPT-4o 批评器 · 最多3轮
+    type: service
+    size: xl
+    position:
+      x: 900
+      'y': 40
+  - id: criticGate
+    label: 批评器接受？
+    type: decision
+    size: xl
+    position:
+      x: 1180
+      'y': 40
+  - id: discardCritic
+    label: 第3轮后仍不合规则剔除
+    type: terminal
+    size: xl
+    position:
+      x: 1180
+      'y': 220
+  - id: expert
+    label: 专家细化
+    type: user
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: hop
+    label: 跳数拆解
+    type: process
+    size: xl
+    position:
+      x: 1740
+      'y': 40
+  - id: difficultyGate
+    label: 四个模型都答对？
+    type: decision
+    size: xl
+    position:
+      x: 2020
+      'y': 40
+  - id: discardEasy
+    label: 因过易而剔除
+    type: terminal
+    size: xl
+    position:
+      x: 2020
+      'y': 220
+  - id: dualReview
+    label: 两名标注员都接受？
+    type: decision
+    size: xl
+    position:
+      x: 2300
+      'y': 40
+  - id: discardReview
+    label: 剔除未通过样本
+    type: terminal
+    size: xl
+    position:
+      x: 2300
+      'y': 220
+  - id: answerAudit
+    label: 权威性与安全审计
+    type: process
+    size: xl
+    position:
+      x: 2580
+      'y': 40
+  - id: release
+    label: 1,079 视频 · 1,504 最终问答 + 逐跳子问答
+    type: output
+    size: xl
+    position:
+      x: 2860
+      'y': 40
+  - id: evaluationTarget
+    label: 评测对象？
+    type: decision
+    size: xl
+    position:
+      x: 2860
+      'y': 480
+  - id: finalAnswer
+    label: 回答最终多跳问答
+    type: service
+    size: xl
+    position:
+      x: 2580
+      'y': 360
+  - id: hopAnswer
+    label: 回答逐事实子问答
+    type: service
+    size: xl
+    position:
+      x: 2580
+      'y': 600
+  - id: judge
+    label: o3：正确 / 错误 / 未作答
+    type: decision
+    size: xl
+    position:
+      x: 2300
+      'y': 480
+  - id: cga
+    label: CGA = 正确数 / 作答数
+    type: formula
+    size: xl
+    position:
+      x: 2020
+      'y': 360
+  - id: fScore
+    label: F = 2·Correct·CGA / (Correct+CGA)
+    type: formula
+    size: xl
+    position:
+      x: 1740
+      'y': 480
+  - id: separateReport
+    label: 最终多跳与逐跳 F 分数分别汇报
+    type: output
+    size: xl
+    position:
+      x: 1460
+      'y': 480
+edges:
+  - from: media
+    to: termMining
+    type: data
+  - from: encyclopedia
+    to: knowledge
+    type: data
+  - from: termMining
+    to: generator
+    type: primary
+  - from: knowledge
+    to: generator
+    type: data
+  - from: generator
+    to: critic
+    type: primary
+  - from: critic
+    to: criticGate
+    type: primary
+  - from: criticGate
+    to: generator
+    type: optional
+    label: 否 · 尚未到第3轮
+    labelPosition: center
+    waypoints:
+      - x: 1280
+        'y': -100
+      - x: 720
+        'y': -100
+  - from: criticGate
+    to: discardCritic
+    type: optional
+    label: 否 · 已到第3轮
+    labelPosition: center
+  - from: criticGate
+    to: expert
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: expert
+    to: hop
+    type: primary
+  - from: hop
+    to: difficultyGate
+    type: primary
+  - from: difficultyGate
+    to: discardEasy
+    type: optional
+    label: 是
+    labelPosition: center
+  - from: difficultyGate
+    to: dualReview
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: dualReview
+    to: discardReview
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: dualReview
+    to: answerAudit
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: answerAudit
+    to: release
+    type: primary
+  - from: release
+    to: evaluationTarget
+    type: primary
+  - from: evaluationTarget
+    to: finalAnswer
+    type: primary
+    label: 最终多跳题
+    labelPosition: center
+  - from: evaluationTarget
+    to: hopAnswer
+    type: primary
+    label: 逐跳子题
+    labelPosition: center
+  - from: finalAnswer
+    to: judge
+    type: primary
+  - from: hopAnswer
+    to: judge
+    type: primary
+  - from: judge
+    to: cga
+    type: data
+    label: 三类标签
+    labelPosition: center
+  - from: judge
+    to: fScore
+    type: data
+    waypoints:
+      - x: 2400
+        'y': 760
+      - x: 1860
+        'y': 760
+  - from: cga
+    to: fScore
+    type: data
+  - from: fScore
+    to: separateReport
+    type: primary
+modules: []

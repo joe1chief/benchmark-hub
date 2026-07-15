@@ -1,0 +1,321 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VisualWebBench — Seven Task Factories and Metrics
+  description: >-
+    VisualWebBench starts from 12 SimilarWeb domains and 87 subdomains, manually selecting representative websites from
+    the top five sites in each subdomain and excluding sites used by Mind2Web or WebArena; the resulting benchmark spans
+    139 websites. Playwright renders 1280-pixel-wide screenshots, and seven task-specific pipelines produce 1,534
+    samples. Verification and curation are collaboratively divided between two authors; the paper does not define a
+    per-sample double-approval gate. The seven task counts are 134/314/46/245/413/281/101.
+  legend: >-
+    Source: arXiv:2404.05955v1, Sections 3.1-3.4 and Appendix B; official dataset:
+    https://huggingface.co/datasets/visualwebbench/VisualWebBench. Section 3.2 specifies representative websites
+    selected from each subdomain's top five, while Section 3.1 and the official dataset report 139 websites. Appendix B
+    specifies collaborative verification and curation with a division of tasks by two authors, not a per-sample
+    two-signature gate.. Solid arrows show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: similarWeb
+    label: SimilarWeb · 12 domains · 87 subdomains
+    type: cloud
+    size: xl
+    position:
+      x: 40
+      'y': 720
+  - id: siteSelect
+    label: Select representative sites from each top 5
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 720
+  - id: overlapGate
+    label: Used by Mind2Web / WebArena?
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 720
+  - id: excludeSite
+    label: Exclude site
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 960
+  - id: render
+    label: 139 sites · Playwright · width 1280
+    type: service
+    size: xl
+    position:
+      x: 880
+      'y': 720
+  - id: factoryRouter
+    label: Task factory?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 720
+  - id: captionDraft
+    label: 'Caption: meta + screenshot → GPT-4V'
+    type: service
+    size: xl
+    position:
+      x: 2100
+      'y': 40
+  - id: captionVerify
+    label: Author verifies caption
+    type: user
+    size: xl
+    position:
+      x: 2400
+      'y': 40
+  - id: webQa
+    label: 'WebQA: humans · ≤5 questions/image'
+    type: user
+    size: xl
+    position:
+      x: 2100
+      'y': 280
+  - id: headingOcr
+    label: 'Heading OCR: first h1'
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 520
+  - id: elementOcr
+    label: 'Element OCR: DOM text + bbox'
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 760
+  - id: elementGround
+    label: 'Element Grounding: target + 7 negatives'
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 1000
+  - id: clickTest
+    label: 'Action Prediction: click element'
+    type: service
+    size: xl
+    position:
+      x: 2100
+      'y': 1240
+  - id: titleGate
+    label: Destination title changed?
+    type: decision
+    size: xl
+    position:
+      x: 2400
+      'y': 1240
+  - id: discardAction
+    label: Discard action sample
+    type: terminal
+    size: xl
+    position:
+      x: 2400
+      'y': 1720
+  - id: actionPred
+    label: Destination title + 7 negative options
+    type: process
+    size: xl
+    position:
+      x: 2700
+      'y': 1240
+  - id: actionGround
+    label: 'Action Grounding: 7 experienced annotators'
+    type: user
+    size: xl
+    position:
+      x: 2100
+      'y': 1480
+  - id: taskPool
+    label: Seven-task Sample Pool
+    type: database
+    size: xl
+    position:
+      x: 3300
+      'y': 720
+  - id: authorCuration
+    label: Two authors · collaborative curation + task division
+    type: user
+    size: xl
+    position:
+      x: 3600
+      'y': 720
+  - id: release
+    label: Release 1,534 samples · 139 sites
+    type: output
+    size: xl
+    position:
+      x: 3900
+      'y': 720
+  - id: metricRouter
+    label: Task metric?
+    type: decision
+    size: xl
+    position:
+      x: 3900
+      'y': 1800
+  - id: rouge
+    label: ROUGE-L · Caption / Heading OCR / Element OCR
+    type: formula
+    size: xl
+    position:
+      x: 3500
+      'y': 2040
+  - id: squad
+    label: SQuAD F1 · WebQA
+    type: formula
+    size: xl
+    position:
+      x: 3900
+      'y': 2040
+  - id: accuracy
+    label: MCQ Accuracy · 3 grounding/action tasks
+    type: formula
+    size: xl
+    position:
+      x: 4300
+      'y': 2040
+  - id: report
+    label: Seven Task Scores
+    type: output
+    size: xl
+    position:
+      x: 3900
+      'y': 2280
+edges:
+  - from: similarWeb
+    to: siteSelect
+    type: primary
+  - from: siteSelect
+    to: overlapGate
+    type: primary
+  - from: overlapGate
+    to: excludeSite
+    type: optional
+    label: 'Yes'
+    labelPosition: center
+  - from: overlapGate
+    to: render
+    type: primary
+    label: 'No'
+    labelPosition: center
+  - from: render
+    to: factoryRouter
+    type: primary
+  - from: factoryRouter
+    to: captionDraft
+    type: primary
+    label: Caption
+    labelPosition: center
+  - from: factoryRouter
+    to: webQa
+    type: primary
+    label: WebQA
+    labelPosition: center
+  - from: factoryRouter
+    to: headingOcr
+    type: primary
+    label: Heading OCR
+    labelPosition: center
+  - from: factoryRouter
+    to: elementOcr
+    type: primary
+    label: Element OCR
+    labelPosition: center
+  - from: factoryRouter
+    to: elementGround
+    type: primary
+    label: Element Grounding
+    labelPosition: center
+  - from: factoryRouter
+    to: clickTest
+    type: primary
+    label: Action Prediction
+    labelPosition: center
+  - from: factoryRouter
+    to: actionGround
+    type: primary
+    label: Action Grounding
+    labelPosition: center
+  - from: captionDraft
+    to: captionVerify
+    type: primary
+  - from: captionVerify
+    to: taskPool
+    type: primary
+  - from: webQa
+    to: taskPool
+    type: primary
+  - from: headingOcr
+    to: taskPool
+    type: primary
+  - from: elementOcr
+    to: taskPool
+    type: primary
+  - from: elementGround
+    to: taskPool
+    type: primary
+  - from: clickTest
+    to: titleGate
+    type: primary
+  - from: titleGate
+    to: discardAction
+    type: optional
+    label: 'No'
+    labelPosition: center
+  - from: titleGate
+    to: actionPred
+    type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: actionPred
+    to: taskPool
+    type: primary
+  - from: actionGround
+    to: taskPool
+    type: primary
+  - from: taskPool
+    to: authorCuration
+    type: primary
+  - from: authorCuration
+    to: release
+    type: primary
+  - from: release
+    to: metricRouter
+    type: primary
+  - from: metricRouter
+    to: rouge
+    type: primary
+    label: Caption/OCR
+    labelPosition: center
+  - from: metricRouter
+    to: squad
+    type: primary
+    label: WebQA
+    labelPosition: center
+  - from: metricRouter
+    to: accuracy
+    type: primary
+    label: Grounding/Action
+    labelPosition: center
+  - from: rouge
+    to: report
+    type: primary
+  - from: squad
+    to: report
+    type: primary
+  - from: accuracy
+    to: report
+    type: primary
+modules: []

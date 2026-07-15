@@ -1,0 +1,363 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WildBench 任务、检查表、WB-Reward 与 WB-Score 流程
+  description: >-
+    WildBench 对 WildChat-1M 依次执行长度、轮次、语言、毒性、语义相似度和设备去重；三种 LLM 只淘汰一致判易任务，再按类别抽样 1500 条，经人工复核形成 12 类 1024 题。两份独立检查表合并为每题
+    5-10 个可核验问题。评测保留两条不同分支：WB-Reward 使用三个基线、五级胜负映射和可选长度惩罚；WB-Score 使用单回答 1-10 分及论文给定的仿射变换。
+  legend: >-
+    来源：WildBench arXiv:2406.04770v2 (2024-10-05), Sections 2.1-2.2 and 3.1-3.2, Figure 2; official repository
+    https://github.com/allenai/WildBench and official dataset https://huggingface.co/datasets/WildEval/WildBench-V2.
+    WildEval is the hosting organization/path, not the benchmark name.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: wildchat_1m
+    label: WildChat-1M 真实用户对话
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: rule_filters
+    label: |-
+      查询 10-3000 tokens
+      最多 5 轮 / 仅英语 / 去毒性
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: semantic_dedup
+    label: |-
+      SBERT 语义去重
+      移除余弦相似度 > 0.9
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: device_dedup
+    label: 同一设备仅保留最后一段对话
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: difficulty_raters
+    label: |-
+      3 个难度评审 / 5 级
+      GPT-4-Turbo + Claude-3-Sonnet + Claude-3-Opus
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: unanimous_easy_gate
+    label: 三者均判为 easy / very easy？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: easy_reject
+    label: 淘汰一致判易任务
+    type: loss
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: sample_1500
+    label: 保持类别分布抽样：1500 条
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: intent_summary
+    label: GPT-4-Turbo 总结用户意图
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: human_task_review
+    label: 人工挑战性与多样性复核通过？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: task_reject
+    label: 移除无意义或薄弱任务
+    type: loss
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: final_1024
+    label: |-
+      WildBench-V2
+      1024 个任务 / 12 类
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: gpt_checklist
+    label: GPT-4-Turbo 生成查询专属检查表
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 440
+  - id: claude_checklist
+    label: Claude-3-Opus 独立生成检查表
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 600
+  - id: checklist_review
+    label: 合并并人工复核
+    type: user
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: checklist_5_10
+    label: 每题 5-10 个可核验问题
+    type: document
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: task_payload
+    label: 任务载荷：最多 4 个历史轮次 + 当前请求
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 920
+  - id: candidate_response
+    label: 候选模型回答
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 920
+  - id: evaluator_input
+    label: 查询 + 历史 + 回答 + 查询专属检查表
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 920
+  - id: metric_branch
+    label: 并行展开：WB-Reward + WB-Score
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 920
+  - id: three_baselines
+    label: |-
+      3 个基线
+      GPT-4-Turbo-0429 / Claude-3-Haiku / Llama-2-70B-chat
+    type: database
+    size: xl
+    position:
+      x: 3960
+      'y': 1080
+  - id: pairwise_judge
+    label: GPT-4-Turbo 五级成对胜负
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 1160
+  - id: preference_map
+    label: 映射：+1, +0.5, 0, -0.5, -1
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 1160
+  - id: length_gap_gate
+    label: |-
+      启用惩罚且长度差 > K
+      + slight win / loss？
+    type: decision
+    size: xl
+    position:
+      x: 4800
+      'y': 1160
+  - id: length_penalty
+    label: |-
+      可选长度惩罚
+      slight win/loss 改为 tie
+    type: process
+    size: xl
+    position:
+      x: 4800
+      'y': 1400
+  - id: reward_average
+    label: WB-Reward = 胜负映射总和 / (3 × 1024)
+    type: process
+    size: xl
+    position:
+      x: 5080
+      'y': 1160
+  - id: pointwise_judge
+    label: GPT-4-Turbo 单回答评分：1-10
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1560
+  - id: raw_mean
+    label: raw_score = 对 1024 题求均值
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 1560
+  - id: wb_score
+    label: WB-Score（WB 得分）= (raw_score - 5) × 2
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 1560
+  - id: wildbench_report
+    label: |-
+      WB-Reward + WB-Score
+      越高越好
+    type: terminal
+    size: xl
+    position:
+      x: 5360
+      'y': 1360
+edges:
+  - from: wildchat_1m
+    to: rule_filters
+    type: primary
+  - from: rule_filters
+    to: semantic_dedup
+    type: primary
+  - from: semantic_dedup
+    to: device_dedup
+    type: primary
+  - from: device_dedup
+    to: difficulty_raters
+    type: primary
+  - from: difficulty_raters
+    to: unanimous_easy_gate
+    type: primary
+  - from: unanimous_easy_gate
+    to: easy_reject
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: unanimous_easy_gate
+    to: sample_1500
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: sample_1500
+    to: intent_summary
+    type: primary
+  - from: intent_summary
+    to: human_task_review
+    type: primary
+  - from: human_task_review
+    to: final_1024
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: human_task_review
+    to: task_reject
+    type: optional
+    label: 移除
+    labelPosition: end
+  - from: final_1024
+    to: gpt_checklist
+    type: primary
+  - from: final_1024
+    to: claude_checklist
+    type: primary
+  - from: gpt_checklist
+    to: checklist_review
+    type: primary
+  - from: claude_checklist
+    to: checklist_review
+    type: primary
+  - from: checklist_review
+    to: checklist_5_10
+    type: primary
+  - from: final_1024
+    to: task_payload
+    type: primary
+  - from: task_payload
+    to: candidate_response
+    type: primary
+  - from: candidate_response
+    to: evaluator_input
+    type: primary
+  - from: checklist_5_10
+    to: evaluator_input
+    type: data
+  - from: task_payload
+    to: evaluator_input
+    type: data
+    label: 查询 + 历史
+    labelPosition: center
+  - from: evaluator_input
+    to: metric_branch
+    type: primary
+  - from: metric_branch
+    to: pairwise_judge
+    type: primary
+    label: WB-Reward 分支
+    labelPosition: end
+  - from: three_baselines
+    to: pairwise_judge
+    type: data
+  - from: pairwise_judge
+    to: preference_map
+    type: primary
+  - from: preference_map
+    to: length_gap_gate
+    type: primary
+  - from: length_gap_gate
+    to: length_penalty
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: length_gap_gate
+    to: reward_average
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: length_penalty
+    to: reward_average
+    type: primary
+  - from: reward_average
+    to: wildbench_report
+    type: primary
+  - from: metric_branch
+    to: pointwise_judge
+    type: primary
+    label: WB-Score 分支
+    labelPosition: end
+  - from: pointwise_judge
+    to: raw_mean
+    type: primary
+  - from: raw_mean
+    to: wb_score
+    type: primary
+  - from: wb_score
+    to: wildbench_report
+    type: primary
+modules: []
