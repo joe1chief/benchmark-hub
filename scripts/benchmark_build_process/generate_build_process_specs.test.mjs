@@ -130,6 +130,79 @@ test('preserves explicit bilingual branches, loops, labels, and positions', () =
   assert.equal((zh.match(/^  - from:/gmu) || []).length, 4);
 });
 
+test('preserves explicit edge waypoints in generated specs', () => {
+  const entry = explicitGraphEntry();
+  entry.diagram.edges[0].waypoints = [
+    { x: 180, y: 120 },
+    { x: 180, y: 220 },
+  ];
+  const { root, publicDir } = createRootWithManifest(
+    'build-process-generator-waypoints-',
+    [entry],
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [generatorScript.pathname, '--root', root, '--id', 'BranchBench'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const en = readFileSync(
+    join(publicDir, 'drawio/BranchBench/BranchBench.en.spec.yaml'),
+    'utf8',
+  );
+  assert.match(
+    en,
+    /from: source[\s\S]*?to: review[\s\S]*?waypoints:\n      - x: 180\n        'y': 120\n      - x: 180\n        'y': 220/u,
+  );
+});
+
+test('rejects an explicit edge waypoint with a non-finite coordinate', () => {
+  const entry = explicitGraphEntry();
+  entry.diagram.edges[0].waypoints = [{ x: null, y: 120 }];
+  const { root } = createRootWithManifest(
+    'build-process-generator-invalid-waypoint-',
+    [entry],
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [generatorScript.pathname, '--root', root, '--id', 'BranchBench'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /edge "source->review" waypoint 0 requires finite x and y/u,
+  );
+});
+
+test('rejects consecutive explicit waypoints less than one pixel apart', () => {
+  const entry = explicitGraphEntry();
+  entry.diagram.edges[0].waypoints = [
+    { x: 100, y: 100 },
+    { x: 100.5, y: 100.5 },
+  ];
+  const { root } = createRootWithManifest(
+    'build-process-generator-degenerate-waypoint-',
+    [entry],
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [generatorScript.pathname, '--root', root, '--id', 'BranchBench'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /edge "source->review" waypoints 0 and 1 must be at least 1px apart/u,
+  );
+});
+
 test('rejects an explicit edge that references an unknown node', () => {
   const entry = explicitGraphEntry();
   entry.diagram.edges[0].to = 'missing';
@@ -573,6 +646,128 @@ test('syncs manifest asset paths into list and detail records when requested', (
   assert.equal(listRecord.drawio_flowchart_en, entry.assets.drawio_flowchart_en);
   assert.equal(detailRecord.drawio_arch_zh, entry.assets.drawio_arch_zh);
   assert.match(detailRecord.drawio_review_note, /Section 3 and Appendix A/u);
+});
+
+test('syncs benchmark data without overwriting hand-authored specs', () => {
+  const root = mkdtempSync(join(tmpdir(), 'build-process-generator-sync-only-'));
+  const publicDir = join(root, 'client/public');
+  const detailDir = join(publicDir, 'benchmarks_detail');
+  const drawioDir = join(publicDir, 'drawio/AlphaBench');
+  mkdirSync(detailDir, { recursive: true });
+  mkdirSync(drawioDir, { recursive: true });
+  const assets = {
+    drawio_flowchart_en: 'drawio/AlphaBench/AlphaBench.en.svg',
+    drawio_flowchart_zh: 'drawio/AlphaBench/AlphaBench.zh.svg',
+    drawio_source_en: 'drawio/AlphaBench/AlphaBench.en.drawio',
+    drawio_source_zh: 'drawio/AlphaBench/AlphaBench.zh.drawio',
+    drawio_spec_en: 'drawio/AlphaBench/AlphaBench.en.spec.yaml',
+    drawio_spec_zh: 'drawio/AlphaBench/AlphaBench.zh.spec.yaml',
+    drawio_arch_en: 'drawio/AlphaBench/AlphaBench.en.arch.json',
+    drawio_arch_zh: 'drawio/AlphaBench/AlphaBench.zh.arch.json',
+  };
+  writeFileSync(
+    join(publicDir, 'benchmarks_build_process_manifest.json'),
+    `${JSON.stringify([{
+      id: 'AlphaBench',
+      evidence_summary_en: 'Paper-aligned process.',
+      evidence_summary_zh: '与论文对齐的流程。',
+      source_locator: 'Section 3',
+      assets,
+    }], null, 2)}\n`,
+  );
+  writeFileSync(
+    join(publicDir, 'benchmarks.json'),
+    `${JSON.stringify([{ id: 'AlphaBench' }], null, 2)}\n`,
+  );
+  writeFileSync(
+    join(detailDir, 'AlphaBench.json'),
+    `${JSON.stringify({ id: 'AlphaBench' }, null, 2)}\n`,
+  );
+  const handAuthored = 'meta:\n  title: Hand Authored\nnodes: []\nedges: []\n';
+  writeFileSync(join(drawioDir, 'AlphaBench.en.spec.yaml'), handAuthored);
+  writeFileSync(join(drawioDir, 'AlphaBench.zh.spec.yaml'), handAuthored);
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      generatorScript.pathname,
+      '--root',
+      root,
+      '--id',
+      'AlphaBench',
+      '--sync-data-only',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(
+    readFileSync(join(drawioDir, 'AlphaBench.en.spec.yaml'), 'utf8'),
+    handAuthored,
+  );
+  assert.equal(
+    readFileSync(join(drawioDir, 'AlphaBench.zh.spec.yaml'), 'utf8'),
+    handAuthored,
+  );
+  const listRecord = JSON.parse(readFileSync(join(publicDir, 'benchmarks.json')))[0];
+  const detailRecord = JSON.parse(readFileSync(join(detailDir, 'AlphaBench.json')));
+  assert.equal(listRecord.drawio_flowchart_en, assets.drawio_flowchart_en);
+  assert.equal(detailRecord.drawio_arch_zh, assets.drawio_arch_zh);
+});
+
+test('validates explicit topology before sync-data-only mutates benchmark data', () => {
+  const root = mkdtempSync(join(tmpdir(), 'build-process-generator-sync-only-invalid-'));
+  const publicDir = join(root, 'client/public');
+  const detailDir = join(publicDir, 'benchmarks_detail');
+  const drawioDir = join(publicDir, 'drawio/BranchBench');
+  mkdirSync(detailDir, { recursive: true });
+  mkdirSync(drawioDir, { recursive: true });
+  const entry = explicitGraphEntry({
+    assets: {
+      drawio_flowchart_en: 'drawio/BranchBench/BranchBench.en.svg',
+      drawio_flowchart_zh: 'drawio/BranchBench/BranchBench.zh.svg',
+      drawio_source_en: 'drawio/BranchBench/BranchBench.en.drawio',
+      drawio_source_zh: 'drawio/BranchBench/BranchBench.zh.drawio',
+      drawio_spec_en: 'drawio/BranchBench/BranchBench.en.spec.yaml',
+      drawio_spec_zh: 'drawio/BranchBench/BranchBench.zh.spec.yaml',
+      drawio_arch_en: 'drawio/BranchBench/BranchBench.en.arch.json',
+      drawio_arch_zh: 'drawio/BranchBench/BranchBench.zh.arch.json',
+    },
+  });
+  entry.diagram.edges[0].to = 'missing';
+  writeFileSync(
+    join(publicDir, 'benchmarks_build_process_manifest.json'),
+    `${JSON.stringify([entry], null, 2)}\n`,
+  );
+  const listContent = `${JSON.stringify([{ id: 'BranchBench' }], null, 2)}\n`;
+  writeFileSync(join(publicDir, 'benchmarks.json'), listContent);
+  writeFileSync(
+    join(detailDir, 'BranchBench.json'),
+    `${JSON.stringify({ id: 'BranchBench' }, null, 2)}\n`,
+  );
+  const handAuthored = 'meta:\n  title: Hand Authored\nnodes: []\nedges: []\n';
+  writeFileSync(join(drawioDir, 'BranchBench.en.spec.yaml'), handAuthored);
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      generatorScript.pathname,
+      '--root',
+      root,
+      '--id',
+      'BranchBench',
+      '--sync-data-only',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /edge to references unknown node "missing"/u);
+  assert.equal(readFileSync(join(publicDir, 'benchmarks.json'), 'utf8'), listContent);
+  assert.equal(
+    readFileSync(join(drawioDir, 'BranchBench.en.spec.yaml'), 'utf8'),
+    handAuthored,
+  );
 });
 
 test('uses an eight-column layout for fifteen-step diagrams', () => {

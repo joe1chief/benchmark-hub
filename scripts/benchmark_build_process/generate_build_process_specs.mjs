@@ -3,6 +3,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
+import { writeFileBatchAtomically } from './atomic_file_batch.mjs';
+
 const VALID_ID = /^[A-Za-z][A-Za-z0-9_-]*$/u;
 const NODE_TYPES = new Set([
   'service',
@@ -89,7 +91,12 @@ function resolveContained(base, ...segments) {
 }
 
 function parseArgs(argv) {
-  const args = { root: process.cwd(), ids: [], syncData: false };
+  const args = {
+    root: process.cwd(),
+    ids: [],
+    syncData: false,
+    syncDataOnly: false,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === '--root') {
       args.root = resolve(argv[index + 1]);
@@ -99,6 +106,8 @@ function parseArgs(argv) {
       index += 1;
     } else if (argv[index] === '--sync-data') {
       args.syncData = true;
+    } else if (argv[index] === '--sync-data-only') {
+      args.syncDataOnly = true;
     }
   }
   return args;
@@ -162,9 +171,17 @@ function prepareBenchmarkDataSync(publicDir, selectedEntries) {
 }
 
 function writeBenchmarkDataSync(syncPlan) {
-  writeFileSync(syncPlan.listPath, syncPlan.listContent);
-  for (const detailWrite of syncPlan.detailWrites) {
-    writeFileSync(detailWrite.path, detailWrite.content);
+  const result = writeFileBatchAtomically([
+    { path: syncPlan.listPath, content: syncPlan.listContent },
+    ...syncPlan.detailWrites,
+  ]);
+  for (const cleanupFailure of result.cleanupErrors) {
+    const message = cleanupFailure.error instanceof Error
+      ? cleanupFailure.error.message
+      : String(cleanupFailure.error);
+    console.warn(
+      `Benchmark data committed, but backup cleanup failed for ${cleanupFailure.path}: ${message}`,
+    );
   }
 }
 
@@ -316,6 +333,35 @@ function validateExplicitDiagram(entry) {
         `${entry.id}: edge "${edge.from}->${edge.to}" has invalid label_position`,
       );
     }
+    if (edge.waypoints != null) {
+      if (!Array.isArray(edge.waypoints)) {
+        throw new Error(
+          `${entry.id}: edge "${edge.from}->${edge.to}" waypoints must be an array`,
+        );
+      }
+      edge.waypoints.forEach((point, index) => {
+        if (
+          !point
+          || !Number.isFinite(point.x)
+          || !Number.isFinite(point.y)
+        ) {
+          throw new Error(
+            `${entry.id}: edge "${edge.from}->${edge.to}" waypoint ${index} requires finite x and y`,
+          );
+        }
+        if (index > 0) {
+          const previous = edge.waypoints[index - 1];
+          if (
+            Math.abs(previous.x - point.x) < 1
+            && Math.abs(previous.y - point.y) < 1
+          ) {
+            throw new Error(
+              `${entry.id}: edge "${edge.from}->${edge.to}" waypoints ${index - 1} and ${index} must be at least 1px apart`,
+            );
+          }
+        }
+      });
+    }
   }
 
   for (const node of diagram.nodes) {
@@ -365,6 +411,15 @@ function renderExplicitSpec(entry, language) {
     }
     if (edge.label_position != null) {
       lines.push(`    labelPosition: ${edge.label_position}`);
+    }
+    if (edge.waypoints?.length) {
+      lines.push('    waypoints:');
+      for (const point of edge.waypoints) {
+        lines.push(
+          `      - x: ${point.x}`,
+          `        'y': ${point.y}`,
+        );
+      }
     }
   }
   lines.push('modules: []', '');
@@ -450,6 +505,7 @@ function main() {
     const entry = entries.get(id);
     if (!entry) throw new Error(`Manifest entry not found: ${id}`);
     validateBenchmarkId(entry.id);
+    validateEntryMetadata(entry);
     selectedEntries.push(entry);
   }
 
@@ -459,20 +515,22 @@ function main() {
       ['en', 'zh'].map((language) => [language, renderSpec(entry, language)]),
     ),
   }));
-  const syncPlan = args.syncData
+  const syncPlan = args.syncData || args.syncDataOnly
     ? prepareBenchmarkDataSync(publicDir, selectedEntries)
     : null;
 
-  for (const { entry, specs } of renderedEntries) {
-    const outputDir = resolveContained(
-      join(publicDir, 'drawio'),
-      entry.id,
-    );
-    mkdirSync(outputDir, { recursive: true });
-    for (const [language, spec] of specs) {
-      const outputPath = join(outputDir, `${entry.id}.${language}.spec.yaml`);
-      writeFileSync(outputPath, spec);
-      console.log(`Generated: ${outputPath}`);
+  if (!args.syncDataOnly) {
+    for (const { entry, specs } of renderedEntries) {
+      const outputDir = resolveContained(
+        join(publicDir, 'drawio'),
+        entry.id,
+      );
+      mkdirSync(outputDir, { recursive: true });
+      for (const [language, spec] of specs) {
+        const outputPath = join(outputDir, `${entry.id}.${language}.spec.yaml`);
+        writeFileSync(outputPath, spec);
+        console.log(`Generated: ${outputPath}`);
+      }
     }
   }
   if (syncPlan) {
