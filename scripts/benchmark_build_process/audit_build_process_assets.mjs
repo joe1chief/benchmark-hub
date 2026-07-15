@@ -66,6 +66,7 @@ function readMetaField(spec, field) {
 export function auditBuildProcessAssets(root) {
   const publicDir = join(root, 'client/public');
   const detailDir = join(publicDir, 'benchmarks_detail');
+  const aggregatePath = join(publicDir, 'benchmarks.json');
   const manifestPath = join(publicDir, 'benchmarks_build_process_manifest.json');
   const detailFiles = readdirSync(detailDir)
     .filter((name) => name.endsWith('.json'))
@@ -82,6 +83,45 @@ export function auditBuildProcessAssets(root) {
   const manifest = existsSync(manifestPath) ? readJson(manifestPath) : [];
   const manifestIds = new Set(manifest.map((entry) => entry.id));
   const manifestById = new Map(manifest.map((entry) => [entry.id, entry]));
+  const aggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
+  const aggregateById = new Map(aggregate.map((entry) => [entry.id, entry]));
+  const aggregateIssues = [];
+  let completeAggregateTotal = 0;
+  for (const manifestEntry of manifest) {
+    const aggregateEntry = aggregateById.get(manifestEntry.id);
+    if (!aggregateEntry) {
+      aggregateIssues.push({
+        id: manifestEntry.id,
+        issue: 'missing_list_record',
+      });
+      continue;
+    }
+
+    const entryIssues = [];
+    for (const field of REQUIRED_ASSET_FIELDS) {
+      const expectedPath = manifestEntry.assets?.[field] ?? null;
+      const actualPath = aggregateEntry[field] || null;
+      if (!actualPath) {
+        entryIssues.push({
+          id: manifestEntry.id,
+          field,
+          issue: 'missing_asset_field',
+          expected_path: expectedPath,
+          actual_path: null,
+        });
+      } else if (actualPath !== expectedPath) {
+        entryIssues.push({
+          id: manifestEntry.id,
+          field,
+          issue: 'asset_path_mismatch',
+          expected_path: expectedPath,
+          actual_path: actualPath,
+        });
+      }
+    }
+    aggregateIssues.push(...entryIssues);
+    if (entryIssues.length === 0) completeAggregateTotal += 1;
+  }
   const sourceIssues = manifest
     .filter((entry) => !String(entry.source_locator || '').trim())
     .map((entry) => ({ id: entry.id, issue: 'missing_source_locator' }));
@@ -186,8 +226,10 @@ export function auditBuildProcessAssets(root) {
 
   return {
     detail_total: detailFiles.length,
+    aggregate_total: aggregate.length,
     manifest_total: manifest.length,
     complete_bilingual_total: completeBilingualTotal,
+    complete_aggregate_total: completeAggregateTotal,
     strict_valid_total: manifest.filter(
       (entry) => entry.strict_validation?.en === 'passed'
         && entry.strict_validation?.zh === 'passed',
@@ -200,13 +242,16 @@ export function auditBuildProcessAssets(root) {
     language_issues: languageIssues,
     source_issues: sourceIssues,
     svg_issues: svgIssues,
+    aggregate_issues: aggregateIssues,
   };
 }
 
 function printHumanSummary(summary) {
   console.log(`Details: ${summary.detail_total}`);
+  console.log(`Aggregate: ${summary.aggregate_total}`);
   console.log(`Manifest: ${summary.manifest_total}`);
   console.log(`Complete bilingual: ${summary.complete_bilingual_total}`);
+  console.log(`Complete aggregate: ${summary.complete_aggregate_total}`);
   console.log(`Strict valid: ${summary.strict_valid_total}`);
   console.log(`Visually reviewed: ${summary.visually_reviewed_total}`);
   console.log(`Missing: ${summary.missing_ids.length}`);
@@ -214,6 +259,7 @@ function printHumanSummary(summary) {
   console.log(`Language issues: ${summary.language_issues.length}`);
   console.log(`Source issues: ${summary.source_issues.length}`);
   console.log(`SVG issues: ${summary.svg_issues.length}`);
+  console.log(`Aggregate issues: ${summary.aggregate_issues.length}`);
 }
 
 function main() {
@@ -230,11 +276,13 @@ function main() {
   const hasSourceIssues = summary.source_issues.length > 0;
   const hasLanguageIssues = summary.language_issues.length > 0;
   const hasSvgIssues = summary.svg_issues.length > 0;
+  const hasAggregateIssues = summary.aggregate_issues.length > 0;
   if (
     hasBrokenReferences
     || hasSourceIssues
     || hasLanguageIssues
     || hasSvgIssues
+    || hasAggregateIssues
     || (isIncomplete && !args.allowIncomplete)
   ) {
     process.exitCode = 1;

@@ -52,6 +52,12 @@ function createCompleteFixture() {
       assets: assetFields,
     },
   ]);
+  writeJson(join(root, 'client/public/benchmarks.json'), [
+    {
+      id: 'AlphaBench',
+      ...assetFields,
+    },
+  ]);
 
   writeFileSync(
     join(drawioDir, 'AlphaBench.en.spec.yaml'),
@@ -93,6 +99,81 @@ test('reports one complete bilingual benchmark when all required assets exist', 
   assert.equal(summary.strict_valid_total, 1);
   assert.deepEqual(summary.missing_ids, []);
   assert.deepEqual(summary.broken_references, []);
+});
+
+test('rejects a missing aggregate asset field even when incomplete coverage is allowed', () => {
+  const root = createCompleteFixture();
+  const listPath = join(root, 'client/public/benchmarks.json');
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  delete list[0].drawio_flowchart_zh;
+  writeJson(listPath, list);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.aggregate_total, 1);
+  assert.equal(summary.complete_aggregate_total, 0);
+  assert.deepEqual(summary.aggregate_issues, [
+    {
+      id: 'AlphaBench',
+      field: 'drawio_flowchart_zh',
+      issue: 'missing_asset_field',
+      expected_path: 'drawio/AlphaBench/AlphaBench.zh.svg',
+      actual_path: null,
+    },
+  ]);
+});
+
+test('rejects an aggregate asset path that differs from the manifest', () => {
+  const root = createCompleteFixture();
+  const listPath = join(root, 'client/public/benchmarks.json');
+  const list = JSON.parse(readFileSync(listPath, 'utf8'));
+  list[0].drawio_flowchart_en = 'drawio/AlphaBench/Wrong.en.svg';
+  writeJson(listPath, list);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.aggregate_total, 1);
+  assert.equal(summary.complete_aggregate_total, 0);
+  assert.deepEqual(summary.aggregate_issues, [
+    {
+      id: 'AlphaBench',
+      field: 'drawio_flowchart_en',
+      issue: 'asset_path_mismatch',
+      expected_path: 'drawio/AlphaBench/AlphaBench.en.svg',
+      actual_path: 'drawio/AlphaBench/Wrong.en.svg',
+    },
+  ]);
+});
+
+test('rejects a manifest benchmark missing from the aggregate list', () => {
+  const root = createCompleteFixture();
+  writeJson(join(root, 'client/public/benchmarks.json'), []);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.aggregate_total, 0);
+  assert.equal(summary.complete_aggregate_total, 0);
+  assert.deepEqual(summary.aggregate_issues, [
+    { id: 'AlphaBench', issue: 'missing_list_record' },
+  ]);
 });
 
 test('rejects a manifest entry without an exact primary-source locator', () => {
