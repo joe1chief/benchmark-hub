@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -84,8 +91,93 @@ function createCompleteFixture() {
       '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><text>AlphaBench</text></svg>\n',
     );
   }
+  for (const suffix of ['en.png', 'zh.png']) {
+    writeFileSync(join(drawioDir, `AlphaBench.${suffix}`), 'png fixture\n');
+  }
 
   return root;
+}
+
+function assetFieldsFor(id) {
+  return {
+    drawio_flowchart_en: `drawio/${id}/${id}.en.svg`,
+    drawio_flowchart_zh: `drawio/${id}/${id}.zh.svg`,
+    drawio_source_en: `drawio/${id}/${id}.en.drawio`,
+    drawio_source_zh: `drawio/${id}/${id}.zh.drawio`,
+    drawio_spec_en: `drawio/${id}/${id}.en.spec.yaml`,
+    drawio_spec_zh: `drawio/${id}/${id}.zh.spec.yaml`,
+    drawio_arch_en: `drawio/${id}/${id}.en.arch.json`,
+    drawio_arch_zh: `drawio/${id}/${id}.zh.arch.json`,
+  };
+}
+
+function addCompleteBenchmark(root, id, {
+  paperStatus = 'passed',
+  strictEn = 'passed',
+  strictZh = 'passed',
+  visualStatus = 'visually_reviewed',
+} = {}) {
+  const fields = assetFieldsFor(id);
+  const sourceUrl = `https://arxiv.org/abs/${id === 'BetaBench' ? '2345.6789' : '3456.7890'}`;
+  const sourceLocator = 'Section 4';
+  const detailDir = join(root, 'client/public/benchmarks_detail');
+  const drawioDir = join(root, `client/public/drawio/${id}`);
+  mkdirSync(drawioDir, { recursive: true });
+  writeJson(join(detailDir, `${id}.json`), {
+    id,
+    paper_url: sourceUrl,
+    ...fields,
+  });
+
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest.push({
+    id,
+    source_type: 'paper',
+    source_url: sourceUrl,
+    source_locator: sourceLocator,
+    strict_validation: { en: strictEn, zh: strictZh },
+    review_status: visualStatus,
+    paper_alignment_review: {
+      status: paperStatus,
+      source_url: sourceUrl,
+      source_locator: sourceLocator,
+    },
+    assets: fields,
+  });
+  writeJson(manifestPath, manifest);
+
+  const aggregatePath = join(root, 'client/public/benchmarks.json');
+  const aggregate = JSON.parse(readFileSync(aggregatePath, 'utf8'));
+  aggregate.push({ id, ...fields });
+  writeJson(aggregatePath, aggregate);
+
+  writeFileSync(
+    join(drawioDir, `${id}.en.spec.yaml`),
+    `meta:\n  title: ${id} Build Process\n  description: Paper-aligned process.\n  legend: Solid arrows show the main flow.\nnodes: []\nedges: []\n`,
+  );
+  writeFileSync(
+    join(drawioDir, `${id}.zh.spec.yaml`),
+    `meta:\n  title: ${id} 构建流程\n  description: 与论文对齐的构建流程。\n  legend: 实线箭头表示主流程。\nnodes: []\nedges: []\n`,
+  );
+  for (const suffix of ['en.drawio', 'zh.drawio']) {
+    writeFileSync(join(drawioDir, `${id}.${suffix}`), '<mxfile><diagram/></mxfile>\n');
+  }
+  for (const suffix of ['en.arch.json', 'zh.arch.json']) {
+    writeJson(join(drawioDir, `${id}.${suffix}`), { nodes: [], edges: [] });
+  }
+  for (const suffix of ['en.svg', 'zh.svg']) {
+    writeFileSync(
+      join(drawioDir, `${id}.${suffix}`),
+      `<svg xmlns="http://www.w3.org/2000/svg"><text>${id}</text></svg>\n`,
+    );
+  }
+  for (const suffix of ['en.png', 'zh.png']) {
+    writeFileSync(join(drawioDir, `${id}.${suffix}`), 'png fixture\n');
+  }
 }
 
 function writeArchPair(root, en, zh = en) {
@@ -108,6 +200,16 @@ test('reports one complete bilingual benchmark when all required assets exist', 
   assert.equal(summary.manifest_total, 1);
   assert.equal(summary.complete_bilingual_total, 1);
   assert.equal(summary.strict_valid_total, 1);
+  assert.equal(summary.visually_reviewed_total, 1);
+  assert.equal(summary.paper_aligned_total, 1);
+  assert.equal(summary.png_complete_total, 1);
+  assert.equal(summary.id_sets_equal, true);
+  assert.deepEqual(summary.id_set_issues, []);
+  assert.deepEqual(summary.png_issues, []);
+  assert.deepEqual(summary.strict_issues, []);
+  assert.deepEqual(summary.visual_issues, []);
+  assert.deepEqual(summary.paper_alignment_issues, []);
+  assert.deepEqual(summary.unresolved_queue, []);
   assert.deepEqual(summary.missing_ids, []);
   assert.deepEqual(summary.broken_references, []);
 });
@@ -1329,7 +1431,7 @@ test('rejects a manifest benchmark ID that has no detail page', () => {
   ]);
 });
 
-test('allows a wholly uncovered benchmark only when incomplete coverage is allowed', () => {
+test('reports a wholly uncovered benchmark even when queue generation is allowed', () => {
   const root = createCompleteFixture();
   writeJson(
     join(root, 'client/public/benchmarks_detail/BetaBench.json'),
@@ -1342,11 +1444,12 @@ test('allows a wholly uncovered benchmark only when incomplete coverage is allow
     { encoding: 'utf8' },
   );
 
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.status, 1);
   const summary = JSON.parse(result.stdout);
   assert.equal(summary.detail_total, 2);
   assert.deepEqual(summary.missing_ids, ['BetaBench']);
   assert.deepEqual(summary.broken_references, []);
+  assert.equal(summary.id_sets_equal, false);
 });
 
 test('rejects started benchmark assets that have no manifest review record', () => {
@@ -1574,4 +1677,316 @@ test('allows reviewed desktop fallback text when foreignObject rendered in the t
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const summary = JSON.parse(result.stdout);
   assert.deepEqual(summary.svg_issues, []);
+});
+
+for (const fixture of [
+  {
+    name: 'catalog-only',
+    id: 'CatalogOnly',
+    presentIn: ['catalog'],
+    mutate(root) {
+      const path = join(root, 'client/public/benchmarks.json');
+      const records = JSON.parse(readFileSync(path, 'utf8'));
+      records.push({ id: this.id });
+      writeJson(path, records);
+    },
+  },
+  {
+    name: 'detail-only',
+    id: 'DetailOnly',
+    presentIn: ['detail'],
+    mutate(root) {
+      writeJson(
+        join(root, `client/public/benchmarks_detail/${this.id}.json`),
+        { id: this.id },
+      );
+    },
+  },
+  {
+    name: 'manifest-only',
+    id: 'ManifestOnly',
+    presentIn: ['manifest'],
+    mutate(root) {
+      const path = join(
+        root,
+        'client/public/benchmarks_build_process_manifest.json',
+      );
+      const records = JSON.parse(readFileSync(path, 'utf8'));
+      records.push({ ...records[0], id: this.id });
+      writeJson(path, records);
+    },
+  },
+  {
+    name: 'assets-only',
+    id: 'AssetsOnly',
+    presentIn: ['physical_assets', 'complete_core_assets'],
+    mutate(root) {
+      const dir = join(root, `client/public/drawio/${this.id}`);
+      mkdirSync(dir, { recursive: true });
+      for (const suffix of [
+        'en.svg',
+        'zh.svg',
+        'en.drawio',
+        'zh.drawio',
+        'en.spec.yaml',
+        'zh.spec.yaml',
+        'en.arch.json',
+        'zh.arch.json',
+      ]) {
+        writeFileSync(join(dir, `${this.id}.${suffix}`), 'fixture\n');
+      }
+    },
+  },
+]) {
+  test(`reports a deterministic ID-set mismatch for a ${fixture.name} benchmark`, () => {
+    const root = createCompleteFixture();
+    fixture.mutate(root);
+
+    const result = spawnSync(
+      process.execPath,
+      [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout);
+    const setOrder = [
+      'catalog',
+      'detail',
+      'manifest',
+      'physical_assets',
+      'complete_core_assets',
+    ];
+    assert.equal(summary.id_sets_equal, false);
+    assert.deepEqual(summary.id_set_issues, [{
+      id: fixture.id,
+      issue: 'id_set_mismatch',
+      present_in: fixture.presentIn,
+      missing_from: setOrder.filter((name) => !fixture.presentIn.includes(name)),
+    }]);
+  });
+}
+
+test('separates review gates and counts only exact paper-source evidence', () => {
+  const root = createCompleteFixture();
+  const path = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(path, 'utf8'));
+  manifest[0].strict_validation.en = 'pending';
+  manifest[0].review_status = 'pending_review';
+  manifest[0].paper_alignment_review.source_locator = 'Section 2';
+  writeJson(path, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.paper_aligned_total, 0);
+  assert.deepEqual(summary.strict_issues, [{
+    id: 'AlphaBench',
+    language: 'en',
+    issue: 'strict_validation_not_passed',
+  }]);
+  assert.deepEqual(summary.visual_issues, [{
+    id: 'AlphaBench',
+    issue: 'visual_review_not_passed',
+  }]);
+  assert.deepEqual(summary.paper_alignment_issues, [{
+    id: 'AlphaBench',
+    issue: 'paper_alignment_source_mismatch',
+    expected_source_locator: 'Section 3',
+    reviewed_source_locator: 'Section 2',
+  }]);
+  assert.deepEqual(summary.review_issues, [
+    ...summary.strict_issues,
+    ...summary.visual_issues,
+    ...summary.paper_alignment_issues,
+  ]);
+});
+
+test('requires both conventionally named PNG exports in the full gate', () => {
+  const root = createCompleteFixture();
+  rmSync(join(root, 'client/public/drawio/AlphaBench/AlphaBench.zh.png'));
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.png_complete_total, 0);
+  assert.deepEqual(summary.png_issues, [{
+    id: 'AlphaBench',
+    language: 'zh',
+    path: 'drawio/AlphaBench/AlphaBench.zh.png',
+    issue: 'png_file_missing',
+  }]);
+  assert.equal(summary.unresolved_queue[0].gates.png, false);
+  assert.equal(
+    summary.unresolved_queue[0].next_action,
+    'Export both English and Chinese PNG previews from the reviewed draw.io assets.',
+  );
+});
+
+test('marks duplicate records as an ID-set queue gate failure', () => {
+  const root = createCompleteFixture();
+  const path = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(path, 'utf8'));
+  manifest.push({ ...manifest[0] });
+  writeJson(path, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.id_sets_equal, true);
+  assert.equal(summary.paper_aligned_total, 1);
+  assert.equal(summary.unresolved_queue[0].gates.id_set, false);
+  assert.ok(
+    summary.unresolved_queue[0].issues.includes('id_set:duplicate_manifest_record'),
+  );
+});
+
+test('produces the same sorted issue arrays and unresolved queue after manifest shuffling', () => {
+  const root = createCompleteFixture();
+  addCompleteBenchmark(root, 'BetaBench', { paperStatus: 'pending' });
+  rmSync(join(root, 'client/public/drawio/AlphaBench/AlphaBench.en.png'));
+  const manifestPath = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest[0].paper_alignment_review.status = 'pending';
+  writeJson(manifestPath, manifest.reverse());
+
+  const firstResult = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(firstResult.status, 1);
+  const first = JSON.parse(firstResult.stdout);
+
+  writeJson(manifestPath, manifest.reverse());
+  const secondResult = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(secondResult.status, 1);
+  const second = JSON.parse(secondResult.stdout);
+
+  for (const field of [
+    'id_set_issues',
+    'png_issues',
+    'strict_issues',
+    'visual_issues',
+    'paper_alignment_issues',
+    'review_issues',
+    'unresolved_queue',
+  ]) {
+    assert.deepEqual(first[field], second[field], `${field} must be stable`);
+  }
+  assert.deepEqual(first.unresolved_queue.map((entry) => entry.id), [
+    'AlphaBench',
+    'BetaBench',
+  ]);
+  assert.deepEqual(first.unresolved_queue[0], {
+    id: 'AlphaBench',
+    source_type: 'paper',
+    source_url: 'https://arxiv.org/abs/1234.5678',
+    source_locator: 'Section 3',
+    gates: {
+      id_set: true,
+      core: true,
+      png: false,
+      strict: true,
+      visual: true,
+      paper: false,
+    },
+    issues: [
+      'paper:paper_alignment_review_not_passed',
+      'png:png_file_missing:en',
+    ],
+    review_state: {
+      strict_validation: { en: 'passed', zh: 'passed' },
+      visual_review: 'visually_reviewed',
+      paper_alignment: 'pending',
+      paper_source_url: 'https://arxiv.org/abs/1234.5678',
+      paper_source_locator: 'Section 3',
+    },
+    asset_state: {
+      physical_directory_present: true,
+      core_complete: true,
+      png_complete: false,
+    },
+    next_action: 'Review and, if needed, redraw the build process against the primary source; then record its exact URL and locator.',
+  });
+  assert.deepEqual(first.unresolved_queue[1].issues, [
+    'paper:paper_alignment_review_not_passed',
+  ]);
+  assert.equal(
+    first.unresolved_queue[1].next_action,
+    'Review and, if needed, redraw the build process against the primary source; then record its exact URL and locator.',
+  );
+});
+
+test('writes queue reports from audit output and rejects report path traversal', () => {
+  const root = createCompleteFixture();
+  rmSync(join(root, 'client/public/drawio/AlphaBench/AlphaBench.zh.png'));
+  mkdirSync(join(root, 'docs/reports'), { recursive: true });
+  const queueJson = 'docs/reports/test-queue.json';
+  const queueMarkdown = 'docs/reports/test-queue.md';
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      auditScript.pathname,
+      '--root', root,
+      '--json',
+      '--allow-incomplete',
+      '--queue-json', queueJson,
+      '--queue-markdown', queueMarkdown,
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.deepEqual(
+    JSON.parse(readFileSync(join(root, queueJson), 'utf8')),
+    summary.unresolved_queue,
+  );
+  const markdown = readFileSync(join(root, queueMarkdown), 'utf8');
+  assert.match(markdown, /^# Build Process Paper Alignment Queue/mu);
+  assert.match(markdown, /\| AlphaBench \|/u);
+
+  const traversalResult = spawnSync(
+    process.execPath,
+    [
+      auditScript.pathname,
+      '--root', root,
+      '--json',
+      '--allow-incomplete',
+      '--queue-json', '../escaped-queue.json',
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.notEqual(traversalResult.status, 0);
+  assert.equal(existsSync(join(root, '../escaped-queue.json')), false);
 });

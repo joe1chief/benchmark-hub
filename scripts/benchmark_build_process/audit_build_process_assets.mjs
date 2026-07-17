@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import {
   basename,
+  dirname,
+  extname,
   isAbsolute,
   join,
   relative,
@@ -19,6 +26,23 @@ const REQUIRED_ASSET_FIELDS = [
   'drawio_spec_zh',
   'drawio_arch_en',
   'drawio_arch_zh',
+];
+const CORE_ASSET_SUFFIXES = [
+  'en.svg',
+  'zh.svg',
+  'en.drawio',
+  'zh.drawio',
+  'en.spec.yaml',
+  'zh.spec.yaml',
+  'en.arch.json',
+  'zh.arch.json',
+];
+const ID_SET_ORDER = [
+  'catalog',
+  'detail',
+  'manifest',
+  'physical_assets',
+  'complete_core_assets',
 ];
 const TECHNICAL_LABEL_ALLOWLIST = new Set([
   'BLEU-1、BLEU-4、ROUGE-1、ROUGE-2、ROUGE-L',
@@ -45,6 +69,8 @@ function parseArgs(argv) {
     root: process.cwd(),
     json: false,
     allowIncomplete: false,
+    queueJson: null,
+    queueMarkdown: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -56,6 +82,12 @@ function parseArgs(argv) {
       args.json = true;
     } else if (arg === '--allow-incomplete') {
       args.allowIncomplete = true;
+    } else if (arg === '--queue-json') {
+      args.queueJson = argv[index + 1];
+      index += 1;
+    } else if (arg === '--queue-markdown') {
+      args.queueMarkdown = argv[index + 1];
+      index += 1;
     }
   }
 
@@ -100,7 +132,206 @@ function countIds(records, getId = (record) => record.id) {
 function duplicateIdIssues(counts, issue) {
   return [...counts]
     .filter(([, count]) => count > 1)
-    .map(([id, count]) => ({ id, issue, count }));
+    .map(([id, count]) => ({ id, issue, count }))
+    .sort((left, right) => compareText(left.id, right.id));
+}
+
+function compareText(left, right) {
+  const leftText = String(left ?? '');
+  const rightText = String(right ?? '');
+  if (leftText < rightText) return -1;
+  if (leftText > rightText) return 1;
+  return 0;
+}
+
+function sortManifestRecords(records) {
+  return [...records].sort((left, right) => (
+    compareText(left?.id, right?.id)
+    || compareText(JSON.stringify(left), JSON.stringify(right))
+  ));
+}
+
+function exactIdSetIssues(idSets) {
+  const allIds = [...new Set(
+    ID_SET_ORDER.flatMap((name) => [...idSets[name]]),
+  )].sort(compareText);
+  return allIds.flatMap((id) => {
+    const presentIn = ID_SET_ORDER.filter((name) => idSets[name].has(id));
+    if (presentIn.length === ID_SET_ORDER.length) return [];
+    return [{
+      id,
+      issue: 'id_set_mismatch',
+      present_in: presentIn,
+      missing_from: ID_SET_ORDER.filter((name) => !idSets[name].has(id)),
+    }];
+  });
+}
+
+function issueCode(gate, issue) {
+  const qualifiers = [];
+  if (issue.language) qualifiers.push(issue.language);
+  if (issue.field) qualifiers.push(issue.field);
+  if (issue.node) qualifiers.push(issue.node);
+  if (issue.edge) qualifiers.push(issue.edge);
+  if (issue.missing_from) qualifiers.push(`missing=${issue.missing_from.join(',')}`);
+  return [gate, issue.issue, ...qualifiers].join(':');
+}
+
+function indexIssuesById(issueGroups) {
+  const index = new Map();
+  for (const [gate, issues] of issueGroups) {
+    for (const issue of issues) {
+      if (!issue?.id) continue;
+      if (!index.has(issue.id)) index.set(issue.id, []);
+      index.get(issue.id).push(issueCode(gate, issue));
+    }
+  }
+  return index;
+}
+
+function nextActionForGates(gates) {
+  if (!gates.id_set) {
+    return 'Reconcile the benchmark ID across catalog, detail, manifest, physical assets, and complete core assets.';
+  }
+  if (!gates.core) {
+    return 'Create or fix the referenced bilingual SVG, draw.io, spec, and architecture files.';
+  }
+  if (!gates.paper) {
+    return 'Review and, if needed, redraw the build process against the primary source; then record its exact URL and locator.';
+  }
+  if (!gates.strict) {
+    return 'Run strict draw.io validation for both languages and record passed evidence.';
+  }
+  if (!gates.visual) {
+    return 'Review both rendered diagrams and record visually_reviewed status.';
+  }
+  return 'Export both English and Chinese PNG previews from the reviewed draw.io assets.';
+}
+
+function addFallbackIssue(issues, gate, code) {
+  if (!issues.some((issue) => issue.startsWith(`${gate}:`))) {
+    issues.push(`${gate}:${code}`);
+  }
+}
+
+function buildUnresolvedQueue({
+  allIds,
+  manifestById,
+  idSetIssues,
+  completeCoreAssetIds,
+  physicalDrawioIds,
+  pngCompleteIds,
+  pngIssues,
+  brokenReferences,
+  aggregateIssues,
+  dataConsistencyIssues,
+  sourceIssues,
+  strictIssues,
+  visualIssues,
+  paperAlignmentIssues,
+  languageIssues,
+  svgIssues,
+  topologyIssues,
+}) {
+  const recordIdentityIssues = [
+    ...aggregateIssues.filter((issue) => issue.issue === 'duplicate_list_record'),
+    ...sourceIssues.filter((issue) => (
+      ['duplicate_manifest_record', 'duplicate_detail_record',
+        'manifest_id_without_detail', 'assets_without_manifest_record']
+        .includes(issue.issue)
+    )),
+  ];
+  const issueIndex = indexIssuesById([
+    ['id_set', idSetIssues],
+    ['core', brokenReferences],
+    ['core', aggregateIssues.filter((issue) => (
+      !['duplicate_list_record'].includes(issue.issue)
+    ))],
+    ['core', dataConsistencyIssues],
+    ['id_set', recordIdentityIssues],
+    ['paper', sourceIssues.filter((issue) => (
+      ['missing_source_url', 'missing_source_locator'].includes(issue.issue)
+    ))],
+    ['png', pngIssues],
+    ['strict', strictIssues],
+    ['visual', visualIssues],
+    ['paper', paperAlignmentIssues],
+    ['strict', languageIssues],
+    ['strict', svgIssues],
+    ['strict', topologyIssues],
+  ]);
+  const idSetIssueIds = new Set(
+    [...idSetIssues, ...recordIdentityIssues].map((issue) => issue.id),
+  );
+  const strictIssueIds = new Set([
+    ...strictIssues,
+    ...languageIssues,
+    ...svgIssues,
+    ...topologyIssues,
+  ].map((issue) => issue.id));
+  const visualIssueIds = new Set(visualIssues.map((issue) => issue.id));
+  const paperIssueIds = new Set([
+    ...paperAlignmentIssues,
+    ...sourceIssues.filter((issue) => (
+      ['missing_source_url', 'missing_source_locator'].includes(issue.issue)
+    )),
+  ].map((issue) => issue.id));
+  const coreIssueIds = new Set([
+    ...brokenReferences,
+    ...aggregateIssues.filter((issue) => issue.issue !== 'duplicate_list_record'),
+    ...dataConsistencyIssues,
+  ].map((issue) => issue.id));
+
+  return [...allIds].sort(compareText).flatMap((id) => {
+    const manifestEntry = manifestById.get(id);
+    const gates = {
+      id_set: !idSetIssueIds.has(id),
+      core: completeCoreAssetIds.has(id) && !coreIssueIds.has(id),
+      png: pngCompleteIds.has(id),
+      strict: Boolean(manifestEntry)
+        && !strictIssueIds.has(id)
+        && manifestEntry.strict_validation?.en === 'passed'
+        && manifestEntry.strict_validation?.zh === 'passed',
+      visual: Boolean(manifestEntry)
+        && !visualIssueIds.has(id)
+        && manifestEntry.review_status === 'visually_reviewed',
+      paper: Boolean(manifestEntry) && !paperIssueIds.has(id),
+    };
+    if (Object.values(gates).every(Boolean)) return [];
+
+    const issues = [...(issueIndex.get(id) || [])];
+    if (!gates.id_set) addFallbackIssue(issues, 'id_set', 'id_set_mismatch');
+    if (!gates.core) addFallbackIssue(issues, 'core', 'core_assets_incomplete');
+    if (!gates.png) addFallbackIssue(issues, 'png', 'png_incomplete');
+    if (!gates.strict) addFallbackIssue(issues, 'strict', 'strict_validation_not_passed');
+    if (!gates.visual) addFallbackIssue(issues, 'visual', 'visual_review_not_passed');
+    if (!gates.paper) addFallbackIssue(issues, 'paper', 'paper_alignment_review_not_passed');
+    const paperReview = manifestEntry?.paper_alignment_review;
+    return [{
+      id,
+      source_type: manifestEntry?.source_type ?? null,
+      source_url: manifestEntry?.source_url ?? null,
+      source_locator: manifestEntry?.source_locator ?? null,
+      gates,
+      issues: [...new Set(issues)].sort(compareText),
+      review_state: {
+        strict_validation: {
+          en: manifestEntry?.strict_validation?.en ?? null,
+          zh: manifestEntry?.strict_validation?.zh ?? null,
+        },
+        visual_review: manifestEntry?.review_status ?? null,
+        paper_alignment: paperReview?.status ?? null,
+        paper_source_url: paperReview?.source_url ?? null,
+        paper_source_locator: paperReview?.source_locator ?? null,
+      },
+      asset_state: {
+        physical_directory_present: physicalDrawioIds.has(id),
+        core_complete: completeCoreAssetIds.has(id),
+        png_complete: pngCompleteIds.has(id),
+      },
+      next_action: nextActionForGates(gates),
+    }];
+  });
 }
 
 function topologySignature(items, fields) {
@@ -237,11 +468,13 @@ export function auditBuildProcessAssets(root) {
     )),
   );
   const manifest = existsSync(manifestPath) ? readJson(manifestPath) : [];
+  const sortedManifest = sortManifestRecords(manifest);
   const manifestIdCounts = countIds(manifest);
   const manifestIds = new Set(manifest.map((entry) => entry.id));
   const manifestById = new Map(manifest.map((entry) => [entry.id, entry]));
   const aggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
   const aggregateIdCounts = countIds(aggregate);
+  const aggregateIds = new Set(aggregate.map((entry) => entry.id));
   const aggregateById = new Map(aggregate.map((entry) => [entry.id, entry]));
   const physicalDrawioIds = new Set(
     existsSync(drawioDir)
@@ -251,12 +484,26 @@ export function auditBuildProcessAssets(root) {
         .map((entry) => entry.name)
       : [],
   );
+  const completeCoreAssetIds = new Set(
+    [...physicalDrawioIds].filter((id) => CORE_ASSET_SUFFIXES.every((suffix) => (
+      existsSync(join(drawioDir, id, `${id}.${suffix}`))
+    ))),
+  );
+  const idSets = {
+    catalog: aggregateIds,
+    detail: detailIds,
+    manifest: manifestIds,
+    physical_assets: physicalDrawioIds,
+    complete_core_assets: completeCoreAssetIds,
+  };
+  const idSetIssues = exactIdSetIssues(idSets);
+  const allIds = new Set(ID_SET_ORDER.flatMap((name) => [...idSets[name]]));
   const aggregateIssues = duplicateIdIssues(
     aggregateIdCounts,
     'duplicate_list_record',
   );
   let completeAggregateTotal = 0;
-  for (const manifestEntry of manifest) {
+  for (const manifestEntry of sortedManifest) {
     const aggregateEntry = aggregateById.get(manifestEntry.id);
     if (!aggregateEntry) {
       aggregateIssues.push({
@@ -318,25 +565,28 @@ export function auditBuildProcessAssets(root) {
     ...duplicateIdIssues(detailIdCounts, 'duplicate_detail_record'),
   ];
   sourceIssues.push(
-    ...manifest
+    ...sortedManifest
     .filter((entry) => !String(entry.source_url || '').trim())
     .map((entry) => ({ id: entry.id, issue: 'missing_source_url' })),
   );
   sourceIssues.push(
-    ...manifest
+    ...sortedManifest
     .filter((entry) => !String(entry.source_locator || '').trim())
     .map((entry) => ({ id: entry.id, issue: 'missing_source_locator' })),
   );
   sourceIssues.push(
-    ...manifest
+    ...sortedManifest
       .filter((entry) => !detailIds.has(entry.id))
       .map((entry) => ({ id: entry.id, issue: 'manifest_id_without_detail' })),
   );
-  const reviewIssues = [];
-  for (const entry of manifest) {
+  const strictIssues = [];
+  const visualIssues = [];
+  const paperAlignmentIssues = [];
+  const paperAlignedIds = new Set();
+  for (const entry of sortedManifest) {
     for (const language of ['en', 'zh']) {
       if (entry.strict_validation?.[language] !== 'passed') {
-        reviewIssues.push({
+        strictIssues.push({
           id: entry.id,
           language,
           issue: 'strict_validation_not_passed',
@@ -344,32 +594,57 @@ export function auditBuildProcessAssets(root) {
       }
     }
     if (entry.review_status !== 'visually_reviewed') {
-      reviewIssues.push({ id: entry.id, issue: 'visual_review_not_passed' });
+      visualIssues.push({ id: entry.id, issue: 'visual_review_not_passed' });
     }
     if (entry.paper_alignment_review?.status !== 'passed') {
-      reviewIssues.push({
+      paperAlignmentIssues.push({
         id: entry.id,
         issue: 'paper_alignment_review_not_passed',
       });
     } else {
-      if (entry.paper_alignment_review.source_url !== entry.source_url) {
-        reviewIssues.push({
+      const sourceUrl = String(entry.source_url || '').trim();
+      const sourceLocator = String(entry.source_locator || '').trim();
+      if (!sourceUrl) {
+        paperAlignmentIssues.push({
+          id: entry.id,
+          issue: 'paper_alignment_source_url_missing',
+        });
+      } else if (entry.paper_alignment_review.source_url !== entry.source_url) {
+        paperAlignmentIssues.push({
           id: entry.id,
           issue: 'paper_alignment_source_url_mismatch',
           expected_source_url: entry.source_url,
           reviewed_source_url: entry.paper_alignment_review.source_url ?? null,
         });
       }
-      if (entry.paper_alignment_review.source_locator !== entry.source_locator) {
-        reviewIssues.push({
+      if (!sourceLocator) {
+        paperAlignmentIssues.push({
+          id: entry.id,
+          issue: 'paper_alignment_source_locator_missing',
+        });
+      } else if (entry.paper_alignment_review.source_locator !== entry.source_locator) {
+        paperAlignmentIssues.push({
           id: entry.id,
           issue: 'paper_alignment_source_mismatch',
           expected_source_locator: entry.source_locator,
           reviewed_source_locator: entry.paper_alignment_review.source_locator ?? null,
         });
       }
+      if (
+        sourceUrl
+        && sourceLocator
+        && entry.paper_alignment_review.source_url === entry.source_url
+        && entry.paper_alignment_review.source_locator === entry.source_locator
+      ) {
+        paperAlignedIds.add(entry.id);
+      }
     }
   }
+  const reviewIssues = [
+    ...strictIssues,
+    ...visualIssues,
+    ...paperAlignmentIssues,
+  ];
   const missingIds = [];
   const brokenReferences = [];
   const languageIssues = [];
@@ -639,16 +914,40 @@ export function auditBuildProcessAssets(root) {
   }
   sourceIssues.push(
     ...[...assetsWithoutManifestIds]
-      .sort()
+      .sort(compareText)
       .map((id) => ({ id, issue: 'assets_without_manifest_record' })),
   );
 
-  return {
+  const pngIssues = [];
+  const pngCompleteIds = new Set();
+  for (const id of [...aggregateIds].sort(compareText)) {
+    let complete = true;
+    for (const language of ['en', 'zh']) {
+      const assetPath = `drawio/${id}/${id}.${language}.png`;
+      const resolvedPath = resolveContainedAsset(publicDir, assetPath);
+      if (!resolvedPath || !existsSync(resolvedPath)) {
+        complete = false;
+        pngIssues.push({
+          id,
+          language,
+          path: assetPath,
+          issue: 'png_file_missing',
+        });
+      }
+    }
+    if (complete) pngCompleteIds.add(id);
+  }
+
+  const summary = {
     detail_total: detailFiles.length,
     aggregate_total: aggregate.length,
     manifest_total: manifest.length,
     complete_bilingual_total: completeBilingualTotal,
     complete_aggregate_total: completeAggregateTotal,
+    id_sets_equal: idSetIssues.length === 0,
+    id_set_issues: idSetIssues,
+    png_complete_total: pngCompleteIds.size,
+    png_issues: pngIssues,
     strict_valid_total: manifest.filter(
       (entry) => entry.strict_validation?.en === 'passed'
         && entry.strict_validation?.zh === 'passed',
@@ -656,6 +955,7 @@ export function auditBuildProcessAssets(root) {
     visually_reviewed_total: manifest.filter(
       (entry) => entry.review_status === 'visually_reviewed',
     ).length,
+    paper_aligned_total: paperAlignedIds.size,
     missing_ids: [...new Set(missingIds)].sort(),
     broken_references: brokenReferences,
     language_issues: languageIssues,
@@ -664,8 +964,107 @@ export function auditBuildProcessAssets(root) {
     aggregate_issues: aggregateIssues,
     data_consistency_issues: dataConsistencyIssues,
     topology_issues: topologyIssues,
+    strict_issues: strictIssues,
+    visual_issues: visualIssues,
+    paper_alignment_issues: paperAlignmentIssues,
     review_issues: reviewIssues,
   };
+  summary.unresolved_queue = buildUnresolvedQueue({
+    allIds,
+    manifestById,
+    idSetIssues,
+    completeCoreAssetIds,
+    physicalDrawioIds,
+    pngCompleteIds,
+    pngIssues,
+    brokenReferences,
+    aggregateIssues,
+    dataConsistencyIssues,
+    sourceIssues,
+    strictIssues,
+    visualIssues,
+    paperAlignmentIssues,
+    languageIssues,
+    svgIssues,
+    topologyIssues,
+  });
+  return summary;
+}
+
+function resolveQueueReportPath(root, requestedPath, extension) {
+  if (
+    typeof requestedPath !== 'string'
+    || !requestedPath.trim()
+    || isAbsolute(requestedPath)
+  ) {
+    throw new Error('Queue report path must be a non-empty repository-relative path.');
+  }
+  const reportDir = resolve(root, 'docs/reports');
+  const target = resolve(root, requestedPath);
+  const relativePath = relative(reportDir, target);
+  if (
+    relativePath === '..'
+    || relativePath.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)
+    || isAbsolute(relativePath)
+  ) {
+    throw new Error('Queue reports may only be written under docs/reports.');
+  }
+  if (extname(target) !== extension) {
+    throw new Error(`Queue report must use the ${extension} extension.`);
+  }
+  if (!existsSync(dirname(target))) {
+    throw new Error('Queue report parent directory must already exist.');
+  }
+  return target;
+}
+
+function markdownCell(value) {
+  return String(value ?? '')
+    .replaceAll('|', '\\|')
+    .replaceAll(/\r?\n/gu, ' ');
+}
+
+function formatQueueMarkdown(summary) {
+  const lines = [
+    '# Build Process Paper Alignment Queue',
+    '',
+    'This report is generated from the Build Process audit. Do not edit it by hand.',
+    '',
+    `- Catalog benchmarks: ${summary.aggregate_total}`,
+    `- Complete bilingual core bundles: ${summary.complete_bilingual_total}`,
+    `- Complete bilingual PNG bundles: ${summary.png_complete_total}`,
+    `- Strict validation passed: ${summary.strict_valid_total}`,
+    `- Visual review passed: ${summary.visually_reviewed_total}`,
+    `- Paper alignment passed: ${summary.paper_aligned_total}`,
+    `- Unresolved benchmarks: ${summary.unresolved_queue.length}`,
+    '',
+    '| ID | Failing gates | Source | Next action |',
+    '| --- | --- | --- | --- |',
+  ];
+  for (const entry of summary.unresolved_queue) {
+    const failingGates = Object.entries(entry.gates)
+      .filter(([, passed]) => !passed)
+      .map(([gate]) => gate)
+      .join(', ');
+    const source = [entry.source_type, entry.source_url, entry.source_locator]
+      .filter(Boolean)
+      .join(' · ');
+    lines.push(
+      `| ${markdownCell(entry.id)} | ${markdownCell(failingGates)} | ${markdownCell(source)} | ${markdownCell(entry.next_action)} |`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function writeQueueReports(args, summary) {
+  if (args.queueJson) {
+    const path = resolveQueueReportPath(args.root, args.queueJson, '.json');
+    writeFileSync(path, `${JSON.stringify(summary.unresolved_queue, null, 2)}\n`);
+  }
+  if (args.queueMarkdown) {
+    const path = resolveQueueReportPath(args.root, args.queueMarkdown, '.md');
+    writeFileSync(path, formatQueueMarkdown(summary));
+  }
 }
 
 function printHumanSummary(summary) {
@@ -674,8 +1073,11 @@ function printHumanSummary(summary) {
   console.log(`Manifest: ${summary.manifest_total}`);
   console.log(`Complete bilingual: ${summary.complete_bilingual_total}`);
   console.log(`Complete aggregate: ${summary.complete_aggregate_total}`);
+  console.log(`ID sets equal: ${summary.id_sets_equal}`);
+  console.log(`PNG complete: ${summary.png_complete_total}`);
   console.log(`Strict valid: ${summary.strict_valid_total}`);
   console.log(`Visually reviewed: ${summary.visually_reviewed_total}`);
+  console.log(`Paper aligned: ${summary.paper_aligned_total}`);
   console.log(`Missing: ${summary.missing_ids.length}`);
   console.log(`Broken references: ${summary.broken_references.length}`);
   console.log(`Language issues: ${summary.language_issues.length}`);
@@ -685,11 +1087,13 @@ function printHumanSummary(summary) {
   console.log(`Data consistency issues: ${summary.data_consistency_issues.length}`);
   console.log(`Topology issues: ${summary.topology_issues.length}`);
   console.log(`Review issues: ${summary.review_issues.length}`);
+  console.log(`Queue: ${summary.unresolved_queue.length}`);
 }
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const summary = auditBuildProcessAssets(args.root);
+  writeQueueReports(args, summary);
   if (args.json) {
     process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
   } else {
@@ -705,8 +1109,12 @@ function main() {
   const hasDataConsistencyIssues = summary.data_consistency_issues.length > 0;
   const hasTopologyIssues = summary.topology_issues.length > 0;
   const hasReviewIssues = summary.review_issues.length > 0;
+  const hasIdSetIssues = summary.id_set_issues.length > 0;
+  const hasPngIssues = summary.png_issues.length > 0;
   if (
-    hasBrokenReferences
+    hasIdSetIssues
+    || hasPngIssues
+    || hasBrokenReferences
     || hasSourceIssues
     || hasLanguageIssues
     || hasSvgIssues
