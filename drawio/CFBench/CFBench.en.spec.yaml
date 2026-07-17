@@ -1,106 +1,214 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: CFBench Build Process
+  title: CFBench Constraint System and Data Construction
   description: >-
-    Paper-aligned construction of CFBench: online logs and NLP tasks are mined for real-world instructions, atomic
-    constraints are extracted and expanded into a 10-category taxonomy, balanced scenarios and constraints produce
-    curated samples, annotators refine instructions, answers, and checklists, and GPT-4o-based checkpoint judging
-    reports CSR, ISR, and PSR.
-  legend: Solid arrows show constraint-system construction, sample assembly, human refinement, checklist judging, and metrics.
+    Based on arXiv v2 and the pinned public data, showing corpus filtering, taxonomy building, candidate augmentation,
+    iterative human QA, and Easy Hard release.
+  legend: Solid edges are the paper construction mainline; the dotted edge is expert-triggered rework; edges carry no text.
 nodes:
-  - id: sources
-    label: Sources
+  - id: source_corpus
+    label: 800K+300K data
     type: database
-    size: xl
+    size: medium
     position:
       x: 40
-      'y': 160
-  - id: atomic
-    label: Atomic
+      'y': 40
+  - id: filter_cluster
+    label: Filter·cluster
     type: process
-    size: xl
+    size: medium
     position:
-      x: 300
-      'y': 160
-  - id: taxonomy
-    label: Taxonomy
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: Balance
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: samples
-    label: Samples
+      x: 220
+      'y': 40
+  - id: pool_30k
+    label: ~30K prompts
     type: database
-    size: xl
+    size: medium
     position:
-      x: 1080
-      'y': 160
-  - id: annotate
-    label: Annotate
-    type: user
-    size: xl
-    position:
-      x: 1340
-      'y': 70
-  - id: checklist
-    label: Checklist
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: judge
-    label: Judge
+      x: 400
+      'y': 40
+  - id: gpt4_extract
+    label: GPT-4 extract
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1600
-      'y': 160
-  - id: metrics
-    label: Metrics
+      x: 580
+      'y': 40
+  - id: atoms_5k
+    label: ~5K atoms
+    type: database
+    size: medium
+    position:
+      x: 760
+      'y': 40
+  - id: expert_refine
+    label: 3-expert sift
+    type: process
+    size: medium
+    position:
+      x: 760
+      'y': 190
+  - id: atoms_1k
+    label: 1K key atoms
+    type: database
+    size: medium
+    position:
+      x: 580
+      'y': 190
+  - id: taxonomy
+    label: 10+25 taxonomy
+    type: database
+    size: medium
+    position:
+      x: 400
+      'y': 190
+  - id: initial_instructions
+    label: Scenario+NLP
+    type: document
+    size: medium
+    position:
+      x: 40
+      'y': 190
+  - id: llm_screen_balance
+    label: LLM screen
+    type: process
+    size: medium
+    position:
+      x: 220
+      'y': 190
+  - id: candidates_2k
+    label: 2K candidates
+    type: database
+    size: medium
+    position:
+      x: 220
+      'y': 340
+  - id: llm_augment
+    label: LLM augment
+    type: process
+    size: medium
+    position:
+      x: 400
+      'y': 340
+  - id: annotator_review
+    label: 9 annotators
+    type: process
+    size: medium
+    position:
+      x: 580
+      'y': 340
+  - id: checklist_priority
+    label: Checklist+prio
+    type: document
+    size: medium
+    position:
+      x: 760
+      'y': 340
+  - id: cross_validation
+    label: 3-review·94%
+    type: process
+    size: medium
+    position:
+      x: 760
+      'y': 490
+  - id: expert_iteration
+    label: Expert revise
+    type: process
+    size: medium
+    position:
+      x: 580
+      'y': 490
+  - id: batch_validation
+    label: Batch review
+    type: process
+    size: medium
+    position:
+      x: 400
+      'y': 490
+  - id: split_vote
+    label: Expert+10 vote
+    type: process
+    size: medium
+    position:
+      x: 220
+      'y': 490
+  - id: easy_hard
+    label: E500+H500
+    type: database
+    size: medium
+    position:
+      x: 40
+      'y': 490
+  - id: release
+    label: CFBench·1,000
     type: terminal
-    size: xl
+    size: medium
     position:
-      x: 1860
-      'y': 160
+      x: 40
+      'y': 640
 edges:
-  - from: sources
-    to: atomic
+  - from: source_corpus
+    to: filter_cluster
     type: primary
-  - from: atomic
+  - from: filter_cluster
+    to: pool_30k
+    type: primary
+  - from: pool_30k
+    to: gpt4_extract
+    type: primary
+  - from: gpt4_extract
+    to: atoms_5k
+    type: primary
+  - from: atoms_5k
+    to: expert_refine
+    type: primary
+  - from: expert_refine
+    to: atoms_1k
+    type: primary
+  - from: atoms_1k
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: balance
+    to: llm_screen_balance
     type: primary
-  - from: balance
-    to: samples
+  - from: initial_instructions
+    to: llm_screen_balance
     type: primary
-  - from: samples
-    to: annotate
+  - from: llm_screen_balance
+    to: candidates_2k
     type: primary
-  - from: samples
-    to: checklist
+  - from: candidates_2k
+    to: llm_augment
     type: primary
-  - from: annotate
-    to: judge
+  - from: llm_augment
+    to: annotator_review
     type: primary
-  - from: checklist
-    to: judge
+  - from: annotator_review
+    to: checklist_priority
     type: primary
-  - from: judge
-    to: metrics
+  - from: checklist_priority
+    to: cross_validation
+    type: primary
+  - from: cross_validation
+    to: expert_iteration
+    type: primary
+  - from: expert_iteration
+    to: annotator_review
+    type: optional
+  - from: expert_iteration
+    to: batch_validation
+    type: primary
+  - from: batch_validation
+    to: split_vote
+    type: primary
+  - from: split_vote
+    to: easy_hard
+    type: primary
+  - from: easy_hard
+    to: release
     type: primary
 modules: []

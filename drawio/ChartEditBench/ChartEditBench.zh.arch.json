@@ -1,108 +1,276 @@
 {
   "version": 1,
-  "title": "ChartEditBench 构建流程",
+  "title": "ChartEditBench 数据集构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 20,
+    "edges": 23,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "specs",
-      "label": "图表规格",
-      "type": "document",
-      "size": "xl"
+      "id": "spec_queues",
+      "label": "图型/修改队列",
+      "type": "queue",
+      "size": "large"
     },
     {
-      "id": "charts",
-      "label": "初始图表",
+      "id": "initial_chart",
+      "label": "生成初始图表",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "edits",
-      "label": "修改链",
+      "id": "validate_initial",
+      "label": "初图校验通过？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "initial_retry_gate",
+      "label": "初图失败\n仍可重试？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "initial_backoff",
+      "label": "指数退避\n最多 3 次尝试",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "execution",
-      "label": "执行验证",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "chartr1",
-      "label": "Chart-R1核查",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "assertions",
-      "label": "断言体系",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "human",
-      "label": "人工子集",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "eval",
-      "label": "逐轮评测",
+      "id": "validation_discard",
+      "label": "尝试耗尽：丢弃",
       "type": "terminal",
-      "size": "xl"
+      "size": "large"
+    },
+    {
+      "id": "next_edit",
+      "label": "未满 5 轮：生成下一轮",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "validate_turn",
+      "label": "本轮校验通过？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "turn_retry_gate",
+      "label": "本轮失败\n仍可重试？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "turn_backoff",
+      "label": "指数退避\n最多 3 次尝试",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "five_done",
+      "label": "已完成 5 轮？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "vqa_generation",
+      "label": "5轮完成·5组VQA",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "edit_chains",
+      "label": "候选修改链",
+      "type": "document",
+      "size": "large"
+    },
+    {
+      "id": "chart_r1",
+      "label": "Chart-R1质检",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "assertion_sets",
+      "label": "两类断言",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "verification_type",
+      "label": "验证类型",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "final_dataset",
+      "label": "4,142·20,710",
+      "type": "database",
+      "size": "large"
+    },
+    {
+      "id": "type_sampling",
+      "label": "按图表类型抽样",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "expert_review",
+      "label": "双专家独立复核",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "human_subset",
+      "label": "人工核验子集",
+      "type": "terminal",
+      "size": "large"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "specs",
-      "to": "charts",
+      "from": "spec_queues",
+      "to": "initial_chart",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "charts",
-      "to": "edits",
+      "from": "initial_chart",
+      "to": "validate_initial",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "edits",
-      "to": "execution",
+      "from": "validate_initial",
+      "to": "next_edit",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "execution",
-      "to": "chartr1",
+      "from": "validate_initial",
+      "to": "initial_retry_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "chartr1",
-      "to": "assertions",
+      "from": "initial_retry_gate",
+      "to": "initial_backoff",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "assertions",
-      "to": "human",
+      "from": "initial_retry_gate",
+      "to": "validation_discard",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "human",
-      "to": "eval",
+      "from": "initial_backoff",
+      "to": "initial_chart",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "next_edit",
+      "to": "validate_turn",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "validate_turn",
+      "to": "five_done",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "validate_turn",
+      "to": "turn_retry_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "turn_retry_gate",
+      "to": "turn_backoff",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "turn_retry_gate",
+      "to": "validation_discard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "turn_backoff",
+      "to": "next_edit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "five_done",
+      "to": "next_edit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "five_done",
+      "to": "vqa_generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "vqa_generation",
+      "to": "edit_chains",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "edit_chains",
+      "to": "final_dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "final_dataset",
+      "to": "type_sampling",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "type_sampling",
+      "to": "expert_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "expert_review",
+      "to": "human_subset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "edit_chains",
+      "to": "chart_r1",
+      "type": "data"
+    },
+    {
+      "id": "edge-22",
+      "from": "edit_chains",
+      "to": "assertion_sets",
+      "type": "data"
+    },
+    {
+      "id": "edge-23",
+      "from": "assertion_sets",
+      "to": "verification_type",
+      "type": "data"
     }
   ],
   "modules": []

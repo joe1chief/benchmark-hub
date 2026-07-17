@@ -1,91 +1,145 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: LongBench_v2 Build Process
-  description: >-
-    Paper-aligned LongBench v2 pipeline from annotator-uploaded long contexts and multiple-choice drafting through
-    automated and expert review, revision, and accuracy evaluation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LongBench v2 Dataset Construction
+  description: Official five-step construction, revision loop, and final verification from Sections 3.2–3.3 and Figure 2.
+  legend: >-
+    Solid arrows show the passed construction path; dashed arrows show document rejection, question revision, or
+    termination.
 nodes:
-  - id: long_docs
-    label: Long Docs
+  - id: annotators
+    label: 97 annotators
     type: document
-    size: xl
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: mcq_draft
-    label: MCQ Draft
+      x: 80
+      'y': 80
+  - id: documents
+    label: English files
     type: document
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: llm_vet
-    label: 3 LLM Vet
+      x: 320
+      'y': 80
+  - id: text_extract
+    label: PyMuPDF text
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: expert_review
-    label: Expert Review
+      x: 560
+      'y': 80
+  - id: doc_filter
+    label: 8192+ & dedup
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: revise_loop
-    label: Revise Loop
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: six_categories
-    label: 6 Categories
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: mcq_set
-    label: 503 MCQs
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: accuracy
-    label: Accuracy
+      x: 800
+      'y': 80
+  - id: doc_reject
+    label: Doc rejected
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 1040
+      'y': 80
+  - id: annotation
+    label: MCQ + evidence
+    type: process
+    size: large
+    position:
+      x: 800
+      'y': 260
+  - id: model_review
+    label: 3-model gate
+    type: process
+    size: large
+    position:
+      x: 560
+      'y': 260
+  - id: human_review
+    label: 24-review gate
+    type: process
+    size: large
+    position:
+      x: 320
+      'y': 260
+  - id: final_verify
+    label: 70-item audit
+    type: process
+    size: large
+    position:
+      x: 80
+      'y': 260
+  - id: final
+    label: 503 EN MCQs
+    type: terminal
+    size: large
+    position:
+      x: 80
+      'y': 440
+  - id: revision
+    label: Revise ≤5x
+    type: process
+    size: large
+    position:
+      x: 560
+      'y': 440
+  - id: terminate
+    label: Stop after >5
+    type: terminal
+    size: large
+    position:
+      x: 560
+      'y': 620
 edges:
-  - from: long_docs
-    to: mcq_draft
+  - from: annotators
+    to: documents
     type: primary
-  - from: mcq_draft
-    to: llm_vet
+  - from: documents
+    to: text_extract
     type: primary
-  - from: llm_vet
-    to: expert_review
+  - from: text_extract
+    to: doc_filter
     type: primary
-  - from: expert_review
-    to: revise_loop
+  - from: doc_filter
+    to: annotation
     type: primary
-  - from: revise_loop
-    to: six_categories
+  - from: doc_filter
+    to: doc_reject
+    type: optional
+  - from: annotation
+    to: model_review
     type: primary
-  - from: six_categories
-    to: mcq_set
+  - from: model_review
+    to: human_review
     type: primary
-  - from: mcq_set
-    to: accuracy
+  - from: human_review
+    to: final_verify
     type: primary
+  - from: final_verify
+    to: final
+    type: primary
+  - from: model_review
+    to: revision
+    type: optional
+  - from: human_review
+    to: revision
+    type: optional
+    waypoints:
+      - x: 400
+        'y': 470
+  - from: revision
+    to: annotation
+    type: optional
+    waypoints:
+      - x: 1040
+        'y': 470
+      - x: 1040
+        'y': 290
+  - from: revision
+    to: terminate
+    type: optional
 modules: []

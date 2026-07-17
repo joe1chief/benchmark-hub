@@ -1,92 +1,202 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: MARS-Bench Build Process
+  title: MARS-Bench Dataset Construction
   description: >-
-    Paper-aligned construction of Mars-Bench: existing Mars science datasets are curated, corrected with expert review,
-    standardized into ML-ready formats and splits, then evaluated with baseline models under repeated training
-    strategies and task-specific metrics.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-disclosed construction from official sports records and MathQA through manual task design, structured
+    task-specific scoring assets, three-stage quality assurance, and public release.
+  legend: >-
+    IF, CR, IR, and TS are the four task families; solid arrows show construction dependencies; model inference and
+    scoring are documented outside the figure.
 nodes:
-  - id: sources
-    label: Mars Sources
+  - id: sports_sources
+    label: ESPN + Hupu
     type: database
-    size: xl
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: curate
-    label: Curate Data
+      x: 64
+      'y': 280
+  - id: collect_records
+    label: 30 uniq. games
     type: process
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: expert
-    label: Expert Fix
-    type: user
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: format
-    label: Unified Format
+      x: 256
+      'y': 280
+  - id: standardize_games
+    label: Normalize
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: splits
-    label: Task Splits
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: models
-    label: Baselines
+      x: 448
+      'y': 280
+  - id: segment_turns
+    label: 5 turns/period
     type: process
-    size: xl
+    size: large
     position:
-      x: 1240
-      'y': 160
-  - id: seeds
-    label: 7 Seeds
+      x: 640
+      'y': 280
+  - id: manual_design
+    label: Manual design
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: metrics
-    label: F1/IoU/mAP
+      x: 832
+      'y': 280
+  - id: format_task
+    label: IF · format
+    type: process
+    size: large
+    position:
+      x: 832
+      'y': 64
+  - id: retrieval_task
+    label: CR · retrieve
+    type: process
+    size: large
+    position:
+      x: 1024
+      'y': 208
+  - id: reasoning_task
+    label: IR · reason
+    type: process
+    size: large
+    position:
+      x: 1024
+      'y': 352
+  - id: switching_task
+    label: TS · IR + math
+    type: process
+    size: large
+    position:
+      x: 832
+      'y': 496
+  - id: mathqa_source
+    label: MathQA
+    type: database
+    size: large
+    position:
+      x: 832
+      'y': 640
+  - id: if_assets
+    label: IF open/rubric
+    type: process
+    size: large
+    position:
+      x: 1216
+      'y': 64
+  - id: sports_assets
+    label: PBP Q/A/rubric
+    type: process
+    size: large
+    position:
+      x: 1216
+      'y': 280
+  - id: ts_assets
+    label: TS mix/rubric
+    type: process
+    size: large
+    position:
+      x: 1216
+      'y': 496
+  - id: task_rows
+    label: 120 task rows
+    type: process
+    size: large
+    position:
+      x: 1408
+      'y': 280
+  - id: sample_review
+    label: 5/type check
+    type: process
+    size: large
+    position:
+      x: 1472
+      'y': 424
+  - id: author_review
+    label: Dual review
+    type: process
+    size: large
+    position:
+      x: 1472
+      'y': 568
+  - id: llm_review
+    label: DeepSeek aid
+    type: process
+    size: large
+    position:
+      x: 1472
+      'y': 712
+  - id: release
+    label: Public release
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 1472
+      'y': 856
 edges:
-  - from: sources
-    to: curate
+  - from: sports_sources
+    to: collect_records
     type: primary
-  - from: curate
-    to: expert
+  - from: collect_records
+    to: standardize_games
     type: primary
-  - from: expert
-    to: format
+  - from: standardize_games
+    to: segment_turns
     type: primary
-  - from: format
-    to: splits
+  - from: segment_turns
+    to: manual_design
     type: primary
-  - from: splits
-    to: models
+  - from: manual_design
+    to: format_task
     type: primary
-  - from: models
-    to: seeds
+  - from: manual_design
+    to: retrieval_task
     type: primary
-  - from: seeds
-    to: metrics
+  - from: manual_design
+    to: reasoning_task
+    type: primary
+  - from: manual_design
+    to: switching_task
+    type: primary
+  - from: mathqa_source
+    to: switching_task
+    type: primary
+  - from: format_task
+    to: if_assets
+    type: primary
+  - from: retrieval_task
+    to: sports_assets
+    type: primary
+  - from: reasoning_task
+    to: sports_assets
+    type: primary
+  - from: switching_task
+    to: ts_assets
+    type: primary
+  - from: if_assets
+    to: task_rows
+    type: primary
+  - from: sports_assets
+    to: task_rows
+    type: primary
+  - from: ts_assets
+    to: task_rows
+    type: primary
+  - from: task_rows
+    to: sample_review
+    type: primary
+  - from: sample_review
+    to: author_review
+    type: primary
+  - from: author_review
+    to: llm_review
+    type: primary
+  - from: llm_review
+    to: release
     type: primary
 modules: []

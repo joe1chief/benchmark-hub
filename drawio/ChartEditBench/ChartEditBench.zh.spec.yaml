@@ -1,89 +1,246 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: ChartEditBench 构建流程
-  description: 对齐论文的 ChartEditBench 构建流程：由 LLM 生成初始图表代码，扩展成难度递进的多轮修改链， 经过执行验证、Chart-R1 自动核查、断言体系和人工抽检后，用对话式协议评测模型。
-  legend: 实线箭头表示数据构建、质量控制与评测主流程。
+  title: ChartEditBench 数据集构建流程
+  description: 依据 arXiv v1 详细方法的初图生成、逐轮编辑校验、失败退避重试、自动质检与人工核验流程。
+  legend: 实线为数据构建主链；虚线为独立 QA/断言分支；数据分支表示从最终数据集派生的人工抽样，均不表示过滤或回写。
 nodes:
-  - id: specs
-    label: 图表规格
-    type: document
-    size: xl
+  - id: spec_queues
+    label: 图型/修改队列
+    type: queue
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: charts
-    label: 初始图表
+      x: 64
+      'y': 320
+  - id: initial_chart
+    label: 生成初始图表
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
-  - id: edits
-    label: 修改链
+      x: 288
+      'y': 320
+  - id: validate_initial
+    label: 初图校验通过？
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 320
+  - id: initial_retry_gate
+    label: |-
+      初图失败
+      仍可重试？
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 176
+  - id: initial_backoff
+    label: |-
+      指数退避
+      最多 3 次尝试
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: execution
-    label: 执行验证
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: chartr1
-    label: Chart-R1核查
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: assertions
-    label: 断言体系
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: human
-    label: 人工子集
-    type: user
-    size: xl
-    position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: 逐轮评测
+      x: 288
+      'y': 176
+  - id: validation_discard
+    label: 尝试耗尽：丢弃
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 160
+      x: 736
+      'y': 32
+  - id: next_edit
+    label: 未满 5 轮：生成下一轮
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 320
+  - id: validate_turn
+    label: 本轮校验通过？
+    type: decision
+    size: large
+    position:
+      x: 960
+      'y': 320
+  - id: turn_retry_gate
+    label: |-
+      本轮失败
+      仍可重试？
+    type: decision
+    size: large
+    position:
+      x: 960
+      'y': 176
+  - id: turn_backoff
+    label: |-
+      指数退避
+      最多 3 次尝试
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 176
+  - id: five_done
+    label: 已完成 5 轮？
+    type: decision
+    size: large
+    position:
+      x: 960
+      'y': 464
+  - id: vqa_generation
+    label: 5轮完成·5组VQA
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 464
+  - id: edit_chains
+    label: 候选修改链
+    type: document
+    size: large
+    position:
+      x: 512
+      'y': 464
+  - id: chart_r1
+    label: Chart-R1质检
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 608
+  - id: assertion_sets
+    label: 两类断言
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 608
+  - id: verification_type
+    label: 验证类型
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 768
+  - id: final_dataset
+    label: 4,142·20,710
+    type: database
+    size: large
+    position:
+      x: 512
+      'y': 768
+  - id: type_sampling
+    label: 按图表类型抽样
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 928
+  - id: expert_review
+    label: 双专家独立复核
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 928
+  - id: human_subset
+    label: 人工核验子集
+    type: terminal
+    size: large
+    position:
+      x: 64
+      'y': 1088
 edges:
-  - from: specs
-    to: charts
+  - from: spec_queues
+    to: initial_chart
     type: primary
-  - from: charts
-    to: edits
+  - from: initial_chart
+    to: validate_initial
     type: primary
-  - from: edits
-    to: execution
+  - from: validate_initial
+    to: next_edit
     type: primary
-  - from: execution
-    to: chartr1
+  - from: validate_initial
+    to: initial_retry_gate
     type: primary
-  - from: chartr1
-    to: assertions
+  - from: initial_retry_gate
+    to: initial_backoff
     type: primary
-  - from: assertions
-    to: human
+  - from: initial_retry_gate
+    to: validation_discard
     type: primary
-  - from: human
-    to: eval
+  - from: initial_backoff
+    to: initial_chart
     type: primary
+  - from: next_edit
+    to: validate_turn
+    type: primary
+  - from: validate_turn
+    to: five_done
+    type: primary
+  - from: validate_turn
+    to: turn_retry_gate
+    type: primary
+  - from: turn_retry_gate
+    to: turn_backoff
+    type: primary
+  - from: turn_retry_gate
+    to: validation_discard
+    type: primary
+  - from: turn_backoff
+    to: next_edit
+    type: primary
+  - from: five_done
+    to: next_edit
+    type: primary
+    waypoints:
+      - x: 1080
+        'y': 536
+      - x: 1080
+        'y': 280
+      - x: 848
+        'y': 280
+  - from: five_done
+    to: vqa_generation
+    type: primary
+  - from: vqa_generation
+    to: edit_chains
+    type: primary
+  - from: edit_chains
+    to: final_dataset
+    type: primary
+  - from: final_dataset
+    to: type_sampling
+    type: data
+  - from: type_sampling
+    to: expert_review
+    type: primary
+  - from: expert_review
+    to: human_subset
+    type: primary
+  - from: edit_chains
+    to: chart_r1
+    type: data
+    waypoints:
+      - x: 480
+        'y': 536
+      - x: 480
+        'y': 648
+  - from: edit_chains
+    to: assertion_sets
+    type: data
+    waypoints:
+      - x: 704
+        'y': 536
+      - x: 704
+        'y': 648
+  - from: assertion_sets
+    to: verification_type
+    type: data
 modules: []

@@ -1,79 +1,193 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
-  layout: horizontal
+  source: generated
+  layout: hierarchical
+  canvas: auto
   routing: orthogonal
-  title: DiagnosisArena 构建流程
-  description: 对齐论文的 DiagnosisArena 流程：从期刊病例报告到分段诊断推理评测。
-  legend: 实线箭头表示病例来源、分段、质量过滤、模型诊断和 GPT-4o 判定。
+  title: DiagnosisArena 数据集构建流程
+  description: 依据 ACL 2026 正式论文图 2、第 3.2 节与官方公开说明，展示病例收集、分段、迭代筛选、专家协同验证及公开发布边界。
+  legend: 实线表示保留主链；点线表示各门禁的剔除结果；虚线表示从论文全集到公开测试集的发布边界。
 nodes:
-  - id: source
-    label: 期刊病例
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: segment
-    label: 病例分段
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: 迭代过滤
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: expert
-    label: 专家核验
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: pairs
-    label: 病例诊断对
+  - id: journals
+    label: 阶段 1｜10 本顶级期刊
     type: document
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: model
-    label: 模型诊断
+      x: 64
+      'y': 64
+  - id: constraint_filter
+    label: 约束筛选与下载
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: judge
-    label: GPT-4o判定
+      x: 288
+      'y': 64
+  - id: raw_cases
+    label: 4,175 篇病例报告
+    type: document
+    size: large
+    position:
+      x: 512
+      'y': 64
+  - id: chapter_filter
+    label: 阶段 2｜章节过滤
+    type: process
+    size: large
+    position:
+      x: 512
+      'y': 224
+  - id: claude_segment
+    label: Claude 3.5 分段
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 224
+  - id: structured_cases
+    label: 四字段结构化病例
+    type: document
+    size: large
+    position:
+      x: 64
+      'y': 224
+  - id: simple_screen
+    label: 阶段 3｜三模型各 2 次
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 384
+  - id: simple_decision
+    label: 任一尝试答对？
+    type: decision
+    size: large
+    position:
+      x: 288
+      'y': 384
+  - id: too_easy
+    label: 答对｜过易剔除
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 288
+      'y': 520
+  - id: pathway_review
+    label: AI 是否全票判合理？
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 384
+  - id: ai_reject
+    label: 未全票｜剔除
+    type: terminal
+    size: large
+    position:
+      x: 512
+      'y': 520
+  - id: stage3_output
+    label: 保留 1,783 例
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 384
+  - id: r1_verify
+    label: 阶段 4｜R1 × 8
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 680
+  - id: r1_gate
+    label: 8 次内命中诊断？
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 680
+  - id: physician_review
+    label: 医师确认完整且明确？
+    type: decision
+    size: large
+    position:
+      x: 288
+      'y': 680
+  - id: verification_reject
+    label: R1未命中/医师否决｜剔除
+    type: terminal
+    size: large
+    position:
+      x: 512
+      'y': 840
+  - id: paper_final
+    label: 论文全集｜1,113 例
+    type: document
+    size: large
+    position:
+      x: 64
+      'y': 680
+  - id: public_release
+    label: 公开测试集｜915 例
+    type: terminal
+    size: large
+    position:
+      x: 64
+      'y': 840
 edges:
-  - from: source
-    to: segment
+  - from: journals
+    to: constraint_filter
     type: primary
-  - from: segment
-    to: filter
+  - from: constraint_filter
+    to: raw_cases
     type: primary
-  - from: filter
-    to: expert
+  - from: raw_cases
+    to: chapter_filter
     type: primary
-  - from: expert
-    to: pairs
+  - from: chapter_filter
+    to: claude_segment
     type: primary
-  - from: pairs
-    to: model
+  - from: claude_segment
+    to: structured_cases
     type: primary
-  - from: model
-    to: judge
+  - from: structured_cases
+    to: simple_screen
     type: primary
+  - from: simple_screen
+    to: simple_decision
+    type: primary
+  - from: simple_decision
+    to: too_easy
+    type: optional
+  - from: simple_decision
+    to: pathway_review
+    type: primary
+  - from: pathway_review
+    to: stage3_output
+    type: primary
+  - from: pathway_review
+    to: ai_reject
+    type: optional
+  - from: stage3_output
+    to: r1_verify
+    type: primary
+  - from: r1_verify
+    to: r1_gate
+    type: primary
+  - from: r1_gate
+    to: physician_review
+    type: primary
+  - from: r1_gate
+    to: verification_reject
+    type: optional
+  - from: physician_review
+    to: paper_final
+    type: primary
+  - from: physician_review
+    to: verification_reject
+    type: optional
+  - from: paper_final
+    to: public_release
+    type: data
 modules: []

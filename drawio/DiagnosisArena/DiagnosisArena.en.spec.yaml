@@ -1,79 +1,197 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
-  layout: horizontal
+  source: generated
+  layout: hierarchical
+  canvas: auto
   routing: orthogonal
-  title: DiagnosisArena Build Process
-  description: Paper-aligned DiagnosisArena flow from journal case reports to segmented diagnostic reasoning evaluation.
-  legend: Solid arrows show case sourcing, segmentation, quality filtering, model diagnosis, and GPT-4o judging.
+  title: DiagnosisArena Dataset Construction
+  description: >-
+    Based on Figure 2 and Section 3.2 of the ACL 2026 paper plus the official release note, showing case collection,
+    segmentation, iterative filtering, expert-AI verification, and the public-release boundary.
+  legend: >-
+    Solid arrows show the retained construction path; dotted arrows show rejection at each gate; the dashed arrow marks
+    the public-release boundary.
 nodes:
-  - id: source
-    label: Journal Cases
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: segment
-    label: Segment
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: Iter Filter
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: expert
-    label: Expert Check
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: pairs
-    label: Case Pairs
+  - id: journals
+    label: S1 10 journals
     type: document
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: model
-    label: Model Dx
+      x: 64
+      'y': 64
+  - id: constraint_filter
+    label: Filter + fetch
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: judge
-    label: GPT-4o Judge
+      x: 288
+      'y': 64
+  - id: raw_cases
+    label: 4,175 reports
+    type: document
+    size: large
+    position:
+      x: 512
+      'y': 64
+  - id: chapter_filter
+    label: S2 Manual heading filter
+    type: process
+    size: large
+    position:
+      x: 512
+      'y': 224
+  - id: claude_segment
+    label: Claude parse
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 224
+  - id: structured_cases
+    label: 4-field cases
+    type: document
+    size: large
+    position:
+      x: 64
+      'y': 224
+  - id: simple_screen
+    label: S3 3 models × 2 attempts
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 384
+  - id: simple_decision
+    label: Any correct?
+    type: decision
+    size: large
+    position:
+      x: 288
+      'y': 384
+  - id: too_easy
+    label: Easy discard
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 288
+      'y': 520
+  - id: pathway_review
+    label: Unanimous AI approval?
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 384
+  - id: ai_reject
+    label: Non-unanimous discard
+    type: terminal
+    size: large
+    position:
+      x: 512
+      'y': 520
+  - id: stage3_output
+    label: Retain 1,783
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 384
+  - id: r1_verify
+    label: S4 R1 x8
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 680
+  - id: r1_gate
+    label: Diagnosed within 8?
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 680
+  - id: physician_review
+    label: Complete and unambiguous?
+    type: decision
+    size: large
+    position:
+      x: 288
+      'y': 680
+  - id: verification_reject
+    label: R1 miss / doctor reject
+    type: terminal
+    size: large
+    position:
+      x: 512
+      'y': 840
+  - id: paper_final
+    label: Full set 1,113
+    type: document
+    size: large
+    position:
+      x: 64
+      'y': 680
+  - id: public_release
+    label: Public set 915
+    type: terminal
+    size: large
+    position:
+      x: 64
+      'y': 840
 edges:
-  - from: source
-    to: segment
+  - from: journals
+    to: constraint_filter
     type: primary
-  - from: segment
-    to: filter
+  - from: constraint_filter
+    to: raw_cases
     type: primary
-  - from: filter
-    to: expert
+  - from: raw_cases
+    to: chapter_filter
     type: primary
-  - from: expert
-    to: pairs
+  - from: chapter_filter
+    to: claude_segment
     type: primary
-  - from: pairs
-    to: model
+  - from: claude_segment
+    to: structured_cases
     type: primary
-  - from: model
-    to: judge
+  - from: structured_cases
+    to: simple_screen
     type: primary
+  - from: simple_screen
+    to: simple_decision
+    type: primary
+  - from: simple_decision
+    to: too_easy
+    type: optional
+  - from: simple_decision
+    to: pathway_review
+    type: primary
+  - from: pathway_review
+    to: stage3_output
+    type: primary
+  - from: pathway_review
+    to: ai_reject
+    type: optional
+  - from: stage3_output
+    to: r1_verify
+    type: primary
+  - from: r1_verify
+    to: r1_gate
+    type: primary
+  - from: r1_gate
+    to: physician_review
+    type: primary
+  - from: r1_gate
+    to: verification_reject
+    type: optional
+  - from: physician_review
+    to: paper_final
+    type: primary
+  - from: physician_review
+    to: verification_reject
+    type: optional
+  - from: paper_final
+    to: public_release
+    type: data
 modules: []

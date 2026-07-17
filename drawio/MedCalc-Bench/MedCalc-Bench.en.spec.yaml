@@ -1,0 +1,242 @@
+meta:
+  profile: academic-paper
+  theme: academic-color
+  source: generated
+  layout: horizontal
+  routing: orthogonal
+  title: MedCalc-Bench-Verified Dataset Construction
+  description: >-
+    Paper-disclosed evaluation and training construction from 55 popular MDCalc tasks and Open-Patients through
+    GPT-assisted note filtering and attribute extraction; the evaluation branch adds medical review and missing-note
+    completion, while the parallel training branch keeps GPT-4 extractions unverified. Both feed the later Verified
+    lineage.
+  legend: >-
+    Solid arrows show construction dependencies or release lineage. The evaluation split follows Appendix A plus the
+    official version-1.0 CSV (11 template and 10 clinician calculators); main-paper §2.2 reverses those counts. Paper
+    training reports 40 calculators, while the original-release CSV has 41 IDs due to one HOMA-IR row. Dashed notes mark
+    these source conflicts; downstream inference, parsing, and scoring are outside the figure.
+nodes:
+  - id: calculator_selection
+    label: 55 MDCalc
+    type: database
+    size: xl
+    position:
+      x: 64
+      'y': 64
+  - id: open_patients
+    label: Open-Patients
+    type: database
+    size: xl
+    position:
+      x: 64
+      'y': 320
+  - id: gpt35_filter
+    label: GPT-3.5 filter
+    type: process
+    size: large
+    position:
+      x: 352
+      'y': 192
+  - id: gpt4_extract
+    label: GPT-4 attrs
+    type: process
+    size: large
+    position:
+      x: 544
+      'y': 192
+  - id: medical_review
+    label: Medical review
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 192
+  - id: eligible_notes
+    label: 34 reviewed
+    type: document
+    size: large
+    position:
+      x: 976
+      'y': 0
+  - id: template_notes
+    label: 11×20 templ.
+    type: process
+    size: large
+    position:
+      x: 976
+      'y': 192
+  - id: handwritten_notes
+    label: 10×20 human
+    type: process
+    size: large
+    position:
+      x: 976
+      'y': 384
+  - id: eval_count_conflict
+    label: Main↔Appx/CSV
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 384
+  - id: note_bundle
+    label: Notes + attrs
+    type: document
+    size: large
+    position:
+      x: 1248
+      'y': 192
+  - id: calculator_templates
+    label: 55 templates
+    type: document
+    size: xl
+    position:
+      x: 1000
+      'y': 560
+  - id: answer_generation
+    label: Answers/steps
+    type: process
+    size: large
+    position:
+      x: 1248
+      'y': 576
+  - id: paper_dataset
+    label: 'Paper: 1,047'
+    type: document
+    size: large
+    position:
+      x: 1000
+      'y': 752
+  - id: training_attrs
+    label: attrs not rev.
+    type: process
+    size: large
+    position:
+      x: 496
+      'y': 912
+  - id: paper_training
+    label: Paper:10053/40
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 912
+  - id: training_template_notes
+    label: 11×80 templ.
+    type: database
+    size: large
+    position:
+      x: 976
+      'y': 912
+  - id: release_train_conflict
+    label: CSV41·HOMA×1
+    type: document
+    size: large
+    position:
+      x: 496
+      'y': 1072
+  - id: verified_updates
+    label: Verified fixes
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 752
+  - id: pinned_release
+    label: 10.5K·1.1K·55
+    type: terminal
+    size: large
+    position:
+      x: 496
+      'y': 752
+edges:
+  - from: calculator_selection
+    to: gpt35_filter
+    type: primary
+  - from: open_patients
+    to: gpt35_filter
+    type: primary
+  - from: gpt35_filter
+    to: gpt4_extract
+    type: primary
+  - from: gpt4_extract
+    to: medical_review
+    type: primary
+  - from: medical_review
+    to: eligible_notes
+    type: primary
+  - from: medical_review
+    to: template_notes
+    type: primary
+  - from: medical_review
+    to: handwritten_notes
+    type: primary
+  - from: medical_review
+    to: eval_count_conflict
+    type: data
+  - from: eligible_notes
+    to: note_bundle
+    type: primary
+  - from: template_notes
+    to: note_bundle
+    type: primary
+  - from: handwritten_notes
+    to: note_bundle
+    type: primary
+  - from: note_bundle
+    to: answer_generation
+    type: primary
+  - from: calculator_templates
+    to: answer_generation
+    type: primary
+  - from: answer_generation
+    to: paper_dataset
+    type: primary
+  - from: gpt4_extract
+    to: training_attrs
+    type: primary
+    waypoints:
+      - x: 624
+        'y': 520
+      - x: 384
+        'y': 520
+      - x: 384
+        'y': 952
+  - from: training_attrs
+    to: paper_training
+    type: primary
+  - from: training_template_notes
+    to: paper_training
+    type: primary
+  - from: calculator_templates
+    to: paper_training
+    type: primary
+    waypoints:
+      - x: 1100
+        'y': 688
+      - x: 1200
+        'y': 688
+      - x: 1200
+        'y': 1040
+      - x: 816
+        'y': 1040
+  - from: paper_training
+    to: release_train_conflict
+    type: data
+    waypoints:
+      - x: 688
+        'y': 984
+      - x: 688
+        'y': 1112
+      - x: 656
+        'y': 1112
+  - from: paper_dataset
+    to: verified_updates
+    type: primary
+  - from: paper_training
+    to: verified_updates
+    type: primary
+  - from: verified_updates
+    to: pinned_release
+    type: primary
+modules: []

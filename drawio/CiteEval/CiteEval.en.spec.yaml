@@ -1,92 +1,174 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: CiteEval Build Process
-  description: >-
-    Paper-aligned construction flow for CiteEval: LFQA queries and retrieved contexts are used to generate cited RAG
-    responses, which receive statement-level human context attribution, citation edits, and ratings before model-based
-    CiteEval-Auto metrics are validated and used for RAG benchmarking.
-  legend: Solid arrows show query sampling, human citation annotation, automatic metric construction, and RAG evaluation.
+  title: CiteBench Human-Annotation Benchmark Construction
+  description: Paper-aligned full LFQA data chain and construction of the human-annotated metric subset.
+  legend: >-
+    Solid arrows denote construction; branch nodes separate Retrieval statements requiring citation judgment from the
+    other three context types marked N/A.
 nodes:
-  - id: queries
-    label: LFQA Queries
+  - id: sources
+    label: 4 LFQA sets
     type: document
-    size: xl
+    size: large
     position:
-      x: 40
-      'y': 160
+      x: 64
+      'y': 64
   - id: retrieval
-    label: Retrieval
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: responses
-    label: Cited Reply
+    label: 10 passages
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: attribution
-    label: Context Labels
-    type: user
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: edits
-    label: Citation Edits
+      x: 272
+      'y': 64
+  - id: queries
+    label: 3,948 queries
     type: document
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: ratings
-    label: Human Ratings
-    type: user
-    size: xl
+      x: 480
+      'y': 64
+  - id: full_split
+    label: Full Dev 948 / Full Test 3,000
+    type: document
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: auto
-    label: Auto Metrics
+      x: 688
+      'y': 64
+  - id: sample
+    label: Sample 300 from Dev
     type: process
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
-  - id: rag
-    label: RAG Benchmark
+      x: 688
+      'y': 208
+  - id: models
+    label: Four models
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 208
+  - id: responses
+    label: 1,200 answers
+    type: document
+    size: large
+    position:
+      x: 272
+      'y': 208
+  - id: statements
+    label: Split statements per answer
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 208
+  - id: blind
+    label: 3× blind passes / statement
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 384
+  - id: context_vote
+    label: Context majority vote
+    type: decision
+    size: large
+    position:
+      x: 272
+      'y': 384
+  - id: retrieval_annotations
+    label: 'Retrieval: edits + 3 ratings'
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 320
+  - id: rating_mean
+    label: Average three ratings
+    type: process
+    size: large
+    position:
+      x: 688
+      'y': 320
+  - id: response_pool
+    label: Mean applicable statements
+    type: process
+    size: large
+    position:
+      x: 896
+      'y': 320
+  - id: na
+    label: 'Other three: N/A'
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 512
+  - id: response_rejoin
+    label: Rejoin 1,200 responses
+    type: document
+    size: large
+    position:
+      x: 896
+      'y': 512
+  - id: metric_split
+    label: Metric Dev 200 / Metric Test 1,000
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 160
+      x: 1104
+      'y': 512
 edges:
-  - from: queries
+  - from: sources
     to: retrieval
     type: primary
   - from: retrieval
+    to: queries
+    type: primary
+  - from: queries
+    to: full_split
+    type: primary
+  - from: full_split
+    to: sample
+    type: primary
+  - from: sample
+    to: models
+    type: primary
+  - from: models
     to: responses
     type: primary
   - from: responses
-    to: attribution
+    to: statements
     type: primary
-  - from: attribution
-    to: edits
+  - from: statements
+    to: blind
     type: primary
-  - from: edits
-    to: ratings
+  - from: blind
+    to: context_vote
     type: primary
-  - from: ratings
-    to: auto
+  - from: context_vote
+    to: retrieval_annotations
     type: primary
-  - from: auto
-    to: rag
+  - from: context_vote
+    to: na
+    type: primary
+  - from: retrieval_annotations
+    to: rating_mean
+    type: primary
+  - from: rating_mean
+    to: response_pool
+    type: primary
+  - from: response_pool
+    to: response_rejoin
+    type: primary
+  - from: na
+    to: response_rejoin
+    type: primary
+  - from: response_rejoin
+    to: metric_split
     type: primary
 modules: []
