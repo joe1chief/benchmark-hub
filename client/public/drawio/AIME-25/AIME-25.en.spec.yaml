@@ -4,140 +4,133 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIME-25 Packaging and Evaluation Process
+  title: AIME-25 Dataset Packaging Process
   description: >-
-    Official-competition and public-dataset aligned workflow for packaging the 2025 AIME I and II forms into a
-    30-problem LLM evaluation and scoring parsed numerical answers by exact match.
+    MAA AIME 2025 material is packaged by opencompass/AIME2025 as two independent 15-item test configurations. A 30-item
+    union and scoring behavior are optional downstream harness conventions.
   legend: >-
-    AIME has no benchmark paper. The MAA defines each 15-question exam and its 0-999 answer format; the research dataset
-    merges the primary and alternate forms even though a contestant may take only one.
+    Solid arrows preserve the two official forms as separate test configs. Dashed optional arrows show a possible
+    downstream union, not the official dataset structure.
 nodes:
   - id: official
     label: |-
-      2025 MAA AIME Competition
-      Invitational Exam after AMC 10 / AMC 12
-      Problems Authored and Administered by the MAA
+      MAA AIME 2025
+      Official problems
+      Official answer keys
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
-  - id: forms
+      'y': 180
+  - id: format
     label: |-
-      Two Alternate Administrations
-      AIME I = Primary Date • AIME II = Alternate Date
-      Each Student May Take Only One Form
+      Preserve Exam Contract
+      15 questions each • 3 hours
+      Answers are 000–999
     type: process
     size: xl
     position:
       x: 320
-      'y': 100
-  - id: format
+      'y': 180
+  - id: form_i
     label: |-
-      Preserve the Official Exam Contract
-      15 Questions per Form • 3 Hours
-      Every Answer Is an Integer from 000 to 999
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 100
-  - id: collect
-    label: |-
-      Collect 2025 Problems and Answer Keys
-      15 AIME I + 15 AIME II
-      Keep Original Mathematical Statements and Numeric Answers
+      AIME 2025 I
+      15 official problems
+      First administration
     type: document
     size: xl
     position:
-      x: 880
-      'y': 100
-  - id: package
+      x: 600
+      'y': 40
+  - id: form_ii
     label: |-
-      Build the Public AIME-25 Dataset
-      Merge Both Forms into 30 Evaluation Problems
-      Standardize Question / Answer JSONL Records
+      AIME 2025 II
+      15 official problems
+      Alternate administration
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 320
+  - id: config_i
+    label: |-
+      Independent test Config I
+      Question + answer records
+      15 items
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 100
-  - id: prompt
+      x: 880
+      'y': 40
+  - id: config_ii
     label: |-
-      Prompt the Target Model
-      Provide One Problem and Request Reasoning + Final Answer
-      Sampling Configuration Is Defined by the Evaluation Harness
-    type: document
-    size: xl
-    position:
-      x: 1160
-      'y': 440
-  - id: samples
-    label: |-
-      Generate One or k Attempts
-      Preserve Each Completion Separately
-      No Competition Partial Credit Is Applied to Model Outputs
-    type: process
+      Independent test Config II
+      Question + answer records
+      15 items
+    type: database
     size: xl
     position:
       x: 880
-      'y': 440
-  - id: parse
+      'y': 320
+  - id: release
     label: |-
-      Parse the Final Numerical Answer
-      Extract the Boxed / Declared Result
-      Normalize Leading Zeros to the 000-999 Key
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 440
-  - id: exact
-    label: |-
-      Compare with the Official Key
-      Exact Integer Match per Attempt
-      Correct = 1 • Incorrect / Unparseable = 0
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 440
-  - id: report
-    label: |-
-      AIME-25 Result
-      Exact-Match Accuracy for One Attempt
-      Avg@k / Mean@k When the Harness Samples k Attempts
+      Publish AIME2025
+      Two separate test configs
+      I: 15 • II: 15
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 440
+      x: 1160
+      'y': 180
+  - id: optional_union
+    label: |-
+      Optional 30-item Union
+      Downstream convenience only
+      Not an official merged config
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 500
+  - id: optional_harness
+    label: |-
+      Optional Downstream Harness
+      Boxed parsing • exact match
+      Avg@k • Mean@k if configured
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 500
 edges:
   - from: official
-    to: forms
-    type: primary
-  - from: forms
     to: format
     type: primary
   - from: format
-    to: collect
+    to: form_i
     type: primary
-  - from: collect
-    to: package
+  - from: format
+    to: form_ii
     type: primary
-  - from: package
-    to: prompt
+  - from: form_i
+    to: config_i
     type: primary
-  - from: prompt
-    to: samples
+  - from: form_ii
+    to: config_ii
     type: primary
-  - from: samples
-    to: parse
+  - from: config_i
+    to: release
     type: primary
-  - from: parse
-    to: exact
+  - from: config_ii
+    to: release
     type: primary
-  - from: exact
-    to: report
-    type: primary
+  - from: config_i
+    to: optional_union
+    type: optional
+  - from: config_ii
+    to: optional_union
+    type: optional
+  - from: optional_union
+    to: optional_harness
+    type: optional
 modules: []

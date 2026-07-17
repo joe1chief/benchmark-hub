@@ -4,150 +4,218 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AInsteinBench 构建与评测流程
-  description: 对齐论文的 AInsteinBench 双来源科学软件任务构建、历史环境重建、Fail-to-Pass 与专家验证， 以及可执行的 CodeAct Agent 评测流程。
-  legend: 上方分支从 6 个代码库构建问题修复任务和合成功能任务；两者汇入可执行验证， 再发布 244 道题并进行 Agent 评测。
+  title: AInsteinBench 双通道构建与评测流程
+  description: 按论文保持历史 PR 与合成功能任务两条独立构建通道，分别通过专家复核后才合流为 244 项任务的发布集。
+  legend: 上方通道挖掘历史功能 PR；下方通道合成消融任务。两者均须通过可执行验证与领域专家审核。
 nodes:
   - id: repositories
     label: |-
-      选择 6 个科学软件代码库
-      PySCF • Qiskit • Einstein Toolkit
-      AMReX • OpenMM • RDKit
+      选择 6 个代码仓库
+      科学计算软件
+      覆盖多种领域
     type: database
     size: xl
     position:
       x: 40
       'y': 180
-  - id: pr_tasks
+  - id: pr_crawl
     label: |-
-      挖掘问题修复任务
-      筛选含测试更新的科学 / 数值计算合并 PR
-      提取 Issue、基线提交、修复补丁与测试补丁
+      抓取已合并 PR
+      科学功能变更
+      测试与关联问题
     type: process
     size: xl
     position:
       x: 320
-      'y': 70
-  - id: feature_tasks
+      'y': 20
+  - id: pr_filter
     label: |-
-      合成功能实现任务
-      删除模块 / 源码组件并保留其余上下文
-      仅提供测试实际使用签名组成的最小 API 块
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 290
-  - id: environment
-    label: |-
-      重建历史运行环境
-      恢复依赖、构建路径和科学工作流
-      在隔离的最小 Docker 镜像中运行每项任务
+      筛选历史 PR
+      功能范围可复现
+      保留任务工件
     type: process
     size: xl
     position:
       x: 600
-      'y': 180
-  - id: f2p
+      'y': 20
+  - id: historical_env
     label: |-
-      强制 Fail-to-Pass 转换
-      基线提交 + 原测试 = PASS
-      加测试补丁 = FAIL • 再加标准修复 = PASS
+      重建历史环境
+      基础提交 + 依赖
+      隔离执行
     type: process
     size: xl
     position:
       x: 880
-      'y': 70
-  - id: expert
+      'y': 20
+  - id: f2p
     label: |-
-      领域专家验证
-      检查科学相关性、描述清晰度和测试覆盖
-      修订测试；评定科学 + 工程难度
-    type: user
-    size: xl
-    position:
-      x: 880
-      'y': 290
-  - id: release
-    label: |-
-      发布 AInsteinBench
-      6 个代码库共 244 道题
-      由综合难度分数划分简单 / 中等 / 困难
-    type: database
+      验证失败转成功
+      原测试通过
+      新测试失败 • 修复后通过
+    type: process
     size: xl
     position:
       x: 1160
-      'y': 180
-  - id: task
+      'y': 20
+  - id: feature_pr_api
     label: |-
-      初始化任务容器
-      问题描述 + 基础代码库状态
-      复现脚本和科学测试套件
+      构建功能 PR 任务
+      新 API 来自修复补丁
+      仅保留测试使用的签名
     type: document
     size: xl
     position:
       x: 1440
-      'y': 500
-  - id: agent
+      'y': 20
+  - id: historical_expert
     label: |-
-      运行 CodeAct 编码 Agent
-      规划–行动循环：检查、编辑、安装和测试
-      在隔离科学环境中迭代
+      历史任务专家审核
+      覆盖不足 / 过度覆盖
+      假阳性 / 假阴性测试
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 20
+  - id: module_selection
+    label: |-
+      选择合成模块
+      科学计算组件
+      实现范围适中
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 500
-  - id: patch
+      x: 320
+      'y': 340
+  - id: ablation_prompt
     label: |-
-      生成候选补丁
-      保持代码库 API 与数值行为
-      提交最终工作区变更
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 500
-  - id: tests
-    label: |-
-      执行科学验证
-      运行复现脚本 + 任务 / 代码库测试
-      必须通过隐藏的 Fail-to-Pass 行为
+      消融并生成提示
+      移除原实现
+      提供最小 API 上下文
     type: process
     size: xl
     position:
       x: 600
-      'y': 500
+      'y': 340
+  - id: synthetic_tests
+    label: |-
+      生成科学测试
+      仿真 • 参数
+      输出验证
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 340
+  - id: reconstructed_verify
+    label: |-
+      验证重建环境
+      任务测试可执行
+      标准实现通过
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 340
+  - id: synthetic_expert
+    label: |-
+      合成任务专家审核
+      覆盖不足 / 过度覆盖
+      假阳性 / 假阴性测试
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 340
+  - id: release
+    label: |-
+      专家复核后发布
+      244 项任务
+      6 个代码仓库
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 180
+  - id: task
+    label: |-
+      初始化任务
+      问题 + 基础仓库
+      可执行环境
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 180
+  - id: agent
+    label: |-
+      运行编程代理
+      检查 • 编辑 • 测试
+      生成候选补丁
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 180
+  - id: evaluation
+    label: |-
+      执行验证
+      科学任务测试
+      仓库回归测试
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 180
   - id: report
     label: |-
-      AInsteinBench 结果
-      244 道题上的问题解决率
-      按代码库、领域、类型和难度拆分
+      AInsteinBench 报告
+      问题解决率
+      按仓库与类型拆分
     type: terminal
     size: xl
     position:
-      x: 320
-      'y': 500
+      x: 3120
+      'y': 180
 edges:
   - from: repositories
-    to: pr_tasks
+    to: pr_crawl
     type: primary
-  - from: repositories
-    to: feature_tasks
+  - from: pr_crawl
+    to: pr_filter
     type: primary
-  - from: pr_tasks
-    to: environment
+  - from: pr_filter
+    to: historical_env
     type: primary
-  - from: feature_tasks
-    to: environment
-    type: primary
-  - from: environment
+  - from: historical_env
     to: f2p
     type: primary
   - from: f2p
-    to: expert
+    to: feature_pr_api
     type: primary
-  - from: expert
+  - from: feature_pr_api
+    to: historical_expert
+    type: primary
+  - from: repositories
+    to: module_selection
+    type: primary
+  - from: module_selection
+    to: ablation_prompt
+    type: primary
+  - from: ablation_prompt
+    to: synthetic_tests
+    type: primary
+  - from: synthetic_tests
+    to: reconstructed_verify
+    type: primary
+  - from: reconstructed_verify
+    to: synthetic_expert
+    type: primary
+  - from: historical_expert
+    to: release
+    type: primary
+  - from: synthetic_expert
     to: release
     type: primary
   - from: release
@@ -157,12 +225,9 @@ edges:
     to: agent
     type: primary
   - from: agent
-    to: patch
+    to: evaluation
     type: primary
-  - from: patch
-    to: tests
-    type: primary
-  - from: tests
+  - from: evaluation
     to: report
     type: primary
 modules: []

@@ -1,75 +1,69 @@
 {
   "version": 1,
-  "title": "AIME-25 封装与评测流程",
+  "title": "AIME-25 数据集打包流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 9,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
       "id": "official",
-      "label": "2025 MAA AIME 竞赛\nAMC 10 / AMC 12 之后的邀请赛\n题目由 MAA 命制并组织考试",
+      "label": "MAA AIME 2025\n官方题目\n官方答案",
       "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "forms",
-      "label": "两个备用关系的考试场次\nAIME I = 主日期 • AIME II = 备用日期\n每名学生只能参加一场",
-      "type": "process",
       "size": "xl"
     },
     {
       "id": "format",
-      "label": "保留官方考试合同\n每场 15 题 • 3 小时\n每题答案均为 000 到 999 的整数",
+      "label": "保留考试规则\n每场 15 题 • 3 小时\n答案范围 000–999",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "collect",
-      "label": "收集 2025 题目与答案键\nAIME I 15 题 + AIME II 15 题\n保留原始数学题面与数值答案",
+      "id": "form_i",
+      "label": "AIME 2025 I\n15 道官方题目\n第一场考试",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "package",
-      "label": "构建公开 AIME-25 数据集\n合并两场为 30 道评测题\n统一 question / answer JSONL 记录",
+      "id": "form_ii",
+      "label": "AIME 2025 II\n15 道官方题目\n与第一场互为替代",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "config_i",
+      "label": "独立 test 配置 I\nquestion + answer 记录\n15 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompt",
-      "label": "提示目标模型\n每次提供一道题并要求推理与最终答案\n采样设置由具体评测框架定义",
-      "type": "document",
+      "id": "config_ii",
+      "label": "独立 test 配置 II\nquestion + answer 记录\n15 条",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "samples",
-      "label": "生成 1 次或 k 次尝试\n分别保存每个回答\n模型输出不采用真实竞赛的部分分",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "parse",
-      "label": "解析最终数值答案\n提取 boxed / 明确声明的结果\n将前导零统一到 000-999 答案键",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "exact",
-      "label": "与官方答案键比较\n每次尝试做整数精确匹配\n正确 = 1 • 错误 / 无法解析 = 0",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "report",
-      "label": "AIME-25 结果\n单次尝试报告精确匹配准确率\n框架采样 k 次时报告 Avg@k / Mean@k",
+      "id": "release",
+      "label": "发布 AIME2025\n两个独立 test 配置\nI：15 • II：15",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "optional_union",
+      "label": "可选合并为 30 题\n仅供下游使用\n并非官方合并配置",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "optional_harness",
+      "label": "可选下游评测框架\n方框解析 • 精确匹配\n配置后可算 Avg@k • Mean@k",
+      "type": "process",
       "size": "xl"
     }
   ],
@@ -77,56 +71,62 @@
     {
       "id": "edge-1",
       "from": "official",
-      "to": "forms",
+      "to": "format",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "forms",
-      "to": "format",
+      "from": "format",
+      "to": "form_i",
       "type": "primary"
     },
     {
       "id": "edge-3",
       "from": "format",
-      "to": "collect",
+      "to": "form_ii",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "collect",
-      "to": "package",
+      "from": "form_i",
+      "to": "config_i",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "package",
-      "to": "prompt",
+      "from": "form_ii",
+      "to": "config_ii",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "prompt",
-      "to": "samples",
+      "from": "config_i",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "samples",
-      "to": "parse",
+      "from": "config_ii",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "parse",
-      "to": "exact",
-      "type": "primary"
+      "from": "config_i",
+      "to": "optional_union",
+      "type": "optional"
     },
     {
       "id": "edge-9",
-      "from": "exact",
-      "to": "report",
-      "type": "primary"
+      "from": "config_ii",
+      "to": "optional_union",
+      "type": "optional"
+    },
+    {
+      "id": "edge-10",
+      "from": "optional_union",
+      "to": "optional_harness",
+      "type": "optional"
     }
   ],
   "modules": []

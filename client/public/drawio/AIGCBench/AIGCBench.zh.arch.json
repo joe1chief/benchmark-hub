@@ -1,81 +1,99 @@
 {
   "version": 1,
-  "title": "AIGCBench 构建与评测流程",
+  "title": "AIGCBench 构建与验证流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 10,
+    "nodes": 14,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
       "id": "webvid",
-      "label": "参考视频-文本分支\n从 WebVid10M 验证集按视频子类型\n采样 1,000 对数据",
+      "label": "WebVid 验证集\n按视频子类型采样 1,000\n真实视频-文本对",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "laion",
-      "label": "无参考图像-文本分支\n从 LAION-Aesthetics 随机采样 925 对\n支持无需参考视频的指标",
+      "label": "LAION-Aesthetics\n美学子集采样 925\n真实图像-文本对",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "prompts",
-      "label": "合成提示分支\n组合主体 • 行为 • 背景 • 图像风格\n随机生成 3,000 条模板提示",
+      "label": "组合 3,000 条提示词\n主体 • 行为\n背景 • 风格",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "enrich",
-      "label": "使用 GPT-4 扩写提示\n让内容更加生动、丰富\n保留四部分语义组合",
+      "label": "GPT-4 扩写\n丰富四段式提示词\n保留语义结构",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "generate",
-      "label": "生成并筛选图像\nSDXL Base • 1280×720 • 16:9\nT2I-CompBench 指标筛出前 2,003 对",
+      "label": "生成并筛选图像\nSDXL：1280 × 720\nT2I 筛至 2,003 条",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "汇总 AIGCBench\n1,000 + 925 + 2,003 = 3,928 个样本\n同时支持参考视频与无参考评测",
+      "label": "组装 AIGCBench\n1,000 + 925 + 2,003\n共 3,928 个样本",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "i2v",
-      "label": "运行图生视频模型\n输入每个控制图像及对应文本\n生成候选视频",
+      "label": "生成图生视频输出\n图像 + 文本控制\n得到候选视频",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "normalize",
-      "label": "统一视频输入\n除特别说明外均取前 16 帧\n需要时从参考视频采样 4 个关键帧",
+      "label": "视频标准化\n使用前 16 帧\n必要时取 4 个参考关键帧",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "计算 4 个维度的 11 项指标\n控制-视频对齐 • 运动效果\n时序一致性 • 视频质量",
+      "label": "自动评测\n4 个维度\n11 项指标",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "AIGCBench 指标报告\n参考式 / 无参考 CLIP 与 SSIM • MSE • RAFT 光流\n相邻帧一致性 • 帧数 • DOVER",
+      "id": "auto_report",
+      "label": "自动指标报告\n对齐 • 运动\n一致性 • 质量",
       "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "通过用户研究验证评测标准\n42 人 • 5 种方法各采样 30 个结果\n在相同四个维度上投票选优",
+      "id": "human_sample",
+      "label": "人工研究采样\n每种方法 30 个视频\n5 种图生视频方法",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_vote",
+      "label": "42 名参与者\n对 4 个维度投票\n独立判断",
       "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "human_report",
+      "label": "人工研究报告\n四维排序\n汇总投票",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "alignment",
+      "label": "验证一致性\n自动指标对比人工投票\n形成最终分析",
+      "type": "terminal",
       "size": "xl"
     }
   ],
@@ -131,13 +149,37 @@
     {
       "id": "edge-9",
       "from": "metrics",
-      "to": "report",
+      "to": "auto_report",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "report",
-      "to": "human",
+      "from": "i2v",
+      "to": "human_sample",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "human_sample",
+      "to": "human_vote",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "human_vote",
+      "to": "human_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "auto_report",
+      "to": "alignment",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "human_report",
+      "to": "alignment",
       "type": "primary"
     }
   ],

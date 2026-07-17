@@ -4,15 +4,15 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIGCBench 构建与评测流程
-  description: 对齐论文的 AIGCBench 三类数据源构建，以及用参考式与无参考指标从四个维度评测图生视频系统， 最后通过 42 人用户研究验证评测标准。
-  legend: 上方分支分别构建 1,000 个真实视频-文本、925 个真实图像-文本和 2,003 个生成图像-文本样本； 下排在统一帧数后评测生成视频。
+  title: AIGCBench 构建与验证流程
+  description: 按论文构建 3,928 个 AIGCBench 样本，并让自动指标与人工研究并行验证图生视频输出。
+  legend: 实线表示主要构建或评测流。自动指标与人工研究分别消费生成视频，仅在最终一致性分析处合流。
 nodes:
   - id: webvid
     label: |-
-      参考视频-文本分支
-      从 WebVid10M 验证集按视频子类型
-      采样 1,000 对数据
+      WebVid 验证集
+      按视频子类型采样 1,000
+      真实视频-文本对
     type: database
     size: xl
     position:
@@ -20,9 +20,9 @@ nodes:
       'y': 40
   - id: laion
     label: |-
-      无参考图像-文本分支
-      从 LAION-Aesthetics 随机采样 925 对
-      支持无需参考视频的指标
+      LAION-Aesthetics
+      美学子集采样 925
+      真实图像-文本对
     type: database
     size: xl
     position:
@@ -30,9 +30,9 @@ nodes:
       'y': 180
   - id: prompts
     label: |-
-      合成提示分支
-      组合主体 • 行为 • 背景 • 图像风格
-      随机生成 3,000 条模板提示
+      组合 3,000 条提示词
+      主体 • 行为
+      背景 • 风格
     type: process
     size: xl
     position:
@@ -40,9 +40,9 @@ nodes:
       'y': 320
   - id: enrich
     label: |-
-      使用 GPT-4 扩写提示
-      让内容更加生动、丰富
-      保留四部分语义组合
+      GPT-4 扩写
+      丰富四段式提示词
+      保留语义结构
     type: process
     size: xl
     position:
@@ -51,8 +51,8 @@ nodes:
   - id: generate
     label: |-
       生成并筛选图像
-      SDXL Base • 1280×720 • 16:9
-      T2I-CompBench 指标筛出前 2,003 对
+      SDXL：1280 × 720
+      T2I 筛至 2,003 条
     type: process
     size: xl
     position:
@@ -60,64 +60,94 @@ nodes:
       'y': 320
   - id: release
     label: |-
-      汇总 AIGCBench
-      1,000 + 925 + 2,003 = 3,928 个样本
-      同时支持参考视频与无参考评测
+      组装 AIGCBench
+      1,000 + 925 + 2,003
+      共 3,928 个样本
     type: database
+    size: xl
+    position:
+      x: 880
+      'y': 180
+  - id: i2v
+    label: |-
+      生成图生视频输出
+      图像 + 文本控制
+      得到候选视频
+    type: process
     size: xl
     position:
       x: 1160
       'y': 180
-  - id: i2v
-    label: |-
-      运行图生视频模型
-      输入每个控制图像及对应文本
-      生成候选视频
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 440
   - id: normalize
     label: |-
-      统一视频输入
-      除特别说明外均取前 16 帧
-      需要时从参考视频采样 4 个关键帧
+      视频标准化
+      使用前 16 帧
+      必要时取 4 个参考关键帧
     type: process
     size: xl
     position:
-      x: 880
-      'y': 440
+      x: 1440
+      'y': 40
   - id: metrics
     label: |-
-      计算 4 个维度的 11 项指标
-      控制-视频对齐 • 运动效果
-      时序一致性 • 视频质量
+      自动评测
+      4 个维度
+      11 项指标
     type: process
     size: xl
     position:
-      x: 600
-      'y': 560
-  - id: report
+      x: 1720
+      'y': 40
+  - id: auto_report
     label: |-
-      AIGCBench 指标报告
-      参考式 / 无参考 CLIP 与 SSIM • MSE • RAFT 光流
-      相邻帧一致性 • 帧数 • DOVER
+      自动指标报告
+      对齐 • 运动
+      一致性 • 质量
     type: terminal
     size: xl
     position:
-      x: 320
-      'y': 560
-  - id: human
+      x: 2000
+      'y': 40
+  - id: human_sample
     label: |-
-      通过用户研究验证评测标准
-      42 人 • 5 种方法各采样 30 个结果
-      在相同四个维度上投票选优
+      人工研究采样
+      每种方法 30 个视频
+      5 种图生视频方法
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 320
+  - id: human_vote
+    label: |-
+      42 名参与者
+      对 4 个维度投票
+      独立判断
     type: user
     size: xl
     position:
-      x: 40
-      'y': 560
+      x: 1720
+      'y': 320
+  - id: human_report
+    label: |-
+      人工研究报告
+      四维排序
+      汇总投票
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 320
+  - id: alignment
+    label: |-
+      验证一致性
+      自动指标对比人工投票
+      形成最终分析
+    type: terminal
+    size: xl
+    position:
+      x: 2280
+      'y': 180
 edges:
   - from: webvid
     to: release
@@ -144,9 +174,21 @@ edges:
     to: metrics
     type: primary
   - from: metrics
-    to: report
+    to: auto_report
     type: primary
-  - from: report
-    to: human
+  - from: i2v
+    to: human_sample
+    type: primary
+  - from: human_sample
+    to: human_vote
+    type: primary
+  - from: human_vote
+    to: human_report
+    type: primary
+  - from: auto_report
+    to: alignment
+    type: primary
+  - from: human_report
+    to: alignment
     type: primary
 modules: []

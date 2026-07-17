@@ -4,19 +4,19 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIGCBench Build and Evaluation Process
+  title: AIGCBench Build and Validation Process
   description: >-
-    Paper-aligned construction of the three AIGCBench data sources and evaluation of image-to-video systems with
-    reference and reference-free metrics across four dimensions, followed by a 42-participant user study.
+    Paper-aligned construction of 3,928 AIGCBench cases and parallel automatic-metric and human-study validation of
+    generated image-to-video outputs.
   legend: >-
-    The upper branches create 1,000 real video-text, 925 real image-text, and 2,003 generated image-text cases; the
-    lower row evaluates generated videos after standard frame normalization.
+    Solid arrows show primary construction or evaluation flow. Automatic metrics and the user study independently
+    consume generated videos and meet only at the final alignment analysis.
 nodes:
   - id: webvid
     label: |-
-      Reference Video-Text Branch
-      Sample 1,000 Pairs from WebVid10M Validation
-      Stratify by Video Subtype
+      WebVid Validation
+      Subtype-aware sample: 1,000
+      Real video-text pairs
     type: database
     size: xl
     position:
@@ -24,9 +24,9 @@ nodes:
       'y': 40
   - id: laion
     label: |-
-      Reference-Free Image-Text Branch
-      Randomly Sample 925 LAION-Aesthetics Pairs
-      Supports Video-Free Metrics
+      LAION-Aesthetics
+      Aesthetic sample: 925
+      Real image-text pairs
     type: database
     size: xl
     position:
@@ -34,9 +34,9 @@ nodes:
       'y': 180
   - id: prompts
     label: |-
-      Synthetic Prompt Branch
-      Combine Subject • Behavior • Background • Style
-      Randomly Create 3,000 Template Prompts
+      Compose 3,000 Prompts
+      Subject • behavior
+      Background • style
     type: process
     size: xl
     position:
@@ -44,9 +44,9 @@ nodes:
       'y': 320
   - id: enrich
     label: |-
-      Enrich Prompts with GPT-4
-      Make Content More Vivid and Rich
-      Preserve the Four-Part Semantic Composition
+      GPT-4 Enrichment
+      Expand four-part prompts
+      Preserve semantics
     type: process
     size: xl
     position:
@@ -54,9 +54,9 @@ nodes:
       'y': 320
   - id: generate
     label: |-
-      Generate and Filter Images
-      SDXL Base • 1280×720 • 16:9
-      T2I-CompBench Metrics Retain Top 2,003 Pairs
+      Generate and Filter
+      SDXL at 1280 × 720
+      T2I filter retains 2,003
     type: process
     size: xl
     position:
@@ -65,63 +65,93 @@ nodes:
   - id: release
     label: |-
       Assemble AIGCBench
-      1,000 + 925 + 2,003 = 3,928 Cases
-      Reference-Video and Reference-Free Evaluation Paths
+      1,000 + 925 + 2,003
+      3,928 cases total
     type: database
+    size: xl
+    position:
+      x: 880
+      'y': 180
+  - id: i2v
+    label: |-
+      Generate I2V Outputs
+      Image + text controls
+      Candidate videos
+    type: process
     size: xl
     position:
       x: 1160
       'y': 180
-  - id: i2v
-    label: |-
-      Run Image-to-Video Models
-      Input Each Control Image and Its Text
-      Generate Candidate Videos
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 440
   - id: normalize
     label: |-
-      Standardize Video Inputs
-      Use the First 16 Frames Unless Specified Otherwise
-      Sample 4 Reference Keyframes Where Required
+      Normalize Videos
+      Use first 16 frames
+      4 ref keyframes as needed
     type: process
     size: xl
     position:
-      x: 880
-      'y': 440
+      x: 1440
+      'y': 40
   - id: metrics
     label: |-
-      Compute 11 Metrics in 4 Dimensions
-      Control-Video Alignment • Motion Effects
-      Temporal Consistency • Video Quality
+      Automatic Evaluation
+      4 dimensions
+      11 metrics
     type: process
     size: xl
     position:
-      x: 600
-      'y': 560
-  - id: report
+      x: 1720
+      'y': 40
+  - id: auto_report
     label: |-
-      AIGCBench Metric Report
-      Reference / Reference-Free CLIP and SSIM • MSE • RAFT Flow
-      Adjacent-Frame Consistency • Frame Count • DOVER
+      Metric Report
+      Alignment • motion
+      Consistency • quality
     type: terminal
     size: xl
     position:
-      x: 320
-      'y': 560
-  - id: human
+      x: 2000
+      'y': 40
+  - id: human_sample
     label: |-
-      Validate the Standard with a User Study
-      42 Participants • 30 Results from Each of 5 Methods
-      Vote Best on the Same Four Dimensions
+      Human-study Sample
+      30 videos per method
+      Five I2V methods
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 320
+  - id: human_vote
+    label: |-
+      42 Participants
+      Vote on 4 dimensions
+      Independent judgments
     type: user
     size: xl
     position:
-      x: 40
-      'y': 560
+      x: 1720
+      'y': 320
+  - id: human_report
+    label: |-
+      Human-study Report
+      Four-dimension ranking
+      Vote aggregation
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 320
+  - id: alignment
+    label: |-
+      Validate Alignment
+      Metrics vs human votes
+      Final benchmark analysis
+    type: terminal
+    size: xl
+    position:
+      x: 2280
+      'y': 180
 edges:
   - from: webvid
     to: release
@@ -148,9 +178,21 @@ edges:
     to: metrics
     type: primary
   - from: metrics
-    to: report
+    to: auto_report
     type: primary
-  - from: report
-    to: human
+  - from: i2v
+    to: human_sample
+    type: primary
+  - from: human_sample
+    to: human_vote
+    type: primary
+  - from: human_vote
+    to: human_report
+    type: primary
+  - from: auto_report
+    to: alignment
+    type: primary
+  - from: human_report
+    to: alignment
     type: primary
 modules: []
