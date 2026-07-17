@@ -1,79 +1,115 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: HealthBench 构建流程
-  description: 对齐论文的 HealthBench 构建流程：医生队伍筛选、健康场景种子、多轮对话生成、 相关性过滤、医生评分准则、模型裁判和 rubric 分数聚合。
-  legend: 实线箭头表示医生输入、对话生成、过滤、评分准则编写、模型评分和分数聚合。
+  title: HealthBench 数据集构建流程
+  description: 依据论文第 3-4 节整理的医师输入、三类会话来源、过滤、逐例 rubric 与共识标准分配流程。
+  legend: 逐例 rubric 与适用的共识标准是两条汇合支线；meta-eval 标注不在图中。
 nodes:
-  - id: doctors
-    label: 医生队伍
+  - id: applicants
+    label: 1,021 名医师报名
     type: user
-    size: xl
+    size: medium
     position:
-      x: 40
-      'y': 160
-  - id: seeds
-    label: 场景种子
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: convs
-    label: 多轮对话
+      x: 32
+      'y': 304
+  - id: vetting
+    label: 表单 + 入门任务
     type: process
-    size: xl
+    size: medium
     position:
-      x: 560
-      'y': 160
-  - id: filter
-    label: 相关性过滤
-    type: decision
-    size: xl
+      x: 192
+      'y': 304
+  - id: cohort
+    label: |-
+      262 人队列
+      质控：-31 及其标注
+    type: user
+    size: large
     position:
-      x: 820
-      'y': 160
+      x: 384
+      'y': 304
+  - id: source_streams
+    label: |-
+      三类来源
+      合成 · 红队 · HQA
+    type: document
+    size: large
+    position:
+      x: 384
+      'y': 64
+  - id: filtering
+    label: o1 三项过滤
+    type: process
+    size: medium
+    position:
+      x: 576
+      'y': 64
+  - id: conversations
+    label: 5,000 会话
+    type: database
+    size: medium
+    position:
+      x: 736
+      'y': 64
   - id: rubrics
-    label: 医生Rubric
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: grader
-    label: 模型裁判
+    label: 逐例医师 rubric
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Rubric分数
+      x: 928
+      'y': 64
+  - id: consensus
+    label: |-
+      主题投票
+      >50% 且 ≥2 → 34 项
+    type: process
+    size: large
+    position:
+      x: 928
+      'y': 304
+  - id: final
+    label: |-
+      HealthBench
+      5,000 · 48,562
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 1120
+      'y': 184
 edges:
-  - from: doctors
-    to: seeds
+  - from: applicants
+    to: vetting
     type: primary
-  - from: seeds
-    to: convs
+  - from: vetting
+    to: cohort
     type: primary
-  - from: convs
-    to: filter
+  - from: cohort
+    to: source_streams
     type: primary
-  - from: filter
+  - from: source_streams
+    to: filtering
+    type: primary
+  - from: filtering
+    to: conversations
+    type: primary
+  - from: conversations
     to: rubrics
     type: primary
-  - from: rubrics
-    to: grader
+  - from: conversations
+    to: consensus
     type: primary
-  - from: grader
-    to: score
+    waypoints:
+      - x: 880
+        'y': 104
+      - x: 880
+        'y': 344
+  - from: rubrics
+    to: final
+    type: primary
+  - from: consensus
+    to: final
     type: primary
 modules: []

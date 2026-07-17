@@ -1,89 +1,233 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: MCP-Bench Build Process (Chinese)
-  description: MCP-Bench 的论文对齐构建流程：分析实时 MCP 服务器与工具依赖，生成模糊多步任务，让智能体执行，并用规则检查与 LLM 评判联合评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MCP-Bench 构建、执行与计分流程
+  description: 依据 arXiv v1 与固定官方代码/任务提交，分开呈现 benchmark 构建、MCP 环境与任务生成、agent 执行评估、计分聚合。
+  legend: 上半区为任务构建与发布；中部为 MCP 执行；下半区为规则指标、LLM Judge 与四轴总分。边不承载文字。
 nodes:
-  - id: servers
-    label: 实时服务器
+  - id: mcp_ecosystem
+    label: 28服务·250工具
     type: database
-    size: xl
+    size: medium
     position:
       x: 40
-      'y': 160
-  - id: schemas
-    label: 工具Schema
-    type: document
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: chains
-    label: 依赖链
+      'y': 40
+  - id: dependency_map
+    label: 服务组·依赖图
     type: process
-    size: xl
+    size: medium
+    position:
+      x: 200
+      'y': 40
+  - id: task_pair
+    label: 详细·模糊任务
+    type: document
+    size: medium
+    position:
+      x: 360
+      'y': 40
+  - id: quality_gate
+    label: S9·U5门限
+    type: decision
+    size: medium
     position:
       x: 520
-      'y': 160
-  - id: tasks
-    label: 模糊任务
+      'y': 40
+  - id: retry_task
+    label: 丢弃·重试
+    type: process
+    size: medium
+    position:
+      x: 360
+      'y': 136
+  - id: human_review
+    label: 人工检查
+    type: process
+    size: medium
+    position:
+      x: 520
+      'y': 136
+  - id: release_tasks
+    label: 3份JSON·104项
+    type: database
+    size: medium
+    position:
+      x: 600
+      'y': 232
+  - id: fuzzy_request
+    label: 模糊请求
     type: document
-    size: xl
+    size: medium
     position:
       x: 760
-      'y': 160
-  - id: runs
-    label: 智能体运行
+      'y': 328
+  - id: mcp_environment
+    label: MCP环境
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1000
-      'y': 160
-  - id: rules
-    label: 规则检查
+      x: 600
+      'y': 328
+  - id: tool_discovery
+    label: 工具发现
+    type: process
+    size: medium
+    position:
+      x: 440
+      'y': 328
+  - id: round_planner
+    label: 分轮规划
+    type: process
+    size: medium
+    position:
+      x: 280
+      'y': 328
+  - id: continue_gate
+    label: 继续且≤20轮?
     type: decision
-    size: xl
+    size: medium
     position:
-      x: 1240
-      'y': 160
-  - id: judge
-    label: LLM评判
-    type: user
-    size: xl
+      x: 120
+      'y': 328
+  - id: parallel_calls
+    label: 调用·更新状态
+    type: process
+    size: medium
     position:
-      x: 1480
-      'y': 160
-  - id: scores
-    label: 分数
+      x: 120
+      'y': 424
+  - id: final_response
+    label: 最终答案
+    type: document
+    size: medium
+    position:
+      x: 280
+      'y': 552
+  - id: judge_refs
+    label: 隐藏参考
+    type: document
+    size: medium
+    position:
+      x: 760
+      'y': 552
+  - id: eval_evidence
+    label: 执行证据
+    type: database
+    size: medium
+    position:
+      x: 440
+      'y': 552
+  - id: schema_axis
+    label: Schema轴均值
+    type: process
+    size: medium
+    position:
+      x: 360
+      'y': 680
+  - id: shuffled_judges
+    label: 5次乱序Judge
+    type: process
+    size: medium
+    position:
+      x: 600
+      'y': 776
+  - id: judge_axes
+    label: 3个Judge轴
+    type: process
+    size: medium
+    position:
+      x: 600
+      'y': 872
+  - id: overall_score
+    label: 四轴均值
     type: terminal
-    size: xl
+    size: medium
     position:
-      x: 1720
-      'y': 160
+      x: 440
+      'y': 872
 edges:
-  - from: servers
-    to: schemas
+  - from: mcp_ecosystem
+    to: dependency_map
     type: primary
-  - from: schemas
-    to: chains
+  - from: dependency_map
+    to: task_pair
     type: primary
-  - from: chains
-    to: tasks
+  - from: task_pair
+    to: quality_gate
     type: primary
-  - from: tasks
-    to: runs
+  - from: quality_gate
+    to: retry_task
+    type: secondary
+  - from: retry_task
+    to: task_pair
+    type: secondary
+    waypoints:
+      - x: 420
+        'y': 216
+      - x: 420
+        'y': 100
+  - from: quality_gate
+    to: human_review
     type: primary
-  - from: runs
-    to: rules
+  - from: human_review
+    to: release_tasks
     type: primary
-  - from: rules
-    to: judge
+  - from: release_tasks
+    to: fuzzy_request
     type: primary
-  - from: judge
-    to: scores
+    waypoints:
+      - x: 740
+        'y': 262
+      - x: 740
+        'y': 358
+  - from: fuzzy_request
+    to: mcp_environment
+    type: primary
+  - from: mcp_environment
+    to: tool_discovery
+    type: primary
+  - from: tool_discovery
+    to: round_planner
+    type: primary
+  - from: round_planner
+    to: continue_gate
+    type: primary
+  - from: continue_gate
+    to: parallel_calls
+    type: primary
+  - from: parallel_calls
+    to: round_planner
+    type: secondary
+  - from: continue_gate
+    to: final_response
+    type: secondary
+    waypoints:
+      - x: 80
+        'y': 520
+      - x: 340
+        'y': 520
+  - from: final_response
+    to: eval_evidence
+    type: primary
+  - from: eval_evidence
+    to: schema_axis
+    type: primary
+  - from: eval_evidence
+    to: shuffled_judges
+    type: primary
+  - from: judge_refs
+    to: shuffled_judges
+    type: secondary
+  - from: shuffled_judges
+    to: judge_axes
+    type: primary
+  - from: schema_axis
+    to: overall_score
+    type: primary
+  - from: judge_axes
+    to: overall_score
     type: primary
 modules: []

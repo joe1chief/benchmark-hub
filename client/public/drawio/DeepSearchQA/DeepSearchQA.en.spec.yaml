@@ -1,79 +1,164 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: DeepSearchQA Build Process
-  description: Paper-aligned DeepSearchQA flow from handcrafted open-web prompts to set-based precision, recall, and F1 evaluation.
-  legend: Solid arrows show prompt design, answer-set construction, agent search, and outcome-based scoring.
+  title: DeepSearchQA Dataset Build Process
+  description: >-
+    Paper Section 2's expert curation, objective-question filter, and conditional three-phase quality-verification
+    process.
+  legend: >-
+    The unconnected card holds unordered causal-chain and time-anchor facts; reviewers receive only the question, while
+    curator ground truth enters only at cross-check; edges have no labels.
 nodes:
-  - id: domains
-    label: 17 Fields
-    type: database
-    size: xl
+  - id: curation
+    label: Expert-curated
+    type: user
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: prompts
-    label: 900 Prompts
+      x: 64
+      'y': 64
+  - id: design_facts
+    label: Causal chain · time anchor
     type: document
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
-  - id: chains
-    label: Causal Chains
+      x: 64
+      'y': 208
+  - id: objective_filter
+    label: Objective-question filter
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: answers
-    label: Answer Sets
-    type: database
-    size: xl
+      x: 272
+      'y': 64
+  - id: question_prompt
+    label: Question prompt
+    type: document
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: search
-    label: Agent Search
+      x: 480
+      'y': 64
+  - id: blind_review
+    label: 3 blind reviewers
+    type: user
+    size: large
+    position:
+      x: 688
+      'y': 64
+  - id: curator_answer
+    label: Curator answer set
+    type: document
+    size: large
+    position:
+      x: 480
+      'y': 208
+  - id: comparison
+    label: Reviewer vs curator agree?
+    type: decision
+    size: large
+    position:
+      x: 896
+      'y': 64
+  - id: agreement_retain
+    label: 'Agree: retain'
     type: process
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: score
-    label: Set Scoring
+      x: 480
+      'y': 352
+  - id: conflict_resolution
+    label: Dispute ambiguous?
+    type: decision
+    size: large
+    position:
+      x: 896
+      'y': 208
+  - id: answer_repair
+    label: Update / keep
+    type: process
+    size: large
+    position:
+      x: 896
+      'y': 352
+  - id: ambiguity_filter
+    label: Drop ambiguity
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: analysis
-    label: Failure Modes
+      x: 1104
+      'y': 352
+  - id: final_dataset
+    label: 900·17 domains
     type: document
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 480
+      'y': 496
+  - id: hf_release
+    label: HF · 4 fields
+    type: terminal
+    size: large
+    position:
+      x: 480
+      'y': 640
 edges:
-  - from: domains
-    to: prompts
+  - from: curation
+    to: objective_filter
     type: primary
-  - from: prompts
-    to: chains
+  - from: objective_filter
+    to: question_prompt
     type: primary
-  - from: chains
-    to: answers
+  - from: objective_filter
+    to: curator_answer
     type: primary
-  - from: answers
-    to: search
+  - from: question_prompt
+    to: blind_review
     type: primary
-  - from: search
-    to: score
+  - from: blind_review
+    to: comparison
     type: primary
-  - from: score
-    to: analysis
+  - from: curator_answer
+    to: comparison
+    type: primary
+    waypoints:
+      - x: 672
+        'y': 264
+      - x: 976
+        'y': 264
+      - x: 976
+        'y': 176
+  - from: comparison
+    to: agreement_retain
+    type: primary
+    waypoints:
+      - x: 864
+        'y': 176
+      - x: 816
+        'y': 176
+      - x: 816
+        'y': 320
+      - x: 672
+        'y': 320
+      - x: 672
+        'y': 392
+  - from: comparison
+    to: conflict_resolution
+    type: primary
+  - from: agreement_retain
+    to: final_dataset
+    type: primary
+  - from: conflict_resolution
+    to: answer_repair
+    type: primary
+  - from: conflict_resolution
+    to: ambiguity_filter
+    type: primary
+  - from: answer_repair
+    to: final_dataset
+    type: primary
+  - from: final_dataset
+    to: hf_release
     type: primary
 modules: []

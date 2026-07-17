@@ -1,79 +1,152 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: GAIA 构建流程
-  description: 按论文对齐的 GAIA 构建流程：从人工构造真实助手问题到精确匹配评测。
-  legend: 实线箭头表示人工问题设计、附件证据、能力元数据、难度分级、零样本助手运行、答案归一化和准确率评分。
+  title: GAIA 数据集构建与验证流程
+  description: 基于 arXiv:2311.12983v1 的人工问题设计、独立验证、分歧诊断、修订或删除、分级与发布拆分。
+  legend: 两名新标注员独立作答；三方一致直接通过，单个验证者作答错误可在诊断后保留，其余分歧修订或删除。
 nodes:
-  - id: tasks
-    label: 真实任务
+  - id: seeds
+    label: 种子题与指南
     type: document
-    size: xl
+    size: medium
     position:
-      x: 40
-      'y': 160
-  - id: human
-    label: 人工构造
+      x: 32
+      'y': 32
+  - id: truth_sources
+    label: 真值源或附件
+    type: document
+    size: medium
+    position:
+      x: 32
+      'y': 144
+  - id: craft
+    label: 人工设计问题
     type: process
-    size: xl
+    size: medium
     position:
-      x: 300
-      'y': 160
-  - id: evidence
-    label: 文件网页
+      x: 208
+      'y': 88
+  - id: annotate
+    label: 答案+工具元数据
+    type: process
+    size: medium
+    position:
+      x: 384
+      'y': 88
+  - id: candidates
+    label: 623个验证候选
     type: database
-    size: xl
+    size: medium
     position:
       x: 560
-      'y': 160
+      'y': 88
+  - id: solvers
+    label: 2人独立作答
+    type: process
+    size: medium
+    position:
+      x: 736
+      'y': 88
+  - id: compare
+    label: 比对并诊断分歧
+    type: process
+    size: medium
+    position:
+      x: 912
+      'y': 88
+  - id: accept
+    label: 一致或验证者失误
+    type: process
+    size: medium
+    position:
+      x: 816
+      'y': 224
+  - id: repair
+    label: 修订，否则删除
+    type: process
+    size: medium
+    position:
+      x: 1008
+      'y': 224
+  - id: validated
+    label: 通过验证的题
+    type: database
+    size: medium
+    position:
+      x: 912
+      'y': 352
   - id: levels
-    label: 难度分级
+    label: 按步骤/工具分级
     type: process
-    size: xl
+    size: medium
     position:
-      x: 820
-      'y': 160
-  - id: run
-    label: 零样本作答
-    type: process
-    size: xl
+      x: 736
+      'y': 352
+  - id: final
+    label: GAIA 466题
+    type: database
+    size: medium
     position:
-      x: 1080
-      'y': 160
-  - id: match
-    label: 精确匹配
+      x: 560
+      'y': 352
+  - id: dev
+    label: Dev 166+答案
     type: terminal
-    size: xl
+    size: medium
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 准确率
-    type: document
-    size: xl
+      x: 368
+      'y': 296
+  - id: test
+    label: Test 300藏答案
+    type: terminal
+    size: medium
     position:
-      x: 1600
-      'y': 160
+      x: 368
+      'y': 408
 edges:
-  - from: tasks
-    to: human
+  - from: seeds
+    to: craft
     type: primary
-  - from: human
-    to: evidence
+  - from: truth_sources
+    to: craft
     type: primary
-  - from: evidence
+  - from: craft
+    to: annotate
+    type: primary
+  - from: annotate
+    to: candidates
+    type: primary
+  - from: candidates
+    to: solvers
+    type: primary
+  - from: solvers
+    to: compare
+    type: primary
+  - from: compare
+    to: accept
+    type: primary
+  - from: compare
+    to: repair
+    type: primary
+  - from: accept
+    to: validated
+    type: primary
+  - from: repair
+    to: validated
+    type: primary
+  - from: validated
     to: levels
     type: primary
   - from: levels
-    to: run
+    to: final
     type: primary
-  - from: run
-    to: match
+  - from: final
+    to: dev
     type: primary
-  - from: match
-    to: score
+  - from: final
+    to: test
     type: primary
 modules: []

@@ -1,81 +1,154 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
-  layout: horizontal
+  source: generated
+  layout: vertical
   routing: orthogonal
-  title: CRUXEval Build Process
+  title: CruxEval Dataset Construction and Task Derivation
   description: >-
-    Paper-aligned CRUXEval flow from Code Llama candidate generation to filtered 800-function input/output prediction
-    tasks.
-  legend: Solid arrows show candidate generation, filtering, sample-size selection, and execution-based scoring.
+    Based on arXiv v1, pinned official code, and released data, showing how standard-library methods and handwritten
+    examples become generation prompts, candidate functions, and input-output pairs; paper filters and random sampling
+    then produce 800 shared samples for the input- and output-prediction task views.
+  legend: >-
+    Solid arrows show the paper's data-construction chain. The final fork only denotes two task views over the same 800
+    samples; model inference, candidate execution for scoring, and pass@k aggregation are outside the diagram.
 nodes:
-  - id: llama
-    label: Code Llama
-    type: terminal
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: stdlib
-    label: Stdlib Seeds
+  - id: method_catalog
+    label: 69 stdlib APIs
     type: document
-    size: xl
+    size: medium
     position:
-      x: 300
-      'y': 160
-  - id: pairs
-    label: I/O Pairs
+      x: 64
+      'y': 48
+  - id: seed_examples
+    label: 10 seed demos
+    type: document
+    size: medium
+    position:
+      x: 248
+      'y': 48
+  - id: prompt_records
+    label: 2,040 prompts
     type: database
-    size: xl
+    size: medium
     position:
-      x: 560
-      'y': 160
-  - id: filters
-    label: Qual Filter
+      x: 156
+      'y': 176
+  - id: code_generator
+    label: Code Llama 34B
     type: process
-    size: xl
+    size: medium
     position:
-      x: 820
-      'y': 160
-  - id: sample
-    label: Bootstrap 800
+      x: 156
+      'y': 272
+  - id: function_candidates
+    label: 102K functions
+    type: database
+    size: medium
+    position:
+      x: 156
+      'y': 368
+  - id: execute_inputs
+    label: Run 5 inputs
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1080
-      'y': 160
-  - id: tasks
-    label: I + O Tasks
+      x: 156
+      'y': 464
+  - id: io_pairs
+    label: 489K I/O pairs
+    type: database
+    size: medium
+    position:
+      x: 156
+      'y': 560
+  - id: filter_gates
+    label: 3 filter gates
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
+      x: 156
+      'y': 656
+  - id: filtered_pool
+    label: Filtered pool
+    type: database
+    size: medium
+    position:
+      x: 156
+      'y': 752
+  - id: random_sample
+    label: Random 800
+    type: process
+    size: medium
+    position:
+      x: 156
+      'y': 848
+  - id: pinned_release
+    label: Pinned JSONL
     type: document
-    size: xl
+    size: medium
     position:
-      x: 1600
-      'y': 160
+      x: 156
+      'y': 944
+  - id: input_task
+    label: CRUXEval-I
+    type: terminal
+    size: medium
+    position:
+      x: 64
+      'y': 1056
+  - id: output_task
+    label: CRUXEval-O
+    type: terminal
+    size: medium
+    position:
+      x: 248
+      'y': 1056
 edges:
-  - from: llama
-    to: stdlib
+  - from: method_catalog
+    to: prompt_records
     type: primary
-  - from: stdlib
-    to: pairs
+    waypoints:
+      - x: 124
+        'y': 136
+      - x: 192
+        'y': 136
+  - from: seed_examples
+    to: prompt_records
     type: primary
-  - from: pairs
-    to: filters
+    waypoints:
+      - x: 308
+        'y': 136
+      - x: 240
+        'y': 136
+  - from: prompt_records
+    to: code_generator
     type: primary
-  - from: filters
-    to: sample
+  - from: code_generator
+    to: function_candidates
     type: primary
-  - from: sample
-    to: tasks
+  - from: function_candidates
+    to: execute_inputs
     type: primary
-  - from: tasks
-    to: score
+  - from: execute_inputs
+    to: io_pairs
+    type: primary
+  - from: io_pairs
+    to: filter_gates
+    type: primary
+  - from: filter_gates
+    to: filtered_pool
+    type: primary
+  - from: filtered_pool
+    to: random_sample
+    type: primary
+  - from: random_sample
+    to: pinned_release
+    type: primary
+  - from: pinned_release
+    to: input_task
+    type: primary
+  - from: pinned_release
+    to: output_task
     type: primary
 modules: []

@@ -1,0 +1,238 @@
+meta:
+  profile: academic-paper
+  theme: academic-color
+  source: generated
+  layout: horizontal
+  routing: orthogonal
+  title: MedCalc-Bench-Verified 数据集构建流程
+  description: >-
+    论文披露的评测集与训练集并行构建流程：从 55 个 MDCalc 热门计算任务和 Open-Patients 病历出发，经 GPT 辅助筛选与属性提取；评测分支增加医学核验与缺失病历补齐，训练分支的 GPT-4
+    抽取不做人工核验，两者共同进入后续 Verified 版本线。
+  legend: >-
+    实线箭头表示构建依赖或发布沿革。评测分支按补充材料 A 与官方 version-1.0 CSV 显示 11 个模板型、10 个临床人工型；主文 §2.2 将两个数量反写。论文训练集报告 40 个计算器，原始发布 CSV 因 1 条
+    HOMA-IR 实为 41 个 ID。虚线注记这些来源冲突；下游推理、解析与评分不在图中。
+nodes:
+  - id: calculator_selection
+    label: 55 个热门计算器
+    type: database
+    size: xl
+    position:
+      x: 64
+      'y': 64
+  - id: open_patients
+    label: Open-Patients
+    type: database
+    size: xl
+    position:
+      x: 64
+      'y': 320
+  - id: gpt35_filter
+    label: GPT-3.5 筛选
+    type: process
+    size: large
+    position:
+      x: 352
+      'y': 192
+  - id: gpt4_extract
+    label: GPT-4 提取属性
+    type: process
+    size: large
+    position:
+      x: 544
+      'y': 192
+  - id: medical_review
+    label: 医学背景者核验
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 192
+  - id: eligible_notes
+    label: 34 类：核验后病历
+    type: document
+    size: large
+    position:
+      x: 976
+      'y': 0
+  - id: template_notes
+    label: 11 类：模板 ×20
+    type: process
+    size: large
+    position:
+      x: 976
+      'y': 192
+  - id: handwritten_notes
+    label: 10 类：临床撰写×20
+    type: process
+    size: large
+    position:
+      x: 976
+      'y': 384
+  - id: eval_count_conflict
+    label: 主文↔附录/CSV
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 384
+  - id: note_bundle
+    label: 病历 + 已核属性
+    type: document
+    size: large
+    position:
+      x: 1248
+      'y': 192
+  - id: calculator_templates
+    label: 55 套计算 / 解释模板
+    type: document
+    size: xl
+    position:
+      x: 1000
+      'y': 560
+  - id: answer_generation
+    label: 答案 + 解释生成
+    type: process
+    size: large
+    position:
+      x: 1248
+      'y': 576
+  - id: paper_dataset
+    label: 论文集：1,047 条
+    type: document
+    size: large
+    position:
+      x: 1000
+      'y': 752
+  - id: training_attrs
+    label: 抽取未核
+    type: process
+    size: large
+    position:
+      x: 496
+      'y': 912
+  - id: paper_training
+    label: 论文:10053/40
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 912
+  - id: training_template_notes
+    label: 11 类模板×80
+    type: database
+    size: large
+    position:
+      x: 976
+      'y': 912
+  - id: release_train_conflict
+    label: CSV 41类·HOMA×1
+    type: document
+    size: large
+    position:
+      x: 496
+      'y': 1072
+  - id: verified_updates
+    label: Verified 版本化修订
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 752
+  - id: pinned_release
+    label: 10.5K·1.1K·55
+    type: terminal
+    size: large
+    position:
+      x: 496
+      'y': 752
+edges:
+  - from: calculator_selection
+    to: gpt35_filter
+    type: primary
+  - from: open_patients
+    to: gpt35_filter
+    type: primary
+  - from: gpt35_filter
+    to: gpt4_extract
+    type: primary
+  - from: gpt4_extract
+    to: medical_review
+    type: primary
+  - from: medical_review
+    to: eligible_notes
+    type: primary
+  - from: medical_review
+    to: template_notes
+    type: primary
+  - from: medical_review
+    to: handwritten_notes
+    type: primary
+  - from: medical_review
+    to: eval_count_conflict
+    type: data
+  - from: eligible_notes
+    to: note_bundle
+    type: primary
+  - from: template_notes
+    to: note_bundle
+    type: primary
+  - from: handwritten_notes
+    to: note_bundle
+    type: primary
+  - from: note_bundle
+    to: answer_generation
+    type: primary
+  - from: calculator_templates
+    to: answer_generation
+    type: primary
+  - from: answer_generation
+    to: paper_dataset
+    type: primary
+  - from: gpt4_extract
+    to: training_attrs
+    type: primary
+    waypoints:
+      - x: 624
+        'y': 520
+      - x: 384
+        'y': 520
+      - x: 384
+        'y': 952
+  - from: training_attrs
+    to: paper_training
+    type: primary
+  - from: training_template_notes
+    to: paper_training
+    type: primary
+  - from: calculator_templates
+    to: paper_training
+    type: primary
+    waypoints:
+      - x: 1100
+        'y': 688
+      - x: 1200
+        'y': 688
+      - x: 1200
+        'y': 1040
+      - x: 816
+        'y': 1040
+  - from: paper_training
+    to: release_train_conflict
+    type: data
+    waypoints:
+      - x: 688
+        'y': 984
+      - x: 688
+        'y': 1112
+      - x: 656
+        'y': 1112
+  - from: paper_dataset
+    to: verified_updates
+    type: primary
+  - from: paper_training
+    to: verified_updates
+    type: primary
+  - from: verified_updates
+    to: pinned_release
+    type: primary
+modules: []

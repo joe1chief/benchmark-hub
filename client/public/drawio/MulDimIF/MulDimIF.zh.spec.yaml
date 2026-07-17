@@ -1,0 +1,221 @@
+meta:
+  profile: academic-paper
+  theme: academic-color
+  source: generated
+  layout: horizontal
+  routing: orthogonal
+  title: MulDimIF Benchmark 构建与规则评测
+  description: 复现原始问题取样、迭代约束扩展与丢弃、三种并列重写模式、数据与校验代码的人工复核，以及固定训练/测试发布；下方是下游规则评测。
+  legend: 上方是 benchmark 构建；下方泳道从固定发布后开始，包含测试推理、逐约束确定性检查和严格分维度得分。循环将未达 Level IV 的通过候选送回扩展。所有边无标签。
+nodes:
+  - id: raw_questions
+    label: ShareGPT原题
+    type: document
+    size: medium
+    position:
+      x: 32
+      'y': 80
+  - id: taxonomy
+    label: 4类13子类
+    type: database
+    size: medium
+    position:
+      x: 32
+      'y': 176
+  - id: select_category
+    label: 选择未覆盖类
+    type: process
+    size: medium
+    position:
+      x: 208
+      'y': 128
+  - id: add_constraints
+    label: 新增1-2条
+    type: process
+    size: medium
+    position:
+      x: 384
+      'y': 128
+  - id: dual_check
+    label: 双检查通过？
+    type: decision
+    size: medium
+    position:
+      x: 560
+      'y': 128
+  - id: discard_candidate
+    label: 舍弃候选
+    type: terminal
+    size: medium
+    position:
+      x: 560
+      'y': 256
+  - id: level_gate
+    label: 达到Level IV？
+    type: decision
+    size: medium
+    position:
+      x: 736
+      'y': 128
+  - id: select_pattern
+    label: 选择呈现模式
+    type: decision
+    size: medium
+    position:
+      x: 912
+      'y': 128
+  - id: example_rewrite
+    label: 3组匹配问答
+    type: process
+    size: medium
+    position:
+      x: 1088
+      'y': 48
+  - id: listing_rewrite
+    label: 列表式改写
+    type: process
+    size: medium
+    position:
+      x: 1088
+      'y': 128
+  - id: incorporation_rewrite
+    label: 融入式改写
+    type: process
+    size: medium
+    position:
+      x: 1088
+      'y': 208
+  - id: rewritten_pool
+    label: 改写后样本池
+    type: database
+    size: medium
+    position:
+      x: 1264
+      'y': 128
+  - id: human_data_review
+    label: 人工数据质检
+    type: process
+    size: medium
+    position:
+      x: 1264
+      'y': 368
+  - id: checker_draft
+    label: 生成校验初稿
+    type: process
+    size: medium
+    position:
+      x: 1088
+      'y': 368
+  - id: dual_code_review
+    label: 双人代码复核
+    type: process
+    size: medium
+    position:
+      x: 912
+      'y': 368
+  - id: fixed_release
+    label: 7,906 + 1,200
+    type: database
+    size: medium
+    position:
+      x: 736
+      'y': 368
+  - id: test_inference
+    label: 测试集推理
+    type: process
+    size: medium
+    position:
+      x: 736
+      'y': 608
+  - id: rule_checks
+    label: 逐约束规则检查
+    type: process
+    size: medium
+    position:
+      x: 912
+      'y': 608
+  - id: sliced_scores
+    label: 分维度严格得分
+    type: terminal
+    size: medium
+    position:
+      x: 1088
+      'y': 608
+edges:
+  - from: raw_questions
+    to: select_category
+    type: primary
+  - from: taxonomy
+    to: select_category
+    type: primary
+  - from: select_category
+    to: add_constraints
+    type: primary
+  - from: add_constraints
+    to: dual_check
+    type: primary
+  - from: dual_check
+    to: discard_candidate
+    type: primary
+  - from: dual_check
+    to: level_gate
+    type: primary
+  - from: level_gate
+    to: select_category
+    type: secondary
+    waypoints:
+      - x: 800
+        'y': 24
+      - x: 272
+        'y': 24
+  - from: level_gate
+    to: select_pattern
+    type: primary
+  - from: select_pattern
+    to: example_rewrite
+    type: primary
+  - from: select_pattern
+    to: listing_rewrite
+    type: primary
+  - from: select_pattern
+    to: incorporation_rewrite
+    type: primary
+  - from: example_rewrite
+    to: rewritten_pool
+    type: primary
+  - from: listing_rewrite
+    to: rewritten_pool
+    type: primary
+  - from: incorporation_rewrite
+    to: rewritten_pool
+    type: primary
+  - from: rewritten_pool
+    to: human_data_review
+    type: primary
+  - from: human_data_review
+    to: checker_draft
+    type: primary
+  - from: checker_draft
+    to: dual_code_review
+    type: primary
+  - from: dual_code_review
+    to: fixed_release
+    type: primary
+  - from: fixed_release
+    to: test_inference
+    type: primary
+  - from: test_inference
+    to: rule_checks
+    type: primary
+  - from: fixed_release
+    to: rule_checks
+    type: secondary
+    waypoints:
+      - x: 848
+        'y': 520
+      - x: 976
+        'y': 520
+  - from: rule_checks
+    to: sliced_scores
+    type: primary
+modules: []

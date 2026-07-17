@@ -1,122 +1,142 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: BIRD-SQL 构建流程
-  description: 基于 arXiv:2305.03111，对齐论文的 BIRD-SQL 数据库收集、双盲 SQL 标注、专家审核和执行效率评测流程。
-  legend: 实线表示数据集构建与评测主流程；虚线表示外部知识记录和专家共识回路。
+  title: BIRD-SQL 构建与标注流程
+  description: 依据 arXiv v3 Figure 2 与第 3.2–3.4 节整理的数据库准备、问题/evidence 和双人 SQL 标注流程。
+  legend: 实线为论文披露的标注链；分支节点区分 SQL 执行结果一致与专家共识处理。
 nodes:
-  - id: db_sources
-    label: |-
-      真实数据库来源
-      Kaggle、CTU、开放表
-      噪声大值域 schema
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: db_curation
-    label: |-
-      数据库整理
-      95 个数据库 / 37 个领域
-      schema 与值描述文件
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: annotator_gate
-    label: |-
-      标注者准入
-      专家培训与考试
-      只保留合格人员
-    type: user
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: question_annotation
-    label: |-
-      问题标注
-      使用数据库描述
-      记录外部知识证据
+  - id: databases
+    label: 真实专业数据库
     type: document
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: sql_annotation
-    label: |-
-      双盲 SQL 标注
-      两名 SQL 标注者独立完成
-      执行并比较结果
+      x: 64
+      'y': 64
+  - id: descriptions
+    label: 表/列描述 CSV
+    type: document
+    size: large
+    position:
+      x: 288
+      'y': 64
+  - id: admission
+    label: 两类标注员准入
     type: process
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 70
-  - id: expert_review
-    label: |-
-      专家审核
-      SQL 有效性
-      文本-知识-SQL 对齐
-      选择高效标准答案
+      x: 512
+      'y': 64
+  - id: questions
+    label: 问题人工标注
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 64
+  - id: evidence
+    label: 专家外部知识 evidence
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 208
+  - id: sql
+    label: 双人独立 SQL 标注
+    type: process
+    size: large
+    position:
+      x: 512
+      'y': 208
+  - id: compare
+    label: 执行结果一致？
     type: decision
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 250
-  - id: splits
-    label: |-
-      BIRD-SQL 数据集
-      12,751 个 text-SQL 对
-      69 训 / 11 验 / 15 测数据库
-    type: database
-    size: xl
+      x: 288
+      'y': 208
+  - id: match
+    label: 一致：候选入选
+    type: process
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
-    label: |-
-      评测协议
-      EX、VA、R-VES
-      正确性与执行效率
+      x: 176
+      'y': 352
+  - id: mismatch
+    label: 不一致：专家共识
+    type: process
+    size: large
+    position:
+      x: 400
+      'y': 352
+  - id: ground_truth
+    label: 选语义等价/高效真值
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 496
+  - id: examination
+    label: SQL 有效性 + 对齐复核
+    type: process
+    size: large
+    position:
+      x: 512
+      'y': 496
+  - id: scope
+    label: 95 库 / 37 领域
+    type: document
+    size: large
+    position:
+      x: 736
+      'y': 496
+  - id: final
+    label: 12,751 标注对
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
+      x: 960
+      'y': 496
 edges:
-  - from: db_sources
-    to: db_curation
+  - from: databases
+    to: descriptions
     type: primary
-  - from: db_curation
-    to: question_annotation
+  - from: descriptions
+    to: admission
     type: primary
-  - from: annotator_gate
-    to: question_annotation
-    type: data
-  - from: question_annotation
-    to: sql_annotation
+  - from: admission
+    to: questions
     type: primary
-  - from: sql_annotation
-    to: expert_review
+  - from: questions
+    to: evidence
     type: primary
-  - from: expert_review
-    to: sql_annotation
-    type: optional
-    label: 结果不一致时共识审核
-  - from: expert_review
-    to: splits
+  - from: evidence
+    to: sql
     type: primary
-  - from: question_annotation
-    to: splits
-    type: optional
-    label: 记录知识证据
-  - from: splits
-    to: evaluation
+  - from: sql
+    to: compare
+    type: primary
+  - from: compare
+    to: match
+    type: primary
+  - from: compare
+    to: mismatch
+    type: primary
+  - from: match
+    to: ground_truth
+    type: primary
+  - from: mismatch
+    to: ground_truth
+    type: primary
+  - from: ground_truth
+    to: examination
+    type: primary
+  - from: examination
+    to: scope
+    type: primary
+  - from: scope
+    to: final
     type: primary
 modules: []

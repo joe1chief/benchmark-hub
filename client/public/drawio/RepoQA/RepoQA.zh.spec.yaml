@@ -1,0 +1,206 @@
+meta:
+  profile: academic-paper
+  theme: academic-color
+  source: generated
+  layout: horizontal
+  routing: orthogonal
+  title: RepoQA 数据构建、检索任务与计分流程
+  description: 依据 arXiv v1、固定官方代码和默认 release，分开呈现仓库筛选、函数与描述构建、SNF 提示生成及 BLEU 计分。
+  legend: 上两行为 benchmark 数据构建；第三行为 release 与运行时任务；第四行为输出评测。孤立卡片表示官方未披露的复核门，边不承载文字。
+nodes:
+  - id: repo_search
+    label: GitHub候选查询
+    type: database
+    size: medium
+    position:
+      x: 40
+      'y': 40
+  - id: repo_gate
+    label: 人工仓库准则
+    type: process
+    size: medium
+    position:
+      x: 200
+      'y': 40
+  - id: pinned_repos
+    label: 固定commit清单
+    type: database
+    size: medium
+    position:
+      x: 360
+      'y': 40
+  - id: source_snapshot
+    label: 入口源码快照
+    type: document
+    size: medium
+    position:
+      x: 520
+      'y': 40
+  - id: dependency_graph
+    label: 语言依赖图
+    type: process
+    size: medium
+    position:
+      x: 680
+      'y': 40
+  - id: topo_source
+    label: 拓扑源码序列
+    type: process
+    size: medium
+    position:
+      x: 680
+      'y': 160
+  - id: parsed_functions
+    label: Tree-sitter函数
+    type: process
+    size: medium
+    position:
+      x: 520
+      'y': 160
+  - id: function_filter
+    label: 唯一名·不超2KB
+    type: process
+    size: medium
+    position:
+      x: 360
+      'y': 160
+  - id: needle_sample
+    label: 64箱·随机10
+    type: process
+    size: medium
+    position:
+      x: 200
+      'y': 160
+  - id: gpt_annotation
+    label: GPT-4四段描述
+    type: process
+    size: medium
+    position:
+      x: 40
+      'y': 160
+  - id: merge_description
+    label: 合并描述字段
+    type: process
+    size: medium
+    position:
+      x: 40
+      'y': 280
+  - id: dataset_release
+    label: v1 500·发布600
+    type: database
+    size: medium
+    position:
+      x: 200
+      'y': 280
+  - id: snf_prompt
+    label: 16K检索提示
+    type: document
+    size: medium
+    position:
+      x: 360
+      'y': 280
+  - id: model_output
+    label: 被测模型输出
+    type: process
+    size: medium
+    position:
+      x: 520
+      'y': 280
+  - id: sanitize_output
+    label: 代码块清洗
+    type: process
+    size: medium
+    position:
+      x: 680
+      'y': 280
+  - id: needle_bleu
+    label: 10项needle BLEU
+    type: process
+    size: medium
+    position:
+      x: 680
+      'y': 400
+  - id: best_target
+    label: 最高相似目标
+    type: process
+    size: medium
+    position:
+      x: 520
+      'y': 400
+  - id: pass_gate
+    label: 名称命中·至少0.8
+    type: process
+    size: medium
+    position:
+      x: 360
+      'y': 400
+  - id: aggregate_score
+    label: 汇总Pass@1
+    type: terminal
+    size: medium
+    position:
+      x: 200
+      'y': 400
+  - id: quality_gap
+    label: 未披露复核门
+    type: document
+    size: medium
+    position:
+      x: 40
+      'y': 400
+edges:
+  - from: repo_search
+    to: repo_gate
+    type: primary
+  - from: repo_gate
+    to: pinned_repos
+    type: primary
+  - from: pinned_repos
+    to: source_snapshot
+    type: primary
+  - from: source_snapshot
+    to: dependency_graph
+    type: primary
+  - from: dependency_graph
+    to: topo_source
+    type: primary
+  - from: topo_source
+    to: parsed_functions
+    type: primary
+  - from: parsed_functions
+    to: function_filter
+    type: primary
+  - from: function_filter
+    to: needle_sample
+    type: primary
+  - from: needle_sample
+    to: gpt_annotation
+    type: primary
+  - from: gpt_annotation
+    to: merge_description
+    type: primary
+  - from: merge_description
+    to: dataset_release
+    type: primary
+  - from: dataset_release
+    to: snf_prompt
+    type: primary
+  - from: snf_prompt
+    to: model_output
+    type: primary
+  - from: model_output
+    to: sanitize_output
+    type: primary
+  - from: sanitize_output
+    to: needle_bleu
+    type: primary
+  - from: needle_bleu
+    to: best_target
+    type: primary
+  - from: best_target
+    to: pass_gate
+    type: primary
+  - from: pass_gate
+    to: aggregate_score
+    type: primary
+modules: []

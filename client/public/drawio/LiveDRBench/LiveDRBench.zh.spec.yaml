@@ -1,89 +1,171 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: LiveDRBench 构建流程
-  description: 根据论文整理的 LiveDRBench 流程：深度研究问题、问题反转、标准论点表示、全网检索系统运行和论点级 F1 评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LiveDRBench 基准构建流程
+  description: 五类官方来源经过类别专属构建、人工核验与受保护发布，形成 100 题 test-only 基准。
+  legend: 实线为主构建链；虚线仅表示论文实验的全部系统输出参与发布前 GT 扩展，judge、指标与榜单在图外。
 nodes:
-  - id: dr_query
-    label: DR问题
-    type: document
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: problem_inversion
-    label: 问题反转
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: gold_claims
-    label: 标准论点
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: two_domains
-    label: 两类领域
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: hundred_tasks
-    label: 100任务
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: web_corpus
-    label: 全网检索
+  - id: source_scifacts
+    label: Curie 两子集
     type: database
-    size: xl
+    size: large
     position:
-      x: 1240
-      'y': 160
-  - id: system_runs
-    label: 系统运行
+      x: 96
+      'y': 56
+  - id: build_scifacts
+    label: |-
+      SciFacts
+      17+19
     type: process
-    size: xl
+    size: large
     position:
-      x: 1480
+      x: 352
+      'y': 56
+  - id: source_novelds
+    label: 领域知识+ICLR数据集
+    type: database
+    size: large
+    position:
+      x: 96
       'y': 160
-  - id: claim_f1
-    label: 论点F1
+  - id: build_novelds
+    label: |-
+      NovelDS
+      6+11+3
+    type: process
+    size: large
+    position:
+      x: 352
+      'y': 160
+  - id: source_priorart
+    label: OpenReview 讨论
+    type: database
+    size: large
+    position:
+      x: 96
+      'y': 264
+  - id: build_priorart
+    label: |-
+      合成摘要
+      17
+    type: process
+    size: large
+    position:
+      x: 352
+      'y': 264
+  - id: source_flights
+    label: 航空调查报告
+    type: database
+    size: large
+    position:
+      x: 96
+      'y': 368
+  - id: build_flights
+    label: |-
+      事故反演
+      7
+    type: process
+    size: large
+    position:
+      x: 352
+      'y': 368
+  - id: source_entities
+    label: 周期事件
+    type: database
+    size: large
+    position:
+      x: 96
+      'y': 472
+  - id: build_entities
+    label: |-
+      爬取筛选
+      20
+    type: process
+    size: large
+    position:
+      x: 352
+      'y': 472
+  - id: task_records
+    label: |-
+      提示 + GT
+      100
+    type: database
+    size: large
+    position:
+      x: 616
+      'y': 264
+  - id: human_finalize
+    label: 核验全部输出→扩展GT
+    type: process
+    size: large
+    position:
+      x: 872
+      'y': 264
+  - id: tested_outputs
+    label: 被测系统全部输出
+    type: document
+    size: large
+    position:
+      x: 872
+      'y': 472
+  - id: protected_package
+    label: 加密 GT/misc
+    type: process
+    size: large
+    position:
+      x: 1128
+      'y': 264
+  - id: release
+    label: v1-full test
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 1384
+      'y': 264
 edges:
-  - from: dr_query
-    to: problem_inversion
+  - from: source_scifacts
+    to: build_scifacts
     type: primary
-  - from: problem_inversion
-    to: gold_claims
+  - from: source_novelds
+    to: build_novelds
     type: primary
-  - from: gold_claims
-    to: two_domains
+  - from: source_priorart
+    to: build_priorart
     type: primary
-  - from: two_domains
-    to: hundred_tasks
+  - from: source_flights
+    to: build_flights
     type: primary
-  - from: hundred_tasks
-    to: web_corpus
+  - from: source_entities
+    to: build_entities
     type: primary
-  - from: web_corpus
-    to: system_runs
+  - from: build_scifacts
+    to: task_records
     type: primary
-  - from: system_runs
-    to: claim_f1
+  - from: build_novelds
+    to: task_records
+    type: primary
+  - from: build_priorart
+    to: task_records
+    type: primary
+  - from: build_flights
+    to: task_records
+    type: primary
+  - from: build_entities
+    to: task_records
+    type: primary
+  - from: task_records
+    to: human_finalize
+    type: primary
+  - from: tested_outputs
+    to: human_finalize
+    type: data
+  - from: human_finalize
+    to: protected_package
+    type: primary
+  - from: protected_package
+    to: release
     type: primary
 modules: []

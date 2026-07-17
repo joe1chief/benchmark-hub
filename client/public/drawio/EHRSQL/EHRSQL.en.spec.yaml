@@ -1,81 +1,195 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: EHRSQL Build Process
-  description: Paper-aligned EHRSQL flow from hospital-staff questions to executable SQL over MIMIC-III and eICU.
+  title: EHRSQL Dataset Construction
+  description: Paper Section 3's poll templates, answerable-asset merge, unanswerable bypass, and v1.5.0 all-split release.
   legend: >-
-    Solid arrows show poll collection, template and time-slot design, SQL labeling, database linking, and execution
-    scoring.
+    174 answerable templates pass value filling and execution; 56 SQL-free unanswerable templates only paraphrase and
+    package; edges have no labels.
 nodes:
   - id: poll
-    label: Staff Poll
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: template
-    label: Templates
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: time
-    label: Time Slots
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: sql
-    label: SQL Labels
+    label: 222 staff poll
     type: document
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 160
-  - id: db
-    label: MIMIC eICU
-    type: database
-    size: xl
+      x: 80
+      'y': 80
+  - id: utterances
+    label: 1,742 utterances
+    type: document
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: Data Splits
+      x: 288
+      'y': 80
+  - id: filter_merge
+    label: Filter · merge
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Exec Score
+      x: 496
+      'y': 80
+  - id: templates
+    label: 230 templates
+    type: document
+    size: large
+    position:
+      x: 704
+      'y': 80
+  - id: answerable
+    label: 174 answerable
+    type: document
+    size: large
+    position:
+      x: 912
+      'y': 80
+  - id: dual_db_sql
+    label: Dual-DB SQL
+    type: process
+    size: large
+    position:
+      x: 1120
+      'y': 80
+  - id: time_patterns
+    label: Time patterns
+    type: process
+    size: large
+    position:
+      x: 1120
+      'y': 272
+  - id: paraphrase_generation
+    label: NL paraphrases
+    type: process
+    size: large
+    position:
+      x: 1120
+      'y': 464
+  - id: paraphrase_qc
+    label: Paraphrase QC
+    type: process
+    size: large
+    position:
+      x: 1328
+      'y': 464
+  - id: answerable_merge
+    label: Merge answerable assets
+    type: process
+    size: large
+    position:
+      x: 1536
+      'y': 272
+  - id: fill_values
+    label: Fill actual values
+    type: process
+    size: large
+    position:
+      x: 1744
+      'y': 272
+  - id: execution_filter
+    label: SQL execute gate
+    type: process
+    size: large
+    position:
+      x: 1952
+      'y': 272
+  - id: unanswerable
+    label: 56 unanswerable
+    type: document
+    size: large
+    position:
+      x: 912
+      'y': 656
+  - id: unanswerable_package
+    label: Paraphrase + valid/test pack
+    type: process
+    size: large
+    position:
+      x: 1328
+      'y': 656
+  - id: release_total
+    label: Total ≈24K · 24,405
+    type: document
+    size: large
+    position:
+      x: 1952
+      'y': 656
+  - id: train_valid
+    label: Train+valid 20,827
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 1744
+      'y': 848
+  - id: hidden_test
+    label: Test 3,578 · paper-hidden
+    type: terminal
+    size: large
+    position:
+      x: 2160
+      'y': 848
 edges:
   - from: poll
-    to: template
+    to: utterances
     type: primary
-  - from: template
-    to: time
+  - from: utterances
+    to: filter_merge
     type: primary
-  - from: time
-    to: sql
+  - from: filter_merge
+    to: templates
     type: primary
-  - from: sql
-    to: db
+  - from: templates
+    to: answerable
     type: primary
-  - from: db
-    to: split
+  - from: templates
+    to: unanswerable
     type: primary
-  - from: split
-    to: eval
+  - from: answerable
+    to: dual_db_sql
+    type: primary
+  - from: answerable
+    to: time_patterns
+    type: primary
+  - from: answerable
+    to: paraphrase_generation
+    type: primary
+    waypoints:
+      - x: 1096
+        'y': 440
+      - x: 1160
+        'y': 440
+  - from: paraphrase_generation
+    to: paraphrase_qc
+    type: primary
+  - from: dual_db_sql
+    to: answerable_merge
+    type: primary
+  - from: time_patterns
+    to: answerable_merge
+    type: primary
+  - from: paraphrase_qc
+    to: answerable_merge
+    type: primary
+  - from: answerable_merge
+    to: fill_values
+    type: primary
+  - from: fill_values
+    to: execution_filter
+    type: primary
+  - from: execution_filter
+    to: release_total
+    type: primary
+  - from: unanswerable
+    to: unanswerable_package
+    type: primary
+  - from: unanswerable_package
+    to: release_total
+    type: primary
+  - from: release_total
+    to: train_valid
+    type: primary
+  - from: release_total
+    to: hidden_test
     type: primary
 modules: []

@@ -1,92 +1,242 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: ChartEditBench Build Process
+  title: ChartEditBench Dataset Build Process
   description: >-
-    Paper-aligned construction flow for ChartEditBench: LLM-generated chart programs are turned into progressive
-    multi-turn edits, validated through execution, Chart-R1 checks, assertions, and human review, then evaluated in a
-    conversational protocol.
-  legend: Solid arrows show dataset construction, validation, and evaluation flow.
+    Initial-chart generation, turn-by-turn validation, failure backoff/retry, automated QA, and human verification from
+    arXiv v1.
+  legend: >-
+    Solid arrows are the build spine; dashed QA/assertion branches terminate independently; the data branch is a
+    human-verification sample derived from the final dataset. Neither branch denotes filtering or write-back.
 nodes:
-  - id: specs
-    label: Chart Specs
-    type: document
-    size: xl
+  - id: spec_queues
+    label: Chart/edit mix
+    type: queue
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: charts
-    label: Initial Charts
+      x: 64
+      'y': 320
+  - id: initial_chart
+    label: Initial chart
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
-  - id: edits
-    label: Edit Chains
+      x: 288
+      'y': 320
+  - id: validate_initial
+    label: Initial valid?
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 320
+  - id: initial_retry_gate
+    label: Retry initial?
+    type: decision
+    size: large
+    position:
+      x: 512
+      'y': 176
+  - id: initial_backoff
+    label: Exp backoff ≤3
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: execution
-    label: Execution QC
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: chartr1
-    label: Chart-R1 QC
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: assertions
-    label: Assertions
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: human
-    label: Human Subset
-    type: user
-    size: xl
-    position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: Turn Eval
+      x: 288
+      'y': 176
+  - id: validation_discard
+    label: 'Fail: discard'
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 160
+      x: 736
+      'y': 32
+  - id: next_edit
+    label: Next edit (<5)
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 320
+  - id: validate_turn
+    label: Turn valid?
+    type: decision
+    size: large
+    position:
+      x: 960
+      'y': 320
+  - id: turn_retry_gate
+    label: Retry turn?
+    type: decision
+    size: large
+    position:
+      x: 960
+      'y': 176
+  - id: turn_backoff
+    label: Exp backoff ≤3
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 176
+  - id: five_done
+    label: 5 turns done?
+    type: decision
+    size: large
+    position:
+      x: 960
+      'y': 464
+  - id: vqa_generation
+    label: '5 done: 5 VQAs'
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 464
+  - id: edit_chains
+    label: Edit chains
+    type: document
+    size: large
+    position:
+      x: 512
+      'y': 464
+  - id: chart_r1
+    label: Chart-R1 QA
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 608
+  - id: assertion_sets
+    label: 2 assertions
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 608
+  - id: verification_type
+    label: Verifier type
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 768
+  - id: final_dataset
+    label: 4,142 · 20,710
+    type: database
+    size: large
+    position:
+      x: 512
+      'y': 768
+  - id: type_sampling
+    label: Type sampling
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 928
+  - id: expert_review
+    label: Expert review
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 928
+  - id: human_subset
+    label: Human subset
+    type: terminal
+    size: large
+    position:
+      x: 64
+      'y': 1088
 edges:
-  - from: specs
-    to: charts
+  - from: spec_queues
+    to: initial_chart
     type: primary
-  - from: charts
-    to: edits
+  - from: initial_chart
+    to: validate_initial
     type: primary
-  - from: edits
-    to: execution
+  - from: validate_initial
+    to: next_edit
     type: primary
-  - from: execution
-    to: chartr1
+  - from: validate_initial
+    to: initial_retry_gate
     type: primary
-  - from: chartr1
-    to: assertions
+  - from: initial_retry_gate
+    to: initial_backoff
     type: primary
-  - from: assertions
-    to: human
+  - from: initial_retry_gate
+    to: validation_discard
     type: primary
-  - from: human
-    to: eval
+  - from: initial_backoff
+    to: initial_chart
     type: primary
+  - from: next_edit
+    to: validate_turn
+    type: primary
+  - from: validate_turn
+    to: five_done
+    type: primary
+  - from: validate_turn
+    to: turn_retry_gate
+    type: primary
+  - from: turn_retry_gate
+    to: turn_backoff
+    type: primary
+  - from: turn_retry_gate
+    to: validation_discard
+    type: primary
+  - from: turn_backoff
+    to: next_edit
+    type: primary
+  - from: five_done
+    to: next_edit
+    type: primary
+    waypoints:
+      - x: 1080
+        'y': 536
+      - x: 1080
+        'y': 280
+      - x: 848
+        'y': 280
+  - from: five_done
+    to: vqa_generation
+    type: primary
+  - from: vqa_generation
+    to: edit_chains
+    type: primary
+  - from: edit_chains
+    to: final_dataset
+    type: primary
+  - from: final_dataset
+    to: type_sampling
+    type: data
+  - from: type_sampling
+    to: expert_review
+    type: primary
+  - from: expert_review
+    to: human_subset
+    type: primary
+  - from: edit_chains
+    to: chart_r1
+    type: data
+    waypoints:
+      - x: 480
+        'y': 536
+      - x: 480
+        'y': 648
+  - from: edit_chains
+    to: assertion_sets
+    type: data
+    waypoints:
+      - x: 704
+        'y': 536
+      - x: 704
+        'y': 648
+  - from: assertion_sets
+    to: verification_type
+    type: data
 modules: []

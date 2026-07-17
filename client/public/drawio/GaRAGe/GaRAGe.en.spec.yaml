@@ -1,83 +1,141 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: GaRAGe Build Process
+  title: GaRAGe Dataset Build Process
   description: >-
-    Paper-aligned GaRAGe pipeline from complex RAG question generation to human-grounded long-form answers and
-    relevance-aware factuality scoring.
-  legend: >-
-    Solid arrows show question generation, grounding retrieval, reranking, human annotations, answer writing, and
-    RAF/attribution evaluation.
+    Paper-aligned question construction, grounding collection, and human annotation pipeline from Section 2 and Figure
+    2.
+  legend: Solid arrows show the disclosed build order; downstream model evaluation is outside this figure.
 nodes:
-  - id: topics
-    label: Seed Topics
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: questions
-    label: Complex Qs
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: retrieve
-    label: Grounding
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: rerank
-    label: Rerank
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: annotate
-    label: Human Tags
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: answers
-    label: Long Answers
+  - id: seed_topics
+    label: Seed topics
     type: document
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: RAF Score
+      x: 64
+      'y': 64
+  - id: search_plan
+    label: Search plan
+    type: process
+    size: large
+    position:
+      x: 272
+      'y': 64
+  - id: question_search
+    label: Search Web
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 64
+  - id: question_generation
+    label: Synthesize Qs
+    type: process
+    size: large
+    position:
+      x: 688
+      'y': 64
+  - id: question_filtering
+    label: Filter Qs
+    type: process
+    size: large
+    position:
+      x: 896
+      'y': 64
+  - id: query_decomposition
+    label: Decompose Q
+    type: process
+    size: large
+    position:
+      x: 896
+      'y': 208
+  - id: passage_retrieval
+    label: Retrieve docs
+    type: process
+    size: large
+    position:
+      x: 688
+      'y': 208
+  - id: grounding_selection
+    label: Rank / sample
+    type: process
+    size: large
+    position:
+      x: 480
+      'y': 208
+  - id: question_annotation
+    label: Label question
+    type: process
+    size: large
+    position:
+      x: 272
+      'y': 208
+  - id: grounding_annotation
+    label: Label passages
+    type: process
+    size: large
+    position:
+      x: 272
+      'y': 352
+  - id: answer_writing
+    label: Write answer
+    type: document
+    size: large
+    position:
+      x: 480
+      'y': 352
+  - id: answer_validation
+    label: Answer check
+    type: process
+    size: large
+    position:
+      x: 688
+      'y': 352
+  - id: release
+    label: 2,366 Qs
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
+      x: 896
+      'y': 352
 edges:
-  - from: topics
-    to: questions
+  - from: seed_topics
+    to: search_plan
     type: primary
-  - from: questions
-    to: retrieve
+  - from: search_plan
+    to: question_search
     type: primary
-  - from: retrieve
-    to: rerank
+  - from: question_search
+    to: question_generation
     type: primary
-  - from: rerank
-    to: annotate
+  - from: question_generation
+    to: question_filtering
     type: primary
-  - from: annotate
-    to: answers
+  - from: question_filtering
+    to: query_decomposition
     type: primary
-  - from: answers
-    to: score
+  - from: query_decomposition
+    to: passage_retrieval
+    type: primary
+  - from: passage_retrieval
+    to: grounding_selection
+    type: primary
+  - from: grounding_selection
+    to: question_annotation
+    type: primary
+  - from: question_annotation
+    to: grounding_annotation
+    type: primary
+  - from: grounding_annotation
+    to: answer_writing
+    type: primary
+  - from: answer_writing
+    to: answer_validation
+    type: primary
+  - from: answer_validation
+    to: release
     type: primary
 modules: []

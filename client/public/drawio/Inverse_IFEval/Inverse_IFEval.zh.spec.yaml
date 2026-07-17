@@ -1,89 +1,132 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: Inverse IFEval 构建流程
-  description: 对齐论文的 Inverse IFEval 流程：SFT 范式反转、专家种子、LLM 生成、自动过滤、 专家复核、双语元数据/rubric 和优化的 LLM-as-a-Judge 评测。
-  legend: 实线箭头表示逆向指令设计、种子构建、生成、过滤、专家校准和裁判。
+  title: Inverse IFEval 数据集构建
+  description: 论文披露的五阶段 human-in-the-loop 构建链；发布后的模型推理与 Judge 评测不在图中。
+  legend: 实线表示论文披露的构建顺序；未公开的模型、prompt、阈值、数量与淘汰路径均不推断。
 nodes:
-  - id: sft
-    label: SFT范式
+  - id: sft_conventions
+    label: SFT 常规范式
     type: database
-    size: xl
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: inverse
-    label: 8类逆指令
+      x: 64
+      'y': 128
+  - id: reverse_types
+    label: 观察反转 · 8 类
     type: process
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: seeds
-    label: 专家种子
-    type: user
-    size: xl
+      x: 256
+      'y': 128
+  - id: expert_seeds
+    label: 专家手工种子
+    type: process
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: templates
-    label: 生成模板
+      x: 448
+      'y': 128
+  - id: unanimous_seed_gate
+    label: 种子全票复核
+    type: process
+    size: large
+    position:
+      x: 640
+      'y': 128
+  - id: type_templates
+    label: 分类型生成模板
     type: document
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: generation
-    label: LLM生成
+      x: 832
+      'y': 32
+  - id: domain_taxonomy
+    label: 23 域学科体系
+    type: document
+    size: large
+    position:
+      x: 832
+      'y': 224
+  - id: multi_llm_generation
+    label: 多模型 · 每格 20 题
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: filtering
-    label: 自动过滤
-    type: decision
-    size: xl
+      x: 1024
+      'y': 128
+  - id: automatic_filtering
+    label: 长度 + 相似度筛查
+    type: process
+    size: large
     position:
-      x: 1240
-      'y': 160
-  - id: review
-    label: 专家复核
-    type: user
-    size: xl
+      x: 1024
+      'y': 416
+  - id: coverage_verification
+    label: 覆盖补齐 + 交叉验证
+    type: process
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: judge
-    label: LLM裁判
+      x: 832
+      'y': 416
+  - id: expert_calibration
+    label: 专家复核 + 规约校准
+    type: process
+    size: large
+    position:
+      x: 640
+      'y': 416
+  - id: translate_annotate
+    label: 中英翻译 + 标注
+    type: document
+    size: large
+    position:
+      x: 448
+      'y': 416
+  - id: final_release
+    label: 1,012 条数据
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 256
+      'y': 416
 edges:
-  - from: sft
-    to: inverse
+  - from: sft_conventions
+    to: reverse_types
     type: primary
-  - from: inverse
-    to: seeds
+  - from: reverse_types
+    to: expert_seeds
     type: primary
-  - from: seeds
-    to: templates
+  - from: expert_seeds
+    to: unanimous_seed_gate
     type: primary
-  - from: templates
-    to: generation
+  - from: unanimous_seed_gate
+    to: type_templates
     type: primary
-  - from: generation
-    to: filtering
+  - from: unanimous_seed_gate
+    to: domain_taxonomy
     type: primary
-  - from: filtering
-    to: review
+  - from: type_templates
+    to: multi_llm_generation
     type: primary
-  - from: review
-    to: judge
+  - from: domain_taxonomy
+    to: multi_llm_generation
+    type: primary
+  - from: multi_llm_generation
+    to: automatic_filtering
+    type: primary
+  - from: automatic_filtering
+    to: coverage_verification
+    type: primary
+  - from: coverage_verification
+    to: expert_calibration
+    type: primary
+  - from: expert_calibration
+    to: translate_annotate
+    type: primary
+  - from: translate_annotate
+    to: final_release
     type: primary
 modules: []

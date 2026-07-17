@@ -1,79 +1,149 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
-  layout: horizontal
+  source: generated
+  layout: vertical
   routing: orthogonal
-  title: CRUXEval 构建流程
-  description: 对齐论文的 CRUXEval 流程：从 Code Llama 候选生成到过滤后的 800 个函数输入/输出预测任务。
-  legend: 实线箭头表示候选生成、过滤、样本量选择和执行式评分。
+  title: CruxEval 数据集构建与任务派生流程
+  description: 基于 arXiv v1、固定官方代码和发布数据，展示标准库方法与手写示例如何形成生成提示、候选函数和 输入输出对，经论文过滤与随机抽样得到 800 条共享样本，并派生输入预测与输出预测任务。
+  legend: 实线表示论文的数据构建主链；末端分叉仅表示同一份 800 条数据的两种任务视图。模型推理、候选答案执行和 pass@k 汇总不属于本图。
 nodes:
-  - id: llama
-    label: Code Llama
-    type: terminal
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: stdlib
-    label: 标准库种子
+  - id: method_catalog
+    label: 69 个标准库方法
     type: document
-    size: xl
+    size: medium
     position:
-      x: 300
-      'y': 160
-  - id: pairs
-    label: 输入输出对
+      x: 64
+      'y': 48
+  - id: seed_examples
+    label: 10 个手写示例
+    type: document
+    size: medium
+    position:
+      x: 248
+      'y': 48
+  - id: prompt_records
+    label: 2,040 条提示
     type: database
-    size: xl
+    size: medium
     position:
-      x: 560
-      'y': 160
-  - id: filters
-    label: 质量过滤
+      x: 156
+      'y': 176
+  - id: code_generator
+    label: Code Llama 34B
     type: process
-    size: xl
+    size: medium
     position:
-      x: 820
-      'y': 160
-  - id: sample
-    label: 自举800
+      x: 156
+      'y': 272
+  - id: function_candidates
+    label: 102K 个函数
+    type: database
+    size: medium
+    position:
+      x: 156
+      'y': 368
+  - id: execute_inputs
+    label: 执行 5 个输入
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1080
-      'y': 160
-  - id: tasks
-    label: 输入输出任务
+      x: 156
+      'y': 464
+  - id: io_pairs
+    label: 489K 个 I/O 对
+    type: database
+    size: medium
+    position:
+      x: 156
+      'y': 560
+  - id: filter_gates
+    label: 三类过滤门
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
+      x: 156
+      'y': 656
+  - id: filtered_pool
+    label: 过滤后候选池
+    type: database
+    size: medium
+    position:
+      x: 156
+      'y': 752
+  - id: random_sample
+    label: 随机抽取 800
+    type: process
+    size: medium
+    position:
+      x: 156
+      'y': 848
+  - id: pinned_release
+    label: 固定 JSONL / HF
     type: document
-    size: xl
+    size: medium
     position:
-      x: 1600
-      'y': 160
+      x: 156
+      'y': 944
+  - id: input_task
+    label: CRUXEval-I
+    type: terminal
+    size: medium
+    position:
+      x: 64
+      'y': 1056
+  - id: output_task
+    label: CRUXEval-O
+    type: terminal
+    size: medium
+    position:
+      x: 248
+      'y': 1056
 edges:
-  - from: llama
-    to: stdlib
+  - from: method_catalog
+    to: prompt_records
     type: primary
-  - from: stdlib
-    to: pairs
+    waypoints:
+      - x: 124
+        'y': 136
+      - x: 192
+        'y': 136
+  - from: seed_examples
+    to: prompt_records
     type: primary
-  - from: pairs
-    to: filters
+    waypoints:
+      - x: 308
+        'y': 136
+      - x: 240
+        'y': 136
+  - from: prompt_records
+    to: code_generator
     type: primary
-  - from: filters
-    to: sample
+  - from: code_generator
+    to: function_candidates
     type: primary
-  - from: sample
-    to: tasks
+  - from: function_candidates
+    to: execute_inputs
     type: primary
-  - from: tasks
-    to: score
+  - from: execute_inputs
+    to: io_pairs
+    type: primary
+  - from: io_pairs
+    to: filter_gates
+    type: primary
+  - from: filter_gates
+    to: filtered_pool
+    type: primary
+  - from: filtered_pool
+    to: random_sample
+    type: primary
+  - from: random_sample
+    to: pinned_release
+    type: primary
+  - from: pinned_release
+    to: input_task
+    type: primary
+  - from: pinned_release
+    to: output_task
     type: primary
 modules: []

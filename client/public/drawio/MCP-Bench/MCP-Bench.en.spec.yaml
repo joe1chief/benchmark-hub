@@ -1,91 +1,237 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: MCP-Bench Build Process
+  title: MCP-Bench Construction, Execution, and Scoring
   description: >-
-    Paper-aligned construction of MCP-Bench: live MCP servers and tools are analyzed for tool dependencies, converted
-    into fuzzy multi-step tasks, executed by agents, and evaluated with rule checks plus LLM-judge scoring.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Based on arXiv v1 and a pinned official code/task commit; separates benchmark construction, MCP environment and task
+    synthesis, agent execution/evaluation, and score aggregation.
+  legend: >-
+    Upper area shows task construction and release; middle shows MCP execution; lower area shows rule metrics, the LLM
+    judge, and the four-axis overall score. Edges carry no text.
 nodes:
-  - id: servers
-    label: Live Servers
+  - id: mcp_ecosystem
+    label: 28 MCPs·250
     type: database
-    size: xl
+    size: medium
     position:
       x: 40
-      'y': 160
-  - id: schemas
-    label: Tool Schemas
-    type: document
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: chains
-    label: Dep Chains
+      'y': 40
+  - id: dependency_map
+    label: Sets·dep map
     type: process
-    size: xl
+    size: medium
+    position:
+      x: 200
+      'y': 40
+  - id: task_pair
+    label: Detailed·fuzzy
+    type: document
+    size: medium
+    position:
+      x: 360
+      'y': 40
+  - id: quality_gate
+    label: S9·U5 gate
+    type: decision
+    size: medium
     position:
       x: 520
-      'y': 160
-  - id: tasks
-    label: Fuzzy Tasks
+      'y': 40
+  - id: retry_task
+    label: Discard·retry
+    type: process
+    size: medium
+    position:
+      x: 360
+      'y': 136
+  - id: human_review
+    label: Human review
+    type: process
+    size: medium
+    position:
+      x: 520
+      'y': 136
+  - id: release_tasks
+    label: 3 JSON·104
+    type: database
+    size: medium
+    position:
+      x: 600
+      'y': 232
+  - id: fuzzy_request
+    label: Fuzzy request
     type: document
-    size: xl
+    size: medium
     position:
       x: 760
-      'y': 160
-  - id: runs
-    label: Agent Runs
+      'y': 328
+  - id: mcp_environment
+    label: MCP env
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1000
-      'y': 160
-  - id: rules
-    label: Rule Checks
+      x: 600
+      'y': 328
+  - id: tool_discovery
+    label: Tool discovery
+    type: process
+    size: medium
+    position:
+      x: 440
+      'y': 328
+  - id: round_planner
+    label: Round planner
+    type: process
+    size: medium
+    position:
+      x: 280
+      'y': 328
+  - id: continue_gate
+    label: Continue ≤20?
     type: decision
-    size: xl
+    size: medium
     position:
-      x: 1240
-      'y': 160
-  - id: judge
-    label: LLM Judge
-    type: user
-    size: xl
+      x: 120
+      'y': 328
+  - id: parallel_calls
+    label: Calls + state
+    type: process
+    size: medium
     position:
-      x: 1480
-      'y': 160
-  - id: scores
-    label: Scores
+      x: 120
+      'y': 424
+  - id: final_response
+    label: Final response
+    type: document
+    size: medium
+    position:
+      x: 280
+      'y': 552
+  - id: judge_refs
+    label: Hidden refs
+    type: document
+    size: medium
+    position:
+      x: 760
+      'y': 552
+  - id: eval_evidence
+    label: Eval evidence
+    type: database
+    size: medium
+    position:
+      x: 440
+      'y': 552
+  - id: schema_axis
+    label: Schema mean
+    type: process
+    size: medium
+    position:
+      x: 360
+      'y': 680
+  - id: shuffled_judges
+    label: 5 judge runs
+    type: process
+    size: medium
+    position:
+      x: 600
+      'y': 776
+  - id: judge_axes
+    label: 3 judge axes
+    type: process
+    size: medium
+    position:
+      x: 600
+      'y': 872
+  - id: overall_score
+    label: 4-axis mean
     type: terminal
-    size: xl
+    size: medium
     position:
-      x: 1720
-      'y': 160
+      x: 440
+      'y': 872
 edges:
-  - from: servers
-    to: schemas
+  - from: mcp_ecosystem
+    to: dependency_map
     type: primary
-  - from: schemas
-    to: chains
+  - from: dependency_map
+    to: task_pair
     type: primary
-  - from: chains
-    to: tasks
+  - from: task_pair
+    to: quality_gate
     type: primary
-  - from: tasks
-    to: runs
+  - from: quality_gate
+    to: retry_task
+    type: secondary
+  - from: retry_task
+    to: task_pair
+    type: secondary
+    waypoints:
+      - x: 420
+        'y': 216
+      - x: 420
+        'y': 100
+  - from: quality_gate
+    to: human_review
     type: primary
-  - from: runs
-    to: rules
+  - from: human_review
+    to: release_tasks
     type: primary
-  - from: rules
-    to: judge
+  - from: release_tasks
+    to: fuzzy_request
     type: primary
-  - from: judge
-    to: scores
+    waypoints:
+      - x: 740
+        'y': 262
+      - x: 740
+        'y': 358
+  - from: fuzzy_request
+    to: mcp_environment
+    type: primary
+  - from: mcp_environment
+    to: tool_discovery
+    type: primary
+  - from: tool_discovery
+    to: round_planner
+    type: primary
+  - from: round_planner
+    to: continue_gate
+    type: primary
+  - from: continue_gate
+    to: parallel_calls
+    type: primary
+  - from: parallel_calls
+    to: round_planner
+    type: secondary
+  - from: continue_gate
+    to: final_response
+    type: secondary
+    waypoints:
+      - x: 80
+        'y': 520
+      - x: 340
+        'y': 520
+  - from: final_response
+    to: eval_evidence
+    type: primary
+  - from: eval_evidence
+    to: schema_axis
+    type: primary
+  - from: eval_evidence
+    to: shuffled_judges
+    type: primary
+  - from: judge_refs
+    to: shuffled_judges
+    type: secondary
+  - from: shuffled_judges
+    to: judge_axes
+    type: primary
+  - from: schema_axis
+    to: overall_score
+    type: primary
+  - from: judge_axes
+    to: overall_score
     type: primary
 modules: []

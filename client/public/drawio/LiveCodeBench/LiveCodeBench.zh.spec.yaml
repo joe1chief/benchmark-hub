@@ -1,89 +1,139 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: LiveCodeBench 构建流程
-  description: 根据论文整理的 LiveCodeBench 流程：竞赛题抓取、日期标注、测试集、四类代码任务和时间切片评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LiveCodeBench 数据集构建
+  description: 共享竞赛采集链与三条场景特定数据构建分支；模型推理、修复轮次、时间窗选择和评分不在图中。
+  legend: 实线表示论文披露的构建顺序；每次 live release 重复共享采集链，未公开细节不推断。
 nodes:
-  - id: contest_sites
-    label: 竞赛平台
+  - id: platforms
+    label: 三平台新竞赛
+    type: database
+    size: large
+    position:
+      x: 64
+      'y': 240
+  - id: scrape
+    label: 公开 HTML 抓取
+    type: process
+    size: large
+    position:
+      x: 256
+      'y': 240
+  - id: filters
+    label: 公式解析 + 规则过滤
+    type: process
+    size: large
+    position:
+      x: 448
+      'y': 240
+  - id: platform_rules
+    label: 平台难度规则
+    type: process
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: tests
+    label: 测试收集 + 补全
+    type: process
+    size: large
+    position:
+      x: 832
+      'y': 240
+  - id: canonical_tuple
+    label: P / T / S / D
     type: document
-    size: xl
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: html_scrape
-    label: HTML抓取
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: date_tags
-    label: 日期标注
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: test_suite
-    label: 测试套件
+      x: 1024
+      'y': 240
+  - id: generation_repair
+    label: 生成 + 修复题源
     type: document
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: diff_filter
-    label: 难度过滤
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: four_scenarios
-    label: 四类任务
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: pass_eval
-    label: Pass@1评估
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: time_slices
-    label: 时间切片
+      x: 1216
+      'y': 72
+  - id: codegen_releases
+    label: 代码生成 v1–v6
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 1408
+      'y': 72
+  - id: human_solutions
+    label: 约 2,000 人工解
+    type: database
+    size: large
+    position:
+      x: 1216
+      'y': 240
+  - id: execution_filter
+    label: 编译/运行筛选 + 目检
+    type: process
+    size: large
+    position:
+      x: 1408
+      'y': 240
+  - id: execution_release
+    label: 执行 · 479
+    type: terminal
+    size: large
+    position:
+      x: 1600
+      'y': 240
+  - id: lc_examples
+    label: LC 题面 + 示例输入
+    type: document
+    size: large
+    position:
+      x: 1216
+      'y': 408
+  - id: top_release
+    label: 输出预测 · 442
+    type: terminal
+    size: large
+    position:
+      x: 1408
+      'y': 408
 edges:
-  - from: contest_sites
-    to: html_scrape
+  - from: platforms
+    to: scrape
     type: primary
-  - from: html_scrape
-    to: date_tags
+  - from: scrape
+    to: filters
     type: primary
-  - from: date_tags
-    to: test_suite
+  - from: filters
+    to: platform_rules
     type: primary
-  - from: test_suite
-    to: diff_filter
+  - from: platform_rules
+    to: tests
     type: primary
-  - from: diff_filter
-    to: four_scenarios
+  - from: tests
+    to: canonical_tuple
     type: primary
-  - from: four_scenarios
-    to: pass_eval
+  - from: canonical_tuple
+    to: generation_repair
     type: primary
-  - from: pass_eval
-    to: time_slices
+  - from: generation_repair
+    to: codegen_releases
+    type: primary
+  - from: canonical_tuple
+    to: human_solutions
+    type: primary
+  - from: human_solutions
+    to: execution_filter
+    type: primary
+  - from: execution_filter
+    to: execution_release
+    type: primary
+  - from: canonical_tuple
+    to: lc_examples
+    type: primary
+  - from: lc_examples
+    to: top_release
     type: primary
 modules: []

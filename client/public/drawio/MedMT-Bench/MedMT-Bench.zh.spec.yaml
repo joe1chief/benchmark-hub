@@ -1,0 +1,220 @@
+meta:
+  profile: academic-paper
+  theme: academic-color
+  source: generated
+  layout: horizontal
+  routing: orthogonal
+  title: MedMT-Bench 数据构建与评测流程
+  description: 复现论文中的源数据预处理、五代理逐场景合成、多模型初筛和医疗专家交叉复核，并把末轮原子测试点评测 保留在独立的下方泳道。
+  legend: 上方两行是数据构建，下方一行是下游评测；secondary 边把发布记录中的原子测试点提供给裁判。所有边均无文字。
+nodes:
+  - id: open_sources
+    label: 开放源数据
+    type: database
+    size: medium
+    position:
+      x: 32
+      'y': 32
+  - id: question_pool
+    label: 约5万问题
+    type: process
+    size: medium
+    position:
+      x: 192
+      'y': 32
+  - id: scenario_map
+    label: 科室场景映射
+    type: process
+    size: medium
+    position:
+      x: 352
+      'y': 32
+  - id: scene_chain
+    label: 三阶段传递
+    type: process
+    size: medium
+    position:
+      x: 512
+      'y': 32
+  - id: dialogue_agents
+    label: 三类对话代理
+    type: process
+    size: medium
+    position:
+      x: 672
+      'y': 32
+  - id: candidate_dialogues
+    label: 1.3万样本
+    type: database
+    size: medium
+    position:
+      x: 832
+      'y': 32
+  - id: generator_agent
+    label: 生成代理
+    type: process
+    size: medium
+    position:
+      x: 992
+      'y': 32
+  - id: verifier_agent
+    label: 多模型验证
+    type: process
+    size: medium
+    position:
+      x: 1152
+      'y': 32
+  - id: refine_pool
+    label: 5167待精修
+    type: database
+    size: medium
+    position:
+      x: 1472
+      'y': 32
+  - id: initial_screen
+    label: 会话评估初筛
+    type: process
+    size: medium
+    position:
+      x: 1312
+      'y': 32
+  - id: medical_experts
+    label: 约20名专家
+    type: process
+    size: medium
+    position:
+      x: 1472
+      'y': 176
+  - id: content_review
+    label: 三项内容复核
+    type: process
+    size: medium
+    position:
+      x: 1312
+      'y': 176
+  - id: cross_review
+    label: 双层交叉复核
+    type: process
+    size: medium
+    position:
+      x: 1152
+      'y': 176
+  - id: dispute_gate
+    label: 有复核分歧?
+    type: decision
+    size: medium
+    position:
+      x: 992
+      'y': 176
+  - id: third_reviewer
+    label: 第三人仲裁
+    type: process
+    size: medium
+    position:
+      x: 832
+      'y': 288
+  - id: release
+    label: 400条JSONL
+    type: document
+    size: medium
+    position:
+      x: 672
+      'y': 176
+  - id: candidate_model
+    label: 待测模型
+    type: process
+    size: medium
+    position:
+      x: 672
+      'y': 416
+  - id: final_answer
+    label: 末轮回答
+    type: document
+    size: medium
+    position:
+      x: 832
+      'y': 416
+  - id: llm_judge
+    label: 测试点裁判
+    type: process
+    size: medium
+    position:
+      x: 992
+      'y': 416
+  - id: accuracy
+    label: 二值准确率
+    type: terminal
+    size: medium
+    position:
+      x: 1152
+      'y': 416
+edges:
+  - from: open_sources
+    to: question_pool
+    type: primary
+  - from: question_pool
+    to: scenario_map
+    type: primary
+  - from: scenario_map
+    to: scene_chain
+    type: primary
+  - from: scene_chain
+    to: dialogue_agents
+    type: primary
+  - from: dialogue_agents
+    to: candidate_dialogues
+    type: primary
+  - from: candidate_dialogues
+    to: generator_agent
+    type: primary
+  - from: generator_agent
+    to: verifier_agent
+    type: primary
+  - from: verifier_agent
+    to: initial_screen
+    type: primary
+  - from: initial_screen
+    to: refine_pool
+    type: primary
+  - from: refine_pool
+    to: medical_experts
+    type: primary
+  - from: medical_experts
+    to: content_review
+    type: primary
+  - from: content_review
+    to: cross_review
+    type: primary
+  - from: cross_review
+    to: dispute_gate
+    type: primary
+  - from: dispute_gate
+    to: release
+    type: primary
+  - from: dispute_gate
+    to: third_reviewer
+    type: secondary
+  - from: third_reviewer
+    to: release
+    type: secondary
+  - from: release
+    to: candidate_model
+    type: primary
+  - from: candidate_model
+    to: final_answer
+    type: primary
+  - from: final_answer
+    to: llm_judge
+    type: primary
+  - from: release
+    to: llm_judge
+    type: secondary
+    waypoints:
+      - x: 608
+        'y': 528
+      - x: 1056
+        'y': 528
+  - from: llm_judge
+    to: accuracy
+    type: primary
+modules: []

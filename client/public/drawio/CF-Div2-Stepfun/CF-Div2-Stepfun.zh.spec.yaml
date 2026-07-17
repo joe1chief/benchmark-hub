@@ -1,104 +1,115 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: CF-Div2-Stepfun 构建流程
-  description: >-
-    基于 Step 3.5 Flash 技术报告对齐 CF-Div2-Stepfun：选择新鲜的官方 CodeForces Div.2 题目， 用离线本地评测替代在线提交，构造小规模、随机、对抗和压力测试，用
-    accepted/failed 提交校验评测器， 并以 avg@8、pass@8 和简化 rating 给模型计分。
-  legend: 实线箭头表示比赛题选择、测试构造、沙箱评分、评测器校验和模型计分。
+  title: CF-Div2-Stepfun 构建与验证流程
+  description: 论文对齐的 53 道 Codeforces Div.2 题目、测试构造与离线可靠性验证流程。
+  legend: 实线箭头表示论文或官方发布确认的构建与验证路径；模型生成和指标计算不在图中。
 nodes:
-  - id: contests
-    label: 比赛
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: problems
-    label: 题目
+  - id: official_div2
+    label: 官方 Div.2
     type: document
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
+      x: 64
+      'y': 64
+  - id: curate_53
+    label: 收录 53 题
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 64
   - id: small_tests
-    label: 小测
+    label: 小规模测试
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 70
-  - id: random_tests
-    label: 随机
+      x: 512
+      'y': 64
+  - id: random_large
+    label: 随机大数据
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 250
-  - id: edge_tests
-    label: 边界
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: grader
-    label: 评测器
+      x: 736
+      'y': 64
+  - id: handmade_edges
+    label: 人工边界例
     type: process
-    size: xl
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: validate
-    label: 校验
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: models
-    label: 模型
+      x: 624
+      'y': 208
+  - id: stress_cases
+    label: 压力自动造例
     type: process
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
-  - id: scores
-    label: 分数
+      x: 848
+      'y': 208
+  - id: offline_grader
+    label: 本地离线判题
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 352
+  - id: accepted_runs
+    label: 正确提交回放
+    type: process
+    size: large
+    position:
+      x: 624
+      'y': 496
+  - id: failed_runs
+    label: 失败提交回放
+    type: process
+    size: large
+    position:
+      x: 848
+      'y': 496
+  - id: reliability_gate
+    label: 可靠性结果 100% / 92.45%
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 160
+      x: 736
+      'y': 640
 edges:
-  - from: contests
-    to: problems
+  - from: official_div2
+    to: curate_53
     type: primary
-  - from: problems
+  - from: curate_53
     to: small_tests
     type: primary
-  - from: problems
-    to: random_tests
-    type: primary
   - from: small_tests
-    to: edge_tests
+    to: random_large
     type: primary
-  - from: random_tests
-    to: edge_tests
+  - from: random_large
+    to: handmade_edges
     type: primary
-  - from: edge_tests
-    to: grader
+  - from: random_large
+    to: stress_cases
     type: primary
-  - from: grader
-    to: validate
+  - from: handmade_edges
+    to: offline_grader
     type: primary
-  - from: validate
-    to: models
+  - from: stress_cases
+    to: offline_grader
     type: primary
-  - from: models
-    to: scores
+  - from: offline_grader
+    to: accepted_runs
+    type: primary
+  - from: offline_grader
+    to: failed_runs
+    type: primary
+  - from: accepted_runs
+    to: reliability_gate
+    type: primary
+  - from: failed_runs
+    to: reliability_gate
     type: primary
 modules: []

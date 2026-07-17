@@ -1,104 +1,212 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
   routing: orthogonal
-  title: CFBench 构建流程
-  description: >-
-    基于论文对齐 CFBench：从在线日志和 NLP 任务中挖掘真实指令，抽取并扩展原子约束形成 10 类约束体系， 平衡场景和约束得到样本，人工修订指令、答案和检查清单，再用 GPT-4o 按 checkpoint 评判
-    CSR、ISR、PSR。
-  legend: 实线箭头表示约束体系构建、样本组装、人工修订、清单评判和指标计算。
+  title: CFBench 约束体系与数据构建流程
+  description: 依据 arXiv v2 与官方固定数据，展示语料过滤、约束体系化、候选增强、人工迭代质检和 Easy Hard 发布。
+  legend: 实线为论文构建主链；点线为专家发现问题后的返工回路；边不承载文字。
 nodes:
-  - id: sources
-    label: 来源
+  - id: source_corpus
+    label: 80万日志·30万NLP
     type: database
-    size: xl
+    size: medium
     position:
       x: 40
-      'y': 160
-  - id: atomic
-    label: 原子约束
+      'y': 40
+  - id: filter_cluster
+    label: 长度过滤·聚类去重
     type: process
-    size: xl
+    size: medium
     position:
-      x: 300
-      'y': 160
-  - id: taxonomy
-    label: 分类
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: 均衡
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: samples
-    label: 样本
+      x: 220
+      'y': 40
+  - id: pool_30k
+    label: 约3万优质指令
     type: database
-    size: xl
+    size: medium
     position:
-      x: 1080
-      'y': 160
-  - id: annotate
-    label: 标注
-    type: user
-    size: xl
-    position:
-      x: 1340
-      'y': 70
-  - id: checklist
-    label: 清单
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: judge
-    label: 评判
+      x: 400
+      'y': 40
+  - id: gpt4_extract
+    label: GPT-4原子约束抽取
     type: process
-    size: xl
+    size: medium
     position:
-      x: 1600
-      'y': 160
-  - id: metrics
-    label: 指标
+      x: 580
+      'y': 40
+  - id: atoms_5k
+    label: 约5千唯一约束
+    type: database
+    size: medium
+    position:
+      x: 760
+      'y': 40
+  - id: expert_refine
+    label: 3名专家筛选
+    type: process
+    size: medium
+    position:
+      x: 760
+      'y': 190
+  - id: atoms_1k
+    label: 1千重要原子约束
+    type: database
+    size: medium
+    position:
+      x: 580
+      'y': 190
+  - id: taxonomy
+    label: 10主类·25子类
+    type: database
+    size: medium
+    position:
+      x: 400
+      'y': 190
+  - id: initial_instructions
+    label: 场景与NLP初始指令
+    type: document
+    size: medium
+    position:
+      x: 40
+      'y': 190
+  - id: llm_screen_balance
+    label: LLM筛选·平衡
+    type: process
+    size: medium
+    position:
+      x: 220
+      'y': 190
+  - id: candidates_2k
+    label: 2千候选指令
+    type: database
+    size: medium
+    position:
+      x: 220
+      'y': 340
+  - id: llm_augment
+    label: 多LLM加约束·生成回答
+    type: process
+    size: medium
+    position:
+      x: 400
+      'y': 340
+  - id: annotator_review
+    label: 9名标注员审校
+    type: process
+    size: medium
+    position:
+      x: 580
+      'y': 340
+  - id: checklist_priority
+    label: 清单·类型·优先级
+    type: document
+    size: medium
+    position:
+      x: 760
+      'y': 340
+  - id: cross_validation
+    label: 3人交叉复核·94%
+    type: process
+    size: medium
+    position:
+      x: 760
+      'y': 490
+  - id: expert_iteration
+    label: 专家裁决·迭代修订
+    type: process
+    size: medium
+    position:
+      x: 580
+      'y': 490
+  - id: batch_validation
+    label: 分批验证·抽样复核
+    type: process
+    size: medium
+    position:
+      x: 400
+      'y': 490
+  - id: split_vote
+    label: 专家+10模型投票
+    type: process
+    size: medium
+    position:
+      x: 220
+      'y': 490
+  - id: easy_hard
+    label: 易500·难500
+    type: database
+    size: medium
+    position:
+      x: 40
+      'y': 490
+  - id: release
+    label: CFBench·1,000条
     type: terminal
-    size: xl
+    size: medium
     position:
-      x: 1860
-      'y': 160
+      x: 40
+      'y': 640
 edges:
-  - from: sources
-    to: atomic
+  - from: source_corpus
+    to: filter_cluster
     type: primary
-  - from: atomic
+  - from: filter_cluster
+    to: pool_30k
+    type: primary
+  - from: pool_30k
+    to: gpt4_extract
+    type: primary
+  - from: gpt4_extract
+    to: atoms_5k
+    type: primary
+  - from: atoms_5k
+    to: expert_refine
+    type: primary
+  - from: expert_refine
+    to: atoms_1k
+    type: primary
+  - from: atoms_1k
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: balance
+    to: llm_screen_balance
     type: primary
-  - from: balance
-    to: samples
+  - from: initial_instructions
+    to: llm_screen_balance
     type: primary
-  - from: samples
-    to: annotate
+  - from: llm_screen_balance
+    to: candidates_2k
     type: primary
-  - from: samples
-    to: checklist
+  - from: candidates_2k
+    to: llm_augment
     type: primary
-  - from: annotate
-    to: judge
+  - from: llm_augment
+    to: annotator_review
     type: primary
-  - from: checklist
-    to: judge
+  - from: annotator_review
+    to: checklist_priority
     type: primary
-  - from: judge
-    to: metrics
+  - from: checklist_priority
+    to: cross_validation
+    type: primary
+  - from: cross_validation
+    to: expert_iteration
+    type: primary
+  - from: expert_iteration
+    to: annotator_review
+    type: optional
+  - from: expert_iteration
+    to: batch_validation
+    type: primary
+  - from: batch_validation
+    to: split_vote
+    type: primary
+  - from: split_vote
+    to: easy_hard
+    type: primary
+  - from: easy_hard
+    to: release
     type: primary
 modules: []
