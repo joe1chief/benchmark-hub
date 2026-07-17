@@ -1768,6 +1768,94 @@ for (const fixture of [
   });
 }
 
+for (const source of ['catalog', 'manifest', 'detail']) {
+  for (const invalidCase of [
+    { name: 'missing', value: undefined, reason: 'missing', rawId: null },
+    { name: 'null', value: null, reason: 'null', rawId: null },
+    { name: 'blank', value: '   ', reason: 'blank', rawId: '   ' },
+    { name: 'non-string', value: 42, reason: 'non_string', rawId: 42 },
+  ]) {
+    test(`reports a locatable invalid benchmark ID for ${source} ${invalidCase.name}`, () => {
+      const root = createCompleteFixture();
+      let syntheticKey;
+      let expectedLocation;
+      const idRecord = invalidCase.value === undefined
+        ? {}
+        : { id: invalidCase.value };
+      if (source === 'catalog') {
+        const path = join(root, 'client/public/benchmarks.json');
+        const records = JSON.parse(readFileSync(path, 'utf8'));
+        records.push(idRecord);
+        writeJson(path, records);
+        syntheticKey = '__invalid__:catalog:record:1';
+        expectedLocation = {
+          source: 'catalog',
+          record_index: 1,
+          raw_id: invalidCase.rawId,
+          reason: invalidCase.reason,
+        };
+      } else if (source === 'manifest') {
+        const path = join(
+          root,
+          'client/public/benchmarks_build_process_manifest.json',
+        );
+        const records = JSON.parse(readFileSync(path, 'utf8'));
+        const invalidRecord = { ...records[0], ...idRecord };
+        if (invalidCase.value === undefined) delete invalidRecord.id;
+        records.push(invalidRecord);
+        writeJson(path, records);
+        syntheticKey = '__invalid__:manifest:record:1';
+        expectedLocation = {
+          source: 'manifest',
+          record_index: 1,
+          raw_id: invalidCase.rawId,
+          reason: invalidCase.reason,
+        };
+      } else {
+        const file = `Invalid-${invalidCase.name}.json`;
+        writeJson(
+          join(root, `client/public/benchmarks_detail/${file}`),
+          idRecord,
+        );
+        syntheticKey = `__invalid__:detail:file:${file}`;
+        expectedLocation = {
+          source: 'detail',
+          file,
+          raw_id: invalidCase.rawId,
+          reason: invalidCase.reason,
+        };
+      }
+
+      const result = spawnSync(
+        process.execPath,
+        [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+        { encoding: 'utf8' },
+      );
+
+      assert.equal(result.status, 1);
+      const summary = JSON.parse(result.stdout);
+      assert.deepEqual(
+        summary.id_set_issues.find((issue) => issue.id === syntheticKey),
+        {
+          id: syntheticKey,
+          synthetic_key: syntheticKey,
+          issue: 'invalid_benchmark_id',
+          ...expectedLocation,
+        },
+      );
+      const queueEntry = summary.unresolved_queue.find(
+        (entry) => entry.id === syntheticKey,
+      );
+      assert.deepEqual(queueEntry.input_location, expectedLocation);
+      assert.ok(
+        queueEntry.issues.some((issue) => (
+          issue.startsWith(`id_set:invalid_benchmark_id:${source}:`)
+        )),
+      );
+    });
+  }
+}
+
 test('separates review gates and counts only exact paper-source evidence', () => {
   const root = createCompleteFixture();
   const path = join(
@@ -1856,11 +1944,72 @@ test('marks duplicate records as an ID-set queue gate failure', () => {
   assert.equal(result.status, 1);
   const summary = JSON.parse(result.stdout);
   assert.equal(summary.id_sets_equal, true);
-  assert.equal(summary.paper_aligned_total, 1);
+  assert.equal(summary.paper_aligned_total, 0);
   assert.equal(summary.unresolved_queue[0].gates.id_set, false);
   assert.ok(
     summary.unresolved_queue[0].issues.includes('id_set:duplicate_manifest_record'),
   );
+});
+
+test('rejects conflicting duplicate aggregate records without order-dependent winners', () => {
+  const root = createCompleteFixture();
+  const path = join(root, 'client/public/benchmarks.json');
+  const aggregate = JSON.parse(readFileSync(path, 'utf8'));
+  const wrong = {
+    ...aggregate[0],
+    drawio_flowchart_en: 'drawio/AlphaBench/Wrong.en.svg',
+  };
+  aggregate.push(wrong);
+  writeJson(path, aggregate);
+
+  const firstResult = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(firstResult.status, 1);
+  const first = JSON.parse(firstResult.stdout);
+
+  writeJson(path, aggregate.reverse());
+  const secondResult = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(secondResult.status, 1);
+  const second = JSON.parse(secondResult.stdout);
+
+  assert.deepEqual(first, second);
+  assert.equal(first.unresolved_queue[0].gates.id_set, false);
+  assert.equal(first.unresolved_queue[0].gates.core, false);
+});
+
+test('does not count a passed paper review when a duplicate record is pending', () => {
+  const root = createCompleteFixture();
+  const path = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(path, 'utf8'));
+  manifest.push({
+    ...manifest[0],
+    paper_alignment_review: {
+      ...manifest[0].paper_alignment_review,
+      status: 'pending',
+    },
+  });
+  writeJson(path, manifest);
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  assert.equal(summary.paper_aligned_total, 0);
+  assert.equal(summary.unresolved_queue[0].gates.paper, false);
 });
 
 test('keeps queue source and review state stable for shuffled conflicting duplicate manifests', () => {
@@ -2117,3 +2266,69 @@ test('rejects a queue report parent symlink without writing outside the reposito
   assert.notEqual(result.status, 0);
   assert.equal(existsSync(join(outside, 'queue.json')), false);
 });
+
+for (const invalidCliCase of [
+  {
+    name: 'missing root value',
+    args: () => ['--root'],
+  },
+  {
+    name: 'root value replaced by a flag',
+    args: () => ['--root', '--json'],
+  },
+  {
+    name: 'missing queue JSON value',
+    args: () => ['--queue-json'],
+  },
+  {
+    name: 'queue JSON value replaced by a flag',
+    args: () => ['--queue-json', '--json'],
+  },
+  {
+    name: 'missing queue Markdown value',
+    args: () => ['--queue-markdown'],
+  },
+  {
+    name: 'queue Markdown value replaced by a flag',
+    args: () => ['--queue-markdown', '--allow-incomplete'],
+  },
+  {
+    name: 'unknown option',
+    args: () => ['--unknown-audit-option'],
+  },
+  {
+    name: 'duplicate root option',
+    args: (root) => ['--root', root, '--root', root],
+  },
+  {
+    name: 'duplicate queue JSON option',
+    args: () => [
+      '--queue-json', 'docs/reports/first.json',
+      '--queue-json', 'docs/reports/second.json',
+    ],
+  },
+  {
+    name: 'duplicate queue Markdown option',
+    args: () => [
+      '--queue-markdown', 'docs/reports/first.md',
+      '--queue-markdown', 'docs/reports/second.md',
+    ],
+  },
+  {
+    name: 'unexpected positional argument',
+    args: () => ['unexpected-positional'],
+  },
+]) {
+  test(`rejects CLI input with ${invalidCliCase.name}`, () => {
+    const root = createCompleteFixture();
+    mkdirSync(join(root, 'docs/reports'), { recursive: true });
+    const result = spawnSync(
+      process.execPath,
+      [auditScript.pathname, ...invalidCliCase.args(root)],
+      { encoding: 'utf8' },
+    );
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Invalid audit arguments:/u);
+  });
+}

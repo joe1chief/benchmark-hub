@@ -12,7 +12,6 @@ import {
   writeFileSync,
 } from 'node:fs';
 import {
-  basename,
   dirname,
   extname,
   isAbsolute,
@@ -77,22 +76,46 @@ function parseArgs(argv) {
     queueJson: null,
     queueMarkdown: null,
   };
+  const seen = new Set();
+
+  const markSeen = (option) => {
+    if (seen.has(option)) {
+      throw new Error(`Invalid audit arguments: duplicate option ${option}.`);
+    }
+    seen.add(option);
+  };
+  const readValue = (option, index) => {
+    markSeen(option);
+    const value = argv[index + 1];
+    if (
+      typeof value !== 'string'
+      || !value.trim()
+      || value.startsWith('-')
+    ) {
+      throw new Error(`Invalid audit arguments: ${option} requires a value.`);
+    }
+    return value;
+  };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--root') {
-      args.root = resolve(argv[index + 1]);
+      args.root = resolve(readValue(arg, index));
       index += 1;
     } else if (arg === '--json') {
+      markSeen(arg);
       args.json = true;
     } else if (arg === '--allow-incomplete') {
+      markSeen(arg);
       args.allowIncomplete = true;
     } else if (arg === '--queue-json') {
-      args.queueJson = argv[index + 1];
+      args.queueJson = readValue(arg, index);
       index += 1;
     } else if (arg === '--queue-markdown') {
-      args.queueMarkdown = argv[index + 1];
+      args.queueMarkdown = readValue(arg, index);
       index += 1;
+    } else {
+      throw new Error(`Invalid audit arguments: unexpected argument ${arg}.`);
     }
   }
 
@@ -156,6 +179,49 @@ function sortManifestRecords(records) {
   ));
 }
 
+function inspectBenchmarkId(record, location) {
+  const hasId = record !== null
+    && typeof record === 'object'
+    && Object.prototype.hasOwnProperty.call(record, 'id');
+  const rawId = hasId ? record.id : null;
+  let reason = null;
+  if (!hasId) reason = 'missing';
+  else if (rawId === null) reason = 'null';
+  else if (typeof rawId !== 'string') reason = 'non_string';
+  else if (!rawId.trim()) reason = 'blank';
+  if (!reason) return { id: rawId, issue: null };
+
+  const locator = location.file
+    ? `file:${location.file}`
+    : `record:${location.record_index}`;
+  const syntheticKey = `__invalid__:${location.source}:${locator}`;
+  return {
+    id: null,
+    issue: {
+      id: syntheticKey,
+      synthetic_key: syntheticKey,
+      issue: 'invalid_benchmark_id',
+      ...location,
+      raw_id: rawId,
+      reason,
+    },
+  };
+}
+
+function partitionValidRecords(records, source) {
+  const validRecords = [];
+  const issues = [];
+  records.forEach((record, recordIndex) => {
+    const inspected = inspectBenchmarkId(record, {
+      source,
+      record_index: recordIndex,
+    });
+    if (inspected.issue) issues.push(inspected.issue);
+    else validRecords.push(record);
+  });
+  return { validRecords, issues };
+}
+
 function exactIdSetIssues(idSets) {
   const allIds = [...new Set(
     ID_SET_ORDER.flatMap((name) => [...idSets[name]]),
@@ -174,6 +240,10 @@ function exactIdSetIssues(idSets) {
 
 function issueCode(gate, issue) {
   const qualifiers = [];
+  if (issue.source) qualifiers.push(issue.source);
+  if (issue.record_index !== undefined) qualifiers.push(`record=${issue.record_index}`);
+  if (issue.file) qualifiers.push(`file=${issue.file}`);
+  if (issue.reason) qualifiers.push(`reason=${issue.reason}`);
   if (issue.language) qualifiers.push(issue.language);
   if (issue.field) qualifiers.push(issue.field);
   if (issue.node) qualifiers.push(issue.node);
@@ -249,9 +319,7 @@ function buildUnresolvedQueue({
   const issueIndex = indexIssuesById([
     ['id_set', idSetIssues],
     ['core', brokenReferences],
-    ['core', aggregateIssues.filter((issue) => (
-      !['duplicate_list_record'].includes(issue.issue)
-    ))],
+    ['core', aggregateIssues],
     ['core', dataConsistencyIssues],
     ['id_set', recordIdentityIssues],
     ['paper', sourceIssues.filter((issue) => (
@@ -283,9 +351,14 @@ function buildUnresolvedQueue({
   ].map((issue) => issue.id));
   const coreIssueIds = new Set([
     ...brokenReferences,
-    ...aggregateIssues.filter((issue) => issue.issue !== 'duplicate_list_record'),
+    ...aggregateIssues,
     ...dataConsistencyIssues,
   ].map((issue) => issue.id));
+  const invalidIdIssueById = new Map(
+    idSetIssues
+      .filter((issue) => issue.issue === 'invalid_benchmark_id')
+      .map((issue) => [issue.id, issue]),
+  );
 
   return [...allIds].sort(compareText).flatMap((id) => {
     const manifestEntry = manifestById.get(id);
@@ -312,8 +385,20 @@ function buildUnresolvedQueue({
     if (!gates.visual) addFallbackIssue(issues, 'visual', 'visual_review_not_passed');
     if (!gates.paper) addFallbackIssue(issues, 'paper', 'paper_alignment_review_not_passed');
     const paperReview = manifestEntry?.paper_alignment_review;
+    const invalidIdIssue = invalidIdIssueById.get(id);
     return [{
       id,
+      ...(invalidIdIssue ? {
+        input_location: {
+          source: invalidIdIssue.source,
+          ...(invalidIdIssue.record_index !== undefined
+            ? { record_index: invalidIdIssue.record_index }
+            : {}),
+          ...(invalidIdIssue.file ? { file: invalidIdIssue.file } : {}),
+          raw_id: invalidIdIssue.raw_id,
+          reason: invalidIdIssue.reason,
+        },
+      } : {}),
       source_type: manifestEntry?.source_type ?? null,
       source_url: manifestEntry?.source_url ?? null,
       source_locator: manifestEntry?.source_locator ?? null,
@@ -459,30 +544,43 @@ export function auditBuildProcessAssets(root) {
   const detailFiles = readdirSync(detailDir)
     .filter((name) => name.endsWith('.json'))
     .sort();
-  const details = detailFiles.map((detailFile) => ({
+  const rawDetails = detailFiles.map((detailFile) => ({
     detailFile,
     detail: readJson(join(detailDir, detailFile)),
   }));
-  const detailIdCounts = countIds(
-    details,
-    ({ detailFile, detail }) => detail.id || basename(detailFile, '.json'),
-  );
-  const detailIds = new Set(
-    details.map(({ detailFile, detail }) => (
-      detail.id || basename(detailFile, '.json')
-    )),
-  );
-  const manifest = existsSync(manifestPath) ? readJson(manifestPath) : [];
+  const invalidIdIssues = [];
+  const details = rawDetails.flatMap(({ detailFile, detail }) => {
+    const inspected = inspectBenchmarkId(detail, {
+      source: 'detail',
+      file: detailFile,
+    });
+    if (inspected.issue) {
+      invalidIdIssues.push(inspected.issue);
+      return [];
+    }
+    return [{ detailFile, detail, id: inspected.id }];
+  });
+  const detailIdCounts = countIds(details, ({ id }) => id);
+  const detailIds = new Set(details.map(({ id }) => id));
+  const rawManifest = existsSync(manifestPath) ? readJson(manifestPath) : [];
+  const manifestPartition = partitionValidRecords(rawManifest, 'manifest');
+  const manifest = manifestPartition.validRecords;
+  invalidIdIssues.push(...manifestPartition.issues);
   const sortedManifest = sortManifestRecords(manifest);
   const manifestIdCounts = countIds(manifest);
   const manifestIds = new Set(manifest.map((entry) => entry.id));
   const manifestById = new Map(
     sortedManifest.map((entry) => [entry.id, entry]),
   );
-  const aggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
+  const rawAggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
+  const aggregatePartition = partitionValidRecords(rawAggregate, 'catalog');
+  const aggregate = aggregatePartition.validRecords;
+  invalidIdIssues.push(...aggregatePartition.issues);
   const aggregateIdCounts = countIds(aggregate);
   const aggregateIds = new Set(aggregate.map((entry) => entry.id));
-  const aggregateById = new Map(aggregate.map((entry) => [entry.id, entry]));
+  const aggregateById = new Map(
+    sortManifestRecords(aggregate).map((entry) => [entry.id, entry]),
+  );
   const physicalDrawioIds = new Set(
     existsSync(drawioDir)
       ? readdirSync(drawioDir, { withFileTypes: true })
@@ -503,14 +601,22 @@ export function auditBuildProcessAssets(root) {
     physical_assets: physicalDrawioIds,
     complete_core_assets: completeCoreAssetIds,
   };
-  const idSetIssues = exactIdSetIssues(idSets);
+  const idSetIssues = [
+    ...invalidIdIssues,
+    ...exactIdSetIssues(idSets),
+  ].sort((left, right) => compareText(left.id, right.id));
   const allIds = new Set(ID_SET_ORDER.flatMap((name) => [...idSets[name]]));
+  const queueIds = new Set([
+    ...allIds,
+    ...invalidIdIssues.map((issue) => issue.synthetic_key),
+  ]);
   const aggregateIssues = duplicateIdIssues(
     aggregateIdCounts,
     'duplicate_list_record',
   );
   let completeAggregateTotal = 0;
   for (const manifestEntry of sortedManifest) {
+    if ((aggregateIdCounts.get(manifestEntry.id) || 0) > 1) continue;
     const aggregateEntry = aggregateById.get(manifestEntry.id);
     if (!aggregateEntry) {
       aggregateIssues.push({
@@ -589,7 +695,7 @@ export function auditBuildProcessAssets(root) {
   const strictIssues = [];
   const visualIssues = [];
   const paperAlignmentIssues = [];
-  const paperAlignedIds = new Set();
+  const paperAlignmentCandidateIds = new Set();
   for (const entry of sortedManifest) {
     for (const language of ['en', 'zh']) {
       if (entry.strict_validation?.[language] !== 'passed') {
@@ -643,7 +749,7 @@ export function auditBuildProcessAssets(root) {
         && entry.paper_alignment_review.source_url === entry.source_url
         && entry.paper_alignment_review.source_locator === entry.source_locator
       ) {
-        paperAlignedIds.add(entry.id);
+        paperAlignmentCandidateIds.add(entry.id);
       }
     }
   }
@@ -671,8 +777,7 @@ export function auditBuildProcessAssets(root) {
   );
   let completeBilingualTotal = 0;
 
-  for (const { detailFile, detail } of details) {
-    const id = detail.id || basename(detailFile, '.json');
+  for (const { detail, id } of details) {
     const manifestEntry = manifestById.get(id);
     const missingFields = REQUIRED_ASSET_FIELDS.filter((field) => !detail[field]);
     const hasStarted = manifestIds.has(id)
@@ -944,11 +1049,21 @@ export function auditBuildProcessAssets(root) {
     }
     if (complete) pngCompleteIds.add(id);
   }
+  const paperBlockingIds = new Set([
+    ...paperAlignmentIssues,
+    ...sourceIssues,
+  ].map((issue) => issue.id));
+  const paperAlignedTotal = [...paperAlignmentCandidateIds]
+    .filter((id) => manifestIdCounts.get(id) === 1)
+    .filter((id) => aggregateIdCounts.get(id) === 1)
+    .filter((id) => detailIdCounts.get(id) === 1)
+    .filter((id) => !paperBlockingIds.has(id))
+    .length;
 
   const summary = {
     detail_total: detailFiles.length,
-    aggregate_total: aggregate.length,
-    manifest_total: manifest.length,
+    aggregate_total: rawAggregate.length,
+    manifest_total: rawManifest.length,
     complete_bilingual_total: completeBilingualTotal,
     complete_aggregate_total: completeAggregateTotal,
     id_sets_equal: idSetIssues.length === 0,
@@ -962,7 +1077,7 @@ export function auditBuildProcessAssets(root) {
     visually_reviewed_total: manifest.filter(
       (entry) => entry.review_status === 'visually_reviewed',
     ).length,
-    paper_aligned_total: paperAlignedIds.size,
+    paper_aligned_total: paperAlignedTotal,
     missing_ids: [...new Set(missingIds)].sort(),
     broken_references: brokenReferences,
     language_issues: languageIssues,
@@ -977,7 +1092,7 @@ export function auditBuildProcessAssets(root) {
     review_issues: reviewIssues,
   };
   summary.unresolved_queue = buildUnresolvedQueue({
-    allIds,
+    allIds: queueIds,
     manifestById,
     idSetIssues,
     completeCoreAssetIds,
