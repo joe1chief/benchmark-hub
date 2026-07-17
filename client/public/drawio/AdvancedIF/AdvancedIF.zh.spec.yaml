@@ -4,15 +4,15 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AdvancedIF 构建与量规评测流程
-  description: 按论文呈现专家围绕三类能力人工编写对抗式指令遵循对话和末轮量规，再用 o3-mini 逐准则判断并执行 “全部满足才通过”严格评分的完整流程。
-  legend: AdvancedIF 含 1,645 个人工对话与人工量规。多轮对话只为最后一轮收集量规；模型回答必须满足全部适用 准则，该对话才得分。
+  title: AdvancedIF 构建流程
+  description: 对齐 arXiv:2511.10507v2 第 3.1-3.2 节及表 1 的构建与严格量规评测流程。
+  legend: 上下文延续与系统提示可控性分别经过标注员与 LLM 的多轮对话；复杂单轮直接进入末轮失败筛选，量规须经多轮人工审核后发布。
 nodes:
   - id: scope
     label: |-
-      定义高级指令遵循
-      将指令执行与事实性区分
-      避免意图模糊和能力域重叠
+      定义进阶指令遵循范围
+      区分指令执行与事实性
+      排除歧义意图
     type: process
     size: xl
     position:
@@ -20,16 +20,16 @@ nodes:
       'y': 240
   - id: experts
     label: |-
-      招募人类专家标注员
-      提示与量规均由人工编写
-      每个提示针对一类高级指令遵循能力
+      招募专家标注员
+      人工编写提示与量规
+      每个提示对应一类
     type: user
     size: xl
     position:
       x: 320
       'y': 240
   - id: category
-    label: 属于哪类指令遵循？
+    label: 选择指令遵循类别
     type: decision
     size: xl
     position:
@@ -37,10 +37,9 @@ nodes:
       'y': 240
   - id: complex
     label: |-
-      显式复杂指令遵循
-      402 个单轮对话 • 平均 7.44 条准则
-      6+ 条语气、格式、风格、长度、否定、
-      拼写、结构或条件联动指令
+      复杂单轮指令遵循
+      402 个对话
+      至少 6 项约束
     type: document
     size: xl
     position:
@@ -48,9 +47,9 @@ nodes:
       'y': 20
   - id: carried
     label: |-
-      多轮上下文延续
-      736 个对话 • 平均 7.69 轮 • 6.08 条准则
-      将初始设定、分散细节与编辑带到末轮
+      上下文延续指令遵循
+      736 个对话 • 平均 7.69 轮
+      延续设定、细节与修改
     type: document
     size: xl
     position:
@@ -59,91 +58,140 @@ nodes:
   - id: system
     label: |-
       系统提示可控性
-      507 个对话 • 平均 11.21 轮 • 9.81 条准则
-      风格、安全、产品、语音与工具规范
+      507 个对话 • 平均 11.21 轮
+      风格、安全、语气与工具
     type: document
     size: xl
     position:
       x: 880
       'y': 460
-  - id: adversarial
+  - id: carried_dialogue
     label: |-
-      对抗式收集提示
-      多轮标注员先与给定 LLM 对话
-      只保留末轮触发指令遵循失败的提示
+      开展标注员与 LLM 对话
+      上下文延续多轮互动
+      将上下文带到末轮
     type: process
     size: xl
     position:
       x: 1160
       'y': 240
-  - id: rubrics
+  - id: system_dialogue
     label: |-
-      编写末轮量规
-      同一标注员把指令拆成最多 20 条
-      清晰、可独立验证的二元准则
+      开展系统提示多轮对话
+      标注员与 LLM 互动
+      507/507 均至少 4 轮
     type: process
     size: xl
     position:
+      x: 1160
+      'y': 460
+  - id: failure_gate
+    label: |-
+      末轮指令遵循失败？
+      仅保留目标类别失败样本
+    type: decision
+    size: xl
+    position:
       x: 1440
+      'y': 240
+  - id: discard
+    label: |-
+      排除非失败提示
+      不属于指令遵循失败
+      不纳入发布集
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 460
+  - id: rubrics
+    label: |-
+      编写末轮量规
+      同一标注员 • 最多 20 条
+      二元可验证准则
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: human_review
+    label: |-
+      多轮人工审核
+      复核提示与量规
+      修订后再发布
+    type: user
+    size: xl
+    position:
+      x: 2000
       'y': 240
   - id: dataset
     label: |-
       发布 AdvancedIF
-      402 + 736 + 507 = 1,645 个对话
-      人工提示 • 人工量规 • 多轮 + 系统提示
+      402 + 736 + 507 = 1,645
+      人工对话与人工量规
     type: database
     size: xl
     position:
-      x: 1720
+      x: 2280
       'y': 240
   - id: response
     label: |-
       生成模型回答
-      使用完整用户/系统对话上下文
-      在最后一轮对回答评分
+      使用完整对话上下文
+      在末轮评分
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 700
+  - id: verifier
+    label: |-
+      逐条验证量规准则
+      o3-mini 判断真或假
+      输入提示、回答与量规
     type: process
     size: xl
     position:
       x: 1720
       'y': 700
-  - id: verifier
+  - id: strict
     label: |-
-      逐条验证全部准则
-      o3-mini 接收提示、回答与量规
-      为每条准则输出真或假
-    type: process
+      所有准则均为真？
+      任一失败则对话失败
+    type: decision
     size: xl
     position:
       x: 1440
       'y': 700
-  - id: strict
+  - id: failed_dialog
     label: |-
-      全部量规准则都为真吗？
-      任一要求失败即整段对话失败
+      记录失败对话
+      至少一条准则为假
+      纳入通过率分母
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 860
+  - id: score
+    label: |-
+      汇总严格通过率
+      CIF • CC • SS
+      三类平均
     type: process
     size: xl
     position:
       x: 1160
       'y': 700
-  - id: score
-    label: |-
-      汇总严格通过率
-      复杂指令 CIF • 上下文延续 CC
-      系统可控 SS • 三类平均分
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 700
   - id: report
     label: |-
-      报告高级指令遵循能力
-      比较思考与最小思考模型
-      诊断单轮、上下文延续与系统提示差距
+      报告进阶指令遵循结果
+      比较不同模型设置
+      诊断类别差距
     type: terminal
     size: xl
     position:
-      x: 600
+      x: 880
       'y': 700
 edges:
   - from: scope
@@ -161,19 +209,45 @@ edges:
   - from: category
     to: system
     type: primary
-  - from: complex
-    to: adversarial
-    type: primary
   - from: carried
-    to: adversarial
+    to: carried_dialogue
+    type: primary
+  - from: complex
+    to: failure_gate
+    type: primary
+    waypoints:
+      - x: 1320
+        'y': 80
+      - x: 1400
+        'y': 80
+      - x: 1400
+        'y': 200
+  - from: carried_dialogue
+    to: failure_gate
     type: primary
   - from: system
-    to: adversarial
+    to: system_dialogue
     type: primary
-  - from: adversarial
+  - from: system_dialogue
+    to: failure_gate
+    type: primary
+    waypoints:
+      - x: 1360
+        'y': 520
+      - x: 1400
+        'y': 520
+      - x: 1400
+        'y': 360
+  - from: failure_gate
     to: rubrics
     type: primary
+  - from: failure_gate
+    to: discard
+    type: optional
   - from: rubrics
+    to: human_review
+    type: primary
+  - from: human_review
     to: dataset
     type: primary
   - from: dataset
@@ -188,6 +262,12 @@ edges:
   - from: strict
     to: score
     type: primary
+  - from: strict
+    to: failed_dialog
+    type: optional
+  - from: failed_dialog
+    to: score
+    type: data
   - from: score
     to: report
     type: primary

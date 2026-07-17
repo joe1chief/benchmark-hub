@@ -4,19 +4,18 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AdvancedIF Construction and Rubric-Based Evaluation Workflow
-  description: >-
-    Paper-aligned workflow for expert-authoring adversarial instruction-following dialogs and final-turn rubrics across
-    three capability categories, then applying criterion-level o3-mini verification and strict all-criteria scoring.
+  title: AdvancedIF Build Process
+  description: Paper-aligned construction and strict rubric evaluation from arXiv:2511.10507v2 Sections 3.1-3.2 and Table 1.
   legend: >-
-    AdvancedIF contains 1,645 human-written dialogs and human-written rubrics. For multi-turn dialogs, rubrics cover
-    only the final turn. A dialog receives credit only when the response satisfies every applicable criterion.
+    Carried-context and system-steerability examples use category-specific annotator-LLM multi-turn dialogues; complex
+    single-turn examples go directly to final-turn failure filtering. Rubrics pass multiple human review rounds before
+    release.
 nodes:
   - id: scope
     label: |-
-      Define Advanced Instruction Following
-      Isolate Instruction Execution from Factuality
-      Avoid Ambiguous Intentions and Domain Overlap
+      Define Advanced IF Scope
+      Separate IF from Factuality
+      Exclude Ambiguous Intent
     type: process
     size: xl
     position:
@@ -24,16 +23,16 @@ nodes:
       'y': 240
   - id: experts
     label: |-
-      Recruit Human Expert Annotators
-      Manually Author Both Prompts and Rubrics
-      One Prompt Targets One Advanced-IF Category
+      Recruit Expert Annotators
+      Human Prompts and Rubrics
+      One Category per Prompt
     type: user
     size: xl
     position:
       x: 320
       'y': 240
   - id: category
-    label: Which Instruction-Following Category?
+    label: Select IF Category
     type: decision
     size: xl
     position:
@@ -41,10 +40,9 @@ nodes:
       'y': 240
   - id: complex
     label: |-
-      Explicit and Complex IF
-      402 Single-Turn Dialogs • 7.44 Criteria on Average
-      6+ Tone, Format, Style, Length, Negative,
-      Spelling, Structure, or Inter-Conditional Instructions
+      Complex Single-Turn IF
+      402 Dialogs
+      At Least 6 Constraints
     type: document
     size: xl
     position:
@@ -52,9 +50,9 @@ nodes:
       'y': 20
   - id: carried
     label: |-
-      Multi-Turn Carried Context IF
-      736 Dialogs • 7.69 Turns • 6.08 Criteria on Average
-      Carry Setup, Scattered Details, and Edits to Final Turn
+      Carried-Context IF
+      736 Dialogs • 7.69 Turns
+      Setup, Details, and Edits
     type: document
     size: xl
     position:
@@ -62,92 +60,142 @@ nodes:
       'y': 240
   - id: system
     label: |-
-      System Prompt Steerability
-      507 Dialogs • 11.21 Turns • 9.81 Criteria on Average
-      Style, Safety, Product, Voice, and Tool Specifications
+      System-Prompt Steerability
+      507 Dialogs • 11.21 Turns
+      Style, Safety, Voice, Tools
     type: document
     size: xl
     position:
       x: 880
       'y': 460
-  - id: adversarial
+  - id: carried_dialogue
     label: |-
-      Collect Prompts Adversarially
-      Multi-Turn Annotator Chats with a Provided LLM
-      Keep Only Final-Turn Responses that Trigger IF Failure
+      Run Annotator-LLM Dialogue
+      Multi-Turn Interaction
+      Carry Context to Final Turn
     type: process
     size: xl
     position:
       x: 1160
       'y': 240
-  - id: rubrics
+  - id: system_dialogue
     label: |-
-      Author the Final-Turn Rubric
-      Same Annotator Decomposes Instructions into up to 20
-      Clear, Separately Verifiable Binary Criteria
+      Run System-Prompt Dialogue
+      Annotator and LLM Multi-Turn
+      507/507 Have at Least 4 Turns
     type: process
     size: xl
     position:
+      x: 1160
+      'y': 460
+  - id: failure_gate
+    label: |-
+      Final-Turn IF Failure?
+      Retain Only Failures
+      in the Target Category
+    type: decision
+    size: xl
+    position:
       x: 1440
+      'y': 240
+  - id: discard
+    label: |-
+      Exclude Non-Failure Prompt
+      Not an IF Failure
+      Do Not Add to Release
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 460
+  - id: rubrics
+    label: |-
+      Author Final-Turn Rubric
+      Same Annotator • Up to 20
+      Binary Verifiable Criteria
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: human_review
+    label: |-
+      Multiple Human Review Rounds
+      Review Prompts and Rubrics
+      Revise Before Release
+    type: user
+    size: xl
+    position:
+      x: 2000
       'y': 240
   - id: dataset
     label: |-
       Release AdvancedIF
-      402 + 736 + 507 = 1,645 Dialogs
-      Human Prompts • Human Rubrics • Multi-Turn + System
+      402 + 736 + 507 = 1,645
+      Human Dialogs and Rubrics
     type: database
     size: xl
     position:
-      x: 1720
+      x: 2280
       'y': 240
   - id: response
     label: |-
-      Generate the Model Response
-      Use the Full User/System Conversation Context
-      Score the Response at the Final Turn
+      Generate Model Response
+      Use Full Conversation Context
+      Score the Final Turn
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 700
+  - id: verifier
+    label: |-
+      Verify Every Criterion
+      o3-mini Judges TRUE or FALSE
+      Prompt + Response + Rubric
     type: process
     size: xl
     position:
       x: 1720
       'y': 700
-  - id: verifier
+  - id: strict
     label: |-
-      Verify Every Criterion Separately
-      o3-mini Receives Prompt, Response, and Rubric
-      Produce TRUE or FALSE for Each Criterion
-    type: process
+      All Criteria TRUE?
+      One Failure Fails the Dialog
+    type: decision
     size: xl
     position:
       x: 1440
       'y': 700
-  - id: strict
+  - id: failed_dialog
     label: |-
-      Are All Rubric Criteria TRUE?
-      Any Single Failed Requirement Makes the Dialog Fail
+      Record Failed Dialog
+      At Least One Criterion FALSE
+      Include in Pass-Rate Denominator
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 860
+  - id: score
+    label: |-
+      Aggregate Strict Pass Rate
+      CIF • CC • SS
+      Three-Category Average
     type: process
     size: xl
     position:
       x: 1160
       'y': 700
-  - id: score
-    label: |-
-      Aggregate Strict Pass Percentages
-      ComplexIF (CIF) • Carried Context (CC)
-      System Steerability (SS) • Three-Category Average
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 700
   - id: report
     label: |-
-      Report Advanced-IF Capability
-      Compare Thinking and Minimal-Thinking Models
-      Diagnose Single-Turn, Context-Carry, and System Gaps
+      Report Advanced IF Results
+      Compare Model Settings
+      Diagnose Category Gaps
     type: terminal
     size: xl
     position:
-      x: 600
+      x: 880
       'y': 700
 edges:
   - from: scope
@@ -165,19 +213,45 @@ edges:
   - from: category
     to: system
     type: primary
-  - from: complex
-    to: adversarial
-    type: primary
   - from: carried
-    to: adversarial
+    to: carried_dialogue
+    type: primary
+  - from: complex
+    to: failure_gate
+    type: primary
+    waypoints:
+      - x: 1320
+        'y': 80
+      - x: 1400
+        'y': 80
+      - x: 1400
+        'y': 200
+  - from: carried_dialogue
+    to: failure_gate
     type: primary
   - from: system
-    to: adversarial
+    to: system_dialogue
     type: primary
-  - from: adversarial
+  - from: system_dialogue
+    to: failure_gate
+    type: primary
+    waypoints:
+      - x: 1360
+        'y': 520
+      - x: 1400
+        'y': 520
+      - x: 1400
+        'y': 360
+  - from: failure_gate
     to: rubrics
     type: primary
+  - from: failure_gate
+    to: discard
+    type: optional
   - from: rubrics
+    to: human_review
+    type: primary
+  - from: human_review
     to: dataset
     type: primary
   - from: dataset
@@ -192,6 +266,12 @@ edges:
   - from: strict
     to: score
     type: primary
+  - from: strict
+    to: failed_dialog
+    type: optional
+  - from: failed_dialog
+    to: score
+    type: data
   - from: score
     to: report
     type: primary

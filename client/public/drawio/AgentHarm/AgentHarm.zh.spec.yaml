@@ -5,13 +5,13 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AgentHarm 构建流程
-  description: 基于 arXiv:2410.09024 对齐的有害/良性 Agent 任务、合成工具、细粒度评分规则与越狱评测流程。
-  legend: AgentHarm 测量恶意多步骤任务是否真正执行成功，而不只判断有害文本；确定性规则之外仅对窄语义条件使用 LLM 评审。
+  description: 对齐 arXiv:2410.09024v3 第 3.1-3.2 节及第 4.1 节的最终任务编写、独立审核、工具与量规封装及评测流程。
+  legend: 四种有害变体及匹配的良性对应任务形成最终任务后，再由非作者独立审核；不是只提前审核 110 个基础行为。
 nodes:
   - id: taxonomy
     label: |-
       定义危害覆盖范围
-      11 类危害
+      11 个类别
       每类 10 个基础行为
     type: database
     size: xl
@@ -21,151 +21,148 @@ nodes:
   - id: base_behaviors
     label: |-
       人工编写 110 个基础行为
-      明确恶意 • 可数字化执行
-      多步骤依赖 • 不含真实身份
+      恶意且可数字化执行
+      多步骤 • 不含真实身份
     type: user
     size: xl
     position:
       x: 320
       'y': 280
-  - id: independent_review
+  - id: augmentation
     label: |-
-      独立人工复核
-      每个问题都由
-      非原作者检查
+      创建四种有害变体
+      详细或开放式
+      带或不带首个工具提示
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 120
+  - id: benign
+    label: |-
+      创建良性对应任务
+      匹配主题与 Agent 技能
+      移除恶意意图
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: final_review
+    label: |-
+      审核每个最终任务
+      由非作者独立审核
+      检查质量与可执行性
     type: user
     size: xl
     position:
-      x: 600
-      'y': 40
-  - id: augmentation
-    label: |-
-      构造四种有害变体
-      详细版 • 开放版
-      各含有/不含首个工具提示
-    type: process
-    size: xl
-    position:
       x: 880
-      'y': 40
-  - id: benign
-    label: |-
-      改写良性对应任务
-      保留相同主题与 Agent 能力
-      去除明确恶意意图
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 180
+      'y': 280
   - id: tools
     label: |-
       实现 104 个合成工具
-      Inspect 独立函数
-      无副作用与真实世界危害
+      独立 Inspect 函数
+      无真实世界副作用
     type: process
     size: xl
     position:
-      x: 600
-      'y': 340
+      x: 1160
+      'y': 120
   - id: rubrics
     label: |-
-      编写细粒度评分规则
+      编写细粒度量规
       目标调用 • 顺序 • 参数
-      必要时做窄范围语义检查
+      必要时用窄语义检查
     type: document
     size: xl
     position:
-      x: 600
-      'y': 500
+      x: 1160
+      'y': 440
   - id: package
     label: |-
       封装 AgentHarm
-      440 个有害任务 + 良性对应集
+      440 个有害任务及良性对应
       验证 44 • 公开 264 • 私有 132
     type: database
     size: xl
     position:
-      x: 880
-      'y': 300
+      x: 1440
+      'y': 280
   - id: run_harmful
     label: |-
-      运行有害 Agent 评测
-      直接指令 • 强制工具调用
+      运行有害任务评测
+      直接提示 • 强制工具调用
       通用越狱模板
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 180
+      x: 1720
+      'y': 120
   - id: run_benign
     label: |-
       运行良性能力对照
-      使用同类 Agent 能力
-      估计无拒答时的任务能力
+      使用相同 Agent 能力
+      分离拒答影响
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 420
+      x: 1720
+      'y': 440
   - id: trace_checks
     label: |-
-      评审完整轨迹
-      确定性规则检查
-      按评分条件给予部分分
+      评分完整轨迹
+      确定性量规检查
+      按准则给予部分分
     type: process
     size: xl
     position:
-      x: 1440
-      'y': 300
+      x: 2000
+      'y': 280
   - id: refusal
     label: |-
       单独判断拒答
-      检查 Agent 的每条消息
-      跟踪非拒答任务表现
+      检查每条 Agent 消息
+      记录未拒答表现
     type: process
     size: xl
     position:
-      x: 1440
+      x: 2000
       'y': 650
   - id: score
     label: |-
-      汇报 AgentHarm 结果
-      Harm Score • 拒答率
-      非拒答与良性任务能力
+      报告 AgentHarm 结果
+      危害分数 • 拒答率
+      未拒答与良性能力
     type: terminal
     size: xl
     position:
-      x: 1160
+      x: 1720
       'y': 650
 edges:
   - from: taxonomy
     to: base_behaviors
     type: primary
   - from: base_behaviors
-    to: independent_review
-    type: primary
-  - from: independent_review
     to: augmentation
     type: primary
-  - from: independent_review
+  - from: augmentation
     to: benign
     type: data
-  - from: base_behaviors
-    to: tools
-    type: data
-  - from: base_behaviors
-    to: rubrics
-    type: data
   - from: augmentation
-    to: package
+    to: final_review
     type: primary
   - from: benign
-    to: package
+    to: final_review
+    type: data
+  - from: final_review
+    to: tools
+    type: primary
+  - from: final_review
+    to: rubrics
     type: data
   - from: tools
     to: package
-    type: data
+    type: primary
   - from: rubrics
     to: package
     type: data

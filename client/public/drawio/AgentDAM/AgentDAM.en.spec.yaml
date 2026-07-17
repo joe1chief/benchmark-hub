@@ -6,11 +6,12 @@ meta:
   routing: orthogonal
   title: AgentDAM Build Process
   description: >-
-    Paper-aligned dataset construction, end-to-end web-agent execution, and privacy-utility evaluation workflow based on
-    arXiv:2503.09780.
+    Paper-aligned dataset construction, web-agent execution, and privacy-utility evaluation from arXiv:2503.09780v3
+    Sections 3.1-3.4 and Appendix B.2.
   legend: >-
     The benchmark measures data minimization in action; irrelevant sensitive facts must not be disclosed even when they
-    appear naturally inside task-related user data.
+    appear naturally inside task-related user data. GPT-4o produces the full privacy metrics; the four-human run is a
+    judge audit.
 nodes:
   - id: principle
     label: |-
@@ -65,12 +66,22 @@ nodes:
   - id: synthesize
     label: |-
       Synthesize Long-Form user_data
-      LLM Generates Coherent Chats or Notes
-      Two Samples per Human Seed
+      Llama-3.3-70B Generates
+      Coherent Chats or Notes
     type: process
     size: xl
     position:
       x: 880
+      'y': 170
+  - id: elbow_select
+    label: |-
+      Apply the Elbow Method
+      Select 2 Outputs per Seed
+      Preserve Coherent Samples
+    type: process
+    size: xl
+    position:
+      x: 1160
       'y': 170
   - id: dataset
     label: |-
@@ -80,7 +91,7 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 170
   - id: setup
     label: |-
@@ -90,7 +101,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 170
   - id: execute
     label: |-
@@ -100,7 +111,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 500
   - id: utility
     label: |-
@@ -110,7 +121,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 420
   - id: privacy
     label: |-
@@ -120,18 +131,18 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 620
   - id: judge_validation
     label: |-
-      Validate the Privacy Judge
-      Four Human Evaluators
-      98% Agreement with LLM Judgments
+      Validate Judge on One Run
+      Four Humans Review GPT-4o + AXTree
+      98% Agreement with GPT-4o
     type: user
     size: xl
     position:
-      x: 880
-      'y': 620
+      x: 1160
+      'y': 760
   - id: metrics
     label: |-
       Report Privacy–Utility Trade-Off
@@ -140,7 +151,7 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 600
+      x: 880
       'y': 500
   - id: mitigation
     label: |-
@@ -150,7 +161,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 320
+      x: 600
       'y': 500
 edges:
   - from: principle
@@ -172,6 +183,9 @@ edges:
     to: synthesize
     type: primary
   - from: synthesize
+    to: elbow_select
+    type: primary
+  - from: elbow_select
     to: dataset
     type: primary
   - from: dataset
@@ -187,12 +201,12 @@ edges:
     to: privacy
     type: primary
   - from: privacy
+    to: metrics
+    type: primary
+  - from: privacy
     to: judge_validation
     type: data
   - from: utility
-    to: metrics
-    type: primary
-  - from: judge_validation
     to: metrics
     type: primary
   - from: metrics

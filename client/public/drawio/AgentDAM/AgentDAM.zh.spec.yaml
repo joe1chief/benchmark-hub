@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AgentDAM 构建流程
-  description: 基于 arXiv:2503.09780 对齐的数据构建、端到端 Web Agent 执行与隐私-效用评测流程。
-  legend: 基准在真实行动中测量数据最小化；即使无关敏感事实自然出现在任务相关用户数据中，Agent 也不应披露它们。
+  description: 对齐 arXiv:2503.09780v3 第 3.1-3.4 节及附录 B.2 的数据构建、Web Agent 执行与隐私-效用评测流程。
+  legend: 基准在真实行动中测量数据最小化；即使无关敏感事实自然出现在任务相关用户数据中，Agent 也不应披露它们。GPT-4o 产出全量隐私指标，四人复核仅用于评审器验证。
 nodes:
   - id: principle
     label: |-
@@ -61,12 +61,22 @@ nodes:
   - id: synthesize
     label: |-
       合成长篇 user_data
-      LLM 生成连贯聊天或笔记
-      每个人工种子采样两次
+      Llama-3.3-70B 生成
+      连贯聊天或笔记
     type: process
     size: xl
     position:
       x: 880
+      'y': 170
+  - id: elbow_select
+    label: |-
+      应用肘部法
+      每个人工种子选取 2 个输出
+      保留连贯样本
+    type: process
+    size: xl
+    position:
+      x: 1160
       'y': 170
   - id: dataset
     label: |-
@@ -76,7 +86,7 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 170
   - id: setup
     label: |-
@@ -86,7 +96,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 170
   - id: execute
     label: |-
@@ -96,7 +106,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 500
   - id: utility
     label: |-
@@ -106,7 +116,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 420
   - id: privacy
     label: |-
@@ -116,18 +126,18 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 620
   - id: judge_validation
     label: |-
-      验证隐私评审器
-      四名人工评审员
-      与 LLM 判断一致率 98%
+      在一轮评测上验证评审器
+      四人复核 GPT-4o + 无障碍树轨迹
+      与 GPT-4o 判断一致率 98%
     type: user
     size: xl
     position:
-      x: 880
-      'y': 620
+      x: 1160
+      'y': 760
   - id: metrics
     label: |-
       汇报隐私-效用权衡
@@ -136,7 +146,7 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 600
+      x: 880
       'y': 500
   - id: mitigation
     label: |-
@@ -146,7 +156,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 320
+      x: 600
       'y': 500
 edges:
   - from: principle
@@ -168,6 +178,9 @@ edges:
     to: synthesize
     type: primary
   - from: synthesize
+    to: elbow_select
+    type: primary
+  - from: elbow_select
     to: dataset
     type: primary
   - from: dataset
@@ -183,12 +196,12 @@ edges:
     to: privacy
     type: primary
   - from: privacy
+    to: metrics
+    type: primary
+  - from: privacy
     to: judge_validation
     type: data
   - from: utility
-    to: metrics
-    type: primary
-  - from: judge_validation
     to: metrics
     type: primary
   - from: metrics
