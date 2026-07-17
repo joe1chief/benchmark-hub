@@ -1,179 +1,175 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval-LC 构建流程
-  description: 对齐论文的 AlpacaEval 与长度控制扩展：从 805 条代表用户交互的指令，经随机顺序的 GPT-4-Turbo 成对裁判、原始胜率、GLM 拟合，到反事实长度控制胜率。
-  legend: 实线表示响应比较和长度控制估计。
+  title: 原始 AlpacaEval 构建流程
+  description: 原始 AlpacaEval 简化固定的 AlpacaFarm 评测集，重新生成 text-davinci-003 参考回复，并用随机顺序、温度为零的 alpaca_eval_gpt4 成对评审计算模型胜率。
+  legend: 上排构建固定 805 样本评测集；下两排比较候选与固定参考回复并聚合偏好，不引入后来的 AlpacaEval-LC 回归流程。
 nodes:
-  - id: instructions
+  - id: alpaca_farm
     label: |-
-      AlpacaEval集合
-      805条指令
-      来自Alpaca网页交互
+      AlpacaFarm 评测集
+      固定 805 个样本
+      来源评测分布
     type: database
     size: xl
     position:
       x: 40
-      'y': 240
-  - id: model_response
-    label: |-
-      被测模型
-      候选响应
-    type: process
-    size: xl
-    position:
-      x: 280
       'y': 80
-  - id: base_response
+  - id: merge_fields
     label: |-
-      GPT-4-Turbo基线
-      参考响应
+      简化提示字段
+      四分之一 Self-Instruct 样本受影响
+      合并 instruction + input
     type: process
     size: xl
     position:
-      x: 280
-      'y': 400
-  - id: shuffle
-    label: |-
-      随机化
-      响应展示顺序
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 240
-  - id: judge
-    label: |-
-      GPT-4-Turbo裁判
-      成对比较
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 240
-  - id: preference
-    label: |-
-      偏好概率
-      候选优于基线
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 240
-  - id: raw
-    label: |-
-      原始AlpacaEval
-      平均胜率
-    type: document
-    size: xl
-    position:
-      x: 1240
+      x: 320
       'y': 80
-  - id: ratings
+  - id: reference_regeneration
     label: |-
-      榜单评分数据
-      多模型×805条指令
+      重生成 text-davinci-003 参考回复
+      不设 AlpacaFarm 输出长度上限
+      每条指令保留一个参考回复
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: dataset
+    label: |-
+      固定 AlpacaEval 评测集
+      805 条指令 + 参考回复
+      原始评测合同
     type: database
     size: xl
     position:
-      x: 1240
-      'y': 400
-  - id: glm
+      x: 880
+      'y': 80
+  - id: candidate
     label: |-
-      逻辑回归GLM特征
-      模型身份
-      长度差
-      指令难度
+      待评模型
+      回答全部指令
+      生成候选回复
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 240
-  - id: regularize
+      x: 600
+      'y': 360
+  - id: reference
     label: |-
-      5折交叉验证拟合
-      L2正则化
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 240
-  - id: counterfactual
-    label: |-
-      令长度差为0
-      预测等长条件下
-      的偏好
-    type: process
-    size: xl
-    position:
-      x: 1960
-      'y': 240
-  - id: lc
-    label: |-
-      AlpacaEval-LC
-      长度控制
-      平均胜率
+      固定参考回复
+      text-davinci-003
+      对应同一 805 条指令
     type: document
     size: xl
     position:
-      x: 2200
-      'y': 400
+      x: 880
+      'y': 360
+  - id: randomize
+    label: |-
+      随机化回复顺序
+      候选 / 参考
+      控制位置偏差
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 640
+  - id: judge
+    label: |-
+      alpaca_eval_gpt4 评审器
+      GPT-4 • 温度 = 0
+      成对偏好提示
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 640
+  - id: preference
+    label: |-
+      解析偏好结果
+      候选胜 / 参考胜
+      平局时双方各记 0.5
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 640
+  - id: score
+    label: |-
+      汇总 805 次判断
+      平均胜率 + 标准误
+      候选对 text-davinci-003
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 920
   - id: report
     label: |-
-      原始与LC
-      榜单报告
+      原始 AlpacaEval 报告
+      胜率与标准误
+      自动评测结果
     type: terminal
     size: xl
     position:
-      x: 2440
-      'y': 240
+      x: 320
+      'y': 920
 edges:
-  - from: instructions
-    to: model_response
+  - from: alpaca_farm
+    to: merge_fields
     type: primary
-  - from: instructions
-    to: base_response
+  - from: merge_fields
+    to: reference_regeneration
     type: primary
-  - from: model_response
-    to: shuffle
+  - from: reference_regeneration
+    to: dataset
     type: primary
-  - from: base_response
-    to: shuffle
+  - from: dataset
+    to: candidate
     type: primary
-  - from: shuffle
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: dataset
+    to: reference
+    type: data
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: candidate
+    to: randomize
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: reference
+    to: randomize
+    type: primary
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: randomize
     to: judge
     type: primary
   - from: judge
     to: preference
     type: primary
   - from: preference
-    to: raw
+    to: score
     type: primary
-  - from: preference
-    to: ratings
-    type: primary
-  - from: ratings
-    to: glm
-    type: primary
-  - from: glm
-    to: regularize
-    type: primary
-  - from: regularize
-    to: counterfactual
-    type: primary
-  - from: counterfactual
-    to: lc
-    type: primary
-    waypoints:
-      - x: 2080
-        'y': 440
-  - from: raw
-    to: report
-    type: primary
-  - from: lc
+  - from: score
     to: report
     type: primary
 modules: []

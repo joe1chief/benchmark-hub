@@ -1,181 +1,179 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval-LC Build Process
+  title: Original AlpacaEval Build Process
   description: >-
-    Paper-aligned AlpacaEval and length-controlled extension from 805 user-representative instructions through
-    randomized GPT-4-Turbo pairwise judging, raw win rate, GLM fitting, and counterfactual LC win rate.
-  legend: Solid arrows show response comparison and length-control estimation.
+    The original AlpacaEval simplifies the fixed AlpacaFarm evaluation set, regenerates text-davinci-003 references, and
+    measures model win rate with randomized temperature-zero alpaca_eval_gpt4 pairwise judgments.
+  legend: >-
+    The top row constructs the fixed 805-example evaluation set; the lower rows compare candidate and fixed reference
+    responses and aggregate preferences without the later AlpacaEval-LC regression.
 nodes:
-  - id: instructions
+  - id: alpaca_farm
     label: |-
-      AlpacaEval Set
-      805 Instructions
-      Alpaca Web Interactions
+      AlpacaFarm Evaluation Set
+      Fixed 805 Examples
+      Source Evaluation Distribution
     type: database
     size: xl
     position:
       x: 40
-      'y': 240
-  - id: model_response
-    label: |-
-      Evaluated Model
-      Candidate Response
-    type: process
-    size: xl
-    position:
-      x: 280
       'y': 80
-  - id: base_response
+  - id: merge_fields
     label: |-
-      GPT-4-Turbo Baseline
-      Reference Response
+      Simplify Prompt Fields
+      1/4 Self-Instruct Examples Affected
+      Merge Instruction + Input
     type: process
     size: xl
     position:
-      x: 280
-      'y': 400
-  - id: shuffle
-    label: |-
-      Randomize
-      Response Order
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 240
-  - id: judge
-    label: |-
-      GPT-4-Turbo Judge
-      Pairwise Comparison
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 240
-  - id: preference
-    label: |-
-      Preference Probability
-      Candidate over Baseline
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 240
-  - id: raw
-    label: |-
-      Raw AlpacaEval
-      Mean Win Rate
-    type: document
-    size: xl
-    position:
-      x: 1240
+      x: 320
       'y': 80
-  - id: ratings
+  - id: reference_regeneration
     label: |-
-      Leaderboard Ratings
-      Models × 805 Instructions
+      Regenerate text-davinci-003 References
+      Without the AlpacaFarm Length Limit
+      Preserve One Reference per Instruction
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: dataset
+    label: |-
+      Fixed AlpacaEval Set
+      805 Instructions + References
+      Original Evaluation Contract
     type: database
     size: xl
     position:
-      x: 1240
-      'y': 400
-  - id: glm
+      x: 880
+      'y': 80
+  - id: candidate
     label: |-
-      Logistic GLM Features
-      Model Identity
-      Length Difference
-      Instruction Difficulty
+      Evaluated Model
+      Answer Every Instruction
+      Candidate Responses
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 240
-  - id: regularize
+      x: 600
+      'y': 360
+  - id: reference
     label: |-
-      Fit with 5-Fold CV
-      L2 Regularization
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 240
-  - id: counterfactual
-    label: |-
-      Set Length Difference = 0
-      Predict Equal-Length
-      Preferences
-    type: process
-    size: xl
-    position:
-      x: 1960
-      'y': 240
-  - id: lc
-    label: |-
-      AlpacaEval-LC
-      Length-Controlled
-      Mean Win Rate
+      Fixed Reference Responses
+      text-davinci-003
+      Same 805 Instructions
     type: document
     size: xl
     position:
-      x: 2200
-      'y': 400
+      x: 880
+      'y': 360
+  - id: randomize
+    label: |-
+      Randomize Response Order
+      Candidate / Reference
+      Control Position Bias
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 640
+  - id: judge
+    label: |-
+      alpaca_eval_gpt4 Judge
+      GPT-4 • Temperature = 0
+      Pairwise Preference Prompt
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 640
+  - id: preference
+    label: |-
+      Parse Preference
+      Candidate Win / Reference Win
+      Tie = 0.5 for Each Side
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 640
+  - id: score
+    label: |-
+      Aggregate 805 Judgments
+      Mean Win Rate + Standard Error
+      Candidate versus text-davinci-003
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 920
   - id: report
     label: |-
-      Raw + LC
-      Leaderboard Report
+      Original AlpacaEval Report
+      Win Rate and Standard Error
+      Automatic Evaluation Result
     type: terminal
     size: xl
     position:
-      x: 2440
-      'y': 240
+      x: 320
+      'y': 920
 edges:
-  - from: instructions
-    to: model_response
+  - from: alpaca_farm
+    to: merge_fields
     type: primary
-  - from: instructions
-    to: base_response
+  - from: merge_fields
+    to: reference_regeneration
     type: primary
-  - from: model_response
-    to: shuffle
+  - from: reference_regeneration
+    to: dataset
     type: primary
-  - from: base_response
-    to: shuffle
+  - from: dataset
+    to: candidate
     type: primary
-  - from: shuffle
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: dataset
+    to: reference
+    type: data
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: candidate
+    to: randomize
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: reference
+    to: randomize
+    type: primary
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: randomize
     to: judge
     type: primary
   - from: judge
     to: preference
     type: primary
   - from: preference
-    to: raw
+    to: score
     type: primary
-  - from: preference
-    to: ratings
-    type: primary
-  - from: ratings
-    to: glm
-    type: primary
-  - from: glm
-    to: regularize
-    type: primary
-  - from: regularize
-    to: counterfactual
-    type: primary
-  - from: counterfactual
-    to: lc
-    type: primary
-    waypoints:
-      - x: 2080
-        'y': 440
-  - from: raw
-    to: report
-    type: primary
-  - from: lc
+  - from: score
     to: report
     type: primary
 modules: []

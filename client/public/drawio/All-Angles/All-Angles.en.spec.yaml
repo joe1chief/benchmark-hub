@@ -1,22 +1,22 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: All-Angles Bench Build Process
   description: >-
-    Paper-aligned multi-view scene selection, question construction, human quality control, and MLLM evaluation workflow
-    based on arXiv:2504.15280.
+    Paper-aligned multi-view scene selection, question construction, and human quality control based on
+    arXiv:2504.15280, with downstream evaluation shown as a separate branch.
   legend: >-
     Each item is a three-option multiple-choice question with one correct answer; paired questions test whether a model
     preserves cross-view correspondences under controlled transformations.
 nodes:
-  - id: source_scenes
+  - id: source_pools
     label: |-
-      Start from Multi-View Video Data
-      83 Ego-Exo4D Scenes
-      7 EgoHumans Scenes
+      Candidate Multi-View Sources
+      Ego-Exo4D + EgoHumans
+      Real-World Multi-Camera Activities
     type: database
     size: xl
     position:
@@ -24,9 +24,9 @@ nodes:
       'y': 170
   - id: select_scenes
     label: |-
-      Manually Select 90 Scenes
-      At Least Three Useful Viewpoints
-      Diverse Real-World Activities
+      Manual Scene Selection
+      83 Ego-Exo4D + 7 EgoHumans
+      90 Final Scenes
     type: user
     size: xl
     position:
@@ -54,24 +54,37 @@ nodes:
       'y': 170
   - id: draft
     label: |-
-      Draft Questions with GPT-4o
-      Three per Task and Scene
-      One Camera-Pose Question per Scene
+      Five MLLM-Generated Task Categories
+      Counting • Attribute • Distance
+      Direction • Manipulation
+      Three Questions per Task and Scene
     type: process
     size: xl
     position:
       x: 1160
-      'y': 170
+      'y': 80
+    style:
+      fontSize: 10
+  - id: camera_template
+    label: |-
+      Camera Pose Estimation
+      Dedicated Question Template
+      One Question per Scene
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 300
   - id: view_policy
     label: |-
       Apply Task-Specific View Policy
       All Views for Counting and Camera Pose
-      Two Random Views for Other Tasks
+      Other Tasks Use Two Randomly Selected Views
     type: process
     size: xl
     position:
       x: 1440
-      'y': 170
+      'y': 190
   - id: human_review
     label: |-
       Eight STEM PhD Annotators Review All Items
@@ -124,14 +137,14 @@ nodes:
       'y': 500
   - id: model_eval
     label: |-
-      Evaluate 27 MLLMs
+      Downstream Evaluation: 27 MLLMs
       Standard Multiple-Choice Prompting
       Parse One of Three Answer Options
     type: process
     size: xl
     position:
-      x: 40
-      'y': 500
+      x: 360
+      'y': 760
   - id: accuracy
     label: |-
       Compute Accuracy
@@ -140,8 +153,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 40
-      'y': 790
+      x: 720
+      'y': 660
   - id: consistency
     label: |-
       Measure Paired Inconsistency
@@ -150,30 +163,31 @@ nodes:
     type: process
     size: xl
     position:
-      x: 320
-      'y': 790
+      x: 720
+      'y': 860
   - id: human
     label: |-
-      Establish Human Reference
-      250-Question Stratified Subset
+      Downstream Human Reference
+      Random 250-Question Subset
+      Exclude Paired Questions
       Cover All Six Task Categories
     type: user
     size: xl
     position:
-      x: 600
-      'y': 790
+      x: 1080
+      'y': 1060
   - id: report
     label: |-
-      Report Multi-View Gaps
+      Report Downstream Model Results
       Accuracy • Paired Consistency
-      Model–Human Performance Gap
+      Overall and Per-Task Performance
     type: terminal
     size: xl
     position:
-      x: 880
-      'y': 790
+      x: 1080
+      'y': 760
 edges:
-  - from: source_scenes
+  - from: source_pools
     to: select_scenes
     type: primary
   - from: select_scenes
@@ -185,9 +199,35 @@ edges:
   - from: task_design
     to: draft
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: task_design
+    to: camera_template
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: draft
     to: view_policy
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: camera_template
+    to: view_policy
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
   - from: view_policy
     to: human_review
     type: primary
@@ -205,23 +245,66 @@ edges:
     type: primary
   - from: benchmark
     to: model_eval
-    type: primary
+    type: secondary
+    style:
+      strokeColor: '#757575'
+      strokeWidth: 1
+      dashed: true
+      dashPattern: 4 4
+      endArrow: open
+      endFill: false
+    waypoints:
+      - x: 324
+        'y': 640
+      - x: 364
+        'y': 640
   - from: model_eval
     to: accuracy
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
   - from: model_eval
     to: consistency
     type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: benchmark
     to: human
-    type: data
+    type: secondary
+    style:
+      strokeColor: '#757575'
+      strokeWidth: 1
+      dashed: true
+      dashPattern: 4 4
+      endArrow: open
+      endFill: false
+    waypoints:
+      - x: 160
+        'y': 498
+      - x: 160
+        'y': 960
+      - x: 1084
+        'y': 960
   - from: accuracy
     to: report
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
   - from: consistency
     to: report
     type: primary
-  - from: human
-    to: report
-    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
 modules: []

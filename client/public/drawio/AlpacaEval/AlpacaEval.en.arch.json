@@ -1,92 +1,80 @@
 {
   "version": 1,
-  "title": "AlpacaEval-LC Build Process",
+  "title": "Original AlpacaEval Build Process",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 14,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "instructions",
-      "label": "AlpacaEval Set\n805 Instructions\nAlpaca Web Interactions",
+      "id": "alpaca_farm",
+      "label": "AlpacaFarm Evaluation Set\nFixed 805 Examples\nSource Evaluation Distribution",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "model_response",
-      "label": "Evaluated Model\nCandidate Response",
+      "id": "merge_fields",
+      "label": "Simplify Prompt Fields\n1/4 Self-Instruct Examples Affected\nMerge Instruction + Input",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "base_response",
-      "label": "GPT-4-Turbo Baseline\nReference Response",
+      "id": "reference_regeneration",
+      "label": "Regenerate text-davinci-003 References\nWithout the AlpacaFarm Length Limit\nPreserve One Reference per Instruction",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "shuffle",
-      "label": "Randomize\nResponse Order",
+      "id": "dataset",
+      "label": "Fixed AlpacaEval Set\n805 Instructions + References\nOriginal Evaluation Contract",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "candidate",
+      "label": "Evaluated Model\nAnswer Every Instruction\nCandidate Responses",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reference",
+      "label": "Fixed Reference Responses\ntext-davinci-003\nSame 805 Instructions",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "randomize",
+      "label": "Randomize Response Order\nCandidate / Reference\nControl Position Bias",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "GPT-4-Turbo Judge\nPairwise Comparison",
+      "label": "alpaca_eval_gpt4 Judge\nGPT-4 • Temperature = 0\nPairwise Preference Prompt",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "preference",
-      "label": "Preference Probability\nCandidate over Baseline",
+      "label": "Parse Preference\nCandidate Win / Reference Win\nTie = 0.5 for Each Side",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "raw",
-      "label": "Raw AlpacaEval\nMean Win Rate",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "ratings",
-      "label": "Leaderboard Ratings\nModels × 805 Instructions",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "glm",
-      "label": "Logistic GLM Features\nModel Identity\nLength Difference\nInstruction Difficulty",
+      "id": "score",
+      "label": "Aggregate 805 Judgments\nMean Win Rate + Standard Error\nCandidate versus text-davinci-003",
       "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "regularize",
-      "label": "Fit with 5-Fold CV\nL2 Regularization",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "counterfactual",
-      "label": "Set Length Difference = 0\nPredict Equal-Length\nPreferences",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "lc",
-      "label": "AlpacaEval-LC\nLength-Controlled\nMean Win Rate",
-      "type": "document",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "Raw + LC\nLeaderboard Report",
+      "label": "Original AlpacaEval Report\nWin Rate and Standard Error\nAutomatic Evaluation Result",
       "type": "terminal",
       "size": "xl"
     }
@@ -94,85 +82,67 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "instructions",
-      "to": "model_response",
+      "from": "alpaca_farm",
+      "to": "merge_fields",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "instructions",
-      "to": "base_response",
+      "from": "merge_fields",
+      "to": "reference_regeneration",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "model_response",
-      "to": "shuffle",
+      "from": "reference_regeneration",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "base_response",
-      "to": "shuffle",
+      "from": "dataset",
+      "to": "candidate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "shuffle",
+      "from": "dataset",
+      "to": "reference",
+      "type": "data"
+    },
+    {
+      "id": "edge-6",
+      "from": "candidate",
+      "to": "randomize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "reference",
+      "to": "randomize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "randomize",
       "to": "judge",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-9",
       "from": "judge",
       "to": "preference",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "preference",
-      "to": "raw",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "preference",
-      "to": "ratings",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "ratings",
-      "to": "glm",
-      "type": "primary"
-    },
-    {
       "id": "edge-10",
-      "from": "glm",
-      "to": "regularize",
+      "from": "preference",
+      "to": "score",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "regularize",
-      "to": "counterfactual",
-      "type": "primary"
-    },
-    {
-      "id": "edge-12",
-      "from": "counterfactual",
-      "to": "lc",
-      "type": "primary"
-    },
-    {
-      "id": "edge-13",
-      "from": "raw",
-      "to": "report",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "lc",
+      "from": "score",
       "to": "report",
       "type": "primary"
     }

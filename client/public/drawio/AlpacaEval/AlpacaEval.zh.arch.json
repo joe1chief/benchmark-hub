@@ -1,92 +1,80 @@
 {
   "version": 1,
-  "title": "AlpacaEval-LC 构建流程",
+  "title": "原始 AlpacaEval 构建流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 14,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "instructions",
-      "label": "AlpacaEval集合\n805条指令\n来自Alpaca网页交互",
+      "id": "alpaca_farm",
+      "label": "AlpacaFarm 评测集\n固定 805 个样本\n来源评测分布",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "model_response",
-      "label": "被测模型\n候选响应",
+      "id": "merge_fields",
+      "label": "简化提示字段\n四分之一 Self-Instruct 样本受影响\n合并 instruction + input",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "base_response",
-      "label": "GPT-4-Turbo基线\n参考响应",
+      "id": "reference_regeneration",
+      "label": "重生成 text-davinci-003 参考回复\n不设 AlpacaFarm 输出长度上限\n每条指令保留一个参考回复",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "shuffle",
-      "label": "随机化\n响应展示顺序",
+      "id": "dataset",
+      "label": "固定 AlpacaEval 评测集\n805 条指令 + 参考回复\n原始评测合同",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "candidate",
+      "label": "待评模型\n回答全部指令\n生成候选回复",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reference",
+      "label": "固定参考回复\ntext-davinci-003\n对应同一 805 条指令",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "randomize",
+      "label": "随机化回复顺序\n候选 / 参考\n控制位置偏差",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "GPT-4-Turbo裁判\n成对比较",
+      "label": "alpaca_eval_gpt4 评审器\nGPT-4 • 温度 = 0\n成对偏好提示",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "preference",
-      "label": "偏好概率\n候选优于基线",
+      "label": "解析偏好结果\n候选胜 / 参考胜\n平局时双方各记 0.5",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "raw",
-      "label": "原始AlpacaEval\n平均胜率",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "ratings",
-      "label": "榜单评分数据\n多模型×805条指令",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "glm",
-      "label": "逻辑回归GLM特征\n模型身份\n长度差\n指令难度",
+      "id": "score",
+      "label": "汇总 805 次判断\n平均胜率 + 标准误\n候选对 text-davinci-003",
       "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "regularize",
-      "label": "5折交叉验证拟合\nL2正则化",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "counterfactual",
-      "label": "令长度差为0\n预测等长条件下\n的偏好",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "lc",
-      "label": "AlpacaEval-LC\n长度控制\n平均胜率",
-      "type": "document",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "原始与LC\n榜单报告",
+      "label": "原始 AlpacaEval 报告\n胜率与标准误\n自动评测结果",
       "type": "terminal",
       "size": "xl"
     }
@@ -94,85 +82,67 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "instructions",
-      "to": "model_response",
+      "from": "alpaca_farm",
+      "to": "merge_fields",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "instructions",
-      "to": "base_response",
+      "from": "merge_fields",
+      "to": "reference_regeneration",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "model_response",
-      "to": "shuffle",
+      "from": "reference_regeneration",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "base_response",
-      "to": "shuffle",
+      "from": "dataset",
+      "to": "candidate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "shuffle",
+      "from": "dataset",
+      "to": "reference",
+      "type": "data"
+    },
+    {
+      "id": "edge-6",
+      "from": "candidate",
+      "to": "randomize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "reference",
+      "to": "randomize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "randomize",
       "to": "judge",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-9",
       "from": "judge",
       "to": "preference",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "preference",
-      "to": "raw",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "preference",
-      "to": "ratings",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "ratings",
-      "to": "glm",
-      "type": "primary"
-    },
-    {
       "id": "edge-10",
-      "from": "glm",
-      "to": "regularize",
+      "from": "preference",
+      "to": "score",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "regularize",
-      "to": "counterfactual",
-      "type": "primary"
-    },
-    {
-      "id": "edge-12",
-      "from": "counterfactual",
-      "to": "lc",
-      "type": "primary"
-    },
-    {
-      "id": "edge-13",
-      "from": "raw",
-      "to": "report",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "lc",
+      "from": "score",
       "to": "report",
       "type": "primary"
     }

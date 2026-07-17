@@ -2,25 +2,25 @@
   "version": 1,
   "title": "All-Angles Bench 构建流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 16,
-    "edges": 17,
+    "nodes": 17,
+    "edges": 18,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source_scenes",
-      "label": "从多视角视频数据出发\n83 个 Ego-Exo4D 场景\n7 个 EgoHumans 场景",
+      "id": "source_pools",
+      "label": "候选多视角来源\nEgo-Exo4D + EgoHumans\n真实多相机活动场景",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "select_scenes",
-      "label": "人工筛选 90 个场景\n至少包含三个有效视角\n覆盖多样真实活动",
+      "label": "人工筛选场景\nEgo-Exo4D 83 个 + EgoHumans 7 个\n共 90 个最终场景",
       "type": "user",
       "size": "xl"
     },
@@ -38,13 +38,19 @@
     },
     {
       "id": "draft",
-      "label": "使用 GPT-4o 起草问题\n每场景每任务三题\n相机姿态每场景一题",
+      "label": "五类 MLLM 生成任务\n计数 • 属性 • 距离\n方向 • 物体操作\n每场景每任务三题",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "camera_template",
+      "label": "相机姿态估计\n专用问题模板\n每场景一题",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "view_policy",
-      "label": "应用任务特定视角策略\n计数与相机姿态使用全部视图\n其他任务随机使用两个视图",
+      "label": "应用任务特定视角策略\n计数与相机姿态使用全部视图\n其他任务随机选择两个视角",
       "type": "process",
       "size": "xl"
     },
@@ -80,7 +86,7 @@
     },
     {
       "id": "model_eval",
-      "label": "评测 27 个 MLLM\n标准选择题提示\n解析三个答案选项之一",
+      "label": "下游评测：27 个 MLLM\n标准选择题提示\n解析三个答案选项之一",
       "type": "process",
       "size": "xl"
     },
@@ -98,13 +104,13 @@
     },
     {
       "id": "human",
-      "label": "建立人类参考\n分层抽取 250 题子集\n覆盖全部六类任务",
+      "label": "下游人类参考\n随机抽取 250 题子集\n排除配对问题\n覆盖全部六类任务",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "汇报多视角能力差距\n准确率 • 配对一致性\n模型与人类表现差距",
+      "label": "汇报下游模型结果\n准确率 • 配对一致性\n总体及分任务表现",
       "type": "terminal",
       "size": "xl"
     }
@@ -112,7 +118,7 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source_scenes",
+      "from": "source_pools",
       "to": "select_scenes",
       "type": "primary"
     },
@@ -136,79 +142,85 @@
     },
     {
       "id": "edge-5",
+      "from": "task_design",
+      "to": "camera_template",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "draft",
       "to": "view_policy",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
+      "from": "camera_template",
+      "to": "view_policy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "view_policy",
       "to": "human_review",
       "type": "primary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-9",
       "from": "human_review",
       "to": "mcq",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-10",
       "from": "mcq",
       "to": "paired",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-11",
       "from": "paired",
       "to": "final_qc",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-12",
       "from": "final_qc",
       "to": "benchmark",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-13",
       "from": "benchmark",
       "to": "model_eval",
-      "type": "primary"
+      "type": "secondary"
     },
     {
-      "id": "edge-12",
+      "id": "edge-14",
       "from": "model_eval",
       "to": "accuracy",
       "type": "primary"
     },
     {
-      "id": "edge-13",
+      "id": "edge-15",
       "from": "model_eval",
       "to": "consistency",
       "type": "data"
     },
     {
-      "id": "edge-14",
+      "id": "edge-16",
       "from": "benchmark",
       "to": "human",
-      "type": "data"
+      "type": "secondary"
     },
     {
-      "id": "edge-15",
+      "id": "edge-17",
       "from": "accuracy",
       "to": "report",
       "type": "primary"
     },
     {
-      "id": "edge-16",
+      "id": "edge-18",
       "from": "consistency",
-      "to": "report",
-      "type": "primary"
-    },
-    {
-      "id": "edge-17",
-      "from": "human",
       "to": "report",
       "type": "primary"
     }

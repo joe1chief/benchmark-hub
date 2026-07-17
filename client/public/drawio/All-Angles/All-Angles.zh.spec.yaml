@@ -1,18 +1,18 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: All-Angles Bench 构建流程
-  description: 基于 arXiv:2504.15280 对齐的多视角场景筛选、问题构建、人工质检与 MLLM 评测流程。
+  description: 基于 arXiv:2504.15280 对齐的多视角场景筛选、问题构建与人工质检流程；下游评测以独立分支展示。
   legend: 每个样本都是三选一且只有一个正确答案；配对问题通过受控变换检验模型能否保持跨视角对应关系。
 nodes:
-  - id: source_scenes
+  - id: source_pools
     label: |-
-      从多视角视频数据出发
-      83 个 Ego-Exo4D 场景
-      7 个 EgoHumans 场景
+      候选多视角来源
+      Ego-Exo4D + EgoHumans
+      真实多相机活动场景
     type: database
     size: xl
     position:
@@ -20,9 +20,9 @@ nodes:
       'y': 170
   - id: select_scenes
     label: |-
-      人工筛选 90 个场景
-      至少包含三个有效视角
-      覆盖多样真实活动
+      人工筛选场景
+      Ego-Exo4D 83 个 + EgoHumans 7 个
+      共 90 个最终场景
     type: user
     size: xl
     position:
@@ -50,24 +50,37 @@ nodes:
       'y': 170
   - id: draft
     label: |-
-      使用 GPT-4o 起草问题
+      五类 MLLM 生成任务
+      计数 • 属性 • 距离
+      方向 • 物体操作
       每场景每任务三题
-      相机姿态每场景一题
     type: process
     size: xl
     position:
       x: 1160
-      'y': 170
+      'y': 80
+    style:
+      fontSize: 10
+  - id: camera_template
+    label: |-
+      相机姿态估计
+      专用问题模板
+      每场景一题
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 300
   - id: view_policy
     label: |-
       应用任务特定视角策略
       计数与相机姿态使用全部视图
-      其他任务随机使用两个视图
+      其他任务随机选择两个视角
     type: process
     size: xl
     position:
       x: 1440
-      'y': 170
+      'y': 190
   - id: human_review
     label: |-
       八名 STEM 博士标注员全量复核
@@ -120,14 +133,14 @@ nodes:
       'y': 500
   - id: model_eval
     label: |-
-      评测 27 个 MLLM
+      下游评测：27 个 MLLM
       标准选择题提示
       解析三个答案选项之一
     type: process
     size: xl
     position:
-      x: 40
-      'y': 500
+      x: 360
+      'y': 760
   - id: accuracy
     label: |-
       计算准确率
@@ -136,8 +149,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 40
-      'y': 790
+      x: 720
+      'y': 660
   - id: consistency
     label: |-
       测量配对不一致率
@@ -146,30 +159,31 @@ nodes:
     type: process
     size: xl
     position:
-      x: 320
-      'y': 790
+      x: 720
+      'y': 860
   - id: human
     label: |-
-      建立人类参考
-      分层抽取 250 题子集
+      下游人类参考
+      随机抽取 250 题子集
+      排除配对问题
       覆盖全部六类任务
     type: user
     size: xl
     position:
-      x: 600
-      'y': 790
+      x: 1080
+      'y': 1060
   - id: report
     label: |-
-      汇报多视角能力差距
+      汇报下游模型结果
       准确率 • 配对一致性
-      模型与人类表现差距
+      总体及分任务表现
     type: terminal
     size: xl
     position:
-      x: 880
-      'y': 790
+      x: 1080
+      'y': 760
 edges:
-  - from: source_scenes
+  - from: source_pools
     to: select_scenes
     type: primary
   - from: select_scenes
@@ -181,9 +195,35 @@ edges:
   - from: task_design
     to: draft
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: task_design
+    to: camera_template
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: draft
     to: view_policy
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: camera_template
+    to: view_policy
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
   - from: view_policy
     to: human_review
     type: primary
@@ -201,23 +241,66 @@ edges:
     type: primary
   - from: benchmark
     to: model_eval
-    type: primary
+    type: secondary
+    style:
+      strokeColor: '#757575'
+      strokeWidth: 1
+      dashed: true
+      dashPattern: 4 4
+      endArrow: open
+      endFill: false
+    waypoints:
+      - x: 324
+        'y': 640
+      - x: 364
+        'y': 640
   - from: model_eval
     to: accuracy
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
   - from: model_eval
     to: consistency
     type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: benchmark
     to: human
-    type: data
+    type: secondary
+    style:
+      strokeColor: '#757575'
+      strokeWidth: 1
+      dashed: true
+      dashPattern: 4 4
+      endArrow: open
+      endFill: false
+    waypoints:
+      - x: 160
+        'y': 498
+      - x: 160
+        'y': 960
+      - x: 1084
+        'y': 960
   - from: accuracy
     to: report
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
   - from: consistency
     to: report
     type: primary
-  - from: human
-    to: report
-    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
 modules: []
