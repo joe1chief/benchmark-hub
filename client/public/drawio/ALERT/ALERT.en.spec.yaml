@@ -6,18 +6,21 @@ meta:
   routing: orthogonal
   title: ALERT Build and Evaluation Process
   description: >-
-    Paper-aligned curation of ALERT user-item contexts and criteria, pairwise recommendation-explanation evaluation
-    through the ALERT-Gen or ALERT-Disc architecture, divide-and-aggregate voting, win-rate reporting, and
-    human-alignment meta-evaluation.
+    Paper-aligned curation of ALERT user-item contexts and criteria, pairwise recommendation-explanation evaluation by
+    first dividing the criteria, then applying ALERT-Gen or ALERT-Disc per criterion, aggregating preferences, and
+    reporting win rate. A separate meta-evaluation lane keeps interruption and expert-correlation studies parallel.
   legend: >-
-    The top row builds the 2,761-interaction benchmark. The bottom row branches to one of two official evaluator
-    architectures, then applies the same four-criterion majority-vote protocol.
+    The top row builds the 2,761-interaction benchmark. The main evaluation lane follows paper Figure 3: divide the four
+    criteria, apply one evaluator architecture to each criterion, then aggregate four preferences. The separate meta
+    lane forks into independent §4.2 interruption and §4.3 expert-correlation experiments; only §4.3 feeds the no-tie
+    expert-accuracy summary.
 nodes:
   - id: source
     label: |-
-      Start from Amazon Reviews 2023
-      Purchase Records across 15 E-Commerce Categories
-      Use Implicit Preferences from Real Transactions
+      Amazon Reviews 2023
+      15 E-Commerce Categories
+      Purchase Records
+      Implicit Transaction Preferences
     type: database
     size: xl
     position:
@@ -25,9 +28,10 @@ nodes:
       'y': 100
   - id: context
     label: |-
-      Construct Recommendation Contexts
-      Most Recent Purchase = Target Item
-      Title + Price + Merchant; Earlier Purchases = User History
+      Build Recommendation Context
+      Latest Purchase = Target Item
+      Title • Price • Merchant
+      Earlier Purchases = History
     type: process
     size: xl
     position:
@@ -35,9 +39,10 @@ nodes:
       'y': 100
   - id: filter
     label: |-
-      Apply Dataset Quality Controls
-      Title ≥ 6 Alphabetic Characters • Users with 5–20 Purchases
-      Keep 5-Star Purchases • Cap Each Category at 200 Behaviors
+      Apply Data Quality Controls
+      Title ≥ 6 Alphabetic Characters
+      Users with 5–20 Purchases
+      5 Stars • ≤200 per Category
     type: process
     size: xl
     position:
@@ -45,9 +50,10 @@ nodes:
       'y': 100
   - id: dataset
     label: |-
-      Retain the ALERT Dataset
-      2,761 User–Item Interactions in 15 Categories
-      Purchase-History Profiles; No Demographics or User IDs
+      Retain ALERT Dataset
+      2,761 User–Item Interactions
+      15 E-Commerce Categories
+      No Demographics or User IDs
     type: database
     size: xl
     position:
@@ -56,8 +62,9 @@ nodes:
   - id: criteria
     label: |-
       Develop 4 Evaluation Criteria
-      E-Commerce Editorial Team + User-Study Refinement
-      Reasoning • Clear / Concise • Engaging • Neutral Tone
+      E-Commerce Editorial Team
+      Refined through User Study
+      Reason • Clarity • Appeal • Tone
     type: user
     size: xl
     position:
@@ -65,56 +72,62 @@ nodes:
       'y': 100
   - id: pair
     label: |-
-      Form a Pairwise Explanation Comparison
-      Candidate Model vs PreferenceLogic Baseline
-      Provide User History, Target Item, and One Criterion
+      Prepare Explanation Pair
+      Candidate vs PreferenceLogic
+      User History + Target Item
+      Carry All 4 Criteria
     type: document
     size: xl
     position:
       x: 1440
       'y': 100
   - id: route
-    label: Evaluator Architecture?
+    label: |-
+      Evaluator Architecture
+      for Each Criterion?
     type: decision
     size: xl
     position:
-      x: 1440
+      x: 1160
       'y': 460
   - id: gen
     label: |-
       ALERT-Gen
-      Claude-3-Sonnet Chain-of-Thought Comparison
-      Output A / B / C (Tie); Systematically Swap Positions
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 360
-  - id: disc
-    label: |-
-      ALERT-Disc
-      ArmoRM Scores Both Explanations
-      Higher Criterion-Specific Reward Wins
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 560
-  - id: divide
-    label: |-
-      Divide by Evaluation Criterion
-      Judge Reasoning, Clarity, Narrative, and Tone Separately
-      Obtain Four Focused Preferences
+      Claude-3-Sonnet + CoT
+      Output A / B / C (Tie)
+      Swap Explanation Positions
     type: process
     size: xl
     position:
       x: 880
+      'y': 360
+  - id: disc
+    label: |-
+      ALERT-Disc
+      ArmoRM Scores Both
+      Criterion-Specific Reward
+      Higher Score Wins
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 560
+  - id: divide
+    label: |-
+      Divide 4 Criteria First
+      Reasoning • Clarity
+      Narrative • Tone
+      Create 4 Focused Comparisons
+    type: process
+    size: xl
+    position:
+      x: 1440
       'y': 460
   - id: vote
     label: |-
       Aggregate by Majority Vote
-      Combine the Four Criterion Preferences
-      Produce the Final A / B / Tie Judgment
+      Combine 4 Criterion Votes
+      Final A / B / Tie Judgment
     type: process
     size: xl
     position:
@@ -123,23 +136,56 @@ nodes:
   - id: result
     label: |-
       ALERT Benchmark Result
-      Win Rate = % Interactions Where Candidate Beats Baseline
-      Report ALERT-Gen and ALERT-Disc Comparisons
+      Win Rate vs PreferenceLogic
+      % Interactions Candidate Wins
+      Report Gen and Disc Separately
     type: terminal
     size: xl
     position:
       x: 320
-      'y': 360
-  - id: meta
+      'y': 460
+  - id: meta_suite
     label: |-
-      Meta-Evaluate Evaluator Reliability
-      Controlled Data / Prompt Interruptions + 3 Expert Annotators
-      About 70% Concordance with Expert Human Judgment
+      Separate Meta-Evaluation
+      ALERT-Gen + ALERT-Disc
+      Independent of Benchmark Scoring
     type: user
     size: xl
     position:
+      x: 880
+      'y': 800
+  - id: interruption_test
+    label: |-
+      §4.2 Inferior-Explanation Test
+      Controlled Data Interruptions
+      Controlled Prompt Interruptions
+      Semi-Synthetic • No New Labels
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 800
+  - id: expert_correlation
+    label: |-
+      §4.3 Expert Correlation Study
+      88 Explanation Pairs
+      3 Professional Annotators
+      Compare Automated Evaluators
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 800
+  - id: no_tie_accuracy
+    label: |-
+      No-Tie Expert Accuracy
+      ALERT-Gen = 0.667
+      ALERT-Disc = 0.711
+    type: terminal
+    size: xl
+    position:
       x: 320
-      'y': 560
+      'y': 800
 edges:
   - from: source
     to: context
@@ -157,6 +203,9 @@ edges:
     to: pair
     type: primary
   - from: pair
+    to: divide
+    type: primary
+  - from: divide
     to: route
     type: primary
   - from: route
@@ -166,18 +215,21 @@ edges:
     to: disc
     type: primary
   - from: gen
-    to: divide
+    to: vote
     type: primary
   - from: disc
-    to: divide
-    type: primary
-  - from: divide
     to: vote
     type: primary
   - from: vote
     to: result
     type: primary
-  - from: vote
-    to: meta
-    type: primary
+  - from: meta_suite
+    to: interruption_test
+    type: secondary
+  - from: meta_suite
+    to: expert_correlation
+    type: secondary
+  - from: expert_correlation
+    to: no_tie_accuracy
+    type: secondary
 modules: []

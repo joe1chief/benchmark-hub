@@ -5,8 +5,10 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AMEGA-LLM 构建与评测流程
-  description: 对齐论文的 AMEGA：医生基于指南构建临床病例，通过准则级 GPT-4 判断、条件性 Reask、 重复多数投票、加权计分与评估器验证，完成自动化口试评测。
-  legend: 本图固定采用论文快照的 20 个病例、135 个问题和 1,337 项准则；官方仓库后来扩展为 24 个病例、163 个问题和 1,497 项准则。
+  description: 对齐论文的 AMEGA：医生基于指南构建临床病例，通过准则级 GPT-4 判断、失败尝试恢复、有效尝试多数投票、显式门控的 Reask、加权计分与评估器验证，完成自动化口试评测。
+  legend: >-
+    本图固定采用论文快照的 20 个病例、135 个问题和 1,337 项准则；官方仓库后来扩展为 24 个病例、163 个问题和 1,497 项准则。 实线主链遵循 Methods 顺序：失败率 >50% 时拆半重试；≤50%
+    时先按准则多数投票并计算置信度，再判断未满足准则是否进入 Reask。虚线验证支路是独立可靠性研究。
 nodes:
   - id: guidelines
     label: |-
@@ -61,8 +63,10 @@ nodes:
   - id: release
     label: |-
       医生复核并发布 AMEGA
-      每病例由至少 1 名其他医生复核并迭代修订
-      每病例 20–30 小时 • 总计超过 400 小时
+      每病例由至少 1 名其他医生复核
+      并迭代修订
+      每病例 20–30 小时
+      总计超过 400 小时
     type: database
     size: xl
     position:
@@ -76,7 +80,7 @@ nodes:
     type: document
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 470
   - id: candidate
     label: |-
@@ -86,35 +90,53 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1440
       'y': 470
   - id: evaluator
     label: |-
       GPT-4-0613 评估器
-      提取临床概念并检查每项 Rubric 元素
+      并行运行 11 次准则评估
       返回各准则是否满足的 True / False 向量
     type: process
     size: xl
     position:
-      x: 880
+      x: 1160
       'y': 470
-  - id: gate
-    label: 准则是否全满足 / 是否允许 Reask？
+  - id: failure_gate
+    label: 评估失败率是否 >50%？
     type: decision
     size: xl
     position:
-      x: 600
+      x: 880
+      'y': 470
+  - id: split_criteria
+    label: |-
+      将准则列表拆成两半
+      分别评估每一半
+      再次检查自一致性
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 740
+  - id: gate
+    label: 准则未满足且允许 Reask？
+    type: decision
+    size: xl
+    position:
+      x: 320
       'y': 470
   - id: reask
     label: |-
       引导式 Reask 与自我反思
-      告知未满足准则，让候选补充细节
-      对会造成即时后果的关键错误跳过 Reask
+      告知未满足准则
+      候选补充细节
+      关键错误跳过 Reask
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 690
+      x: 1440
+      'y': 740
   - id: voting
     label: |-
       稳定准则判断
@@ -123,28 +145,30 @@ nodes:
     type: process
     size: xl
     position:
-      x: 320
+      x: 600
       'y': 470
   - id: score
     label: |-
       AMEGA 指南遵循结果
-      布尔结果乘权重后求和
-      问题 / 病例分、50 分均值、归一化缺陷与成本
+      布尔结果 × 临床权重
+      问题分 / 病例分 • 50 分均值
+      归一化缺陷 • 成本
     type: terminal
     size: xl
     position:
       x: 40
-      'y': 360
+      'y': 470
   - id: validate
     label: |-
       验证评估器可靠性
-      50 次模拟；11 次后趋于稳定
-      临床专家比较 2 个病例 + 抽查病例 3 与 5
+      50 次模拟；11 次后趋稳
+      临床专家比较 2 个病例
+      抽查病例 3 与 5
     type: user
     size: xl
     position:
-      x: 40
-      'y': 580
+      x: 600
+      'y': 740
 edges:
   - from: guidelines
     to: physicians
@@ -171,26 +195,42 @@ edges:
     to: evaluator
     type: primary
   - from: evaluator
+    to: failure_gate
+    type: primary
+  - from: failure_gate
+    to: split_criteria
+    type: optional
+    label: 是：拆分
+  - from: split_criteria
+    to: evaluator
+    type: optional
+    label: 分半重评
+  - from: failure_gate
+    to: voting
+    type: primary
+    label: ≤50%：投票
+  - from: voting
     to: gate
     type: primary
   - from: gate
     to: reask
-    type: primary
+    type: optional
+    label: 是：Reask
     waypoints:
-      - x: 730
-        'y': 650
-      - x: 1290
-        'y': 650
+      - x: 324
+        'y': 850
+      - x: 1444
+        'y': 850
   - from: reask
     to: candidate
     type: optional
+    label: 返回补充
   - from: gate
-    to: voting
-    type: primary
-  - from: voting
     to: score
     type: primary
+    label: 否：计分
   - from: voting
     to: validate
-    type: primary
+    type: secondary
+    label: 验证研究
 modules: []

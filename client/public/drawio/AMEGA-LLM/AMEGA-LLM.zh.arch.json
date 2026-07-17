@@ -7,8 +7,8 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 14,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
@@ -44,7 +44,7 @@
     },
     {
       "id": "release",
-      "label": "医生复核并发布 AMEGA\n每病例由至少 1 名其他医生复核并迭代修订\n每病例 20–30 小时 • 总计超过 400 小时",
+      "label": "医生复核并发布 AMEGA\n每病例由至少 1 名其他医生复核\n并迭代修订\n每病例 20–30 小时\n总计超过 400 小时",
       "type": "database",
       "size": "xl"
     },
@@ -62,19 +62,31 @@
     },
     {
       "id": "evaluator",
-      "label": "GPT-4-0613 评估器\n提取临床概念并检查每项 Rubric 元素\n返回各准则是否满足的 True / False 向量",
+      "label": "GPT-4-0613 评估器\n并行运行 11 次准则评估\n返回各准则是否满足的 True / False 向量",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "failure_gate",
+      "label": "评估失败率是否 >50%？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "split_criteria",
+      "label": "将准则列表拆成两半\n分别评估每一半\n再次检查自一致性",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "gate",
-      "label": "准则是否全满足 / 是否允许 Reask？",
+      "label": "准则未满足且允许 Reask？",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "reask",
-      "label": "引导式 Reask 与自我反思\n告知未满足准则，让候选补充细节\n对会造成即时后果的关键错误跳过 Reask",
+      "label": "引导式 Reask 与自我反思\n告知未满足准则\n候选补充细节\n关键错误跳过 Reask",
       "type": "process",
       "size": "xl"
     },
@@ -86,13 +98,13 @@
     },
     {
       "id": "score",
-      "label": "AMEGA 指南遵循结果\n布尔结果乘权重后求和\n问题 / 病例分、50 分均值、归一化缺陷与成本",
+      "label": "AMEGA 指南遵循结果\n布尔结果 × 临床权重\n问题分 / 病例分 • 50 分均值\n归一化缺陷 • 成本",
       "type": "terminal",
       "size": "xl"
     },
     {
       "id": "validate",
-      "label": "验证评估器可靠性\n50 次模拟；11 次后趋于稳定\n临床专家比较 2 个病例 + 抽查病例 3 与 5",
+      "label": "验证评估器可靠性\n50 次模拟；11 次后趋稳\n临床专家比较 2 个病例\n抽查病例 3 与 5",
       "type": "user",
       "size": "xl"
     }
@@ -149,38 +161,63 @@
     {
       "id": "edge-9",
       "from": "evaluator",
-      "to": "gate",
+      "to": "failure_gate",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "gate",
-      "to": "reask",
-      "type": "primary"
+      "from": "failure_gate",
+      "to": "split_criteria",
+      "type": "optional",
+      "label": "是：拆分"
     },
     {
       "id": "edge-11",
-      "from": "reask",
-      "to": "candidate",
-      "type": "optional"
+      "from": "split_criteria",
+      "to": "evaluator",
+      "type": "optional",
+      "label": "分半重评"
     },
     {
       "id": "edge-12",
-      "from": "gate",
+      "from": "failure_gate",
       "to": "voting",
-      "type": "primary"
+      "type": "primary",
+      "label": "≤50%：投票"
     },
     {
       "id": "edge-13",
       "from": "voting",
-      "to": "score",
+      "to": "gate",
       "type": "primary"
     },
     {
       "id": "edge-14",
+      "from": "gate",
+      "to": "reask",
+      "type": "optional",
+      "label": "是：Reask"
+    },
+    {
+      "id": "edge-15",
+      "from": "reask",
+      "to": "candidate",
+      "type": "optional",
+      "label": "返回补充"
+    },
+    {
+      "id": "edge-16",
+      "from": "gate",
+      "to": "score",
+      "type": "primary",
+      "label": "否：计分"
+    },
+    {
+      "id": "edge-17",
       "from": "voting",
       "to": "validate",
-      "type": "primary"
+      "type": "secondary",
+      "label": "验证研究"
     }
   ],
   "modules": []

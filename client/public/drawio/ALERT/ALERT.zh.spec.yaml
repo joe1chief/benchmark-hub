@@ -5,8 +5,10 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ALERT 构建与评测流程
-  description: 对齐论文的 ALERT 用户–商品上下文与准则构建，通过 ALERT-Gen 或 ALERT-Disc 架构进行推荐解释两两评测， 再做分治多数投票、胜率报告与人类对齐元评测。
-  legend: 上排构建含 2,761 个交互的基准；下排分流至两种官方评估器之一， 再应用相同的四准则多数投票协议。
+  description: 对齐论文的 ALERT 用户–商品上下文与准则构建：先拆分四项准则，再逐项应用 ALERT-Gen 或 ALERT-Disc，聚合偏好并报告胜率；独立元评测支线并行展示干扰测试与专家相关性研究。
+  legend: >-
+    上排构建含 2,761 个交互的基准。主评测链严格遵循论文图 3：先拆分四项准则，再由一种评估器架构逐项判断，最后聚合四个偏好。 独立元评测支线并行分为 §4.2 干扰实验与 §4.3 专家相关性实验；仅 §4.3
+    连接到不含平局的专家准确率。
 nodes:
   - id: source
     label: |-
@@ -51,8 +53,10 @@ nodes:
   - id: criteria
     label: |-
       制定 4 项评测准则
-      电商编辑团队设计 + 用户研究优化
-      推理一致性 • 清晰简洁 • 叙事吸引力 • 中性语气
+      电商编辑团队设计
+      经用户研究优化
+      推理一致性 • 清晰简洁
+      叙事吸引力 • 中性语气
     type: user
     size: xl
     position:
@@ -60,20 +64,23 @@ nodes:
       'y': 100
   - id: pair
     label: |-
-      形成两两解释比较
+      准备两两解释比较
       候选模型 vs PreferenceLogic 基线
-      提供用户历史、目标商品与一项准则
+      提供用户历史与目标商品
+      携带全部 4 项准则
     type: document
     size: xl
     position:
       x: 1440
       'y': 100
   - id: route
-    label: 选择哪种评估器架构？
+    label: |-
+      每项准则选择
+      哪种评估器架构？
     type: decision
     size: xl
     position:
-      x: 1440
+      x: 1160
       'y': 460
   - id: gen
     label: |-
@@ -83,7 +90,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 880
       'y': 360
   - id: disc
     label: |-
@@ -93,17 +100,18 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1160
+      x: 880
       'y': 560
   - id: divide
     label: |-
-      按评测准则拆分
-      分别判断推理、清晰度、叙事和语气
-      得到四个聚焦的偏好判断
+      先拆分 4 项评测准则
+      推理 • 清晰度
+      叙事 • 语气
+      形成 4 个聚焦比较
     type: process
     size: xl
     position:
-      x: 880
+      x: 1440
       'y': 460
   - id: vote
     label: |-
@@ -124,17 +132,49 @@ nodes:
     size: xl
     position:
       x: 320
-      'y': 360
-  - id: meta
+      'y': 460
+  - id: meta_suite
     label: |-
-      元评测评估器可靠性
-      受控数据 / 提示干扰 + 3 位专家标注者
-      与专家人工判断约 70% 一致
+      单独开展元评测
+      ALERT-Gen + ALERT-Disc
+      不属于基准计分下游
     type: user
     size: xl
     position:
+      x: 880
+      'y': 800
+  - id: interruption_test
+    label: |-
+      §4.2 劣质解释检测
+      受控数据干扰
+      受控提示干扰
+      半合成 • 无需新增标注
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 800
+  - id: expert_correlation
+    label: |-
+      §4.3 专家相关性研究
+      88 对解释
+      3 位专业标注者
+      对比自动评估器
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 800
+  - id: no_tie_accuracy
+    label: |-
+      不含平局的专家准确率
+      ALERT-Gen = 0.667
+      ALERT-Disc = 0.711
+    type: terminal
+    size: xl
+    position:
       x: 320
-      'y': 560
+      'y': 800
 edges:
   - from: source
     to: context
@@ -152,6 +192,9 @@ edges:
     to: pair
     type: primary
   - from: pair
+    to: divide
+    type: primary
+  - from: divide
     to: route
     type: primary
   - from: route
@@ -161,18 +204,21 @@ edges:
     to: disc
     type: primary
   - from: gen
-    to: divide
+    to: vote
     type: primary
   - from: disc
-    to: divide
-    type: primary
-  - from: divide
     to: vote
     type: primary
   - from: vote
     to: result
     type: primary
-  - from: vote
-    to: meta
-    type: primary
+  - from: meta_suite
+    to: interruption_test
+    type: secondary
+  - from: meta_suite
+    to: expert_correlation
+    type: secondary
+  - from: expert_correlation
+    to: no_tie_accuracy
+    type: secondary
 modules: []
