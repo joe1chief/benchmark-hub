@@ -22,6 +22,16 @@ const BENCHMARK_DISPLAY_ALIASES = {
 
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
 const sorted = values => [...values].sort((left, right) => left.localeCompare(right));
+const getOwnAlias = (aliases, reference) => (
+  Object.hasOwn(aliases, reference) ? aliases[reference] : undefined
+);
+
+test('does not inherit benchmark aliases from Object.prototype', () => {
+  for (const reservedName of ['constructor', '__proto__', 'toString']) {
+    assert.equal(getOwnAlias(BENCHMARK_ID_ALIASES, reservedName), undefined);
+    assert.equal(getOwnAlias(BENCHMARK_DISPLAY_ALIASES, reservedName), undefined);
+  }
+});
 
 test('keeps benchmark identities canonical across every published surface', () => {
   const catalog = readJson(join(publicDir, 'benchmarks.json'));
@@ -62,7 +72,8 @@ test('keeps benchmark identities canonical across every published surface', () =
   }
 
   const canonicalizeRelatedReference = reference => {
-    const aliasedId = BENCHMARK_ID_ALIASES[reference] ?? BENCHMARK_DISPLAY_ALIASES[reference];
+    const aliasedId = getOwnAlias(BENCHMARK_ID_ALIASES, reference)
+      ?? getOwnAlias(BENCHMARK_DISPLAY_ALIASES, reference);
     if (aliasedId) return aliasedId;
     if (catalogIdSet.has(reference)) return reference;
 

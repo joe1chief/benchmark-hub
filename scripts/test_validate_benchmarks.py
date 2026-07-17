@@ -48,6 +48,17 @@ class RelatedBenchmarkReferenceTest(unittest.TestCase):
             )
         )
 
+    def test_rejects_malformed_reference_without_crashing(self):
+        for reference in (None, "", [], {}, 17):
+            with self.subTest(reference=reference):
+                self.assertFalse(
+                    related_reference_resolves(
+                        reference,
+                        self.catalog_ids,
+                        self.display_name_counts,
+                    )
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

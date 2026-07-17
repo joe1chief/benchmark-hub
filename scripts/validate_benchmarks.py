@@ -116,6 +116,8 @@ def build_related_reference_index(data):
 
 
 def related_reference_resolves(reference, catalog_ids, display_name_counts):
+    if not isinstance(reference, str) or not reference:
+        return False
     return reference in catalog_ids or display_name_counts.get(reference, 0) == 1
 
 

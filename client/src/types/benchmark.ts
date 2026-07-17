@@ -26,7 +26,7 @@ export interface Benchmark {
   family: string;         // Family name, empty if standalone
   variant: string;        // Variant/version name within family
   widely_tested: boolean; // Medal: widely tested by major LLM tech reports
-  related_benchmarks: string[]; // Related benchmark names
+  related_benchmarks: string[]; // Canonical benchmark IDs or unique display names
   homepage: string;       // Official homepage URL
   // English i18n fields
   l1_en?: string;

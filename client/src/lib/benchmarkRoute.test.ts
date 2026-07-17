@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   BENCHMARK_ID_ALIASES,
+  findBenchmarkByReference,
   findBenchmarkByRouteId,
   migrateBenchmarkStorage,
+  resolveRelatedBenchmarks,
   resolveBenchmarkId,
 } from './benchmarkRoute';
 
@@ -69,6 +71,46 @@ describe('benchmark route identity compatibility', () => {
     expect(resolveBenchmarkId('alignbench')).toBe('alignbench');
     expect(findBenchmarkByRouteId(benchmarks, 'alignbench')).toBeUndefined();
   });
+
+  it.each(['constructor', '__proto__', 'toString'])(
+    'does not treat inherited object property %s as a benchmark alias',
+    reservedId => {
+      expect(resolveBenchmarkId(reservedId)).toBe(reservedId);
+    },
+  );
+});
+
+describe('related benchmark reference resolution', () => {
+  const relatedCatalog = [
+    { id: 'PixMo_Count', name: 'PixMo-Count' },
+    { id: 'NYU_CTF_Bench', name: 'NYU CTF Bench' },
+    { id: 'ExactId', name: 'Shared name' },
+    { id: 'OtherId', name: 'Shared name' },
+    { id: 'DisplayOnly', name: 'ExactId' },
+  ];
+
+  it('resolves an exact catalog id before considering display names', () => {
+    expect(findBenchmarkByReference(relatedCatalog, 'ExactId')?.id).toBe('ExactId');
+  });
+
+  it('resolves a unique display name', () => {
+    expect(findBenchmarkByReference(relatedCatalog, 'PixMo-Count')?.id).toBe('PixMo_Count');
+  });
+
+  it('rejects ambiguous or missing display names', () => {
+    expect(findBenchmarkByReference(relatedCatalog, 'Shared name')).toBeUndefined();
+    expect(findBenchmarkByReference(relatedCatalog, 'Missing')).toBeUndefined();
+  });
+
+  it('deduplicates resolved references and excludes the current benchmark', () => {
+    expect(
+      resolveRelatedBenchmarks(
+        relatedCatalog,
+        ['PixMo_Count', 'PixMo-Count', 'NYU CTF Bench', 'ExactId'],
+        'ExactId',
+      ).map(benchmark => benchmark.id),
+    ).toEqual(['PixMo_Count', 'NYU_CTF_Bench']);
+  });
 });
 
 describe('benchmark localStorage identity migration', () => {
@@ -117,7 +159,7 @@ describe('benchmark localStorage identity migration', () => {
     },
   );
 
-  it('keeps an existing canonical note while removing the legacy note', () => {
+  it('keeps both copies when a canonical note conflicts with a legacy note', () => {
     const storage = new FakeStorage({
       'note-InfoVQA': 'legacy note',
       'note-InfographicVQA': 'canonical note',
@@ -126,7 +168,32 @@ describe('benchmark localStorage identity migration', () => {
     migrateBenchmarkStorage(storage);
 
     expect(storage.getItem('note-InfographicVQA')).toBe('canonical note');
+    expect(storage.getItem('note-InfoVQA')).toBe('legacy note');
+  });
+
+  it('removes a legacy note when its canonical copy is identical', () => {
+    const storage = new FakeStorage({
+      'note-InfoVQA': 'same note',
+      'note-InfographicVQA': 'same note',
+    });
+
+    migrateBenchmarkStorage(storage);
+
+    expect(storage.getItem('note-InfographicVQA')).toBe('same note');
     expect(storage.getItem('note-InfoVQA')).toBeNull();
+  });
+
+  it('does not discard the second legacy note when two aliases share a canonical id', () => {
+    const storage = new FakeStorage({
+      'note-AlignmentBench': 'first legacy note',
+      'note-AlimentBench': 'second legacy note',
+    });
+
+    migrateBenchmarkStorage(storage);
+
+    expect(storage.getItem('note-AlignBench')).toBe('first legacy note');
+    expect(storage.getItem('note-AlignmentBench')).toBeNull();
+    expect(storage.getItem('note-AlimentBench')).toBe('second legacy note');
   });
 
   it.each(['{', JSON.stringify({ id: 'AlignBench' })])(
@@ -159,5 +226,22 @@ describe('benchmark localStorage identity migration', () => {
 
     expect(secondResult).toEqual(firstResult);
     expect(secondSnapshot).toEqual(firstSnapshot);
+  });
+
+  it('preserves object-prototype property names as unknown starred ids', () => {
+    const storage = new FakeStorage({
+      'starred-benchmarks': JSON.stringify(['constructor', '__proto__', 'toString']),
+    });
+
+    expect(migrateBenchmarkStorage(storage)).toEqual([
+      'constructor',
+      '__proto__',
+      'toString',
+    ]);
+    expect(JSON.parse(storage.getItem('starred-benchmarks') ?? 'null')).toEqual([
+      'constructor',
+      '__proto__',
+      'toString',
+    ]);
   });
 });

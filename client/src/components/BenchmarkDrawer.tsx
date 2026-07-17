@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
+import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
 
 interface Props {
   benchmark: Benchmark | null;
@@ -448,9 +449,11 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
 
   // Enhanced related benchmarks with similarity scoring
   const relatedBenchmarks = (() => {
-    const directRelated = (b.related_benchmarks || [])
-      .map(name => allBenchmarks.find(x => x.name === name))
-      .filter((x): x is Benchmark => !!x);
+    const directRelated = resolveRelatedBenchmarks(
+      allBenchmarks,
+      b.related_benchmarks || [],
+      b.id,
+    );
 
     // Also find similar benchmarks by l1 category and task type
     const sameCategory = allBenchmarks

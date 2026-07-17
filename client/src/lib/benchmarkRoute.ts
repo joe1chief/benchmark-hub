@@ -12,7 +12,9 @@ export const STARRED_BENCHMARKS_STORAGE_KEY = 'starred-benchmarks';
 type BenchmarkStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export function resolveBenchmarkId(routeId: string): string {
-  return BENCHMARK_ID_ALIASES[routeId] ?? routeId;
+  return Object.hasOwn(BENCHMARK_ID_ALIASES, routeId)
+    ? BENCHMARK_ID_ALIASES[routeId]
+    : routeId;
 }
 
 export function findBenchmarkByRouteId<T extends { id: string }>(
@@ -21,6 +23,35 @@ export function findBenchmarkByRouteId<T extends { id: string }>(
 ): T | undefined {
   const resolvedId = resolveBenchmarkId(routeId);
   return benchmarks.find(benchmark => benchmark.id === resolvedId);
+}
+
+export function findBenchmarkByReference<T extends { id: string; name: string }>(
+  benchmarks: readonly T[],
+  reference: string,
+): T | undefined {
+  const exactIdMatch = benchmarks.find(benchmark => benchmark.id === reference);
+  if (exactIdMatch) return exactIdMatch;
+
+  const displayNameMatches = benchmarks.filter(benchmark => benchmark.name === reference);
+  return displayNameMatches.length === 1 ? displayNameMatches[0] : undefined;
+}
+
+export function resolveRelatedBenchmarks<T extends { id: string; name: string }>(
+  benchmarks: readonly T[],
+  references: readonly string[],
+  currentBenchmarkId?: string,
+): T[] {
+  const seenIds = new Set<string>();
+  const resolved: T[] = [];
+
+  references.forEach(reference => {
+    const benchmark = findBenchmarkByReference(benchmarks, reference);
+    if (!benchmark || benchmark.id === currentBenchmarkId || seenIds.has(benchmark.id)) return;
+    seenIds.add(benchmark.id);
+    resolved.push(benchmark);
+  });
+
+  return resolved;
 }
 
 export function migrateBenchmarkStorage(storage: BenchmarkStorage): string[] {
@@ -53,10 +84,13 @@ export function migrateBenchmarkStorage(storage: BenchmarkStorage): string[] {
       const legacyNote = storage.getItem(legacyNoteKey);
       if (legacyNote === null) return;
 
-      if (storage.getItem(canonicalNoteKey) === null) {
+      const canonicalNote = storage.getItem(canonicalNoteKey);
+      if (canonicalNote === null) {
         storage.setItem(canonicalNoteKey, legacyNote);
+        storage.removeItem(legacyNoteKey);
+      } else if (canonicalNote === legacyNote) {
+        storage.removeItem(legacyNoteKey);
       }
-      storage.removeItem(legacyNoteKey);
     } catch {
       // Preserve whichever copy remains when a storage operation is unavailable.
     }
