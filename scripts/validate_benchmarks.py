@@ -4,8 +4,8 @@ Validate client/public/benchmarks.json for structural integrity.
 
 Checks:
   1. Valid JSON
-  2. Required fields present (name, l1, year)
-  3. No duplicate names
+  2. Required fields present (id, name, l1, year)
+  3. IDs and names are non-empty strings and unique
   4. l1 values are from the allowed set (Chinese values as used in data)
   5. year format is YYYY or YYYY-MM
   6. related_benchmarks reference existing IDs or unique display names
@@ -43,7 +43,7 @@ VALID_L1 = {
 # Data uses lowercase openness values
 VALID_OPENNESS = {"public", "partly public", "in-house", ""}
 
-REQUIRED_FIELDS = ["name", "l1", "year"]
+REQUIRED_FIELDS = ["l1", "year"]
 
 YEAR_RE = re.compile(r"^\d{4}(-\d{2})?$")
 URL_RE = re.compile(r"^(https?:)?//")
@@ -102,23 +102,77 @@ def validate_drawio_assets(entry: dict, prefix: str):
 
 
 def build_related_reference_index(data):
-    catalog_ids = {
+    catalog_id_counts = Counter(
         entry.get("id")
         for entry in data
-        if isinstance(entry.get("id"), str) and entry.get("id")
-    }
+        if (
+            isinstance(entry, dict)
+            and isinstance(entry.get("id"), str)
+            and entry.get("id").strip()
+        )
+    )
     display_name_counts = Counter(
         entry.get("name")
         for entry in data
-        if isinstance(entry.get("name"), str) and entry.get("name")
+        if (
+            isinstance(entry, dict)
+            and isinstance(entry.get("name"), str)
+            and entry.get("name").strip()
+        )
     )
-    return catalog_ids, display_name_counts
+    return catalog_id_counts, display_name_counts
 
 
-def related_reference_resolves(reference, catalog_ids, display_name_counts):
-    if not isinstance(reference, str) or not reference:
+def related_reference_resolves(reference, catalog_id_counts, display_name_counts):
+    if not isinstance(reference, str) or not reference.strip():
         return False
-    return reference in catalog_ids or display_name_counts.get(reference, 0) == 1
+    return (
+        catalog_id_counts.get(reference, 0) == 1
+        or display_name_counts.get(reference, 0) == 1
+    )
+
+
+def validate_identity_record(entry, index, catalog_id_counts, display_name_counts):
+    issues = []
+    if not isinstance(entry, dict):
+        return [f"[entry #{index}] must be an object, got: {type(entry).__name__}"]
+
+    benchmark_id = entry.get("id")
+    name = entry.get("name")
+    prefix_value = name if isinstance(name, str) and name.strip() else f"entry #{index}"
+    prefix = f"[{prefix_value}]"
+
+    if not isinstance(benchmark_id, str) or not benchmark_id.strip():
+        issues.append(f"{prefix} id must be a non-empty string")
+    elif catalog_id_counts.get(benchmark_id, 0) > 1:
+        issues.append(f"{prefix} duplicate id: '{benchmark_id}'")
+
+    if not isinstance(name, str) or not name.strip():
+        issues.append(f"{prefix} name must be a non-empty string")
+    elif display_name_counts.get(name, 0) > 1:
+        issues.append(f"{prefix} duplicate name: '{name}'")
+
+    related = entry.get("related_benchmarks", [])
+    if related is None:
+        related = []
+    if not isinstance(related, list):
+        issues.append(f"{prefix} related_benchmarks must be a list")
+        return issues
+
+    for reference in related:
+        if not isinstance(reference, str) or not reference.strip():
+            issues.append(f"{prefix} related_benchmarks reference must be a non-empty string")
+        elif not related_reference_resolves(
+            reference,
+            catalog_id_counts,
+            display_name_counts,
+        ):
+            issues.append(
+                f"{prefix} related_benchmarks reference does not resolve to a unique "
+                f"catalog id or display name: '{reference}'"
+            )
+
+    return issues
 
 
 def main():
@@ -139,12 +193,24 @@ def main():
     print(f"  Loaded {len(data)} entries")
 
     # Build identity indexes for cross-reference checks.
-    catalog_ids, display_name_counts = build_related_reference_index(data)
-    duplicate_names = {name for name, count in display_name_counts.items() if count > 1}
+    catalog_id_counts, display_name_counts = build_related_reference_index(data)
 
     # 2. Per-entry validation
     for i, entry in enumerate(data):
-        name = entry.get("name", f"<entry #{i}>")
+        if not isinstance(entry, dict):
+            err(f"[entry #{i}] must be an object, got: {type(entry).__name__}")
+            continue
+
+        for identity_issue in validate_identity_record(
+            entry,
+            i,
+            catalog_id_counts,
+            display_name_counts,
+        ):
+            err(identity_issue)
+
+        raw_name = entry.get("name")
+        name = raw_name if isinstance(raw_name, str) and raw_name.strip() else f"<entry #{i}>"
         prefix = f"[{name}]"
 
         # Required fields
@@ -152,13 +218,9 @@ def main():
             if not entry.get(field):
                 err(f"{prefix} missing required field: '{field}'")
 
-        # Duplicate names
-        if name in duplicate_names:
-            err(f"{prefix} duplicate name: '{name}'")
-
         # l1 value
         l1 = entry.get("l1", "")
-        if l1 and l1 not in VALID_L1:
+        if l1 and (not isinstance(l1, str) or l1 not in VALID_L1):
             err(f"{prefix} invalid l1 value: '{l1}'. Must be one of: {sorted(VALID_L1)}")
 
         # year format
@@ -168,7 +230,7 @@ def main():
 
         # openness
         openness = entry.get("openness", "")
-        if openness not in VALID_OPENNESS:
+        if not isinstance(openness, str) or openness not in VALID_OPENNESS:
             warn(f"{prefix} unexpected openness value: '{openness}'")
 
         # mermaid_flowchart
@@ -177,16 +239,6 @@ def main():
             err(f"{prefix} mermaid_flowchart must be a string or null, got: {type(flowchart).__name__}")
 
         validate_drawio_assets(entry, prefix)
-
-        # related_benchmarks cross-reference
-        related = entry.get("related_benchmarks", [])
-        if related and isinstance(related, list):
-            for ref in related:
-                if not related_reference_resolves(ref, catalog_ids, display_name_counts):
-                    warn(
-                        f"{prefix} related_benchmarks reference does not resolve to a catalog id "
-                        f"or unique display name: '{ref}'"
-                    )
 
     detail_count = 0
     if DETAIL_DIR.exists():
