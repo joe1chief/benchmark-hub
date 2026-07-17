@@ -4,184 +4,232 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Mars-Bench 构建流程
+  title: MARS-Bench 构建流程
   description: >-
-    依据论文重绘的 Mars-Bench 流程：按可用性与宽松许可筛选既有火星科学数据，选出覆盖分类、分割和目标检测的 20 个轨道器与火星车数据集；在行星科学专家及原作者参与下整理、重构、去重、平衡并纠正数据，提供统一加载器
-    和常用标注格式；有官方训练/验证/测试划分则保留，否则按标准方法创建；再派生跨域、比例子集和少样本版本， 调优三种训练策略并用七个随机种子重训，最终报告任务指标、归一化 IQM 与自举 95% 置信区间。
-  legend: 实线表示保留的数据；点线分支表示被论文筛选门排除的数据集。
+    依据论文重绘的 MARS-Bench 流程：从 ESPN 收集英文 NBA/NHL 逐事件记录与赛后统计，并从虎扑收集中文 NBA
+    数据；标准化每场完整比赛；人工设计指令遵循、上下文检索、信息推理和任务切换问题；通过正则选择上下文、派生唯一答案并构建加权证据清单；执行抽样核验、作者独立交叉复核和 DeepSeek-V3-0324
+    辅助一致性检查；先组装增量对话，再形成 120 场比赛与 4,010 次查询，最后由 LLM 裁判仅依据加权检查清单评估零样本逐轮回复。
+  legend: 实线表示构建与评测主流程；点线支路仅把赛后统计送入答案核验。
 nodes:
   - id: sources
-    label: 既有火星数据集
+    label: |-
+      体育数据来源
+      ESPN 英文 NBA/NHL
+      虎扑中文 NBA
     type: database
     size: large
     position:
       x: 40
-      'y': 220
-  - id: source_gate
-    label: 可用且许可宽松？
-    type: decision
+      'y': 120
+  - id: standardize
+    label: |-
+      标准化完整比赛
+      实况 • 阵容 • 统计
+    type: process
     size: large
     position:
-      x: 240
-      'y': 220
-  - id: excluded
-    label: 排除数据集
+      x: 250
+      'y': 120
+  - id: model_input
+    label: |-
+      模型输入
+      逐事件实况 + 阵容
     type: document
     size: large
     position:
-      x: 240
+      x: 460
+      'y': 120
+  - id: taxonomy
+    label: |-
+      四类任务
+      指令 • 检索 • 推理 • 切换
+    type: process
+    size: large
+    position:
+      x: 670
+      'y': 120
+  - id: questions
+    label: |-
+      人工设计问题
+      按比赛节次与任务
+    type: process
+    size: large
+    position:
+      x: 880
+      'y': 120
+  - id: answers
+    label: |-
+      正则筛选上下文
+      派生唯一参考答案
+    type: process
+    size: large
+    position:
+      x: 1090
+      'y': 120
+  - id: checklists
+    label: |-
+      加权证据清单
+      事实项 + 首检条件
+    type: process
+    size: large
+    position:
+      x: 1300
+      'y': 120
+  - id: sample_check
+    label: |-
+      抽样核验
+      每种题型 5 题
+      核验答案抽取
+    type: process
+    size: large
+    position:
+      x: 1510
+      'y': 280
+  - id: cross_review
+    label: |-
+      作者独立
+      交叉复核
+    type: process
+    size: large
+    position:
+      x: 1510
       'y': 420
-  - id: selected
-    label: 20个火星数据集
-    type: document
-    size: large
-    position:
-      x: 440
-      'y': 220
-  - id: curate
-    label: 重构与纠正
+  - id: consistency
+    label: |-
+      DeepSeek-V3-0324
+      辅助一致性检查
     type: process
     size: large
     position:
-      x: 640
-      'y': 220
-  - id: expert
-    label: 领域专家验证
+      x: 1300
+      'y': 420
+  - id: dataset
+    label: |-
+      MARS-Bench
+      120 场 • 4,010 次查询
+      平均 33.42 轮
+    type: database
+    size: large
+    position:
+      x: 880
+      'y': 420
+  - id: dialogue
+    label: |-
+      组装增量对话
+      每节 5 个比分轮次
+      插入分类问题
     type: process
     size: large
     position:
-      x: 840
-      'y': 220
-  - id: formats
-    label: 统一加载与格式
+      x: 1090
+      'y': 420
+  - id: target
+    label: |-
+      目标模型零样本作答
+      每轮均需响应
     type: process
     size: large
     position:
-      x: 1040
-      'y': 220
-  - id: split_gate
-    label: 有官方划分？
-    type: decision
-    size: large
-    position:
-      x: 1240
-      'y': 220
-  - id: keep_split
-    label: 保留原划分
+      x: 670
+      'y': 420
+  - id: judge
+    label: |-
+      仅按清单评分
+      参考答案只作上下文
+      首检条件可归零
     type: process
     size: large
     position:
-      x: 1440
-      'y': 100
-  - id: create_split
-    label: 创建标准划分
-    type: process
-    size: large
-    position:
-      x: 1440
-      'y': 340
-  - id: standard_split
-    label: 训练验证测试集
-    type: document
-    size: large
-    position:
-      x: 1640
-      'y': 220
-  - id: cross_domain
-    label: 跨域分区
-    type: process
-    size: large
-    position:
-      x: 1840
-      'y': 100
-  - id: low_data
-    label: 比例与少样本集
-    type: process
-    size: large
-    position:
-      x: 1840
-      'y': 340
-  - id: tune
-    label: 调优三种训练策略
-    type: process
-    size: large
-    position:
-      x: 2040
-      'y': 220
-  - id: seeds
-    label: 七个随机种子
-    type: process
-    size: large
-    position:
-      x: 2240
-      'y': 220
-  - id: task_metrics
-    label: F1、IoU、mAP
-    type: process
-    size: large
-    position:
-      x: 2440
-      'y': 220
+      x: 460
+      'y': 420
   - id: report
-    label: IQM与95%区间
+    label: |-
+      分任务与总体
+      准确率（%）
     type: terminal
     size: large
     position:
-      x: 2640
-      'y': 220
+      x: 250
+      'y': 420
+  - id: verification_stats
+    label: |-
+      仅用于核验
+      赛后统计
+    type: database
+    size: large
+    position:
+      x: 1300
+      'y': 280
 edges:
   - from: sources
-    to: source_gate
+    to: standardize
     type: primary
-  - from: source_gate
-    to: excluded
-    type: optional
-  - from: source_gate
-    to: selected
+  - from: standardize
+    to: model_input
     type: primary
-  - from: selected
-    to: curate
+  - from: standardize
+    to: verification_stats
+    type: data
+    waypoints:
+      - x: 355
+        'y': 315
+      - x: 1270
+        'y': 315
+  - from: model_input
+    to: taxonomy
     type: primary
-  - from: curate
-    to: expert
+  - from: taxonomy
+    to: questions
     type: primary
-  - from: expert
-    to: formats
+  - from: questions
+    to: answers
     type: primary
-  - from: formats
-    to: split_gate
+  - from: verification_stats
+    to: sample_check
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: answers
+    to: checklists
     type: primary
-  - from: split_gate
-    to: keep_split
+  - from: checklists
+    to: sample_check
     type: primary
-  - from: split_gate
-    to: create_split
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.5
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: sample_check
+    to: cross_review
     type: primary
-  - from: keep_split
-    to: standard_split
+  - from: cross_review
+    to: consistency
     type: primary
-  - from: create_split
-    to: standard_split
+  - from: consistency
+    to: dialogue
     type: primary
-  - from: standard_split
-    to: cross_domain
+  - from: dialogue
+    to: dataset
     type: primary
-  - from: standard_split
-    to: low_data
+  - from: dataset
+    to: target
     type: primary
-  - from: cross_domain
-    to: tune
+  - from: target
+    to: judge
     type: primary
-  - from: low_data
-    to: tune
-    type: primary
-  - from: tune
-    to: seeds
-    type: primary
-  - from: seeds
-    to: task_metrics
-    type: primary
-  - from: task_metrics
+  - from: judge
     to: report
     type: primary
 modules: []
