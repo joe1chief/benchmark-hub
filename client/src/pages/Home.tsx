@@ -10,6 +10,7 @@ import BenchmarkDrawer from '@/components/BenchmarkDrawer';
 import { Loader2, SearchX, ArrowUp } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
+import { findBenchmarkByRouteId, resolveBenchmarkId } from '@/lib/benchmarkRoute';
 
 const PAGE_SIZE = 60;
 
@@ -93,10 +94,44 @@ export default function Home() {
   }, [baseFiltered, starredOnly, starredIds]);
   const widelyTestedCount = useMemo(() => data.filter(b => b.widely_tested === true).length, [data]);
 
+  const replaceBenchmarkQuery = useCallback((benchmarkId?: string) => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (benchmarkId) {
+        params.set('benchmark', benchmarkId);
+      } else {
+        params.delete('benchmark');
+      }
+      const queryString = params.toString();
+      const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`;
+      window.history.replaceState(null, '', newUrl);
+    } catch (e) {
+      console.error('Benchmark URL sync failed:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading || data.length === 0) return;
+    try {
+      const routeId = new URLSearchParams(window.location.search).get('benchmark');
+      if (!routeId) return;
+      const benchmark = findBenchmarkByRouteId(data, routeId);
+      if (!benchmark) return;
+      setSelected(benchmark);
+      const canonicalId = resolveBenchmarkId(routeId);
+      if (canonicalId !== routeId) replaceBenchmarkQuery(canonicalId);
+    } catch (e) {
+      console.error('Benchmark route restore failed:', e);
+    }
+  }, [data, loading, replaceBenchmarkQuery]);
+
   // Sync filters to URL query parameters
   useEffect(() => {
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(window.location.search);
+      for (const key of ['q', 'category', 'year', 'difficulty', 'modality', 'openness', 'sort', 'widely', 'starred']) {
+        params.delete(key);
+      }
       if (filters.search) params.set('q', filters.search);
       if (filters.l1) params.set('category', filters.l1);
       if (filters.year) params.set('year', filters.year);
@@ -108,7 +143,7 @@ export default function Home() {
       if (filters.starredOnly) params.set('starred', 'true');
 
       const queryString = params.toString();
-      const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+      const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`;
       window.history.replaceState(null, '', newUrl);
     } catch (e) {
       console.error('URL sync failed:', e);
@@ -168,7 +203,15 @@ export default function Home() {
     setPage(1);
   }, []);
 
-  const handleSelectBenchmark = useCallback((b: Benchmark) => setSelected(b), []);
+  const handleSelectBenchmark = useCallback((b: Benchmark) => {
+    setSelected(b);
+    replaceBenchmarkQuery(b.id);
+  }, [replaceBenchmarkQuery]);
+
+  const handleCloseBenchmark = useCallback(() => {
+    setSelected(null);
+    replaceBenchmarkQuery();
+  }, [replaceBenchmarkQuery]);
 
   const paged = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = paged.length < filtered.length;
@@ -306,7 +349,7 @@ export default function Home() {
                   <BenchmarkCard
                     key={b.id}
                     benchmark={b}
-                    onClick={setSelected}
+                    onClick={handleSelectBenchmark}
                     isStarred={starredIds.includes(b.id)}
                     style={{
                       animationDelay: `${Math.min(i % PAGE_SIZE, 24) * 25}ms`,
@@ -363,7 +406,7 @@ export default function Home() {
           allBenchmarks={data}
           isStarred={starredIds.includes(selected.id)}
           onToggleStar={() => toggleStar(selected.id)}
-          onClose={() => setSelected(null)}
+          onClose={handleCloseBenchmark}
           onSelectBenchmark={handleSelectBenchmark}
         />
       )}
