@@ -6,198 +6,224 @@ meta:
   routing: orthogonal
   title: 2WikiMultihopQA Build Process
   description: >-
-    Paper-aligned 2WikiMultihopQA construction from Wikipedia and Wikidata through verified templates, four question
-    types, distractor and ambiguity controls, difficulty-aware splitting, and joint evidence evaluation.
-  legend: Solid arrows show parallel question generation, shared quality gates, split construction, and evaluation.
+    Paper-aligned construction from Wikipedia/Wikidata sources through template and logical-rule branches, four question
+    types, type-specific validity gates, serialized post-processing and TF-IDF distractor retrieval, and
+    difficulty-aware splits.
+  legend: Solid arrows show the dataset-construction sequence; all four question-type branches must pass their gate.
 nodes:
   - id: source
     label: |-
-      Wikipedia Summaries
-      + Wikidata Statements
-      5.95M Entities / 23,763 Groups
+      Wikipedia Summaries + Wikidata
+      5.95M entities • 23,763 groups
     type: database
     size: xl
     position:
       x: 40
-      'y': 240
+      'y': 280
   - id: templates
     label: |-
-      Template Design
-      HotpotQA NER + Manual
-      Remove Single-Hop Forms
+      Design Question Templates
+      HotpotQA NER + manual templates
+      Remove single-hop forms
+      Remove context-dependent forms
     type: process
     size: xl
     position:
       x: 280
-      'y': 80
-  - id: rules
+      'y': 100
+  - id: logical_rules
     label: |-
-      Logical Rules
-      AMIE Candidates
-      Manually Verify 28 Rules
+      Mine Logical Rules
+      AMIE candidates
+      Manually verify 28 rules
     type: process
     size: xl
     position:
       x: 280
-      'y': 400
+      'y': 500
   - id: comparison
     label: |-
-      Comparison +
-      Bridge-Comparison
-      Entity Pairs + Mutual Relations
+      Comparison Questions
+      Compare paired entities
     type: process
     size: xl
     position:
       x: 520
-      'y': 80
-  - id: bridge
+      'y': 40
+  - id: bridge_comparison
     label: |-
-      Inference + Compositional
-      Verified Two-Hop Chains
+      Bridge-Comparison Questions
+      Bridge entity + comparison
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 200
+  - id: inference
+    label: |-
+      Inference Questions
+      Apply verified relation chains
     type: process
     size: xl
     position:
       x: 520
       'y': 400
-  - id: fields
+  - id: compositional
     label: |-
-      Build QA Record
-      Question / Answer / Context
-      Supporting Facts / Triples
-    type: document
+      Compositional Questions
+      Compose two relations
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 560
+  - id: comparison_gate
+    label: |-
+      Comparison Validity Gate
+      Both answer spans must occur
+    type: process
     size: xl
     position:
       x: 760
-      'y': 240
-  - id: distractors
+      'y': 40
+  - id: bridge_gate
     label: |-
-      Retrieve Distractors
-      Top-50 TF-IDF → 8 or 6
-      Shuffle to 10 Paragraphs
+      Bridge-Comparison Gate
+      Mention / non-mention constraints
     type: process
     size: xl
     position:
+      x: 760
+      'y': 200
+  - id: two_hop_gate
+    label: |-
+      Two-Hop Validity Gate
+      Valid intermediate and answer path
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 480
+  - id: qa_records
+    label: |-
+      Build QA + Evidence Record
+      Question • answer • supporting facts
+      Wikidata evidence triples
+    type: document
+    size: xl
+    position:
       x: 1000
-      'y': 80
+      'y': 280
   - id: postprocess
     label: |-
-      Post-Process
-      Balance Yes / No
-      Remove Ambiguous + Mismatched
+      Post-Process Questions
+      Balance yes / no answers
+      Remove ambiguity and mismatches
     type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 400
-  - id: dataset
-    label: |-
-      2WikiMultihopQA
-      192,606 Questions
-      Four Question Types
-    type: database
     size: xl
     position:
       x: 1240
-      'y': 240
-  - id: split_model
+      'y': 280
+  - id: distractors
     label: |-
-      Single-Hop BERT
-      5-Fold Difficulty Split
+      Retrieve TF-IDF Distractors
+      Search top 50; retain 8 or 6
+      Shuffle into 10 paragraphs
     type: process
     size: xl
     position:
       x: 1480
-      'y': 240
-  - id: train
+      'y': 280
+  - id: dataset
     label: |-
-      Training
-      Medium 154,878
-      Hard 12,576
+      2WikiMultihopQA
+      192,606 questions
+      Four question types
     type: database
     size: xl
     position:
       x: 1720
-      'y': 80
-  - id: heldout
+      'y': 280
+  - id: split_model
     label: |-
-      Held-Out Sets
-      Dev 12,576
-      Test 12,576
-    type: database
-    size: xl
-    position:
-      x: 1720
-      'y': 400
-  - id: predict
-    label: |-
-      Predict Answer
-      Sentence Supporting Facts
-      Evidence Triples
+      Difficulty-Aware Splitting
+      Single-hop BERT • five folds
     type: process
     size: xl
     position:
       x: 1960
-      'y': 240
-  - id: score
+      'y': 280
+  - id: splits
     label: |-
-      EM + F1
-      Answer / SF / Evidence
-      Joint EM + Joint F1
-    type: terminal
+      Published Splits
+      Train 154,878 + 12,576 hard
+      Dev 12,576 • Test 12,576
+    type: database
     size: xl
     position:
       x: 2200
-      'y': 240
+      'y': 280
 edges:
   - from: source
     to: templates
     type: primary
   - from: source
-    to: rules
+    to: logical_rules
     type: primary
   - from: templates
     to: comparison
     type: primary
   - from: templates
-    to: bridge
+    to: bridge_comparison
     type: primary
-  - from: rules
-    to: bridge
+  - from: templates
+    to: inference
+    type: primary
+  - from: templates
+    to: compositional
+    type: primary
+    waypoints:
+      - x: 412
+        'y': 468
+      - x: 574
+        'y': 468
+  - from: logical_rules
+    to: inference
     type: primary
   - from: comparison
-    to: fields
+    to: comparison_gate
     type: primary
-  - from: bridge
-    to: fields
+  - from: bridge_comparison
+    to: bridge_gate
     type: primary
-  - from: fields
-    to: distractors
+  - from: inference
+    to: two_hop_gate
     type: primary
-  - from: fields
+  - from: compositional
+    to: two_hop_gate
+    type: primary
+  - from: comparison_gate
+    to: qa_records
+    type: primary
+  - from: bridge_gate
+    to: qa_records
+    type: primary
+  - from: two_hop_gate
+    to: qa_records
+    type: primary
+  - from: qa_records
     to: postprocess
     type: primary
-  - from: distractors
-    to: dataset
-    type: primary
   - from: postprocess
+    to: distractors
+    type: primary
+  - from: distractors
     to: dataset
     type: primary
   - from: dataset
     to: split_model
     type: primary
   - from: split_model
-    to: train
-    type: primary
-  - from: split_model
-    to: heldout
-    type: primary
-  - from: train
-    to: predict
-    type: primary
-  - from: heldout
-    to: predict
-    type: primary
-  - from: predict
-    to: score
+    to: splits
     type: primary
 modules: []

@@ -5,196 +5,222 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: 2WikiMultihopQA 构建流程
-  description: 对齐论文的 2WikiMultihopQA 流程：从 Wikipedia 与 Wikidata，经验证模板、四类问题、 干扰段落与歧义控制、难度感知划分，到联合证据评测。
-  legend: 实线表示并行问题生成、统一质量门、数据划分和评测。
+  description: 按论文重建从 Wikipedia/Wikidata 信源，经模板与逻辑规则分支、四类问题、各类型有效性门控、串行后处理与 TF-IDF 干扰段检索，直至按难度划分数据集的流程。
+  legend: 实线箭头表示数据集构建顺序；四类问题均须通过各自的有效性门控。
 nodes:
   - id: source
     label: |-
-      Wikipedia摘要
-      +Wikidata陈述
-      5.95M实体/23,763组
+      Wikipedia 摘要 + Wikidata
+      595 万实体 • 23,763 个分组
     type: database
     size: xl
     position:
       x: 40
-      'y': 240
+      'y': 280
   - id: templates
     label: |-
-      模板设计
-      HotpotQA实体识别+人工
-      移除单跳形式
+      设计问题模板
+      HotpotQA NER + 人工模板
+      删除单跳模板
+      删除依赖上下文的模板
     type: process
     size: xl
     position:
       x: 280
-      'y': 80
-  - id: rules
+      'y': 100
+  - id: logical_rules
     label: |-
-      逻辑规则
-      AMIE候选
-      人工验证28条规则
+      挖掘逻辑规则
+      AMIE 候选规则
+      人工验证 28 条规则
     type: process
     size: xl
     position:
       x: 280
-      'y': 400
+      'y': 500
   - id: comparison
     label: |-
-      比较与桥接比较
-      实体对+共同关系
+      比较类问题
+      比较配对实体
     type: process
     size: xl
     position:
       x: 520
-      'y': 80
-  - id: bridge
+      'y': 40
+  - id: bridge_comparison
     label: |-
-      推断与组合问题
-      验证二跳链路
+      桥接比较类问题
+      桥接实体 + 比较
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 200
+  - id: inference
+    label: |-
+      推断类问题
+      应用已验证关系链
     type: process
     size: xl
     position:
       x: 520
       'y': 400
-  - id: fields
+  - id: compositional
     label: |-
-      构造问答记录
-      问题/答案/上下文
-      支持句/证据三元组
-    type: document
+      组合类问题
+      组合两条关系
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 560
+  - id: comparison_gate
+    label: |-
+      比较有效性门控
+      两个答案跨度均须出现
+    type: process
     size: xl
     position:
       x: 760
-      'y': 240
-  - id: distractors
+      'y': 40
+  - id: bridge_gate
     label: |-
-      检索干扰段落
-      前50段→8或6段
-      打乱为10段上下文
+      桥接比较门控
+      满足提及 / 不提及约束
     type: process
     size: xl
     position:
+      x: 760
+      'y': 200
+  - id: two_hop_gate
+    label: |-
+      两跳有效性门控
+      中间实体与答案路径均有效
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 480
+  - id: qa_records
+    label: |-
+      构建问答与证据记录
+      问题 • 答案 • 支持事实
+      Wikidata 证据三元组
+    type: document
+    size: xl
+    position:
       x: 1000
-      'y': 80
+      'y': 280
   - id: postprocess
     label: |-
-      后处理
-      平衡是/否答案
-      移除歧义与不匹配
+      问题后处理
+      平衡 yes / no 答案
+      删除歧义与不匹配项
     type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 400
-  - id: dataset
-    label: |-
-      2WikiMultihopQA
-      192,606题
-      四类问题
-    type: database
     size: xl
     position:
       x: 1240
-      'y': 240
-  - id: split_model
+      'y': 280
+  - id: distractors
     label: |-
-      单跳BERT
-      5折难度划分
+      检索 TF-IDF 干扰段
+      检索前 50，保留 8 或 6 段
+      打乱组成 10 个段落
     type: process
     size: xl
     position:
       x: 1480
-      'y': 240
-  - id: train
+      'y': 280
+  - id: dataset
     label: |-
-      训练集
-      中等154,878
-      困难12,576
+      2WikiMultihopQA
+      192,606 道问题
+      四类问题
     type: database
     size: xl
     position:
       x: 1720
-      'y': 80
-  - id: heldout
+      'y': 280
+  - id: split_model
     label: |-
-      留出集
-      验证12,576
-      测试12,576
-    type: database
-    size: xl
-    position:
-      x: 1720
-      'y': 400
-  - id: predict
-    label: |-
-      预测答案
-      句级支持事实
-      证据三元组
+      按难度划分
+      单跳 BERT • 五折分析
     type: process
     size: xl
     position:
       x: 1960
-      'y': 240
-  - id: score
+      'y': 280
+  - id: splits
     label: |-
-      精确匹配与F1
-      答案/支持事实/证据
-      联合精确匹配与联合F1
-    type: terminal
+      发布划分
+      训练 154,878 + 困难 12,576
+      开发 12,576 • 测试 12,576
+    type: database
     size: xl
     position:
       x: 2200
-      'y': 240
+      'y': 280
 edges:
   - from: source
     to: templates
     type: primary
   - from: source
-    to: rules
+    to: logical_rules
     type: primary
   - from: templates
     to: comparison
     type: primary
   - from: templates
-    to: bridge
+    to: bridge_comparison
     type: primary
-  - from: rules
-    to: bridge
+  - from: templates
+    to: inference
+    type: primary
+  - from: templates
+    to: compositional
+    type: primary
+    waypoints:
+      - x: 412
+        'y': 468
+      - x: 574
+        'y': 468
+  - from: logical_rules
+    to: inference
     type: primary
   - from: comparison
-    to: fields
+    to: comparison_gate
     type: primary
-  - from: bridge
-    to: fields
+  - from: bridge_comparison
+    to: bridge_gate
     type: primary
-  - from: fields
-    to: distractors
+  - from: inference
+    to: two_hop_gate
     type: primary
-  - from: fields
+  - from: compositional
+    to: two_hop_gate
+    type: primary
+  - from: comparison_gate
+    to: qa_records
+    type: primary
+  - from: bridge_gate
+    to: qa_records
+    type: primary
+  - from: two_hop_gate
+    to: qa_records
+    type: primary
+  - from: qa_records
     to: postprocess
     type: primary
-  - from: distractors
-    to: dataset
-    type: primary
   - from: postprocess
+    to: distractors
+    type: primary
+  - from: distractors
     to: dataset
     type: primary
   - from: dataset
     to: split_model
     type: primary
   - from: split_model
-    to: train
-    type: primary
-  - from: split_model
-    to: heldout
-    type: primary
-  - from: train
-    to: predict
-    type: primary
-  - from: heldout
-    to: predict
-    type: primary
-  - from: predict
-    to: score
+    to: splits
     type: primary
 modules: []

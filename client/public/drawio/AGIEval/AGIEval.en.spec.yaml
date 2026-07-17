@@ -4,159 +4,260 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AGIEval Build Process
+  title: AGIEval Build and Evaluation Process
   description: >-
-    Paper-aligned AGIEval construction from official human exams and reused exam datasets through objective-question
-    filtering, 20-task bilingual assembly, four prompting settings, and format-specific metrics.
-  legend: Solid arrows show dataset construction, human reference scores, and model evaluation.
+    Paper-aligned acquisition from directly collected public Gaokao/SAT exams and reused LSAT/LogiQA/MATH/AQuA/JEC
+    datasets, followed by source-specific selection/downsampling, normalization, and format-specific evaluation.
+  legend: >-
+    The two acquisition lanes merge before the 20-task release; the lower branch makes the four paper-defined 5-shot
+    source rules explicit, while data edges also supply human references.
 nodes:
-  - id: official_sources
+  - id: direct_sources
     label: |-
-      Official Public Exams
-      Gaokao / SAT / LSAT
-      GRE / GMAT / Law / Civil Service
+      Direct Public Exam Sources
+      Gaokao + SAT
+      Officially released questions
     type: database
     size: xl
     position:
       x: 40
       'y': 80
-  - id: reused_sources
+  - id: direct_select
     label: |-
-      Reused Exam Datasets
-      LogiQA / MATH / AQuA-RAT
-      JEC-QA / LSAT Data
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 400
-  - id: select
-    label: |-
-      Select Standardized Exams
-      Human Reasoning +
-      Real-World Relevance
+      Direct-Source Selection
+      Keep public standardized exams
+      Select language-only objective items
     type: process
     size: xl
     position:
       x: 280
-      'y': 240
-  - id: objective
+      'y': 80
+  - id: reused_sources
     label: |-
-      Remove Subjective Items
-      Keep MCQ + Fill-in
+      Reused Exam Datasets
+      LSAT • LogiQA • MATH
+      AQuA-RAT • JEC-QA
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 440
+  - id: reused_downsample
+    label: |-
+      Reuse + Source Downsampling
+      Map source task formats
+      MATH and two JEC tasks → 1,000 each
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 440
+  - id: objective_filter
+    label: |-
+      Objective-Question Filter
+      Remove subjective items
+      Keep multiple-choice + fill-in
     type: process
     size: xl
     position:
       x: 520
-      'y': 240
+      'y': 260
   - id: normalize
     label: |-
-      Normalize Sources
-      Downsample MATH and
-      Two JEC-QA Tasks to 1K Each
+      Normalize Task Records
+      Standardize bilingual fields
+      Preserve source answer formats
     type: process
     size: xl
     position:
       x: 760
-      'y': 240
+      'y': 260
   - id: dataset
     label: |-
       AGIEval
-      20 Tasks / 8,062 Questions
+      20 tasks • 8,062 questions
       Chinese + English
     type: database
     size: xl
     position:
       x: 1000
-      'y': 240
+      'y': 260
   - id: humans
     label: |-
       Human References
-      Average + Top Test Takers
+      Official average scores
+      Top test-taker scores
     type: user
     size: xl
     position:
-      x: 1240
-      'y': 80
-  - id: prompts
-    label: |-
-      Prompt Regimes
-      Zero-shot / 5-shot
-      With / Without CoT
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 400
-  - id: generation
-    label: |-
-      Greedy Generation
-      Temperature 0
-      Max 2,048 Tokens
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 400
-  - id: format
-    label: |-
-      Question Format
-      MCQ or Fill-in?
+      x: 2920
+      'y': 40
+  - id: five_shot_route
+    label: Select 5-Shot Rule by Source
     type: decision
     size: xl
     position:
-      x: 1720
-      'y': 400
-  - id: mcq
+      x: 1240
+      'y': 560
+  - id: pool_examples
     label: |-
-      Multiple Choice
-      Classification Accuracy
+      AQuA / LogiQA / LSAT
+      Randomly sample 5 from train
+      Choose medium-length examples
     type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 380
+  - id: exam_original_pool
+    label: |-
+      Gaokao / SAT
+      From each original collected set
+      Pick 5 medium-length examples
+      Remove those 5 from its test set
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 500
+  - id: jec_remainder
+    label: |-
+      JEC
+      First 1,000 train items → test
+      From remainder: select 5 with
+      medium sentence length
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 620
+  - id: math_appendix
+    label: |-
+      MATH
+      Use Lewkowycz appendix exemplars
+      Directly; do not sample
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 740
+  - id: five_shot_bundle
+    label: |-
+      Source-Specific 5-Shot Examples
+      Preserve each source format
+      Attach the selected exemplars
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 560
+  - id: prompts
+    label: |-
+      Prompt Regimes
+      Zero-shot / source-specific 5-shot
+      With / without chain-of-thought
+    type: process
     size: xl
     position:
       x: 1960
       'y': 260
-  - id: fill
+  - id: generation
     label: |-
-      Fill-in-the-Blank
-      Exact Match + F1
-    type: document
-    size: xl
-    position:
-      x: 1960
-      'y': 500
-  - id: report
-    label: |-
-      Task Results
-      Model vs Human
-      Outputs + Code Released
-    type: terminal
+      Model Generation
+      Temperature 0
+      Maximum 2,048 tokens
+    type: process
     size: xl
     position:
       x: 2200
-      'y': 240
+      'y': 260
+  - id: format
+    label: Question Format?
+    type: decision
+    size: xl
+    position:
+      x: 2440
+      'y': 260
+  - id: mcq
+    label: |-
+      Multiple Choice
+      Classification accuracy
+    type: process
+    size: xl
+    position:
+      x: 2680
+      'y': 140
+  - id: fill
+    label: |-
+      Fill-in-the-Blank
+      Exact match + F1
+    type: process
+    size: xl
+    position:
+      x: 2680
+      'y': 380
+  - id: report
+    label: |-
+      AGIEval Results
+      Model vs human references
+      Released data, code, and outputs
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 260
 edges:
-  - from: official_sources
-    to: select
+  - from: direct_sources
+    to: direct_select
     type: primary
   - from: reused_sources
-    to: select
+    to: reused_downsample
     type: primary
-  - from: select
-    to: objective
+  - from: direct_select
+    to: objective_filter
     type: primary
-  - from: objective
+  - from: reused_downsample
+    to: objective_filter
+    type: primary
+  - from: objective_filter
     to: normalize
     type: primary
   - from: normalize
     to: dataset
     type: primary
   - from: dataset
-    to: humans
-    type: primary
+    to: five_shot_route
+    type: data
   - from: dataset
     to: prompts
     type: primary
+  - from: five_shot_route
+    to: pool_examples
+    type: data
+  - from: five_shot_route
+    to: exam_original_pool
+    type: data
+  - from: five_shot_route
+    to: jec_remainder
+    type: data
+  - from: five_shot_route
+    to: math_appendix
+    type: data
+  - from: pool_examples
+    to: five_shot_bundle
+    type: data
+  - from: exam_original_pool
+    to: five_shot_bundle
+    type: data
+  - from: jec_remainder
+    to: five_shot_bundle
+    type: data
+  - from: math_appendix
+    to: five_shot_bundle
+    type: data
+  - from: five_shot_bundle
+    to: prompts
+    type: data
   - from: prompts
     to: generation
     type: primary
@@ -166,12 +267,14 @@ edges:
   - from: format
     to: mcq
     type: primary
+    label: MCQ
   - from: format
     to: fill
     type: primary
+    label: Fill-in
   - from: humans
     to: report
-    type: primary
+    type: data
   - from: mcq
     to: report
     type: primary

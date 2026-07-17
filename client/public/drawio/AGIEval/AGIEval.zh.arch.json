@@ -1,92 +1,134 @@
 {
   "version": 1,
-  "title": "AGIEval 构建流程",
+  "title": "AGIEval 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 14,
+    "nodes": 20,
+    "edges": 24,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "official_sources",
-      "label": "官方公开考试\n高考/SAT/LSAT\nGRE/GMAT/法考/公考",
+      "id": "direct_sources",
+      "label": "直接收集公开考试\n高考 + SAT\n官方公开试题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "reused_sources",
-      "label": "复用考试数据集\nLogiQA/MATH/AQuA-RAT\nJEC-QA与LSAT数据",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "select",
-      "label": "选择标准化考试\n人类推理能力\n与真实场景相关",
+      "id": "direct_select",
+      "label": "直接来源筛选\n保留公开标准化考试\n选择纯语言客观题",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "objective",
-      "label": "移除主观题\n保留选择与填空题",
+      "id": "reused_sources",
+      "label": "复用考试数据集\nLSAT • LogiQA • MATH\nAQuA-RAT • JEC-QA",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "reused_downsample",
+      "label": "复用 + 按来源下采样\n映射各来源任务格式\nMATH 与两类 JEC 各降至 1,000",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "objective_filter",
+      "label": "客观题过滤\n删除主观题\n保留选择题 + 填空题",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "normalize",
-      "label": "统一数据来源\nMATH与两类JEC-QA\n各下采样至1K",
+      "label": "标准化任务记录\n统一中英文字段\n保留各来源答案格式",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "AGIEval\n20项任务/8,062题\n中文与英文",
+      "label": "AGIEval\n20 项任务 • 8,062 道题\n中文 + 英文",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "humans",
-      "label": "人类参考\n平均与顶尖考生",
+      "label": "人类参考成绩\n官方平均分\n顶尖考生分数",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "five_shot_route",
+      "label": "按来源选择 5-Shot 规则",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "pool_examples",
+      "label": "AQuA / LogiQA / LSAT\n从训练集随机采样 5 个\n选择中等长度示例",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "exam_original_pool",
+      "label": "高考 / SAT\n各自取自原始收集集\n各选 5 个中等长度示例\n从对应 test 集移除这 5 个",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "jec_remainder",
+      "label": "JEC\n训练集前 1,000 条作为测试集\n从剩余部分选择 5 个\n中等句长示例",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "math_appendix",
+      "label": "MATH\n直接采用 Lewkowycz 附录示例\n不采样",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "five_shot_bundle",
+      "label": "按来源构造 5-Shot 示例\n保留来源专属格式\n附加已选示例",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "prompts",
-      "label": "提示设置\n零样本/5样本\n使用/不使用CoT",
+      "label": "提示设置\nZero-shot / 按来源 5-shot\n使用 / 不使用思维链",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "generation",
-      "label": "贪心生成\n温度0\n最多2,048词元",
+      "label": "模型生成\n温度 0\n最多 2,048 tokens",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "format",
-      "label": "问题题型\n选择或填空？",
+      "label": "题目格式？",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "mcq",
       "label": "选择题\n分类准确率",
-      "type": "document",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "fill",
-      "label": "填空题\n精确匹配与F1",
-      "type": "document",
+      "label": "填空题\nExact Match + F1",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "分任务结果\n模型对比人类\n公开输出与代码",
+      "label": "AGIEval 结果\n模型与人类参考对比\n公开数据、代码与输出",
       "type": "terminal",
       "size": "xl"
     }
@@ -94,84 +136,146 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "official_sources",
-      "to": "select",
+      "from": "direct_sources",
+      "to": "direct_select",
       "type": "primary"
     },
     {
       "id": "edge-2",
       "from": "reused_sources",
-      "to": "select",
+      "to": "reused_downsample",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "select",
-      "to": "objective",
+      "from": "direct_select",
+      "to": "objective_filter",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "objective",
-      "to": "normalize",
+      "from": "reused_downsample",
+      "to": "objective_filter",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "objective_filter",
+      "to": "normalize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "normalize",
       "to": "dataset",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
       "from": "dataset",
-      "to": "humans",
-      "type": "primary"
+      "to": "five_shot_route",
+      "type": "data"
     },
     {
-      "id": "edge-7",
+      "id": "edge-8",
       "from": "dataset",
       "to": "prompts",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-9",
+      "from": "five_shot_route",
+      "to": "pool_examples",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "five_shot_route",
+      "to": "exam_original_pool",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "five_shot_route",
+      "to": "jec_remainder",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "five_shot_route",
+      "to": "math_appendix",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "pool_examples",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "exam_original_pool",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "jec_remainder",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-16",
+      "from": "math_appendix",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "five_shot_bundle",
+      "to": "prompts",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
       "from": "prompts",
       "to": "generation",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-19",
       "from": "generation",
       "to": "format",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-20",
       "from": "format",
       "to": "mcq",
-      "type": "primary"
+      "type": "primary",
+      "label": "选择题"
     },
     {
-      "id": "edge-11",
+      "id": "edge-21",
       "from": "format",
       "to": "fill",
-      "type": "primary"
+      "type": "primary",
+      "label": "填空题"
     },
     {
-      "id": "edge-12",
+      "id": "edge-22",
       "from": "humans",
       "to": "report",
-      "type": "primary"
+      "type": "data"
     },
     {
-      "id": "edge-13",
+      "id": "edge-23",
       "from": "mcq",
       "to": "report",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-24",
       "from": "fill",
       "to": "report",
       "type": "primary"

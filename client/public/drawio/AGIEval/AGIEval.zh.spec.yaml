@@ -4,157 +4,256 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AGIEval 构建流程
-  description: 对齐论文的 AGIEval 流程：从官方人类考试和复用考试数据集，经客观题过滤、 双语 20 任务组装、四种提示设置，到按题型计算指标。
-  legend: 实线表示数据构建、人类参考成绩和模型评测。
+  title: AGIEval 构建与评测流程
+  description: 按论文分开直接收集的公开高考/SAT 试题与复用的 LSAT/LogiQA/MATH/AQuA/JEC 数据集，经过来源专属筛选/ 下采样、标准化，再按题型评测。
+  legend: 两条采集泳道在 20 项任务发布前汇合；下方分支明确展示论文定义的四类 5-shot 来源规则，数据边同时提供人类参考分。
 nodes:
-  - id: official_sources
+  - id: direct_sources
     label: |-
-      官方公开考试
-      高考/SAT/LSAT
-      GRE/GMAT/法考/公考
+      直接收集公开考试
+      高考 + SAT
+      官方公开试题
     type: database
     size: xl
     position:
       x: 40
       'y': 80
-  - id: reused_sources
+  - id: direct_select
     label: |-
-      复用考试数据集
-      LogiQA/MATH/AQuA-RAT
-      JEC-QA与LSAT数据
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 400
-  - id: select
-    label: |-
-      选择标准化考试
-      人类推理能力
-      与真实场景相关
+      直接来源筛选
+      保留公开标准化考试
+      选择纯语言客观题
     type: process
     size: xl
     position:
       x: 280
-      'y': 240
-  - id: objective
+      'y': 80
+  - id: reused_sources
     label: |-
-      移除主观题
-      保留选择与填空题
+      复用考试数据集
+      LSAT • LogiQA • MATH
+      AQuA-RAT • JEC-QA
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 440
+  - id: reused_downsample
+    label: |-
+      复用 + 按来源下采样
+      映射各来源任务格式
+      MATH 与两类 JEC 各降至 1,000
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 440
+  - id: objective_filter
+    label: |-
+      客观题过滤
+      删除主观题
+      保留选择题 + 填空题
     type: process
     size: xl
     position:
       x: 520
-      'y': 240
+      'y': 260
   - id: normalize
     label: |-
-      统一数据来源
-      MATH与两类JEC-QA
-      各下采样至1K
+      标准化任务记录
+      统一中英文字段
+      保留各来源答案格式
     type: process
     size: xl
     position:
       x: 760
-      'y': 240
+      'y': 260
   - id: dataset
     label: |-
       AGIEval
-      20项任务/8,062题
-      中文与英文
+      20 项任务 • 8,062 道题
+      中文 + 英文
     type: database
     size: xl
     position:
       x: 1000
-      'y': 240
+      'y': 260
   - id: humans
     label: |-
-      人类参考
-      平均与顶尖考生
+      人类参考成绩
+      官方平均分
+      顶尖考生分数
     type: user
     size: xl
     position:
-      x: 1240
-      'y': 80
-  - id: prompts
-    label: |-
-      提示设置
-      零样本/5样本
-      使用/不使用CoT
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 400
-  - id: generation
-    label: |-
-      贪心生成
-      温度0
-      最多2,048词元
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 400
-  - id: format
-    label: |-
-      问题题型
-      选择或填空？
+      x: 2920
+      'y': 40
+  - id: five_shot_route
+    label: 按来源选择 5-Shot 规则
     type: decision
     size: xl
     position:
-      x: 1720
-      'y': 400
-  - id: mcq
+      x: 1240
+      'y': 560
+  - id: pool_examples
     label: |-
-      选择题
-      分类准确率
+      AQuA / LogiQA / LSAT
+      从训练集随机采样 5 个
+      选择中等长度示例
     type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 380
+  - id: exam_original_pool
+    label: |-
+      高考 / SAT
+      各自取自原始收集集
+      各选 5 个中等长度示例
+      从对应 test 集移除这 5 个
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 500
+  - id: jec_remainder
+    label: |-
+      JEC
+      训练集前 1,000 条作为测试集
+      从剩余部分选择 5 个
+      中等句长示例
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 620
+  - id: math_appendix
+    label: |-
+      MATH
+      直接采用 Lewkowycz 附录示例
+      不采样
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 740
+  - id: five_shot_bundle
+    label: |-
+      按来源构造 5-Shot 示例
+      保留来源专属格式
+      附加已选示例
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 560
+  - id: prompts
+    label: |-
+      提示设置
+      Zero-shot / 按来源 5-shot
+      使用 / 不使用思维链
+    type: process
     size: xl
     position:
       x: 1960
       'y': 260
-  - id: fill
+  - id: generation
     label: |-
-      填空题
-      精确匹配与F1
-    type: document
-    size: xl
-    position:
-      x: 1960
-      'y': 500
-  - id: report
-    label: |-
-      分任务结果
-      模型对比人类
-      公开输出与代码
-    type: terminal
+      模型生成
+      温度 0
+      最多 2,048 tokens
+    type: process
     size: xl
     position:
       x: 2200
-      'y': 240
+      'y': 260
+  - id: format
+    label: 题目格式？
+    type: decision
+    size: xl
+    position:
+      x: 2440
+      'y': 260
+  - id: mcq
+    label: |-
+      选择题
+      分类准确率
+    type: process
+    size: xl
+    position:
+      x: 2680
+      'y': 140
+  - id: fill
+    label: |-
+      填空题
+      Exact Match + F1
+    type: process
+    size: xl
+    position:
+      x: 2680
+      'y': 380
+  - id: report
+    label: |-
+      AGIEval 结果
+      模型与人类参考对比
+      公开数据、代码与输出
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 260
 edges:
-  - from: official_sources
-    to: select
+  - from: direct_sources
+    to: direct_select
     type: primary
   - from: reused_sources
-    to: select
+    to: reused_downsample
     type: primary
-  - from: select
-    to: objective
+  - from: direct_select
+    to: objective_filter
     type: primary
-  - from: objective
+  - from: reused_downsample
+    to: objective_filter
+    type: primary
+  - from: objective_filter
     to: normalize
     type: primary
   - from: normalize
     to: dataset
     type: primary
   - from: dataset
-    to: humans
-    type: primary
+    to: five_shot_route
+    type: data
   - from: dataset
     to: prompts
     type: primary
+  - from: five_shot_route
+    to: pool_examples
+    type: data
+  - from: five_shot_route
+    to: exam_original_pool
+    type: data
+  - from: five_shot_route
+    to: jec_remainder
+    type: data
+  - from: five_shot_route
+    to: math_appendix
+    type: data
+  - from: pool_examples
+    to: five_shot_bundle
+    type: data
+  - from: exam_original_pool
+    to: five_shot_bundle
+    type: data
+  - from: jec_remainder
+    to: five_shot_bundle
+    type: data
+  - from: math_appendix
+    to: five_shot_bundle
+    type: data
+  - from: five_shot_bundle
+    to: prompts
+    type: data
   - from: prompts
     to: generation
     type: primary
@@ -164,12 +263,14 @@ edges:
   - from: format
     to: mcq
     type: primary
+    label: 选择题
   - from: format
     to: fill
     type: primary
+    label: 填空题
   - from: humans
     to: report
-    type: primary
+    type: data
   - from: mcq
     to: report
     type: primary

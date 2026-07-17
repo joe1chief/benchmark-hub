@@ -10,9 +10,9 @@ meta:
 nodes:
   - id: pddl
     label: |-
-      生成 PDDL 领域与问题文件
-      沿用 ACPBench 的 13 个规划领域
-      ALFWorld 直接使用现有 PDDL，不运行生成器
+      生成 PDDL 领域与问题
+      ACPBench 的 13 个规划领域
+      复用 ALFWorld PDDL
     type: database
     size: xl
     position:
@@ -22,7 +22,7 @@ nodes:
     label: |-
       运行 Top-K / Top-Quality 规划器
       产生多条有效计划
-      保留规划任务、当前状态与目标
+      保留任务、当前状态与目标
     type: process
     size: xl
     position:
@@ -30,9 +30,9 @@ nodes:
       'y': 100
   - id: sample
     label: |-
-      采样计划或中间状态
-      按不同任务选择所需材料
-      无法确定可达性时跳过该状态
+      采样计划 / 中间状态
+      按任务选择所需材料
+      跳过可达性不确定的状态
     type: process
     size: xl
     position:
@@ -40,9 +40,11 @@ nodes:
       'y': 100
   - id: symbolic
     label: |-
-      生成符号化问题与答案
-      适用性 • 推演 • 可达性 • 动作可达性
-      验证 • 论证 • 地标 • 下一动作
+      生成符号化问答
+      适用性 • 状态演进
+      可达性 • 动作可达性
+      验证 • 论证
+      地标 • 下一动作
     type: process
     size: xl
     position:
@@ -51,8 +53,9 @@ nodes:
   - id: translate
     label: |-
       使用领域模板翻译
-      PDDL 事实与动作 → 自然语言
-      保留事实、动作、计划、代价及证据集用于判分
+      PDDL 事实 / 动作 → 自然语言
+      保留事实、计划、代价
+      与验证证据
     type: process
     size: xl
     position:
@@ -61,8 +64,8 @@ nodes:
   - id: release
     label: |-
       ACPBench Hard 数据集
-      Dev：每任务 40 例，共 320 例
-      Test：每领域 10 题 × 13 × 8 任务 = 1,040 题
+      官方数据卡验证集：320 例
+      测试：13 领域 × 8 任务 × 10 = 1,040
     type: database
     size: xl
     position:
@@ -70,9 +73,10 @@ nodes:
       'y': 100
   - id: inference
     label: |-
-      开放式模型评测
-      自然语言上下文 + 任务指令 + 2 个样例
-      温度 0 • 最多生成 1,000 token
+      开放式评测 • 2-shot
+      温度 0 • 默认最多 1,000
+      GPT-OSS 20B / 120B
+      例外最多 4,000
     type: document
     size: xl
     position:
@@ -81,8 +85,8 @@ nodes:
   - id: parse
     label: |-
       任务专用语法解析器
-      提取动作列表、事实列表、计划或序号
-      拒绝无法解析或非法的符号
+      提取动作、事实、计划或序号
+      拒绝非法 / 无法解析的符号
     type: process
     size: xl
     position:
@@ -98,32 +102,35 @@ nodes:
   - id: stored
     label: |-
       存储值 / 模拟检查
-      适用性与推演要求集合完全匹配
-      首个无效序号；论证检查真子序列且仍为有效计划
+      精确集合：适用性、状态演进
+      首个无效序号
+      子序列论证
     type: process
     size: xl
     position:
-      x: 600
+      x: 400
       'y': 350
   - id: solve
     label: |-
       规划器支撑的检查
-      可达性 • 动作可达性 • 地标
-      下一动作必须使最优目标距离减少 1
+      可达性 • 动作可达性
+      地标
+      下一动作令最优距离减 1
     type: process
     size: xl
     position:
-      x: 600
+      x: 400
       'y': 530
   - id: report
     label: |-
       ACPBench Hard 结果
-      按任务 / 领域统计二元正确性与准确率
-      默认要求完整答案；适用性可附加 Jaccard 分析
+      按任务 / 领域统计二元准确率
+      严格答案
+      适用性可附加 Jaccard
     type: terminal
     size: xl
     position:
-      x: 320
+      x: 40
       'y': 440
 edges:
   - from: pddl
@@ -153,9 +160,15 @@ edges:
   - from: route
     to: stored
     type: primary
+    label: |-
+      存储：适用性 • 状态演进
+      验证 • 论证
   - from: route
     to: solve
     type: primary
+    label: |-
+      求解：可达性 • 动作可达性
+      地标 • 下一动作
   - from: stored
     to: report
     type: primary

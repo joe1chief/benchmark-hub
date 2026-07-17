@@ -1,92 +1,134 @@
 {
   "version": 1,
-  "title": "AGIEval Build Process",
+  "title": "AGIEval Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 14,
+    "nodes": 20,
+    "edges": 24,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "official_sources",
-      "label": "Official Public Exams\nGaokao / SAT / LSAT\nGRE / GMAT / Law / Civil Service",
+      "id": "direct_sources",
+      "label": "Direct Public Exam Sources\nGaokao + SAT\nOfficially released questions",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "reused_sources",
-      "label": "Reused Exam Datasets\nLogiQA / MATH / AQuA-RAT\nJEC-QA / LSAT Data",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "select",
-      "label": "Select Standardized Exams\nHuman Reasoning +\nReal-World Relevance",
+      "id": "direct_select",
+      "label": "Direct-Source Selection\nKeep public standardized exams\nSelect language-only objective items",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "objective",
-      "label": "Remove Subjective Items\nKeep MCQ + Fill-in",
+      "id": "reused_sources",
+      "label": "Reused Exam Datasets\nLSAT • LogiQA • MATH\nAQuA-RAT • JEC-QA",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "reused_downsample",
+      "label": "Reuse + Source Downsampling\nMap source task formats\nMATH and two JEC tasks → 1,000 each",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "objective_filter",
+      "label": "Objective-Question Filter\nRemove subjective items\nKeep multiple-choice + fill-in",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "normalize",
-      "label": "Normalize Sources\nDownsample MATH and\nTwo JEC-QA Tasks to 1K Each",
+      "label": "Normalize Task Records\nStandardize bilingual fields\nPreserve source answer formats",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "AGIEval\n20 Tasks / 8,062 Questions\nChinese + English",
+      "label": "AGIEval\n20 tasks • 8,062 questions\nChinese + English",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "humans",
-      "label": "Human References\nAverage + Top Test Takers",
+      "label": "Human References\nOfficial average scores\nTop test-taker scores",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "five_shot_route",
+      "label": "Select 5-Shot Rule by Source",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "pool_examples",
+      "label": "AQuA / LogiQA / LSAT\nRandomly sample 5 from train\nChoose medium-length examples",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "exam_original_pool",
+      "label": "Gaokao / SAT\nFrom each original collected set\nPick 5 medium-length examples\nRemove those 5 from its test set",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "jec_remainder",
+      "label": "JEC\nFirst 1,000 train items → test\nFrom remainder: select 5 with\nmedium sentence length",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "math_appendix",
+      "label": "MATH\nUse Lewkowycz appendix exemplars\nDirectly; do not sample",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "five_shot_bundle",
+      "label": "Source-Specific 5-Shot Examples\nPreserve each source format\nAttach the selected exemplars",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "prompts",
-      "label": "Prompt Regimes\nZero-shot / 5-shot\nWith / Without CoT",
+      "label": "Prompt Regimes\nZero-shot / source-specific 5-shot\nWith / without chain-of-thought",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "generation",
-      "label": "Greedy Generation\nTemperature 0\nMax 2,048 Tokens",
+      "label": "Model Generation\nTemperature 0\nMaximum 2,048 tokens",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "format",
-      "label": "Question Format\nMCQ or Fill-in?",
+      "label": "Question Format?",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "mcq",
-      "label": "Multiple Choice\nClassification Accuracy",
-      "type": "document",
+      "label": "Multiple Choice\nClassification accuracy",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "fill",
-      "label": "Fill-in-the-Blank\nExact Match + F1",
-      "type": "document",
+      "label": "Fill-in-the-Blank\nExact match + F1",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "Task Results\nModel vs Human\nOutputs + Code Released",
+      "label": "AGIEval Results\nModel vs human references\nReleased data, code, and outputs",
       "type": "terminal",
       "size": "xl"
     }
@@ -94,84 +136,146 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "official_sources",
-      "to": "select",
+      "from": "direct_sources",
+      "to": "direct_select",
       "type": "primary"
     },
     {
       "id": "edge-2",
       "from": "reused_sources",
-      "to": "select",
+      "to": "reused_downsample",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "select",
-      "to": "objective",
+      "from": "direct_select",
+      "to": "objective_filter",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "objective",
-      "to": "normalize",
+      "from": "reused_downsample",
+      "to": "objective_filter",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "objective_filter",
+      "to": "normalize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "normalize",
       "to": "dataset",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
       "from": "dataset",
-      "to": "humans",
-      "type": "primary"
+      "to": "five_shot_route",
+      "type": "data"
     },
     {
-      "id": "edge-7",
+      "id": "edge-8",
       "from": "dataset",
       "to": "prompts",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-9",
+      "from": "five_shot_route",
+      "to": "pool_examples",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "five_shot_route",
+      "to": "exam_original_pool",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "five_shot_route",
+      "to": "jec_remainder",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "five_shot_route",
+      "to": "math_appendix",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "pool_examples",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "exam_original_pool",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "jec_remainder",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-16",
+      "from": "math_appendix",
+      "to": "five_shot_bundle",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "five_shot_bundle",
+      "to": "prompts",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
       "from": "prompts",
       "to": "generation",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-19",
       "from": "generation",
       "to": "format",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-20",
       "from": "format",
       "to": "mcq",
-      "type": "primary"
+      "type": "primary",
+      "label": "MCQ"
     },
     {
-      "id": "edge-11",
+      "id": "edge-21",
       "from": "format",
       "to": "fill",
-      "type": "primary"
+      "type": "primary",
+      "label": "Fill-in"
     },
     {
-      "id": "edge-12",
+      "id": "edge-22",
       "from": "humans",
       "to": "report",
-      "type": "primary"
+      "type": "data"
     },
     {
-      "id": "edge-13",
+      "id": "edge-23",
       "from": "mcq",
       "to": "report",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-24",
       "from": "fill",
       "to": "report",
       "type": "primary"

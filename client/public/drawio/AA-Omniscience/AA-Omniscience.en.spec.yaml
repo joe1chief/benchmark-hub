@@ -6,17 +6,15 @@ meta:
   routing: orthogonal
   title: AA-Omniscience Build and Evaluation Process
   description: >-
-    Paper-aligned source selection, agentic question curation, public/full-set boundary, closed-book answering, four-way
-    grading, and knowledge-reliability scoring.
-  legend: >-
-    The top row builds the 6,000-question benchmark and its 600-question public subset; the bottom row reads
-    right-to-left through no-tool evaluation and metric reporting.
+    Paper-aligned construction with explicit GPT-5 generation, filtering, and revision, manual validation, a 6,000-item
+    full evaluation set, and a separate distribution- and performance-aligned 600-item public sample.
+  legend: The full set feeds evaluation; the public 600-item release is a representative publication branch only.
 nodes:
   - id: sources
     label: |-
-      Select Authoritative Source Material
-      First-Party and Recognized Primary / Secondary Sources
-      Prefer Current Versions and Recent First-Answerable Dates
+      Select Authoritative Sources
+      First-party and recognized sources
+      Prefer current, recently answerable facts
     type: database
     size: xl
     position:
@@ -24,114 +22,144 @@ nodes:
       'y': 100
   - id: coverage
     label: |-
-      Define Economically Relevant Coverage
-      6 Domains • 42 Topics
-      Business, Humanities, Health, Law, Software, STEM
+      Define Economic Coverage
+      6 domains • 42 topics
+      Business to STEM
     type: process
     size: xl
     position:
-      x: 320
+      x: 280
       'y': 100
   - id: generate
     label: |-
-      Automated Question-Generation Agent
-      Ground Questions in Source Facts
-      Require Short, Exact Answers and Stated Formats
+      GPT-5 Question Generation
+      Ground each item in source facts
+      Require precise short answers
     type: process
     size: xl
     position:
-      x: 600
+      x: 520
       'y': 100
-  - id: curate
+  - id: filter
     label: |-
-      Filter and Revise
-      Remove Similar, Ambiguous, Easy, or Source-Reliant Items
-      Test Difficulty against Models from Multiple Frontier Labs
+      GPT-5 Filtering
+      Remove similar, ambiguous,
+      easy, or source-reliant items
     type: process
     size: xl
     position:
-      x: 880
+      x: 760
       'y': 100
-  - id: validate
+  - id: revise
     label: |-
-      Manual Review and Validation
-      One Unambiguous Correct Answer
-      Difficult • Precise • Self-Contained Context
+      GPT-5 Revision
+      Improve precision and format
+      Retest frontier-model difficulty
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1000
       'y': 100
-  - id: release
+  - id: manual_validation
     label: |-
-      AA-Omniscience Dataset
-      Full Evaluation: 6,000 Questions
-      Public: 600-Question Representative 10% Subset
+      Manual Validation
+      One unambiguous correct answer
+      Difficult • precise • self-contained
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: full_release
+    label: |-
+      Full Evaluation Set
+      6,000 questions
+      Main benchmark consumed by evaluation
     type: database
     size: xl
     position:
-      x: 1440
+      x: 1480
       'y': 100
+  - id: public_sampling
+    label: |-
+      Representative Sampling
+      Align domain/topic distribution
+      Align model-performance profile
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: public_release
+    label: |-
+      Public Release
+      600 questions • 10%
+      Representative publication subset
+    type: database
+    size: xl
+    position:
+      x: 1960
+      'y': 40
   - id: prompt
     label: |-
-      Closed-Book Evaluation Prompt
-      Domain + Topic + One Question
-      No Context or Tools; Answer Only if Confident
+      Closed-Book Prompt
+      Full-set question • no context
+      No tools; answer only if confident
     type: document
     size: xl
     position:
-      x: 1440
-      'y': 440
+      x: 1720
+      'y': 400
   - id: answer
     label: |-
       Target-Model Response
-      Short Answer or Explicit Abstention
-      One Pass over the Complete Evaluation Set
+      Short answer or explicit abstention
+      One pass over all 6,000 items
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 440
+      x: 1960
+      'y': 400
   - id: grade
     label: |-
-      Gemini 2.5 Flash Preview (09-2025)
-      Reasoning Grader Selected by Human Alignment
-      Compare Question, Gold Target, and Prediction
+      Gemini 2.5 Flash Preview
+      Compare question, gold, prediction
+      Reasoning grader selected by alignment
     type: process
     size: xl
     position:
-      x: 880
-      'y': 440
+      x: 2200
+      'y': 400
   - id: classes
     label: |-
-      Four-Way Classification
-      Correct • Partially Correct
-      Incorrect • Not Attempted
+      Four-Way Grade
+      Correct • partially correct
+      Incorrect • not attempted
     type: process
     size: xl
     position:
-      x: 600
-      'y': 440
+      x: 2440
+      'y': 400
   - id: metrics
     label: |-
       Reliability Metrics
-      OI = 100 × (Correct − Incorrect) / Total
-      Accuracy • Hallucination Rate • Cost to Run
+      OI = 100 × (correct − incorrect) / total
+      Accuracy • hallucination rate • cost
     type: process
     size: xl
     position:
-      x: 320
-      'y': 440
+      x: 2680
+      'y': 400
   - id: report
     label: |-
       AA-Omniscience Results
-      Overall and Domain-Level Reliability on the Full Set
-      Public Subset Supports Overall, Not Topic-Level, Estimates
+      Overall + domain reliability
+      Topic estimates require the full set
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 440
+      x: 2920
+      'y': 400
 edges:
   - from: sources
     to: coverage
@@ -140,15 +168,24 @@ edges:
     to: generate
     type: primary
   - from: generate
-    to: curate
+    to: filter
     type: primary
-  - from: curate
-    to: validate
+  - from: filter
+    to: revise
     type: primary
-  - from: validate
-    to: release
+  - from: revise
+    to: manual_validation
     type: primary
-  - from: release
+  - from: manual_validation
+    to: full_release
+    type: primary
+  - from: full_release
+    to: public_sampling
+    type: secondary
+  - from: public_sampling
+    to: public_release
+    type: secondary
+  - from: full_release
     to: prompt
     type: primary
   - from: prompt

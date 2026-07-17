@@ -32,6 +32,12 @@ function normalizeCellStyle(style) {
   return normalized.join(';');
 }
 
+function normalizeCellValueNewlines(tag) {
+  return tag.replace(/\bvalue="([^"]*)"/u, (_attribute, value) => (
+    `value="${value.replace(/\r\n|\r|\n/gu, '&#xa;')}"`
+  ));
+}
+
 export function normalizeImporterDrawioContent(xml) {
   if (!/<mxfile\b/u.test(xml)) throw new Error('Expected a Draw.io mxfile document.');
 
@@ -46,7 +52,7 @@ export function normalizeImporterDrawioContent(xml) {
   return xml
     .replace(/math="[01]"/gu, 'math="0"')
     .replace(/<mxCell\b[^>]*>/gu, (tag) => {
-      let normalized = tag;
+      let normalized = normalizeCellValueNewlines(tag);
       const style = readAttribute(tag, 'style');
       if (style !== undefined) {
         normalized = normalized.replace(
