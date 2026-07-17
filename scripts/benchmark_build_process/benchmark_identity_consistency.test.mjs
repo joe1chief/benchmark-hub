@@ -16,6 +16,10 @@ const BENCHMARK_ID_ALIASES = {
   ComplexFunBench: 'ComplexFuncBench_Audio',
 };
 
+const BENCHMARK_DISPLAY_ALIASES = {
+  'Humanity’s Last Exam (HLE)': 'HLE',
+};
+
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
 const sorted = values => [...values].sort((left, right) => left.localeCompare(right));
 
@@ -50,18 +54,60 @@ test('keeps benchmark identities canonical across every published surface', () =
   assert.equal(catalog.length, 609, 'identity normalization must leave 609 benchmarks');
 
   const catalogIdSet = new Set(catalogIds);
+  const catalogIdsByName = new Map();
+  for (const record of catalog) {
+    const ids = catalogIdsByName.get(record.name) ?? [];
+    ids.push(record.id);
+    catalogIdsByName.set(record.name, ids);
+  }
+
+  const canonicalizeRelatedReference = reference => {
+    const aliasedId = BENCHMARK_ID_ALIASES[reference] ?? BENCHMARK_DISPLAY_ALIASES[reference];
+    if (aliasedId) return aliasedId;
+    if (catalogIdSet.has(reference)) return reference;
+
+    const matchingIds = catalogIdsByName.get(reference) ?? [];
+    assert.equal(
+      matchingIds.length,
+      1,
+      `related benchmark reference must resolve to one catalog id or unique display name: ${reference}`,
+    );
+    return matchingIds[0];
+  };
+
   for (const [alias, canonical] of Object.entries(BENCHMARK_ID_ALIASES)) {
     assert.ok(!catalogIdSet.has(alias), `legacy id must not remain published: ${alias}`);
     assert.ok(catalogIdSet.has(canonical), `canonical id must remain published: ${canonical}`);
   }
 
-  for (const record of [...catalog, ...details.map(({ record }) => record)]) {
+  const publishedRecords = [...catalog, ...details.map(({ record }) => record)];
+  for (const alias of Object.keys(BENCHMARK_DISPLAY_ALIASES)) {
+    const referencingIds = publishedRecords
+      .filter(record => (record.related_benchmarks ?? []).includes(alias))
+      .map(record => record.id);
+    assert.deepEqual(
+      referencingIds,
+      [],
+      `legacy display alias must not remain in related benchmarks: ${alias}`,
+    );
+  }
+
+  for (const record of publishedRecords) {
     const related = record.related_benchmarks ?? [];
-    assert.deepEqual(related, [...new Set(related)], `${record.id} related ids must be deduplicated`);
-    assert.ok(!related.includes(record.id), `${record.id} must not relate to itself`);
     for (const alias of Object.keys(BENCHMARK_ID_ALIASES)) {
       assert.ok(!related.includes(alias), `${record.id} must not reference legacy id ${alias}`);
     }
+    for (const alias of Object.keys(BENCHMARK_DISPLAY_ALIASES)) {
+      assert.ok(!related.includes(alias), `${record.id} must not reference legacy display alias ${alias}`);
+    }
+
+    const canonicalRelated = related.map(canonicalizeRelatedReference);
+    assert.deepEqual(
+      canonicalRelated,
+      [...new Set(canonicalRelated)],
+      `${record.id} related benchmarks must be deduplicated after canonicalization`,
+    );
+    assert.ok(!canonicalRelated.includes(record.id), `${record.id} must not relate to itself`);
   }
 
   const seoDescription = readFileSync(join(root, 'client/index.html'), 'utf8').match(
@@ -69,4 +115,29 @@ test('keeps benchmark identities canonical across every published surface', () =
   );
   assert.ok(seoDescription, 'SEO description must expose the benchmark count');
   assert.equal(Number(seoDescription[1]), catalog.length, 'SEO count must equal catalog count');
+
+  for (const language of ['en', 'zh']) {
+    const svgPath = join(
+      drawioDir,
+      'ComplexFuncBench_Audio',
+      `ComplexFuncBench_Audio.${language}.svg`,
+    );
+    assert.doesNotMatch(
+      readFileSync(svgPath, 'utf8'),
+      /light-dark\s*\(/u,
+      `ComplexFuncBench_Audio ${language} SVG must use a fixed light academic palette`,
+    );
+  }
+
+  const audioManifest = manifest.find(record => record.id === 'ComplexFuncBench_Audio');
+  assert.ok(audioManifest, 'ComplexFuncBench_Audio manifest record must exist');
+  assert.equal(audioManifest.visual_review.reviewed_at, '2026-07-18');
+  assert.match(audioManifest.visual_review.artifact, /Draw\.io Desktop 30\.0\.2 PNG exports/u);
+  assert.match(audioManifest.visual_review.artifact, /2445\s*[x×]\s*681/u);
+  assert.match(audioManifest.visual_review.result, /2473\s*[x×]\s*709/u);
+  assert.doesNotMatch(
+    `${audioManifest.visual_review.artifact} ${audioManifest.visual_review.result}`,
+    /DOM|2503\s*(?:x|×|by)\s*739/iu,
+    'ComplexFuncBench_Audio review evidence must not retain stale DOM or dimensions claims',
+  );
 });

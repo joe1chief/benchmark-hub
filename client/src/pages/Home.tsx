@@ -10,7 +10,11 @@ import BenchmarkDrawer from '@/components/BenchmarkDrawer';
 import { Loader2, SearchX, ArrowUp } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
-import { findBenchmarkByRouteId, resolveBenchmarkId } from '@/lib/benchmarkRoute';
+import {
+  findBenchmarkByRouteId,
+  migrateBenchmarkStorage,
+  resolveBenchmarkId,
+} from '@/lib/benchmarkRoute';
 
 const PAGE_SIZE = 60;
 
@@ -35,7 +39,7 @@ export default function Home() {
   // Starred benchmarks LocalStorage State
   const [starredIds, setStarredIds] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('starred-benchmarks') || '[]');
+      return migrateBenchmarkStorage(localStorage);
     } catch {
       return [];
     }

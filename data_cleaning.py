@@ -58,9 +58,6 @@ def main():
         'AI2D',             # 显式删除
         'MMLU-Pro-Max',     # 不存在
     ]
-    # Note: InfographicVQA - check if it exists as InfoVQA
-    # The instruction says delete InfographicVQA but we have InfoVQA - keep InfoVQA as it's different
-    
     before_count = len(data)
     data = [b for b in data if b['name'] not in delete_names]
     for name in delete_names:

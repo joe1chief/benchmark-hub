@@ -8,7 +8,7 @@ Checks:
   3. No duplicate names
   4. l1 values are from the allowed set (Chinese values as used in data)
   5. year format is YYYY or YYYY-MM
-  6. related_benchmarks only reference existing names
+  6. related_benchmarks reference existing IDs or unique display names
   7. mermaid_flowchart is a string or null
   8. openness is from the allowed set (lowercase as used in data)
 """
@@ -16,6 +16,7 @@ Checks:
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Optional
 
@@ -100,6 +101,24 @@ def validate_drawio_assets(entry: dict, prefix: str):
         err(f"{prefix} drawio_review_note must be a string, got: {type(review_note).__name__}")
 
 
+def build_related_reference_index(data):
+    catalog_ids = {
+        entry.get("id")
+        for entry in data
+        if isinstance(entry.get("id"), str) and entry.get("id")
+    }
+    display_name_counts = Counter(
+        entry.get("name")
+        for entry in data
+        if isinstance(entry.get("name"), str) and entry.get("name")
+    )
+    return catalog_ids, display_name_counts
+
+
+def related_reference_resolves(reference, catalog_ids, display_name_counts):
+    return reference in catalog_ids or display_name_counts.get(reference, 0) == 1
+
+
 def main():
     print(f"Validating {DATA_PATH} ...")
 
@@ -117,14 +136,9 @@ def main():
 
     print(f"  Loaded {len(data)} entries")
 
-    # Build name set for cross-reference checks
-    all_names = set()
-    duplicate_names = set()
-    for entry in data:
-        name = entry.get("name", "")
-        if name in all_names:
-            duplicate_names.add(name)
-        all_names.add(name)
+    # Build identity indexes for cross-reference checks.
+    catalog_ids, display_name_counts = build_related_reference_index(data)
+    duplicate_names = {name for name, count in display_name_counts.items() if count > 1}
 
     # 2. Per-entry validation
     for i, entry in enumerate(data):
@@ -166,8 +180,11 @@ def main():
         related = entry.get("related_benchmarks", [])
         if related and isinstance(related, list):
             for ref in related:
-                if ref not in all_names:
-                    warn(f"{prefix} related_benchmarks references non-existent entry: '{ref}'")
+                if not related_reference_resolves(ref, catalog_ids, display_name_counts):
+                    warn(
+                        f"{prefix} related_benchmarks reference does not resolve to a catalog id "
+                        f"or unique display name: '{ref}'"
+                    )
 
     detail_count = 0
     if DETAIL_DIR.exists():
