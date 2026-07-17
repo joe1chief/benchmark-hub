@@ -5,8 +5,12 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MSEarthMCQ 构建流程
-  description: 按论文从地球科学论文出发，经上下文增强、多智能体投票和专家验证构建 MSEarth 的 2,784 题多选子集。
-  legend: 阶段 A 使用原始图注；阶段 B 与 C 加入精炼图注，以区分专业知识题和视觉困难题。
+  description: >-
+    MSEarthMCQ 解析超过 40 万篇地球科学 PDF，筛选论文并对齐图表与正文引用，再用 GPT-4o 优化图注并生成候选问题；经五模型与 70B+ 三模型参与的三阶段筛选及专家复核，剔除 216 个无效样本，最终得到
+    2,784 道题。
+  legend: >-
+    来源：arXiv:2505.20740 Sections 3-4 and Appendices E-G; official PrismaX/MSEarth repository and MSEarth_MCQ
+    dataset。实线箭头表示论文或官方资料明确支持的主流程。
 nodes:
   - id: papers
     label: |-
@@ -36,7 +40,7 @@ nodes:
       使用 Qwen2.5-VL-72B
       要求与地球科学相关
       保留约 8.3 万篇论文
-    type: decision
+    type: process
     size: xl
     position:
       x: 500
@@ -87,10 +91,9 @@ nodes:
       'y': 40
   - id: phase_a
     label: |-
-      阶段 A · 原始图注
-      由五个 MLLM 投票
-      剔除全部模型都答对的题
-      错误模型超 40% 则继续
+      阶段 A 投票结果？
+      原始图注
+      五个 MLLM
     type: decision
     size: xl
     position:
@@ -98,10 +101,9 @@ nodes:
       'y': 420
   - id: phase_b
     label: |-
-      阶段 B · 精炼图注
-      再由同一组五模型投票
-      正确模型超过 60%
-      归为专业科学问答
+      阶段 B：正确率 >60%？
+      精炼图注
+      同一组五个 MLLM
     type: decision
     size: xl
     position:
@@ -109,10 +111,9 @@ nodes:
       'y': 420
   - id: phase_c
     label: |-
-      阶段 C · 大模型投票
-      GPT-4o · InternVL2.5-78B
-      Qwen2.5-VL-72B
-      正确超 60% 归为困难题
+      阶段 C：正确率 >60%？
+      精炼图注
+      三个 70B+ MLLM
     type: decision
     size: xl
     position:
@@ -162,6 +163,15 @@ nodes:
     position:
       x: 20
       'y': 420
+  - id: discard
+    label: |-
+      丢弃候选题
+      过于简单或存在缺陷
+    type: loss
+    size: xl
+    position:
+      x: 1100
+      'y': 800
 edges:
   - from: papers
     to: parse
@@ -187,12 +197,18 @@ edges:
   - from: phase_a
     to: phase_b
     type: primary
+    label: 错误 >40% · 继续分析
+    labelPosition: center
   - from: phase_b
     to: phase_c
     type: primary
+    label: 正确 ≤60% · 继续分析
+    labelPosition: center
   - from: phase_c
     to: sample
     type: primary
+    label: 正确 >60% · 困难问答
+    labelPosition: center
   - from: sample
     to: expert
     type: primary
@@ -202,4 +218,39 @@ edges:
   - from: release
     to: score
     type: primary
+  - from: phase_a
+    to: discard
+    type: optional
+    label: 全部答对 · 过于简单
+    labelPosition: center
+    waypoints:
+      - x: 1580
+        'y': 720
+      - x: 1220
+        'y': 720
+  - from: phase_a
+    to: sample
+    type: primary
+    label: 其余 · 简单问答
+    labelPosition: center
+    waypoints:
+      - x: 1460
+        'y': 650
+      - x: 740
+        'y': 650
+  - from: phase_b
+    to: sample
+    type: primary
+    label: 正确 >60% · 专业问答
+    labelPosition: center
+    waypoints:
+      - x: 1220
+        'y': 250
+      - x: 740
+        'y': 250
+  - from: phase_c
+    to: discard
+    type: optional
+    label: 正确 ≤60% · 缺陷题
+    labelPosition: center
 modules: []

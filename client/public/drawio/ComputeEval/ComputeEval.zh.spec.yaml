@@ -5,15 +5,20 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ComputeEval 构建与评测流程
-  description: 依据 NVIDIA 官方资料呈现 ComputeEval 2026.1：从专家主导的混合题目编写、隐藏测试封装与参考解 CI， 到隔离的正确性验证和可选 GPU 性能剖析。
-  legend: 上行从左到右阅读版本化基准构建，下行从右到左阅读模型评测；橙色节点标示证据边界， 因为目录原 arXiv 链接对应 OptiML 而非 ComputeEval。
+  description: >-
+    ComputeEval 的官方引用中未找到独立论文；目录原 arXiv 链接实际是只引用 ComputeEval 的 OptiML 方法论文。NVIDIA 官方 2026.1 版本含 566 题、7 个领域组，其中 CUDA C++
+    518 题、CUDA Python 48 题，499 题带性能负载。任务由 NVIDIA 工程师编写，部分使用前沿模型辅助，但所有题目与标签均经人工复核。每题包含提示、可见上下文、构建/测试命令、隐藏测试、参考解与可选性能负载；CI
+    用已知正确解验证编译、测试与规格。模型看不到测试或参考解；隔离评测先编译并核验必需 API 与隐藏测试，仅对正确候选做延迟、吞吐量和相对基线加速比剖析，并报告 Pass@k。
+  legend: >-
+    来源：NVIDIA technical blog; official README, DATASET_CARD.md, DOMAIN_MAP.md, and CHANGELOG.md for release
+    2026.1。实线箭头表示论文或官方资料明确支持的主流程。
 nodes:
   - id: evidence
     label: |-
       证据边界
       未发现独立 ComputeEval 论文
       采用 NVIDIA 博客、官方仓库与数据卡
-    type: decision
+    type: process
     size: xl
     position:
       x: 40
@@ -90,19 +95,19 @@ nodes:
       'y': 440
   - id: compile
     label: |-
-      编译与静态合同检查
-      执行 build_command
-      按需核验 source_references
-    type: process
+      编译与合约检查是否通过？
+      运行 build_command + 必需的 source_references 检查
+      仅在通过后运行 test_command
+    type: decision
     size: xl
     position:
       x: 880
       'y': 440
   - id: correctness
     label: |-
-      隐藏功能正确性测试
+      隐藏功能测试是否通过？
       编译成功后执行 test_command
-      退出码为 0 即通过，否则失败
+      退出码为 0 即通过
     type: decision
     size: xl
     position:
@@ -156,10 +161,34 @@ edges:
   - from: compile
     to: correctness
     type: primary
+    label: 是 · 运行隐藏测试
+    labelPosition: center
   - from: correctness
     to: performance
     type: primary
+    label: 通过 · 可选性能分析
+    labelPosition: center
   - from: performance
     to: report
     type: primary
+  - from: compile
+    to: report
+    type: optional
+    label: 否 · 编译或合约检查失败
+    labelPosition: center
+    waypoints:
+      - x: 860
+        'y': 780
+      - x: 40
+        'y': 780
+  - from: correctness
+    to: report
+    type: optional
+    label: 失败 · 跳过性能分析
+    labelPosition: center
+    waypoints:
+      - x: 600
+        'y': 650
+      - x: 40
+        'y': 650
 modules: []

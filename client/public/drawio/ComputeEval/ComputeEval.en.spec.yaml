@@ -6,19 +6,24 @@ meta:
   routing: orthogonal
   title: ComputeEval Build and Evaluation Process
   description: >-
-    Official-source-aligned construction and evaluation of NVIDIA ComputeEval 2026.1, from hybrid expert authoring and
-    hidden-test packaging through reference-solution CI, isolated correctness checks, and optional GPU performance
-    profiling.
+    ComputeEval has no standalone paper located in its official citation; the previous catalog arXiv link is the
+    unrelated OptiML method paper, which only cites ComputeEval. NVIDIA's official 2026.1 release has 566 problems
+    across seven groups: 518 CUDA C++ and 48 CUDA Python, with performance workloads for 499 problems. NVIDIA engineers
+    author the tasks, sometimes with frontier-model assistance, and human engineers review every problem and label. Each
+    contract contains a prompt, visible context, build/test commands, held-out tests, a reference solution, and optional
+    performance workload. CI compiles and runs known-good solutions and validates specifications. Models see no tests or
+    references; isolated evaluation compiles candidates, checks required APIs and held-out tests, and profiles only
+    correct solutions for latency, throughput, and baseline speedup alongside pass@k.
   legend: >-
-    Read the versioned benchmark-construction row left-to-right, then the model evaluation row right-to-left; orange
-    marks the evidence boundary because the catalog's former arXiv link describes OptiML rather than ComputeEval.
+    Source: NVIDIA technical blog; official README, DATASET_CARD.md, DOMAIN_MAP.md, and CHANGELOG.md for release 2026.1.
+    Solid arrows show the main flow explicitly supported by the paper or official documentation.
 nodes:
   - id: evidence
     label: |-
       Evidence Boundary
       No Standalone ComputeEval Paper Located
       NVIDIA Blog + Repository + Dataset Card
-    type: decision
+    type: process
     size: xl
     position:
       x: 40
@@ -95,19 +100,19 @@ nodes:
       'y': 440
   - id: compile
     label: |-
-      Compile and Static Contract Checks
-      Run build_command
-      Verify Declared source_references when Required
-    type: process
+      Do Build and Contract Checks Pass?
+      Run build_command + Required source_references Checks
+      Only Then Run test_command
+    type: decision
     size: xl
     position:
       x: 880
       'y': 440
   - id: correctness
     label: |-
-      Held-Out Functional Correctness
+      Do Held-Out Functional Tests Pass?
       Run test_command after Successful Build
-      Exit Code 0 = Pass; Otherwise Fail
+      Exit Code 0 = Pass
     type: decision
     size: xl
     position:
@@ -161,10 +166,34 @@ edges:
   - from: compile
     to: correctness
     type: primary
+    label: Yes · run held-out tests
+    labelPosition: center
   - from: correctness
     to: performance
     type: primary
+    label: Pass · optional profiling
+    labelPosition: center
   - from: performance
     to: report
     type: primary
+  - from: compile
+    to: report
+    type: optional
+    label: No · build / contract failure
+    labelPosition: center
+    waypoints:
+      - x: 860
+        'y': 780
+      - x: 40
+        'y': 780
+  - from: correctness
+    to: report
+    type: optional
+    label: Fail · skip performance
+    labelPosition: center
+    waypoints:
+      - x: 600
+        'y': 650
+      - x: 40
+        'y': 650
 modules: []

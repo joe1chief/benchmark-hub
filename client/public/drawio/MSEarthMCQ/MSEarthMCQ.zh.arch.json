@@ -7,8 +7,8 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 15,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
@@ -27,7 +27,7 @@
     {
       "id": "filter",
       "label": "筛选科学图像\n使用 Qwen2.5-VL-72B\n要求与地球科学相关\n保留约 8.3 万篇论文",
-      "type": "decision",
+      "type": "process",
       "size": "xl"
     },
     {
@@ -56,19 +56,19 @@
     },
     {
       "id": "phase_a",
-      "label": "阶段 A · 原始图注\n由五个 MLLM 投票\n剔除全部模型都答对的题\n错误模型超 40% 则继续",
+      "label": "阶段 A 投票结果？\n原始图注\n五个 MLLM",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "phase_b",
-      "label": "阶段 B · 精炼图注\n再由同一组五模型投票\n正确模型超过 60%\n归为专业科学问答",
+      "label": "阶段 B：正确率 >60%？\n精炼图注\n同一组五个 MLLM",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "phase_c",
-      "label": "阶段 C · 大模型投票\nGPT-4o · InternVL2.5-78B\nQwen2.5-VL-72B\n正确超 60% 归为困难题",
+      "label": "阶段 C：正确率 >60%？\n精炼图注\n三个 70B+ MLLM",
       "type": "decision",
       "size": "xl"
     },
@@ -94,6 +94,12 @@
       "id": "score",
       "label": "执行准确率评测\n使用结构化选择题提示\n以正则抽取预测选项\n与标准选项进行比较",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "discard",
+      "label": "丢弃候选题\n过于简单或存在缺陷",
+      "type": "loss",
       "size": "xl"
     }
   ],
@@ -144,19 +150,22 @@
       "id": "edge-8",
       "from": "phase_a",
       "to": "phase_b",
-      "type": "primary"
+      "type": "primary",
+      "label": "错误 >40% · 继续分析"
     },
     {
       "id": "edge-9",
       "from": "phase_b",
       "to": "phase_c",
-      "type": "primary"
+      "type": "primary",
+      "label": "正确 ≤60% · 继续分析"
     },
     {
       "id": "edge-10",
       "from": "phase_c",
       "to": "sample",
-      "type": "primary"
+      "type": "primary",
+      "label": "正确 >60% · 困难问答"
     },
     {
       "id": "edge-11",
@@ -175,6 +184,34 @@
       "from": "release",
       "to": "score",
       "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "phase_a",
+      "to": "discard",
+      "type": "optional",
+      "label": "全部答对 · 过于简单"
+    },
+    {
+      "id": "edge-15",
+      "from": "phase_a",
+      "to": "sample",
+      "type": "primary",
+      "label": "其余 · 简单问答"
+    },
+    {
+      "id": "edge-16",
+      "from": "phase_b",
+      "to": "sample",
+      "type": "primary",
+      "label": "正确 >60% · 专业问答"
+    },
+    {
+      "id": "edge-17",
+      "from": "phase_c",
+      "to": "discard",
+      "type": "optional",
+      "label": "正确 ≤60% · 缺陷题"
     }
   ],
   "modules": []

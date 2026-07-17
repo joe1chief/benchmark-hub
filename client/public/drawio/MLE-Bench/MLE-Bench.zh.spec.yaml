@@ -6,9 +6,9 @@ meta:
   routing: orthogonal
   title: MLE-Bench 构建流程
   description: >-
-    论文对齐的 MLE-Bench 流程：5,673 个已结束 Kaggle 竞赛经人工相关性与可复现性门控缩减为 75 个测试任务和 7 个开发任务；离线数据、本地评分器、私有榜单快照、受控 Agent
-    运行与反作弊审计支持相对人类的奖牌率。
-  legend: 实线表示竞赛筛选、离线打包、受控 Agent 执行、完整性审计与评分。
+    论文明确给出 Meta Kaggle 的 5,673 个已结束竞赛题池、排除社区竞赛并人工筛查 586 个候选、入选与复杂度标准、75 个测试加 7 个开发竞赛、使用原测试集或通常按 10%
+    重切并做分布核验、离线说明/数据/本地评分器、私有榜单快照、只检查格式的校验服务、24 小时 Docker 三种子运行、GPT-4o 规则检查、Dolos 对照前 50 笔记本及 60% 人审阈值，以及相对人类的奖牌指标。
+  legend: 来源：Sections 2-3 and Appendices A.1-A.5。实线箭头表示论文或官方资料明确支持的主流程。
 nodes:
   - id: pool
     label: |-
@@ -33,7 +33,7 @@ nodes:
       选择门槛
       现代 ML + 任务清晰
       本地指标 + 数据可用
-    type: decision
+    type: process
     size: xl
     position:
       x: 520
@@ -102,18 +102,16 @@ nodes:
     label: |-
       提交校验
       CSV 格式正确？
-    type: decision
+    type: process
     size: large
     position:
       x: 2200
       'y': 180
   - id: audit
     label: |-
-      完整性审计
-      仅检查奖牌候选
-      GPT-4o 规则检查
-      Dolos 对照前 50 笔记本
-      相似度 >60% → 人工复核
+      是否存在取消资格的完整性违规？
+      Dolos >60% → 取消资格并人工复核
+      GPT-4o 告警 → 人工复核；确认违规则取消资格
     type: decision
     size: xl
     position:
@@ -121,10 +119,10 @@ nodes:
       'y': 180
   - id: compare
     label: |-
-      本地计算分数
+      达到奖牌线？
+      本地评分
       对照私有榜单
-      识别奖牌候选
-    type: process
+    type: decision
     size: large
     position:
       x: 2440
@@ -139,6 +137,15 @@ nodes:
     position:
       x: 2920
       'y': 180
+  - id: disqualified
+    label: |-
+      取消该次尝试资格
+      不计入报告结果
+    type: terminal
+    size: xl
+    position:
+      x: 2680
+      'y': 500
 edges:
   - from: pool
     to: screen
@@ -173,7 +180,26 @@ edges:
   - from: compare
     to: audit
     type: primary
+    label: 是 · 奖牌候选
+    labelPosition: center
   - from: audit
     to: metrics
     type: primary
+    label: 否 · 无违规 / 告警为误报
+    labelPosition: center
+  - from: compare
+    to: metrics
+    type: primary
+    label: 否 · 仅记录原始分
+    labelPosition: center
+    waypoints:
+      - x: 2440
+        'y': 390
+      - x: 2920
+        'y': 390
+  - from: audit
+    to: disqualified
+    type: optional
+    label: 是 · >60% 或确认规则违规
+    labelPosition: center
 modules: []

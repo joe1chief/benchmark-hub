@@ -6,11 +6,12 @@ meta:
   routing: orthogonal
   title: MSEarthMCQ Build Process
   description: >-
-    Paper-aligned construction of the 2,784-item MSEarth multiple-choice subset from Earth-science papers through
-    context enrichment, multi-agent voting, and expert validation.
+    MSEarthMCQ parses more than 400,000 Earth-science PDFs, filters papers and aligns figures with references, then uses
+    GPT-4o to refine captions and create candidate questions; three-phase five-model and 70B-plus-model screening plus
+    expert review removes 216 invalid items and yields 2,784 questions.
   legend: >-
-    Phase A uses the original caption; Phases B and C add the refined caption to separate specialized and visually hard
-    questions.
+    Source: arXiv:2505.20740 Sections 3-4 and Appendices E-G; official PrismaX/MSEarth repository and MSEarth_MCQ
+    dataset. Solid arrows show the main flow explicitly supported by the paper or official documentation.
 nodes:
   - id: papers
     label: |-
@@ -40,7 +41,7 @@ nodes:
       Use Qwen2.5-VL-72B
       Require Earth-science Relevance
       Retain about 83K Papers
-    type: decision
+    type: process
     size: xl
     position:
       x: 500
@@ -91,10 +92,9 @@ nodes:
       'y': 40
   - id: phase_a
     label: |-
-      Phase A · Original Caption
-      Vote with Five MLLMs
-      Discard Questions All Solve
-      Route if over 40% Are Wrong
+      Phase A Vote Outcome?
+      Original Caption
+      Five MLLMs
     type: decision
     size: xl
     position:
@@ -102,10 +102,9 @@ nodes:
       'y': 420
   - id: phase_b
     label: |-
-      Phase B · Refined Caption
-      Re-run the Five-model Vote
-      Over 60% Correct Means
-      Specialized Scientific QA
+      Phase B: >60% Correct?
+      Refined Caption
+      Same Five MLLMs
     type: decision
     size: xl
     position:
@@ -113,10 +112,9 @@ nodes:
       'y': 420
   - id: phase_c
     label: |-
-      Phase C · Large Models
-      GPT-4o · InternVL2.5-78B
-      Qwen2.5-VL-72B Vote
-      Over 60% Correct Means Hard QA
+      Phase C: >60% Correct?
+      Refined Caption
+      Three 70B+ MLLMs
     type: decision
     size: xl
     position:
@@ -166,6 +164,15 @@ nodes:
     position:
       x: 20
       'y': 420
+  - id: discard
+    label: |-
+      Discard Candidate
+      Overly Simple or Flawed
+    type: loss
+    size: xl
+    position:
+      x: 1100
+      'y': 800
 edges:
   - from: papers
     to: parse
@@ -191,12 +198,18 @@ edges:
   - from: phase_a
     to: phase_b
     type: primary
+    label: '>40% wrong · analyze further'
+    labelPosition: center
   - from: phase_b
     to: phase_c
     type: primary
+    label: ≤60% correct · analyze further
+    labelPosition: center
   - from: phase_c
     to: sample
     type: primary
+    label: '>60% correct · hard QA'
+    labelPosition: center
   - from: sample
     to: expert
     type: primary
@@ -206,4 +219,39 @@ edges:
   - from: release
     to: score
     type: primary
+  - from: phase_a
+    to: discard
+    type: optional
+    label: All correct · too simple
+    labelPosition: center
+    waypoints:
+      - x: 1580
+        'y': 720
+      - x: 1220
+        'y': 720
+  - from: phase_a
+    to: sample
+    type: primary
+    label: Otherwise · easy QA
+    labelPosition: center
+    waypoints:
+      - x: 1460
+        'y': 650
+      - x: 740
+        'y': 650
+  - from: phase_b
+    to: sample
+    type: primary
+    label: '>60% correct · specialized QA'
+    labelPosition: center
+    waypoints:
+      - x: 1220
+        'y': 250
+      - x: 740
+        'y': 250
+  - from: phase_c
+    to: discard
+    type: optional
+    label: ≤60% correct · flawed
+    labelPosition: center
 modules: []

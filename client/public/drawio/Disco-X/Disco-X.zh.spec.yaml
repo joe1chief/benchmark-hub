@@ -5,8 +5,13 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DiscoX 构建流程
-  description: 对齐论文的专业文本策展、专家评分点过滤、双语任务选择与 Metric-S 多智能体评测流程。
-  legend: 实线箭头展示从 665 到 200 的筛选漏斗，以及去重和严重度计分前的三条 Metric-S 质量分支。
+  description: >-
+    DiscoX 由 133 人团队构建，包括 115 位领域专家和 18 位语言专家，共投入 1,330 人时。真实专业文本须超过 1,500 中文字符或英文词，并标注可验证的语法、术语、主题词和文化评分点，平均每题 9.38
+    条。665 个候选先经语言同行评审，且两个先进模型都必须至少失败八条评分点；领域专家再精修和平衡为 200 题，双向各 100 题，其中学术 121、非学术 79，覆盖七领域。Metric-S
+    将非翻译输出直接记零，再分别评估准确性、流畅性、得体性，分层去重根因错误，并采用 60/20/20 满分与 2/5/10/50 严重度扣分。
+  legend: >-
+    来源：DiscoX Sections 2.1-2.2 and 3.1-3.4, Figures 3-4; official ByteDance-Seed/DiscoX repository and
+    dataset。实线箭头表示论文或官方资料明确支持的主流程。
 nodes:
   - id: team
     label: |-
@@ -51,7 +56,7 @@ nodes:
     label: |-
       语言专家同行评审
       检查文本专业性与评分点清晰度
-    type: decision
+    type: process
     size: xl
     position:
       x: 1080
@@ -60,7 +65,7 @@ nodes:
     label: |-
       两个先进模型难度门
       两个模型均须至少失败 8 条预设评分点
-    type: decision
+    type: process
     size: xl
     position:
       x: 1340
@@ -95,16 +100,19 @@ nodes:
       'y': 250
   - id: instruction
     label: |-
-      指令遵循预检
-      非翻译 / 续写 / 摘要输出直接记零
+      输出是否遵循翻译指令？
+      必须生成翻译
+      非翻译 / 续写 / 摘要 = 0
     type: decision
     size: xl
     position:
       x: 2380
       'y': 250
   - id: route
-    label: Metric-S 质量评估
-    type: decision
+    label: |-
+      Metric-S 质量评估
+      同时运行准确性、流畅性与得体性评审
+    type: process
     size: xl
     position:
       x: 2640
@@ -158,6 +166,16 @@ nodes:
     position:
       x: 3420
       'y': 250
+  - id: instruction_zero
+    label: |-
+      指令遵循失败
+      非翻译 / 续写 / 摘要
+      Disco-X 得分 = 0
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 570
 edges:
   - from: team
     to: source
@@ -189,6 +207,8 @@ edges:
   - from: instruction
     to: route
     type: primary
+    label: 翻译输出
+    labelPosition: center
   - from: route
     to: accuracy
     type: primary
@@ -210,4 +230,9 @@ edges:
   - from: dedup
     to: score
     type: primary
+  - from: instruction
+    to: instruction_zero
+    type: optional
+    label: 无效输出 · 记零
+    labelPosition: center
 modules: []

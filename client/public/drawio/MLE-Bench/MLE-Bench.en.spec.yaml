@@ -6,10 +6,14 @@ meta:
   routing: orthogonal
   title: MLE-Bench Build Process
   description: >-
-    Paper-aligned MLE-Bench workflow: 5,673 completed Kaggle competitions are reduced by manual relevance and
-    reproducibility gates to 75 test tasks plus seven development tasks; offline datasets, local graders, private
-    leaderboard snapshots, controlled agent runs, and anti-cheating audits support human-relative medal rates.
-  legend: Solid arrows show competition curation, offline packaging, controlled agent execution, audit, and scoring.
+    The paper specifies the 5,673-completed-competition Meta Kaggle pool, Community Competition removal and manual
+    screening of 586 candidates, selection and complexity criteria, 75 test plus seven development competitions,
+    original or usually 10% reconstructed test splits with distribution checks, offline descriptions/data/local graders,
+    Private leaderboard snapshots, a format-only validation server, 24-hour Docker runs with three seeds, GPT-4o rule
+    checks, Dolos comparison against top-50 notebooks with 60% review threshold, and human-relative medal metrics.
+  legend: >-
+    Source: Sections 2-3 and Appendices A.1-A.5. Solid arrows show the main flow explicitly supported by the paper or
+    official documentation.
 nodes:
   - id: pool
     label: |-
@@ -34,7 +38,7 @@ nodes:
       Selection Gates
       Modern ML + Clear Task
       Local Metric + Legal Data
-    type: decision
+    type: process
     size: xl
     position:
       x: 520
@@ -103,18 +107,16 @@ nodes:
     label: |-
       Submission Validation
       Correct CSV Format?
-    type: decision
+    type: process
     size: large
     position:
       x: 2200
       'y': 180
   - id: audit
     label: |-
-      Integrity Audit
-      Medal-winning Candidates
-      GPT-4o Rule Check
-      Dolos vs Top-50 Notebooks
-      >60% Similarity → Human Review
+      Disqualifying Integrity Violation?
+      Dolos >60% → Disqualify + Human Review
+      GPT-4o Flag → Human Review; Confirmed Violation → Disqualify
     type: decision
     size: xl
     position:
@@ -122,10 +124,10 @@ nodes:
       'y': 180
   - id: compare
     label: |-
+      Medal-Winning Submission?
       Grade Locally
       Compare Private Leaderboard
-      Identify Medal Candidates
-    type: process
+    type: decision
     size: large
     position:
       x: 2440
@@ -140,6 +142,15 @@ nodes:
     position:
       x: 2920
       'y': 180
+  - id: disqualified
+    label: |-
+      Disqualify Attempt
+      Exclude from Reported Results
+    type: terminal
+    size: xl
+    position:
+      x: 2680
+      'y': 500
 edges:
   - from: pool
     to: screen
@@ -174,7 +185,26 @@ edges:
   - from: compare
     to: audit
     type: primary
+    label: Yes · medal candidate
+    labelPosition: center
   - from: audit
     to: metrics
     type: primary
+    label: No · no violation / false-positive flag
+    labelPosition: center
+  - from: compare
+    to: metrics
+    type: primary
+    label: No · raw score only
+    labelPosition: center
+    waypoints:
+      - x: 2440
+        'y': 390
+      - x: 2920
+        'y': 390
+  - from: audit
+    to: disqualified
+    type: optional
+    label: Yes · >60% or confirmed rule violation
+    labelPosition: center
 modules: []

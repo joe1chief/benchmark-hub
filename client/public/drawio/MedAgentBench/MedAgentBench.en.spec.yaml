@@ -6,11 +6,13 @@ meta:
   routing: orthogonal
   title: MedAgentBench Build Process
   description: >-
-    Paper- and official-code-aligned physician task design, STARR patient processing, FHIR environment construction,
-    agent interaction, and success-rate scoring for MedAgentBench.
+    MedAgentBench pairs 300 physician-authored clinical tasks with a synthetic-identity 100-patient STARR cohort
+    transformed into 785,207 FHIR records, exposes nine functions through an AgentBench-compatible HAPI FHIR
+    environment, and separately verifies 150 query and 150 action tasks before reporting success rates.
   legend: >-
-    Solid arrows trace 300 tasks, 100 patients and 785,207 records, nine FHIR functions, 150 query plus 150 action
-    tasks, and three success-rate views.
+    Source: arXiv:2501.14654 Sections 3-4 and official stanfordmlgroup/MedAgentBench repository; physician tasks,
+    STARR-to-FHIR environment, AgentBench harness, and success scoring. Solid arrows show the main flow explicitly
+    supported by the paper or official documentation.
 nodes:
   - id: tasks
     label: |-
@@ -102,10 +104,10 @@ nodes:
       'y': 420
   - id: interaction
     label: |-
-      Execute a High-level Agent Loop
-      Plan Requests and Read Responses
-      Modify the Virtual EHR if Needed
-      Return a Structured Final Result
+      Execute the Agent Loop
+      GET: Send Request and Return Raw Response
+      POST: Validate JSON Payload and Indicate Success
+      FINISH: Save the Trajectory for Grading
     type: process
     size: xl
     position:
@@ -113,10 +115,9 @@ nodes:
       'y': 420
   - id: split
     label: |-
-      Separate Two Task Families
-      150 Query-based Tasks
-      150 Action-based Tasks
-      Actions May Start with GET
+      Task Family?
+      150 Query-Based Tasks
+      150 Action-Based Tasks
     type: decision
     size: xl
     position:
@@ -136,9 +137,9 @@ nodes:
   - id: actiongrade
     label: |-
       Grade Action-based Tasks
-      Inspect the POST Payload
-      Run Manual Rule-based Sanity Checks
-      Verify the EHR Modification
+      Inspect the Proposed POST Payload
+      Apply Manually Written Rule-based Sanity Checks
+      Assess Payload Correctness
     type: process
     size: xl
     position:
@@ -150,7 +151,7 @@ nodes:
       Mark Each Task Pass or Fail
       Aggregate Overall Success Rate
       Report Query SR and Action SR
-    type: decision
+    type: process
     size: xl
     position:
       x: 260
@@ -197,13 +198,30 @@ edges:
   - from: split
     to: querygrade
     type: primary
-  - from: querygrade
-    to: actiongrade
-    type: primary
+    label: Query · GET retrieval
+    labelPosition: center
   - from: actiongrade
     to: score
     type: primary
   - from: score
     to: report
     type: primary
+  - from: split
+    to: actiongrade
+    type: primary
+    label: Action · POST modification
+    labelPosition: center
+    waypoints:
+      - x: 980
+        'y': 650
+      - x: 500
+        'y': 650
+  - from: querygrade
+    to: score
+    type: primary
+    waypoints:
+      - x: 740
+        'y': 250
+      - x: 260
+        'y': 250
 modules: []

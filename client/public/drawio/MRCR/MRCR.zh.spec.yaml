@@ -5,8 +5,12 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: OpenAI MRCR 构建流程
-  description: 按 OpenAI 官方数据卡构建覆盖三种针数量和八个长度桶的 2,400 条合成长上下文对话，并以哈希门控的 SequenceMatcher 相似度计分。
-  legend: 目标针与干扰项来自相同生成分布，模型必须按出现顺序找回指定回答。
+  description: >-
+    MRCR 使用 438 个实体与十种写作格式合成长多轮对话，并以 GPT-4o 生成助手回答，使目标请求与干扰内容同分布；每个样本将同一请求重复 2 次、4 次或 8 次，再要求返回指定序号的回答，最终在八个长度区间形成 2,400
+    个样本。
+  legend: >-
+    来源：OpenAI MRCR dataset card, Motivation, Description, Dataset Construction, Evaluation Criteria, Statistics, and
+    Changelog。实线箭头表示论文或官方资料明确支持的主流程。
 nodes:
   - id: schema
     label: |-
@@ -120,10 +124,9 @@ nodes:
       'y': 420
   - id: prefix_gate
     label: |-
-      应用前缀门控
-      回答必须以前缀开头
-      缺少前缀时直接记零分
-      否则从回答与真值移除前缀
+      是否包含必需前缀？
+      缺少前缀 = 0
+      存在前缀：移除双方前缀
     type: decision
     size: xl
     position:
@@ -140,6 +143,15 @@ nodes:
     position:
       x: 20
       'y': 420
+  - id: prefix_zero
+    label: |-
+      缺少必需前缀
+      匹配比率 = 0
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 720
 edges:
   - from: schema
     to: responses
@@ -174,4 +186,11 @@ edges:
   - from: prefix_gate
     to: score
     type: primary
+    label: 存在 · 比较移除前缀后的文本
+    labelPosition: center
+  - from: prefix_gate
+    to: prefix_zero
+    type: optional
+    label: 缺少 · 记零
+    labelPosition: center
 modules: []

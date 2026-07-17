@@ -5,8 +5,12 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MedAgentBench 构建流程
-  description: 与论文及官方代码对齐地展示 MedAgentBench 的医生任务设计、STARR 患者数据处理、FHIR 环境构建、智能体交互和成功率评分。
-  legend: 实线箭头依次表示 300 个任务、100 名患者与 785207 条记录的构造、九个 FHIR 函数、150 个查询与 150 个动作任务，以及三类成功率。
+  description: >-
+    MedAgentBench 将 300 项医生编写的临床任务与 100 名 STARR 患者的合成身份队列配对并转换为 785,207 条 FHIR 记录，通过 AgentBench 兼容的 HAPI FHIR
+    环境暴露九个函数，再分别验证 150 项查询任务和 150 项操作任务并报告成功率。
+  legend: >-
+    来源：arXiv:2501.14654 Sections 3-4 and official stanfordmlgroup/MedAgentBench repository; physician tasks,
+    STARR-to-FHIR environment, AgentBench harness, and success scoring。实线箭头表示论文或官方资料明确支持的主流程。
 nodes:
   - id: tasks
     label: |-
@@ -98,10 +102,10 @@ nodes:
       'y': 420
   - id: interaction
     label: |-
-      智能体循环执行高层任务
-      规划请求并读取服务器响应
-      必要时修改虚拟病历
-      最后返回结构化结果
+      执行 Agent 循环
+      GET：发送请求并返回原始响应
+      POST：校验 JSON 载荷并返回成功提示
+      FINISH：保存轨迹用于评分
     type: process
     size: xl
     position:
@@ -109,10 +113,9 @@ nodes:
       'y': 420
   - id: split
     label: |-
-      区分两类评测任务
+      任务类型？
       150 个查询型任务
       150 个动作型任务
-      动作任务可先执行 GET
     type: decision
     size: xl
     position:
@@ -132,9 +135,9 @@ nodes:
   - id: actiongrade
     label: |-
       评分动作型任务
-      检查 POST 请求负载
-      运行人工规则化健全检查
-      验证病历修改是否正确
+      检查拟提交的 POST 载荷
+      应用人工编写的规则化健全性检查
+      判定载荷是否正确
     type: process
     size: xl
     position:
@@ -146,7 +149,7 @@ nodes:
       每个任务成功或失败
       汇总 Overall Success Rate
       分别报告 Query 与 Action SR
-    type: decision
+    type: process
     size: xl
     position:
       x: 260
@@ -193,13 +196,30 @@ edges:
   - from: split
     to: querygrade
     type: primary
-  - from: querygrade
-    to: actiongrade
-    type: primary
+    label: 查询型 · GET 检索
+    labelPosition: center
   - from: actiongrade
     to: score
     type: primary
   - from: score
     to: report
     type: primary
+  - from: split
+    to: actiongrade
+    type: primary
+    label: 动作型 · POST 修改
+    labelPosition: center
+    waypoints:
+      - x: 980
+        'y': 650
+      - x: 500
+        'y': 650
+  - from: querygrade
+    to: score
+    type: primary
+    waypoints:
+      - x: 740
+        'y': 250
+      - x: 260
+        'y': 250
 modules: []
