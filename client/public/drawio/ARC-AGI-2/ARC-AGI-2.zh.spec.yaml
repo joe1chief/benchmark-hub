@@ -5,14 +5,14 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ARC-AGI-2 构建与评测流程
-  description: 对齐论文的高复杂度网格题过量生成、受控人类可解性测试、三类评测集难度校准、双层验证与离线 Pass@2 评分流程。
-  legend: 1,000 题公开训练集不做难度校准。公开、半私有、私有评测集各 120 题且难度校准；每道评测题都被至少两个人在两次尝试内解出。
+  description: 对齐论文的高复杂度网格题来源汇集与过量生成、测试子对级筛选、三类评测分区校准、评测题最终验证及 Pass@2 评分流程。
+  legend: 人类筛选门槛作用于测试子对，整题完整正确则要求所有测试输入通过。1,000 题公开训练集是独立的未校准分支，因为并非所有训练题都完成完整人测；三类评测集各 120 题，平均人类准确率差控制在 1 个百分点内。虚线分支表示移除候选题。
 nodes:
   - id: sources
     label: |-
-      汇集候选任务来源
-      专门新编的 ARC-AGI-2 任务
-      以往 ARC 版本未使用的保留题
+      ARC 任务来源
+      ARC-AGI-2 新题 + 历史未用题
+      ARC-AGI-1 + 新训练题
     type: database
     size: xl
     position:
@@ -20,124 +20,159 @@ nodes:
       'y': 100
   - id: design
     label: |-
-      有意过量生成新颖任务
+      过量生成评测候选
       多规则 / 多步骤组合
-      情境规则 + 上下文内符号定义
+      情境规则 + 上下文内符号
     type: process
     size: xl
     position:
-      x: 320
+      x: 280
       'y': 100
   - id: humans
     label: |-
       运行受控人类测试
-      407 人 • 515 个会话 • 1,848 个测试对
-      13,405 次尝试；记录准确率与用时
+      407 人 • 515 个会话
+      1,848 个测试对 • 13,405 次尝试
     type: user
     size: xl
     position:
-      x: 600
+      x: 520
       'y': 100
   - id: gate
-    label: 是否满足难度校准评测集门槛？
+    label: |-
+      ≥2 人各自在前两次尝试内
+      解出 ≥1 个测试对？
     type: decision
     size: xl
     position:
-      x: 880
+      x: 760
       'y': 100
   - id: calibrate
     label: |-
-      筛选评测候选题
-      要求 ≥2 位独立人类解出
-      两次尝试内成功 • 计算经验难度指数
+      通过筛选门槛
+      估算经验难度
+      整题完整正确率
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1000
       'y': 100
-  - id: train_or_reject
+  - id: dedupe
     label: |-
-      路由非评测候选题
-      较易且有效任务 → 公开训练集
-      不可解、冗余或有缺陷任务 → 移除
-    type: document
+      冗余共识审查
+      两两可视化比较
+      标记可共享同一程序的任务对
+    type: process
     size: xl
     position:
-      x: 880
-      'y': 330
-  - id: sets
+      x: 1240
+      'y': 100
+  - id: partition
     label: |-
-      发布 ARC-AGI-2 子集
-      训练集 1,000 题（未校准）
-      公开 / 半私有 / 私有评测各 120 题
+      保留非冗余任务
+      划分 3 类评测集
+      平均人类准确率差 ≤1 个百分点
+      新题优先→私有；曾公开题→公开
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 100
+  - id: public_training
+    label: |-
+      组装公开训练集 • 1,000 题
+      已验证任务库 • 难度范围广
+      不做校准；并非全部完成完整人测
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 330
-  - id: validate
+      x: 40
+      'y': 340
+  - id: eval_sets
     label: |-
-      执行双层最终验证
-      每道评测题由两位外部独立人员解出
-      再由原作者之外的内部人员复核
-    type: process
+      公开 / 半私有 / 私有
+      各 120 道评测题
+    type: database
     size: xl
     position:
-      x: 1440
-      'y': 600
-  - id: format
+      x: 1480
+      'y': 340
+  - id: remove
     label: |-
-      呈现静态网格任务
-      通常 2–5 个示例输入/输出对
-      ≤30×30 网格 • 最多 10 色 • 未见测试输入
-    type: document
-    size: xl
-    position:
-      x: 1160
-      'y': 600
-  - id: competition
-    label: |-
-      运行 ARC Prize 离线评测
-      120 半私有 + 120 私有未见任务
-      四张 L4 • 12 小时 • 禁止联网
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 600
-  - id: predict
-    label: |-
-      每个测试输入提交两个预测
-      从示例中归纳规则
-      构造尺寸与全部输出单元
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 600
-  - id: score
-    label: |-
-      执行 Pass@2 像素级精确评分
-      两个网格任一完全匹配则该测试输入通过
-      任务的全部测试对通过才算完整正确
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 600
-  - id: report
-    label: |-
-      报告准确率与效率
-      私有集准确率决定竞赛名次
-      公开排行榜增加每题成本
+      排除候选题
+      未达纳入门槛或被判冗余
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 600
+      x: 760
+      'y': 340
+  - id: validate
+    label: |-
+      最终验证评测题
+      两位外部人员完成每道评测题
+      额外任务：由原作者之外人员审查
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 340
+  - id: format
+    label: |-
+      呈现静态网格任务
+      通常 2–5 个示例 + 1–2 个测试输入
+      1×1–30×30 • 10 种符号 / 颜色
+    type: document
+    size: xl
+    position:
+      x: 1240
+      'y': 580
+  - id: competition
+    label: |-
+      在 Kaggle 安全沙箱运行
+      120 半私有 + 120 私有
+      离线 • 4×L4 • 12 小时 • 禁止联网
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 580
+  - id: predict
+    label: |-
+      每个测试输入给出两个候选网格
+      从示例中归纳规则
+      确定尺寸与每个输出单元
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 580
+  - id: score
+    label: |-
+      Pass@2 像素级精确整题规则
+      每个输入的两个候选任一可匹配
+      所有测试输入必须通过
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 580
+  - id: report
+    label: |-
+      排行榜结果
+      Kaggle：半私有实时得分
+      私有集最终名次
+      ARC：得分 × 每题成本
+    type: terminal
+    size: xl
+    position:
+      x: 280
+      'y': 580
 edges:
   - from: sources
     to: design
+    type: primary
+  - from: sources
+    to: public_training
     type: primary
   - from: design
     to: humans
@@ -149,15 +184,28 @@ edges:
     to: calibrate
     type: primary
   - from: gate
-    to: train_or_reject
+    to: remove
     type: optional
   - from: calibrate
-    to: sets
+    to: dedupe
     type: primary
-  - from: train_or_reject
-    to: sets
+  - from: dedupe
+    to: partition
     type: primary
-  - from: sets
+  - from: dedupe
+    to: remove
+    type: optional
+    waypoints:
+      - x: 1340
+        'y': 280
+      - x: 1000
+        'y': 280
+      - x: 1000
+        'y': 390
+  - from: partition
+    to: eval_sets
+    type: primary
+  - from: eval_sets
     to: validate
     type: primary
   - from: validate
