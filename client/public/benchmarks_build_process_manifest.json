@@ -1403,36 +1403,48 @@
   },
   {
     "id": "EvalPlus",
-    "source_type": "paper",
+    "source_type": "paper_and_official_repository",
     "source_url": "https://arxiv.org/abs/2305.01210",
-    "source_locator": "Sections 2.1-2.3 and 3",
-    "evidence_summary_en": "The paper specifies ground-truth-plus-test prompts, about 30 ChatGPT seeds per HumanEval task, program input contracts, iterative type-aware mutation with 1,000 inputs per task under a one-hour budget, differential testing, an 80-times HumanEval+ test scale, optional greedy set-cover reduction to a 47-times-smaller mini suite, and unbiased pass@k.",
-    "evidence_summary_zh": "论文明确给出参考实现加测试的提示、每个 HumanEval 任务约 30 个 ChatGPT 种子、程序输入契约、每题一小时预算生成 1,000 个输入的迭代式类型感知变异、差分测试、80 倍 HumanEval+ 测试规模、可选贪心集合覆盖得到缩小 47 倍的精简套件，以及无偏 pass@k。",
+    "source_locator": "Paper v3 Figure 2; Sections 2.1-2.3 and 3; Tables 1-2 and 4; Appendix A; paper v1 stopping-rule wording; official repository at commit 26d6d00bb1fd0fa37f39c99d5290da67891d1c5e including inputgen.py, chatgpt_gen.py, type_mut.py, evaluate.py, data loaders, and execution docs; official EvalPlus v0.2.0, HumanEval+ v0.1.10, and MBPP+ v0.2.0 releases",
+    "evidence_summary_en": "The NeurIPS paper instantiates EvalPlus on HumanEval's 164 Python tasks, not MBPP+. Authors reimplement and test every gold solution after finding 18 defects and hand-write contracts for 83 tasks. Three prompt types using corrected gold code and sampled base inputs yield about 30 ChatGPT seeds per task; parsed, deduplicated, contract-valid seeds bootstrap ingredient-aware type mutation. Unique valid mutants return to the pool until 1,000 additional mutation-generated inputs or the one-hour budget, producing HumanEval+ with 764.1 tests per task on average in paper v3. Optional greedy set cover preserves branch coverage, mutant kills, and leave-one-out other-model sample kills to form the 16.1-test-average Mini suite. Paper evaluation separately samples 200 programs at four temperatures and runs greedy decoding, compares corrected-gold outputs on base and extra tests with the disclosed timeout/tolerance rules, and reports greedy Pass@1★ separately from unbiased Pass@1/10/100. MBPP+ is explicitly marked as a post-paper official extension; current v0.2.0 has 378 tasks, about 35 times the base tests, and no Mini loader.",
+    "evidence_summary_zh": "NeurIPS 论文把 EvalPlus 具体应用于 HumanEval 的 164 道 Python 任务，而非 MBPP+。作者发现 18 个金标准缺陷后重写并测试全部解答，并为 83 题手写契约。三类提示以修正金标准和抽样基础输入为上下文，每题生成约 30 个 ChatGPT 种子；经解析、去重和契约过滤的种子启动材料复用的类型感知变异。唯一且有效的变异输入回流种子池，直至生成 1,000 个新增变异输入或耗尽一小时预算；论文 v3 的 HumanEval+ 每题平均 764.1 个测试。可选贪心集合覆盖保留分支覆盖、变异体杀伤和留一法的其他模型样本杀伤，得到平均 16.1 个测试的 Mini。论文评测另行按四个温度各采样 200 个程序并运行贪心解码，依据修正金标准在基础与新增测试上采用披露的超时及容差规则比较输出，并将贪心 Pass@1★ 与无偏 Pass@1/10/100 分开报告。MBPP+ 被明确标为论文后的官方扩展；当前 v0.2.0 有 378 题、测试约为基础集 35 倍，且没有 Mini loader。",
     "construction_steps_en": [
-      "Start from base tasks with ground-truth implementations and original tests",
-      "Prompt ChatGPT with the ground truth, sampled test demonstrations, and a specialized instruction to generate about 30 seeds per task",
-      "Reject seeds that violate the annotated program input contracts",
-      "Iteratively apply type-aware mutation, return valid mutants to the seed pool, and generate 1,000 inputs per task under a one-hour budget",
-      "Construct HumanEval+ at 80 times the original test scale and correct faulty ground-truth implementations",
-      "Optionally apply greedy set cover to preserve coverage, mutant kills, and LLM-sample kills in HumanEval+-Mini, which is 47 times smaller"
+      "Start from 164 HumanEval Python signature-and-docstring tasks with original gold implementations and base tests averaging 9.6 per task",
+      "Inspect, reimplement, and test every gold solution after identifying 18 defects (11 percent), so differential testing does not reuse faulty original oracles",
+      "Hand-write precondition contracts for 83 of the 164 tasks in the paper snapshot to clarify valid inputs and filter undefined behavior",
+      "Create three prompt variants from the corrected gold code, randomly sampled base inputs, and complex, corner-case, or difficult-input instructions; obtain about 30 ChatGPT seeds per task",
+      "Parse and deduplicate generated inputs and reject seeds that violate the task's available contract",
+      "Randomly select from the valid pool and apply recursive type-aware mutation with an ingredient mechanism that reuses observed data fragments",
+      "Discard duplicate or contract-invalid mutants; add unique valid mutants back to the seed pool and continue until 1,000 additional mutation-generated inputs or the one-hour budget",
+      "Release the paper-v3 HumanEval+ Full suite with 164 tasks and 764.1 tests per task on average, about 80 times the original test scale",
+      "Optionally use greedy set cover over branch coverage, mutant kills, and leave-one-out other-model sample kills to form HumanEval+-Mini, averaging 16.1 tests and about 47 times smaller than Full",
+      "Treat MBPP+ as a post-paper official extension: v0.2.0 retains 378 tasks and about 35 times the base tests; the official loader provides no MBPP+-Mini"
     ],
     "construction_steps_zh": [
-      "从带参考实现与原始测试的基础任务开始",
-      "用参考实现、抽样测试示例和专用指令提示 ChatGPT，每题生成约 30 个种子",
-      "根据标注的程序输入契约剔除无效种子",
-      "迭代执行类型感知变异，把有效变异体放回种子池，并在每题一小时预算内生成 1,000 个输入",
-      "构建测试规模为原始 80 倍的 HumanEval+，并修正错误参考实现",
-      "可选用贪心集合覆盖保留覆盖率、变异体杀伤和模型样本杀伤，得到缩小 47 倍的 HumanEval+-Mini"
+      "从 HumanEval 的 164 道 Python 函数签名与文档字符串任务开始，原始金标准和基础测试每题平均 9.6 个",
+      "发现 18 个缺陷（11%）后检查、重写并测试全部金标准，避免差分测试继续使用错误的原始 oracle",
+      "在论文快照中为 164 题中的 83 题手写前置条件契约，用于澄清有效输入并过滤未定义行为",
+      "以修正金标准、随机抽样基础输入和复杂、边界或困难输入指令构造三类提示，每题获得约 30 个 ChatGPT 种子",
+      "解析并去重生成输入，并按题目已有契约拒绝无效种子",
+      "从有效种子池随机抽样，执行递归类型感知变异，并通过 ingredient 机制复用已出现的数据片段",
+      "丢弃重复或不符合契约的变异输入，把唯一且有效的变异输入加入种子池，直到生成 1,000 个新增变异输入或耗尽一小时预算",
+      "发布论文 v3 的 HumanEval+ 完整集：164 题、每题平均 764.1 个测试，测试规模约为原始集 80 倍",
+      "可选按分支覆盖、变异体杀伤和留一法的其他模型样本杀伤做贪心集合覆盖，形成平均 16.1 个测试、比完整集约小 47 倍的 HumanEval+-Mini",
+      "把 MBPP+ 作为论文后的官方扩展：v0.2.0 保留 378 题、测试约为基础集 35 倍，官方 loader 不提供 MBPP+-Mini"
     ],
     "evaluation_steps_en": [
-      "Run each LLM-generated solution on the full or reduced plus test suite",
-      "Use differential testing against the corrected ground-truth implementation as the oracle",
-      "Count functionally correct samples and compute the unbiased pass@k estimator"
+      "In the paper study, sample 200 programs per task at temperatures 0.2, 0.4, 0.6, and 0.8, and separately run greedy decoding",
+      "Execute the corrected gold implementation to derive expected outputs and ground-truth runtimes for base and extra inputs",
+      "Run candidate code on base and extra tests; use exact comparison by default, task-specific or 1e-6 absolute tolerance for floats, and a per-test limit of the larger of 0.2 seconds or four times the gold runtime",
+      "Mark Base correct only when every base test passes; mark Plus correct only when both all base and all extra tests pass, with mismatches, errors, or timeouts counted as failures",
+      "Report greedy Pass@1★ separately; when enough samples exist, compute the unbiased estimator for Pass@1, Pass@10, and Pass@100 and compare Base against Base-plus-Extra results"
     ],
     "evaluation_steps_zh": [
-      "在完整或精简的增强测试集上运行每个模型生成解答",
-      "以修正后的参考实现为 oracle 执行差分测试",
-      "统计功能正确样本并计算无偏 pass@k 估计量"
+      "论文实验按温度 0.2、0.4、0.6 和 0.8 为每题各采样 200 个程序，并另行运行贪心解码",
+      "执行修正后的金标准，在基础与新增输入上生成期望输出及金标准用时",
+      "在基础与新增测试上运行候选代码；默认精确比较，浮点使用题目专用或 1e-6 绝对容差，每测试时限取 0.2 秒和金标准用时四倍中的较大者",
+      "仅当全部基础测试通过时标记 Base 正确；仅当基础与新增测试全部通过时标记 Plus 正确，输出不符、异常或超时均计失败",
+      "单独报告贪心 Pass@1★；样本数足够时计算无偏 Pass@1、Pass@10 和 Pass@100，并比较 Base 与 Base+Extra 结果"
     ],
     "strict_validation": {
       "en": "passed",
@@ -1444,9 +1456,9 @@
     },
     "review_status": "visually_reviewed",
     "visual_review": {
-      "reviewed_at": "2026-07-10",
-      "artifact": "Draw.io Desktop PNG exports plus local English and Chinese page DOM checks",
-      "result": "The contract-filter feedback loop and optional full/mini suite branches are complete and unambiguous without dangling lines; both pages loaded the expected SVG at natural size 2423 by 531."
+      "reviewed_at": "2026-07-17",
+      "artifact": "Draw.io Desktop PNG exports (2069 by 825) plus local English and Chinese page DOM and screenshot checks",
+      "result": "Both 19-node, 20-edge diagrams render without clipping or dangling lines; decision labels, contract-filter retries, valid-mutant feedback, Full and optional Mini branches, and the detached post-paper MBPP+ note remain legible. The English and Chinese pages loaded their expected SVGs completely at natural size 2067 by 823 and displayed them at 90 percent zoom."
     },
     "assets": {
       "drawio_flowchart_en": "drawio/EvalPlus/EvalPlus.en.svg",
@@ -1457,6 +1469,12 @@
       "drawio_spec_zh": "drawio/EvalPlus/EvalPlus.zh.spec.yaml",
       "drawio_arch_en": "drawio/EvalPlus/EvalPlus.en.arch.json",
       "drawio_arch_zh": "drawio/EvalPlus/EvalPlus.zh.arch.json"
+    },
+    "paper_alignment_review": {
+      "status": "passed",
+      "source_url": "https://arxiv.org/abs/2305.01210",
+      "source_locator": "Paper v3 Figure 2; Sections 2.1-2.3 and 3; Tables 1-2 and 4; Appendix A; paper v1 stopping-rule wording; official repository at commit 26d6d00bb1fd0fa37f39c99d5290da67891d1c5e including inputgen.py, chatgpt_gen.py, type_mut.py, evaluate.py, data loaders, and execution docs; official EvalPlus v0.2.0, HumanEval+ v0.1.10, and MBPP+ v0.2.0 releases",
+      "reviewed_at": "2026-07-17"
     }
   },
   {

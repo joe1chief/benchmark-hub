@@ -1,178 +1,258 @@
 {
   "version": 1,
-  "title": "EvalPlus 构建流程",
+  "title": "EvalPlus 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 14,
+    "nodes": 19,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
       "id": "base",
-      "label": "原始代码基准\n参考实现 + 基础测试",
+      "label": "HumanEval 基础集\n164 道 Python 任务\n金标准 + 平均 9.6 个测试",
       "type": "database",
-      "size": "large"
+      "size": "xl"
+    },
+    {
+      "id": "curate",
+      "label": "论文版 HumanEval+ 整理\n重写并测试全部金标准\n83 / 164 题手写契约",
+      "type": "process",
+      "size": "xl"
     },
     {
       "id": "prompt",
-      "label": "提示：参考实现\n测试示例 + 指令",
+      "label": "三类提示\n修正金标准 + 抽样基础输入\n复杂 • 边界 • 困难",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "seeds",
-      "label": "ChatGPT 种子\n每题约 30 个",
+      "label": "ChatGPT 种子输入\n每题约 30 个\n解析 + 去重",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "seed_filter",
-      "label": "种子输入\n契约检查",
-      "type": "process",
+      "id": "seed_gate",
+      "label": "种子是否唯一\n且符合契约？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "discard_seed",
+      "label": "丢弃\n无效 / 重复种子",
+      "type": "terminal",
       "size": "large"
     },
     {
       "id": "seed_pool",
-      "label": "有效种子池",
+      "label": "有效种子池\n符合契约的输入",
       "type": "database",
-      "size": "large"
+      "size": "xl"
+    },
+    {
+      "id": "budget_gate",
+      "label": "停止生成？\n1,000 个新增输入\n或一小时",
+      "type": "decision",
+      "size": "xl"
     },
     {
       "id": "mutation",
-      "label": "类型感知变异\n每题 1,000 个",
+      "label": "类型感知变异\n随机种子 + 递归编辑\n复用 ingredient 片段",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "mutant_filter",
-      "label": "变异输入\n契约检查",
+      "id": "mutant_gate",
+      "label": "变异输入是否唯一\n且符合契约？",
       "type": "decision",
-      "size": "large"
-    },
-    {
-      "id": "plus",
-      "label": "HumanEval+\n测试规模 80 倍",
-      "type": "database",
-      "size": "large"
-    },
-    {
-      "id": "distill",
-      "label": "可选贪心\n集合覆盖",
-      "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "full",
-      "label": "完整增强测试集",
+      "label": "HumanEval+ 完整集（论文 v3）\n164 题 • 平均 764.1 个测试\n测试约为基础集 80 倍",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "reduction_requirements",
+      "label": "可选约简要求\n分支覆盖 • 变异体杀伤\n其他模型样本杀伤（留一法）",
       "type": "document",
-      "size": "large"
+      "size": "xl"
+    },
+    {
+      "id": "set_cover",
+      "label": "贪心集合覆盖\n保留全部要求",
+      "type": "process",
+      "size": "xl"
     },
     {
       "id": "mini",
-      "label": "HumanEval+-Mini\n缩小 47 倍",
-      "type": "document",
-      "size": "large"
+      "label": "HumanEval+-Mini（论文 v3）\n平均 16.1 个测试\n约比完整集小 47 倍",
+      "type": "database",
+      "size": "xl"
     },
     {
-      "id": "differential",
-      "label": "执行模型代码\n与参考实现差分",
+      "id": "post_paper_mbpp",
+      "label": "论文后官方扩展\nMBPP+ v0.2.0 • 378 题\n测试约 35 倍 • 无 Mini",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "sampling",
+      "label": "论文评测采样\n每个温度 200 个程序\n0.2 • 0.4 • 0.6 • 0.8 + 贪心",
       "type": "process",
-      "size": "large"
+      "size": "xl"
+    },
+    {
+      "id": "execute",
+      "label": "差分执行\n修正金标准生成期望输出\n最少 0.2 秒 • 金标准用时 4 倍",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correctness",
+      "label": "功能正确性\nBase：全部基础测试通过\nPlus：基础与新增测试均通过",
+      "type": "process",
+      "size": "xl"
     },
     {
       "id": "score",
-      "label": "无偏 pass@k",
+      "label": "论文结果\n贪心 Pass@1★\n无偏 Pass@1 / 10 / 100\nBase 与 Plus 对比",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
       "from": "base",
-      "to": "prompt",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-2",
+      "from": "curate",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
       "from": "prompt",
       "to": "seeds",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "seeds",
-      "to": "seed_filter",
-      "type": "primary"
-    },
-    {
       "id": "edge-4",
-      "from": "seed_filter",
-      "to": "seed_pool",
+      "from": "seeds",
+      "to": "seed_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "seed_pool",
-      "to": "mutation",
-      "type": "primary"
+      "from": "seed_gate",
+      "to": "seed_pool",
+      "type": "primary",
+      "label": "是：保留"
     },
     {
       "id": "edge-6",
-      "from": "mutation",
-      "to": "mutant_filter",
-      "type": "primary"
+      "from": "seed_gate",
+      "to": "discard_seed",
+      "type": "optional",
+      "label": "否：丢弃"
     },
     {
       "id": "edge-7",
-      "from": "mutant_filter",
-      "to": "seed_pool",
-      "type": "data"
+      "from": "seed_pool",
+      "to": "budget_gate",
+      "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "mutant_filter",
-      "to": "plus",
-      "type": "primary"
+      "from": "budget_gate",
+      "to": "mutation",
+      "type": "primary",
+      "label": "否：继续变异"
     },
     {
       "id": "edge-9",
-      "from": "plus",
-      "to": "distill",
-      "type": "data"
+      "from": "mutation",
+      "to": "mutant_gate",
+      "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "plus",
-      "to": "full",
-      "type": "primary"
+      "from": "mutant_gate",
+      "to": "seed_pool",
+      "type": "primary",
+      "label": "是：加入种子池"
     },
     {
       "id": "edge-11",
-      "from": "distill",
-      "to": "mini",
-      "type": "primary"
+      "from": "mutant_gate",
+      "to": "mutation",
+      "type": "optional",
+      "label": "否：丢弃并重试"
     },
     {
       "id": "edge-12",
-      "from": "full",
-      "to": "differential",
-      "type": "primary"
+      "from": "budget_gate",
+      "to": "full",
+      "type": "primary",
+      "label": "是：构建完整集"
     },
     {
       "id": "edge-13",
-      "from": "mini",
-      "to": "differential",
-      "type": "primary"
+      "from": "full",
+      "to": "reduction_requirements",
+      "type": "data",
+      "label": "可选约简"
     },
     {
       "id": "edge-14",
-      "from": "differential",
+      "from": "reduction_requirements",
+      "to": "set_cover",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "set_cover",
+      "to": "mini",
+      "type": "data"
+    },
+    {
+      "id": "edge-16",
+      "from": "full",
+      "to": "sampling",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "mini",
+      "to": "sampling",
+      "type": "data",
+      "label": "可选 Mini 实验"
+    },
+    {
+      "id": "edge-18",
+      "from": "sampling",
+      "to": "execute",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "execute",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "correctness",
       "to": "score",
       "type": "primary"
     }
