@@ -5,18 +5,16 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ActivityNet-QA Build and Evaluation Process
-  description: >-
-    Paper-aligned ActivityNet video sampling, controlled crowdsourced QA authoring, independent answer checks, bilingual
-    translation quality control, official splits, exact accuracy, and WUPS evaluation.
+  description: Paper-aligned class-balanced video sampling, controlled bilingual QA annotation, quality review, and evaluation.
   legend: >-
-    The top row builds 58,000 bilingual QA pairs from 5,800 videos; the bottom row branches into the paper's exact-match
-    and semantic-similarity criteria before type-wise reporting.
+    The multi-annotator audit covers a sampled portion as an optional quality branch. The paper does not disclose that
+    sample's size or annotator count.
 nodes:
   - id: videos
     label: |-
-      Sample ActivityNet v1.3 Videos
-      5,800 of Approximately 20,000 Long Web Videos
-      Train / Val / Test: 3,200 / 1,800 / 800 Videos
+      Class-Balanced Video Sampling
+      5,800 ActivityNet v1.3 videos
+      Train/val balanced • test random
     type: database
     size: xl
     position:
@@ -24,104 +22,124 @@ nodes:
       'y': 100
   - id: author
     label: |-
-      Human Crowdsourced QA Authoring
-      Exactly 10 Question–Answer Pairs per Video
-      Initial Questions and Answers Written in Chinese
+      Crowdsourced QA Authoring
+      10 Chinese QA pairs per video
     type: process
     size: xl
     position:
-      x: 320
+      x: 280
       'y': 100
   - id: types
     label: |-
-      Controlled Question Coverage
-      1 Motion + 1 Spatial + 1 Temporal + 7 Free
-      Free Answers: Yes/No, Number, Color, Object, Location, Other
+      Control Question Coverage
+      1 motion + 1 spatial
+      1 temporal + 7 free
     type: process
     size: xl
     position:
-      x: 600
+      x: 520
+      'y': 100
+  - id: length_gate
+    label: |-
+      Enforce QA Length Limits
+      Question ≤20 • answer ≤5 words
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 100
+  - id: yes_no_balance
+    label: |-
+      Balance Yes/No Answers
+      Keep ratio close to 1:1
+    type: process
+    size: xl
+    position:
+      x: 1000
       'y': 100
   - id: quality
     label: |-
-      Annotation Quality Gates
-      Separate Question and Answer Annotators
-      Regenerate Unanswerable Items; Majority Vote on Random Audits
+      Independent Answer Review
+      Regenerate unanswerable
     type: process
     size: xl
     position:
-      x: 880
+      x: 1240
       'y': 100
+  - id: random_audit
+    label: |-
+      Audit a Sampled Portion
+      Multiple annotators • vote
+      Sample/count not disclosed
+    type: user
+    size: xl
+    position:
+      x: 1480
+      'y': 300
   - id: translate
     label: |-
-      Chinese-to-English Translation QA
-      Compare Google, Baidu, Sogou, and Youdao with CIDEr
-      Manually Check Low-Agreement Cases; Otherwise Use Baidu
+      Chinese-to-English QA
+      Four engines + CIDEr check
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1720
       'y': 100
   - id: release
     label: |-
-      ActivityNet-QA Dataset
-      58,000 Bilingually Aligned QA Pairs on 5,800 Videos
-      Train / Val / Test: 32,000 / 18,000 / 8,000 QA Pairs
+      ActivityNet-QA
+      58,000 bilingual QA pairs
     type: database
     size: xl
     position:
-      x: 1440
+      x: 1960
       'y': 100
   - id: prediction
     label: |-
-      VideoQA Model Prediction
-      Input: Full Video + Free-Form Question
-      Output: Short Open-Ended Answer
+      VideoQA Prediction
+      Video + question → answer
     type: document
     size: xl
     position:
-      x: 1440
-      'y': 440
+      x: 1960
+      'y': 660
   - id: exact
     label: |-
       Exact-Match Accuracy
-      Score 1 Only When Prediction Equals Ground Truth
-      Official Evaluation Script Uses This Comparison
+      Prediction equals reference
     type: process
     size: xl
     position:
-      x: 1040
-      'y': 350
+      x: 1640
+      'y': 560
   - id: wups
     label: |-
-      WUPS Semantic Similarity
-      WordNet-Based Similarity between Answer Word Sets
-      Paper Reports WUPS at Thresholds 0.9 and 0.0
+      WUPS Similarity
+      Thresholds 0.9 and 0.0
     type: process
     size: xl
     position:
-      x: 1040
-      'y': 530
+      x: 1640
+      'y': 760
   - id: aggregate
     label: |-
-      Aggregate by Question Type
-      Motion • Spatial Relationship • Temporal Relationship • Free
-      Split Free Questions by the Six Answer Types
+      Aggregate by Type
+      Motion • spatial
+      Temporal • free
     type: process
     size: xl
     position:
-      x: 600
-      'y': 440
+      x: 1320
+      'y': 660
   - id: report
     label: |-
-      ActivityNet-QA Results
-      Overall and Per-Type Accuracy
-      WUPS Complements Strict Equality for Answer Ambiguity
+      Report Results
+      Overall and per-type scores
     type: terminal
     size: xl
     position:
-      x: 320
-      'y': 440
+      x: 1080
+      'y': 660
 edges:
   - from: videos
     to: author
@@ -130,11 +148,24 @@ edges:
     to: types
     type: primary
   - from: types
+    to: length_gate
+    type: primary
+  - from: length_gate
+    to: yes_no_balance
+    type: primary
+  - from: yes_no_balance
     to: quality
     type: primary
   - from: quality
     to: translate
     type: primary
+  - from: quality
+    to: random_audit
+    type: optional
+    label: Sampled portion
+  - from: random_audit
+    to: translate
+    type: optional
   - from: translate
     to: release
     type: primary

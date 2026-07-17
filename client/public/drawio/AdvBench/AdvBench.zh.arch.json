@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "title": "AdvBench 构建与 GCG 评测流程",
+  "title": "AdvBench 构建与 GCG 攻击流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
@@ -8,97 +8,97 @@
   "layout": "horizontal",
   "counts": {
     "nodes": 15,
-    "edges": 16,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "threat",
-      "label": "定义护栏绕过威胁模型\n测试对齐模型能否被诱导生成\n其通常会拒绝的内容",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "setting",
-      "label": "构建哪类 AdvBench 集合？",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "strings",
-      "label": "整理 500 个有害字符串\n有毒、威胁、误导、歧视、网络犯罪、\n危险或非法内容\n3-44 个 LLaMA token • 均值 16",
+      "id": "seed_strings",
+      "label": "有害字符串种子\n人工编写 100 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "整理 500 个有害行为\n将相同广义主题写成指令\n成功指尝试遵从，而非拒答",
+      "id": "seed_behaviors",
+      "label": "有害行为种子\n人工编写 50 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "objective",
-      "label": "定义优化目标\n字符串：精确目标续写\n行为：与遵从一致的肯定式前缀",
+      "id": "five_shot",
+      "label": "构造 5 个示例提示\n从种子中抽取示例",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "suffix",
-      "label": "初始化 20-token 对抗后缀\n附加到一个或多个提示\n汇总多提示与多模型损失",
+      "id": "generator",
+      "label": "Wizard-Vicuna-30B-Uncensored\n每轮生成 10 条",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter_unknown",
+      "label": "论文未披露\n生成后过滤链\n仅作注释 • 无连线",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "发布 AdvBench\n500 字符串 + 500 行为",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "protocol",
+      "label": "选择攻击协议\n单题 • 通用 • 迁移",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate_loss",
+      "label": "汇总目标损失\n跨所选提示与模型",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "gcg",
-      "label": "运行贪心坐标梯度搜索\n梯度 Top-k 256 • 候选批量 512\n用最低损失候选替换一个 token",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "protocol",
-      "label": "选择攻击协议\n单题：前 100 项、单一模型\n通用：25 个训练 + 100 个留出行为\n迁移：25 个行为、2 或 4 个源模型",
+      "label": "运行 GCG 搜索\nTop-k 256 • 批量 512",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "run",
-      "label": "保留 500 步后的最佳后缀\n按各模型默认对话模板运行\n评测白盒与黑盒迁移",
+      "label": "运行被测模型\n500 步后保留最佳后缀",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "应采用哪条成功判定？",
+      "id": "success_gate",
+      "label": "采用哪条成功判定？",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "string_score",
-      "label": "有害字符串评分\n出现精确目标字符串即成功\n同时记录目标交叉熵损失",
+      "label": "字符串成功\n精确目标文本出现",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "behavior_score",
-      "label": "有害行为评分\n判断是否合理尝试执行指令\n必要时人工区分遵从与拒答",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "asr",
-      "label": "计算攻击成功率\n单题 ASR • 通用训练/测试 ASR\n388 个测试行为上的迁移 ASR",
+      "label": "行为成功\n尝试遵从指令",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "compare",
-      "label": "比较攻击方法与迁移\nPEZ • GBDA • AutoPrompt • GCG\n源模型 → 开源及闭源目标模型",
+      "id": "asr",
+      "label": "攻击成功率\n单题 • 通用 • 迁移",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "报告鲁棒性与通用性\nASR 越高表示护栏绕过越成功\n字符串诱导中目标损失越低越好",
+      "label": "报告鲁棒性\nASR + 目标损失",
       "type": "terminal",
       "size": "xl"
     }
@@ -106,97 +106,87 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "threat",
-      "to": "setting",
+      "from": "seed_strings",
+      "to": "five_shot",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "setting",
-      "to": "strings",
+      "from": "seed_behaviors",
+      "to": "five_shot",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "setting",
-      "to": "behaviors",
+      "from": "five_shot",
+      "to": "generator",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "strings",
-      "to": "objective",
+      "from": "generator",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "behaviors",
-      "to": "objective",
+      "from": "release",
+      "to": "protocol",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "objective",
-      "to": "suffix",
+      "from": "protocol",
+      "to": "aggregate_loss",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "suffix",
+      "from": "aggregate_loss",
       "to": "gcg",
       "type": "primary"
     },
     {
       "id": "edge-8",
       "from": "gcg",
-      "to": "protocol",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "protocol",
       "to": "run",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-9",
       "from": "run",
-      "to": "judge",
+      "to": "success_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "success_gate",
+      "to": "string_score",
+      "type": "primary",
+      "label": "字符串"
     },
     {
       "id": "edge-11",
-      "from": "judge",
-      "to": "string_score",
-      "type": "primary"
+      "from": "success_gate",
+      "to": "behavior_score",
+      "type": "primary",
+      "label": "行为"
     },
     {
       "id": "edge-12",
-      "from": "judge",
-      "to": "behavior_score",
-      "type": "primary"
-    },
-    {
-      "id": "edge-13",
       "from": "string_score",
       "to": "asr",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-13",
       "from": "behavior_score",
       "to": "asr",
       "type": "primary"
     },
     {
-      "id": "edge-15",
+      "id": "edge-14",
       "from": "asr",
-      "to": "compare",
-      "type": "primary"
-    },
-    {
-      "id": "edge-16",
-      "from": "compare",
       "to": "report",
       "type": "primary"
     }

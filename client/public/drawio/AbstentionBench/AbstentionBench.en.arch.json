@@ -8,79 +8,79 @@
   "layout": "horizontal",
   "counts": {
     "nodes": 12,
-    "edges": 11,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "search",
-      "label": "Systematic Dataset Search\nAbstention, Refusal, and Uncertainty Resources\nShortlist 82 Candidate Datasets",
+      "id": "candidate_search",
+      "label": "Search Candidate Datasets\nReview 82 resources",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "general_datasets",
+      "label": "General-Domain Suite\nRetain 16 datasets",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "review",
-      "label": "Author Review and Selection\nRetain Samples Where Abstention Is Desirable\nSelect 16 General-Domain Datasets",
+      "id": "reasoning_sources",
+      "label": "Reasoning Sources\nGPQA • GSM8K • MMLU-Math",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "abstain_variants",
+      "label": "Build 3 -Abstain Variants\nRemove required context",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "variants",
-      "label": "Build 3 Reasoning Variants\nGPQA-Diamond • GSM8K • MMLU-Math\nDuplicate, Then Remove Context before the Final Question",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "add_umwp",
-      "label": "Add UMWP\nExisting Unanswerable Math Word Problems\nCombine with the 16 Selected + 3 Constructed Sets",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "scenarios",
-      "label": "Group into 6 Abstention Scenarios\nUnknown • False Premise • Stale • Subjective\nUnderspecified Context • Underspecified Intent",
-      "type": "process",
+      "id": "umwp",
+      "label": "UMWP\nUnanswerable math problems",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "AbstentionBench\n20 Datasets • More Than 35,000 Unanswerable Questions\nFull Suite + Fast Subset of at Most 100 per Dataset",
+      "label": "AbstentionBench\n20 datasets • >35,000 questions",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "labels",
-      "label": "Evaluation Records\nQuestion + Desired-Abstention Label\nGround-Truth Answer Where Available",
-      "type": "document",
-      "size": "xl"
-    },
-    {
       "id": "inference",
-      "label": "Target-Model Inference\nDefault Maximum 4,000 Tokens\nTemperature 0.8 unless Otherwise Specified",
+      "label": "Target-Model Response\nQuestion + generated answer",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "abstention_judge",
-      "label": "Llama 3.1 8B Instruct Abstention Judge\nQuestion + Response → Yes / No\n88% Accuracy on Manually Annotated Responses",
-      "type": "process",
+      "label": "Llama 3.1 8B Judge\nDid the model abstain?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "reference_gate",
+      "label": "Non-Abstaining Response\nIs a reference available?",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "correctness_judge",
-      "label": "Llama 3.1 8B Instruct Correctness Judge\nScore Non-Abstention Responses against References\nApplied Where Ground-Truth Answers Exist",
+      "label": "Correctness Judge\nCompare answer with reference",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "Evaluation Metrics\nPrimary: Abstention Recall\nAbstention Precision + F1 • Response Accuracy",
+      "label": "Compute Metrics\nRecall • precision\nF1 • accuracy",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "AbstentionBench Results\nAggregate by Dataset and Six Scenarios\nCompare Instruct, Reasoning, Scale, and Prompt Interventions",
+      "label": "Report Results\nAggregate by dataset\nand scenario",
       "type": "terminal",
       "size": "xl"
     }
@@ -88,66 +88,82 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "search",
-      "to": "review",
+      "from": "candidate_search",
+      "to": "general_datasets",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "review",
-      "to": "variants",
+      "from": "reasoning_sources",
+      "to": "abstain_variants",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "variants",
-      "to": "add_umwp",
+      "from": "general_datasets",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "add_umwp",
-      "to": "scenarios",
+      "from": "abstain_variants",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "scenarios",
+      "from": "umwp",
       "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "release",
-      "to": "labels",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "labels",
       "to": "inference",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-7",
       "from": "inference",
       "to": "abstention_judge",
       "type": "primary"
     },
     {
+      "id": "edge-8",
+      "from": "abstention_judge",
+      "to": "metrics",
+      "type": "optional",
+      "label": "Abstained"
+    },
+    {
       "id": "edge-9",
       "from": "abstention_judge",
-      "to": "correctness_judge",
-      "type": "primary"
+      "to": "reference_gate",
+      "type": "primary",
+      "label": "Did not abstain"
     },
     {
       "id": "edge-10",
+      "from": "reference_gate",
+      "to": "correctness_judge",
+      "type": "primary",
+      "label": "Reference available"
+    },
+    {
+      "id": "edge-11",
+      "from": "reference_gate",
+      "to": "metrics",
+      "type": "optional",
+      "label": "No reference"
+    },
+    {
+      "id": "edge-12",
       "from": "correctness_judge",
       "to": "metrics",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-13",
       "from": "metrics",
       "to": "report",
       "type": "primary"

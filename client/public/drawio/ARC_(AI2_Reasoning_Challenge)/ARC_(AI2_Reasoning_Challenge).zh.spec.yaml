@@ -4,172 +4,216 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AI2 推理挑战集构建与评测流程
-  description: 对齐论文的自然科学考试题收集、双简单求解器划分 Easy/Challenge、配套 ARC Corpus 构建与公开基线评测流程。
-  legend: Challenge 集由算法门禁定义：题目必须同时被 Waterloo 语料检索求解器和 PMI 词共现求解器答错。 可选的 1400 万句 ARC Corpus 用于研究支持，但不改变 Easy/Challenge 归属。
+  title: AI2 推理挑战集构建流程
+  description: 对齐论文的 ARC 问题集构建流程，以及独立构建的可选 ARC Corpus 流程。
+  legend: IR 与 PMI 并行运行；只有两者均答错的问题进入 Challenge。语料库是可选检索资源，不由问题集派生。
 nodes:
-  - id: source
+  - id: question_sources
     label: |-
-      收集公版科学考试题
-      面向 3–9 年级、由人类命制
-      自然题面 • 无图表 • 通常四选一
+      公版科学考试题
+      3–9 年级 • 无图表选择题
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
+      'y': 80
   - id: normalize
     label: |-
-      规范化 ARC 题集
-      统一题干、选项与正确答案
+      规范化问题
       保留 7,787 题
     type: process
     size: xl
     position:
-      x: 320
-      'y': 100
+      x: 280
+      'y': 80
   - id: ir
     label: |-
-      运行检索基线
-      搜索 Waterloo Web Corpus
-      依据检索文本为候选答案打分
+      Waterloo IR 求解器
+      检索文本并为答案打分
     type: process
     size: xl
     position:
-      x: 600
-      'y': 100
+      x: 520
+      'y': 0
   - id: pmi
     label: |-
-      运行 PMI 词共现基线
-      衡量问题词与答案词关联
-      预测得分最高选项
+      PMI 求解器
+      计算词共现分数
     type: process
     size: xl
     position:
-      x: 880
-      'y': 100
-  - id: gate
-    label: 两个简单求解器是否都答错？
+      x: 520
+      'y': 200
+  - id: challenge_gate
+    label: 两个求解器都答错？
     type: decision
     size: xl
     position:
-      x: 1160
+      x: 760
       'y': 100
   - id: challenge
     label: |-
-      ARC Challenge 集
-      两个求解器均失败 • 2,590 题
-      训练 / 开发 / 测试 = 1,119 / 299 / 1,172
+      ARC Challenge
+      2,590 题
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 310
+      x: 1000
+      'y': 0
   - id: easy
     label: |-
-      ARC Easy 集
-      至少一个求解器成功 • 5,197 题
-      训练 / 开发 / 测试 = 2,251 / 570 / 2,376
+      ARC Easy
+      5,197 题
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 310
-  - id: package
+      x: 1000
+      'y': 200
+  - id: question_release
     label: |-
-      发布 ARC 问题包
+      发布 ARC 问题集
       Easy + Challenge = 7,787
-      保留选择题标签与数据划分
     type: document
     size: xl
     position:
-      x: 1300
-      'y': 560
-  - id: corpus
+      x: 1240
+      'y': 100
+  - id: corpus_queries
     label: |-
-      构建可选 ARC Corpus
-      约 100 个手写查询覆盖 80 个科学主题
-      AristoMini 过滤 → 1400 万科学句子
+      设计语料检索
+      约 100 个模板，覆盖 80 个主题
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: web_documents
+    label: |-
+      检索网页文档
+      按主题检索网页
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 520
+  - id: corpus_filter
+    label: |-
+      文档去重
+      删除重复网页
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 520
+  - id: text_extract
+    label: |-
+      提取文本
+      保留文档文本内容
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 520
+  - id: sentence_split
+    label: |-
+      切分为句子
+      构造句子级语料单元
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 520
+  - id: aristomini
+    label: |-
+      AristoMini 语料
+      补充科学文本
     type: database
     size: xl
     position:
-      x: 1020
-      'y': 560
-  - id: baselines
+      x: 1000
+      'y': 720
+  - id: corpus_merge
     label: |-
-      在 Challenge 集评测公开基线
-      IR • PMI • BiDAF • DecompAttn • DGEM
-      与随机选择比较
+      加入 AristoMini 语料
+      合并句子来源
     type: process
     size: xl
     position:
-      x: 740
+      x: 1240
       'y': 560
-  - id: score
+  - id: corpus
     label: |-
-      计算选择题准确率
-      正确选项得 1 分
-      求解器并列选择时给分数比例
-    type: process
+      可选 ARC Corpus
+      1400 万科学句子
+    type: database
     size: xl
     position:
-      x: 460
+      x: 1480
       'y': 560
   - id: publish
     label: |-
       公开 ARC 资源
-      题集 + 1400 万句语料库
-      基线实现 + 排行榜
+      问题集 + 可选语料库
     type: terminal
     size: xl
     position:
-      x: 180
-      'y': 560
+      x: 1720
+      'y': 320
 edges:
-  - from: source
+  - from: question_sources
     to: normalize
     type: primary
   - from: normalize
     to: ir
     type: primary
-  - from: ir
+  - from: normalize
     to: pmi
     type: primary
-  - from: pmi
-    to: gate
+  - from: ir
+    to: challenge_gate
     type: primary
-  - from: gate
+  - from: pmi
+    to: challenge_gate
+    type: primary
+  - from: challenge_gate
     to: challenge
     type: primary
-  - from: gate
+    label: 两者均答错
+  - from: challenge_gate
     to: easy
     type: primary
+    label: 其他情况
   - from: challenge
-    to: package
+    to: question_release
     type: primary
-    waypoints:
-      - x: 1260
-        'y': 500
-      - x: 1400
-        'y': 500
   - from: easy
-    to: package
+    to: question_release
     type: primary
-    waypoints:
-      - x: 1540
-        'y': 520
-      - x: 1400
-        'y': 520
-  - from: package
+  - from: corpus_queries
+    to: web_documents
+    type: primary
+  - from: web_documents
+    to: corpus_filter
+    type: primary
+  - from: corpus_filter
+    to: text_extract
+    type: primary
+  - from: text_extract
+    to: sentence_split
+    type: primary
+  - from: sentence_split
+    to: corpus_merge
+    type: primary
+  - from: aristomini
+    to: corpus_merge
+    type: data
+  - from: corpus_merge
     to: corpus
     type: primary
-  - from: corpus
-    to: baselines
-    type: data
-  - from: baselines
-    to: score
-    type: primary
-  - from: score
+  - from: question_release
     to: publish
     type: primary
+  - from: corpus
+    to: publish
+    type: optional
 modules: []

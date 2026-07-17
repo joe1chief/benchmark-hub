@@ -8,79 +8,79 @@
   "layout": "horizontal",
   "counts": {
     "nodes": 12,
-    "edges": 11,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "search",
-      "label": "系统化搜索数据集\n拒答、拒绝与不确定性资源\n初筛 82 个候选数据集",
+      "id": "candidate_search",
+      "label": "搜索候选数据集\n复核 82 项资源",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "general_datasets",
+      "label": "通用领域套件\n保留 16 个数据集",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "review",
-      "label": "作者深入复核与筛选\n仅保留应该拒答的样本\n选出 16 个通用领域数据集",
+      "id": "reasoning_sources",
+      "label": "推理题来源\nGPQA • GSM8K • MMLU-Math",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "abstain_variants",
+      "label": "构造 3 个 -Abstain 变体\n删除作答必需上下文",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "variants",
-      "label": "构造 3 个推理变体\nGPQA-Diamond • GSM8K • MMLU-Math\n复制原题，再删除最终问题之前的上下文",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "add_umwp",
-      "label": "加入 UMWP\n现有不可回答数学文字题\n与 16 个筛选集及 3 个构造集汇合",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "scenarios",
-      "label": "归入 6 类拒答场景\n答案未知 • 错误前提 • 过时 • 主观\n上下文不足 • 意图不明",
-      "type": "process",
+      "id": "umwp",
+      "label": "UMWP\n不可回答数学文字题",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "AbstentionBench\n20 个数据集 • 超过 35,000 个不可回答问题\n全量套件 + 每数据集最多 100 题的快速子集",
+      "label": "AbstentionBench\n20 个数据集 • 超过 3.5 万题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "labels",
-      "label": "评测记录\n问题 + 是否应拒答标签\n在可用数据集中附参考答案",
-      "type": "document",
-      "size": "xl"
-    },
-    {
       "id": "inference",
-      "label": "被测模型推理\n默认最多生成 4,000 token\n除特别说明外温度为 0.8",
+      "label": "被测模型回答\n问题 + 生成答案",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "abstention_judge",
-      "label": "Llama 3.1 8B Instruct 拒答判分器\n问题 + 回答 → 是 / 否\n在人工标注回答上达到 88% 准确率",
-      "type": "process",
+      "label": "Llama 3.1 8B 判分器\n模型是否拒答？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "reference_gate",
+      "label": "未拒答回答\n是否有参考答案？",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "correctness_judge",
-      "label": "Llama 3.1 8B Instruct 正确性判分器\n对照参考答案判断非拒答回答\n仅用于具备金标准答案的数据集",
+      "label": "正确性判分器\n对照参考答案",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "评测指标\n核心：拒答召回率\n拒答精确率 + F1 • 回答准确率",
+      "label": "计算指标\n召回率 • 精确率 • F1 • 准确率",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "AbstentionBench 结果\n按数据集与六类场景汇总\n比较指令、推理、规模及提示干预效果",
+      "label": "报告结果\n按数据集与场景汇总",
       "type": "terminal",
       "size": "xl"
     }
@@ -88,66 +88,82 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "search",
-      "to": "review",
+      "from": "candidate_search",
+      "to": "general_datasets",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "review",
-      "to": "variants",
+      "from": "reasoning_sources",
+      "to": "abstain_variants",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "variants",
-      "to": "add_umwp",
+      "from": "general_datasets",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "add_umwp",
-      "to": "scenarios",
+      "from": "abstain_variants",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "scenarios",
+      "from": "umwp",
       "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "release",
-      "to": "labels",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "labels",
       "to": "inference",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-7",
       "from": "inference",
       "to": "abstention_judge",
       "type": "primary"
     },
     {
+      "id": "edge-8",
+      "from": "abstention_judge",
+      "to": "metrics",
+      "type": "optional",
+      "label": "已拒答"
+    },
+    {
       "id": "edge-9",
       "from": "abstention_judge",
-      "to": "correctness_judge",
-      "type": "primary"
+      "to": "reference_gate",
+      "type": "primary",
+      "label": "未拒答"
     },
     {
       "id": "edge-10",
+      "from": "reference_gate",
+      "to": "correctness_judge",
+      "type": "primary",
+      "label": "有参考答案"
+    },
+    {
+      "id": "edge-11",
+      "from": "reference_gate",
+      "to": "metrics",
+      "type": "optional",
+      "label": "无参考答案"
+    },
+    {
+      "id": "edge-12",
       "from": "correctness_judge",
       "to": "metrics",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-13",
       "from": "metrics",
       "to": "report",
       "type": "primary"

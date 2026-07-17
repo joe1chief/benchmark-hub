@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "title": "AdvBench Construction and GCG Evaluation Workflow",
+  "title": "AdvBench Construction and GCG Attack Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
@@ -8,97 +8,97 @@
   "layout": "horizontal",
   "counts": {
     "nodes": 15,
-    "edges": 16,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "threat",
-      "label": "Define the Guardrail-Bypass Threat Model\nTest Whether Aligned Models Can Be Induced\nto Produce Content They Normally Refuse",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "setting",
-      "label": "Construct Which AdvBench Setting?",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "strings",
-      "label": "Curate 500 Harmful Strings\nToxic, Threatening, Misleading, Discriminatory,\nCybercrime, Dangerous, or Illegal Content\n3-44 LLaMA Tokens • Mean 16",
+      "id": "seed_strings",
+      "label": "Harmful-String Seeds\n100 written examples",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "Curate 500 Harmful Behaviors\nFormulate the Same Broad Themes as Instructions\nSuccess Means an Attempt to Comply, Not Refusal",
+      "id": "seed_behaviors",
+      "label": "Harmful-Behavior Seeds\n50 written examples",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "objective",
-      "label": "Define the Optimization Target\nString: Exact Target Continuation\nBehavior: Affirmative Prefix Consistent with Compliance",
+      "id": "five_shot",
+      "label": "Build 5-Shot Prompts\nSample seed examples",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "suffix",
-      "label": "Initialize a 20-Token Adversarial Suffix\nAttach It to One or Multiple Prompts\nAggregate Losses across Prompts and Models",
+      "id": "generator",
+      "label": "Wizard-Vicuna-30B-Uncensored\nGenerate 10 items per round",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter_unknown",
+      "label": "Not Disclosed by Paper\nPost-generation filter chain\nAnnotation only • no edge",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "Release AdvBench\n500 strings + 500 behaviors",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "protocol",
+      "label": "Select Attack Protocol\nIndividual • universal\nTransfer",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate_loss",
+      "label": "Aggregate Target Loss\nAcross selected prompts\nand models",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "gcg",
-      "label": "Run Greedy Coordinate Gradient Search\nGradient Top-k 256 • Candidate Batch 512\nReplace One Token with the Lowest-Loss Candidate",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "protocol",
-      "label": "Select the Attack Protocol\nIndividual: First 100 Items, One Model\nUniversal: 25 Train + 100 Held-Out Behaviors\nTransfer: 25 Behaviors across 2 or 4 Source Models",
+      "label": "Run GCG Search\nTop-k 256 • batch 512",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "run",
-      "label": "Keep the Best Suffix after 500 Steps\nRun Victim Models with Their Default Chat Templates\nEvaluate White-Box and Black-Box Transfer",
+      "label": "Run Victim Models\nKeep best suffix after 500 steps",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "Which Success Rule Applies?",
+      "id": "success_gate",
+      "label": "Which success rule?",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "string_score",
-      "label": "Harmful-String Scoring\nExact Target String Appears = Success\nAlso Record Target Cross-Entropy Loss",
+      "label": "String Success\nExact target appears",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "behavior_score",
-      "label": "Harmful-Behavior Scoring\nJudge a Reasonable Attempt to Execute the Instruction\nHuman Review May Separate Compliance from Refusal",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "asr",
-      "label": "Compute Attack Success Rate\nIndividual ASR • Universal Train/Test ASR\nTransfer ASR on 388 Test Behaviors",
+      "label": "Behavior Success\nAttempted compliance",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "compare",
-      "label": "Compare Attack Methods and Transfer\nPEZ • GBDA • AutoPrompt • GCG\nSource Models → Open and Proprietary Targets",
+      "id": "asr",
+      "label": "Attack Success Rate\nIndividual • universal\nTransfer",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "Report Robustness and Universality\nHigher ASR Means More Successful Guardrail Bypass\nLower Target Loss Is Better for String Elicitation",
+      "label": "Report Robustness\nASR + target loss",
       "type": "terminal",
       "size": "xl"
     }
@@ -106,97 +106,87 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "threat",
-      "to": "setting",
+      "from": "seed_strings",
+      "to": "five_shot",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "setting",
-      "to": "strings",
+      "from": "seed_behaviors",
+      "to": "five_shot",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "setting",
-      "to": "behaviors",
+      "from": "five_shot",
+      "to": "generator",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "strings",
-      "to": "objective",
+      "from": "generator",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "behaviors",
-      "to": "objective",
+      "from": "release",
+      "to": "protocol",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "objective",
-      "to": "suffix",
+      "from": "protocol",
+      "to": "aggregate_loss",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "suffix",
+      "from": "aggregate_loss",
       "to": "gcg",
       "type": "primary"
     },
     {
       "id": "edge-8",
       "from": "gcg",
-      "to": "protocol",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "protocol",
       "to": "run",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-9",
       "from": "run",
-      "to": "judge",
+      "to": "success_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "success_gate",
+      "to": "string_score",
+      "type": "primary",
+      "label": "String"
     },
     {
       "id": "edge-11",
-      "from": "judge",
-      "to": "string_score",
-      "type": "primary"
+      "from": "success_gate",
+      "to": "behavior_score",
+      "type": "primary",
+      "label": "Behavior"
     },
     {
       "id": "edge-12",
-      "from": "judge",
-      "to": "behavior_score",
-      "type": "primary"
-    },
-    {
-      "id": "edge-13",
       "from": "string_score",
       "to": "asr",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-13",
       "from": "behavior_score",
       "to": "asr",
       "type": "primary"
     },
     {
-      "id": "edge-15",
+      "id": "edge-14",
       "from": "asr",
-      "to": "compare",
-      "type": "primary"
-    },
-    {
-      "id": "edge-16",
-      "from": "compare",
       "to": "report",
       "type": "primary"
     }

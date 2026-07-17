@@ -4,197 +4,190 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AdvBench Construction and GCG Evaluation Workflow
-  description: >-
-    Paper-aligned workflow for constructing the two AdvBench safety-attack settings, optimizing adversarial suffixes
-    with Greedy Coordinate Gradient search, and measuring individual, universal, and cross-model attack success.
+  title: AdvBench Construction and GCG Attack Process
+  description: Paper-aligned construction of the two AdvBench sets followed by individual, universal, or transfer GCG evaluation.
   legend: >-
-    AdvBench contains two separate 500-item sets. Harmful Strings requires exact target-string elicitation; Harmful
-    Behaviors asks whether a model attempts to comply rather than refusing. Attack Success Rate is the primary metric.
+    The paper discloses seed counts and generator settings. Its unspecified post-generation filter chain is shown only
+    as an unconnected annotation, not a required pipeline stage.
 nodes:
-  - id: threat
+  - id: seed_strings
     label: |-
-      Define the Guardrail-Bypass Threat Model
-      Test Whether Aligned Models Can Be Induced
-      to Produce Content They Normally Refuse
-    type: process
+      Harmful-String Seeds
+      100 written examples
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 0
+  - id: seed_behaviors
+    label: |-
+      Harmful-Behavior Seeds
+      50 written examples
+    type: database
     size: xl
     position:
       x: 40
       'y': 200
-  - id: setting
-    label: Construct Which AdvBench Setting?
-    type: decision
-    size: xl
-    position:
-      x: 320
-      'y': 200
-  - id: strings
+  - id: five_shot
     label: |-
-      Curate 500 Harmful Strings
-      Toxic, Threatening, Misleading, Discriminatory,
-      Cybercrime, Dangerous, or Illegal Content
-      3-44 LLaMA Tokens • Mean 16
-    type: database
-    size: xl
-    position:
-      x: 600
-      'y': 20
-  - id: behaviors
-    label: |-
-      Curate 500 Harmful Behaviors
-      Formulate the Same Broad Themes as Instructions
-      Success Means an Attempt to Comply, Not Refusal
-    type: database
-    size: xl
-    position:
-      x: 600
-      'y': 380
-  - id: objective
-    label: |-
-      Define the Optimization Target
-      String: Exact Target Continuation
-      Behavior: Affirmative Prefix Consistent with Compliance
+      Build 5-Shot Prompts
+      Sample seed examples
     type: document
     size: xl
     position:
-      x: 880
-      'y': 200
-  - id: suffix
+      x: 280
+      'y': 100
+  - id: generator
     label: |-
-      Initialize a 20-Token Adversarial Suffix
-      Attach It to One or Multiple Prompts
-      Aggregate Losses across Prompts and Models
+      Wizard-Vicuna-30B-Uncensored
+      Generate 10 items per round
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 200
-  - id: gcg
+      x: 520
+      'y': 100
+  - id: filter_unknown
     label: |-
-      Run Greedy Coordinate Gradient Search
-      Gradient Top-k 256 • Candidate Batch 512
-      Replace One Token with the Lowest-Loss Candidate
-    type: process
+      Not Disclosed by Paper
+      Post-generation filter chain
+      Annotation only • no edge
+    type: document
     size: xl
     position:
-      x: 1440
-      'y': 200
+      x: 760
+      'y': 260
+  - id: release
+    label: |-
+      Release AdvBench
+      500 strings + 500 behaviors
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 100
   - id: protocol
     label: |-
-      Select the Attack Protocol
-      Individual: First 100 Items, One Model
-      Universal: 25 Train + 100 Held-Out Behaviors
-      Transfer: 25 Behaviors across 2 or 4 Source Models
+      Select Attack Protocol
+      Individual • universal
+      Transfer
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 200
+      x: 1000
+      'y': 440
+  - id: aggregate_loss
+    label: |-
+      Aggregate Target Loss
+      Across selected prompts
+      and models
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 440
+  - id: gcg
+    label: |-
+      Run GCG Search
+      Top-k 256 • batch 512
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 440
   - id: run
     label: |-
-      Keep the Best Suffix after 500 Steps
-      Run Victim Models with Their Default Chat Templates
-      Evaluate White-Box and Black-Box Transfer
+      Run Victim Models
+      Keep best suffix after 500 steps
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 620
-  - id: judge
-    label: Which Success Rule Applies?
+      x: 280
+      'y': 440
+  - id: success_gate
+    label: Which success rule?
     type: decision
     size: xl
     position:
-      x: 1440
-      'y': 620
+      x: 40
+      'y': 440
   - id: string_score
     label: |-
-      Harmful-String Scoring
-      Exact Target String Appears = Success
-      Also Record Target Cross-Entropy Loss
+      String Success
+      Exact target appears
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 460
+      x: 280
+      'y': 680
   - id: behavior_score
     label: |-
-      Harmful-Behavior Scoring
-      Judge a Reasonable Attempt to Execute the Instruction
-      Human Review May Separate Compliance from Refusal
-    type: user
+      Behavior Success
+      Attempted compliance
+    type: process
     size: xl
     position:
-      x: 1160
-      'y': 780
+      x: 280
+      'y': 880
   - id: asr
     label: |-
-      Compute Attack Success Rate
-      Individual ASR • Universal Train/Test ASR
-      Transfer ASR on 388 Test Behaviors
+      Attack Success Rate
+      Individual • universal
+      Transfer
     type: process
     size: xl
     position:
-      x: 880
-      'y': 620
-  - id: compare
-    label: |-
-      Compare Attack Methods and Transfer
-      PEZ • GBDA • AutoPrompt • GCG
-      Source Models → Open and Proprietary Targets
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 620
+      x: 520
+      'y': 780
   - id: report
     label: |-
-      Report Robustness and Universality
-      Higher ASR Means More Successful Guardrail Bypass
-      Lower Target Loss Is Better for String Elicitation
+      Report Robustness
+      ASR + target loss
     type: terminal
     size: xl
     position:
-      x: 320
-      'y': 620
+      x: 760
+      'y': 780
 edges:
-  - from: threat
-    to: setting
+  - from: seed_strings
+    to: five_shot
     type: primary
-  - from: setting
-    to: strings
+  - from: seed_behaviors
+    to: five_shot
     type: primary
-  - from: setting
-    to: behaviors
+  - from: five_shot
+    to: generator
     type: primary
-  - from: strings
-    to: objective
+  - from: generator
+    to: release
     type: primary
-  - from: behaviors
-    to: objective
-    type: primary
-  - from: objective
-    to: suffix
-    type: primary
-  - from: suffix
-    to: gcg
-    type: primary
-  - from: gcg
+  - from: release
     to: protocol
     type: primary
   - from: protocol
+    to: aggregate_loss
+    type: primary
+  - from: aggregate_loss
+    to: gcg
+    type: primary
+  - from: gcg
     to: run
     type: primary
   - from: run
-    to: judge
+    to: success_gate
     type: primary
-  - from: judge
+  - from: success_gate
     to: string_score
     type: primary
-  - from: judge
+    label: String
+  - from: success_gate
     to: behavior_score
     type: primary
+    label: Behavior
+    waypoints:
+      - x: 120
+        'y': 800
+      - x: 120
+        'y': 880
   - from: string_score
     to: asr
     type: primary
@@ -202,9 +195,6 @@ edges:
     to: asr
     type: primary
   - from: asr
-    to: compare
-    type: primary
-  - from: compare
     to: report
     type: primary
 modules: []

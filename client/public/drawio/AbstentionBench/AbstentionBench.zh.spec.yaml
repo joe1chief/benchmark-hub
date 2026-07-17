@@ -5,157 +5,162 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AbstentionBench 构建与评测流程
-  description: 对齐论文的系统化数据集筛选、信息缺失推理变体构造、六类场景分组、经人工验证的 LLM 判分与拒答 / 正确性指标流程。
-  legend: 上排构建 20 个数据集组成的套件；下排从右到左展示推理、两阶段判分和指标汇总。
+  description: 对齐论文的 20 数据集套件构建，以及拒答与回答正确性的条件判分流程。
+  legend: 16 个筛选数据集、3 个构造的 -Abstain 变体和 UMWP 并行汇入。仅当回答未拒答且存在参考答案时才判正确性。
 nodes:
-  - id: search
+  - id: candidate_search
     label: |-
-      系统化搜索数据集
-      拒答、拒绝与不确定性资源
-      初筛 82 个候选数据集
+      搜索候选数据集
+      复核 82 项资源
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: general_datasets
+    label: |-
+      通用领域套件
+      保留 16 个数据集
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 40
+  - id: reasoning_sources
+    label: |-
+      推理题来源
+      GPQA • GSM8K • MMLU-Math
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
-  - id: review
+      'y': 240
+  - id: abstain_variants
     label: |-
-      作者深入复核与筛选
-      仅保留应该拒答的样本
-      选出 16 个通用领域数据集
+      构造 3 个 -Abstain 变体
+      删除作答必需上下文
     type: process
     size: xl
     position:
-      x: 320
-      'y': 100
-  - id: variants
+      x: 280
+      'y': 240
+  - id: umwp
     label: |-
-      构造 3 个推理变体
-      GPQA-Diamond • GSM8K • MMLU-Math
-      复制原题，再删除最终问题之前的上下文
-    type: process
+      UMWP
+      不可回答数学文字题
+    type: database
     size: xl
     position:
-      x: 600
-      'y': 100
-  - id: add_umwp
-    label: |-
-      加入 UMWP
-      现有不可回答数学文字题
-      与 16 个筛选集及 3 个构造集汇合
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 100
-  - id: scenarios
-    label: |-
-      归入 6 类拒答场景
-      答案未知 • 错误前提 • 过时 • 主观
-      上下文不足 • 意图不明
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 100
+      x: 280
+      'y': 440
   - id: release
     label: |-
       AbstentionBench
-      20 个数据集 • 超过 35,000 个不可回答问题
-      全量套件 + 每数据集最多 100 题的快速子集
+      20 个数据集 • 超过 3.5 万题
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 100
-  - id: labels
-    label: |-
-      评测记录
-      问题 + 是否应拒答标签
-      在可用数据集中附参考答案
-    type: document
-    size: xl
-    position:
-      x: 1440
-      'y': 440
+      x: 520
+      'y': 240
   - id: inference
     label: |-
-      被测模型推理
-      默认最多生成 4,000 token
-      除特别说明外温度为 0.8
+      被测模型回答
+      问题 + 生成答案
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 440
+      x: 760
+      'y': 240
   - id: abstention_judge
     label: |-
-      Llama 3.1 8B Instruct 拒答判分器
-      问题 + 回答 → 是 / 否
-      在人工标注回答上达到 88% 准确率
-    type: process
+      Llama 3.1 8B 判分器
+      模型是否拒答？
+    type: decision
     size: xl
     position:
-      x: 880
-      'y': 440
+      x: 1000
+      'y': 240
+  - id: reference_gate
+    label: |-
+      未拒答回答
+      是否有参考答案？
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 240
   - id: correctness_judge
     label: |-
-      Llama 3.1 8B Instruct 正确性判分器
-      对照参考答案判断非拒答回答
-      仅用于具备金标准答案的数据集
+      正确性判分器
+      对照参考答案
     type: process
     size: xl
     position:
-      x: 600
-      'y': 440
+      x: 1480
+      'y': 80
   - id: metrics
     label: |-
-      评测指标
-      核心：拒答召回率
-      拒答精确率 + F1 • 回答准确率
+      计算指标
+      召回率 • 精确率 • F1 • 准确率
     type: process
     size: xl
     position:
-      x: 320
-      'y': 440
+      x: 1720
+      'y': 240
   - id: report
     label: |-
-      AbstentionBench 结果
-      按数据集与六类场景汇总
-      比较指令、推理、规模及提示干预效果
+      报告结果
+      按数据集与场景汇总
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 440
+      x: 1960
+      'y': 240
 edges:
-  - from: search
-    to: review
+  - from: candidate_search
+    to: general_datasets
     type: primary
-  - from: review
-    to: variants
+  - from: reasoning_sources
+    to: abstain_variants
     type: primary
-  - from: variants
-    to: add_umwp
+  - from: general_datasets
+    to: release
     type: primary
-  - from: add_umwp
-    to: scenarios
+  - from: abstain_variants
+    to: release
     type: primary
-  - from: scenarios
+  - from: umwp
     to: release
     type: primary
   - from: release
-    to: labels
-    type: primary
-  - from: labels
     to: inference
     type: primary
   - from: inference
     to: abstention_judge
     type: primary
   - from: abstention_judge
+    to: metrics
+    type: optional
+    label: 已拒答
+    waypoints:
+      - x: 1120
+        'y': 560
+      - x: 1720
+        'y': 560
+      - x: 1720
+        'y': 320
+  - from: abstention_judge
+    to: reference_gate
+    type: primary
+    label: 未拒答
+  - from: reference_gate
     to: correctness_judge
     type: primary
+    label: 有参考答案
+  - from: reference_gate
+    to: metrics
+    type: optional
+    label: 无参考答案
   - from: correctness_judge
     to: metrics
     type: primary

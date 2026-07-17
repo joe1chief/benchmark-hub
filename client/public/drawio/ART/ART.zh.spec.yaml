@@ -10,9 +10,8 @@ meta:
 nodes:
   - id: failures
     label: |-
-      分析医疗 Agent 失败
-      对照 MedAgentBench 输出与标准任务
-      检索 • 聚合 • 条件逻辑
+      分析 Agent 失败
+      检索 • 聚合 • 条件
     type: process
     size: xl
     position:
@@ -20,18 +19,16 @@ nodes:
       'y': 260
   - id: ehr
     label: |-
-      挖掘真实 EHR 格式观测
-      695 名患者的 50,000 条记录
-      保留化验值、时间戳与人口学信息
+      挖掘真实 EHR
+      5 万记录 • 695 患者
+      保留数值与时间
     type: database
     size: xl
     position:
       x: 320
       'y': 260
   - id: mode
-    label: |-
-      场景识别 Agent
-      该病例针对哪类失败模式？
+    label: 选择失败模式
     type: decision
     size: xl
     position:
@@ -40,8 +37,8 @@ nodes:
   - id: retrieval
     label: |-
       检索场景
-      11 种化验代码 • 稀疏或密集读数
-      最新值与 23-25 小时边界案例
+      11 种化验代码
+      23–25 小时边界
     type: process
     size: xl
     position:
@@ -49,8 +46,8 @@ nodes:
       'y': 40
   - id: aggregation
     label: |-
-      聚合场景
-      24 小时内至少 3 个有效测量
+      24 小时聚合
+      至少 3 次测量
       血糖 • 血钾 • 血钠
     type: process
     size: xl
@@ -59,9 +56,9 @@ nodes:
       'y': 260
   - id: conditional
     label: |-
-      阈值与条件场景
-      七档数值范围 + 人口学阈值
-      检索 → 比较 → 条件执行
+      条件场景
+      7 档数值
+      人口学规则
     type: process
     size: xl
     position:
@@ -69,9 +66,9 @@ nodes:
       'y': 480
   - id: generate
     label: |-
-      任务生成 Agent
-      GPT-4o-mini / Claude 3.5 改写措辞与上下文
-      真实临床数值保持不变
+      生成任务
+      真实数值
+      仅合成措辞
     type: process
     size: xl
     position:
@@ -79,73 +76,68 @@ nodes:
       'y': 260
   - id: dataset
     label: |-
-      打包平衡的 ART 基准
-      每类 200 题，共 600 题
-      指令 • 上下文 • 标准答案 • 匿名 MRN
+      平衡 ART 集
+      每类 200 • 共 600
     type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 260
+  - id: automatic_audit
+    label: |-
+      源 EHR 验证
+      纳入前验证
+      数值 • 时间 • 规则
+    type: process
     size: xl
     position:
       x: 1440
       'y': 260
-  - id: automatic_audit
+  - id: clinical_audit
     label: |-
-      自动回查源 EHR
-      复核数值、时间窗口与阈值
-      剔除任何与来源不一致的任务
+      临床 HITL 审核
+      代表性子集
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 260
+  - id: environment
+    label: |-
+      实时 FHIR R5
+      无状态 • 温度 0
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 680
+  - id: agents
+    label: |-
+      评测两个 Agent
+      GPT-4o-mini • Claude 3.5
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: score
+    label: |-
+      精确匹配成功率
+      对照 EHR 标准答案
     type: process
     size: xl
     position:
       x: 1440
       'y': 680
-  - id: clinical_audit
-    label: |-
-      人在回路临床审核
-      专家检查代表性子集
-      事实相关性 • 逻辑 • 阈值一致性
-    type: user
-    size: xl
-    position:
-      x: 1160
-      'y': 680
-  - id: environment
-    label: |-
-      运行实时临床环境
-      MedAgentBench + FHIR R5 API 调用
-      无状态 • 温度 0 • 无对话历史
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 680
-  - id: agents
-    label: |-
-      评测两个医疗 Agent
-      GPT-4o-mini 与 Claude 3.5 Sonnet
-      执行检索、聚合与条件动作
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 680
-  - id: score
-    label: |-
-      精确匹配成功率
-      最终结果对比 EHR 派生标准答案
-      本研究不逐步判定推理过程
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 680
   - id: report
     label: |-
-      报告各失败模式差距
-      检索 100% / 100%
-      聚合 28% / 64% • 条件 32% / 38%
+      报告模式差距
+      检索 100/100 • 聚合 28/64
+      条件 32/38
     type: terminal
     size: xl
     position:
-      x: 40
+      x: 1160
       'y': 680
 edges:
   - from: failures
@@ -173,15 +165,15 @@ edges:
     to: generate
     type: primary
   - from: generate
-    to: dataset
-    type: primary
-  - from: dataset
     to: automatic_audit
     type: primary
   - from: automatic_audit
     to: clinical_audit
     type: primary
   - from: clinical_audit
+    to: dataset
+    type: primary
+  - from: dataset
     to: environment
     type: primary
   - from: environment

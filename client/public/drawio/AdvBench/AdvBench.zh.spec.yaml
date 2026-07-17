@@ -4,193 +4,185 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AdvBench 构建与 GCG 评测流程
-  description: 按论文呈现构建 AdvBench 两类安全攻击集合、用贪心坐标梯度搜索优化对抗后缀，并衡量单题、通用与跨模型 攻击成功率的完整流程。
-  legend: AdvBench 包含两个相互独立的 500 项集合。有害字符串要求精确诱导目标文本；有害行为判断模型是否尝试遵从 而非拒答。主要指标为攻击成功率。
+  title: AdvBench 构建与 GCG 攻击流程
+  description: 对齐论文的两类 AdvBench 集合构建流程，以及单题、通用或迁移 GCG 评测流程。
+  legend: 论文披露了种子数量与生成器设置。未说明的生成后过滤链只作为无连线注释呈现，不是必经流程阶段。
 nodes:
-  - id: threat
+  - id: seed_strings
     label: |-
-      定义护栏绕过威胁模型
-      测试对齐模型能否被诱导生成
-      其通常会拒绝的内容
-    type: process
+      有害字符串种子
+      人工编写 100 条
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 0
+  - id: seed_behaviors
+    label: |-
+      有害行为种子
+      人工编写 50 条
+    type: database
     size: xl
     position:
       x: 40
       'y': 200
-  - id: setting
-    label: 构建哪类 AdvBench 集合？
-    type: decision
-    size: xl
-    position:
-      x: 320
-      'y': 200
-  - id: strings
+  - id: five_shot
     label: |-
-      整理 500 个有害字符串
-      有毒、威胁、误导、歧视、网络犯罪、
-      危险或非法内容
-      3-44 个 LLaMA token • 均值 16
-    type: database
-    size: xl
-    position:
-      x: 600
-      'y': 20
-  - id: behaviors
-    label: |-
-      整理 500 个有害行为
-      将相同广义主题写成指令
-      成功指尝试遵从，而非拒答
-    type: database
-    size: xl
-    position:
-      x: 600
-      'y': 380
-  - id: objective
-    label: |-
-      定义优化目标
-      字符串：精确目标续写
-      行为：与遵从一致的肯定式前缀
+      构造 5 个示例提示
+      从种子中抽取示例
     type: document
     size: xl
     position:
-      x: 880
-      'y': 200
-  - id: suffix
+      x: 280
+      'y': 100
+  - id: generator
     label: |-
-      初始化 20-token 对抗后缀
-      附加到一个或多个提示
-      汇总多提示与多模型损失
+      Wizard-Vicuna-30B-Uncensored
+      每轮生成 10 条
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 200
-  - id: gcg
+      x: 520
+      'y': 100
+  - id: filter_unknown
     label: |-
-      运行贪心坐标梯度搜索
-      梯度 Top-k 256 • 候选批量 512
-      用最低损失候选替换一个 token
-    type: process
+      论文未披露
+      生成后过滤链
+      仅作注释 • 无连线
+    type: document
     size: xl
     position:
-      x: 1440
-      'y': 200
+      x: 760
+      'y': 260
+  - id: release
+    label: |-
+      发布 AdvBench
+      500 字符串 + 500 行为
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 100
   - id: protocol
     label: |-
       选择攻击协议
-      单题：前 100 项、单一模型
-      通用：25 个训练 + 100 个留出行为
-      迁移：25 个行为、2 或 4 个源模型
+      单题 • 通用 • 迁移
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 200
+      x: 1000
+      'y': 440
+  - id: aggregate_loss
+    label: |-
+      汇总目标损失
+      跨所选提示与模型
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 440
+  - id: gcg
+    label: |-
+      运行 GCG 搜索
+      Top-k 256 • 批量 512
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 440
   - id: run
     label: |-
-      保留 500 步后的最佳后缀
-      按各模型默认对话模板运行
-      评测白盒与黑盒迁移
+      运行被测模型
+      500 步后保留最佳后缀
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 620
-  - id: judge
-    label: 应采用哪条成功判定？
+      x: 280
+      'y': 440
+  - id: success_gate
+    label: 采用哪条成功判定？
     type: decision
     size: xl
     position:
-      x: 1440
-      'y': 620
+      x: 40
+      'y': 440
   - id: string_score
     label: |-
-      有害字符串评分
-      出现精确目标字符串即成功
-      同时记录目标交叉熵损失
+      字符串成功
+      精确目标文本出现
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 460
+      x: 280
+      'y': 680
   - id: behavior_score
     label: |-
-      有害行为评分
-      判断是否合理尝试执行指令
-      必要时人工区分遵从与拒答
-    type: user
+      行为成功
+      尝试遵从指令
+    type: process
     size: xl
     position:
-      x: 1160
-      'y': 780
+      x: 280
+      'y': 880
   - id: asr
     label: |-
-      计算攻击成功率
-      单题 ASR • 通用训练/测试 ASR
-      388 个测试行为上的迁移 ASR
+      攻击成功率
+      单题 • 通用 • 迁移
     type: process
     size: xl
     position:
-      x: 880
-      'y': 620
-  - id: compare
-    label: |-
-      比较攻击方法与迁移
-      PEZ • GBDA • AutoPrompt • GCG
-      源模型 → 开源及闭源目标模型
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 620
+      x: 520
+      'y': 780
   - id: report
     label: |-
-      报告鲁棒性与通用性
-      ASR 越高表示护栏绕过越成功
-      字符串诱导中目标损失越低越好
+      报告鲁棒性
+      ASR + 目标损失
     type: terminal
     size: xl
     position:
-      x: 320
-      'y': 620
+      x: 760
+      'y': 780
 edges:
-  - from: threat
-    to: setting
+  - from: seed_strings
+    to: five_shot
     type: primary
-  - from: setting
-    to: strings
+  - from: seed_behaviors
+    to: five_shot
     type: primary
-  - from: setting
-    to: behaviors
+  - from: five_shot
+    to: generator
     type: primary
-  - from: strings
-    to: objective
+  - from: generator
+    to: release
     type: primary
-  - from: behaviors
-    to: objective
-    type: primary
-  - from: objective
-    to: suffix
-    type: primary
-  - from: suffix
-    to: gcg
-    type: primary
-  - from: gcg
+  - from: release
     to: protocol
     type: primary
   - from: protocol
+    to: aggregate_loss
+    type: primary
+  - from: aggregate_loss
+    to: gcg
+    type: primary
+  - from: gcg
     to: run
     type: primary
   - from: run
-    to: judge
+    to: success_gate
     type: primary
-  - from: judge
+  - from: success_gate
     to: string_score
     type: primary
-  - from: judge
+    label: 字符串
+  - from: success_gate
     to: behavior_score
     type: primary
+    label: 行为
+    waypoints:
+      - x: 120
+        'y': 800
+      - x: 120
+        'y': 880
   - from: string_score
     to: asr
     type: primary
@@ -198,9 +190,6 @@ edges:
     to: asr
     type: primary
   - from: asr
-    to: compare
-    type: primary
-  - from: compare
     to: report
     type: primary
 modules: []

@@ -7,74 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 11,
+    "nodes": 14,
+    "edges": 15,
     "modules": 0
   },
   "nodes": [
     {
       "id": "videos",
-      "label": "从 ActivityNet v1.3 采样视频\n约 20,000 个长视频中选取 5,800 个\n训练 / 验证 / 测试：3,200 / 1,800 / 800 个视频",
+      "label": "类别均衡视频采样\n5,800 个 ActivityNet v1.3 视频\n训练/验证均衡 • 测试随机",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "author",
-      "label": "人工众包编写问答\n每个视频恰好 10 对问题与答案\n初始问题和答案均以中文编写",
+      "label": "众包编写问答\n每视频 10 对中文问答",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "types",
-      "label": "控制问题类型覆盖\n1 动作 + 1 空间 + 1 时间 + 7 自由问题\n自由题答案：是非、数量、颜色、物体、位置、其他",
+      "label": "控制问题覆盖\n1 动作 + 1 空间 + 1 时间 + 7 自由",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "length_gate",
+      "label": "限制问答长度\n问题 ≤20 词 • 答案 ≤5 词",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "yes_no_balance",
+      "label": "均衡是非答案\n比例接近 1:1",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "quality",
-      "label": "标注质量门控\n问题编写者与答案标注者相互独立\n不可答题返工；随机抽题由多人作答并多数投票",
+      "label": "独立答案复核\n不可回答问题返工",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "random_audit",
+      "label": "复核抽样部分\n多人标注 • 多数投票\n规模与人数未披露",
+      "type": "user",
+      "size": "xl"
+    },
+    {
       "id": "translate",
-      "label": "中译英质量检查\n用 CIDEr 比较谷歌、百度、搜狗与有道译文\n低一致性样本人工检查；其余采用百度结果",
+      "label": "中译英质检\n四引擎 + CIDEr 检查",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "ActivityNet-QA 数据集\n5,800 个视频上的 58,000 对中英对齐问答\n训练 / 验证 / 测试：32,000 / 18,000 / 8,000 对",
+      "label": "ActivityNet-QA\n58,000 对双语问答",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "prediction",
-      "label": "VideoQA 模型预测\n输入：完整视频 + 自由形式问题\n输出：简短开放式答案",
+      "label": "VideoQA 预测\n视频 + 问题 → 答案",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "exact",
-      "label": "精确匹配准确率\n仅预测与金标准答案完全相等时记 1 分\n官方评测脚本使用这一比较",
+      "label": "精确匹配准确率\n预测等于参考答案",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "wups",
-      "label": "WUPS 语义相似度\n基于 WordNet 比较答案词集合\n论文报告阈值 0.9 与 0.0 下的 WUPS",
+      "label": "WUPS 相似度\n阈值 0.9 与 0.0",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "aggregate",
-      "label": "按问题类型汇总\n动作 • 空间关系 • 时间关系 • 自由问题\n自由问题再按六类答案细分",
+      "label": "按题型汇总\n动作 • 空间 • 时间 • 自由",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "ActivityNet-QA 结果\n总体及分题型准确率\nWUPS 用于补充严格相等对答案歧义的处理",
+      "label": "报告结果\n总体与分题型分数",
       "type": "terminal",
       "size": "xl"
     }
@@ -95,53 +113,78 @@
     {
       "id": "edge-3",
       "from": "types",
-      "to": "quality",
+      "to": "length_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "length_gate",
+      "to": "yes_no_balance",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "yes_no_balance",
+      "to": "quality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "quality",
       "to": "translate",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-7",
+      "from": "quality",
+      "to": "random_audit",
+      "type": "optional",
+      "label": "抽样部分"
+    },
+    {
+      "id": "edge-8",
+      "from": "random_audit",
+      "to": "translate",
+      "type": "optional"
+    },
+    {
+      "id": "edge-9",
       "from": "translate",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-10",
       "from": "release",
       "to": "prediction",
       "type": "primary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-11",
       "from": "prediction",
       "to": "exact",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-12",
       "from": "prediction",
       "to": "wups",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-13",
       "from": "exact",
       "to": "aggregate",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-14",
       "from": "wups",
       "to": "aggregate",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-15",
       "from": "aggregate",
       "to": "report",
       "type": "primary"
