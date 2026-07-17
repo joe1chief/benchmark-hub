@@ -1,136 +1,274 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongBench v2 Build Process
+  title: LongBench v2 Build and Evaluation Process
   description: >-
-    Paper-aligned five-step LongBench v2 collection pipeline: select one of six categories and 20 subtasks; upload
-    personally read English documents; extract text and reject contexts below 8,192 words or overlapping prior
-    submissions; draft a four-option question, answer, and evidence; reject questions solved by all three review LLMs;
-    apply an expert checklist, answer check, and three-minute difficulty gate; revise at most five times; then tag
-    difficulty and retain 503 multiple-choice questions for accuracy evaluation.
-  legend: Solid arrows show accepted data; dotted branches show rejection or revision paths.
+    Paper- and repository-aligned LongBench v2 workflow: define six categories and 20 subtasks; collect realistic long
+    contexts through 97 English-proficient annotators and task-specific sources; normalize files and enforce length and
+    overlap gates; author four-choice questions with answers and evidence; cycle through three 128k-context models and
+    24 independent expert reviewers; label difficulty, audit quality, and release 503 English test MCQs; then run the
+    paper's core zero-shot or two-call chain-of-thought evaluation and its separate retrieval/no-context analyses.
+  legend: >-
+    Solid arrows show accepted construction and core evaluation. Dashed arrows show auxiliary analyses. Dotted arrows
+    show rejection or revision branches. The paper's main text and appendix describe the rewrite cap differently, so the
+    diagram records a neutral rewrite-limit gate without inventing an off-by-one rule.
 nodes:
   - id: taxonomy
-    label: 6 Cat / 20 Sub
+    label: |-
+      Task Taxonomy
+      6 Categories • 20 Subtasks
     type: process
-    size: large
+    size: xl
     position:
       x: 40
-      'y': 220
-  - id: upload
-    label: Upload Files
-    type: document
-    size: large
+      'y': 40
+  - id: sources
+    label: |-
+      Context Sources
+      97 Annotators + Task-specific Data
+      Personal Files • Prior Datasets
+    type: database
+    size: xl
     position:
-      x: 240
-      'y': 220
-  - id: doc_gate
-    label: Long + Unique?
+      x: 280
+      'y': 40
+  - id: normalize
+    label: |-
+      Prepare Contexts
+      Files → Plain Text
+      PyMuPDF and Other Tools
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 40
+  - id: length_gate
+    label: |-
+      Context Below
+      8,192 Words?
     type: decision
-    size: large
+    size: xl
     position:
-      x: 440
-      'y': 220
-  - id: reject_doc
-    label: Reject Context
-    type: document
-    size: large
+      x: 760
+      'y': 40
+  - id: overlap_gate
+    label: |-
+      High Overlap with
+      Earlier Annotations?
+    type: decision
+    size: xl
     position:
-      x: 440
-      'y': 420
+      x: 1000
+      'y': 40
   - id: annotate
-    label: MCQ + Evidence
+    label: |-
+      Author English MCQ
+      Question + A–D + Answer
+      Supporting Evidence
     type: process
-    size: large
+    size: xl
     position:
-      x: 640
-      'y': 220
+      x: 1240
+      'y': 40
   - id: auto_review
-    label: 3-LLM Review
+    label: |-
+      3 × 128k LLM Review
+      GPT-4o-mini • GLM-4-Air
+      GLM-4-Flash • Middle Truncate
     type: process
-    size: large
+    size: xl
     position:
-      x: 840
-      'y': 220
-  - id: auto_gate
-    label: All 3 Correct?
-    type: decision
-    size: large
-    position:
-      x: 1040
-      'y': 220
-  - id: expert
-    label: Expert Review
-    type: process
-    size: large
-    position:
-      x: 1240
-      'y': 220
-  - id: manual_gate
-    label: Valid + >3m?
-    type: decision
-    size: large
-    position:
-      x: 1440
-      'y': 220
-  - id: revise
-    label: Revise ≤5
-    type: process
-    size: large
-    position:
-      x: 1240
-      'y': 440
-  - id: discard
-    label: Drop after 5
-    type: document
-    size: large
-    position:
-      x: 1440
-      'y': 600
-  - id: difficulty
-    label: Easy / Hard
-    type: process
-    size: large
-    position:
-      x: 1640
-      'y': 220
-  - id: final_set
-    label: 503 MCQs
-    type: document
-    size: large
-    position:
-      x: 1840
-      'y': 220
-  - id: evaluate
-    label: Model Eval
-    type: process
-    size: large
-    position:
-      x: 2040
-      'y': 220
-  - id: score
-    label: Accuracy
+      x: 1480
+      'y': 40
+  - id: reject_short
+    label: |-
+      Reject
+      Context Too Short
     type: terminal
     size: large
     position:
-      x: 2240
+      x: 760
       'y': 220
+  - id: reject_overlap
+    label: |-
+      Reject
+      Excessive Overlap
+    type: terminal
+    size: large
+    position:
+      x: 1000
+      'y': 220
+  - id: auto_gate
+    label: |-
+      All 3 Models
+      Answer Correctly?
+    type: decision
+    size: xl
+    position:
+      x: 1480
+      'y': 360
+  - id: expert_review
+    label: |-
+      24 Independent Experts
+      Checklist → Timed Solve (15 min)
+      Reveal Answer / Evidence → Verify
+      Human Baseline = 53.7%
+    type: user
+    size: xl
+    position:
+      x: 1240
+      'y': 360
+  - id: manual_gate
+    label: |-
+      Revision Needed?
+      Invalid / Wrong Answer
+      or Correct within 3 min
+    type: decision
+    size: xl
+    position:
+      x: 1000
+      'y': 360
+  - id: difficulty
+    label: |-
+      Assign Difficulty
+      Hard: ≥2 LLMs Miss
+      AND Expert Needs >10 min
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 360
+  - id: verify
+    label: |-
+      Author Final Audit
+      70 Sample: 68 Correct
+      67 Google-proof • Privacy/IP Check
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 360
+  - id: final_set
+    label: |-
+      503 English Test MCQs
+      Easy 192 • Hard 311
+      Short 180 • Medium 215 • Long 108
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 360
+  - id: eval_input
+    label: |-
+      Context + Question + A–D
+      Middle-truncate only if
+      Sequence Exceeds Model Window
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: feedback
+    label: |-
+      Reviewer Feedback → Rewrite
+      Illegal • Too Easy
+      Wrong Answer
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 600
+  - id: revision_limit
+    label: |-
+      Rewrite Limit
+      Reached?
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 600
+  - id: discard
+    label: |-
+      Discard
+      Persistent Failure
+    type: terminal
+    size: large
+    position:
+      x: 1480
+      'y': 600
+  - id: core_eval
+    label: |-
+      Core Evaluation
+      Zero-shot: 128 Tokens
+      2-call CoT: 1024 → 128 • T=0.1
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 600
+  - id: aux_eval
+    label: |-
+      Auxiliary Analyses
+      RAG: 512-token Chunks + Top-N
+      No Context: Memorization Check
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 800
+  - id: parser
+    label: |-
+      Official A–D Regex Parser
+      Exact Choice Match
+      Invalid Output = Wrong
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 700
+  - id: report
+    label: |-
+      Model Accuracy Reports
+      Overall • Easy/Hard
+      Short/Medium/Long
+    type: terminal
+    size: xl
+    position:
+      x: 840
+      'y': 700
 edges:
   - from: taxonomy
-    to: upload
+    to: sources
     type: primary
-  - from: upload
-    to: doc_gate
+  - from: sources
+    to: normalize
     type: primary
-  - from: doc_gate
-    to: reject_doc
+  - from: normalize
+    to: length_gate
+    type: primary
+  - from: length_gate
+    to: reject_short
     type: optional
-  - from: doc_gate
+    label: 'Yes'
+    labelPosition: center
+  - from: length_gate
+    to: overlap_gate
+    type: primary
+    label: 'No'
+    labelPosition: center
+  - from: overlap_gate
+    to: reject_overlap
+    type: optional
+    label: 'Yes'
+    labelPosition: center
+  - from: overlap_gate
     to: annotate
     type: primary
+    label: 'No'
+    labelPosition: center
   - from: annotate
     to: auto_review
     type: primary
@@ -138,48 +276,78 @@ edges:
     to: auto_gate
     type: primary
   - from: auto_gate
-    to: expert
-    type: primary
-  - from: auto_gate
-    to: revise
+    to: feedback
     type: optional
+    label: 'Yes: revise'
+    labelPosition: center
     waypoints:
-      - x: 1120
-        'y': 380
-      - x: 1200
-        'y': 380
-  - from: expert
+      - x: 1580
+        'y': 520
+      - x: 1100
+        'y': 520
+  - from: auto_gate
+    to: expert_review
+    type: primary
+    label: 'No'
+    labelPosition: center
+  - from: expert_review
     to: manual_gate
     type: primary
   - from: manual_gate
+    to: feedback
+    type: optional
+    label: 'Yes: revise'
+    labelPosition: center
+  - from: manual_gate
     to: difficulty
     type: primary
-  - from: manual_gate
-    to: revise
+    label: 'No: accept'
+    labelPosition: center
+  - from: feedback
+    to: revision_limit
     type: optional
-    waypoints:
-      - x: 1520
-        'y': 380
-      - x: 1400
-        'y': 380
-  - from: revise
-    to: auto_review
-    type: optional
-    waypoints:
-      - x: 1040
-        'y': 540
-      - x: 920
-        'y': 540
-  - from: revise
+  - from: revision_limit
     to: discard
     type: optional
+    label: 'Yes'
+    labelPosition: center
+  - from: revision_limit
+    to: auto_review
+    type: optional
+    label: 'No: resubmit'
+    labelPosition: center
+    waypoints:
+      - x: 1400
+        'y': 760
+      - x: 1740
+        'y': 760
+      - x: 1740
+        'y': 90
   - from: difficulty
+    to: verify
+    type: primary
+  - from: verify
     to: final_set
     type: primary
   - from: final_set
-    to: evaluate
+    to: eval_input
     type: primary
-  - from: evaluate
-    to: score
+  - from: eval_input
+    to: core_eval
+    type: primary
+  - from: eval_input
+    to: aux_eval
+    type: data
+    waypoints:
+      - x: 140
+        'y': 850
+  - from: core_eval
+    to: parser
+    type: primary
+  - from: aux_eval
+    to: parser
+    type: data
+  - from: parser
+    to: report
     type: primary
 modules: []

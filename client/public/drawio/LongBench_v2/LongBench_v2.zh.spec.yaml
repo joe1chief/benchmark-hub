@@ -1,133 +1,268 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongBench v2 构建流程
+  title: LongBench v2 构建与评测流程
   description: >-
-    依据论文重绘的 LongBench v2 五步采集流程：从六大类、20 个子任务中选择任务，上传本人读过的英文文档， 转为文本并拒绝少于 8,192 词或与既有提交高度重合的上下文，标注四选一问题、答案和证据；若三个审核
-    模型全部答对则退回修订，再由专家检查题目规范、答案正确性和三分钟难度门；最多修订五次，通过后标记 难度并形成 503 道选择题，以准确率评测。
-  legend: 实线表示通过的数据；点线分支表示拒绝或修订路径。
+    对齐论文与官方仓库的 LongBench v2 流程：定义六大类和 20 个子任务；由 97 名英语熟练标注者结合任务专用来源收集真实长上下文； 规范化文件并执行长度和重合门；编写含答案与证据的四选一问题；经三个 128k
+    上下文模型与 24 名独立专家循环复核；标注难度、 完成作者终审并发布 503 道英文测试题；随后运行论文的核心零样本或两段式思维链评测，以及独立的检索增强和无上下文分析。
+  legend: 实线表示通过后的构建主线与核心评测，虚线表示辅助分析，点线表示拒绝或修订分支。论文正文与附录对重写上限的表述不同， 因此图中使用中性的“是否达到重写上限”门，不臆造一次数边界。
 nodes:
   - id: taxonomy
-    label: 六大类20子任务
+    label: |-
+      任务体系
+      6 大类 • 20 个子任务
     type: process
-    size: large
+    size: xl
     position:
       x: 40
-      'y': 220
-  - id: upload
-    label: 上传本人文档
-    type: document
-    size: large
+      'y': 40
+  - id: sources
+    label: |-
+      上下文来源
+      97 名标注者 + 任务专用数据
+      个人文件 • 既有数据集
+    type: database
+    size: xl
     position:
-      x: 240
-      'y': 220
-  - id: doc_gate
-    label: 足够长且不重复？
+      x: 280
+      'y': 40
+  - id: normalize
+    label: |-
+      准备上下文
+      文件 → 纯文本
+      PyMuPDF 等工具
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 40
+  - id: length_gate
+    label: |-
+      上下文是否少于
+      8,192 词？
     type: decision
-    size: large
+    size: xl
     position:
-      x: 440
-      'y': 220
-  - id: reject_doc
-    label: 拒绝上下文
-    type: document
-    size: large
+      x: 760
+      'y': 40
+  - id: overlap_gate
+    label: |-
+      是否与既有标注
+      高度重合？
+    type: decision
+    size: xl
     position:
-      x: 440
-      'y': 420
+      x: 1000
+      'y': 40
   - id: annotate
-    label: 四选一题与证据
+    label: |-
+      编写英文选择题
+      问题 + A–D + 答案
+      支持证据
     type: process
-    size: large
+    size: xl
     position:
-      x: 640
-      'y': 220
+      x: 1240
+      'y': 40
   - id: auto_review
-    label: 三模型审核
+    label: |-
+      3 个 128k 模型复核
+      GPT-4o-mini • GLM-4-Air
+      GLM-4-Flash • 必要时中部截断
     type: process
-    size: large
+    size: xl
     position:
-      x: 840
-      'y': 220
-  - id: auto_gate
-    label: 三者全答对？
-    type: decision
-    size: large
-    position:
-      x: 1040
-      'y': 220
-  - id: expert
-    label: 专家人工审核
-    type: process
-    size: large
-    position:
-      x: 1240
-      'y': 220
-  - id: manual_gate
-    label: 合格且超过3分？
-    type: decision
-    size: large
-    position:
-      x: 1440
-      'y': 220
-  - id: revise
-    label: 最多修改五次
-    type: process
-    size: large
-    position:
-      x: 1240
-      'y': 440
-  - id: discard
-    label: 五次后仍失败则丢弃
-    type: document
-    size: large
-    position:
-      x: 1440
-      'y': 600
-  - id: difficulty
-    label: 简单或困难
-    type: process
-    size: large
-    position:
-      x: 1640
-      'y': 220
-  - id: final_set
-    label: 503道选择题
-    type: document
-    size: large
-    position:
-      x: 1840
-      'y': 220
-  - id: evaluate
-    label: 模型评测
-    type: process
-    size: large
-    position:
-      x: 2040
-      'y': 220
-  - id: score
-    label: 准确率
+      x: 1480
+      'y': 40
+  - id: reject_short
+    label: |-
+      拒绝
+      上下文过短
     type: terminal
     size: large
     position:
-      x: 2240
+      x: 760
       'y': 220
+  - id: reject_overlap
+    label: |-
+      拒绝
+      重合度过高
+    type: terminal
+    size: large
+    position:
+      x: 1000
+      'y': 220
+  - id: auto_gate
+    label: |-
+      三个模型是否
+      全部答对？
+    type: decision
+    size: xl
+    position:
+      x: 1480
+      'y': 360
+  - id: expert_review
+    label: |-
+      24 名独立专家
+      清单检查 → 限时作答（15 分钟）
+      揭示答案/证据 → 核验
+      人类基线 = 53.7%
+    type: user
+    size: xl
+    position:
+      x: 1240
+      'y': 360
+  - id: manual_gate
+    label: |-
+      是否需要修订？
+      无效 / 答案错误
+      或 3 分钟内答对
+    type: decision
+    size: xl
+    position:
+      x: 1000
+      'y': 360
+  - id: difficulty
+    label: |-
+      标注难度
+      困难：至少 2 个模型答错
+      且专家用时 >10 分钟
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 360
+  - id: verify
+    label: |-
+      作者最终审计
+      抽查 70 题：68 题正确
+      67 题不可搜索 • 隐私/版权检查
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 360
+  - id: final_set
+    label: |-
+      503 道英文测试选择题
+      简单 192 • 困难 311
+      短 180 • 中 215 • 长 108
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 360
+  - id: eval_input
+    label: |-
+      上下文 + 问题 + A–D
+      仅在超出模型窗口时
+      截断序列中部
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: feedback
+    label: |-
+      复核反馈 → 重写
+      不合规 • 过易
+      答案错误
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 600
+  - id: revision_limit
+    label: |-
+      是否达到
+      重写上限？
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 600
+  - id: discard
+    label: |-
+      丢弃
+      持续未通过
+    type: terminal
+    size: large
+    position:
+      x: 1480
+      'y': 600
+  - id: core_eval
+    label: |-
+      核心评测
+      零样本：128 Tokens
+      两段式 CoT：1024 → 128 • T=0.1
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 600
+  - id: aux_eval
+    label: |-
+      辅助分析
+      RAG：512-token 分块 + Top-N
+      无上下文：记忆检查
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 800
+  - id: parser
+    label: |-
+      官方 A–D 正则解析
+      选项精确匹配
+      无效输出计错
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 700
+  - id: report
+    label: |-
+      模型准确率报告
+      总体 • 简单/困难
+      短/中/长
+    type: terminal
+    size: xl
+    position:
+      x: 840
+      'y': 700
 edges:
   - from: taxonomy
-    to: upload
+    to: sources
     type: primary
-  - from: upload
-    to: doc_gate
+  - from: sources
+    to: normalize
     type: primary
-  - from: doc_gate
-    to: reject_doc
+  - from: normalize
+    to: length_gate
+    type: primary
+  - from: length_gate
+    to: reject_short
     type: optional
-  - from: doc_gate
+    label: 是
+    labelPosition: center
+  - from: length_gate
+    to: overlap_gate
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: overlap_gate
+    to: reject_overlap
+    type: optional
+    label: 是
+    labelPosition: center
+  - from: overlap_gate
     to: annotate
     type: primary
+    label: 否
+    labelPosition: center
   - from: annotate
     to: auto_review
     type: primary
@@ -135,48 +270,78 @@ edges:
     to: auto_gate
     type: primary
   - from: auto_gate
-    to: expert
-    type: primary
-  - from: auto_gate
-    to: revise
+    to: feedback
     type: optional
+    label: 是：修订
+    labelPosition: center
     waypoints:
-      - x: 1120
-        'y': 380
-      - x: 1200
-        'y': 380
-  - from: expert
+      - x: 1580
+        'y': 520
+      - x: 1100
+        'y': 520
+  - from: auto_gate
+    to: expert_review
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: expert_review
     to: manual_gate
     type: primary
   - from: manual_gate
+    to: feedback
+    type: optional
+    label: 是：修订
+    labelPosition: center
+  - from: manual_gate
     to: difficulty
     type: primary
-  - from: manual_gate
-    to: revise
+    label: 否：通过
+    labelPosition: center
+  - from: feedback
+    to: revision_limit
     type: optional
-    waypoints:
-      - x: 1520
-        'y': 380
-      - x: 1400
-        'y': 380
-  - from: revise
-    to: auto_review
-    type: optional
-    waypoints:
-      - x: 1040
-        'y': 540
-      - x: 920
-        'y': 540
-  - from: revise
+  - from: revision_limit
     to: discard
     type: optional
+    label: 是
+    labelPosition: center
+  - from: revision_limit
+    to: auto_review
+    type: optional
+    label: 否：重新提交
+    labelPosition: center
+    waypoints:
+      - x: 1400
+        'y': 760
+      - x: 1740
+        'y': 760
+      - x: 1740
+        'y': 90
   - from: difficulty
+    to: verify
+    type: primary
+  - from: verify
     to: final_set
     type: primary
   - from: final_set
-    to: evaluate
+    to: eval_input
     type: primary
-  - from: evaluate
-    to: score
+  - from: eval_input
+    to: core_eval
+    type: primary
+  - from: eval_input
+    to: aux_eval
+    type: data
+    waypoints:
+      - x: 140
+        'y': 850
+  - from: core_eval
+    to: parser
+    type: primary
+  - from: aux_eval
+    to: parser
+    type: data
+  - from: parser
+    to: report
     type: primary
 modules: []
