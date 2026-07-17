@@ -5,121 +5,149 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CiteBench 人工标注基准构建流程
-  description: 与论文对齐的全量 LFQA 数据链和人工标注 metric 子集构建流程。
-  legend: 实线表示数据构建；分支节点区分需要引用判断的 Retrieval 陈述与标为 N/A 的其他三类上下文。
+  description: 展示完整 LFQA 数据池、论文披露的响应预处理，以及以完整响应为单位、在上下文中逐句判断的三次盲审，最终形成 200/1,000 指标划分。
+  legend: 每次盲审都接收完整响应/样本，并在全部上下文可见时逐句处理。仅“检索”语句接受引用编辑与评分；“用户知识”“响应知识”“参数知识”三类标为 N/A。
 nodes:
   - id: sources
-    label: 4 个 LFQA 集
+    label: 四个 LFQA 数据集
     type: document
-    size: large
+    size: medium
     position:
-      x: 64
-      'y': 64
+      x: 32
+      'y': 32
   - id: retrieval
-    label: 每题 10 段
+    label: 每个查询 10 段
     type: process
-    size: large
+    size: medium
     position:
-      x: 272
-      'y': 64
+      x: 224
+      'y': 32
   - id: queries
-    label: 3,948 条查询
+    label: 3,948 个查询
     type: document
-    size: large
+    size: medium
     position:
-      x: 480
-      'y': 64
+      x: 416
+      'y': 32
   - id: full_split
-    label: Full Dev 948 / Full Test 3,000
+    label: 全量开发集 948 / 测试集 3,000
     type: document
     size: large
     position:
-      x: 688
-      'y': 64
+      x: 608
+      'y': 32
   - id: sample
-    label: 仅从 Dev 抽 300
+    label: 从开发集抽样 300 个
     type: process
-    size: large
+    size: medium
     position:
-      x: 688
-      'y': 208
+      x: 832
+      'y': 32
   - id: models
-    label: 4 个生成模型
+    label: 四个响应模型
     type: process
-    size: large
+    size: medium
     position:
-      x: 480
-      'y': 208
+      x: 1024
+      'y': 32
   - id: responses
-    label: 1,200 份回答
+    label: 1,200 条响应
     type: document
+    size: medium
+    position:
+      x: 1216
+      'y': 32
+  - id: remove_thinking
+    label: 移除 thinking 标签
+    type: process
+    size: medium
+    position:
+      x: 1408
+      'y': 32
+  - id: sentence_split
+    label: NLTK 3.8.1 分句
+    type: process
     size: large
     position:
-      x: 272
-      'y': 208
+      x: 1600
+      'y': 32
+  - id: citation_indices
+    label: 正则提取引用索引
+    type: process
+    size: medium
+    position:
+      x: 1824
+      'y': 32
+  - id: valid_indices
+    label: 仅保留有效段落索引
+    type: process
+    size: large
+    position:
+      x: 2016
+      'y': 32
+  - id: blind_passes
+    label: 每个完整响应 3 次盲审
+    type: user
+    size: large
+    position:
+      x: 2240
+      'y': 32
   - id: statements
-    label: 逐回答拆分陈述
+    label: 逐句判断 · 保留完整上下文
     type: process
     size: large
     position:
-      x: 64
+      x: 2240
       'y': 208
-  - id: blind
-    label: 每条陈述 3×盲注
-    type: process
-    size: large
-    position:
-      x: 64
-      'y': 384
   - id: context_vote
     label: 上下文多数票
     type: decision
-    size: large
+    size: medium
     position:
-      x: 272
-      'y': 384
+      x: 2016
+      'y': 208
   - id: retrieval_annotations
-    label: Retrieval：删增 + 3份评级
+    label: 检索 · 编辑 + 3 次评分
     type: process
     size: large
     position:
-      x: 480
-      'y': 320
+      x: 1792
+      'y': 208
   - id: rating_mean
-    label: 三份评级取平均
+    label: 三次评分取均值
     type: process
-    size: large
+    size: medium
     position:
-      x: 688
-      'y': 320
+      x: 1568
+      'y': 208
   - id: response_pool
-    label: 适用陈述均值汇总
+    label: 适用语句取均值
     type: process
     size: large
     position:
-      x: 896
-      'y': 320
+      x: 1344
+      'y': 208
   - id: na
-    label: 其余三类：N/A
+    label: 其余三类上下文 · N/A
     type: process
     size: large
     position:
-      x: 480
-      'y': 512
+      x: 1792
+      'y': 384
   - id: response_rejoin
-    label: 回聚合 1,200 份回答
+    label: 回并 1,200 条响应
     type: document
     size: large
     position:
-      x: 896
-      'y': 512
+      x: 1120
+      'y': 384
   - id: metric_split
-    label: Metric Dev 200 / Metric Test 1,000
+    label: 指标开发集 200 / 测试集 1,000
     type: terminal
     size: large
     position:
-      x: 1104
-      'y': 512
+      x: 896
+      'y': 384
 edges:
   - from: sources
     to: retrieval
@@ -140,20 +168,34 @@ edges:
     to: responses
     type: primary
   - from: responses
+    to: remove_thinking
+    type: primary
+  - from: remove_thinking
+    to: sentence_split
+    type: primary
+  - from: sentence_split
+    to: citation_indices
+    type: primary
+  - from: citation_indices
+    to: valid_indices
+    type: primary
+  - from: valid_indices
+    to: blind_passes
+    type: primary
+  - from: blind_passes
     to: statements
     type: primary
   - from: statements
-    to: blind
-    type: primary
-  - from: blind
     to: context_vote
     type: primary
   - from: context_vote
     to: retrieval_annotations
     type: primary
+    label: 检索
   - from: context_vote
     to: na
-    type: primary
+    type: optional
+    label: 用户知识 / 响应知识 / 参数知识
   - from: retrieval_annotations
     to: rating_mean
     type: primary

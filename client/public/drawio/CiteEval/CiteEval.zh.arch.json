@@ -7,62 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 16,
-    "edges": 16,
+    "nodes": 20,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
       "id": "sources",
-      "label": "4 个 LFQA 集",
+      "label": "四个 LFQA 数据集",
       "type": "document",
-      "size": "large"
+      "size": "medium"
     },
     {
       "id": "retrieval",
-      "label": "每题 10 段",
+      "label": "每个查询 10 段",
       "type": "process",
-      "size": "large"
+      "size": "medium"
     },
     {
       "id": "queries",
-      "label": "3,948 条查询",
+      "label": "3,948 个查询",
       "type": "document",
-      "size": "large"
+      "size": "medium"
     },
     {
       "id": "full_split",
-      "label": "Full Dev 948 / Full Test 3,000",
+      "label": "全量开发集 948 / 测试集 3,000",
       "type": "document",
       "size": "large"
     },
     {
       "id": "sample",
-      "label": "仅从 Dev 抽 300",
+      "label": "从开发集抽样 300 个",
       "type": "process",
-      "size": "large"
+      "size": "medium"
     },
     {
       "id": "models",
-      "label": "4 个生成模型",
+      "label": "四个响应模型",
+      "type": "process",
+      "size": "medium"
+    },
+    {
+      "id": "responses",
+      "label": "1,200 条响应",
+      "type": "document",
+      "size": "medium"
+    },
+    {
+      "id": "remove_thinking",
+      "label": "移除 thinking 标签",
+      "type": "process",
+      "size": "medium"
+    },
+    {
+      "id": "sentence_split",
+      "label": "NLTK 3.8.1 分句",
       "type": "process",
       "size": "large"
     },
     {
-      "id": "responses",
-      "label": "1,200 份回答",
-      "type": "document",
+      "id": "citation_indices",
+      "label": "正则提取引用索引",
+      "type": "process",
+      "size": "medium"
+    },
+    {
+      "id": "valid_indices",
+      "label": "仅保留有效段落索引",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "blind_passes",
+      "label": "每个完整响应 3 次盲审",
+      "type": "user",
       "size": "large"
     },
     {
       "id": "statements",
-      "label": "逐回答拆分陈述",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "blind",
-      "label": "每条陈述 3×盲注",
+      "label": "逐句判断 · 保留完整上下文",
       "type": "process",
       "size": "large"
     },
@@ -70,41 +94,41 @@
       "id": "context_vote",
       "label": "上下文多数票",
       "type": "decision",
-      "size": "large"
+      "size": "medium"
     },
     {
       "id": "retrieval_annotations",
-      "label": "Retrieval：删增 + 3份评级",
+      "label": "检索 · 编辑 + 3 次评分",
       "type": "process",
       "size": "large"
     },
     {
       "id": "rating_mean",
-      "label": "三份评级取平均",
+      "label": "三次评分取均值",
       "type": "process",
-      "size": "large"
+      "size": "medium"
     },
     {
       "id": "response_pool",
-      "label": "适用陈述均值汇总",
+      "label": "适用语句取均值",
       "type": "process",
       "size": "large"
     },
     {
       "id": "na",
-      "label": "其余三类：N/A",
+      "label": "其余三类上下文 · N/A",
       "type": "process",
       "size": "large"
     },
     {
       "id": "response_rejoin",
-      "label": "回聚合 1,200 份回答",
+      "label": "回并 1,200 条响应",
       "type": "document",
       "size": "large"
     },
     {
       "id": "metric_split",
-      "label": "Metric Dev 200 / Metric Test 1,000",
+      "label": "指标开发集 200 / 测试集 1,000",
       "type": "terminal",
       "size": "large"
     }
@@ -149,59 +173,85 @@
     {
       "id": "edge-7",
       "from": "responses",
-      "to": "statements",
+      "to": "remove_thinking",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "statements",
-      "to": "blind",
+      "from": "remove_thinking",
+      "to": "sentence_split",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "blind",
-      "to": "context_vote",
+      "from": "sentence_split",
+      "to": "citation_indices",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "context_vote",
-      "to": "retrieval_annotations",
+      "from": "citation_indices",
+      "to": "valid_indices",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "context_vote",
-      "to": "na",
+      "from": "valid_indices",
+      "to": "blind_passes",
       "type": "primary"
     },
     {
       "id": "edge-12",
+      "from": "blind_passes",
+      "to": "statements",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "statements",
+      "to": "context_vote",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "context_vote",
+      "to": "retrieval_annotations",
+      "type": "primary",
+      "label": "检索"
+    },
+    {
+      "id": "edge-15",
+      "from": "context_vote",
+      "to": "na",
+      "type": "optional",
+      "label": "用户知识 / 响应知识 / 参数知识"
+    },
+    {
+      "id": "edge-16",
       "from": "retrieval_annotations",
       "to": "rating_mean",
       "type": "primary"
     },
     {
-      "id": "edge-13",
+      "id": "edge-17",
       "from": "rating_mean",
       "to": "response_pool",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-18",
       "from": "response_pool",
       "to": "response_rejoin",
       "type": "primary"
     },
     {
-      "id": "edge-15",
+      "id": "edge-19",
       "from": "na",
       "to": "response_rejoin",
       "type": "primary"
     },
     {
-      "id": "edge-16",
+      "id": "edge-20",
       "from": "response_rejoin",
       "to": "metric_split",
       "type": "primary"
