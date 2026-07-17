@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 
 import {
+  closeSync,
+  constants,
   existsSync,
+  lstatSync,
+  openSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   writeFileSync,
 } from 'node:fs';
 import {
@@ -471,7 +476,9 @@ export function auditBuildProcessAssets(root) {
   const sortedManifest = sortManifestRecords(manifest);
   const manifestIdCounts = countIds(manifest);
   const manifestIds = new Set(manifest.map((entry) => entry.id));
-  const manifestById = new Map(manifest.map((entry) => [entry.id, entry]));
+  const manifestById = new Map(
+    sortedManifest.map((entry) => [entry.id, entry]),
+  );
   const aggregate = existsSync(aggregatePath) ? readJson(aggregatePath) : [];
   const aggregateIdCounts = countIds(aggregate);
   const aggregateIds = new Set(aggregate.map((entry) => entry.id));
@@ -920,7 +927,7 @@ export function auditBuildProcessAssets(root) {
 
   const pngIssues = [];
   const pngCompleteIds = new Set();
-  for (const id of [...aggregateIds].sort(compareText)) {
+  for (const id of [...allIds].sort(compareText)) {
     let complete = true;
     for (const language of ['en', 'zh']) {
       const assetPath = `drawio/${id}/${id}.${language}.png`;
@@ -991,6 +998,15 @@ export function auditBuildProcessAssets(root) {
   return summary;
 }
 
+function isPathContained(base, target) {
+  const relativePath = relative(base, target);
+  return relativePath === '' || (
+    relativePath !== '..'
+    && !relativePath.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)
+    && !isAbsolute(relativePath)
+  );
+}
+
 function resolveQueueReportPath(root, requestedPath, extension) {
   if (
     typeof requestedPath !== 'string'
@@ -1001,12 +1017,7 @@ function resolveQueueReportPath(root, requestedPath, extension) {
   }
   const reportDir = resolve(root, 'docs/reports');
   const target = resolve(root, requestedPath);
-  const relativePath = relative(reportDir, target);
-  if (
-    relativePath === '..'
-    || relativePath.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)
-    || isAbsolute(relativePath)
-  ) {
+  if (!isPathContained(reportDir, target)) {
     throw new Error('Queue reports may only be written under docs/reports.');
   }
   if (extname(target) !== extension) {
@@ -1015,7 +1026,36 @@ function resolveQueueReportPath(root, requestedPath, extension) {
   if (!existsSync(dirname(target))) {
     throw new Error('Queue report parent directory must already exist.');
   }
+  const realRoot = realpathSync(root);
+  const realReportDir = realpathSync(reportDir);
+  const realParent = realpathSync(dirname(target));
+  if (
+    !isPathContained(realRoot, realReportDir)
+    || !isPathContained(realReportDir, realParent)
+  ) {
+    throw new Error('Queue report path resolves outside the repository reports directory.');
+  }
+  try {
+    if (lstatSync(target).isSymbolicLink()) {
+      throw new Error('Queue report target must not be a symbolic link.');
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
   return target;
+}
+
+function writeQueueReport(path, contents) {
+  const flags = constants.O_WRONLY
+    | constants.O_CREAT
+    | constants.O_TRUNC
+    | (constants.O_NOFOLLOW || 0);
+  const descriptor = openSync(path, flags, 0o644);
+  try {
+    writeFileSync(descriptor, contents, 'utf8');
+  } finally {
+    closeSync(descriptor);
+  }
 }
 
 function markdownCell(value) {
@@ -1057,13 +1097,20 @@ function formatQueueMarkdown(summary) {
 }
 
 function writeQueueReports(args, summary) {
-  if (args.queueJson) {
-    const path = resolveQueueReportPath(args.root, args.queueJson, '.json');
-    writeFileSync(path, `${JSON.stringify(summary.unresolved_queue, null, 2)}\n`);
+  const queueJsonPath = args.queueJson
+    ? resolveQueueReportPath(args.root, args.queueJson, '.json')
+    : null;
+  const queueMarkdownPath = args.queueMarkdown
+    ? resolveQueueReportPath(args.root, args.queueMarkdown, '.md')
+    : null;
+  if (queueJsonPath) {
+    writeQueueReport(
+      queueJsonPath,
+      `${JSON.stringify(summary.unresolved_queue, null, 2)}\n`,
+    );
   }
-  if (args.queueMarkdown) {
-    const path = resolveQueueReportPath(args.root, args.queueMarkdown, '.md');
-    writeFileSync(path, formatQueueMarkdown(summary));
+  if (queueMarkdownPath) {
+    writeQueueReport(queueMarkdownPath, formatQueueMarkdown(summary));
   }
 }
 

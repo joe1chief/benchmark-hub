@@ -5,6 +5,7 @@ import {
   mkdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -1862,6 +1863,86 @@ test('marks duplicate records as an ID-set queue gate failure', () => {
   );
 });
 
+test('keeps queue source and review state stable for shuffled conflicting duplicate manifests', () => {
+  const root = createCompleteFixture();
+  const path = join(
+    root,
+    'client/public/benchmarks_build_process_manifest.json',
+  );
+  const manifest = JSON.parse(readFileSync(path, 'utf8'));
+  manifest.push({
+    ...manifest[0],
+    source_type: 'official_repository',
+    source_url: 'https://github.com/example/AlphaBench',
+    source_locator: 'README: construction protocol',
+    strict_validation: { en: 'pending', zh: 'pending' },
+    review_status: 'pending_review',
+    paper_alignment_review: {
+      status: 'pending',
+      source_url: 'https://github.com/example/AlphaBench',
+      source_locator: 'README: construction protocol',
+    },
+  });
+  writeJson(path, manifest);
+
+  const firstResult = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(firstResult.status, 1);
+  const first = JSON.parse(firstResult.stdout);
+
+  writeJson(path, manifest.reverse());
+  const secondResult = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(secondResult.status, 1);
+  const second = JSON.parse(secondResult.stdout);
+
+  assert.deepEqual(first.unresolved_queue, second.unresolved_queue);
+});
+
+test('reports true PNG state for a physical-assets-only benchmark with both PNGs', () => {
+  const root = createCompleteFixture();
+  const id = 'PhysicalOnlyWithPng';
+  const dir = join(root, `client/public/drawio/${id}`);
+  mkdirSync(dir, { recursive: true });
+  for (const suffix of [
+    'en.svg',
+    'zh.svg',
+    'en.drawio',
+    'zh.drawio',
+    'en.spec.yaml',
+    'zh.spec.yaml',
+    'en.arch.json',
+    'zh.arch.json',
+    'en.png',
+    'zh.png',
+  ]) {
+    writeFileSync(join(dir, `${id}.${suffix}`), 'fixture\n');
+  }
+
+  const result = spawnSync(
+    process.execPath,
+    [auditScript.pathname, '--root', root, '--json', '--allow-incomplete'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout);
+  const queueEntry = summary.unresolved_queue.find((entry) => entry.id === id);
+  assert.equal(queueEntry.gates.id_set, false);
+  assert.equal(queueEntry.gates.png, true);
+  assert.deepEqual(queueEntry.asset_state, {
+    physical_directory_present: true,
+    core_complete: true,
+    png_complete: true,
+  });
+});
+
 test('produces the same sorted issue arrays and unresolved queue after manifest shuffling', () => {
   const root = createCompleteFixture();
   addCompleteBenchmark(root, 'BetaBench', { paperStatus: 'pending' });
@@ -1989,4 +2070,50 @@ test('writes queue reports from audit output and rejects report path traversal',
   );
   assert.notEqual(traversalResult.status, 0);
   assert.equal(existsSync(join(root, '../escaped-queue.json')), false);
+});
+
+test('rejects a queue report target symlink without overwriting its external file', () => {
+  const root = createCompleteFixture();
+  const reportDir = join(root, 'docs/reports');
+  const outside = mkdtempSync(join(tmpdir(), 'build-process-report-outside-'));
+  const outsideFile = join(outside, 'queue.json');
+  mkdirSync(reportDir, { recursive: true });
+  writeFileSync(outsideFile, 'keep me\n');
+  symlinkSync(outsideFile, join(reportDir, 'linked.json'));
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      auditScript.pathname,
+      '--root', root,
+      '--allow-incomplete',
+      '--queue-json', 'docs/reports/linked.json',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.equal(readFileSync(outsideFile, 'utf8'), 'keep me\n');
+});
+
+test('rejects a queue report parent symlink without writing outside the repository', () => {
+  const root = createCompleteFixture();
+  const reportDir = join(root, 'docs/reports');
+  const outside = mkdtempSync(join(tmpdir(), 'build-process-report-outside-'));
+  mkdirSync(reportDir, { recursive: true });
+  symlinkSync(outside, join(reportDir, 'linked-parent'));
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      auditScript.pathname,
+      '--root', root,
+      '--allow-incomplete',
+      '--queue-json', 'docs/reports/linked-parent/queue.json',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.equal(existsSync(join(outside, 'queue.json')), false);
 });
