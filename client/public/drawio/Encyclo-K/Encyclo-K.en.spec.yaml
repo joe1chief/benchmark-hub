@@ -5,77 +5,126 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Encyclo-K Build Process
-  description: Paper-aligned Encyclo-K flow from textbook knowledge statements to dynamic multi-statement evaluation.
+  description: >-
+    Paper-aligned statement-level curation, false-statement synthesis, dynamic question assembly, and exact accuracy
+    evaluation.
   legend: >-
-    Solid arrows show textbook sourcing, correct-statement extraction, incorrect-statement generation, dynamic sampling,
-    option assembly, answer extraction, and accuracy reporting.
+    Solid arrows follow the three official stages: collect correct statements, generate incorrect statements, and
+    assemble dynamic questions. Section 3.1.1 reports 43 source subfields; Table 1 reports 44 fields / 62 subfields.
 nodes:
   - id: books
-    label: Textbooks
+    label: |-
+      Select 62 university / graduate textbooks
+      11 disciplines · 43 source subfields (§3.1.1)
+      authoritative bilingual knowledge sources
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: facts
-    label: True Stmts
+      'y': 250
+  - id: screenshots
+    label: |-
+      Manually capture textbook screenshots
+      mask irrelevant content with mosaics
+      retain grounded source context
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: false_stmts
-    label: False Stmts
+      'y': 250
+  - id: extract
+    label: |-
+      Extract correct standalone statements
+      doubao-1.5-vision-pro-32k + titles
+      independence · clarity · conciseness rules
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: sample
-    label: Dyn Sample
-    type: decision
+      'y': 250
+  - id: correct_qc
+    label: |-
+      Filter and review correct statements
+      remove images / references / ambiguous items
+      3 annotators review 21,525 qualified statements
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: opts
-    label: Options
-    type: document
+      'y': 250
+  - id: false_stmts
+    label: |-
+      Generate deceptive incorrect counterparts
+      DeepSeek-R1 with six error patterns
+      filter short items → 21,494 false statements
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: parse
-    label: Answer Parse
-    type: terminal
+      'y': 250
+  - id: pool
+    label: |-
+      Build the statement collection
+      21,525 correct + 21,494 incorrect
+      43,019 total · 44 fields / 62 subfields (Table 1)
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
-    type: document
+      'y': 250
+  - id: assemble
+    label: |-
+      Dynamically sample and assemble questions
+      8–10 statements · 4–8 options
+      each option combines 2–4 statements
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: dataset
+    label: |-
+      Encyclo-K standard configuration
+      5,038 questions: 3,286 EN + 1,752 ZH
+      discipline-proportional allocation
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: evaluate
+    label: |-
+      Parse option letters by regex tiers
+      fallback to matching option content
+      misses count wrong · report accuracy
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
   - from: books
-    to: facts
+    to: screenshots
     type: primary
-  - from: facts
+  - from: screenshots
+    to: extract
+    type: primary
+  - from: extract
+    to: correct_qc
+    type: primary
+  - from: correct_qc
     to: false_stmts
     type: primary
   - from: false_stmts
-    to: sample
+    to: pool
     type: primary
-  - from: sample
-    to: opts
+  - from: pool
+    to: assemble
     type: primary
-  - from: opts
-    to: parse
+  - from: assemble
+    to: dataset
     type: primary
-  - from: parse
-    to: score
+  - from: dataset
+    to: evaluate
     type: primary
 modules: []

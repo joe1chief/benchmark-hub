@@ -5,107 +5,158 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CSR-Bench 构建流程
-  description: 基于 arXiv:2502.06111 论文整理的 CSR-Bench 构建与评测流程。
-  legend: 实线表示仓库筛选与部署评测主流程；虚线表示运行日志反馈。
+  description: 与论文对齐的仓库筛选及 CSR-Agents 部署评测流程。
+  legend: 实线表示筛选与执行主流程；虚线表示分阶段故障修复和重试。
 nodes:
-  - id: github
+  - id: candidates
     label: |-
-      GitHub
-      1.5k
+      GitHub 标签检索
+      超过 1,500 个仓库
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 210
   - id: areas
-    label: 五领域
+    label: |-
+      五个领域
+      NLP · CV · LLM · ML · 交叉领域
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: rank
-    label: 星数
+      'y': 210
+  - id: screen
+    label: |-
+      星数排序 + 人工筛选
+      README 充分 · 代码可部署
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: screen
-    label: 人工筛选
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: repos
-    label: 100 仓库
+      'y': 210
+  - id: benchmark
+    label: |-
+      CSR-Bench
+      100 个宽松许可仓库
     type: database
     size: xl
     position:
+      x: 820
+      'y': 210
+  - id: evidence
+    label: |-
+      部署依据
+      README 为主 · 仓库内容为辅
+    type: document
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: prompt
-    label: 脚本
+      'y': 210
+  - id: drafter
+    label: |-
+      命令起草智能体
+      环境 · 下载 · 训练 · 推理 · 评测
     type: process
     size: xl
     position:
       x: 1340
-      'y': 70
-  - id: docker
-    label: Docker
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: logs
-    label: 日志
+      'y': 210
+  - id: executor
+    label: |-
+      脚本执行智能体
+      标准 Docker + BashExecutor
     type: process
     size: xl
     position:
       x: 1600
-      'y': 160
-  - id: metrics
-    label: 完成率
-    type: terminal
+      'y': 210
+  - id: state
+    label: |-
+      LLM 解析 stdout / stderr
+      推断执行返回状态
+    type: decision
     size: xl
     position:
       x: 1860
-      'y': 160
+      'y': 210
+  - id: analyzer
+    label: |-
+      日志分析智能体
+      依靠模型内知识修正
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 60
+  - id: issues
+    label: |-
+      Issue 检索智能体
+      BM25 检索仓库 Issues
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 60
+  - id: web
+    label: |-
+      网页搜索智能体
+      Perplexity · 限次尝试
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: result
+    label: |-
+      完成率
+      成功命令数 / 执行命令总数
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 210
 edges:
-  - from: github
+  - from: candidates
     to: areas
     type: primary
   - from: areas
-    to: rank
-    type: primary
-  - from: rank
     to: screen
     type: primary
   - from: screen
-    to: repos
+    to: benchmark
     type: primary
-    label: 入选仓库
-  - from: repos
-    to: prompt
+  - from: benchmark
+    to: evidence
     type: primary
-  - from: repos
-    to: docker
+  - from: evidence
+    to: drafter
+    type: primary
+  - from: drafter
+    to: executor
+    type: primary
+  - from: executor
+    to: state
     type: data
-    label: 仓库代码
-  - from: prompt
-    to: docker
+  - from: state
+    to: result
     type: primary
-    label: 命令
-  - from: docker
-    to: logs
-    type: data
-  - from: logs
-    to: prompt
+  - from: state
+    to: analyzer
     type: optional
-    label: 失败日志
-  - from: logs
-    to: metrics
-    type: primary
+  - from: analyzer
+    to: executor
+    type: optional
+  - from: analyzer
+    to: issues
+    type: optional
+  - from: issues
+    to: executor
+    type: optional
+  - from: issues
+    to: web
+    type: optional
+  - from: web
+    to: executor
+    type: optional
 modules: []

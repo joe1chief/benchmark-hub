@@ -1,0 +1,207 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Math-VR 构建流程
+  description: 按论文复原 Math-VR 双语视觉数学语料与留出基准：经 VLM 筛选、GPT 辅助标准化和专家复核， 构造人工确认的评分点，分别报告答案正确性与过程部分得分。
+  legend: >-
+    arXiv:2510.11718 报告 89,075 道独立问题（178,150 条双语样本），其中训练 86,575 道、 测试 2,500 道；双语 benchmark 将这 2,500 道测试题展开为 5,000
+    条语言版本样本。
+nodes:
+  - id: collect
+    label: |-
+      收集约 90 万道数学题
+      面向中学数学
+      来源为公开网站
+      解题说明至少包含一张图
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: filter
+    label: |-
+      用 Qwen2.5-VL-72B 筛图
+      标注每张图的作用
+      保留数学图形
+      删除无关图或纯文字图
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: standardize
+    label: |-
+      用 GPT-4.1 标准化
+      转写剩余文字图像
+      分离问题与解答
+      将两者改写为 Markdown
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: qc_translate
+    label: |-
+      用 GPT-4.1 验证与翻译
+      删除不完整或不连贯样本
+      翻译标准化记录
+      形成中英文配对
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: corpus
+    label: |-
+      构建 Math-VR 语料
+      共 89,075 道独立问题
+      训练 86,575 + 测试 2,500
+      展开为 178,150 条双语样本
+    type: database
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: taxonomy
+    label: |-
+      标注学科层次
+      几何、代数、微积分、统计
+      几何占 81%
+      纯文本 29% · 多模态 71%
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: candidates
+    label: |-
+      形成 benchmark 候选池
+      排除证明题和大多数多选题
+      从其余问题随机抽取 3,000 道
+      聚焦非平凡视觉推理
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: human_review
+    label: |-
+      开展专家人工复核
+      15 名高年级 STEM 大学生
+      删除视觉推理极少或过于简单的题
+      验证问题与答案
+    type: user
+    size: xl
+    position:
+      x: 1700
+      'y': 420
+  - id: benchmark
+    label: |-
+      发布双语 benchmark
+      2,500 道独立测试题
+      纯文本 1,000 + 多模态 1,500
+      中英文共 5,000 条样本
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: rubric
+    label: |-
+      构造经验证的评分参考
+      GPT-4.1 总结标准答案
+      生成关键评分点
+      人工复核评分点与难度权重
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: response
+    label: |-
+      生成模型回答
+      输入纯文本或多模态问题
+      保持双语评测划分
+      记录完整推理与最终答案
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: judge
+    label: |-
+      使用 GPT-4.1 裁判
+      AC · 整体答案二元正确性
+      PS · 按权重命中的评分点
+      使用论文定义的 PS 折扣
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: validate
+    label: |-
+      验证自动裁判一致性
+      1,000 道题 × 3 个模型回答
+      与人工评分比较
+      AC 用 κ/MCC · PS 用 Pearson/Spearman
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告 AC 与 PS
+      纯文本、多模态与总体结果
+      分析学科和语言差异
+      明确保留两项指标含义
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: collect
+    to: filter
+    type: primary
+  - from: filter
+    to: standardize
+    type: primary
+  - from: standardize
+    to: qc_translate
+    type: primary
+  - from: qc_translate
+    to: corpus
+    type: primary
+  - from: corpus
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: candidates
+    type: primary
+  - from: candidates
+    to: human_review
+    type: primary
+  - from: human_review
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: rubric
+    type: primary
+  - from: rubric
+    to: response
+    type: primary
+  - from: response
+    to: judge
+    type: primary
+  - from: judge
+    to: validate
+    type: primary
+  - from: validate
+    to: report
+    type: primary
+modules: []

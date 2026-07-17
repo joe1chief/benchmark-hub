@@ -1,0 +1,243 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: XLRS-Bench 多产品标注与评测流程
+  description: >-
+    XLRS-Bench汇合6个遥感来源的1400张超高分辨率图像，经多轮人工交叉核验后形成三类产品：13个任务的纯人工VQA、2个任务的人工定位，以及GPT-4o辅助并由人工结合VQA证据精修的描述。6名双语专家翻译并交叉核对长文本。评测分别使用VQA准确率/OLUC集合精确匹配、定位Acc@IoU
+    0.5/0.7，以及描述BLEU/METEOR/ROUGE-L。流程图必须披露摘要总数45942与Table 5逐行求和45838的冲突。
+  legend: >-
+    来源：XLRS-Bench arXiv:2503.23771v1, Figures 3-4, Sections 3.1-3.3 and 4.1-4.2, Tables 2-4, and Appendix A.4 Table 5;
+    project https://xlrs-bench.github.io/home_page.html, repository https://github.com/AI9Stars/XLRS-Bench, and release
+    collection https://huggingface.co/collections/initiacms/xlrs-bench. Version pin: full-paper 1,400-image bilingual
+    benchmark, not the earlier VQA-only lite release or website scale_en=10,784. Required conflict: repeated headline
+    total is 45,942, while literal Appendix Table 5 rows sum to 45,838.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: rs_sources
+    label: 六类遥感数据源
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: image_pool
+    label: 1400张超高分辨率图像
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: image_qc
+    label: 多轮图像交叉核验
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: vqa_annotation
+    label: 13任务纯人工VQA
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: ground_annotation
+    label: 2个人工定位任务
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: caption_inputs
+    label: 3×3切图与全图
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: gpt4o_caption
+    label: GPT-4o描述草案
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: caption_refine
+    label: 人工描述精修
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: vqa_crosscheck
+    label: 3组15人互检与10专家
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: ground_qc
+    label: 同一VQA质检团队
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: bilingual_review
+    label: 6专家英译中互审
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: xlrs_release
+    label: 摘要45942* / 表5合计45838
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: zero_shot_models
+    label: 零样本MLLM评测
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1040
+  - id: vqa_metrics
+    label: VQA准确率与OLUC集合匹配
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 800
+  - id: ground_metrics
+    label: 定位Acc@IoU 0.5 / 0.7
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 1040
+  - id: caption_metrics
+    label: 图像描述：BLEU / METEOR / ROUGE-L
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1280
+  - id: xlrs_report
+    label: 分产品评测结果
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 1040
+edges:
+  - from: rs_sources
+    to: image_pool
+    type: data
+  - from: image_pool
+    to: image_qc
+    type: primary
+  - from: image_qc
+    to: vqa_annotation
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: image_qc
+    to: ground_annotation
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: image_qc
+    to: caption_inputs
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: image_qc
+    to: image_pool
+    type: optional
+    label: 复查
+    labelPosition: start
+  - from: vqa_annotation
+    to: vqa_crosscheck
+    type: primary
+  - from: ground_annotation
+    to: ground_qc
+    type: primary
+  - from: caption_inputs
+    to: gpt4o_caption
+    type: primary
+  - from: gpt4o_caption
+    to: caption_refine
+    type: primary
+  - from: vqa_crosscheck
+    to: bilingual_review
+    type: primary
+  - from: ground_qc
+    to: bilingual_review
+    type: primary
+  - from: caption_refine
+    to: bilingual_review
+    type: primary
+  - from: bilingual_review
+    to: xlrs_release
+    type: primary
+  - from: vqa_crosscheck
+    to: vqa_annotation
+    type: optional
+    label: 解决分歧
+    labelPosition: start
+  - from: ground_qc
+    to: ground_annotation
+    type: optional
+    label: 修订
+    labelPosition: start
+  - from: bilingual_review
+    to: caption_refine
+    type: optional
+    label: 修正
+    labelPosition: start
+  - from: xlrs_release
+    to: zero_shot_models
+    type: primary
+    waypoints:
+      - x: 2280
+        'y': 680
+      - x: 2280
+        'y': 1090
+  - from: zero_shot_models
+    to: vqa_metrics
+    type: primary
+  - from: zero_shot_models
+    to: ground_metrics
+    type: primary
+  - from: zero_shot_models
+    to: caption_metrics
+    type: primary
+  - from: vqa_metrics
+    to: xlrs_report
+    type: primary
+    waypoints:
+      - x: 1580
+        'y': 720
+      - x: 1280
+        'y': 720
+      - x: 1280
+        'y': 1000
+  - from: ground_metrics
+    to: xlrs_report
+    type: primary
+  - from: caption_metrics
+    to: xlrs_report
+    type: primary
+    waypoints:
+      - x: 1580
+        'y': 1420
+      - x: 1280
+        'y': 1420
+      - x: 1280
+        'y': 1200
+modules: []

@@ -5,75 +5,206 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DynaMath Build Process
-  description: Paper-aligned DynaMath flow from seed visual math questions to dynamic variants and robustness scoring.
-  legend: Solid arrows show seed collection, program generation, variant rendering, answer extraction, and robustness metrics.
+  description: >-
+    Paper-aligned seed curation, programmatic visual-question generation, and variant-level mathematical robustness
+    evaluation.
+  legend: >-
+    Solid arrows trace the 501 seed programs into 5,010 concrete variants; the metric branch separates average,
+    worst-case, and consistency-aware robustness views.
 nodes:
-  - id: seed
-    label: Seed Qs
+  - id: sources
+    label: |-
+      Candidate visual-math questions
+      MathVista 107 · MATH-V 27 · MMMU/materials 93
+      public web 236 + author-designed 38
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: review
-    label: Review
+      'y': 250
+  - id: select
+    label: |-
+      Seed curation and review
+      require visually grounded reasoning
+      remove images too complex to reproduce by code
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: program
-    label: Python Gen
-    type: process
+      'y': 250
+  - id: seeds
+    label: |-
+      501 high-quality seed questions
+      9 mathematical topics
+      227 adapted + 274 newly designed
+    type: database
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: variant
-    label: Variants
+      'y': 250
+  - id: program
+    label: |-
+      College STEM students annotate solution strategies
+      handcraft one Python program per seed
+      condition sampler + solution / answer formatting
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: truth
-    label: Ground Truth
-    type: document
+      'y': 250
+  - id: variations
+    label: |-
+      Encode controlled variation space
+      values · functions · graph structure · geometry
+      operations · color · layout · context
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: answers
-    label: VLM Answers
+      'y': 250
+  - id: render
+    label: |-
+      Render visual context
+      Matplotlib / Pyglet drawing functions
+      470 plotting programs + 31 fixed-image programs
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Robust Score
-    type: terminal
+      'y': 250
+  - id: verify
+    label: |-
+      Manual program QA
+      verify sampled conditions, drawing, solution,
+      answer format, and generated difficulty
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: variants
+    label: |-
+      Dynamic evaluation set
+      randomly sample 10 variants per seed
+      501 × 10 = 5,010 concrete questions
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: predict
+    label: |-
+      VLM zero-shot prediction
+      image + question · temperature 0
+      generate reasoning and short answer
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: extract
+    label: |-
+      Extract and normalize short answers
+      compare Ans(i,j) with program GT(i,j)
+      optional five-repeat consistency study
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: metrics
+    label: |-
+      Variant robustness views
+      evaluate the same 10 variants per seed
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 250
+  - id: average
+    label: |-
+      Average-case accuracy Aavg
+      mean correctness over all 5,010 variants
+    type: document
+    size: xl
+    position:
+      x: 2900
+      'y': 10
+  - id: worst
+    label: |-
+      Worst-case accuracy Awst
+      seed is correct only when all 10 variants are correct
+    type: document
+    size: xl
+    position:
+      x: 2900
+      'y': 250
+  - id: robustness
+    label: |-
+      RR = Awst / Aavg
+      repetition consistency RC separates model randomness
+    type: document
+    size: xl
+    position:
+      x: 2900
+      'y': 490
+  - id: report
+    label: |-
+      DynaMath report
+      overall, topic, and difficulty breakdowns
+      average–worst gap and robustness
+    type: terminal
+    size: xl
+    position:
+      x: 3160
+      'y': 250
 edges:
-  - from: seed
-    to: review
+  - from: sources
+    to: select
     type: primary
-  - from: review
+  - from: select
+    to: seeds
+    type: primary
+  - from: seeds
     to: program
     type: primary
   - from: program
-    to: variant
+    to: variations
     type: primary
-  - from: variant
-    to: truth
+  - from: variations
+    to: render
     type: primary
-  - from: truth
-    to: answers
+  - from: render
+    to: verify
     type: primary
-  - from: answers
-    to: score
+  - from: verify
+    to: variants
+    type: primary
+  - from: variants
+    to: predict
+    type: primary
+  - from: predict
+    to: extract
+    type: primary
+  - from: extract
+    to: metrics
+    type: primary
+  - from: metrics
+    to: average
+    type: primary
+  - from: metrics
+    to: worst
+    type: primary
+  - from: metrics
+    to: robustness
+    type: primary
+  - from: average
+    to: report
+    type: primary
+  - from: worst
+    to: report
+    type: primary
+  - from: robustness
+    to: report
     type: primary
 modules: []

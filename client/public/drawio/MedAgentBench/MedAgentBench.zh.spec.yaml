@@ -1,0 +1,225 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedAgentBench 构建流程
+  description: >-
+    MedAgentBench 将 300 项医生编写的临床任务与 100 名 STARR 患者的合成身份队列配对并转换为 785,207 条 FHIR 记录，通过 AgentBench 兼容的 HAPI FHIR
+    环境暴露九个函数，再分别验证 150 项查询任务和 150 项操作任务并报告成功率。
+  legend: >-
+    来源：arXiv:2501.14654 Sections 3-4 and official stanfordmlgroup/MedAgentBench repository; physician tasks,
+    STARR-to-FHIR environment, AgentBench harness, and success scoring。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: tasks
+    label: |-
+      由两名内科医生设计任务
+      提交 300 个临床任务
+      按复杂度与临床价值策展
+      覆盖住院与门诊场景
+    type: user
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: taxonomy
+    label: |-
+      组织临床任务体系
+      10 个具体任务类别
+      归并为 7 个广义类别
+      覆盖检索记录和医嘱动作
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: cohort
+    label: |-
+      从 STARR 选择患者队列
+      使用去标识临床数据仓库
+      随机抽取 100 名患者
+      以晨间住院钠检验为锚
+    type: database
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: extract
+    label: |-
+      抽取最近五年病历数据
+      检验与六类生命体征
+      诊断、操作和药物医嘱
+      截止至 2023-11-13
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: deid
+    label: |-
+      补充可用的虚拟身份
+      生成去重七位假 MRN
+      Faker 生成姓名电话地址
+      保留患者级时间扰动
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: resources
+    label: |-
+      映射到 FHIR 资源
+      Observation 与 Procedure
+      Condition 与 MedicationRequest
+      共形成 785207 条记录
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: environment
+    label: |-
+      构建交互式 EHR 环境
+      使用 HAPI FHIR JPA
+      持久化 H2 并批量 POST
+      封装为可复现 Docker 镜像
+    type: cloud
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: harness
+    label: |-
+      接入 AgentBench 框架
+      提供九个 FHIR 函数
+      每轮只允许一次函数调用
+      支持 GET、POST 与 FINISH
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: interaction
+    label: |-
+      执行 Agent 循环
+      GET：发送请求并返回原始响应
+      POST：校验 JSON 载荷并返回成功提示
+      FINISH：保存轨迹用于评分
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: split
+    label: |-
+      任务类型？
+      150 个查询型任务
+      150 个动作型任务
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: querygrade
+    label: |-
+      评分查询型任务
+      人工编写参考解决方案
+      比较智能体最终回复
+      检查预期值和格式
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: actiongrade
+    label: |-
+      评分动作型任务
+      检查拟提交的 POST 载荷
+      应用人工编写的规则化健全性检查
+      判定载荷是否正确
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: score
+    label: |-
+      计算二元任务成功结果
+      每个任务成功或失败
+      汇总 Overall Success Rate
+      分别报告 Query 与 Action SR
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      发布 MedAgentBench 结果
+      比较 12 个代表性模型
+      按任务类别分析表现差异
+      保留可复现实验轨迹
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: tasks
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: cohort
+    type: primary
+  - from: cohort
+    to: extract
+    type: primary
+  - from: extract
+    to: deid
+    type: primary
+  - from: deid
+    to: resources
+    type: primary
+  - from: resources
+    to: environment
+    type: primary
+  - from: environment
+    to: harness
+    type: primary
+  - from: harness
+    to: interaction
+    type: primary
+  - from: interaction
+    to: split
+    type: primary
+  - from: split
+    to: querygrade
+    type: primary
+    label: 查询型 · GET 检索
+    labelPosition: center
+  - from: actiongrade
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
+  - from: split
+    to: actiongrade
+    type: primary
+    label: 动作型 · POST 修改
+    labelPosition: center
+    waypoints:
+      - x: 980
+        'y': 650
+      - x: 500
+        'y': 650
+  - from: querygrade
+    to: score
+    type: primary
+    waypoints:
+      - x: 740
+        'y': 250
+      - x: 260
+        'y': 250
+modules: []

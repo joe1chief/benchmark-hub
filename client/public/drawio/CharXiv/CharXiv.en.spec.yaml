@@ -6,87 +6,192 @@ meta:
   routing: orthogonal
   title: CharXiv Build Process
   description: >-
-    Paper-aligned construction flow for CharXiv: arXiv figures are rendered and filtered into diverse charts, graduate
-    annotators curate descriptive and reasoning questions, answers are made unambiguous, and models are compared with a
-    human baseline.
-  legend: Solid arrows show chart selection, question construction, validation, and evaluation.
+    Paper-aligned CharXiv construction and evaluation: scientific figures from eight arXiv subjects are rendered and
+    filtered into 2,323 charts, paired with 9,292 descriptive and 2,323 reasoning questions, expert-verified, and scored
+    with a human-reference GPT-4o judge validated against human grading.
+  legend: Solid arrows show chart selection, two parallel QA paths, expert verification, release, and zero-shot evaluation.
 nodes:
-  - id: arxiv
-    label: arXiv Charts
+  - id: papers
+    label: |-
+      Download arXiv Preprints
+      Eight Academic Subjects • Jan 2020–Sep 2023
+      Preserve Paper and Figure Context
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: select
-    label: Chart Select
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: desc
-    label: Desc Qs
+      'y': 220
+  - id: render
+    label: |-
+      Extract and Re-render Figures
+      Normalize Scientific Charts as Images
+      Retain Natural Labels, Styles, and Complexity
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: reason
-    label: Reason Qs
+      x: 340
+      'y': 220
+  - id: siglip
+    label: |-
+      SigLIP Similarity Prefilter
+      Surface Chart-like Scientific Figures
+      Reduce Manual Screening Volume
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: expert
-    label: Expert Check
+      x: 640
+      'y': 220
+  - id: manual
+    label: |-
+      Graduate-student Manual Selection
+      Favor Visual and Topical Diversity
+      Keep Natural, Challenging Charts
+    type: user
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: quality
+    label: |-
+      Deduplicate by Pairwise Similarity
+      Remove Blurry or Unclear-label Charts
+      Finalize 2,323 High-resolution Charts
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: CharXiv
+      x: 1240
+      'y': 220
+  - id: descriptive
+    label: |-
+      Descriptive QA: Four per Chart
+      19 Templates across Extraction, Enumeration,
+      Pattern, Counting, and Compositionality
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Model Eval
+      x: 1540
+      'y': 40
+  - id: answerability
+    label: |-
+      Three Answerable + One Unanswerable
+      Short Open-vocabulary Answers
+      9,292 Descriptive Questions
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1840
+      'y': 40
+  - id: reasoning
+    label: |-
+      Reasoning QA: One per Chart
+      Manually Synthesize Multiple Visual Elements
+      Require a Definite, Verifiable Short Answer
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: reasoning_set
+    label: |-
+      Categorize Reasoning Answers
+      Text/Number in Chart or General Context
+      2,323 Unique Reasoning Questions
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 400
+  - id: verify
+    label: |-
+      Human-expert Verification
+      Check Charts, Questions, and Reference Answers
+      Preserve Clear Automatic-grading Targets
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: release
+    label: |-
+      Release CharXiv
+      2,323 Charts • 11,615 Total Questions
+      Validation 1,000 Charts • Test 1,323 Charts
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: inference
+    label: |-
+      Zero-shot MLLM Evaluation
+      Natural Instruction + Chart + Question
+      Score Descriptive and Reasoning Separately
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: judge
+    label: |-
+      GPT-4o Judge with Human Reference
+      Accept Equivalent Answer Forms
+      98.5% Match to Human Grades on 400 Checks
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
   - id: human
-    label: Human Base
+    label: |-
+      Human Baseline under Identical Instructions
+      80.5% Reasoning • 92.1% Descriptive
+      Compare Open and Proprietary MLLMs
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 220
 edges:
-  - from: arxiv
-    to: select
+  - from: papers
+    to: render
     type: primary
-  - from: select
-    to: desc
+  - from: render
+    to: siglip
     type: primary
-  - from: desc
-    to: reason
+  - from: siglip
+    to: manual
     type: primary
-  - from: reason
-    to: expert
+  - from: manual
+    to: quality
     type: primary
-  - from: expert
-    to: bench
+  - from: quality
+    to: descriptive
     type: primary
-  - from: bench
-    to: eval
+  - from: quality
+    to: reasoning
     type: primary
-  - from: eval
+  - from: descriptive
+    to: answerability
+    type: primary
+  - from: reasoning
+    to: reasoning_set
+    type: primary
+  - from: answerability
+    to: verify
+    type: primary
+  - from: reasoning_set
+    to: verify
+    type: primary
+  - from: verify
+    to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
+    to: judge
+    type: primary
+  - from: judge
     to: human
     type: primary
 modules: []

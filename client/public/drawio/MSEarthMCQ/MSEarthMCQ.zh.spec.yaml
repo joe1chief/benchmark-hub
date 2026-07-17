@@ -1,0 +1,256 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MSEarthMCQ 构建流程
+  description: >-
+    MSEarthMCQ 解析超过 40 万篇地球科学 PDF，筛选论文并对齐图表与正文引用，再用 GPT-4o 优化图注并生成候选问题；经五模型与 70B+ 三模型参与的三阶段筛选及专家复核，剔除 216 个无效样本，最终得到
+    2,784 道题。
+  legend: >-
+    来源：arXiv:2505.20740 Sections 3-4 and Appendices E-G; official PrismaX/MSEarth repository and MSEarth_MCQ
+    dataset。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: papers
+    label: |-
+      收集地球科学论文
+      超过 40 万份 PDF
+      覆盖五大地球圈层
+      来源为学术论文
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: parse
+    label: |-
+      解析并分类论文
+      用 MinerU 将 PDF 转为 JSON
+      摘要匹配圈层关键词
+      分配学科类别
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: filter
+    label: |-
+      筛选科学图像
+      使用 Qwen2.5-VL-72B
+      要求与地球科学相关
+      保留约 8.3 万篇论文
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: align
+    label: |-
+      对齐图像与图注
+      提取 MinerU 图像资产
+      用正则检测图号
+      匹配正文中的图像引用
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: context
+    label: |-
+      抽取支持性上下文
+      保留引用目标图的段落
+      要求段落超过两个句子
+      保留 64,560 篇论文
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: refine
+    label: |-
+      生成精炼图注
+      输入图像与原始图注
+      加入论文上下文推理
+      使用 GPT-4o
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: generate
+    label: |-
+      生成候选选择题
+      输入图像与两种图注
+      使用 GPT-4o
+      以论文证据约束问答
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: phase_a
+    label: |-
+      阶段 A 投票结果？
+      原始图注
+      五个 MLLM
+    type: decision
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: phase_b
+    label: |-
+      阶段 B：正确率 >60%？
+      精炼图注
+      同一组五个 MLLM
+    type: decision
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: phase_c
+    label: |-
+      阶段 C：正确率 >60%？
+      精炼图注
+      三个 70B+ MLLM
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: sample
+    label: |-
+      抽取 MCQ 基准样本
+      阶段 A 抽取 900 题
+      阶段 B 1,800 · C 300
+      形成 3,000 道候选题
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: expert
+    label: |-
+      由地球科学专家验证
+      要求具备硕士背景
+      检查完整性与答案正确性
+      移除 216 道无效题
+    type: user
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: release
+    label: |-
+      发布 MSEarthMCQ
+      2,784 道图像落地选择题
+      发现题 2,117 · 感知题 667
+      单图 1,255 · 多图 1,529
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: score
+    label: |-
+      执行准确率评测
+      使用结构化选择题提示
+      以正则抽取预测选项
+      与标准选项进行比较
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+  - id: discard
+    label: |-
+      丢弃候选题
+      过于简单或存在缺陷
+    type: loss
+    size: xl
+    position:
+      x: 1100
+      'y': 800
+edges:
+  - from: papers
+    to: parse
+    type: primary
+  - from: parse
+    to: filter
+    type: primary
+  - from: filter
+    to: align
+    type: primary
+  - from: align
+    to: context
+    type: primary
+  - from: context
+    to: refine
+    type: primary
+  - from: refine
+    to: generate
+    type: primary
+  - from: generate
+    to: phase_a
+    type: primary
+  - from: phase_a
+    to: phase_b
+    type: primary
+    label: 错误 >40% · 继续分析
+    labelPosition: center
+  - from: phase_b
+    to: phase_c
+    type: primary
+    label: 正确 ≤60% · 继续分析
+    labelPosition: center
+  - from: phase_c
+    to: sample
+    type: primary
+    label: 正确 >60% · 困难问答
+    labelPosition: center
+  - from: sample
+    to: expert
+    type: primary
+  - from: expert
+    to: release
+    type: primary
+  - from: release
+    to: score
+    type: primary
+  - from: phase_a
+    to: discard
+    type: optional
+    label: 全部答对 · 过于简单
+    labelPosition: center
+    waypoints:
+      - x: 1580
+        'y': 720
+      - x: 1220
+        'y': 720
+  - from: phase_a
+    to: sample
+    type: primary
+    label: 其余 · 简单问答
+    labelPosition: center
+    waypoints:
+      - x: 1460
+        'y': 650
+      - x: 740
+        'y': 650
+  - from: phase_b
+    to: sample
+    type: primary
+    label: 正确 >60% · 专业问答
+    labelPosition: center
+    waypoints:
+      - x: 1220
+        'y': 250
+      - x: 740
+        'y': 250
+  - from: phase_c
+    to: discard
+    type: optional
+    label: 正确 ≤60% · 缺陷题
+    labelPosition: center
+modules: []

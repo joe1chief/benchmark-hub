@@ -7,114 +7,208 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 15,
+    "edges": 18,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "babi_tasks",
-      "label": "bAbI task generator\nQA1 to QA20\nsimulated facts and questions",
+      "id": "babi_simulation",
+      "label": "Generate bAbI Simulations\nCharacters, Objects, Locations, and Events\nSynthetic Facts plus Ground-Truth Answers",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "pg19_background",
-      "label": "PG19 background books\nnatural long contexts\nirrelevant distractor text",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "fact_insertion",
-      "label": "Fact hiding pipeline\ninsert task sentences\npreserve background order",
+      "id": "task_suite",
+      "label": "Select QA1 through QA20\nFact Chains • Induction • Deduction\nCounting • Lists/Sets • Space and Time",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "length_splits",
-      "label": "Length-controlled samples\npredefined splits up to 10M\nvariable facts per task",
+      "id": "pg19",
+      "label": "Sample PG19 Books\nNatural Long-Form Narratives\nDraw Background Sentences in Original Order",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "llm_eval",
-      "label": "Long-context LLM evaluation\ndistinguish relevant facts\nanswer reasoning questions",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "rag_eval",
-      "label": "RAG baselines\n512-token chunks or sentences\nretrieve supporting facts",
+      "id": "interleave",
+      "label": "Hide Task Facts in Background Text\nInterleave Relevant and Distractor Sentences\nPreserve Their Natural and Logical Order",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "memory_models",
-      "label": "Recurrent-memory training\nRMT and ARMT curriculum\n10k train / 1k eval",
+      "id": "length_control",
+      "label": "Add Background until Target Length\nMeasure with the GPT-2 Tokenizer\nAdapt Fact Positions Algorithmically",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "Pre-Generate Reproducible Splits\n0K • 4K • 8K • 16K • 32K • 64K\n128K • 512K • 1M • 10M Tokens",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "direct_eval",
+      "label": "Run Long-Context LLMs Directly\nLocate Supporting Facts\nMemorize and Reason to the Answer",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rag_chunks",
+      "label": "Run RAG-C Baseline\nRetrieve 512-Token Chunks\nPass Retrieved Evidence to the LLM",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rag_sentences",
+      "label": "Run RAG-S Baseline\nRetrieve Individual Sentences\nTest Multi-Hop and Temporal Failures",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recurrent_train",
+      "label": "Curriculum-Fine-Tune Memory Models\nRMT • ARMT • Mamba\nGradually Increase Recurrent Segments",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recurrent_eval",
+      "label": "Evaluate Recurrent Memory\nExtrapolate beyond Training Lengths\nTest Selected Runs up to 50M Tokens",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Compute Exact Task Accuracy\nReport Every QA Task and Context Length\nUse 1,000 Samples to 32K and 100 Beyond",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "effective_context",
+      "label": "Diagnose Effective Context Use\nCompare One-, Two-, and Three-Fact Tasks\nTrack Accuracy Decay with Length",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "method_compare",
+      "label": "Compare Direct, RAG, and Memory Models\nAnalyze Retrieval Order and Missing Facts\nSeparate Refusals Where Reported",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "BABILong report\naccuracy by task and length\nextrapolation up to 50M tokens",
-      "type": "database",
+      "label": "Publish BABILong Results\nAccuracy by Task, Length, and Method\nPredefined Splits plus 50M Extrapolation",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "babi_tasks",
-      "to": "fact_insertion",
+      "from": "babi_simulation",
+      "to": "task_suite",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "pg19_background",
-      "to": "fact_insertion",
-      "type": "data"
-    },
-    {
-      "id": "edge-3",
-      "from": "fact_insertion",
-      "to": "length_splits",
+      "from": "task_suite",
+      "to": "interleave",
       "type": "primary"
     },
     {
+      "id": "edge-3",
+      "from": "pg19",
+      "to": "interleave",
+      "type": "data"
+    },
+    {
       "id": "edge-4",
-      "from": "length_splits",
-      "to": "llm_eval",
+      "from": "interleave",
+      "to": "length_control",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "length_splits",
-      "to": "rag_eval",
-      "type": "optional",
-      "label": "chunk and sentence retrieval"
+      "from": "length_control",
+      "to": "release",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "length_splits",
-      "to": "memory_models",
-      "type": "optional",
-      "label": "curriculum segments"
+      "from": "release",
+      "to": "direct_eval",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "llm_eval",
+      "from": "release",
+      "to": "rag_chunks",
+      "type": "optional"
+    },
+    {
+      "id": "edge-8",
+      "from": "release",
+      "to": "rag_sentences",
+      "type": "optional"
+    },
+    {
+      "id": "edge-9",
+      "from": "release",
+      "to": "recurrent_train",
+      "type": "optional"
+    },
+    {
+      "id": "edge-10",
+      "from": "recurrent_train",
+      "to": "recurrent_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "direct_eval",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "rag_chunks",
+      "to": "score",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "rag_sentences",
+      "to": "score",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "recurrent_eval",
+      "to": "score",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "score",
+      "to": "effective_context",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "score",
+      "to": "method_compare",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "effective_context",
       "to": "report",
       "type": "primary"
     },
     {
-      "id": "edge-8",
-      "from": "rag_eval",
-      "to": "report",
-      "type": "data"
-    },
-    {
-      "id": "edge-9",
-      "from": "memory_models",
+      "id": "edge-18",
+      "from": "method_compare",
       "to": "report",
       "type": "data"
     }

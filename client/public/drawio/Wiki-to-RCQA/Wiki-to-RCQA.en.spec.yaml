@@ -1,0 +1,237 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Wiki-to-RCQA Data Build and Validation
+  description: >-
+    Wiki-to-RCQA is an OLMo 3 midtraining data source, not a standalone benchmark. The official recipe cleans prepared
+    Wikipedia, excludes list and disambiguation pages and invalid short pages, extracts summaries and sections, keeps
+    sections under 300 words intact, splits longer sections into paragraphs, and drops passages below 20 words. For each
+    passage it samples one of four prompts with probabilities DEFAULT 0.10, SPAN 0.25, PPHRASE 0.25, and DROP 0.40,
+    chooses one to eight questions as a function of passage length, and asks Qwen2.5-32B-Instruct to synthesize QA
+    pairs. The pool has 4.22B tokens and 22.3M documents. A 10B-token microanneal incorporating the 4.2B-token source
+    improves the GenQA cluster by nearly two points against a 10B web-only baseline, concentrated on DROP, SQuAD, and
+    CoQA; 3.0B tokens, 3 percent of the 100B final midtraining mix, are selected. No independent Accuracy or F1 protocol
+    is reported.
+  legend: >-
+    Source: OLMo 3 arXiv:2512.13961v2, Sections 3.5.1-3.5.2 and Table 5; official recipe README, prompt templates, and
+    wikiclean script under https://github.com/allenai/dolma3/tree/main/datasets/dolma3_dolmino_mix/wiki_to_rcqa;
+    official data-pool card https://huggingface.co/datasets/allenai/dolma3_dolmino_pool. Scope pin: Wiki-to-RCQA is a
+    synthetic midtraining dataset validated by microannealing, not an independent evaluation benchmark.. Solid arrows
+    show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: wiki_documents
+    label: Prepared Wikipedia Documents
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: wikiclean
+    label: wikiclean Preprocessing
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: page_gate
+    label: Valid Content Page?
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: discard_page
+    label: Discard Page or Passage
+    type: loss
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: section_split
+    label: Section / Paragraph Segmentation
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: passage_gate
+    label: Passage at Least 20 Words?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: prompt_router
+    label: Sample Prompt Type
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 40
+  - id: default_prompt
+    label: DEFAULT 0.10
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: span_prompt
+    label: SPAN 0.25
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: paraphrase_prompt
+    label: PPHRASE 0.25
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: drop_prompt
+    label: DROP 0.40
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 400
+  - id: qwen_generate
+    label: 'Qwen2.5-32B: Generate 1-8 QAs'
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 760
+  - id: rcqa_pool
+    label: 4.22B Tokens / 22.3M Docs
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 760
+  - id: microanneal
+    label: 10B Microanneal vs Web-Only
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 760
+  - id: gain_gate
+    label: Promising GenQA Gain?
+    type: decision
+    size: xl
+    position:
+      x: 2700
+      'y': 760
+  - id: reject_source
+    label: Do Not Select Source
+    type: loss
+    size: xl
+    position:
+      x: 2700
+      'y': 400
+  - id: integration_tests
+    label: Candidate-Mix Integration Tests
+    type: process
+    size: xl
+    position:
+      x: 2980
+      'y': 760
+  - id: final_mix
+    label: 3.0B Tokens / 3% of 100B Mix
+    type: terminal
+    size: xl
+    position:
+      x: 3260
+      'y': 760
+edges:
+  - from: wiki_documents
+    to: wikiclean
+    type: data
+  - from: wikiclean
+    to: page_gate
+    type: primary
+  - from: page_gate
+    to: section_split
+    type: primary
+    label: Valid
+    labelPosition: end
+  - from: page_gate
+    to: discard_page
+    type: optional
+    label: Invalid
+    labelPosition: end
+  - from: section_split
+    to: passage_gate
+    type: primary
+  - from: passage_gate
+    to: prompt_router
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: passage_gate
+    to: discard_page
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: prompt_router
+    to: default_prompt
+    type: data
+    label: '0.10'
+    labelPosition: end
+  - from: prompt_router
+    to: span_prompt
+    type: data
+    label: '0.25'
+    labelPosition: end
+  - from: prompt_router
+    to: paraphrase_prompt
+    type: data
+    label: '0.25'
+    labelPosition: end
+  - from: prompt_router
+    to: drop_prompt
+    type: data
+    label: '0.40'
+    labelPosition: end
+  - from: default_prompt
+    to: qwen_generate
+    type: primary
+  - from: span_prompt
+    to: qwen_generate
+    type: primary
+  - from: paraphrase_prompt
+    to: qwen_generate
+    type: primary
+  - from: drop_prompt
+    to: qwen_generate
+    type: primary
+  - from: qwen_generate
+    to: rcqa_pool
+    type: primary
+  - from: rcqa_pool
+    to: microanneal
+    type: primary
+  - from: microanneal
+    to: gain_gate
+    type: primary
+    label: GenQA nearly +2
+    labelPosition: end
+  - from: gain_gate
+    to: integration_tests
+    type: primary
+    label: Promising
+    labelPosition: end
+  - from: gain_gate
+    to: reject_source
+    type: optional
+    label: Not promising
+    labelPosition: end
+  - from: integration_tests
+    to: final_mix
+    type: primary
+modules: []

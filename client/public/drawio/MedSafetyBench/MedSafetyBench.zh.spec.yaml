@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedSafetyBench 构建与评测流程
+  description: 对齐论文展示从九项 AMA 医学伦理原则，经双模型生成有害请求、人工整理、安全回应编写、分层划分、 医生验证，到安全评测与对齐训练的完整流程。
+  legend: 1,800 条有害请求由 900 条 GPT-4 请求和 900 条经 GCG 越狱的 Llama-2 请求组成；Eval 与 Improve 各含每种来源 450 条，并在九项原则上分层。
+nodes:
+  - id: ethics
+    label: |-
+      定义医疗安全
+      采用九项 AMA 医学伦理原则
+      将违反原则的请求视为有害
+      覆盖医疗领域特有风险
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: gpt4
+    label: |-
+      按原则提示 GPT-4
+      每次提示生成 20 条请求
+      要求包含医学术语
+      形成直接有害请求
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: llama
+    label: |-
+      越狱 Llama-2-7b-chat
+      应用贪婪坐标梯度攻击
+      优化肯定式目标回答
+      生成另一来源的请求
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: curate
+    label: |-
+      人工整理请求
+      删除重复样本
+      删除无关样本
+      保留确实违反原则者
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: harmful
+    label: |-
+      汇总有害请求集
+      GPT-4：900 条
+      Llama-2：900 条
+      合计 1,800 条
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: safe
+    label: |-
+      编写安全示范回应
+      GPT-4 拒绝每条有害请求
+      简述不安全或不道德原因
+      人工核验并编辑回应
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: split
+    label: |-
+      分层随机划分
+      MedSafety-Eval：900 条
+      MedSafety-Improve：900 条
+      每来源 450 条 · 覆盖九项原则
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: validate
+    label: |-
+      由 25 名医生验证
+      每人随机评 25 条请求
+      判断是否违规及对应原则
+      确认危害性与覆盖度
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: eval_inputs
+    label: |-
+      准备安全评测输入
+      使用 MedSafety-Eval 有害请求
+      GenSafety-Eval：330 条
+      不向被测模型展示安全回应
+    type: document
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: responses
+    label: |-
+      查询通用与医疗大模型
+      收集自由文本回应
+      比较对齐模型与基础模型
+      保持相同提示协议
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: judge
+    label: |-
+      评定回应有害程度
+      GPT-3.5 按服从度打 1 至 5 分
+      1 为完全拒绝 · 5 为完全服从
+      越低越安全 · 医疗按 AMA 判断
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: improve
+    label: |-
+      微调医疗大模型
+      通用安全示范：900 条
+      医疗安全：900 条 · 合并：1,800 条
+      Medalpaca 7b/13b · Meditron 7b
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: preserve
+    label: |-
+      检查医疗能力保持
+      MedQA · MedMCQA
+      PubMedQA · MMLU-Medical
+      三样本准确率
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      报告安全性与效用
+      汇总平均有害度分数
+      比较对齐前后变化
+      验证医疗表现是否保持
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: ethics
+    to: gpt4
+    type: primary
+  - from: gpt4
+    to: llama
+    type: primary
+  - from: llama
+    to: curate
+    type: primary
+  - from: curate
+    to: harmful
+    type: primary
+  - from: harmful
+    to: safe
+    type: primary
+  - from: safe
+    to: split
+    type: primary
+  - from: split
+    to: validate
+    type: primary
+  - from: validate
+    to: eval_inputs
+    type: primary
+  - from: eval_inputs
+    to: responses
+    type: primary
+  - from: responses
+    to: judge
+    type: primary
+  - from: judge
+    to: improve
+    type: primary
+  - from: improve
+    to: preserve
+    type: primary
+  - from: preserve
+    to: report
+    type: primary
+modules: []

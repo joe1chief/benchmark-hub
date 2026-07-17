@@ -4,117 +4,165 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AInsteinBench 构建流程
-  description: 基于 arXiv:2512.21373 对齐的 AInsteinBench 科学代码基准构建与评估流程。
-  legend: 实线表示从科学仓库到任务构建和可执行评估的主流程；虚线表示特征消融与专家复核反馈路径。
+  title: AInsteinBench 构建与评测流程
+  description: 对齐论文的 AInsteinBench 双来源科学软件任务构建、历史环境重建、Fail-to-Pass 与专家验证， 以及可执行的 CodeAct Agent 评测流程。
+  legend: 上方分支从 6 个代码库构建问题修复任务和合成功能任务；两者汇入可执行验证， 再发布 244 道题并进行 Agent 评测。
 nodes:
   - id: repositories
     label: |-
-      科学代码仓库
-      PySCF、Qiskit、RDKit
-      AMReX、OpenMM、Einstein Toolkit
+      选择 6 个科学软件代码库
+      PySCF • Qiskit • Einstein Toolkit
+      AMReX • OpenMM • RDKit
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: pr_crawl
+      'y': 180
+  - id: pr_tasks
     label: |-
-      PR 爬取
-      issue 描述、base commit
-      fix patch 与测试更新
+      挖掘问题修复任务
+      筛选含测试更新的科学 / 数值计算合并 PR
+      提取 Issue、基线提交、修复补丁与测试补丁
     type: process
     size: xl
     position:
-      x: 300
+      x: 320
       'y': 70
-  - id: feature_ablation
+  - id: feature_tasks
     label: |-
-      特征任务合成
-      消融科学模块
-      补充测试相关 API 文档
+      合成功能实现任务
+      删除模块 / 源码组件并保留其余上下文
+      仅提供测试实际使用签名组成的最小 API 块
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 320
+      'y': 290
   - id: environment
     label: |-
-      环境重建
-      历史依赖栈
-      隔离 Docker 测试
+      重建历史运行环境
+      恢复依赖、构建路径和科学工作流
+      在隔离的最小 Docker 镜像中运行每项任务
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: filtering
+      x: 600
+      'y': 180
+  - id: f2p
     label: |-
-      fail-to-pass 过滤
-      base 通过、patched 失败
-      fixed patch 通过
-    type: decision
+      强制 Fail-to-Pass 转换
+      基线提交 + 原测试 = PASS
+      加测试补丁 = FAIL • 再加标准修复 = PASS
+    type: process
     size: xl
     position:
-      x: 820
+      x: 880
       'y': 70
-  - id: expert_review
+  - id: expert
     label: |-
-      领域专家复核
-      科学相关性
-      测试强度与难度分层
+      领域专家验证
+      检查科学相关性、描述清晰度和测试覆盖
+      修订测试；评定科学 + 工程难度
     type: user
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: dataset
+      x: 880
+      'y': 290
+  - id: release
     label: |-
-      AInsteinBench 任务
-      244 个问题
-      真实 PR 与特征实现
+      发布 AInsteinBench
+      6 个代码库共 244 道题
+      由综合难度分数划分简单 / 中等 / 困难
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: agent_eval
+      x: 1160
+      'y': 180
+  - id: task
     label: |-
-      coding agent 评估
-      查看、编辑、跑测试
-      solve rate 与失败分析
+      初始化任务容器
+      问题描述 + 基础代码库状态
+      复现脚本和科学测试套件
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: agent
+    label: |-
+      运行 CodeAct 编码 Agent
+      规划–行动循环：检查、编辑、安装和测试
+      在隔离科学环境中迭代
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 500
+  - id: patch
+    label: |-
+      生成候选补丁
+      保持代码库 API 与数值行为
+      提交最终工作区变更
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 500
+  - id: tests
+    label: |-
+      执行科学验证
+      运行复现脚本 + 任务 / 代码库测试
+      必须通过隐藏的 Fail-to-Pass 行为
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 500
+  - id: report
+    label: |-
+      AInsteinBench 结果
+      244 道题上的问题解决率
+      按代码库、领域、类型和难度拆分
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 500
 edges:
   - from: repositories
-    to: pr_crawl
+    to: pr_tasks
     type: primary
   - from: repositories
-    to: feature_ablation
-    type: data
-  - from: pr_crawl
+    to: feature_tasks
+    type: primary
+  - from: pr_tasks
     to: environment
     type: primary
-  - from: feature_ablation
+  - from: feature_tasks
     to: environment
-    type: data
+    type: primary
   - from: environment
-    to: filtering
+    to: f2p
     type: primary
-  - from: filtering
-    to: expert_review
+  - from: f2p
+    to: expert
     type: primary
-  - from: expert_review
-    to: filtering
-    type: optional
-    label: 调整测试强度
-  - from: expert_review
-    to: dataset
+  - from: expert
+    to: release
     type: primary
-  - from: dataset
-    to: agent_eval
+  - from: release
+    to: task
+    type: primary
+  - from: task
+    to: agent
+    type: primary
+  - from: agent
+    to: patch
+    type: primary
+  - from: patch
+    to: tests
+    type: primary
+  - from: tests
+    to: report
     type: primary
 modules: []

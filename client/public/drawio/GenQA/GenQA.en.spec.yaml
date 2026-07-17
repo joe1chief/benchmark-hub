@@ -1,0 +1,144 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OlmoBaseEval GenQA Build Process
+  description: Source-aligned construction and evaluation flow for the GenQA macro-average reported by Olmo 3.
+  legend: >-
+    GenQA is not a standalone dataset: it is an OlmoBaseEval task cluster defined by the Olmo 3 report and official
+    OLMES suite. The two branches use different formats before merging into one macro-average.
+nodes:
+  - id: pool
+    label: |-
+      Collect 23K benchmark results
+      from 70 open-weight models
+      compare task-level model rankings
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: cluster
+    label: |-
+      Hierarchically cluster evaluations
+      Ward variance minimization
+      merge tasks that rank models similarly
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: align
+    label: |-
+      Align clusters with task format
+      move same-format tasks together
+      split multiple choice into STEM/non-STEM
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: rc
+    label: |-
+      GenQA rank-choice/continuation branch
+      HellaSwag · WinoGrande · LAMBADA
+      BasicSkills (6 subtasks)
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 80
+  - id: gen
+    label: |-
+      GenQA short-answer branch
+      DROP · Jeopardy · NaturalQs
+      SQuAD · CoQA
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 520
+  - id: prompt_rc
+    label: |-
+      Run RC/continuation evaluation
+      mostly 5-shot; LAMBADA is 0-shot
+      normalize likelihood per task definition
+    type: process
+    size: xl
+    position:
+      x: 1280
+      'y': 80
+  - id: prompt_gen
+    label: |-
+      Generate short answers
+      5-shot except built-in 0-shot CoQA
+      temperature 0 · top-p 1 · max 50/100 tokens
+    type: process
+    size: xl
+    position:
+      x: 1280
+      'y': 520
+  - id: task_score
+    label: |-
+      Score each source task
+      RC/continuation uses accuracy
+      short answers use F1 against answer banks
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 300
+  - id: macro
+    label: |-
+      Macro-average nine task scores
+      report Olmo 3-Eval GenQA
+      use as one OlmoBaseEval Main capability
+    type: terminal
+    size: xl
+    position:
+      x: 1940
+      'y': 300
+  - id: caveat
+    label: |-
+      Preserve the documented limitation
+      incomplete short-answer banks can cause
+      false negatives; Gen2MC is a separate remedy
+    type: terminal
+    size: xl
+    position:
+      x: 2240
+      'y': 300
+edges:
+  - from: pool
+    to: cluster
+    type: primary
+  - from: cluster
+    to: align
+    type: primary
+  - from: align
+    to: rc
+    type: primary
+  - from: align
+    to: gen
+    type: primary
+  - from: rc
+    to: prompt_rc
+    type: primary
+  - from: gen
+    to: prompt_gen
+    type: primary
+  - from: prompt_rc
+    to: task_score
+    type: primary
+  - from: prompt_gen
+    to: task_score
+    type: primary
+  - from: task_score
+    to: macro
+    type: primary
+  - from: macro
+    to: caveat
+    type: primary
+modules: []

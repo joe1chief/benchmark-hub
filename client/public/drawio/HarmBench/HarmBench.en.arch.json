@@ -7,50 +7,104 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 16,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
       "id": "policies",
-      "label": "Policy Seeds",
+      "label": "Collect major-lab use policies\nOpenAI · Anthropic · Meta · Inflection\nGPT-4 distills a combined safety summary",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "510 Behaviors",
+      "id": "curate",
+      "label": "Authors manually design behaviors\nviolate laws or widely held norms\nemphasize realistic differential harm",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter",
+      "label": "Run repeated curation passes\nremove or rewrite dual-intent requests\nretain clear undesirable objectives",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "Assign functional category\npreserve seven semantic harm categories\nattach context or image when required",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "standard",
+      "label": "Standard · 200\nself-contained harmful request\nno external context or image",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "copyright",
+      "label": "Copyright · 100\nrequest protected passages or lyrics\nretain content hashes for judging",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "contextual",
+      "label": "Contextual · 100\nbehavior string plus specific context\ndifficult to reproduce by web search",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "multimodal",
+      "label": "Multimodal · 110\nbehavior string references an image\ntests image-conditioned attacks",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Assemble 510 HarmBench behaviors\nfour functional · seven semantic categories\nbehavior IDs and category metadata",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "Val/Test Split",
+      "label": "Create canonical held-out split\nvalidation 100 · test 410\nstratify intersections then adjust manually",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "attacks",
-      "label": "Attack Gen",
+      "id": "attack",
+      "label": "Generate attack test cases\nred-team method receives each behavior\ndo not tune on test or semantic duplicates",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "targets",
-      "label": "Target Runs",
+      "id": "target",
+      "label": "Run the target model or defense\nstandardized generation parameters\ngreedy completion for comparability",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "Classifier",
+      "id": "judge_route",
+      "label": "Classify behavior success\nexhibited or clearly attempted behavior\nuse held-out validation/test classifiers",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "ASR Report",
+      "id": "open_judge",
+      "label": "Non-copyright classifier\nopen Llama-2-13B-chat classifier\ntrained on human-labeled completions",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hash_judge",
+      "label": "Copyright classifier\ncompare completion against stored hashes\ndirectly detect protected text generation",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Report attack success rate\nsuccessful test cases divided by all cases\nbreak down attack · target · category",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,38 +113,116 @@
     {
       "id": "edge-1",
       "from": "policies",
-      "to": "behaviors",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "behaviors",
-      "to": "split",
+      "from": "curate",
+      "to": "filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "split",
-      "to": "attacks",
+      "from": "filter",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attacks",
-      "to": "targets",
+      "from": "route",
+      "to": "standard",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "targets",
-      "to": "judge",
+      "from": "route",
+      "to": "copyright",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "judge",
-      "to": "metrics",
+      "from": "route",
+      "to": "contextual",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "route",
+      "to": "multimodal",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "standard",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "copyright",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "contextual",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "multimodal",
+      "to": "dataset",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-12",
+      "from": "dataset",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "split",
+      "to": "attack",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "attack",
+      "to": "target",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "target",
+      "to": "judge_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "judge_route",
+      "to": "open_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "judge_route",
+      "to": "hash_judge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-18",
+      "from": "open_judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "hash_judge",
+      "to": "score",
+      "type": "secondary"
     }
   ],
   "modules": []

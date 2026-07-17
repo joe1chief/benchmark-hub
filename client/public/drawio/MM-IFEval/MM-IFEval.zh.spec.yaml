@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MM-IFEval 构建流程
-  description: 对齐论文的 MM-IFEval 构建流程：MM-IFEngine 筛选图像、生成富约束多模态指令，经人工标注和冲突检查后，用规则与 judge 模型评估组合级和感知级问题。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文重建 300 道组合级和 100 道感知级多模态指令遵循题，并展示官方三种方法组成的混合评测。
+  legend: 评测同时采用确定性函数、LLM 直接判断与 LLM 对比判断。
 nodes:
-  - id: n1
-    label: 图像来源
+  - id: images
+    label: |-
+      汇集多样图像来源
+      自然场景 · 用户界面
+      图示 · 图表 · 数学表达式
+      纳入已有问答数据集
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 图像筛选
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 任务生成
+      x: 20
+      'y': 40
+  - id: tasks
+    label: |-
+      定义指令任务
+      使用 16 类任务描述
+      覆盖真实应用场景
+      任务必须基于图像
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 32类约束
+      x: 300
+      'y': 40
+  - id: filter
+    label: |-
+      过滤来源问题
+      去除少样本示例
+      去除多选题选项
+      使用正则与长度限制
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 人工标注
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 冲突检查
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 400道评测题
+      x: 580
+      'y': 40
+  - id: taxonomy
+    label: |-
+      建立约束池
+      六个主要类别
+      32 个约束子类别
+      混合多项要求
     type: document
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 混合评分
+      x: 860
+      'y': 40
+  - id: integrate
+    label: |-
+      用 LLM 整合约束
+      生成具体要求
+      保持与任务相关
+      过滤完全矛盾的组合
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: annotate
+    label: |-
+      人工标注评测问题
+      组合级输出约束
+      感知级视觉约束
+      标注感知题标准答案
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: conflict
+    label: |-
+      后处理约束冲突
+      让额外 LLM 再次检查
+      缓解不兼容要求
+      保留人工标注
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: dataset
+    label: |-
+      汇总 400 道题
+      300 道组合级开放题
+      100 道有答案的感知题
+      覆盖 13 类感知图像
+    type: database
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: respond
+    label: |-
+      生成模型回答
+      提供图像与完整指令
+      保留全部约束
+      逐题进行评分
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: rules
+    label: |-
+      执行规则验证
+      覆盖 10 个可验证子类别
+      提取验证函数参数
+      人工复核函数映射
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: judges
+    label: |-
+      执行两种 LLM 评判
+      直接判断明确约束
+      与无该约束回答对比
+      处理语气风格与角色扮演
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告混合评测准确率
+      组合级准确率
+      感知级准确率
+      汇总 400 题平均准确率
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: images
+    to: tasks
     type: primary
-  - from: n2
-    to: n3
+  - from: tasks
+    to: filter
     type: primary
-  - from: n3
-    to: n4
+  - from: filter
+    to: taxonomy
     type: primary
-  - from: n4
-    to: n5
+  - from: taxonomy
+    to: integrate
     type: primary
-  - from: n5
-    to: n6
+  - from: integrate
+    to: annotate
     type: primary
-  - from: n6
-    to: n7
+  - from: annotate
+    to: conflict
     type: primary
-  - from: n7
-    to: n8
+  - from: conflict
+    to: dataset
+    type: primary
+  - from: dataset
+    to: respond
+    type: primary
+  - from: respond
+    to: rules
+    type: primary
+  - from: rules
+    to: judges
+    type: primary
+  - from: judges
+    to: report
     type: primary
 modules: []

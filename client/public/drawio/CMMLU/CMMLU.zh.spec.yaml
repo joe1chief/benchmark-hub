@@ -5,116 +5,192 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMMLU 构建流程
-  description: 基于 arXiv:2306.09212 论文整理的 CMMLU 构建与评测流程。
-  legend: 实线表示基准构建主流程；虚线表示质量核验环节。
+  description: >-
+    按论文对齐的 CMMLU 流程：四名本科及以上标注员重点从不易被训练语料抓取的来源收集中文试题，统一为四选一并规范公式， 每科抽检 5%，将 67 科共 11,528
+    题切成开发与测试集，再按模型访问方式抽取答案并计算零样本或少样本准确率。
+  legend: 实线表示构建与评测主流程；右侧两条分支是论文规定的两种答案选择路径。
 nodes:
-  - id: scope
-    label: |-
-      中文范围
-      67 科目
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
   - id: annotators
     label: |-
       4 名标注员
-      250 小时
+      约 250 小时
     type: user
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
+      x: 40
+      'y': 240
   - id: sources
-    label: PDF OCR
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: format
     label: |-
-      选择题格式
-      四选一
-    type: process
-    size: xl
+      免费资源
+      超 80% 来自 PDF OCR
+    type: database
+    size: large
     position:
-      x: 820
-      'y': 70
+      x: 240
+      'y': 240
+  - id: contamination
+    label: |-
+      非公开材料
+      模拟题 + 竞猜节目
+    type: process
+    size: large
+    position:
+      x: 440
+      'y': 240
+  - id: mcq
+    label: |-
+      四个选项
+      仅一个正确答案
+    type: process
+    size: large
+    position:
+      x: 640
+      'y': 100
   - id: formula
     label: |-
-      公式处理
-      LaTeX/文本
+      公式各占一半
+      LaTeX / 纯文本
     type: process
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 250
+      x: 640
+      'y': 380
   - id: qc
     label: |-
-      质量核验
-      抽检 5%
-    type: decision
-    size: xl
+      每科抽检 5%
+      估计噪声约 2%
+    type: process
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
+      x: 840
+      'y': 240
+  - id: pool
     label: |-
-      CMMLU
-      11.5k
+      11,528 道题
+      67 个科目
     type: database
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
+      x: 1040
+      'y': 240
   - id: split
+    label: 按科目切分
+    type: decision
+    size: large
+    position:
+      x: 1240
+      'y': 240
+  - id: dev
     label: |-
-      开发/测试
-      5 / 100+
+      开发集
+      每科 5 题
     type: document
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
-  - id: eval
+      x: 1440
+      'y': 100
+  - id: test
     label: |-
-      模型评测
-      20+ LLM
-    type: terminal
-    size: xl
+      测试集
+      每科超过 100 题
+    type: document
+    size: large
     position:
-      x: 1860
-      'y': 160
+      x: 1440
+      'y': 380
+  - id: prompt
+    label: |-
+      零样本或
+      最多 5 个示例
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: strategy
+    label: 按模型访问方式
+    type: decision
+    size: large
+    position:
+      x: 1840
+      'y': 240
+  - id: generation
+    label: |-
+      闭源 API
+      自由生成 + 正则
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 100
+  - id: next_token
+    label: |-
+      开源模型
+      A / B / C / D 概率最大
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 380
+  - id: score
+    label: |-
+      各科宏平均
+      准确率
+    type: terminal
+    size: large
+    position:
+      x: 2240
+      'y': 240
 edges:
-  - from: scope
-    to: annotators
-    type: primary
   - from: annotators
     to: sources
     type: primary
   - from: sources
-    to: format
+    to: contamination
     type: primary
-  - from: sources
+  - from: contamination
+    to: mcq
+    type: primary
+  - from: contamination
     to: formula
-    type: data
-    label: STEM 题目
-  - from: format
+    type: primary
+  - from: mcq
     to: qc
     type: primary
   - from: formula
     to: qc
     type: primary
   - from: qc
-    to: dataset
+    to: pool
     type: primary
-    label: 通过题目
-  - from: dataset
+  - from: pool
     to: split
     type: primary
   - from: split
-    to: eval
+    to: dev
+    type: primary
+  - from: split
+    to: test
+    type: primary
+  - from: dev
+    to: prompt
+    type: primary
+  - from: test
+    to: prompt
+    type: primary
+  - from: prompt
+    to: strategy
+    type: primary
+  - from: strategy
+    to: generation
+    type: primary
+  - from: strategy
+    to: next_token
+    type: primary
+  - from: generation
+    to: score
+    type: primary
+  - from: next_token
+    to: score
     type: primary
 modules: []

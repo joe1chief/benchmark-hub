@@ -5,89 +5,149 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: 2WikiMultihopQA Build Process
-  description: Paper-aligned construction workflow for 2WikiMultihopQA, based on the COLING 2020 paper and arXiv source.
-  legend: >-
-    Solid arrows show construction flow; dashed arrows show branch-specific generation paths before shared quality
-    gates.
+  description: >-
+    Paper-aligned 2WikiMultihopQA construction from Wikipedia and Wikidata through verified templates, four question
+    types, distractor and ambiguity controls, difficulty-aware splitting, and joint evidence evaluation.
+  legend: Solid arrows show parallel question generation, shared quality gates, split construction, and evaluation.
 nodes:
   - id: source
     label: |-
-      Wiki summaries + Wikidata
-      5.95M entities / 23,763 groups
+      Wikipedia Summaries
+      + Wikidata Statements
+      5.95M Entities / 23,763 Groups
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 240
   - id: templates
     label: |-
-      Question templates
-      HotpotQA NER + manual templates
-      4 question types
+      Template Design
+      HotpotQA NER + Manual
+      Remove Single-Hop Forms
     type: process
     size: xl
     position:
       x: 280
-      'y': 70
+      'y': 80
   - id: rules
     label: |-
-      Logical-rule verification
-      AMIE candidates -> 28 Wikidata rules
+      Logical Rules
+      AMIE Candidates
+      Manually Verify 28 Rules
     type: process
     size: xl
     position:
       x: 280
-      'y': 250
-  - id: compare
+      'y': 400
+  - id: comparison
     label: |-
-      Comparison generation
-      sample entity pairs
-      mutual relations + summaries
+      Comparison +
+      Bridge-Comparison
+      Entity Pairs + Mutual Relations
     type: process
     size: xl
     position:
-      x: 540
-      'y': 70
+      x: 520
+      'y': 80
   - id: bridge
     label: |-
-      Bridge generation
-      build two-hop chains
-      inference + compositional
+      Inference + Compositional
+      Verified Two-Hop Chains
     type: process
     size: xl
     position:
-      x: 540
-      'y': 250
-  - id: sample
+      x: 520
+      'y': 400
+  - id: fields
     label: |-
-      QA sample fields
-      Q, A, C, sentence SFs
-      evidence triples
+      Build QA Record
+      Question / Answer / Context
+      Supporting Facts / Triples
     type: document
     size: xl
     position:
-      x: 800
-      'y': 160
-  - id: quality
+      x: 760
+      'y': 240
+  - id: distractors
     label: |-
-      Quality gates
-      remove ambiguity, equal comparisons
-      check Wiki-Wikidata mismatches
-    type: decision
+      Retrieve Distractors
+      Top-50 TF-IDF → 8 or 6
+      Shuffle to 10 Paragraphs
+    type: process
     size: xl
     position:
-      x: 1060
-      'y': 160
+      x: 1000
+      'y': 80
+  - id: postprocess
+    label: |-
+      Post-Process
+      Balance Yes / No
+      Remove Ambiguous + Mismatched
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 400
   - id: dataset
     label: |-
-      Release and evaluate
-      train / dev / test
-      answer, SF, evidence EM/F1
+      2WikiMultihopQA
+      192,606 Questions
+      Four Question Types
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: split_model
+    label: |-
+      Single-Hop BERT
+      5-Fold Difficulty Split
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 240
+  - id: train
+    label: |-
+      Training
+      Medium 154,878
+      Hard 12,576
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: heldout
+    label: |-
+      Held-Out Sets
+      Dev 12,576
+      Test 12,576
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: predict
+    label: |-
+      Predict Answer
+      Sentence Supporting Facts
+      Evidence Triples
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+  - id: score
+    label: |-
+      EM + F1
+      Answer / SF / Evidence
+      Joint EM + Joint F1
     type: terminal
     size: xl
     position:
-      x: 1320
-      'y': 160
+      x: 2200
+      'y': 240
 edges:
   - from: source
     to: templates
@@ -96,27 +156,48 @@ edges:
     to: rules
     type: primary
   - from: templates
-    to: compare
-    type: data
-    label: comparison / bridge-comparison
+    to: comparison
+    type: primary
   - from: templates
     to: bridge
-    type: data
-    label: bridge templates
+    type: primary
   - from: rules
     to: bridge
     type: primary
-    label: inference rules
-  - from: compare
-    to: sample
+  - from: comparison
+    to: fields
     type: primary
   - from: bridge
-    to: sample
+    to: fields
     type: primary
-  - from: sample
-    to: quality
+  - from: fields
+    to: distractors
     type: primary
-  - from: quality
+  - from: fields
+    to: postprocess
+    type: primary
+  - from: distractors
     to: dataset
+    type: primary
+  - from: postprocess
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split_model
+    type: primary
+  - from: split_model
+    to: train
+    type: primary
+  - from: split_model
+    to: heldout
+    type: primary
+  - from: train
+    to: predict
+    type: primary
+  - from: heldout
+    to: predict
+    type: primary
+  - from: predict
+    to: score
     type: primary
 modules: []

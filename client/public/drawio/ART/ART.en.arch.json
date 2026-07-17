@@ -1,122 +1,192 @@
 {
   "version": 1,
-  "title": "ART Build Process",
+  "title": "ART Construction and Evaluation Workflow",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 14,
+    "edges": 15,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "ehr_source",
-      "label": "Real EHR observations\n50k records / 695 patients\nlab codes and timestamps",
+      "id": "failures",
+      "label": "Analyze Medical-Agent Failures\nCompare MedAgentBench Outputs with Gold Tasks\nRetrieval • Aggregation • Conditional Logic",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ehr",
+      "label": "Mine Real EHR-Formatted Observations\n50,000 Records from 695 Patients\nPreserve Labs, Timestamps, and Demographics",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "scenario_agent",
-      "label": "Scenario identification\nretrieval, aggregation\nthreshold failure modes",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "synthesis",
-      "label": "Task generation agent\nGPT-4o-mini variants\nauthentic clinical data retained",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "task_schema",
-      "label": "Structured ART tasks\ninstruction, context\nground truth and MRN",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "quality",
-      "label": "Quality audit\nsource alignment checks\nHITL clinical expert review",
+      "id": "mode",
+      "label": "Scenario Identification Agent\nWhich Failure Mode Does the Case Target?",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "benchmark",
-      "label": "Balanced benchmark\n600 tasks\n200 per failure mode",
+      "id": "retrieval",
+      "label": "Retrieval Scenarios\n11 Lab Codes • Sparse or Clustered Readings\nLatest Value and 23-25 h Edge Cases",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregation",
+      "label": "Aggregation Scenarios\nAt Least 3 Valid Measurements in 24 h\nGlucose • Potassium • Sodium",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "conditional",
+      "label": "Threshold and Conditional Scenarios\nSeven Value Ranges + Demographic Thresholds\nRetrieve → Compare → Conditionally Act",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "Task Generation Agent\nGPT-4o-mini / Claude 3.5 Vary Wording and Context\nAuthentic Clinical Values Remain Unchanged",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Package the Balanced ART Benchmark\n200 Tasks per Failure Mode = 600 Total\nInstruction • Context • Ground Truth • Anonymous MRN",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "medagentbench",
-      "label": "AgentBench evaluation\nFHIR live EHR API\nstateless temperature 0",
+      "id": "automatic_audit",
+      "label": "Automatic Source-EHR Validation\nRecheck Values, Time Windows, and Thresholds\nReject Any Task Inconsistent with Its Origin",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "clinical_audit",
+      "label": "Human-in-the-Loop Clinical Audit\nExperts Review a Representative Subset\nFactual Relevance • Logic • Threshold Consistency",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "environment",
+      "label": "Run the Live Clinical Environment\nMedAgentBench + FHIR R5 API Calls\nStateless • Temperature 0 • No Conversation History",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agents",
+      "label": "Evaluate Two Medical Agents\nGPT-4o-mini and Claude 3.5 Sonnet\nExecute Retrieval, Aggregation, and Conditional Actions",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Exact-Match Success Rate\nCompare Final Result with EHR-Derived Ground Truth\nNo Step-Wise Reasoning Credit in This Study",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Report Failure-Mode Gaps\nRetrieval 100% / 100%\nAggregation 28% / 64% • Conditional 32% / 38%",
       "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "results",
-      "label": "Success-rate report\nexact match by category\nretrieval, aggregation, threshold",
-      "type": "database",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "ehr_source",
-      "to": "scenario_agent",
+      "from": "failures",
+      "to": "ehr",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "scenario_agent",
-      "to": "synthesis",
+      "from": "ehr",
+      "to": "mode",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "synthesis",
-      "to": "task_schema",
+      "from": "mode",
+      "to": "retrieval",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "task_schema",
-      "to": "quality",
+      "from": "mode",
+      "to": "aggregation",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "quality",
-      "to": "benchmark",
+      "from": "mode",
+      "to": "conditional",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "quality",
-      "to": "synthesis",
-      "type": "optional",
-      "label": "revise low-confidence tasks"
+      "from": "retrieval",
+      "to": "generate",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "benchmark",
-      "to": "medagentbench",
+      "from": "aggregation",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "medagentbench",
-      "to": "results",
+      "from": "conditional",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "results",
-      "to": "quality",
-      "type": "optional",
-      "label": "future QA-agent routing"
+      "from": "generate",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "dataset",
+      "to": "automatic_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "automatic_audit",
+      "to": "clinical_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "clinical_audit",
+      "to": "environment",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "environment",
+      "to": "agents",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "agents",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "score",
+      "to": "report",
+      "type": "primary"
     }
   ],
   "modules": []

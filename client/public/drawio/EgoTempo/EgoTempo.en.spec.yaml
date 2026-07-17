@@ -5,77 +5,207 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EgoTempo Build Process
-  description: Paper-aligned EgoTempo flow from egocentric videos to temporal VideoQA evaluation.
+  description: >-
+    Paper-aligned Ego4D clip construction, Gemini-assisted temporal QA curation, shortcut filtering, and controlled
+    video-evidence evaluation.
   legend: >-
-    Solid arrows show video sourcing, temporal task taxonomy, QA construction, anti-shortcut checks, full-video model
-    runs, answer matching, and accuracy reporting.
+    Solid arrows trace benchmark construction; the input branch compares text-only, single-frame, and multi-frame
+    evidence under the same open-ended judging protocol.
 nodes:
-  - id: videos
-    label: Ego Videos
+  - id: source
+    label: |-
+      Ego4D source videos
+      diverse real-world scenarios
+      timestamped first-person narrations
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: types
-    label: 10 Tasks
+      'y': 250
+  - id: windows
+    label: |-
+      Derive narration windows
+      narration timestamp + local/global intervals
+      short segments average about 5 seconds
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: qa
-    label: QA Curation
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: filter
-    label: Shortcut Test
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: run
-    label: Video Run
+      'y': 250
+  - id: clips
+    label: |-
+      Group consecutive segments
+      up to 120 narrations or 120 seconds
+      preserve context for temporal questions
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: match
-    label: Answer Match
-    type: terminal
+      x: 560
+      'y': 250
+  - id: caption
+    label: |-
+      Gemini 1.5 Pro zero-shot captioning
+      video clip + narrations
+      add background detail to interaction narration
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
+      x: 820
+      'y': 250
+  - id: taxonomy
+    label: |-
+      Generate open-ended QA in 10 capabilities
+      action / event / object sequence and counting,
+      prediction, spatial relations, and object grounding
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 250
+  - id: review
+    label: |-
+      Manual video-grounded review
+      verify question and answer against clip
+      remove irrelevant or non-temporal pairs
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 250
+  - id: shortcut
+    label: |-
+      Single-frame shortcut gate
+      discard pairs Gemini answers from one frame
+      retain genuine temporal dependence
+    type: process
+    size: xl
+    position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: benchmark
+    label: |-
+      EgoTempo benchmark
+      500 QA pairs · 50 per capability
+      365 clips from 221 videos · 40 scenarios
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: inputs
+    label: |-
+      Controlled evidence settings
+      same questions and ground truth
+    type: decision
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: text
+    label: |-
+      Text only
+      diagnose commonsense / language shortcuts
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 10
+  - id: single
+    label: |-
+      Single frame
+      diagnose static visual shortcuts
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: video
+    label: |-
+      Multiple frames
+      controlled rates S = 0.1, 0.5, 1 FPS
+      plus fixed-frame / sampling ablations
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 490
+  - id: prediction
+    label: |-
+      MLLM open-ended prediction
+      run commercial and open video models
+      Gemini Flash kept separate from Pro-generated data
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 250
+  - id: judge
+    label: |-
+      Gemini 1.5 Pro judge
+      compare prediction with ground truth
+      binary correct / incorrect plus rationale
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 250
+  - id: report
+    label: |-
+      Accuracy and temporal-evidence gain
+      10-capability breakdown
+      absolute score + single-frame → video ratio
+    type: terminal
+    size: xl
+    position:
+      x: 3160
+      'y': 250
 edges:
-  - from: videos
-    to: types
+  - from: source
+    to: windows
     type: primary
-  - from: types
-    to: qa
+  - from: windows
+    to: clips
     type: primary
-  - from: qa
-    to: filter
+  - from: clips
+    to: caption
     type: primary
-  - from: filter
-    to: run
+  - from: caption
+    to: taxonomy
     type: primary
-  - from: run
-    to: match
+  - from: taxonomy
+    to: review
     type: primary
-  - from: match
-    to: score
+  - from: review
+    to: shortcut
+    type: primary
+  - from: shortcut
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: inputs
+    type: primary
+  - from: inputs
+    to: text
+    type: primary
+  - from: inputs
+    to: single
+    type: primary
+  - from: inputs
+    to: video
+    type: primary
+  - from: text
+    to: prediction
+    type: primary
+  - from: single
+    to: prediction
+    type: primary
+  - from: video
+    to: prediction
+    type: primary
+  - from: prediction
+    to: judge
+    type: primary
+  - from: judge
+    to: report
     type: primary
 modules: []

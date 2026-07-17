@@ -1,0 +1,150 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Context Arena OpenAI-MRCR Evaluation Process
+  description: >-
+    Source-aligned external evaluation and dashboard flow for OpenAI MRCR v2, emphasizing eight-needle ordinal
+    retrieval, random-hash compliance, mean match ratio, context-length bins, and normalized AUC.
+  legend: Solid arrows trace synthetic case construction and scoring; the hash-failure branch receives zero.
+nodes:
+  - id: source
+    label: |-
+      Published OpenAI MRCR v2 Data
+      Inspired by Google DeepMind MRCR
+      Context Arena Uses External Results
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 190
+  - id: generation
+    label: |-
+      GPT-4o Generates Needles and Distractors
+      Multiple Writing Media and Topics
+      Unique Synthetic Conversation per Test
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 190
+  - id: conversation
+    label: |-
+      Long Multi-Turn Conversation
+      2 / 4 / 8 Identical Requests
+      Responses Scattered among Distractors
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 190
+  - id: query
+    label: |-
+      Final Ordinal Retrieval Query
+      Return the Nth Matching Response
+      Prepend a Per-Test Random Hash
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 190
+  - id: bins
+    label: |-
+      Length Bins via o200k_base
+      8K / 16K / 32K / 64K / 128K
+      256K / 512K / 1M; 100 Tests per Bin
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 190
+  - id: run
+    label: |-
+      External Model Evaluation
+      Claude Card Uses Hardest 8-Needle Variant
+      Five Trials for Its Internal Table
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 190
+  - id: hash
+    label: Valid Hash?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 190
+  - id: zero
+    label: Missing or Wrong Hash → Score 0
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 60
+  - id: compare
+    label: |-
+      Remove Valid Hash
+      Python difflib SequenceMatcher
+      Compare Response to Expected Needle
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 300
+  - id: bin_score
+    label: |-
+      Mean Match Ratio per Length Bin
+      Average 100 Tests in Each Bin
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 300
+  - id: report
+    label: |-
+      Context Arena Dashboard
+      128K / 1M Scores and Normalized AUC
+      Model AUC, Token Efficiency, Cost
+    type: terminal
+    size: xl
+    position:
+      x: 2540
+      'y': 190
+edges:
+  - from: source
+    to: generation
+    type: primary
+  - from: generation
+    to: conversation
+    type: primary
+  - from: conversation
+    to: query
+    type: primary
+  - from: query
+    to: bins
+    type: primary
+  - from: bins
+    to: run
+    type: primary
+  - from: run
+    to: hash
+    type: primary
+  - from: hash
+    to: zero
+    type: primary
+  - from: hash
+    to: compare
+    type: primary
+  - from: zero
+    to: report
+    type: primary
+  - from: compare
+    to: bin_score
+    type: primary
+  - from: bin_score
+    to: report
+    type: primary
+modules: []

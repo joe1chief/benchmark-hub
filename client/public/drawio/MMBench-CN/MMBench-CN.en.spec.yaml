@@ -6,86 +6,190 @@ meta:
   routing: orthogonal
   title: MMBench-CN Build Process
   description: >-
-    Source-aligned construction of MMBench-CN: the MMBench Chinese release keeps the image-question ability taxonomy,
-    verified Chinese prompts, dev/test splits, CircularEval, and choice extraction for Chinese VQA accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MMBench-CN workflow: a three-level taxonomy guides volunteer collection and two model-assisted quality
+    controls; GPT-4 translates the 3,217 curated English image MCQs and humans verify them before a 4:6 split, while
+    heuristic/GPT-4 choice extraction plus all-pass CircularEval yields robust Chinese ability-level accuracy.
+  legend: Solid arrows show collection and evaluation; the upper/lower branches are complementary quality controls.
 nodes:
-  - id: n1
-    label: MMBench Base
-    type: database
+  - id: taxonomy
+    label: |-
+      Three-level Ability Taxonomy
+      Perception + Reasoning
+      Six L-2 / Twenty L-3 Abilities
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: CN Version
+      'y': 240
+  - id: exemplars
+    label: |-
+      Cold-start Exemplars
+      Authors Compile 10–20 MCQs
+      for Every L-3 Ability
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: CN Dev/Test
-    type: document
+      x: 320
+      'y': 240
+  - id: collection
+    label: |-
+      Student-volunteer Expansion
+      More than 80% from Internet
+      Rest from Public Validation Sets
+    type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Image MCQ
+      x: 600
+      'y': 240
+  - id: raw
+    label: |-
+      Raw Image MCQs
+      Image + Question + 2–4 Choices
+      + One Correct Answer
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 240
+  - id: text_qc
+    label: |-
+      Text-only Quality Control
+      SOTA LLM Majority Correct
+      → Manual Check; Remove if Text-only
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: CircularEval
+      x: 1160
+      'y': 60
+  - id: wrong_qc
+    label: |-
+      Wrong-item Quality Control
+      All SOTA VLMs Fail
+      → Manual Check; Remove if Flawed
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Extract
-    type: decision
+      x: 1160
+      'y': 420
+  - id: dataset
+    label: |-
+      Curated English MMBench Source
+      3,217 Questions
+      ≥125 per L-3 Ability
+    type: database
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Submit
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: CN Acc
-    type: terminal
+      x: 1440
+      'y': 240
+  - id: translate
+    label: |-
+      GPT-4 Chinese Translation
+      Translate Questions + Choices
+      Keep Proper Nouns / Symbols / Code
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 240
+  - id: verify_translation
+    label: |-
+      Human Translation Verification
+      Check Validity + Accuracy
+      English/Chinese Items Stay Aligned
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: split
+    label: |-
+      Dev / Test Split = 4:6
+      Dev: Public Ground Truth
+      Test: Hidden Ground Truth
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+  - id: model
+    label: |-
+      VLM Open-ended Prediction
+      Image + Chinese MCQ Prompt
+    type: process
+    size: large
+    position:
+      x: 2560
+      'y': 240
+  - id: extraction
+    label: |-
+      Choice Extraction
+      Heuristic Label Match First
+      GPT-4-0125 Fallback; Else Z
+    type: process
+    size: xl
+    position:
+      x: 2800
+      'y': 240
+  - id: circular
+    label: |-
+      CircularEval
+      N Circular Choice Rotations
+      Correct Only if Every Pass Succeeds
+    type: process
+    size: xl
+    position:
+      x: 3080
+      'y': 240
+  - id: metric
+    label: |-
+      Official Test Submission
+      Overall + 20-ability Accuracy
+    type: terminal
+    size: xl
+    position:
+      x: 3360
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: taxonomy
+    to: exemplars
     type: primary
-  - from: n2
-    to: n3
+  - from: exemplars
+    to: collection
     type: primary
-  - from: n3
-    to: n4
+  - from: collection
+    to: raw
     type: primary
-  - from: n4
-    to: n5
+  - from: raw
+    to: text_qc
     type: primary
-  - from: n5
-    to: n6
+  - from: raw
+    to: wrong_qc
     type: primary
-  - from: n6
-    to: n7
+  - from: text_qc
+    to: dataset
     type: primary
-  - from: n7
-    to: n8
+  - from: wrong_qc
+    to: dataset
+    type: primary
+  - from: dataset
+    to: translate
+    type: primary
+  - from: translate
+    to: verify_translation
+    type: primary
+  - from: verify_translation
+    to: split
+    type: primary
+  - from: split
+    to: model
+    type: primary
+  - from: model
+    to: extraction
+    type: primary
+  - from: extraction
+    to: circular
+    type: primary
+  - from: circular
+    to: metric
     type: primary
 modules: []

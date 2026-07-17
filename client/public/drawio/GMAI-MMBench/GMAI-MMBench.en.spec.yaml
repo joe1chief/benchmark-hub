@@ -5,77 +5,139 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GMAI-MMBench Build Process
-  description: Paper-aligned GMAI-MMBench flow from worldwide medical datasets to lexical-tree VQA and macro accuracy evaluation.
+  description: >-
+    Paper-aligned medical-dataset integration, VQA generation, validation, balancing, and evaluation flow for
+    GMAI-MMBench.
   legend: >-
-    Solid arrows show dataset collection, standardization, lexical-tree tagging, VQA generation, manual validation, and
-    LVLM scoring.
+    Solid arrows follow arXiv:2408.03361. The retained 284 sources comprise 268 public and 16 ethically approved
+    hospital datasets; the test answers are withheld and evaluated through the organizers.
 nodes:
-  - id: sources
-    label: 284 Datasets
+  - id: collect
+    label: |-
+      Survey hundreds of medical datasets
+      public sources plus approved hospital data
+      span image modalities and clinical specialties
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: standard
-    label: Standardize
+      'y': 250
+  - id: retain
+    label: |-
+      Filter for usable high-quality labels
+      retain 284 datasets
+      268 public + 16 ethically approved hospital sets
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: tree
-    label: Lexical Tree
+      'y': 250
+  - id: standardize
+    label: |-
+      Standardize images and label expressions
+      convert heterogeneous medical inputs for display
+      normalize ambiguous or duplicate label wording
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: qa
-    label: VQA Pairs
+      'y': 250
+  - id: lexical
+    label: |-
+      Organize a customizable lexical tree
+      38 modalities · 18 clinical tasks
+      18 departments · 4 perceptual granularities
     type: document
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: validate
-    label: Manual Check
-    type: decision
+      'y': 250
+  - id: pools
+    label: |-
+      Form local-view question and option pools
+      group by modality × task × granularity
+      require all three cues in each question
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eval
-    label: LVLM Eval
+      'y': 250
+  - id: qa
+    label: |-
+      Generate candidate VQA pairs
+      sample one question and up to four options
+      pair the medical image with its grounded answer
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
-    type: terminal
+      'y': 250
+  - id: validate
+    label: |-
+      Manually reject invalid questions
+      missing key cues or answerable without image
+      incorrect answer · unclear target · poor image
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: balance
+    label: |-
+      Select diverse cases per answer
+      cap at 30 while varying appearance and source
+      consider age, gender, and other relevant factors
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: release
+    label: |-
+      Assemble 25,831 VQA pairs
+      validation: 4,550 · test: 21,281
+      withhold test answers for organizer evaluation
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: evaluate
+    label: |-
+      Run LVLMs zero-shot via VLMEvalKit
+      extract the selected option or answer
+      report accuracy overall and by lexical-tree slice
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 250
 edges:
-  - from: sources
-    to: standard
+  - from: collect
+    to: retain
     type: primary
-  - from: standard
-    to: tree
+  - from: retain
+    to: standardize
     type: primary
-  - from: tree
+  - from: standardize
+    to: lexical
+    type: primary
+  - from: lexical
+    to: pools
+    type: primary
+  - from: pools
     to: qa
     type: primary
   - from: qa
     to: validate
     type: primary
   - from: validate
-    to: eval
+    to: balance
     type: primary
-  - from: eval
-    to: score
+  - from: balance
+    to: release
+    type: primary
+  - from: release
+    to: evaluate
     type: primary
 modules: []

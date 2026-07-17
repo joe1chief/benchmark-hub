@@ -5,85 +5,145 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Arena-Hard 构建流程
-  description: 按论文对齐的Arena-Hard构建流程：清洗Arena众包查询，聚类主题并评估7项提示质量，采样500条多样化困难提示，生成模型回答，经成对LLM裁判后汇总Bradley-Terry胜率。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  description: 对齐论文的 BenchBuilder 数据构建与评测流程，对应 500 条提示的 Arena-Hard-Auto 基准。
+  legend: 上排从左向右阅读，再沿下排从右向左进入评测和质量复核。
 nodes:
-  - id: n1
-    label: Arena日志
+  - id: source
+    label: |-
+      Chatbot Arena 日志
+      20 万条众包提示
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 清洗提示
+      'y': 100
+  - id: clean
+    label: |-
+      清洗提示池
+      去重、去多轮对话
+      去非英文内容
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 主题聚类
+      x: 320
+      'y': 100
+  - id: topics
+    label: |-
+      分层主题建模
+      text-embedding-3-small + UMAP
+      HDBSCAN -> 4,000 个主题
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 7维质量评分
+      x: 600
+      'y': 100
+  - id: quality
+    label: |-
+      GPT-4-Turbo 质量标注
+      7 项所需能力（0-7 分）
+      保留提示 >=6 / 主题均分 >=5
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 采样500条
+      x: 880
+      'y': 100
+  - id: safety
+    label: |-
+      高质量主题池
+      超过 500 个主题簇
+      移除隐私与冒犯内容
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: sample
+    label: |-
+      分层提示采样
+      随机选择 250 个主题簇
+      每簇抽取 2 条
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: dataset
+    label: |-
+      Arena-Hard-Auto
+      500 条多样化困难提示
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 模型回答
+      x: 1440
+      'y': 440
+  - id: responses
+    label: |-
+      被测模型与基线回答
+      开放式模型生成
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 成对裁判
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      GPT-4-Turbo 成对裁判
+      每题互换 A/B 位置
+      每模型 1,000 次判定
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: BT胜率
+      x: 880
+      'y': 440
+  - id: score
+    label: |-
+      Bradley-Terry 汇总
+      胜率 + Bootstrap 置信区间
+      可选风格控制
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: metrics
+    label: |-
+      基准质量复核
+      可分性 / 人类偏好一致性
+      成对排名 Brier 分数
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: clean
     type: primary
-  - from: n2
-    to: n3
+  - from: clean
+    to: topics
     type: primary
-  - from: n3
-    to: n4
+  - from: topics
+    to: quality
     type: primary
-  - from: n4
-    to: n5
+  - from: quality
+    to: safety
     type: primary
-  - from: n5
-    to: n6
+  - from: safety
+    to: sample
     type: primary
-  - from: n6
-    to: n7
+  - from: sample
+    to: dataset
     type: primary
-  - from: n7
-    to: n8
+  - from: dataset
+    to: responses
+    type: primary
+  - from: responses
+    to: judge
+    type: primary
+  - from: judge
+    to: score
+    type: primary
+  - from: score
+    to: metrics
     type: primary
 modules: []

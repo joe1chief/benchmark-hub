@@ -1,0 +1,221 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ZeroBench Adversarial Construction and Exact-Match Evaluation
+  description: >-
+    More than 20 creators hand-craft 140 difficult visual candidates, iteratively improve them with o1 pro/QVQ probes,
+    and submit them to independent review that broadens answer spaces and removes unsuitable formats. Adversarial
+    filtering removes any candidate solved by any baseline, leaving 100 v1 questions; subquestions are derived from
+    natural reasoning steps. Community red-teaming modifies 23% into v2, followed by a clarity-only v3 patch. Evaluation
+    uses brace-delimited final answers, exact match, macro subquestion scoring, pass@k, and pass^k.
+  legend: >-
+    Source: ZeroBench arXiv:2502.09696v3, Sections 3.1-3.3, Table 1, Sections 4.1-4.2, Table 2, and Appendix F; official
+    project https://zerobench.github.io/, repository https://github.com/jonathan-roberts1/zerobench, and dataset
+    https://huggingface.co/datasets/jonathan-roberts1/zerobench. Version pin: paper construction creates v1 then
+    community-red-team v2, and paper experiments use v2; the current project v3 only clarifies two main questions and
+    three associated subquestions without changing scores.. Solid arrows show the main flow explicitly supported by the
+    paper or official documentation.
+nodes:
+  - id: human_creators
+    label: 20+ Human Creators
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: candidate_questions
+    label: 140 Visual Candidates
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: difficulty_feedback
+    label: Feedback + o1 pro / QVQ Probes
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: independent_review
+    label: Independent Review Pass?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: revise_candidate
+    label: Revise Candidate
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: first_pass_set
+    label: 106 First-Pass Questions
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: baseline_filter
+    label: Any Baseline Solves It?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: discard_solved
+    label: Discard Solved Item
+    type: loss
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: v1_set
+    label: 'v1: 100 Main Questions'
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: subquestions
+    label: 334 Reasoning-Step Subquestions
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: community_redteam
+    label: Community Red Team
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: v2_set
+    label: 'v2: 23% Main Questions Modified'
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 40
+  - id: v3_patch
+    label: 'v3 Clarity Patch: 2 Main + 3 Sub'
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 40
+  - id: prompt_format
+    label: CoT + Final Answer in Braces
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: generation_branch
+    label: Greedy pass@1 / Stochastic k
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: answer_parser
+    label: Brace Parser / o1-QVQ Exception
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: exact_match
+    label: Exact Match Scoring
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+  - id: zero_metrics
+    label: Main Acc + Macro SubQ + pass@k / pass^k
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: zero_report
+    label: Version-Pinned Results
+    type: terminal
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+edges:
+  - from: human_creators
+    to: candidate_questions
+    type: primary
+  - from: candidate_questions
+    to: difficulty_feedback
+    type: primary
+  - from: difficulty_feedback
+    to: independent_review
+    type: primary
+  - from: independent_review
+    to: first_pass_set
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: independent_review
+    to: revise_candidate
+    type: optional
+    label: Revise
+    labelPosition: end
+  - from: revise_candidate
+    to: difficulty_feedback
+    type: optional
+  - from: first_pass_set
+    to: baseline_filter
+    type: primary
+  - from: baseline_filter
+    to: discard_solved
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: baseline_filter
+    to: v1_set
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: v1_set
+    to: subquestions
+    type: primary
+  - from: subquestions
+    to: community_redteam
+    type: primary
+  - from: community_redteam
+    to: v2_set
+    type: primary
+  - from: v2_set
+    to: v3_patch
+    type: primary
+  - from: v3_patch
+    to: prompt_format
+    type: primary
+  - from: prompt_format
+    to: generation_branch
+    type: primary
+  - from: generation_branch
+    to: answer_parser
+    type: primary
+  - from: answer_parser
+    to: exact_match
+    type: primary
+  - from: exact_match
+    to: zero_metrics
+    type: primary
+  - from: zero_metrics
+    to: zero_report
+    type: primary
+modules: []

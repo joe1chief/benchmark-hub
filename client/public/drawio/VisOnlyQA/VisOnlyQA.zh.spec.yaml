@@ -1,0 +1,266 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VisOnlyQA — 真实/合成数据构建与评测
+  description: >-
+    VisOnlyQA 保持真实与合成两条独立产线。人工基于 MathVista、MMMU、ChartQA、CharXiv 图像新编问题，每组问答均由第二名标注员核验；标注员平衡选项标签，选项会打乱，真假题还生成否定版本。对
+    Eval-Real 随机抽取 100 题的人工审计全部有效。另一条产线独立使用 Python 精确处理 SyntheticGeometry、CLEVR、SuperCLEVR 元数据并套用模板，全程不使用 LLM，生成
+    Eval-Synthetic 与 Train。v3 发布 900 道真实评测题、700 道合成评测题和 7 万道合成训练题。
+  legend: >-
+    来源：arXiv:2412.00947v3, Sections 3.1-3.3 (pp.4-5), Section 4 (p.6), and Appendix C (p.23); official repository:
+    https://github.com/psunlpgroup/VisOnlyQA. Pin v3 counts (1,600 evaluation items), not the older 1,200-item
+    description.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: realSources
+    label: 真实来源：MathVista · MMMU · ChartQA · CharXiv
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: author
+    label: 标注员新编问答
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: review
+    label: 第二名标注员核验
+    type: user
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: realPool
+    label: Eval-Real 候选池
+    type: database
+    size: xl
+    position:
+      x: 780
+      'y': 40
+  - id: syntheticSources
+    label: 合成来源：SyntheticGeometry · CLEVR · SuperCLEVR
+    type: database
+    size: xl
+    position:
+      x: 60
+      'y': 380
+  - id: metadata
+    label: 结构化元数据
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 380
+  - id: pythonExact
+    label: Python 精确计算
+    type: process
+    size: xl
+    position:
+      x: 540
+      'y': 280
+  - id: templates
+    label: 模板 · 不使用LLM
+    type: document
+    size: xl
+    position:
+      x: 540
+      'y': 500
+  - id: syntheticPool
+    label: 合成问答池
+    type: database
+    size: xl
+    position:
+      x: 780
+      'y': 380
+  - id: balance
+    label: 真实集：标签平衡 · 打乱 · 真假否定题
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 40
+  - id: qc
+    label: 审计100道随机 Eval-Real · 全部有效
+    type: process
+    size: xl
+    position:
+      x: 1260
+      'y': 40
+  - id: split
+    label: 合成数据发布分集？
+    type: decision
+    size: xl
+    position:
+      x: 1020
+      'y': 380
+  - id: evalReal
+    label: Eval-Real · 900题
+    type: output
+    size: xl
+    position:
+      x: 1500
+      'y': 40
+  - id: evalSynthetic
+    label: Eval-Synthetic · 700题
+    type: output
+    size: xl
+    position:
+      x: 1260
+      'y': 280
+  - id: train
+    label: 训练集 · 7万题
+    type: output
+    size: xl
+    position:
+      x: 1260
+      'y': 500
+  - id: promptMode
+    label: 提示模式？
+    type: decision
+    size: xl
+    position:
+      x: 1740
+      'y': 260
+  - id: direct
+    label: 零样本直接回答
+    type: service
+    size: xl
+    position:
+      x: 2020
+      'y': 160
+  - id: cot
+    label: 零样本思维链
+    type: service
+    size: xl
+    position:
+      x: 2020
+      'y': 400
+  - id: extractor
+    label: GPT-4o 仅抽取最终选项
+    type: service
+    size: xl
+    position:
+      x: 2300
+      'y': 260
+  - id: match
+    label: 选项匹配答案键？
+    type: decision
+    size: xl
+    position:
+      x: 2580
+      'y': 260
+  - id: correct
+    label: 正确
+    type: output
+    size: xl
+    position:
+      x: 2860
+      'y': 160
+  - id: incorrect
+    label: 错误
+    type: output
+    size: xl
+    position:
+      x: 2860
+      'y': 400
+  - id: accuracy
+    label: 分别报告 Eval-Real / Eval-Synthetic 准确率
+    type: formula
+    size: xl
+    position:
+      x: 3140
+      'y': 260
+edges:
+  - from: realSources
+    to: author
+    type: primary
+  - from: author
+    to: review
+    type: primary
+  - from: review
+    to: realPool
+    type: primary
+  - from: syntheticSources
+    to: metadata
+    type: primary
+  - from: metadata
+    to: pythonExact
+    type: primary
+  - from: metadata
+    to: templates
+    type: data
+  - from: pythonExact
+    to: syntheticPool
+    type: primary
+  - from: templates
+    to: syntheticPool
+    type: primary
+  - from: realPool
+    to: balance
+    type: primary
+  - from: syntheticPool
+    to: split
+    type: primary
+  - from: balance
+    to: qc
+    type: primary
+  - from: qc
+    to: evalReal
+    type: primary
+  - from: split
+    to: evalSynthetic
+    type: primary
+    label: 合成评测
+    labelPosition: center
+  - from: split
+    to: train
+    type: primary
+    label: 训练
+    labelPosition: center
+  - from: evalReal
+    to: promptMode
+    type: primary
+  - from: evalSynthetic
+    to: promptMode
+    type: primary
+  - from: promptMode
+    to: direct
+    type: primary
+    label: 直接
+    labelPosition: center
+  - from: promptMode
+    to: cot
+    type: primary
+    label: 思维链
+    labelPosition: center
+  - from: direct
+    to: extractor
+    type: primary
+  - from: cot
+    to: extractor
+    type: primary
+  - from: extractor
+    to: match
+    type: primary
+  - from: match
+    to: correct
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: match
+    to: incorrect
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: correct
+    to: accuracy
+    type: data
+  - from: incorrect
+    to: accuracy
+    type: data
+modules: []

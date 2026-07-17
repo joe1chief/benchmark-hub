@@ -4,86 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Humanity’s Last Exam Build Process (ZH)
-  description: 对齐论文的 HLE 构建流程：从专家投稿到 LLM 难度检查、研究生级同行评审、组织者批准、公开审阅、闭式题发布和准确率/校准评测。
-  legend: 实线箭头表示题目开发、评审、发布和模型评测流程。
+  title: Humanity’s Last Exam (HLE) 构建流程
+  description: 论文对齐的 Humanity's Last Exam 流程：全球专家征集的封闭式问题必须难倒前沿模型，并通过研究生与组织者两轮复核， 最终形成公开的 2,500 题基准和私有留出集；O3-mini 评审支持准确率与置信度校准分析。
+  legend: 实线表示征集、难度门控、专家复核、发布与评测；虚线分支表示发布后的社区与可搜索性审计，不是得分依赖。
 nodes:
-  - id: authors
-    label: 专家作者
+  - id: experts
+    label: |-
+      全球专家征集
+      约 1,000 名贡献者
+      500+ 机构 / 50 国
     type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: questions
-    label: 前沿问题
+      'y': 220
+  - id: submission
+    label: |-
+      投稿材料
+      问题 + 答案 + 详解
+      学科 + 所属机构
     type: document
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: llm
-    label: LLM过滤
-    type: decision
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: review
-    label: 评审轮次
-    type: user
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: approval
-    label: 专家复核
-    type: user
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: public
-    label: 公开审阅
+      'y': 220
+  - id: criteria
+    label: |-
+      封闭式质量规则
+      精确 / 原创 / 可解
+      不可搜索 + 简短答案
     type: process
     size: xl
     position:
+      x: 520
+      'y': 220
+  - id: llm_gate
+    label: |-
+      前沿模型门控
+      精确题：全部模型失败
+      选择题：至多一模型答对
+      7 万次尝试 → 约 1.3 万题
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 220
+  - id: review1
+    label: |-
+      专家复核第一轮
+      1–3 名研究生级评审
+      作者迭代修改
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 220
+  - id: review2
+    label: |-
+      复核第二轮
+      组织者 / 专家批准
+    type: process
+    size: large
+    position:
       x: 1240
-      'y': 160
-  - id: set
-    label: 2500题
-    type: document
+      'y': 220
+  - id: dataset
+    label: |-
+      最终 HLE
+      100+ 学科
+      14% 多模态；24% 选择题
+    type: database
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: eval
-    label: 准确率
-    type: terminal
-    size: xl
+      'y': 220
+  - id: public
+    label: |-
+      公开发布
+      2,500 道题
+    type: document
+    size: large
     position:
       x: 1720
-      'y': 160
+      'y': 60
+  - id: private
+    label: |-
+      私有留出集
+      过拟合 / 刷榜检查
+    type: database
+    size: large
+    position:
+      x: 1720
+      'y': 380
+  - id: post_audit
+    label: |-
+      发布后审计
+      社区反馈
+      可搜索性检查
+    type: document
+    size: large
+    position:
+      x: 1960
+      'y': 500
+  - id: eval_prompt
+    label: |-
+      标准评测提示
+      推理 + 最终答案
+      置信度 0–100%
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 220
+  - id: judge
+    label: |-
+      O3-mini 结构化评审
+      接受等价格式
+    type: process
+    size: large
+    position:
+      x: 2180
+      'y': 220
+  - id: metrics
+    label: |-
+      报告准确率
+      RMS 校准误差
+    type: terminal
+    size: large
+    position:
+      x: 2380
+      'y': 220
 edges:
-  - from: authors
-    to: questions
+  - from: experts
+    to: submission
     type: primary
-  - from: questions
-    to: llm
+  - from: submission
+    to: criteria
     type: primary
-  - from: llm
-    to: review
+  - from: criteria
+    to: llm_gate
     type: primary
-  - from: review
-    to: approval
+  - from: llm_gate
+    to: review1
     type: primary
-  - from: approval
+  - from: review1
+    to: review2
+    type: primary
+  - from: review2
+    to: dataset
+    type: primary
+  - from: dataset
     to: public
     type: primary
-  - from: public
-    to: set
+  - from: dataset
+    to: private
     type: primary
-  - from: set
-    to: eval
+  - from: public
+    to: eval_prompt
+    type: primary
+  - from: private
+    to: eval_prompt
+    type: primary
+  - from: public
+    to: post_audit
+    type: optional
+  - from: eval_prompt
+    to: judge
+    type: primary
+  - from: judge
+    to: metrics
     type: primary
 modules: []

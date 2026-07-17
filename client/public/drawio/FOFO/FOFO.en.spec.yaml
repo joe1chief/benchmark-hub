@@ -5,77 +5,111 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FOFO Build Process
-  description: Paper-aligned FOFO flow from AI-human domain selection to format-following evaluation.
+  description: Paper-aligned AI-human construction and all-requirements format evaluation of the FOFO benchmark.
   legend: >-
-    Solid arrows show domain selection, domain-specific format collection, format-instruction generation, expert review,
-    task assembly, GPT-4 judging, and format accuracy reporting.
+    Solid arrows follow arXiv:2402.18667 through domain expansion, format generation, expert refinement, FORMAT-INSTRU
+    creation, model generation, GPT-4 binary judging, and human agreement validation.
 nodes:
-  - id: domains
-    label: Domains
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: formats
-    label: Formats
+  - id: domain_seed
+    label: |-
+      Experts seed useful AI-agent subdomains
+      GPT-4 expands and groups them into super-domains
+      humans iterate regeneration and review
     type: process
     size: xl
     position:
+      x: 40
+      'y': 250
+  - id: taxonomy
+    label: |-
+      Fix the domain taxonomy
+      10 domains × 5 subdomains each
+      healthcare, finance, software, legal, arts, and more
+    type: database
+    size: xl
+    position:
       x: 300
-      'y': 160
-  - id: instr
-    label: Format Instr
+      'y': 250
+  - id: format_generation
+    label: |-
+      GPT-4 proposes 5 text formats per subdomain
+      require human-readable, domain-specific examples
+      initially exclude generic TXT/CSV/JSON/XML
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: review
-    label: Expert Review
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: tasks
-    label: 494 Tasks
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: judge
-    label: GPT-4 Judge
+      'y': 250
+  - id: format_review
+    label: |-
+      Experts assess, regenerate, or remove formats
+      add universal JSON/XML/CSV/Markdown/YAML back
+      final pool: 248 data formats
     type: process
     size: xl
     position:
+      x: 820
+      'y': 250
+  - id: instruction_generation
+    label: |-
+      GPT-4 writes FORMAT-INSTRU per triplet
+      detailed real-world task + exact format configuration
+      include dummy context or permission to improvise
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+  - id: instruction_review
+    label: |-
+      Humans verify, edit, remove, or regenerate each item
+      final 494 FORMAT-INSTRU
+      average instruction length: 2,908 characters
+    type: database
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Format Acc
-    type: terminal
+      'y': 250
+  - id: generation
+    label: |-
+      Generate one response per test instruction
+      use each model's official prompt format
+      sampling temperature 0.7 · max 5,120 new tokens
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: evaluation
+    label: |-
+      GPT-4 gives binary format verdict + explanation
+      missing any requirement fails the whole item
+      report format accuracy; human check agrees 84/100
+    type: terminal
+    size: xl
+    position:
+      x: 1860
+      'y': 250
 edges:
-  - from: domains
-    to: formats
+  - from: domain_seed
+    to: taxonomy
     type: primary
-  - from: formats
-    to: instr
+  - from: taxonomy
+    to: format_generation
     type: primary
-  - from: instr
-    to: review
+  - from: format_generation
+    to: format_review
     type: primary
-  - from: review
-    to: tasks
+  - from: format_review
+    to: instruction_generation
     type: primary
-  - from: tasks
-    to: judge
+  - from: instruction_generation
+    to: instruction_review
     type: primary
-  - from: judge
-    to: score
+  - from: instruction_review
+    to: generation
+    type: primary
+  - from: generation
+    to: evaluation
     type: primary
 modules: []

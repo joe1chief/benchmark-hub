@@ -5,75 +5,180 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HealthSearchQA 构建流程
-  description: 对齐论文的 HealthSearchQA 流程：医学种子词、搜索引擎常见问题检索、消费者健康问题集、 开放式回答生成，以及 MultiMedQA 中的临床/普通用户人工评估。
-  legend: 实线箭头表示查询策划、开放回答、人工评估轴和 benchmark 使用。
+  description: 对齐论文的 3,375 条仅含问题的消费者健康查询构建流程，以及独立的 MultiMedQA 人工评测试验；该试验在三数据集 140 题样本中使用 100 道 HealthSearchQA 问题。
+  legend: 开放基准只含问题，不含参考答案。图中的临床医生与普通用户评分属于论文的抽样评测试验，并非为全部 3,375 条问题 附加的标注。
 nodes:
   - id: seeds
-    label: 医学种子词
+    label: |-
+      定义医学种子数据
+      医学状况 + 相关症状
+      表示消费者健康关注点
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: search
-    label: 搜索问题
+      'y': 380
+  - id: retrieve
+    label: |-
+      检索常见搜索问题
+      搜索引擎生成的公开查询
+      向所有输入种子词的用户展示
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 380
   - id: curate
-    label: 3375问题
+    label: |-
+      策划 HealthSearchQA
+      3,375 条常见消费者医学问题
+      英文 · 开放域 · 仅含问题
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: response
-    label: 自由回答
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: axes
-    label: 临床评估轴
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: rating
-    label: 人工评分
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 640
+      'y': 380
   - id: suite
-    label: MultiMedQA
+    label: |-
+      作为第七个数据集加入 MultiMedQA
+      自由文本回答格式
+      不以参考答案做自动准确率
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 380
+  - id: framework
+    label: |-
+      设计人工评测框架
+      英国 · 美国 · 印度临床医生焦点组
+      补充共识 · 伤害 · 完整性 · 偏见
+    type: user
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: pilot
+    label: |-
+      完善说明与量表
+      三名医生为每个数据集各评 25 个问答组
+      迭代直至评分方法收敛
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 100
+  - id: sample
+    label: |-
+      构造 140 题评测样本
+      100 道 HealthSearchQA + 20 道 LiveQA
+      + 20 道 MedicationQA · 与调优集不重叠
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 660
+  - id: answers
+    label: |-
+      生成三组回答
+      合格临床医生参考回答
+      Flan-PaLM + Med-PaLM 回答
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 660
+  - id: blind
+    label: |-
+      隐藏回答来源
+      每份回答由一名医生评分
+      9 名医生来自美国 · 英国 · 印度
+    type: user
+    size: xl
+    position:
+      x: 1840
+      'y': 380
+  - id: clinician_axes
+    label: |-
+      应用 12 个临床医生评估轴
+      科学共识 · 伤害程度 / 可能性
+      正误理解 · 知识回忆 · 推理
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 180
+  - id: content_axes
+    label: |-
+      检查回答内容
+      不当 / 错误内容 · 缺失内容
+      潜在人群偏见
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 180
+  - id: lay
+    label: |-
+      增加普通用户效用评分
+      印度 5 名无医学背景评分者
+      意图匹配 · 有用性 · 可行动性
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 620
+  - id: statistics
+    label: |-
+      报告人工评测结果
+      100 次非参数 Bootstrap 重采样
+      95% Bootstrap 百分位区间
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2740
+      'y': 380
 edges:
   - from: seeds
-    to: search
+    to: retrieve
     type: primary
-  - from: search
+  - from: retrieve
     to: curate
     type: primary
   - from: curate
-    to: response
-    type: primary
-  - from: response
-    to: axes
-    type: primary
-  - from: axes
-    to: rating
-    type: primary
-  - from: rating
     to: suite
     type: primary
+  - from: suite
+    to: framework
+    type: secondary
+  - from: framework
+    to: pilot
+    type: primary
+  - from: suite
+    to: sample
+    type: primary
+  - from: sample
+    to: answers
+    type: primary
+  - from: pilot
+    to: blind
+    type: secondary
+  - from: answers
+    to: blind
+    type: primary
+  - from: blind
+    to: clinician_axes
+    type: primary
+  - from: clinician_axes
+    to: content_axes
+    type: primary
+  - from: blind
+    to: lay
+    type: secondary
+  - from: content_axes
+    to: statistics
+    type: primary
+  - from: lay
+    to: statistics
+    type: secondary
 modules: []

@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "title": "OpenMathReasoning 数据集构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 14,
+    "edges": 13,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "source",
+      "label": "收集AoPS论坛讨论\n除Middle School Math外全部论坛\n获取620K条讨论\n保留数学上下文",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "extract",
+      "label": "用Qwen2.5-32B抽取问题\n识别每篇帖子中的全部问题\n允许零个一个或多个问题\n得到580K个问题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "classify",
+      "label": "分类每个问题\n证明题或非证明题\n多选或二元问题\n有效或无效",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter",
+      "label": "移除不适合格式\n删除多选题\n删除是非题和无效题\n论文阶段保留550K",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "transform",
+      "label": "规范为可回答问题\n把证明题转换为答案题\n尽可能抽取最终答案\n保留无法抽取答案的问题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "decontam",
+      "label": "执行基准去污染\n由LLM比对热门数学任务\n移除高度相似问题\n论文流水线报告540K",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correction",
+      "label": "对齐官方发布更正\n仅306K个问题进入解答分集\n193K个样例保持仅问题\n流水线Bug丢失137K个证明题",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "cot_generate",
+      "label": "生成长思维链候选\n使用DeepSeek-R1和QwQ-32B\n每题最多32个\n温度0.7且Top-p 0.95",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cot_filter",
+      "label": "过滤思维链解答\n检查预期最终答案\nQwen2.5-32B判断等价\n必要时用多数答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cot_release",
+      "label": "保留长推理数据\n2.7M条DeepSeek-R1解答\n0.5M条QwQ-32B解答\n合计3.2M条CoT",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "tir_seed",
+      "label": "启动工具集成推理\n提示LIMO-Qwen-32B使用Python\n生成1.2M个候选\n筛为15K条阶段零样例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "tir_iterate",
+      "label": "迭代TIR训练与生成\n先训练QwQ再训练14B模型\n过滤正确且使用代码的解答\n得到1.7M条TIR",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "genselect",
+      "label": "构建GenSelect数据\n改写忠实的解答摘要\n比较多个候选解答\n生成566K条选择样例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "发布OpenMathReasoning\n含CoT、TIR、GenSelect和额外问题\n官方卡约5.68M行\n同时发布代码和OpenMath-Nemotron模型",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "source",
+      "to": "extract",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "extract",
+      "to": "classify",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "classify",
+      "to": "filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "filter",
+      "to": "transform",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "transform",
+      "to": "decontam",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "decontam",
+      "to": "correction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "correction",
+      "to": "cot_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "cot_generate",
+      "to": "cot_filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "cot_filter",
+      "to": "cot_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "cot_release",
+      "to": "tir_seed",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "tir_seed",
+      "to": "tir_iterate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "tir_iterate",
+      "to": "genselect",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "genselect",
+      "to": "release",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

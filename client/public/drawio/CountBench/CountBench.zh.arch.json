@@ -1,56 +1,74 @@
 {
   "version": 1,
-  "title": "CountBench 构建流程",
+  "title": "CountBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 10,
+    "edges": 9,
     "modules": 0
   },
   "nodes": [
     {
       "id": "laion",
-      "label": "LAION-400M",
+      "label": "公开 LAION-400M\n图像与描述对",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "num",
-      "label": "数字过滤",
+      "id": "number_filter",
+      "label": "保留英文 two 到 ten 计数词\n排除日期、年龄、时间、地址\n及其他非可见数量用法",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "detect",
-      "label": "检测校验",
+      "id": "detector",
+      "label": "现成目标检测器\n统计每类检测对象数量\n描述匹配图中数量最多的类别",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "candidate",
+      "label": "自动过滤候选\n数量严重失衡：two 超过 158K\nten 仅约 100",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "balance",
-      "label": "数量平衡",
+      "label": "初步平衡数量\n每个数字保留 100 到 200 个候选",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "人工验证",
+      "id": "verify",
+      "label": "人工验证\n描述数量必须匹配\n图中清晰可见对象",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "bench",
-      "label": "540图像",
-      "type": "document",
+      "id": "dataset",
+      "label": "CountBench 仅作测试\n每个数量 60 对 × 9 = 540\n与计数训练集无重叠",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "零样本评测",
+      "id": "captions",
+      "label": "创建九条候选描述\n用 two 到 ten 替换数字\n一条正确 + 八条反事实",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "similarity",
+      "label": "零样本 VLM 推理\n计算图文相似度\n选择得分最高的数字",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告计数准确率\n与平均数量偏差",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,37 +77,55 @@
     {
       "id": "edge-1",
       "from": "laion",
-      "to": "num",
+      "to": "number_filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "num",
-      "to": "detect",
+      "from": "number_filter",
+      "to": "detector",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "detect",
-      "to": "balance",
+      "from": "detector",
+      "to": "candidate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "balance",
-      "to": "human",
+      "from": "candidate",
+      "to": "balance",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "human",
-      "to": "bench",
+      "from": "balance",
+      "to": "verify",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "bench",
-      "to": "eval",
+      "from": "verify",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "dataset",
+      "to": "captions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "captions",
+      "to": "similarity",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "similarity",
+      "to": "report",
       "type": "primary"
     }
   ],

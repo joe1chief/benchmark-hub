@@ -4,122 +4,186 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ASPERA 构建流程
-  description: 基于 arXiv:2507.15501，对齐 ASPERA/Asper-Bench 的助手库模拟、人机协同任务生成、质量控制和 task-success 评测流程。
-  legend: 实线表示 ASPERA 任务构造与执行评测主流程；虚线表示开发者调控和偏差缓解循环。
+  title: ASPERA 与 Asper-Bench 构建及评测流程
+  description: 按论文呈现交互式生成可执行数字助理任务、模拟环境初始化器和断言式评测器，再衡量模型生成的动作程序能否 完成任务的完整流程。
+  legend: 每个任务包含四项合同：用户查询、参考动作执行程序 AEP、状态初始化程序 SIP、评测程序 EP。只有执行无错误且 EP 的全部断言通过，任务才算成功。
 nodes:
-  - id: assistant_library
+  - id: library
     label: |-
-      助手库模拟
-      7 个数据库
-      69 个 Python 原语
+      实现 ASPERA 助理库
+      模拟公司 • 7 个数据库 • 69 个原语
+      49 个函数 • 20 个类 • 时间工具
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: aep_generation
+      'y': 100
+  - id: session
     label: |-
-      查询与 AEP 生成
-      GPT-4o 加示例
-      复杂组合程序
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: bias_control
-    label: |-
-      多样性控制
-      历史查询提示
-      focus 指令与过滤
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: sip_generation
-    label: |-
-      SIP 生成
-      初始化模拟状态
-      动态用户数据库
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 70
-  - id: ep_generation
-    label: |-
-      EP 生成
-      执行 SIP 与 AEP
-      断言目标和副作用
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 250
-  - id: human_qc
-    label: |-
-      开发者调控
-      IDE 中运行与编辑程序
-      标注者确认质量
+      启动开发者与 LLM 交互
+      提供聚焦指令或人工查询
+      控制复杂度、长度与场景
     type: user
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: dataset
+      x: 320
+      'y': 100
+  - id: prompt
     label: |-
-      Asper-Bench 数据集
-      250 个任务
-      AEP、SIP、EP 标注
+      为 GPT-4o 生成提供依据
+      助理库文档 + 自然语言规则
+      每类程序 5 个上下文示例
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: aep
+    label: |-
+      生成查询 + 参考 AEP
+      组合原语、流程控制、循环与时间逻辑
+      开发者执行、筛选并编辑
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: sip
+    label: |-
+      生成 SIP
+      构建查询所需的动态模拟状态
+      开发者执行并编辑初始化器
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: ep
+    label: |-
+      生成 EP
+      依次运行 SIP 与 AEP，断言返回值和状态变化
+      支持多个可接受结果与条件分支
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: release
+    label: |-
+      审核并发布 Asper-Bench
+      第一作者执行/修正，两名标注员确认质量
+      250 题：71 个信息查询 + 179 个状态修改
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluator
+      x: 1720
+      'y': 100
+  - id: setting
     label: |-
-      ASPERA 评测器
-      完整或部分代码库知识
-      断言通过即任务成功
+      选择评测设置
+      CCK：完整库文档 + 5 个 AEP 示例
+      PS：逐模块选原语 + 1 个示例
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: candidate
+    label: |-
+      生成候选 AEP
+      模型把未见用户查询转换为 Python
+      PS 另记原语精确率、召回率和微平均 F1
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: initialize
+    label: |-
+      初始化参考状态
+      在隔离模拟中执行任务 SIP
+      条件查询覆盖 AEP 的每个分支
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: execute
+    label: |-
+      执行候选 AEP
+      观测返回值、异常与数据库副作用
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: assertions
+    label: |-
+      执行是否无错误结束
+      且参考 EP 的全部断言通过？
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: metric
+    label: |-
+      计算任务成功率
+      仅全部必要检查通过才算完成一题
+      比较 CCK 与原语选择难度
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: report
+    label: |-
+      报告程序合成能力
+      任务成功率 + 原语选择诊断
+      分析缺失、多余与误用原语
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 520
 edges:
-  - from: assistant_library
-    to: aep_generation
+  - from: library
+    to: session
     type: primary
-  - from: assistant_library
-    to: sip_generation
-    type: data
-  - from: aep_generation
-    to: bias_control
-    type: optional
-    label: 缓解重复偏差
-  - from: bias_control
-    to: aep_generation
-    type: optional
-    label: 调整 focus
-  - from: aep_generation
-    to: sip_generation
+  - from: session
+    to: prompt
     type: primary
-  - from: sip_generation
-    to: ep_generation
+  - from: prompt
+    to: aep
     type: primary
-  - from: ep_generation
-    to: human_qc
+  - from: aep
+    to: sip
     type: primary
-  - from: human_qc
-    to: aep_generation
-    type: optional
-    label: 执行并编辑输出
-  - from: human_qc
-    to: dataset
+  - from: sip
+    to: ep
     type: primary
-  - from: dataset
-    to: evaluator
+  - from: ep
+    to: release
+    type: primary
+  - from: release
+    to: setting
+    type: primary
+  - from: setting
+    to: candidate
+    type: primary
+  - from: candidate
+    to: initialize
+    type: primary
+  - from: initialize
+    to: execute
+    type: primary
+  - from: execute
+    to: assertions
+    type: primary
+  - from: assertions
+    to: metric
+    type: primary
+  - from: metric
+    to: report
     type: primary
 modules: []

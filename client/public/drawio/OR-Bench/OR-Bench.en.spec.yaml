@@ -1,0 +1,209 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OR-Bench Build and Evaluation Process
+  description: >-
+    Paper-aligned pipeline that rewrites toxic seeds into benign borderline prompts, moderates them with an LLM ensemble
+    and response recovery, and releases complementary helpfulness and safety evaluation sets.
+  legend: >-
+    OR-Bench measures both sides of safety alignment: low rejection is desired on benign over-refusal prompts, while
+    high rejection is desired on the toxic control set.
+nodes:
+  - id: categories
+    label: |-
+      Define 10 Refusal Categories
+      Violence · Privacy · Hate
+      Sexual · Illegal · Self-harm
+      Deception and Other Harms
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: seeds
+    label: |-
+      Generate Toxic Seeds
+      Mixtral 8×7B
+      2,000 Seeds per Category
+      Batches of 20 Prompts
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: dedupe
+    label: |-
+      Remove Duplicate Seeds
+      Consolidate Generation Batches
+      Preserve Category Coverage
+      Keep Toxic Controls
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: rewrite
+    label: |-
+      Rewrite Each Seed Five Ways
+      Mixtral 8×7B with Five Examples
+      Avoid “Safe” or “Legal” Cues
+      Avoid Fictional Framing
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: moderate
+    label: |-
+      Moderate Every Rewrite
+      GPT-4 Turbo · Llama 3 70B
+      Gemini 1.5 Pro
+      Explain Then Classify
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: vote
+    label: |-
+      Take Ensemble Majority Vote
+      Include Majority-safe Prompts
+      Reduce Single-family Bias
+      Hold Flagged Prompts for Recovery
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: recover
+    label: |-
+      Recover Oversensitive Flags
+      Mistral 7B Answers Flagged Prompt
+      Ensemble Reassesses Response
+      Recover Prompt if Response Is Safe
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: partition
+    label: |-
+      Partition by Final Safety Label
+      Safe or Recovered → Benign Pool
+      Remaining Harmful → Toxic Pool
+      Preserve Category Metadata
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: release_main
+    label: |-
+      Release Complementary Sets
+      OR-Bench-80K: Safe Prompts
+      OR-Bench-Toxic: About 600
+      Test Helpfulness and Safety
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: screen
+    label: |-
+      Screen Benign Prompt Difficulty
+      Query Largest and Newest Models
+      Group Results by Model Family
+      Record Which Safe Prompts Refuse
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: hard
+    label: |-
+      Select OR-Bench-Hard-1K
+      Safe Yet Frequently Refused
+      Rejected by at Least Three
+      Top Models in Each Family
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: query
+    label: |-
+      Evaluate 32 LLMs
+      Eight Model Families
+      Public APIs · Temperature 0.0
+      No System Prompt
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: judge
+    label: |-
+      Detect Model Rejections
+      Keyword Match on Full 80K
+      GPT-4 on Hard and Toxic Sets
+      Check Safety–Helpfulness Balance
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      Report Rejection Rates
+      Lower on Safe Prompts Is Better
+      Higher on Toxic Prompts Is Better
+      Break Down by 10 Categories
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: categories
+    to: seeds
+    type: primary
+  - from: seeds
+    to: dedupe
+    type: primary
+  - from: dedupe
+    to: rewrite
+    type: primary
+  - from: rewrite
+    to: moderate
+    type: primary
+  - from: moderate
+    to: vote
+    type: primary
+  - from: vote
+    to: recover
+    type: primary
+  - from: recover
+    to: partition
+    type: primary
+  - from: partition
+    to: release_main
+    type: primary
+  - from: release_main
+    to: screen
+    type: primary
+  - from: screen
+    to: hard
+    type: primary
+  - from: hard
+    to: query
+    type: primary
+  - from: query
+    to: judge
+    type: primary
+  - from: judge
+    to: report
+    type: primary
+modules: []

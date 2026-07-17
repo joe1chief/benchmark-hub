@@ -1,0 +1,199 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: IMO-AnswerBench 构建流程
+  description: >-
+    与论文和官方发布一致的 IMO-AnswerBench 流程：专家精选并改写 400 道奥赛题，平衡四类数学领域， 对题面做防记忆稳健化，保证答案唯一、非平凡且简短，再由 Gemini 2.5 Pro
+    AnswerAutoGrader 按语义等价性评测正确率。
+  legend: 实线表示论文中的构建与答案评测；虚线表示自动裁判的人类验证，以及论文发布后的 answerbench_v2 修订。
+nodes:
+  - id: sources
+    label: |-
+      历年奥林匹克竞赛
+      国家级 + 地区级 + 国际级
+      覆盖多样主题与解题技巧
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 200
+  - id: handpick
+    label: |-
+      专家人工精选
+      400 道问题
+      均有可验证简短答案
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 200
+  - id: balance
+    label: |-
+      平衡四个 IMO 类别
+      每类 100 道：代数 / 组合
+      几何 / 数论
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 200
+  - id: reformulate
+    label: |-
+      改写证明型题目
+      形成明确非平凡的简短答案
+      覆盖预备级至 IMO 困难级
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 200
+  - id: robustify
+    label: |-
+      防记忆稳健化
+      释义改写 + 对象重命名
+      修改数值 + 添加干扰项
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 200
+  - id: consistency
+    label: |-
+      一致性质检门
+      答案唯一且化简
+      避免二元或歧义输出
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 200
+  - id: vet
+    label: |-
+      IMO 奖牌得主与数学家复核
+      评审团合计 10 枚金牌
+      和 5 枚银牌
+    type: user
+    size: xl
+    position:
+      x: 1600
+      'y': 200
+  - id: dataset
+    label: |-
+      论文版 IMO-AnswerBench
+      400 组题目与标准答案
+      含类别 / 主题 / 来源元数据
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 200
+  - id: v2
+    label: |-
+      官方 answerbench_v2.csv
+      论文后发布修订
+      修复歧义题面与错误答案
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 520
+  - id: generate
+    label: |-
+      生成模型解答
+      保留推理与最终答案
+      论文结果通常平均 8 次运行
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 200
+  - id: grader
+    label: |-
+      Gemini 2.5 Pro AnswerAutoGrader
+      抽取最终答案
+      与标准答案比较
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 200
+  - id: semantic
+    label: |-
+      语义等价性判定
+      接受等价格式
+      拒绝矛盾或缺失答案
+    type: process
+    size: xl
+    position:
+      x: 2700
+      'y': 200
+  - id: validate
+    label: |-
+      人类验证审计
+      800 次答案判断
+      与自动裁判近乎一致
+    type: user
+    size: xl
+    position:
+      x: 2700
+      'y': 520
+  - id: report
+    label: |-
+      报告准确率
+      总体 + 四个类别
+      稳健化前后对比分析
+    type: terminal
+    size: xl
+    position:
+      x: 2980
+      'y': 200
+edges:
+  - from: sources
+    to: handpick
+    type: primary
+  - from: handpick
+    to: balance
+    type: primary
+  - from: balance
+    to: reformulate
+    type: primary
+  - from: reformulate
+    to: robustify
+    type: primary
+  - from: robustify
+    to: consistency
+    type: primary
+  - from: consistency
+    to: vet
+    type: primary
+  - from: vet
+    to: dataset
+    type: primary
+  - from: dataset
+    to: generate
+    type: primary
+  - from: dataset
+    to: v2
+    type: optional
+  - from: v2
+    to: generate
+    type: optional
+  - from: generate
+    to: grader
+    type: primary
+  - from: grader
+    to: semantic
+    type: primary
+  - from: grader
+    to: validate
+    type: optional
+  - from: semantic
+    to: report
+    type: primary
+  - from: validate
+    to: report
+    type: optional
+modules: []

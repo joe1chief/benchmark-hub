@@ -7,51 +7,63 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 9,
+    "edges": 8,
     "modules": 0
   },
   "nodes": [
     {
       "id": "books",
-      "label": "权威教材",
+      "label": "选择 62 本大学 / 研究生教材\n11 个学科 · 43 个源子领域（§3.1.1）\n权威的中英文知识来源",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "facts",
-      "label": "正确陈述",
+      "id": "screenshots",
+      "label": "人工截取教材页面\n用马赛克遮盖无关内容\n保留可溯源的上下文",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "extract",
+      "label": "提取独立正确语句\ndoubao-1.5-vision-pro-32k + 标题\n独立 · 清晰 · 简洁规则",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correct_qc",
+      "label": "过滤并复核正确语句\n移除图像 / 引用 / 语义含混项\n3 名标注员复核 21,525 条合格语句",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "false_stmts",
-      "label": "错误陈述",
+      "label": "生成高迷惑性错误语句\nDeepSeek-R1 + 六类错误模式\n过滤过短项 → 21,494 条错误语句",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "sample",
-      "label": "动态采样",
-      "type": "decision",
+      "id": "pool",
+      "label": "建立语句集合\n21,525 条正确 + 21,494 条错误\n共 43,019 条 · 44 个领域 / 62 个子领域（Table 1）",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "opts",
-      "label": "选项组装",
-      "type": "document",
+      "id": "assemble",
+      "label": "动态采样并组题\n8–10 条语句 · 4–8 个选项\n每个选项组合 2–4 条语句",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "答案抽取",
+      "id": "dataset",
+      "label": "Encyclo-K 标准配置\n5,038 题：3,286 英文 + 1,752 中文\n按学科语句占比分配",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evaluate",
+      "label": "分层正则解析选项字母\n失败时匹配选项文本\n未解析计错 · 报告准确率",
       "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "score",
-      "label": "准确率",
-      "type": "document",
       "size": "xl"
     }
   ],
@@ -59,37 +71,49 @@
     {
       "id": "edge-1",
       "from": "books",
-      "to": "facts",
+      "to": "screenshots",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "facts",
-      "to": "false_stmts",
+      "from": "screenshots",
+      "to": "extract",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "false_stmts",
-      "to": "sample",
+      "from": "extract",
+      "to": "correct_qc",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "sample",
-      "to": "opts",
+      "from": "correct_qc",
+      "to": "false_stmts",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "opts",
-      "to": "parse",
+      "from": "false_stmts",
+      "to": "pool",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "parse",
-      "to": "score",
+      "from": "pool",
+      "to": "assemble",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "assemble",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dataset",
+      "to": "evaluate",
       "type": "primary"
     }
   ],

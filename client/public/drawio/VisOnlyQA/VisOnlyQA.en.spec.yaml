@@ -1,0 +1,269 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VisOnlyQA — Real/Synthetic Construction and Evaluation
+  description: >-
+    VisOnlyQA keeps separate real and synthetic factories. Humans author new questions over figures from MathVista,
+    MMMU, ChartQA, and CharXiv, and a second annotator verifies every pair; annotators balance option labels, options
+    are shuffled, and true/false questions receive negative counterparts. A manual audit of 100 randomly selected
+    Eval-Real items found all valid. Independently, SyntheticGeometry, CLEVR, and SuperCLEVR metadata are processed by
+    exact Python programs and templates without an LLM to produce Eval-Synthetic and Train. Version 3 releases 900 real
+    and 700 synthetic evaluation items plus 70k synthetic training items.
+  legend: >-
+    Source: arXiv:2412.00947v3, Sections 3.1-3.3 (pp.4-5), Section 4 (p.6), and Appendix C (p.23); official repository:
+    https://github.com/psunlpgroup/VisOnlyQA. Pin v3 counts (1,600 evaluation items), not the older 1,200-item
+    description.. Solid arrows show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: realSources
+    label: MathVista · MMMU · ChartQA · CharXiv
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: author
+    label: Annotator Authors New QA
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: review
+    label: Second Annotator Verification
+    type: user
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: realPool
+    label: Eval-Real Pool
+    type: database
+    size: xl
+    position:
+      x: 780
+      'y': 40
+  - id: syntheticSources
+    label: SyntheticGeometry · CLEVR · SuperCLEVR
+    type: database
+    size: xl
+    position:
+      x: 60
+      'y': 380
+  - id: metadata
+    label: Structured Metadata
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 380
+  - id: pythonExact
+    label: Exact Python Computation
+    type: process
+    size: xl
+    position:
+      x: 540
+      'y': 280
+  - id: templates
+    label: Templates · no LLM
+    type: document
+    size: xl
+    position:
+      x: 540
+      'y': 500
+  - id: syntheticPool
+    label: Synthetic QA Pool
+    type: database
+    size: xl
+    position:
+      x: 780
+      'y': 380
+  - id: balance
+    label: 'Real: balance labels · shuffle · T/F negatives'
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 40
+  - id: qc
+    label: Audit 100 random Eval-Real · all valid
+    type: process
+    size: xl
+    position:
+      x: 1260
+      'y': 40
+  - id: split
+    label: Synthetic release split?
+    type: decision
+    size: xl
+    position:
+      x: 1020
+      'y': 380
+  - id: evalReal
+    label: Eval-Real · 900
+    type: output
+    size: xl
+    position:
+      x: 1500
+      'y': 40
+  - id: evalSynthetic
+    label: Eval-Synthetic · 700
+    type: output
+    size: xl
+    position:
+      x: 1260
+      'y': 280
+  - id: train
+    label: Train · 70k
+    type: output
+    size: xl
+    position:
+      x: 1260
+      'y': 500
+  - id: promptMode
+    label: Prompt Mode?
+    type: decision
+    size: xl
+    position:
+      x: 1740
+      'y': 260
+  - id: direct
+    label: Zero-shot Direct
+    type: service
+    size: xl
+    position:
+      x: 2020
+      'y': 160
+  - id: cot
+    label: Zero-shot CoT
+    type: service
+    size: xl
+    position:
+      x: 2020
+      'y': 400
+  - id: extractor
+    label: GPT-4o Final-choice Extractor Only
+    type: service
+    size: xl
+    position:
+      x: 2300
+      'y': 260
+  - id: match
+    label: Choice Matches Key?
+    type: decision
+    size: xl
+    position:
+      x: 2580
+      'y': 260
+  - id: correct
+    label: Correct
+    type: output
+    size: xl
+    position:
+      x: 2860
+      'y': 160
+  - id: incorrect
+    label: Incorrect
+    type: output
+    size: xl
+    position:
+      x: 2860
+      'y': 400
+  - id: accuracy
+    label: Separate Eval-Real / Eval-Synthetic Accuracy
+    type: formula
+    size: xl
+    position:
+      x: 3140
+      'y': 260
+edges:
+  - from: realSources
+    to: author
+    type: primary
+  - from: author
+    to: review
+    type: primary
+  - from: review
+    to: realPool
+    type: primary
+  - from: syntheticSources
+    to: metadata
+    type: primary
+  - from: metadata
+    to: pythonExact
+    type: primary
+  - from: metadata
+    to: templates
+    type: data
+  - from: pythonExact
+    to: syntheticPool
+    type: primary
+  - from: templates
+    to: syntheticPool
+    type: primary
+  - from: realPool
+    to: balance
+    type: primary
+  - from: syntheticPool
+    to: split
+    type: primary
+  - from: balance
+    to: qc
+    type: primary
+  - from: qc
+    to: evalReal
+    type: primary
+  - from: split
+    to: evalSynthetic
+    type: primary
+    label: Synthetic eval
+    labelPosition: center
+  - from: split
+    to: train
+    type: primary
+    label: Training
+    labelPosition: center
+  - from: evalReal
+    to: promptMode
+    type: primary
+  - from: evalSynthetic
+    to: promptMode
+    type: primary
+  - from: promptMode
+    to: direct
+    type: primary
+    label: Direct
+    labelPosition: center
+  - from: promptMode
+    to: cot
+    type: primary
+    label: CoT
+    labelPosition: center
+  - from: direct
+    to: extractor
+    type: primary
+  - from: cot
+    to: extractor
+    type: primary
+  - from: extractor
+    to: match
+    type: primary
+  - from: match
+    to: correct
+    type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: match
+    to: incorrect
+    type: optional
+    label: 'No'
+    labelPosition: center
+  - from: correct
+    to: accuracy
+    type: data
+  - from: incorrect
+    to: accuracy
+    type: data
+modules: []

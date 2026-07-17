@@ -4,118 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ACPBench Hard 构建流程
-  description: 基于 arXiv:2503.24378 对齐的 ACPBench Hard 构建与评估流程。
-  legend: 实线表示基准构建和评估主流程；虚线表示验证器反馈和按任务类型执行的答案校验。
+  title: ACPBench Hard 构建与评测流程
+  description: 对齐论文的 PDDL 生成、优质规划、计划 / 状态采样、八类开放式任务、模板翻译、语法解析和任务专用符号验证流程。
+  legend: 上排遵循论文六步数据生成流程；下排分流至存储值 / 模拟检查与规划器验证，再汇总严格准确率。
 nodes:
-  - id: domains
+  - id: pddl
     label: |-
-      规划领域
-      13 个 PDDL 领域
-      继承自 ACPBench
+      生成 PDDL 领域与问题文件
+      沿用 ACPBench 的 13 个规划领域
+      ALFWorld 直接使用现有 PDDL，不运行生成器
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
-    label: |-
-      原子规划推理任务
-      7 类 ACP 任务
-      追加 next action
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
+      'y': 100
   - id: planner
     label: |-
-      符号规划支持
-      当前状态作为初始状态
-      高质量 planner + 备选 planner
+      运行 Top-K / Top-Quality 规划器
+      产生多条有效计划
+      保留规划任务、当前状态与目标
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: questions
+      x: 320
+      'y': 100
+  - id: sample
     label: |-
-      开放式自然语言问题
-      模板化 PDDL 转文本
-      生成式答案格式
-    type: document
+      采样计划或中间状态
+      按不同任务选择所需材料
+      无法确定可达性时跳过该状态
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: answers
+      x: 600
+      'y': 100
+  - id: symbolic
     label: |-
-      保存符号答案
-      可执行动作、状态变化
-      计划、事实、landmarks
+      生成符号化问题与答案
+      适用性 • 推演 • 可达性 • 动作可达性
+      验证 • 论证 • 地标 • 下一动作
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: translate
+    label: |-
+      使用领域模板翻译
+      PDDL 事实与动作 → 自然语言
+      保留事实、动作、计划、代价及证据集用于判分
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      ACPBench Hard 数据集
+      Dev：每任务 40 例，共 320 例
+      Test：每领域 10 题 × 13 × 8 任务 = 1,040 题
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: validators
+      x: 1440
+      'y': 100
+  - id: inference
     label: |-
-      任务级验证器
-      解析模型生成答案
-      按任务规则校验正确性
-    type: decision
+      开放式模型评测
+      自然语言上下文 + 任务指令 + 2 个样例
+      温度 0 • 最多生成 1,000 token
+    type: document
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: model_eval
+      x: 1440
+      'y': 440
+  - id: parse
     label: |-
-      LLM 评测
-      回答各类生成式任务
-      不再提供多选项
+      任务专用语法解析器
+      提取动作列表、事实列表、计划或序号
+      拒绝无法解析或非法的符号
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: release
+      x: 1160
+      'y': 440
+  - id: route
+    label: 选择验证路径？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: stored
+    label: |-
+      存储值 / 模拟检查
+      适用性与推演要求集合完全匹配
+      首个无效序号；论证检查真子序列且仍为有效计划
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 350
+  - id: solve
+    label: |-
+      规划器支撑的检查
+      可达性 • 动作可达性 • 地标
+      下一动作必须使最优目标距离减少 1
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 530
+  - id: report
     label: |-
       ACPBench Hard 结果
-      按任务统计 accuracy
-      诊断规划推理能力
+      按任务 / 领域统计二元正确性与准确率
+      默认要求完整答案；适用性可附加 Jaccard 分析
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: domains
-    to: tasks
-    type: primary
-  - from: domains
+  - from: pddl
     to: planner
-    type: data
-  - from: tasks
-    to: questions
     type: primary
   - from: planner
-    to: questions
+    to: sample
     type: primary
-    label: 状态与计划
-  - from: questions
-    to: answers
+  - from: sample
+    to: symbolic
     type: primary
-  - from: answers
-    to: validators
-    type: data
-  - from: questions
-    to: model_eval
+  - from: symbolic
+    to: translate
     type: primary
-  - from: model_eval
-    to: validators
-    type: primary
-    label: 生成答案
-  - from: validators
+  - from: translate
     to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
+    to: parse
+    type: primary
+  - from: parse
+    to: route
+    type: primary
+  - from: route
+    to: stored
+    type: primary
+  - from: route
+    to: solve
+    type: primary
+  - from: stored
+    to: report
+    type: primary
+  - from: solve
+    to: report
     type: primary
 modules: []

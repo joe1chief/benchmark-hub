@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "title": "OR-Bench 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 14,
+    "edges": 13,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "categories",
+      "label": "定义 10 类常见拒答主题\n暴力 · 隐私 · 仇恨\n性内容 · 违法 · 自残\n欺骗及其他伤害",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "seeds",
+      "label": "生成有害种子\n使用 Mixtral 8×7B\n每类 2,000 条种子\n每批生成 20 条",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dedupe",
+      "label": "去除重复种子\n合并各生成批次\n保留类别覆盖\n留存有毒对照来源",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rewrite",
+      "label": "每个种子改写五次\nMixtral 8×7B 配五个示例\n避免“安全”或“合法”提示词\n避免虚构式表达",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "moderate",
+      "label": "审核每条改写提示\nGPT-4 Turbo · Llama 3 70B\nGemini 1.5 Pro\n先解释再分类",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "vote",
+      "label": "采用集成多数票\n纳入多数判安全的提示\n降低单一模型族偏差\n暂存被判有害的提示",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recover",
+      "label": "恢复过敏误判\nMistral 7B 回答被拦提示\n集成审核器复审回答\n回答安全则恢复原提示",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "partition",
+      "label": "按最终安全标签分流\n安全或恢复 → 无害池\n其余有害项 → 有毒池\n保留类别元数据",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release_main",
+      "label": "发布互补数据集\nOR-Bench-80K：安全提示\nOR-Bench-Toxic：约 600 条\n同测有用性与安全性",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "screen",
+      "label": "筛选无害提示难度\n查询各族最大或最新模型\n按模型族汇总结果\n记录安全提示拒答情况",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hard",
+      "label": "选出 OR-Bench-Hard-1K\n安全但频繁被拒答\n每个模型族的头部模型中\n至少三个拒答",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "query",
+      "label": "评测 32 个大模型\n覆盖八个模型族\n公共 API · 温度 0.0\n不使用系统提示",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "识别模型是否拒答\n80K 全集用关键词匹配\nHard 与 Toxic 用 GPT-4\n同查安全和有用性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告拒答率\n安全提示越低越好\n有毒提示越高越好\n按 10 个类别细分",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "categories",
+      "to": "seeds",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "seeds",
+      "to": "dedupe",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "dedupe",
+      "to": "rewrite",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "rewrite",
+      "to": "moderate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "moderate",
+      "to": "vote",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "vote",
+      "to": "recover",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "recover",
+      "to": "partition",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "partition",
+      "to": "release_main",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "release_main",
+      "to": "screen",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "screen",
+      "to": "hard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "hard",
+      "to": "query",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "query",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "judge",
+      "to": "report",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

@@ -5,77 +5,126 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EmbSpatial-Bench Build Process
-  description: Paper-aligned EmbSpatial-Bench flow from annotated 3D embodied scenes to egocentric spatial QA evaluation.
+  description: >-
+    Paper-aligned construction from annotated embodied 3D scenes to balanced egocentric spatial-relation MCQs and
+    zero-shot LVLM accuracy.
   legend: >-
-    Solid arrows show 3D scene sourcing, RGB-D image selection, spatial triple extraction, QA template generation,
-    sample filtering, LVLM evaluation, and accuracy reporting.
+    Solid arrows follow the ACL 2024 paper's benchmark pipeline. EmbSpatial-SFT is a separate training set and is not
+    mixed into the 3,640-item evaluation benchmark.
 nodes:
-  - id: scenes
-    label: 3D Scenes
+  - id: sources
+    label: |-
+      Select annotated embodied scenes
+      MP3D test · ScanNet validation
+      AI2-THOR: 7 ALFRED tasks / 93 scenes
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: images
-    label: RGB-D Frames
+      'y': 250
+  - id: frames
+    label: |-
+      Capture target RGB-D frames
+      random viewpoints in MP3D / ScanNet
+      PDDL-selected key frames in AI2-THOR
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: triples
-    label: Rel Triples
+      'y': 250
+  - id: project
+    label: |-
+      Project 3D objects into each image
+      camera parameters + 3D coordinates
+      produce 2D bounding boxes and mean depth
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: qa
-    label: QA Templates
-    type: document
+      'y': 250
+  - id: relations
+    label: |-
+      Extract non-overlapping relation triples
+      whole-box: above / below / left / right
+      mean depth: close / far · viewer perspective
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: filter
-    label: Sample Filter
-    type: decision
+      'y': 250
+  - id: qa
+    label: |-
+      Generate multiple-choice QA
+      5 templates for four directional relations
+      aggregate objects for closest / farthest
+    type: document
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eval
-    label: LVLM Eval
+      'y': 250
+  - id: filter
+    label: |-
+      Automatic filtering and balancing
+      remove overly large / small boxes
+      balance the six spatial relations
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
-    type: terminal
+      'y': 250
+  - id: verify
+    label: |-
+      Human verification of every sample
+      remove unclear object references
+      remove incorrect spatial relationships
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: dataset
+    label: |-
+      EmbSpatial-Bench
+      3,640 QA · 2,181 images · 277 scenes
+      294 object categories · 6 relations
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: evaluation
+    label: |-
+      Zero-shot LVLM evaluation
+      generation answer or max-likelihood option
+      report accuracy by strategy
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: scenes
-    to: images
+  - from: sources
+    to: frames
     type: primary
-  - from: images
-    to: triples
+  - from: frames
+    to: project
     type: primary
-  - from: triples
+  - from: project
+    to: relations
+    type: primary
+  - from: relations
     to: qa
     type: primary
   - from: qa
     to: filter
     type: primary
   - from: filter
-    to: eval
+    to: verify
     type: primary
-  - from: eval
-    to: score
+  - from: verify
+    to: dataset
+    type: primary
+  - from: dataset
+    to: evaluation
     type: primary
 modules: []

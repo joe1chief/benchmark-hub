@@ -1,0 +1,138 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: SQuAD 构建流程
+  description: >-
+    论文对齐的 SQuAD v1.0 流程：从高 PageRank 英文 Wikipedia 文章抽样并清洗成段落，由合格众包标注员用自己的话编写 抽取式问题，开发集和测试集补充多个答案，最终 107,785 组问答按归一化精确匹配和
+    token F1 评测。
+  legend: 实线箭头表示段落筛选、文章级划分、众包问答、附加答案收集和抽取式评测。
+nodes:
+  - id: ranked_articles
+    label: |-
+      英文 Wikipedia
+      内部 PageRank 前 10K 篇
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 200
+  - id: sample
+    label: |-
+      均匀抽样
+      536 篇文章
+    type: process
+    size: large
+    position:
+      x: 280
+      'y': 200
+  - id: passages
+    label: |-
+      提取 23,215 个段落
+      移除图片 / 表格 / 图形
+      删除少于 500 字符的段落
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 200
+  - id: split
+    label: |-
+      按文章划分
+      训练 80% / 开发 10% / 测试 10%
+    type: database
+    size: xl
+    position:
+      x: 780
+      'y': 200
+  - id: qa
+    label: |-
+      合格众包标注员
+      每段最多编写 5 题
+      高亮答案文本片段
+      自己表述；禁用复制粘贴
+    type: user
+    size: xl
+    position:
+      x: 1040
+      'y': 200
+  - id: dataset
+    label: |-
+      SQuAD v1.0
+      107,785 组问答
+      答案可由段落推出
+    type: database
+    size: xl
+    position:
+      x: 1300
+      'y': 200
+  - id: extra_answers
+    label: |-
+      开发 / 测试重标
+      每题至少 2 个附加答案
+      选择最短有效片段
+    type: user
+    size: xl
+    position:
+      x: 1560
+      'y': 200
+  - id: predict
+    label: |-
+      抽取式阅读器
+      预测段落中的任意文本片段
+    type: process
+    size: large
+    position:
+      x: 1820
+      'y': 200
+  - id: normalize
+    label: |-
+      归一化预测
+      忽略冠词与标点
+      与所有参考答案比较
+    type: process
+    size: xl
+    position:
+      x: 2060
+      'y': 200
+  - id: score
+    label: |-
+      精确匹配
+      每题取最大 Token F1
+      对所有问题宏平均
+    type: terminal
+    size: xl
+    position:
+      x: 2320
+      'y': 200
+edges:
+  - from: ranked_articles
+    to: sample
+    type: primary
+  - from: sample
+    to: passages
+    type: primary
+  - from: passages
+    to: split
+    type: primary
+  - from: split
+    to: qa
+    type: primary
+  - from: qa
+    to: dataset
+    type: primary
+  - from: dataset
+    to: extra_answers
+    type: primary
+  - from: extra_answers
+    to: predict
+    type: primary
+  - from: predict
+    to: normalize
+    type: primary
+  - from: normalize
+    to: score
+    type: primary
+modules: []

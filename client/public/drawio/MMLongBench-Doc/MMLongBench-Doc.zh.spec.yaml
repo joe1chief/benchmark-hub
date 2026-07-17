@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMLongBench-Doc 构建流程
-  description: 对齐论文的 MMLongBench-Doc 构建流程：从长 PDF、专家问题、证据标注、跨页推理与不可回答样例构成长文档多模态基准，并用 F1 评测 LVLM 回答。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文通过专家构建与三轮质检，在 135 份长篇 PDF 上形成 1,082 道题，再经答案抽取计算广义准确率与广义 F1。
+  legend: 最终基准包含 184 道保留的来源题目和 898 道新标注题目。
 nodes:
-  - id: n1
-    label: 长篇PDF
+  - id: documents
+    label: |-
+      收集 135 份长篇 PDF
+      76 份已有 · 59 份新收集
+      覆盖七种文档类型
+      平均 47.5 页 · 21,214 词元
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 复杂版面
+      x: 20
+      'y': 40
+  - id: train
+    label: |-
+      培训十名专家标注员
+      均为医生或博士生
+      要求熟练使用英语
+      先标注三份文档
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: batches
+    label: |-
+      执行 54 批正式标注
+      每批分配两至四份 PDF
+      每文档投入 60–90 分钟
+      持续提供迭代反馈
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 专家问题
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 证据标注
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 跨页问题
+      x: 580
+      'y': 40
+  - id: review
+    label: |-
+      复核 425 道已有问题
+      标记保留 · 修订 · 移除
+      检查六类质量问题
+      初步收集 211 道题
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 不可答题
-    type: decision
+      x: 860
+      'y': 40
+  - id: author
+    label: |-
+      专家编写新问题
+      每份已有 PDF 约三题
+      每份新 PDF 约六题
+      记录答案与证据元数据
+    type: user
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: LVLM/OCR评测
+      x: 1140
+      'y': 40
+  - id: coverage
+    label: |-
+      保证问题多样性
+      单页与跨页证据并存
+      纳入不可回答问题
+      使用文本 · 表格 · 图表 · 图像
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: F1得分
+      x: 1420
+      'y': 40
+  - id: relevance
+    label: |-
+      质检一：文档必要性
+      不提供 PDF 让 GPT-4o 作答
+      移除 94 道无需文档可答题
+      确保文档不可替代
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: reflection
+    label: |-
+      质检二：自我反思
+      提供 PDF 让 GPT-4o 检查
+      将不一致项返回专家
+      修订 13.8% 的题目
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: crosscheck
+    label: |-
+      质检三：专家交叉检查
+      标记 17.5% 不一致项
+      一致性 Kappa 为 0.42
+      由主要作者最终裁决
+    type: user
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: dataset
+    label: |-
+      汇总 1,082 道最终题目
+      184 道来源题 · 898 道新题
+      494 道单页 · 365 道跨页
+      223 道不可回答题
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: extract
+    label: |-
+      生成并规范化答案
+      输入 PDF 页面或 OCR 文本
+      保留模型自由文本输出
+      GPT-4o 抽取简短答案
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: score
+    label: |-
+      执行规则评分
+      广义准确率与广义 F1
+      处理不可回答结果
+      对比 LVLM 与 OCR+LLM 输入
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: documents
+    to: train
     type: primary
-  - from: n2
-    to: n3
+  - from: train
+    to: batches
     type: primary
-  - from: n3
-    to: n4
+  - from: batches
+    to: review
     type: primary
-  - from: n4
-    to: n5
+  - from: review
+    to: author
     type: primary
-  - from: n5
-    to: n6
+  - from: author
+    to: coverage
     type: primary
-  - from: n6
-    to: n7
+  - from: coverage
+    to: relevance
     type: primary
-  - from: n7
-    to: n8
+  - from: relevance
+    to: reflection
+    type: primary
+  - from: reflection
+    to: crosscheck
+    type: primary
+  - from: crosscheck
+    to: dataset
+    type: primary
+  - from: dataset
+    to: extract
+    type: primary
+  - from: extract
+    to: score
     type: primary
 modules: []

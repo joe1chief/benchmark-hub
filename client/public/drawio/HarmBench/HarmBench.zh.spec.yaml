@@ -5,75 +5,225 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HarmBench 构建流程
-  description: 对齐论文的 HarmBench 流程：从有害行为策划、验证/测试划分，到红队测试样本生成、 目标模型补全、分类器判定和攻击成功率报告。
-  legend: 实线箭头表示行为策划、数据划分、攻击生成、模型补全、分类判定和 ASR 指标。
+  description: 与论文一致的 510 个有害行为策划及标准化攻击、目标模型、分类器和 ASR 评测流程。
+  legend: HarmBench 包含标准 200、版权 100、上下文 100 和多模态 110 个行为。官方验证/测试划分为 100/410； 测试行为与独立测试分类器仅用于评测。
 nodes:
   - id: policies
-    label: 政策种子
+    label: |-
+      收集主要实验室使用政策
+      OpenAI · Anthropic · Meta · Inflection
+      GPT-4 提炼联合安全摘要
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: behaviors
-    label: 510行为
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: split
-    label: 验证/测试
+      'y': 300
+  - id: curate
+    label: |-
+      作者人工设计有害行为
+      违反法律或广泛认同的规范
+      强调现实且具有差异化的危害
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: attacks
-    label: 攻击生成
+      x: 340
+      'y': 300
+  - id: filter
+    label: |-
+      多轮策划与过滤
+      删除或改写双重用途请求
+      保留目标明确的不良行为
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: targets
-    label: 目标补全
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: judge
-    label: 分类判定
+      x: 640
+      'y': 300
+  - id: route
+    label: |-
+      分配功能类别
+      保留七个语义危害类别
+      需要时附加上下文或图像
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: ASR报告
+      x: 940
+      'y': 300
+  - id: standard
+    label: |-
+      标准类 · 200
+      自包含有害请求
+      无外部上下文或图像
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 0
+  - id: copyright
+    label: |-
+      版权类 · 100
+      请求受保护段落或歌词
+      保留内容哈希用于判定
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 200
+  - id: contextual
+    label: |-
+      上下文类 · 100
+      行为字符串加特定上下文
+      难以通过网页搜索直接复现
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: multimodal
+    label: |-
+      多模态类 · 110
+      行为字符串引用图像
+      测试图像条件攻击
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 600
+  - id: dataset
+    label: |-
+      汇总 510 个 HarmBench 行为
+      四个功能类 · 七个语义类
+      行为 ID 与类别元数据
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: split
+    label: |-
+      建立官方保留划分
+      验证 100 · 测试 410
+      按类别交集分层后人工调整
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: attack
+    label: |-
+      生成攻击测试样本
+      红队方法接收每个行为
+      禁止在测试行为或语义重复项上调参
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: target
+    label: |-
+      运行目标模型或防御
+      使用标准化生成参数
+      贪心补全保证可比性
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: judge_route
+    label: |-
+      判定行为是否成功
+      已实施或明确尝试实施行为
+      使用独立验证/测试分类器
+    type: decision
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: open_judge
+    label: |-
+      非版权分类器
+      开源 Llama-2-13B-chat 分类器
+      基于人工标注补全训练
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 100
+  - id: hash_judge
+    label: |-
+      版权分类器
+      将补全与存储哈希比对
+      直接检测受保护文本生成
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 500
+  - id: score
+    label: |-
+      报告攻击成功率
+      成功测试样本数除以全部样本数
+      按攻击 · 目标 · 类别拆分
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3340
+      'y': 300
 edges:
   - from: policies
-    to: behaviors
+    to: curate
     type: primary
-  - from: behaviors
+  - from: curate
+    to: filter
+    type: primary
+  - from: filter
+    to: route
+    type: primary
+  - from: route
+    to: standard
+    type: primary
+  - from: route
+    to: copyright
+    type: primary
+  - from: route
+    to: contextual
+    type: primary
+  - from: route
+    to: multimodal
+    type: secondary
+  - from: standard
+    to: dataset
+    type: primary
+  - from: copyright
+    to: dataset
+    type: primary
+  - from: contextual
+    to: dataset
+    type: primary
+  - from: multimodal
+    to: dataset
+    type: secondary
+  - from: dataset
     to: split
     type: primary
   - from: split
-    to: attacks
+    to: attack
     type: primary
-  - from: attacks
-    to: targets
+  - from: attack
+    to: target
     type: primary
-  - from: targets
-    to: judge
+  - from: target
+    to: judge_route
     type: primary
-  - from: judge
-    to: metrics
+  - from: judge_route
+    to: open_judge
     type: primary
+  - from: judge_route
+    to: hash_judge
+    type: secondary
+  - from: open_judge
+    to: score
+    type: primary
+  - from: hash_judge
+    to: score
+    type: secondary
 modules: []

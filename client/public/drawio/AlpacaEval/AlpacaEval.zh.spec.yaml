@@ -4,86 +4,176 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval 构建流程
-  description: 按论文对齐的AlpacaEval流程：整理805条Alpaca指令，生成被测模型与基线回答，随机交换展示顺序，由GPT-4进行成对偏好判断，再用长度控制GLM计算LC胜率。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: AlpacaEval-LC 构建流程
+  description: 对齐论文的 AlpacaEval 与长度控制扩展：从 805 条代表用户交互的指令，经随机顺序的 GPT-4-Turbo 成对裁判、原始胜率、GLM 拟合，到反事实长度控制胜率。
+  legend: 实线表示响应比较和长度控制估计。
 nodes:
-  - id: n1
-    label: Alpaca交互
+  - id: instructions
+    label: |-
+      AlpacaEval集合
+      805条指令
+      来自Alpaca网页交互
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 805条指令
-    type: document
+      'y': 240
+  - id: model_response
+    label: |-
+      被测模型
+      候选响应
+    type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: 模型回答
+      'y': 80
+  - id: base_response
+    label: |-
+      GPT-4-Turbo基线
+      参考响应
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 400
+  - id: shuffle
+    label: |-
+      随机化
+      响应展示顺序
     type: process
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: 基线回答
+      'y': 240
+  - id: judge
+    label: |-
+      GPT-4-Turbo裁判
+      成对比较
     type: process
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: 顺序随机化
-    type: process
+      'y': 240
+  - id: preference
+    label: |-
+      偏好概率
+      候选优于基线
+    type: document
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: GPT-4裁判
-    type: process
+      'y': 240
+  - id: raw
+    label: |-
+      原始AlpacaEval
+      平均胜率
+    type: document
     size: xl
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: 长度GLM
+      'y': 80
+  - id: ratings
+    label: |-
+      榜单评分数据
+      多模型×805条指令
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: glm
+    label: |-
+      逻辑回归GLM特征
+      模型身份
+      长度差
+      指令难度
     type: process
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: LC胜率
-    type: terminal
+      'y': 240
+  - id: regularize
+    label: |-
+      5折交叉验证拟合
+      L2正则化
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 240
+  - id: counterfactual
+    label: |-
+      令长度差为0
+      预测等长条件下
+      的偏好
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+  - id: lc
+    label: |-
+      AlpacaEval-LC
+      长度控制
+      平均胜率
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 400
+  - id: report
+    label: |-
+      原始与LC
+      榜单报告
+    type: terminal
+    size: xl
+    position:
+      x: 2440
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: instructions
+    to: model_response
     type: primary
-  - from: n2
-    to: n3
+  - from: instructions
+    to: base_response
     type: primary
-  - from: n3
-    to: n4
+  - from: model_response
+    to: shuffle
     type: primary
-  - from: n4
-    to: n5
+  - from: base_response
+    to: shuffle
     type: primary
-  - from: n5
-    to: n6
+  - from: shuffle
+    to: judge
     type: primary
-  - from: n6
-    to: n7
+  - from: judge
+    to: preference
     type: primary
-  - from: n7
-    to: n8
+  - from: preference
+    to: raw
+    type: primary
+  - from: preference
+    to: ratings
+    type: primary
+  - from: ratings
+    to: glm
+    type: primary
+  - from: glm
+    to: regularize
+    type: primary
+  - from: regularize
+    to: counterfactual
+    type: primary
+  - from: counterfactual
+    to: lc
+    type: primary
+    waypoints:
+      - x: 2080
+        'y': 440
+  - from: raw
+    to: report
+    type: primary
+  - from: lc
+    to: report
     type: primary
 modules: []

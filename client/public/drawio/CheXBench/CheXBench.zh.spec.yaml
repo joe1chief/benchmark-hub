@@ -5,85 +5,195 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CheXBench 构建流程
-  description: 对齐论文的 CheXBench 构建流程：先定义胸片理解任务并收集公开 CXR 数据，经数据工程形成 CheXinstruct，训练 CheXagent，再在八类 CheXbench 任务和放射科医生读片研究中评测。
-  legend: 实线箭头表示数据整理、模型训练、基准评测和临床研究主流程。
+  description: >-
+    对齐论文的 CheXBench 流程：35 类胸片任务和 32 个公开数据集经过人工与自动化数据工程；保留源数据测试划分构成覆盖三轴的 八任务基准，而独立的 CheXinstruct 路径用于训练参评的
+    CheXagent，八名放射科医生的读片研究另行验证临床效用。
+  legend: 实线箭头表示基准构建与评测；虚线箭头表示独立的模型训练和临床研究背景。
 nodes:
-  - id: tasks
-    label: 任务设计
+  - id: taxonomy
+    label: |-
+      定义35类临床相关胸片任务
+      粗/细粒度感知 • 问答 • 文本生成
+      其他图像-文本能力
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 40
   - id: sources
-    label: 公开CXR集
+    label: |-
+      收集32个公开胸片数据集
+      图像、报告、标签、框和说明文字
+      覆盖不同机构与国家
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 40
+      'y': 400
   - id: engineering
-    label: 数据工程
+    label: |-
+      人工 + 自动数据工程
+      核验质量并统一异构结构
+      重构报告并将源标签映射到任务
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 340
+      'y': 220
+  - id: split
+    label: |-
+      保留官方源数据划分
+      将评测病例排除在训练之外
+      防止CheXinstruct与CheXBench泄漏
+    type: decision
+    size: xl
+    position:
+      x: 640
+      'y': 220
   - id: instruct
-    label: CheXinstruct
-    type: document
+    label: |-
+      训练背景：CheXinstruct
+      850万条指令-图像-回答三元组
+      每任务十个人工指令模板
+    type: database
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 40
   - id: train
-    label: CheXagent训练
+    label: |-
+      三阶段训练CheXagent
+      临床文本语言模型 • 胸片-报告视觉编码器
+      视觉语言联合指令微调
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: CheXbench任务
+      x: 1240
+      'y': 40
+  - id: axes
+    label: |-
+      按三条评测轴构建CheXBench
+      图像感知 • 图像-文本推理
+      文本生成
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 模型评测
-    type: terminal
+      x: 940
+      'y': 400
+  - id: tasks
+    label: |-
+      八类临床相关任务
+      视图/时序/疾病 • 细粒度/VQA/定位
+      检查所见生成与摘要
+    type: database
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: reader
-    label: 读片研究
+      x: 1240
+      'y': 400
+  - id: inputs
+    label: |-
+      统一评测输入
+      指令 + 一张或多张胸片（按需加文本）
+      选择、定位和自由文本输出
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: models
+    label: |-
+      对比基础模型
+      通用域 + 医疗域基线
+      CheXagent来自独立训练路径
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: metrics
+    label: |-
+      使用任务特定指标
+      准确率 • mIoU/mAP • CheXbert-F1
+      BERTScore • RadGraph-F1 • ROUGE-L
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: expert_review
+    label: |-
+      专家复核生成的检查所见
+      放射科医生比较临床正确性
+      补充自动文本生成指标
     type: user
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2440
+      'y': 220
+  - id: reader
+    label: |-
+      独立临床读片研究
+      八名放射科医生起草/编辑报告
+      测量耗时、书写效率和质量
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 440
+  - id: report
+    label: |-
+      报告CheXBench结果
+      汇总八任务与三条评测轴表现
+      基准成绩与读片研究效用分开呈现
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 220
 edges:
-  - from: tasks
-    to: sources
+  - from: taxonomy
+    to: engineering
     type: primary
   - from: sources
     to: engineering
     type: primary
   - from: engineering
-    to: instruct
+    to: split
     type: primary
+  - from: split
+    to: instruct
+    type: data
   - from: instruct
     to: train
     type: primary
+  - from: split
+    to: axes
+    type: primary
+  - from: axes
+    to: tasks
+    type: primary
+  - from: tasks
+    to: inputs
+    type: primary
   - from: train
-    to: bench
+    to: models
+    type: data
+  - from: inputs
+    to: models
     type: primary
-  - from: bench
-    to: eval
+  - from: models
+    to: metrics
     type: primary
-  - from: eval
+  - from: metrics
+    to: expert_review
+    type: primary
+  - from: train
     to: reader
+    type: data
+  - from: expert_review
+    to: report
     type: primary
+  - from: reader
+    to: report
+    type: data
 modules: []

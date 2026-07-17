@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedAlign 构建流程
+  description: 与论文对齐地展示 MedAlign 的三阶段临床医生策展、OMOP 到 XML 的 EHR 准备、BM25 配对、专家参考回复、六模型生成与盲法临床评测。
+  legend: 实线箭头依次表示 1314 条原始指令去重为 983 条、77200 名患者上的 BM25 top-5 检索、303 个相关配对与参考回复、276 份 EHR 和人工及自动指标。
+nodes:
+  - id: ehr
+    label: |-
+      准备纵向患者病历
+      同时包含结构与非结构事件
+      以 OMOP CDM 表示数据
+      每份病历转换为单一 XML
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: recruit
+    label: |-
+      招募临床指令作者
+      共 15 名执业临床医生
+      覆盖 7 个医学专科
+      通过在线表单独立提交
+    type: user
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: collect
+    label: |-
+      第一阶段：收集指令
+      构想日常 EHR 工作情境
+      提交 1314 条问题或命令
+      附患者特征与临床语境
+    type: document
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: dedup
+    label: |-
+      清理并标记指令
+      ROUGE-L 超 0.7 判近重复
+      去重后保留 983 条
+      其中 407 条适用于一般患者
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: query
+    label: |-
+      第二阶段：构造检索查询
+      使用一般患者适用指令
+      拼接患者特征与临床语境
+      对比随机配对和 BM25Okapi
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: retrieve
+    label: |-
+      检索相关患者病历
+      从 77200 名患者子样本检索
+      BM25 返回每条指令 top-5
+      同一池用于随机基线
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: relevance
+    label: |-
+      人工判断配对相关性
+      作者执行二元相关审查
+      303 条指令 top-5 至少一份相关
+      BM25 命中率 74% 对随机 38%
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: response
+    label: |-
+      第三阶段：专家生成回复
+      优先分配同专科非原作者
+      检查可行性与信息充分性
+      以病历最新时间为锚作答
+    type: user
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: release
+    label: |-
+      发布 MedAlign 数据合同
+      共 983 条临床指令
+      303 条专家参考回复
+      对应 276 份纵向 EHR
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: models
+    label: |-
+      运行六个通用语言模型
+      覆盖闭源与开源模型
+      为生成预留 256 tokens
+      从病历末尾保留最新信息
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: mr
+    label: |-
+      处理超长病历上下文
+      32k 仍容不下超 80% 病历
+      多步精炼按 30k 分块顺序输入
+      每块更新或保留已有回复
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: human
+    label: |-
+      九名临床医生盲法评测
+      二元判断临床回复是否正确
+      再按相关性与适当性排序
+      允许并列且随机模型顺序
+    type: user
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: automated
+    label: |-
+      运行自动文本生成指标
+      COMET、BERTScore 与 METEOR
+      加入 chrF、BLEU、ROUGE 等
+      由指标产生模型回复排序
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      汇总临床与自动评测
+      报告正确率、胜率与平均排名
+      计算与人工排序的 Kendall Tau
+      分析上下文长度造成的差异
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: ehr
+    to: recruit
+    type: primary
+  - from: recruit
+    to: collect
+    type: primary
+  - from: collect
+    to: dedup
+    type: primary
+  - from: dedup
+    to: query
+    type: primary
+  - from: query
+    to: retrieve
+    type: primary
+  - from: retrieve
+    to: relevance
+    type: primary
+  - from: relevance
+    to: response
+    type: primary
+  - from: response
+    to: release
+    type: primary
+  - from: release
+    to: models
+    type: primary
+  - from: models
+    to: mr
+    type: primary
+  - from: mr
+    to: human
+    type: primary
+  - from: human
+    to: automated
+    type: primary
+  - from: automated
+    to: report
+    type: primary
+modules: []

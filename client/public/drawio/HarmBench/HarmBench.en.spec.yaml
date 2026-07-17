@@ -6,76 +6,228 @@ meta:
   routing: orthogonal
   title: HarmBench Build Process
   description: >-
-    Paper-aligned HarmBench workflow from harmful behavior curation to standardized red-team test cases, target
-    completions, classifier-based success labels, and attack success rate reporting.
-  legend: Solid arrows show behavior curation, split policy, red-team generation, model completion, classification, and ASR.
+    Paper-aligned curation of 510 harmful behaviors and standardized attack, target-model, classifier, and ASR
+    evaluation.
+  legend: >-
+    HarmBench contains 200 standard, 100 copyright, 100 contextual, and 110 multimodal behaviors. The canonical
+    validation/test split is 100/410; test behaviors and the held-out test classifier are evaluation-only.
 nodes:
   - id: policies
-    label: Policy Seeds
+    label: |-
+      Collect major-lab use policies
+      OpenAI · Anthropic · Meta · Inflection
+      GPT-4 distills a combined safety summary
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: behaviors
-    label: 510 Behaviors
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: split
-    label: Val/Test Split
+      'y': 300
+  - id: curate
+    label: |-
+      Authors manually design behaviors
+      violate laws or widely held norms
+      emphasize realistic differential harm
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: attacks
-    label: Attack Gen
+      x: 340
+      'y': 300
+  - id: filter
+    label: |-
+      Run repeated curation passes
+      remove or rewrite dual-intent requests
+      retain clear undesirable objectives
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: targets
-    label: Target Runs
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: judge
-    label: Classifier
+      x: 640
+      'y': 300
+  - id: route
+    label: |-
+      Assign functional category
+      preserve seven semantic harm categories
+      attach context or image when required
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: ASR Report
+      x: 940
+      'y': 300
+  - id: standard
+    label: |-
+      Standard · 200
+      self-contained harmful request
+      no external context or image
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 0
+  - id: copyright
+    label: |-
+      Copyright · 100
+      request protected passages or lyrics
+      retain content hashes for judging
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 200
+  - id: contextual
+    label: |-
+      Contextual · 100
+      behavior string plus specific context
+      difficult to reproduce by web search
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: multimodal
+    label: |-
+      Multimodal · 110
+      behavior string references an image
+      tests image-conditioned attacks
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 600
+  - id: dataset
+    label: |-
+      Assemble 510 HarmBench behaviors
+      four functional · seven semantic categories
+      behavior IDs and category metadata
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: split
+    label: |-
+      Create canonical held-out split
+      validation 100 · test 410
+      stratify intersections then adjust manually
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: attack
+    label: |-
+      Generate attack test cases
+      red-team method receives each behavior
+      do not tune on test or semantic duplicates
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: target
+    label: |-
+      Run the target model or defense
+      standardized generation parameters
+      greedy completion for comparability
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: judge_route
+    label: |-
+      Classify behavior success
+      exhibited or clearly attempted behavior
+      use held-out validation/test classifiers
+    type: decision
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: open_judge
+    label: |-
+      Non-copyright classifier
+      open Llama-2-13B-chat classifier
+      trained on human-labeled completions
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 100
+  - id: hash_judge
+    label: |-
+      Copyright classifier
+      compare completion against stored hashes
+      directly detect protected text generation
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 500
+  - id: score
+    label: |-
+      Report attack success rate
+      successful test cases divided by all cases
+      break down attack · target · category
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3340
+      'y': 300
 edges:
   - from: policies
-    to: behaviors
+    to: curate
     type: primary
-  - from: behaviors
+  - from: curate
+    to: filter
+    type: primary
+  - from: filter
+    to: route
+    type: primary
+  - from: route
+    to: standard
+    type: primary
+  - from: route
+    to: copyright
+    type: primary
+  - from: route
+    to: contextual
+    type: primary
+  - from: route
+    to: multimodal
+    type: secondary
+  - from: standard
+    to: dataset
+    type: primary
+  - from: copyright
+    to: dataset
+    type: primary
+  - from: contextual
+    to: dataset
+    type: primary
+  - from: multimodal
+    to: dataset
+    type: secondary
+  - from: dataset
     to: split
     type: primary
   - from: split
-    to: attacks
+    to: attack
     type: primary
-  - from: attacks
-    to: targets
+  - from: attack
+    to: target
     type: primary
-  - from: targets
-    to: judge
+  - from: target
+    to: judge_route
     type: primary
-  - from: judge
-    to: metrics
+  - from: judge_route
+    to: open_judge
     type: primary
+  - from: judge_route
+    to: hash_judge
+    type: secondary
+  - from: open_judge
+    to: score
+    type: primary
+  - from: hash_judge
+    to: score
+    type: secondary
 modules: []

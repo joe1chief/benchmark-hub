@@ -1,0 +1,152 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: SWE-Sharp-Bench 构建流程
+  description: 对齐论文的 C# 仓库选择、.NET 环境构建、三状态执行过滤、人工复核与补丁评测流程。
+  legend: 上排从左向右完成构建，下排从右向左完成 C# 智能体评测。
+nodes:
+  - id: repos
+    label: |-
+      GitHub 前 100 个 C# 仓库
+      至少 5,000 星，近 6 个月活跃
+      最新提交可构建且测试通过
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: prs
+    label: |-
+      每仓库抓取最新 1,000 条 PR
+      关联 Issue 且修改测试文件
+      已合并到默认分支
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: environment
+    label: |-
+      自动生成 .NET Dockerfile
+      解析工作流 / sln / csproj / env
+      协调 NuGet 与运行时版本
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: validate_env
+    label: |-
+      构建并启动容器
+      最小修复环境配置失败
+      否则丢弃该 PR
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: execute
+    label: |-
+      三状态测试执行
+      基线 -> 测试补丁 -> 测试 + 修复
+      必须通过 -> 失败 -> 通过
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: manual
+    label: |-
+      两位作者人工复核
+      检查问题陈述是否充分
+      排除狭窄或不相关测试
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: dataset
+    label: |-
+      SWE-Sharp-Bench
+      150 个 Issue 解决任务
+      来自 17 个 C# 仓库
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: agent
+    label: |-
+      SWE-Agent 或 OpenHands
+      C# 专用提示词
+      一次有效尝试；2 小时超时
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: patch
+    label: |-
+      智能体编辑非测试文件
+      生成代码库补丁
+      在可复现容器中执行
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: tests
+    label: |-
+      运行所需 .NET 测试
+      NUnit / XUnit / MSTest
+      统一规范化日志
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: metric
+    label: |-
+      实例解决成功
+      生成补丁通过全部测试
+      指标：问题解决率
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 440
+edges:
+  - from: repos
+    to: prs
+    type: primary
+  - from: prs
+    to: environment
+    type: primary
+  - from: environment
+    to: validate_env
+    type: primary
+  - from: validate_env
+    to: execute
+    type: primary
+  - from: execute
+    to: manual
+    type: primary
+  - from: manual
+    to: dataset
+    type: primary
+  - from: dataset
+    to: agent
+    type: primary
+  - from: agent
+    to: patch
+    type: primary
+  - from: patch
+    to: tests
+    type: primary
+  - from: tests
+    to: metric
+    type: primary
+modules: []

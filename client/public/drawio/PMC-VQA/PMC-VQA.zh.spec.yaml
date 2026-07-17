@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PMC-VQA 构建与评测流程
+  description: 与论文一致地展示从图注生成VQA、两级视觉依赖过滤、图像隔离划分、人工测试集核验及双任务评分。
+  legend: 最终226,946对数据经过自动清洗；2,000题PMC-VQA-test是图像隔离的50,000题初始测试集中的人工核验子集。
+nodes:
+  - id: step_1
+    label: |-
+      从PMC-OA开始
+      160万对生物医学图像与图注
+      来源为PubMed Central开放子集
+      覆盖240万篇论文
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: step_2
+    label: |-
+      选取381K对图像与图注
+      使用医学图像采集第一阶段
+      不执行自动子图切分
+      保留复杂医学图像
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: step_3
+    label: |-
+      每条图注生成五组问答
+      用图注文本提示ChatGPT
+      四个选项且仅一个正确
+      随机化正确选项位置
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: step_4
+    label: |-
+      清洗生成输出
+      移除重复拒答与虚假条目
+      强制符合指定模板
+      保留1,497,808组问答
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: step_5
+    label: |-
+      把数据分成两半
+      避免文本过滤器自训练
+      在其中一半训练
+      到另一半执行推理
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: step_6
+    label: |-
+      训练纯文本LLaMA-7B
+      只输入问题与答案选项
+      不提供对应图像
+      学习生物医学语言捷径
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: step_7
+    label: |-
+      过滤纯语言可答问题
+      打乱选项并推理五次
+      正确至少3次即移除
+      保留848,433组问答
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: step_8
+    label: |-
+      标注图像可回答性
+      人工标注2,192组问答
+      1,752训练 · 440测试
+      使用二元图像可答标签
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: step_9
+    label: |-
+      训练问题分类器
+      准确率达到81.77%
+      识别仅依赖图注的信息
+      应用于剩余候选池
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: step_10
+    label: |-
+      形成清洗后PMC-VQA
+      226,946组问答
+      对应149,075张医学图像
+      约80%为放射学图像
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: step_11
+    label: |-
+      创建图像隔离划分
+      随机选择50,000组问答
+      形成PMC-VQA-test-initial
+      训练与测试图像不重叠
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: step_12
+    label: |-
+      人工核验测试样本
+      检查图像相关性与可答性
+      检查干扰项难度和图像质量
+      保留2,000题PMC-VQA-test
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: step_13
+    label: |-
+      运行两类评测任务
+      Choice提供四个候选答案
+      Blanking不提供选项
+      生成A至D或自由文本
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: step_14
+    label: |-
+      报告任务专用指标
+      Choice使用准确率
+      Blanking使用准确率与BLEU-1
+      在人工核验测试集上比较
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: step_1
+    to: step_2
+    type: primary
+  - from: step_2
+    to: step_3
+    type: primary
+  - from: step_3
+    to: step_4
+    type: primary
+  - from: step_4
+    to: step_5
+    type: primary
+  - from: step_5
+    to: step_6
+    type: primary
+  - from: step_6
+    to: step_7
+    type: primary
+  - from: step_7
+    to: step_8
+    type: primary
+  - from: step_8
+    to: step_9
+    type: primary
+  - from: step_9
+    to: step_10
+    type: primary
+  - from: step_10
+    to: step_11
+    type: primary
+  - from: step_11
+    to: step_12
+    type: primary
+  - from: step_12
+    to: step_13
+    type: primary
+  - from: step_13
+    to: step_14
+    type: primary
+modules: []

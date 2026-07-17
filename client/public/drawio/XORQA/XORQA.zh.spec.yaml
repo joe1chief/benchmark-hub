@@ -1,0 +1,190 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: XORQA-IN 翻译、双视图与协议覆盖流程
+  description: >-
+    IndicGenBench从XOR-TyDi的孟加拉语/泰卢固语样例中抽取100个train与500个dev种子，并因原test不公开而从公开dev选539个test种子，再经两阶段专业人工翻译扩展到28种印度语言。每条记录支持XORQA-IN-EN和XORQA-IN-XX两个视图。IndicGenBench使用SQuAD
+    token F1与主要one-shot协议，而Gemma 3改用5-shot字符F分；流程图必须分开两套协议。
+  legend: >-
+    来源：The site wording (Gemma 3; in-en/in-xx) identifies IndicGenBench XORQA-IN, not original XOR-TyDi. Primary
+    construction: IndicGenBench arXiv:2404.16816v2, Table 1, Section 2 Cross-Lingual Question-Answering: XORQA-IN,
+    Section 3 Evaluation Metrics, Appendix Table 15, and Table 18; official data
+    https://github.com/google-research-datasets/indic-gen-bench. Gemma 3 arXiv:2503.19786 Tables 14 and 19 supplies the
+    reuse protocol. Original XOR QA arXiv:2010.11856 is upstream provenance only. Appendix Table 15 mislabels both rows
+    IN-XX; the English-output row is IN-EN by Section 2.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: xortydi_source
+    label: 上游XOR-TyDi孟加拉与泰卢固
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: train_sample
+    label: 600个等量train种子
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: train_dev_split
+    label: 100 条训练 + 500 条验证
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: test_sample
+    label: 公开dev选孟302与泰237作test
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: english_translation
+    label: 阶段1：问题译为英文
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 160
+  - id: indic_translation
+    label: 阶段2：问答译为28种语言
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 160
+  - id: translation_complete
+    label: 专业人工翻译完成
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 160
+  - id: xorqa_records
+    label: 共享双语记录
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 160
+  - id: inen_view
+    label: XORQA-IN-EN：英文作答
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: inxx_view
+    label: XORQA-IN-XX：目标语言作答
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: release_counts
+    label: 2.8K训练 / 14K开发 / 15.1K测试
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 160
+  - id: prompt_eval
+    label: 目标语言问题与英文段落
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: protocol_router
+    label: 评测协议
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+  - id: indic_f1
+    label: IndicGenBench：1-shot 词元 F1
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: gemma_f1
+    label: Gemma 3：5-shot字符F分
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: xorqa_report
+    label: IN-EN与IN-XX结果
+    type: terminal
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+edges:
+  - from: xortydi_source
+    to: train_sample
+    type: data
+  - from: train_sample
+    to: train_dev_split
+    type: primary
+  - from: xortydi_source
+    to: test_sample
+    type: data
+  - from: train_dev_split
+    to: english_translation
+    type: primary
+  - from: test_sample
+    to: english_translation
+    type: primary
+  - from: english_translation
+    to: indic_translation
+    type: primary
+  - from: indic_translation
+    to: translation_complete
+    type: primary
+  - from: translation_complete
+    to: xorqa_records
+    type: primary
+  - from: xorqa_records
+    to: inen_view
+    type: primary
+  - from: xorqa_records
+    to: inxx_view
+    type: primary
+  - from: inen_view
+    to: release_counts
+    type: primary
+  - from: inxx_view
+    to: release_counts
+    type: primary
+  - from: release_counts
+    to: prompt_eval
+    type: primary
+  - from: prompt_eval
+    to: protocol_router
+    type: primary
+  - from: protocol_router
+    to: indic_f1
+    type: primary
+    label: 原协议
+    labelPosition: end
+  - from: protocol_router
+    to: gemma_f1
+    type: optional
+    label: Gemma 3覆盖
+    labelPosition: end
+  - from: indic_f1
+    to: xorqa_report
+    type: primary
+  - from: gemma_f1
+    to: xorqa_report
+    type: primary
+modules: []

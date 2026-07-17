@@ -1,0 +1,227 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: KodCode Build Process
+  description: >-
+    Paper-aligned KodCode synthesis through twelve-source question generation, semantic deduplication, solution-and-test
+    self-verification, style conversion, separate RL and reasoning-SFT branches, and downstream code benchmark
+    evaluation.
+  legend: >-
+    Step 2 yields 279K verified triplets; style conversion adds 168K to form 447K RL-ready triplets. DeepSeek-R1
+    response generation and test-based rejection form a separate SFT branch before both uses meet in post-training.
+nodes:
+  - id: sources
+    label: |-
+      Synthesize 12 Question Subsets
+      Prefill · Five Assessment Sources
+      Algorithm · Data Structure · Docs
+      Filter · Package · Evol
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: dedup
+    label: |-
+      Semantic Deduplication
+      all-mpnet-base-v2 Embeddings
+      FAISS Nearest-neighbor Search
+      Remove Above Similarity Threshold
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: synthesize
+    label: |-
+      Generate Solution and Tests
+      GPT-4o-0513 Creates Both Anew
+      Python Solution + Pytest Cases
+      Start Self-verification Attempts
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: execute
+    label: |-
+      Execute Unit Tests
+      Run Solution against Generated Tests
+      Measure Branches with pytest-cov
+      Reject Runtime or Assertion Failures
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: verify
+    label: |-
+      Self-verification and Scaled Retry
+      Require All Tests + 100% Branch Coverage
+      Up to 10 Fresh Solution-test Attempts
+      Keep Only Non-decreasing Coverage
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: verified
+    label: |-
+      Retain 279K Verified Triplets
+      Discard Questions Failing All Attempts
+      Label Difficulty from Attempt Success Rate
+      Question + Solution + Unit Tests
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: convert
+    label: |-
+      Convert Question Styles
+      Use Solution and Tests as Context
+      Add Function Signatures and Examples
+      Create 168K Additional Triplets
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: final
+    label: |-
+      Release KodCode-V1 · 447K
+      Verified Question-solution-test Triplets
+      279K Original + 168K Converted
+      12 Subsets · Easy / Medium / Hard
+    type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 40
+  - id: rl
+    label: |-
+      RL-ready Data Branch
+      Use Paired Unit Tests as Verifiable Reward
+      Preserve the Full 447K Triplets
+      Support Test-based Reinforcement Learning
+    type: document
+    size: xl
+    position:
+      x: 2260
+      'y': 720
+  - id: r1
+    label: |-
+      Generate Reasoning Responses
+      Prompt DeepSeek-R1 per Question
+      Produce Chain-of-thought + Code
+      Sample Three Responses per Question
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 380
+  - id: reject
+    label: |-
+      Test-based Reject Sampling
+      Execute Each R1 Response on Unit Tests
+      Retain Only Verifiably Correct Outputs
+      Form High-quality SFT Examples
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: sft
+    label: |-
+      KodCode-SFT Branch
+      Question + Accepted Reasoning Response
+      Verifiable Chain-of-thought Code Data
+      Ready for Supervised Fine-tuning
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: train
+    label: |-
+      Post-train Code Models
+      SFT on Accepted R1 Responses
+      RL Directly on 447K Verified Triplets
+      Exclude 94 Flagged Overlaps in Analysis
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 720
+  - id: benchmark
+    label: |-
+      Evaluate Data Utility
+      HumanEval and HumanEval+
+      MBPP and MBPP+ · BigCodeBench
+      LiveCodeBench V5 · Greedy Decoding
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 720
+  - id: report
+    label: |-
+      Report Code Correctness
+      Pass@1 across Standard Benchmarks
+      SFT and RL Model Comparisons
+      Self-verification Error below 2.5%
+    type: terminal
+    size: xl
+    position:
+      x: 860
+      'y': 720
+edges:
+  - from: sources
+    to: dedup
+    type: primary
+  - from: dedup
+    to: synthesize
+    type: primary
+  - from: synthesize
+    to: execute
+    type: primary
+  - from: execute
+    to: verify
+    type: primary
+  - from: verify
+    to: verified
+    type: primary
+  - from: verified
+    to: convert
+    type: primary
+  - from: convert
+    to: final
+    type: primary
+  - from: final
+    to: rl
+    type: primary
+  - from: final
+    to: r1
+    type: secondary
+  - from: r1
+    to: reject
+    type: primary
+  - from: reject
+    to: sft
+    type: primary
+  - from: rl
+    to: train
+    type: primary
+  - from: sft
+    to: train
+    type: primary
+  - from: train
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: report
+    type: primary
+modules: []

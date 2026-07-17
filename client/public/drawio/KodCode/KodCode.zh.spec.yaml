@@ -1,0 +1,222 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: KodCode 构建流程
+  description: 对齐论文的 KodCode 合成流程：从十二类问题生成、语义去重、解答与测试自验证，到风格转换、 独立的 RL 与推理 SFT 路径，再通过下游代码基准验证数据效果。
+  legend: 第二阶段得到 279K 个已验证三元组，风格转换增加 168K，形成 447K 个 RL 就绪三元组； DeepSeek-R1 回答生成与基于测试的拒绝采样构成独立 SFT 路径，两类数据在后训练阶段汇合。
+nodes:
+  - id: sources
+    label: |-
+      合成十二类问题子集
+      Prefill · 五个编程评测来源
+      算法 · 数据结构 · 技术文档
+      Filter · Package · Evol
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: dedup
+    label: |-
+      语义去重
+      all-mpnet-base-v2 向量
+      FAISS 最近邻搜索
+      删除超过相似度阈值的问题
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: synthesize
+    label: |-
+      生成解答与测试
+      GPT-4o-0513 每次同时重新生成
+      Python 解答 + Pytest 用例
+      启动自验证尝试
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: execute
+    label: |-
+      执行单元测试
+      用生成测试运行解答
+      通过 pytest-cov 测量分支
+      拒绝运行或断言失败项
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: verify
+    label: |-
+      自验证与扩展重试
+      要求测试全过且分支覆盖率 100%
+      最多十次全新解答-测试尝试
+      只保留覆盖率不下降的尝试
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: verified
+    label: |-
+      保留 279K 个已验证三元组
+      丢弃所有尝试均失败的问题
+      按尝试成功率标记难度
+      问题 + 解答 + 单元测试
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: convert
+    label: |-
+      转换问题风格
+      以解答和测试作为上下文
+      添加函数签名与示例
+      新增 168K 个三元组
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: final
+    label: |-
+      发布 KodCode-V1 · 447K
+      已验证问题-解答-测试三元组
+      279K 原始 + 168K 转换
+      十二子集 · 简单 / 中等 / 困难
+    type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 40
+  - id: rl
+    label: |-
+      RL 就绪数据路径
+      使用配套单元测试作为可验证奖励
+      保留完整 447K 三元组
+      支持基于测试的强化学习
+    type: document
+    size: xl
+    position:
+      x: 2260
+      'y': 720
+  - id: r1
+    label: |-
+      生成推理回答
+      每题提示 DeepSeek-R1
+      生成思维链与代码
+      每题采样三个回答
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 380
+  - id: reject
+    label: |-
+      基于测试的拒绝采样
+      在单元测试上执行每个 R1 回答
+      仅保留可验证正确输出
+      形成高质量 SFT 样本
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: sft
+    label: |-
+      KodCode-SFT 路径
+      问题 + 通过测试的推理回答
+      可验证思维链代码数据
+      可用于监督微调
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: train
+    label: |-
+      后训练代码模型
+      用通过测试的 R1 回答进行 SFT
+      直接用 447K 已验证三元组做 RL
+      分析中排除 94 个疑似重叠项
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 720
+  - id: benchmark
+    label: |-
+      评估数据效用
+      HumanEval 与 HumanEval+
+      MBPP 与 MBPP+ · BigCodeBench
+      LiveCodeBench V5 · 贪心解码
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 720
+  - id: report
+    label: |-
+      汇报代码正确性
+      标准基准上的 Pass@1
+      比较 SFT 与 RL 模型
+      自验证错误率低于 2.5%
+    type: terminal
+    size: xl
+    position:
+      x: 860
+      'y': 720
+edges:
+  - from: sources
+    to: dedup
+    type: primary
+  - from: dedup
+    to: synthesize
+    type: primary
+  - from: synthesize
+    to: execute
+    type: primary
+  - from: execute
+    to: verify
+    type: primary
+  - from: verify
+    to: verified
+    type: primary
+  - from: verified
+    to: convert
+    type: primary
+  - from: convert
+    to: final
+    type: primary
+  - from: final
+    to: rl
+    type: primary
+  - from: final
+    to: r1
+    type: secondary
+  - from: r1
+    to: reject
+    type: primary
+  - from: reject
+    to: sft
+    type: primary
+  - from: rl
+    to: train
+    type: primary
+  - from: sft
+    to: train
+    type: primary
+  - from: train
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: report
+    type: primary
+modules: []

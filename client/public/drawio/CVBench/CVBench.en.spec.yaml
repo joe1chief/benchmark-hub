@@ -5,88 +5,161 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CVBench Build Process
-  description: >-
-    Paper-aligned construction flow for CVBench: task-driven YouTube video groups are curated, segmented, captioned,
-    summarized relationally, converted into multi-choice cross-video QA pairs, and checked by annotators before
-    zero-shot and CoT evaluation.
-  legend: Solid arrows show the dataset construction and evaluation pipeline.
+  description: Paper-aligned cross-video curation, relational QA synthesis, two-stage human review, and accuracy evaluation.
+  legend: Solid arrows show the paper's construction, human review, and evaluation pipeline.
 nodes:
-  - id: youtube
-    label: YouTube
+  - id: candidates
+    label: |-
+      YouTube retrieval
+      1,500 candidate videos
     type: cloud
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: video_qc
-    label: Video QC
-    type: decision
+      'y': 210
+  - id: curate
+    label: |-
+      Task-driven curation
+      relations · duration · 720p · 24 fps
+    type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: captions
-    label: Captions
-    type: process
+      'y': 210
+  - id: videos
+    label: |-
+      Curated video groups
+      1,315 videos · 2–4 per QA group
+    type: database
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: relations
-    label: Relations
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: qa
-    label: QA Pairs
+      'y': 210
+  - id: segments
+    label: |-
+      Adaptive frame sampling
+      segment-level visual captions
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: human_qc
-    label: Human QC
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: bench
-    label: CVBench
+      x: 820
+      'y': 210
+  - id: descriptions
+    label: |-
+      Video-level descriptions
+      aggregate segment evidence
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 210
+  - id: relations
+    label: |-
+      Relational summary
+      state · causality · complement · contradiction
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 210
+  - id: synthesize
+    label: |-
+      GPT-4o synthesis
+      ≥2 MCQs/group · 1 answer + 3 distractors
+    type: process
+    size: xl
+    position:
       x: 1600
-      'y': 160
-  - id: eval
-    label: Eval
-    type: terminal
+      'y': 210
+  - id: qc1
+    label: |-
+      First human check
+      8 annotators · 15 criteria · revise / recollect
+    type: user
     size: xl
     position:
       x: 1860
-      'y': 160
+      'y': 110
+  - id: qc2
+    label: |-
+      Independent re-examination
+      5 new annotators · 200 QA each
+    type: user
+    size: xl
+    position:
+      x: 2120
+      'y': 110
+  - id: benchmark
+    label: |-
+      CVBench
+      1,000 QA · 3 tiers · 15 subtasks
+    type: database
+    size: xl
+    position:
+      x: 2380
+      'y': 210
+  - id: input
+    label: |-
+      Multi-video input
+      indexed videos · 8 frames/video for open models
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 210
+  - id: prompting
+    label: |-
+      Prompting settings
+      zero-shot or chain-of-thought
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 210
+  - id: accuracy
+    label: |-
+      Accuracy
+      overall · tier · subtask
+    type: terminal
+    size: xl
+    position:
+      x: 3160
+      'y': 210
 edges:
-  - from: youtube
-    to: video_qc
+  - from: candidates
+    to: curate
     type: primary
-  - from: video_qc
-    to: captions
+  - from: curate
+    to: videos
     type: primary
-  - from: captions
+  - from: videos
+    to: segments
+    type: primary
+  - from: segments
+    to: descriptions
+    type: primary
+  - from: descriptions
     to: relations
     type: primary
   - from: relations
-    to: qa
+    to: synthesize
     type: primary
-  - from: qa
-    to: human_qc
+  - from: synthesize
+    to: qc1
     type: primary
-  - from: human_qc
-    to: bench
+  - from: qc1
+    to: qc2
     type: primary
-  - from: bench
-    to: eval
+  - from: qc2
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: input
+    type: primary
+  - from: input
+    to: prompting
+    type: primary
+  - from: prompting
+    to: accuracy
     type: primary
 modules: []

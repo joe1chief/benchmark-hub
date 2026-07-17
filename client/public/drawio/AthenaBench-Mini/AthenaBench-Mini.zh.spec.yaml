@@ -1,0 +1,236 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: AthenaBench-Mini 构建流程
+  description: 基于 arXiv:2511.01144 对齐的 CTI 数据构建、代表性 Mini 子集选择与六任务评测流程。
+  legend: AthenaBench-Mini 是从 8,100 条完整基准中选择的 950 条公开子集；按任务设置采样比例，使其总体模型排名尽可能接近完整基准。
+nodes:
+  - id: cti_sources
+    label: |-
+      整理权威 CTI 知识
+      MITRE ATT&CK • CWE • CAPEC • CISA
+      STIX/TAXII • GDPR 与行业标准
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: cve_sources
+    label: |-
+      接入实时漏洞数据
+      NVD API • CVE 描述
+      CVSS 指标与 CWE 标签
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: threat_sources
+    label: |-
+      收集威胁与防御证据
+      APT 厂商报告 • 安全博客
+      MITRE STIX 技术与缓解措施
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: ckt
+    label: |-
+      构建 CTI Knowledge Test
+      GPT-5 生成五选一问题
+      双模型标记 + 人工修正
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: rcm_vsp
+    label: |-
+      构建 RCM 与 VSP
+      映射根因 CWE 并预测 CVSS
+      去重并过滤过短记录
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 220
+  - id: taa_rms_ate
+    label: |-
+      构建 TAA、RMS 与 ATE
+      匿名化攻击者 • 关联缓解措施
+      将技术描述改写为场景
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: full_benchmark
+    label: |-
+      汇总完整 AthenaBench
+      六类 CTI 任务共 8,100 条
+      删除重复与答案泄露线索
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: sampling_policy
+    label: |-
+      应用任务特定采样比例
+      CKT/RCM/VSP 取 10% • ATE/RMS 取 20%
+      TAA 取 50%
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: candidate_subsets
+    label: |-
+      生成候选 Mini 子集
+      使用十个随机种子
+      评估模型总体表现
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: representative_selection
+    label: |-
+      选择代表性随机种子
+      总体表现与完整基准
+      最接近的候选子集
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: mini_release
+    label: |-
+      发布 AthenaBench-Mini
+      CKT 300 • ATE 100 • RCM 200
+      RMS 100 • VSP 200 • TAA 50
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: model_eval
+    label: |-
+      评测 12 个 LLM
+      闭源与开源模型
+      支持时统一温度为 0
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: categorical_metrics
+    label: |-
+      评分离散答案任务
+      CKT、ATE、RCM、TAA 使用准确率
+      按任务标准答案精确判断
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 580
+  - id: rms_metric
+    label: |-
+      评分风险缓解任务
+      RMS 使用多标签 F1
+      允许多个有效缓解策略
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 580
+  - id: vsp_metric
+    label: |-
+      评分漏洞严重性
+      解析 CVSS 并计算 MAD
+      标准化准确率为 1 - MAD / 7.7
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 580
+  - id: combined
+    label: |-
+      汇总六类任务分数
+      统一为百分比量纲
+      比较完整集与 Mini 排名
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 800
+  - id: report
+    label: |-
+      汇报 AthenaBench-Mini 结果
+      六项任务指标 + Combined Score
+      诊断 CTI 推理能力缺口
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 1020
+edges:
+  - from: cti_sources
+    to: ckt
+    type: primary
+  - from: cve_sources
+    to: rcm_vsp
+    type: primary
+  - from: threat_sources
+    to: taa_rms_ate
+    type: primary
+  - from: ckt
+    to: full_benchmark
+    type: primary
+  - from: rcm_vsp
+    to: full_benchmark
+    type: primary
+  - from: taa_rms_ate
+    to: full_benchmark
+    type: primary
+  - from: full_benchmark
+    to: sampling_policy
+    type: primary
+  - from: sampling_policy
+    to: candidate_subsets
+    type: primary
+  - from: candidate_subsets
+    to: representative_selection
+    type: primary
+  - from: representative_selection
+    to: mini_release
+    type: primary
+  - from: mini_release
+    to: model_eval
+    type: primary
+  - from: model_eval
+    to: categorical_metrics
+    type: primary
+  - from: model_eval
+    to: rms_metric
+    type: data
+  - from: model_eval
+    to: vsp_metric
+    type: data
+  - from: categorical_metrics
+    to: combined
+    type: primary
+  - from: rms_metric
+    to: combined
+    type: primary
+  - from: vsp_metric
+    to: combined
+    type: primary
+  - from: combined
+    to: report
+    type: primary
+modules: []

@@ -6,86 +6,190 @@ meta:
   routing: orthogonal
   title: K-QA Build Process
   description: >-
-    Paper-aligned K-QA pipeline from real patient questions through physician answers, statement tags, and NLI medical
-    QA metrics.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned K-QA construction from deidentified K Health conversations through stand-alone question curation,
+    physician-authored granular references, GPT-4-assisted statement decomposition, and validated NLI metrics.
+  legend: >-
+    K-QA contains 1,212 questions; the physician-reference and statement-level evaluation subset contains 201 answers
+    decomposed into 1,589 Must Have or Nice to Have statements.
 nodes:
-  - id: patient_queries
-    label: Patient Qs
-    type: document
+  - id: interactions
+    label: |-
+      Source Real Patient Interactions
+      Deidentified K Health Conversations
+      1,055 Unique Users
+      Manually Review for Privacy Leaks
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: question_filter
-    label: Q Filter
+      x: 20
+      'y': 40
+  - id: prefilter
+    label: |-
+      Automatic Question Prefilter
+      BERT Question-vs-statement Classifier
+      Regex Removes Billing and Logistics
+      Retain Candidate Patient Questions
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: doctor_review
-    label: Doctor Review
+      x: 300
+      'y': 40
+  - id: candidates
+    label: |-
+      Candidate Pool · About 26K
+      Real Consumer-health Wording
+      Ambiguous Jargon and Multiple Conditions
+      Potential Stand-alone Questions
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: medical_review
+    label: |-
+      Medical-professional Review
+      Require Stand-alone Answerability
+      Exclude Need for Patient History
+      Assign ICD-10 Condition Labels
     type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: question_set
-    label: 1212 Questions
-    type: document
+      x: 860
+      'y': 40
+  - id: questions
+    label: |-
+      Release K-QA Questions · 1,212
+      More Than 100 Medical Conditions
+      Real-world Long-form Medical QA
+      Full Question Set Has No Gold Answer
+    type: database
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: phys_answers
-    label: Dr Answers
+      x: 1140
+      'y': 40
+  - id: answers
+    label: |-
+      Author 201 Physician Answers
+      Six Doctors + Experienced Reviewer
+      Consult UpToDate and PubMed
+      No Generative AI · About 400 Hours
     type: user
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: statement_split
-    label: Stmt Split
+      x: 1420
+      'y': 40
+  - id: decomposition
+    label: |-
+      Decompose into Atomic Statements
+      Six Different Medical Doctors
+      GPT-4 Few-shot Suggestions
+      Amend, Remove, or Add Missing Facts
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: must_nice
-    label: Must/Nice Tags
+      x: 1700
+      'y': 40
+  - id: statements
+    label: |-
+      Produce 1,589 Statements
+      Average 7.9 per Physician Answer
+      Concise · Accurate · Self-contained
+      892 Must Have + 697 Nice to Have
+    type: database
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: importance
+    label: |-
+      Clinician Importance Consensus
+      Must Have: Clinically Crucial
+      Nice to Have: Supplemental
+      Collaborative Medical-group Decision
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: predict
+    label: |-
+      Generate Model Answer
+      Evaluate the 201 Referenced Questions
+      Zero Temperature Where Configurable
+      Optional ICL and Medical RAG Variants
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: nli_metrics
-    label: NLI Metrics
+      x: 1140
+      'y': 380
+  - id: nli
+    label: |-
+      Automatic NLI Comparison
+      Model Answer Is Premise
+      Each Gold Statement Is Hypothesis
+      GPT-4 Few-shot CoT: Entail / Contradict
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 380
+  - id: validate
+    label: |-
+      Validate the NLI Evaluator
+      50 Question-answer Pairs · 402 Statements
+      Three Physicians + Majority Vote
+      Fleiss Kappa 0.70
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 380
+  - id: metrics
+    label: |-
+      Report Medical Answer Quality
+      Comprehensiveness: Entailed Must Haves
+      Hallucination: Contradicted Gold Facts
+      Higher Comp and Lower Hall Are Better
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 300
+      'y': 380
 edges:
-  - from: patient_queries
-    to: question_filter
+  - from: interactions
+    to: prefilter
     type: primary
-  - from: question_filter
-    to: doctor_review
+  - from: prefilter
+    to: candidates
     type: primary
-  - from: doctor_review
-    to: question_set
+  - from: candidates
+    to: medical_review
     type: primary
-  - from: question_set
-    to: phys_answers
+  - from: medical_review
+    to: questions
     type: primary
-  - from: phys_answers
-    to: statement_split
+  - from: questions
+    to: answers
     type: primary
-  - from: statement_split
-    to: must_nice
+  - from: answers
+    to: decomposition
     type: primary
-  - from: must_nice
-    to: nli_metrics
+  - from: decomposition
+    to: statements
+    type: primary
+  - from: statements
+    to: importance
+    type: primary
+  - from: importance
+    to: predict
+    type: primary
+  - from: predict
+    to: nli
+    type: primary
+  - from: nli
+    to: validate
+    type: primary
+  - from: validate
+    to: metrics
     type: primary
 modules: []

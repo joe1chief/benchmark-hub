@@ -7,56 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 13,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "exam_pool",
-      "label": "官方考试池\n高考、SAT、LSAT\nGMAT、GRE、AMC、AIME",
+      "id": "official_sources",
+      "label": "官方公开考试\n高考/SAT/LSAT\nGRE/GMAT/法考/公考",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "exam_selection",
-      "label": "考试选择\n标准化高质量考试\n强调人类推理和真实场景",
+      "id": "reused_sources",
+      "label": "复用考试数据集\nLogiQA/MATH/AQuA-RAT\nJEC-QA与LSAT数据",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "select",
+      "label": "选择标准化考试\n人类推理能力\n与真实场景相关",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "objective_filter",
-      "label": "客观题过滤\n移除主观题\n保留选择题和填空题",
-      "type": "decision",
+      "id": "objective",
+      "label": "移除主观题\n保留选择与填空题",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "data_collection",
-      "label": "数据来源收集\n公开考试题源\nLSAT、LogiQA、MATH、JEC-QA",
-      "type": "document",
+      "id": "normalize",
+      "label": "统一数据来源\nMATH与两类JEC-QA\n各下采样至1K",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "AGIEval 数据集\n8,062 道题\n中英双语覆盖",
+      "label": "AGIEval\n20项任务/8,062题\n中文与英文",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "human_baselines",
-      "label": "人类表现基线\n平均和顶尖考生\n缩放到任务分数",
+      "id": "humans",
+      "label": "人类参考\n平均与顶尖考生",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "model_eval",
-      "label": "模型评估\n零样本、少样本\nchain-of-thought 提示",
+      "id": "prompts",
+      "label": "提示设置\n零样本/5样本\n使用/不使用CoT",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics_release",
-      "label": "结果与发布\naccuracy、EM、F1\n公开输出和代码",
+      "id": "generation",
+      "label": "贪心生成\n温度0\n最多2,048词元",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "format",
+      "label": "问题题型\n选择或填空？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "mcq",
+      "label": "选择题\n分类准确率",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "fill",
+      "label": "填空题\n精确匹配与F1",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "分任务结果\n模型对比人类\n公开输出与代码",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,58 +94,86 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "exam_pool",
-      "to": "exam_selection",
+      "from": "official_sources",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "exam_selection",
-      "to": "objective_filter",
-      "type": "data",
-      "label": "选定考试"
+      "from": "reused_sources",
+      "to": "select",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "objective_filter",
-      "to": "exam_selection",
-      "type": "optional",
-      "label": "移除主观题"
+      "from": "select",
+      "to": "objective",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "objective_filter",
-      "to": "data_collection",
+      "from": "objective",
+      "to": "normalize",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "data_collection",
+      "from": "normalize",
       "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "dataset",
-      "to": "human_baselines",
-      "type": "data"
+      "to": "humans",
+      "type": "primary"
     },
     {
       "id": "edge-7",
       "from": "dataset",
-      "to": "model_eval",
+      "to": "prompts",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "human_baselines",
-      "to": "metrics_release",
-      "type": "data"
+      "from": "prompts",
+      "to": "generation",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "model_eval",
-      "to": "metrics_release",
+      "from": "generation",
+      "to": "format",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "format",
+      "to": "mcq",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "format",
+      "to": "fill",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "humans",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "mcq",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "fill",
+      "to": "report",
       "type": "primary"
     }
   ],

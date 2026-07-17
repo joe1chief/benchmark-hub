@@ -1,0 +1,319 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WildGuardTest Construction, Three-Task F1, and OLMo 3 Downstream Evaluation
+  description: >-
+    WildGuardTest is a classifier benchmark built from a synthetic vanilla/adversarial test split. Three independent
+    annotators label prompt harmfulness, response harmfulness, and response refusal; Unsure is allowed, majority voting
+    is applied per label, and only labels without two-way agreement are nulled/removed, so other task labels on the same
+    row may remain. GPT-4 plus human mismatch review audits the result. The official dataset exposes 1,725 rows spanning
+    13 approximately balanced risk subcategories, while the paper separately reports 5,299 aggregate task-label items.
+    Canonical evaluation reports F1 for all three tasks with adversarial/vanilla breakdowns. OLMo 3 is a distinct
+    downstream model-generation evaluation: it selects 749 adversarial prompts, generates target-model responses, uses
+    WildGuard to classify safety/refusal behavior, and reports refusal accuracy (1 - ASR, higher is better).
+  legend: >-
+    Source: WildGuard arXiv:2406.18495v3 (2024-12-09), Section 3.2, Section 4.1 and Table 4, and Appendix A.6 Table 10;
+    official repository https://github.com/allenai/wildguard; official data
+    https://huggingface.co/datasets/allenai/wildguardmix, wildguardtest config. The separate OLMo 3 operational layer is
+    pinned to arXiv:2512.13961v2 (2026-04-14), safety-evaluation appendix; OLMo 3's broader subset wording must not
+    replace WildGuard v3's synthetic vanilla/adversarial construction provenance. Unit/source tension must remain
+    explicit: the reproducible dataset has 1,725 prompt-response rows, the WildGuard paper quotes 5,299 aggregate
+    human-annotated task-label items across three tasks, and OLMo 3 selects 749 adversarial prompts. Because 1,725 x 3
+    is 5,175 and per-label agreement filtering can leave null labels, 5,299 must not be derived from row count or
+    relabeled as unique prompts.. Solid arrows show the main flow explicitly supported by the paper or official
+    documentation.
+nodes:
+  - id: synthetic_split
+    label: Synthetic Vanilla + Adversarial Test Split
+    type: input
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: row_count
+    label: 1,725 Prompt-Response Rows
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: three_annotators
+    label: 3 Independent Annotators · 3 Tasks
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: annotation_task
+    label: Annotation Task?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: prompt_harm_label
+    label: Prompt Harmfulness · kappa 0.55
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: response_harm_label
+    label: Response Harmfulness · kappa 0.50
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: response_refusal_label
+    label: Response Refusal · kappa 0.72
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: majority_vote
+    label: Majority Vote per Label
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: agreement_gate
+    label: At Least 2 Votes Agree?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: retain_label
+    label: Retain This Label
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: null_label
+    label: Null / Remove This Label Only
+    type: loss
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: gpt4_audit
+    label: GPT-4 Full Pass + Human Mismatch Review
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: wgtest
+    label: WGTest · 1,725 Rows · 13 Risk Subcategories
+    type: output
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: unit_note
+    label: 'Paper: 5,299 Task-Label Items · Different Unit'
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 40
+  - id: moderation_model
+    label: Moderation Model
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: classifier_task
+    label: Classifier Task?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: prompt_harm_f1
+    label: Prompt Harmfulness F1
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 600
+  - id: response_harm_f1
+    label: Response Harmfulness F1
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 760
+  - id: response_refusal_f1
+    label: Response Refusal F1
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 920
+  - id: original_f1_report
+    label: 3 Task F1 + Adversarial/Vanilla Breakdown
+    type: output
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: olmo_select
+    label: OLMo 3 Layer · 749 Adversarial Prompts
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 1240
+  - id: target_generation
+    label: Target Model Generates Responses
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1240
+  - id: wildguard_judge
+    label: WildGuard Safety / Refusal Classifier
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 1240
+  - id: refusal_accuracy
+    label: Refusal Accuracy = 1 - ASR · Higher Better
+    type: formula
+    size: xl
+    position:
+      x: 1720
+      'y': 1240
+  - id: olmo_report
+    label: OLMo 3 Downstream Safety Result
+    type: output
+    size: xl
+    position:
+      x: 1440
+      'y': 1240
+edges:
+  - from: synthetic_split
+    to: row_count
+    type: primary
+  - from: row_count
+    to: three_annotators
+    type: primary
+  - from: three_annotators
+    to: annotation_task
+    type: primary
+  - from: annotation_task
+    to: prompt_harm_label
+    type: primary
+    label: Prompt Harm
+    labelPosition: center
+  - from: annotation_task
+    to: response_harm_label
+    type: primary
+    label: Response Harm
+    labelPosition: center
+  - from: annotation_task
+    to: response_refusal_label
+    type: primary
+    label: Refusal
+    labelPosition: center
+  - from: prompt_harm_label
+    to: majority_vote
+    type: primary
+  - from: response_harm_label
+    to: majority_vote
+    type: primary
+  - from: response_refusal_label
+    to: majority_vote
+    type: primary
+  - from: majority_vote
+    to: agreement_gate
+    type: primary
+  - from: agreement_gate
+    to: retain_label
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: agreement_gate
+    to: null_label
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: retain_label
+    to: gpt4_audit
+    type: primary
+  - from: null_label
+    to: gpt4_audit
+    type: optional
+  - from: gpt4_audit
+    to: wgtest
+    type: primary
+  - from: wgtest
+    to: unit_note
+    type: data
+    label: Do Not Collapse Units
+    labelPosition: center
+  - from: wgtest
+    to: moderation_model
+    type: primary
+  - from: moderation_model
+    to: classifier_task
+    type: primary
+  - from: classifier_task
+    to: prompt_harm_f1
+    type: primary
+    label: Prompt Harm
+    labelPosition: center
+  - from: classifier_task
+    to: response_harm_f1
+    type: primary
+    label: Response Harm
+    labelPosition: center
+  - from: classifier_task
+    to: response_refusal_f1
+    type: primary
+    label: Refusal
+    labelPosition: center
+  - from: prompt_harm_f1
+    to: original_f1_report
+    type: primary
+  - from: response_harm_f1
+    to: original_f1_report
+    type: primary
+  - from: response_refusal_f1
+    to: original_f1_report
+    type: primary
+  - from: wgtest
+    to: olmo_select
+    type: data
+    label: Separate Downstream Layer
+    labelPosition: center
+    waypoints:
+      - x: 3040
+        'y': 360
+      - x: 3040
+        'y': 1320
+      - x: 2720
+        'y': 1320
+  - from: olmo_select
+    to: target_generation
+    type: primary
+  - from: target_generation
+    to: wildguard_judge
+    type: primary
+  - from: wildguard_judge
+    to: refusal_accuracy
+    type: primary
+  - from: refusal_accuracy
+    to: olmo_report
+    type: primary
+modules: []

@@ -1,0 +1,211 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ComplexFuncBench 构建与音频适配评测
+  description: 按论文还原 ComplexFuncBench 构建流程，并补充 Google 后续音频适配。站点保留旧 ID ComplexFunBench，但原论文与仓库中的 benchmark 正式名称是 ComplexFuncBench。
+  legend: 顶部为原始 benchmark 构建；底部分开显示论文文本协议与 Google 提示转音频的 Gemini Live 复用，两者沿用论文 ComplexEval 评分器。
+nodes:
+  - id: apis
+    label: |-
+      Booking.com（经 RapidAPI）
+      五个领域的 43 个实时 API
+      人工修正函数描述
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: coarse
+    label: |-
+      阶段一：粗粒度生成
+      GPT-4o 采样函数并生成
+      1,000 个问题与初始调用路径
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: select
+    label: |-
+      选择 100 个相对完整样本
+      覆盖不同步数与调用路径
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: correct
+    label: |-
+      阶段二：资深标注
+      改写问题、修正参数
+      构造最短且完整的调用路径
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: disambiguate
+    label: |-
+      消除歧义
+      排除功能重叠函数并删除
+      导致多个有效参数的 API 结果
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: templates
+    label: |-
+      质检后的模板集
+      100 条无错误复杂调用路径
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: generalize
+    label: |-
+      阶段三：泛化
+      GPT-4o 修改地点与约束
+      每个模板生成 9 个新问题
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: junior
+    label: |-
+      初级标注员填写参数
+      保留路径并消除响应歧义
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 100
+  - id: dataset
+    label: |-
+      ComplexFuncBench（原始名称）
+      1,000 条：600 单域 + 400 跨域
+      站点 ID 保留为 ComplexFunBench
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 100
+  - id: text_protocol
+    label: |-
+      论文文本到文本协议
+      静态上下文与相互依赖调用
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 430
+  - id: audio_synth
+    label: |-
+      Google 音频适配
+      为每条提示合成音频
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 670
+  - id: text_run
+    label: |-
+      模型迭代生成函数调用
+      接收已标注的 API 响应
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 430
+  - id: live_run
+    label: |-
+      通过 Gemini Live API 运行
+      处理音频提示与函数调用
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 670
+  - id: complexeval
+    label: |-
+      论文 ComplexEval 评分器
+      格式检查 + 匈牙利匹配
+      规则 / 响应 / GPT-4o 等价判断
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 550
+  - id: response_judge
+    label: |-
+      GPT-4o 最终回答评审
+      完整性与正确性（0 到 2）
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 550
+  - id: report
+    label: |-
+      报告成功率与调用准确率
+      以及完整性与正确性
+    type: terminal
+    size: xl
+    position:
+      x: 1000
+      'y': 550
+edges:
+  - from: apis
+    to: coarse
+    type: primary
+  - from: coarse
+    to: select
+    type: primary
+  - from: select
+    to: correct
+    type: primary
+  - from: correct
+    to: disambiguate
+    type: primary
+  - from: disambiguate
+    to: templates
+    type: primary
+  - from: templates
+    to: generalize
+    type: primary
+  - from: generalize
+    to: junior
+    type: primary
+  - from: junior
+    to: dataset
+    type: primary
+  - from: dataset
+    to: text_protocol
+    type: primary
+  - from: dataset
+    to: audio_synth
+    type: primary
+  - from: text_protocol
+    to: text_run
+    type: primary
+  - from: audio_synth
+    to: live_run
+    type: primary
+  - from: text_run
+    to: complexeval
+    type: primary
+  - from: live_run
+    to: complexeval
+    type: primary
+  - from: complexeval
+    to: response_judge
+    type: primary
+  - from: response_judge
+    to: report
+    type: primary
+modules: []

@@ -4,86 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLU-Redux_2.0 构建流程
-  description: 对齐来源的 MMLU-Redux 2.0 构建流程：新版 Redux 覆盖全部57个 MMLU 学科进行人工重标注，发布带元数据的修正行，并支持更新后的准确率评测。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMLU-Redux 2.0 构建流程
+  description: 按论文由专家重新标注覆盖 57 个学科的 5,700 道 MMLU 测试题，并对比全量与仅正确题目的精确匹配结果。
+  legend: 建议正确答案属于标注元数据；论文评测并未用它替换原始 MMLU 标签。
 nodes:
-  - id: n1
-    label: MMLU来源
+  - id: sample
+    label: |-
+      从 MMLU 测试集抽样
+      每个学科抽取 100 题
+      覆盖全部 57 个学科
+      合计 5,700 道题
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 57学科
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 5700行
+      x: 20
+      'y': 40
+  - id: taxonomy
+    label: |-
+      定义分层错误体系
+      问题或选项不清晰
+      无正确或多个正确答案
+      错误真值 · 正常 · 待专家
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 人工检查
+      x: 300
+      'y': 40
+  - id: assign
+    label: |-
+      分配 14 名人类专家
+      匹配对应学科专长
+      审查问题与选项
+      检查原始答案
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: source
+    label: |-
+      追溯支持性来源
+      尽可能查找原始出处
+      否则使用可信来源
+      优先官方资料或教材
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 修正结果
+      x: 860
+      'y': 40
+  - id: annotate
+    label: |-
+      标注每条抽样题目
+      记录错误类型与来源
+      给出建议正确答案
+      补充支持性解释
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: HF发布
-    type: decision
+      x: 1140
+      'y': 40
+  - id: uncertain
+    label: |-
+      上报不确定样本
+      标记为待专家处理
+      避免无依据的判断
+      保留可审计信息
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 评测框架
-    type: document
+      x: 1420
+      'y': 40
+  - id: agreement
+    label: |-
+      检查标注者一致性
+      三人复标五个学科
+      聚焦错误较多的学科
+      Cohen Kappa 高于 0.6
+    type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
+      x: 1420
+      'y': 420
+  - id: release
+    label: |-
+      汇总 Redux 2.0 元数据
+      问题 · 选项 · 原始答案
+      错误类型 · 来源 · 建议答案
+      完整覆盖 57 个学科
+    type: database
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: estimate
+    label: |-
+      估计完整 MMLU 错误率
+      汇总各学科抽样结果
+      加权观察到的错误
+      报告 6.49%
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: original
+    label: |-
+      评估模型预测
+      使用原始精确匹配
+      报告全量题目结果
+      保持论文评测协议
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: filter
+    label: |-
+      构造仅正确题目视图
+      按错误类型元数据过滤
+      排除错误与待专家题目
+      重新计算精确匹配
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: compare
+    label: |-
+      对比分数与排名
+      全量题目对比仅正确题目
+      量化标注错误影响
+      报告准确率变化
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: sample
+    to: taxonomy
     type: primary
-  - from: n2
-    to: n3
+  - from: taxonomy
+    to: assign
     type: primary
-  - from: n3
-    to: n4
+  - from: assign
+    to: source
     type: primary
-  - from: n4
-    to: n5
+  - from: source
+    to: annotate
     type: primary
-  - from: n5
-    to: n6
+  - from: annotate
+    to: uncertain
     type: primary
-  - from: n6
-    to: n7
+  - from: uncertain
+    to: agreement
     type: primary
-  - from: n7
-    to: n8
+  - from: agreement
+    to: release
+    type: primary
+  - from: release
+    to: estimate
+    type: primary
+  - from: estimate
+    to: original
+    type: primary
+  - from: original
+    to: filter
+    type: primary
+  - from: filter
+    to: compare
     type: primary
 modules: []

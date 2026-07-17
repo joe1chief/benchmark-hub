@@ -5,117 +5,164 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMMMU 构建流程
-  description: 基于 arXiv:2401.11944 论文整理的 CMMMU 构建与评测流程。
-  legend: 实线表示数据主流程；虚线表示人工质量过滤环节。
+  description: 对齐论文的 CMMMU 构建与评测流程：组织者和本科及以上标注员从许可合规来源整理大学水平中文多模态题，经专家、难度与污染过滤并补齐稀缺学科，形成 12K 基准，再以规则答案抽取和微平均准确率评分。
+  legend: 实线箭头表示来源整理、三重质量门禁、发布与评测。
 nodes:
-  - id: sources
-    label: |-
-      授权资料
-      每科 20+
-    type: document
+  - id: source_plan
+    label: 许可合规网站与书籍；每科至少 20 个来源
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: annotators
-    label: |-
-      众包标注
-      MMMU 协议
+      'y': 170
+  - id: organizers
+    label: 论文组织者收集候选资料
     type: user
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filters
-    label: |-
-      图像过滤
-      专家题
-    type: decision
+      'y': 170
+  - id: annotators
+    label: 本科及以上标注员创建多模态题目
+    type: user
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: balance
-    label: |-
-      补充题目
-      平衡学科
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: authorqc
-    label: |-
-      作者质检
-      大学水平
+      'y': 170
+  - id: item_filter
+    label: 初步题目过滤
     type: decision
     size: xl
     position:
       x: 820
-      'y': 250
-  - id: contamination
-    label: |-
-      污染过滤
-      模型答对剔除
+      'y': 170
+  - id: balance
+    label: 组织者补充稀缺学科题目
     type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: dataset
-    label: |-
-      CMMMU
-      12K
-    type: database
+      'y': 60
+  - id: author_qc
+    label: 作者逐题核验
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 280
+  - id: difficulty_filter
+    label: 大学水平与答案门禁
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: image_types
-    label: |-
-      元数据
-      39 类图像
+      'y': 170
+  - id: contamination
+    label: 剔除 GPT-4、Qwen、DeepSeek、Yi 无 OCR 均答对的题
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 170
+  - id: benchmark
+    label: CMMMU：12K 题、6 大学科、30 多个专业
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 170
+  - id: metadata
+    label: 39 类图像、子领域元数据与多种题型
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 70
-  - id: eval
-    label: 规则评测
+      x: 2120
+      'y': 60
+  - id: model_input
+    label: 输入中文题目、选项与关联图像
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 280
+  - id: extraction
+    label: 按不同题型进行规则答案抽取
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 280
+  - id: accuracy
+    label: 微平均准确率
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 170
+  - id: error_analysis
+    label: 分析 150 个 GPT-4V 错例，每专业 5 个
+    type: user
+    size: xl
+    position:
+      x: 2640
+      'y': 340
+  - id: report
+    label: 学科、图像类型与错例分析报告
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 250
+      x: 2900
+      'y': 170
 edges:
-  - from: sources
+  - from: source_plan
+    to: organizers
+    type: primary
+  - from: organizers
     to: annotators
     type: primary
   - from: annotators
-    to: filters
+    to: item_filter
     type: primary
-  - from: filters
+  - from: item_filter
     to: balance
-    type: data
-    label: 稀缺科目
-  - from: filters
-    to: authorqc
+    type: primary
+  - from: item_filter
+    to: author_qc
     type: primary
   - from: balance
-    to: authorqc
+    to: difficulty_filter
     type: primary
-  - from: authorqc
+  - from: author_qc
+    to: difficulty_filter
+    type: primary
+  - from: difficulty_filter
     to: contamination
     type: primary
-    label: 核验题目
   - from: contamination
-    to: dataset
+    to: benchmark
     type: primary
-  - from: dataset
-    to: image_types
-    type: data
-    label: 元数据
-  - from: dataset
-    to: eval
+  - from: benchmark
+    to: metadata
+    type: primary
+  - from: benchmark
+    to: model_input
+    type: primary
+  - from: model_input
+    to: extraction
+    type: primary
+  - from: extraction
+    to: accuracy
+    type: primary
+  - from: accuracy
+    to: error_analysis
+    type: primary
+  - from: metadata
+    to: report
+    type: primary
+  - from: accuracy
+    to: report
+    type: primary
+  - from: error_analysis
+    to: report
     type: primary
 modules: []

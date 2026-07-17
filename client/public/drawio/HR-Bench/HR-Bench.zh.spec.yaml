@@ -5,75 +5,151 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HR-Bench 构建流程
-  description: 对齐论文的 HR-Bench 构建流程：8K 图像来源、人工设计 FSP/FCP 任务、标注目标坐标、 生成 4K 裁剪、多选项提示、循环置换评测和准确率/不确定性统计。
-  legend: 实线箭头表示基准构建和评测流程；不把 DC2 推理方法混入数据集构建。
+  description: 与论文一致的 200 题 HR-Bench 构建流程及 8K/4K 循环置换评测视图。
+  legend: HR-Bench 共有 200 个唯一图像问题：FSP 与 FCP 各 100 个。8K 和 4K 版本复用相同问题但图像分辨率不同； 选项循环换位是评测运行，不是新增的唯一问题。
 nodes:
   - id: images
-    label: 8K图像
+    label: |-
+      收集 200 张高分辨率图像
+      来源为开放 DIV8K 与互联网
+      原始图像平均分辨率约 8K
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
-    label: FSP+FCP
+      'y': 300
+  - id: boxes
+    label: |-
+      人工标记相关目标
+      在每张 8K 图像中标注边界框
+      保留目标的原始坐标
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: annotate
-    label: 人工问答
+      x: 340
+      'y': 300
+  - id: generate
+    label: |-
+      按标注边界框裁剪图像
+      使用 GPT-4o 生成问题与答案
+      聚焦必须依赖视觉定位的细节
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: coords
-    label: 目标坐标
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: crops
-    label: 4K裁剪
+      x: 640
+      'y': 300
+  - id: review
+    label: |-
+      人类专家审核生成问答
+      删除错误或含歧义的问题
+      保留无法脱离图像猜测的题目
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 940
+      'y': 300
+  - id: route
+    label: |-
+      分配细粒度任务
+      单实例属性或文本感知
+      与跨实例关系感知
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: fsp
+    label: |-
+      FSP · 100 个样本
+      属性识别 · OCR
+      视觉提示
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 80
+  - id: fcp
+    label: |-
+      FCP · 100 个样本
+      地图分析 · 图表分析
+      空间关系
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 520
+  - id: versions
+    label: |-
+      构建两种分辨率视图
+      HR-Bench 8K 保留原始图像
+      HR-Bench 4K 围绕相关目标裁剪
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
   - id: options
-    label: 多选项
+    label: |-
+      创建多项选择选项
+      两种视图绑定相同标准答案
+      保持问题与目标的视觉对应
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: 准确+不确定
+      x: 2140
+      'y': 300
+  - id: rotate
+    label: |-
+      应用循环置换
+      轮换所有答案选项的位置
+      每种选项顺序各运行一次
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: score
+    label: |-
+      汇总 HR-Bench 结果
+      对所有置换的准确率取平均
+      先导分析还报告不确定性分数
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2740
+      'y': 300
 edges:
   - from: images
-    to: tasks
+    to: boxes
     type: primary
-  - from: tasks
-    to: annotate
+  - from: boxes
+    to: generate
     type: primary
-  - from: annotate
-    to: coords
+  - from: generate
+    to: review
     type: primary
-  - from: coords
-    to: crops
+  - from: review
+    to: route
     type: primary
-  - from: crops
+  - from: route
+    to: fsp
+    type: primary
+  - from: route
+    to: fcp
+    type: primary
+  - from: fsp
+    to: versions
+    type: primary
+  - from: fcp
+    to: versions
+    type: primary
+  - from: versions
     to: options
     type: primary
   - from: options
-    to: metrics
+    to: rotate
+    type: primary
+  - from: rotate
+    to: score
     type: primary
 modules: []

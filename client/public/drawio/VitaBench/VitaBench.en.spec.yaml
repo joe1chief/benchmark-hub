@@ -1,0 +1,302 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VitaBench — Task Construction, Agent Loop, and Strict Scoring
+  description: >-
+    VitaBench models three real application domains with 66 tools, explicit pre/postconditions, dependency graphs, and a
+    user simulator that progressively reveals needs. User profiles, composite requests, real/synthetic environment data,
+    and human rubrics feed repeated trial-and-human-acceptance cycles that retain 400 tasks: 100 cross-domain and 300
+    single-domain (100 each for Delivery, In-store, and OTA). Evaluation runs an agent against the user simulator and
+    tools until ###STOP### or failure, scores overlapping trajectory windows into persistent rubric states, and repeats
+    each task four times. Strict success requires every rubric item satisfied; the paper reports Avg@4, Pass@4, and
+    Pass^4.
+  legend: >-
+    Source: arXiv:2509.26490v2, Sections 3.2-3.3 (pp.4-6) and Section 4.1 (p.6); official repository:
+    https://github.com/meituan-longcat/vitabench. The diagram is pinned to paper v2; later repository
+    evaluator/database/result updates are maintenance drift, not paper evidence.. Solid arrows show the main flow
+    explicitly supported by the paper or official documentation.
+nodes:
+  - id: domains
+    label: Delivery · In-store · OTA
+    type: database
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: tools
+    label: 66 Tools + Pre/Postconditions
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: dependency
+    label: Tool Dependency Graph
+    type: graph
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: userSim
+    label: Progressively Revealed User Needs
+    type: user
+    size: xl
+    position:
+      x: 540
+      'y': 200
+  - id: profiles
+    label: User Profiles
+    type: document
+    size: xl
+    position:
+      x: 780
+      'y': 40
+  - id: requests
+    label: Composite Authentic Requests
+    type: document
+    size: xl
+    position:
+      x: 780
+      'y': 200
+  - id: envData
+    label: Real + Synthetic Environment Data
+    type: database
+    size: xl
+    position:
+      x: 780
+      'y': 360
+  - id: rubrics
+    label: Human Rubrics
+    type: document
+    size: xl
+    position:
+      x: 1020
+      'y': 40
+  - id: compose
+    label: Compose Candidate Task
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 200
+  - id: trial
+    label: Multi-round Trial
+    type: service
+    size: xl
+    position:
+      x: 1260
+      'y': 200
+  - id: acceptGate
+    label: Human accepts trial?
+    type: decision
+    size: xl
+    position:
+      x: 1740
+      'y': 200
+  - id: reviseTask
+    label: Revise Task / Rubric / Data
+    type: process
+    size: xl
+    position:
+      x: 1740
+      'y': 360
+  - id: taskSet
+    label: 400 Tasks · 100 cross + 300 single
+    type: output
+    size: xl
+    position:
+      x: 1980
+      'y': 40
+  - id: agent
+    label: Agent
+    type: service
+    size: xl
+    position:
+      x: 1980
+      'y': 520
+  - id: interaction
+    label: User Simulator ↔ Tools
+    type: service
+    size: xl
+    position:
+      x: 1740
+      'y': 520
+  - id: stopGate
+    label: '###STOP###, failure, or continue?'
+    type: decision
+    size: xl
+    position:
+      x: 1500
+      'y': 520
+  - id: nextTurn
+    label: Next Interaction Turn
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 760
+  - id: failure
+    label: Failure Termination
+    type: terminal
+    size: xl
+    position:
+      x: 1260
+      'y': 360
+  - id: trajectory
+    label: Completed Trajectory
+    type: document
+    size: xl
+    position:
+      x: 1260
+      'y': 520
+  - id: windows
+    label: Overlapping Windows
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 520
+  - id: state
+    label: Persistent Rubric State s ∈ {0,1}^k
+    type: process
+    size: xl
+    position:
+      x: 780
+      'y': 520
+  - id: strict
+    label: Strict = 1[Σ sⱼ = k]
+    type: formula
+    size: xl
+    position:
+      x: 300
+      'y': 520
+  - id: runs
+    label: 4 Independent Runs
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 680
+  - id: avg4
+    label: Avg@4
+    type: formula
+    size: xl
+    position:
+      x: 60
+      'y': 840
+  - id: pass4
+    label: Pass@4 · at least once
+    type: formula
+    size: xl
+    position:
+      x: 300
+      'y': 960
+  - id: passPower4
+    label: Pass⁴ · all four
+    type: formula
+    size: xl
+    position:
+      x: 540
+      'y': 840
+edges:
+  - from: domains
+    to: tools
+    type: primary
+  - from: tools
+    to: dependency
+    type: primary
+  - from: tools
+    to: userSim
+    type: primary
+  - from: dependency
+    to: compose
+    type: primary
+  - from: userSim
+    to: compose
+    type: primary
+  - from: profiles
+    to: compose
+    type: primary
+  - from: requests
+    to: compose
+    type: primary
+  - from: envData
+    to: compose
+    type: primary
+  - from: rubrics
+    to: compose
+    type: primary
+  - from: compose
+    to: trial
+    type: primary
+  - from: trial
+    to: acceptGate
+    type: primary
+  - from: acceptGate
+    to: reviseTask
+    type: optional
+    label: 'No'
+    labelPosition: center
+  - from: acceptGate
+    to: taskSet
+    type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: reviseTask
+    to: compose
+    type: optional
+  - from: taskSet
+    to: agent
+    type: primary
+  - from: agent
+    to: interaction
+    type: primary
+  - from: interaction
+    to: stopGate
+    type: primary
+  - from: stopGate
+    to: nextTurn
+    type: primary
+    label: Continue
+    labelPosition: center
+  - from: stopGate
+    to: failure
+    type: optional
+    label: Failure
+    labelPosition: center
+  - from: stopGate
+    to: trajectory
+    type: primary
+    label: '###STOP###'
+    labelPosition: center
+  - from: nextTurn
+    to: agent
+    type: bidirectional
+  - from: failure
+    to: trajectory
+    type: data
+  - from: trajectory
+    to: windows
+    type: primary
+  - from: windows
+    to: state
+    type: primary
+  - from: state
+    to: strict
+    type: primary
+  - from: strict
+    to: runs
+    type: primary
+  - from: runs
+    to: avg4
+    type: primary
+  - from: runs
+    to: pass4
+    type: primary
+  - from: runs
+    to: passPower4
+    type: primary
+modules: []

@@ -5,77 +5,179 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DUDE Build Process
-  description: Paper-aligned DUDE flow from public visually rich documents to multi-domain DocVQA evaluation.
+  description: Paper-aligned document sourcing, phased human annotation, adjudication, diagnostic labeling, and ANLS evaluation.
   legend: >-
-    Solid arrows show public VRD sourcing, manual search, two-round QA annotation, agreement filtering, diverse QA
-    construction, DocVQA evaluation, and ANLS reporting.
+    Solid arrows trace the main construction path; the agreement branch separates automatically accepted answers from
+    expert adjudication.
 nodes:
-  - id: docs
-    label: Public VRDs
+  - id: sources
+    label: |-
+      Public aggregate sources
+      archive.org · Wikimedia Commons · DocumentCloud
+      category-keyword manual queries
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: search
-    label: Manual Query
+      'y': 250
+  - id: document_gate
+    label: |-
+      Document selection gate
+      public-domain / permissive license
+      visual diversity · remove privacy / legal risks
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: qa
-    label: QA Rounds
-    type: process
+      'y': 250
+  - id: documents
+    label: |-
+      Multi-industry English VRDs
+      5,019 documents · 1860–2022
+      mean 5.72 pages · born-digital and scans
+    type: database
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: filter
-    label: ANLS Filter
-    type: decision
+      'y': 250
+  - id: phase1
+    label: |-
+      Phase 1 · author QA pairs
+      all MTurkers: extractive / abstractive / list
+      evidence box for extractive answers
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: items
-    label: Diverse QA
-    type: document
+      'y': 250
+  - id: filter
+    label: |-
+      Semi-automatic QA filtering
+      length / character / type checks
+      cluster duplicates and near-duplicates
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eval
-    label: DocVQA Eval
+      'y': 250
+  - id: phase2
+    label: |-
+      Phase 2 · independent answer
+      a second worker answers the same question
+      form two-answer QA triples
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: ANLS
-    type: terminal
+      'y': 250
+  - id: agreement
+    label: |-
+      Inter-answer ANLS gate
+      agreement > 0.8 is accepted
+      lower agreement requires adjudication
+    type: decision
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: direct
+    label: |-
+      Direct promotion
+      high-agreement triples
+      linguist-authored non-answerable items bypass 2–3
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 90
+  - id: phase3
+    label: |-
+      Phase 3 · Best-MTurker adjudication
+      choose / reject both answer variants
+      5 PhD linguists correct decision outliers
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 410
+  - id: final
+    label: |-
+      DUDE benchmark
+      41,541 questions · 42.39% extractive
+      38.25% abstractive · 6.62% list · 12.74% none
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: diagnostics
+    label: |-
+      Optional Phase 4 · test diagnostics
+      linguists review QA and label complexity,
+      evidence, operation, and answer form
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: evaluation
+    label: |-
+      DocVQA evaluation
+      train / validation / hidden test predictions
+      single answers, lists, and None handling
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 250
+  - id: report
+    label: |-
+      ANLS report
+      overall plus diagnostic slices
+      multi-domain and multi-task generalization
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 250
 edges:
-  - from: docs
-    to: search
+  - from: sources
+    to: document_gate
     type: primary
-  - from: search
-    to: qa
+  - from: document_gate
+    to: documents
     type: primary
-  - from: qa
+  - from: documents
+    to: phase1
+    type: primary
+  - from: phase1
     to: filter
     type: primary
   - from: filter
-    to: items
+    to: phase2
     type: primary
-  - from: items
-    to: eval
+  - from: phase2
+    to: agreement
     type: primary
-  - from: eval
-    to: score
+  - from: agreement
+    to: direct
+    type: primary
+  - from: agreement
+    to: phase3
+    type: primary
+  - from: direct
+    to: final
+    type: primary
+  - from: phase3
+    to: final
+    type: primary
+  - from: final
+    to: diagnostics
+    type: primary
+  - from: diagnostics
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: report
     type: primary
 modules: []

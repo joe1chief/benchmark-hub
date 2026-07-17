@@ -1,0 +1,142 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OlmoBaseEval GenQA 构建流程
+  description: 按来源呈现 Olmo 3 报告中 GenQA 宏平均的构造与评测流程。
+  legend: GenQA 不是独立数据集，而是 Olmo 3 报告与官方 OLMES 套件定义的任务簇；两条分支采用不同格式后合并为宏平均。
+nodes:
+  - id: pool
+    label: |-
+      收集 70 个开源权重模型的
+      2.3 万条 benchmark 结果
+      比较任务级模型排名
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: cluster
+    label: |-
+      对评测执行层次聚类
+      使用 Ward 方差最小化
+      合并模型排名相近的任务
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: align
+    label: |-
+      按任务格式校正聚类
+      将相同格式任务归为同簇
+      再将选择题拆为 STEM/非 STEM
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: rc
+    label: |-
+      GenQA 排序选择/续写分支
+      HellaSwag · WinoGrande · LAMBADA
+      BasicSkills（6 个子任务）
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 80
+  - id: gen
+    label: |-
+      GenQA 短答案分支
+      DROP · Jeopardy · NaturalQs
+      SQuAD · CoQA
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 520
+  - id: prompt_rc
+    label: |-
+      运行排序选择/续写评测
+      多数 5-shot；LAMBADA 为 0-shot
+      按各任务定义归一化似然
+    type: process
+    size: xl
+    position:
+      x: 1280
+      'y': 80
+  - id: prompt_gen
+    label: |-
+      生成短答案
+      除内置 0-shot CoQA 外均为 5-shot
+      温度 0 · top-p 1 · 最多 50/100 tokens
+    type: process
+    size: xl
+    position:
+      x: 1280
+      'y': 520
+  - id: task_score
+    label: |-
+      分别计算各来源任务得分
+      排序选择/续写使用准确率
+      短答案与答案库比较 F1
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 300
+  - id: macro
+    label: |-
+      对 9 项任务分数取宏平均
+      报告 Olmo 3-Eval GenQA
+      作为 OlmoBaseEval Main 一项能力
+    type: terminal
+    size: xl
+    position:
+      x: 1940
+      'y': 300
+  - id: caveat
+    label: |-
+      保留报告中的已知限制
+      短答案库不完整会产生假阴性
+      Gen2MC 是另行构造的修正方案
+    type: terminal
+    size: xl
+    position:
+      x: 2240
+      'y': 300
+edges:
+  - from: pool
+    to: cluster
+    type: primary
+  - from: cluster
+    to: align
+    type: primary
+  - from: align
+    to: rc
+    type: primary
+  - from: align
+    to: gen
+    type: primary
+  - from: rc
+    to: prompt_rc
+    type: primary
+  - from: gen
+    to: prompt_gen
+    type: primary
+  - from: prompt_rc
+    to: task_score
+    type: primary
+  - from: prompt_gen
+    to: task_score
+    type: primary
+  - from: task_score
+    to: macro
+    type: primary
+  - from: macro
+    to: caveat
+    type: primary
+modules: []

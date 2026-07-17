@@ -5,89 +5,111 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AlpacaEval 2.0 构建流程
-  description: 基于 arXiv:2404.04475 重绘的 AlpacaEval 2.0 成对自动评测与长度控制胜率流程。
-  legend: 实线表示成对评测与长度控制胜率计算主流程；虚线表示与人类偏好基准的验证关系。
+  description: >-
+    论文对齐的 AlpacaEval 2.0 流程：805 条固定指令产生随机顺序的 GPT-4-Turbo 成对判断；标准胜率与带正则的 反对称 GLM 分别给出原始分和长度控制分，并验证胜率语义、降低长度可操纵性及提升与
+    Chatbot Arena 的一致性。
+  legend: 实线表示回复生成、评审与分数估计；虚线表示原始指标和长度控制指标与稳健性及人类偏好证据的对照。
 nodes:
   - id: instructions
     label: |-
       固定指令集
-      805 条 Alpaca 演示提示
-      覆盖用户交互
+      805 条 Alpaca 提示
     type: document
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
+      'y': 220
   - id: baseline
     label: |-
-      基线模型回复
-      GPT-4 turbo 基线
-      每条指令一个回答
+      基线回复
+      GPT-4-1106-Preview
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 70
+      x: 240
+      'y': 60
   - id: candidate
     label: |-
       候选模型回复
-      待评估模型输出
-      同一 805 条指令
+      同一 805 条提示
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 250
+      x: 240
+      'y': 380
   - id: evaluator
     label: |-
-      GPT-4 turbo 评审器
-      成对比较回复
-      输出偏好概率
+      GPT-4-Turbo 评审
+      随机呈现顺序
     type: process
-    size: xl
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: win_rate
+      x: 440
+      'y': 220
+  - id: ratings
+    label: |-
+      成对偏好结果
+      每题偏好概率
+    type: database
+    size: large
+    position:
+      x: 640
+      'y': 220
+  - id: raw_win
     label: |-
       标准胜率
-      期望偏好概率
-      汇总 805 条指令
-    type: process
-    size: xl
+      805 题均值
+    type: terminal
+    size: large
     position:
-      x: 820
-      'y': 70
+      x: 840
+      'y': 40
   - id: glm
     label: |-
-      偏差控制 GLM
-      模型身份
-      长度差异与指令难度
+      反对称 GLM
+      模型 + 长度 + 题目
     type: formula
-    size: xl
+    size: large
     position:
-      x: 820
-      'y': 250
-  - id: lc_win_rate
+      x: 840
+      'y': 260
+  - id: regularize
+    label: |-
+      拟合与正则化
+      五折交叉验证 + L2
+    type: process
+    size: large
+    position:
+      x: 1040
+      'y': 260
+  - id: lc_win
     label: |-
       长度控制胜率
-      将长度差异设为零
-      得到反事实偏好
+      长度项置零
+    type: terminal
+    size: large
+    position:
+      x: 1240
+      'y': 260
+  - id: semantics
+    label: |-
+      保持胜率语义
+      自比 50%；交换对称
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 260
+  - id: validation
+    label: |-
+      外部验证
+      可操纵性 25% → 10%
+      Arena ρ：.94 → .98
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: validation
-    label: |-
-      鲁棒性验证
-      降低长度可操纵性
-      Chatbot Arena 相关性 0.98
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 1700
+      'y': 140
 edges:
   - from: instructions
     to: baseline
@@ -102,16 +124,27 @@ edges:
     to: evaluator
     type: primary
   - from: evaluator
-    to: win_rate
+    to: ratings
     type: primary
-  - from: evaluator
+  - from: ratings
+    to: raw_win
+    type: primary
+  - from: ratings
     to: glm
-    type: data
-  - from: glm
-    to: lc_win_rate
     type: primary
-  - from: lc_win_rate
+  - from: glm
+    to: regularize
+    type: primary
+  - from: regularize
+    to: lc_win
+    type: primary
+  - from: lc_win
+    to: semantics
+    type: primary
+  - from: raw_win
     to: validation
     type: optional
-    label: 对照人类偏好验证
+  - from: semantics
+    to: validation
+    type: optional
 modules: []

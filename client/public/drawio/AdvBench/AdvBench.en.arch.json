@@ -1,62 +1,104 @@
 {
   "version": 1,
-  "title": "AdvBench Build Process",
+  "title": "AdvBench Construction and GCG Evaluation Workflow",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "Harmful Tasks",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "n2",
-      "label": "500 Prompts",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n3",
-      "label": "Attack Suffix",
+      "id": "threat",
+      "label": "Define the Guardrail-Bypass Threat Model\nTest Whether Aligned Models Can Be Induced\nto Produce Content They Normally Refuse",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "Model Queries",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n5",
-      "label": "Compliance",
+      "id": "setting",
+      "label": "Construct Which AdvBench Setting?",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "Safety Judge",
+      "id": "strings",
+      "label": "Curate 500 Harmful Strings\nToxic, Threatening, Misleading, Discriminatory,\nCybercrime, Dangerous, or Illegal Content\n3-44 LLaMA Tokens • Mean 16",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "behaviors",
+      "label": "Curate 500 Harmful Behaviors\nFormulate the Same Broad Themes as Instructions\nSuccess Means an Attempt to Comply, Not Refusal",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "objective",
+      "label": "Define the Optimization Target\nString: Exact Target Continuation\nBehavior: Affirmative Prefix Consistent with Compliance",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "suffix",
+      "label": "Initialize a 20-Token Adversarial Suffix\nAttach It to One or Multiple Prompts\nAggregate Losses across Prompts and Models",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "Success Rate",
+      "id": "gcg",
+      "label": "Run Greedy Coordinate Gradient Search\nGradient Top-k 256 • Candidate Batch 512\nReplace One Token with the Lowest-Loss Candidate",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "Refusal",
+      "id": "protocol",
+      "label": "Select the Attack Protocol\nIndividual: First 100 Items, One Model\nUniversal: 25 Train + 100 Held-Out Behaviors\nTransfer: 25 Behaviors across 2 or 4 Source Models",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run",
+      "label": "Keep the Best Suffix after 500 Steps\nRun Victim Models with Their Default Chat Templates\nEvaluate White-Box and Black-Box Transfer",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "Which Success Rule Applies?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "string_score",
+      "label": "Harmful-String Scoring\nExact Target String Appears = Success\nAlso Record Target Cross-Entropy Loss",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "behavior_score",
+      "label": "Harmful-Behavior Scoring\nJudge a Reasonable Attempt to Execute the Instruction\nHuman Review May Separate Compliance from Refusal",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "asr",
+      "label": "Compute Attack Success Rate\nIndividual ASR • Universal Train/Test ASR\nTransfer ASR on 388 Test Behaviors",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "compare",
+      "label": "Compare Attack Methods and Transfer\nPEZ • GBDA • AutoPrompt • GCG\nSource Models → Open and Proprietary Targets",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Report Robustness and Universality\nHigher ASR Means More Successful Guardrail Bypass\nLower Target Loss Is Better for String Elicitation",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +106,98 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "threat",
+      "to": "setting",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "setting",
+      "to": "strings",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "setting",
+      "to": "behaviors",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "strings",
+      "to": "objective",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "behaviors",
+      "to": "objective",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "objective",
+      "to": "suffix",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "suffix",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "gcg",
+      "to": "protocol",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "protocol",
+      "to": "run",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "run",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "judge",
+      "to": "string_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "judge",
+      "to": "behavior_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "string_score",
+      "to": "asr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "behavior_score",
+      "to": "asr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "asr",
+      "to": "compare",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "compare",
+      "to": "report",
       "type": "primary"
     }
   ],

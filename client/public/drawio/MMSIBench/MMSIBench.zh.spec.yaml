@@ -4,88 +4,175 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMSIBench Build Process
-  description: >-
-    Paper-aligned construction of MMSI-Bench: experts curate multi-image spatial questions from a large image pool, add
-    distractors and reasoning traces, and use them for model evaluation and error-mode diagnosis.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMSI-Bench 构建流程
+  description: 按论文从超过 12 万张真实世界候选图像人工构建 1,000 道多图空间问题，经独立质检后，以精确匹配协议评测 37 个多模态大模型。
+  legend: 每道最终题都必须依赖多张图像；非多步推理题固定使用两张图像。
 nodes:
-  - id: n1
-    label: 图像池
+  - id: images
+    label: |-
+      检查候选图像池
+      超过 12 万张图像
+      来自八个真实世界数据集
+      不使用合成场景
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 3D专家
+      x: 20
+      'y': 40
+  - id: sources
+    label: |-
+      覆盖多样数据来源
+      ScanNet · Matterport3D · DTU
+      nuScenes · Waymo · Ego4D
+      AgiBot-World · DAVIS 2017
+    type: document
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: taxonomy
+    label: |-
+      定义空间任务体系
+      相机 · 物体 · 区域
+      位置 · 属性 · 运动
+      十类基础任务加多步推理
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: annotate
+    label: |-
+      六名 3D 视觉研究者
+      总投入超过 300 小时
+      使用自由形式标注
+      不套用问题模板
     type: user
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 选择题
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 干扰项
+      x: 860
+      'y': 40
+  - id: select
+    label: |-
+      选择相关图像组合
+      必须整合跨图信息
+      排除单图即可回答的题
+      基础任务使用两张图像
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 推理标注
+      x: 1140
+      'y': 40
+  - id: question
+    label: |-
+      编写四选一问题
+      仅有一个正确答案
+      保持问题挑战性
+      同时确保人类可回答
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 质量审核
-    type: decision
+      x: 1420
+      'y': 40
+  - id: rationale
+    label: |-
+      补充丰富标注
+      设计可信干扰选项
+      编写详细推理过程
+      按人类答题时长定难度
+    type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: MLLM评测
+      x: 1420
+      'y': 420
+  - id: qc
+    label: |-
+      三名独立审核者质检
+      移除歧义或答案错误题
+      排除常识即可回答的题
+      排除视觉证据不足的题
+    type: user
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: release
+    label: |-
+      汇总最终 MMSI-Bench
+      1,000 题 · 1,990 张图像
+      每题平均 2.55 张图
+      单题最多十张图
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: evaluate
+    label: |-
+      评测 37 个多模态模型
+      温度为零 · 最长 2,048 词元
+      加入随机与盲测 GPT-4o
+      加入五人平均人类基线
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 错误模式
+      x: 580
+      'y': 420
+  - id: score
+    label: |-
+      抽取答案并计分
+      与标准选项精确匹配
+      格式失败时用 VLMEvalKit
+      报告准确率百分比
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: analyze
+    label: |-
+      分析四类错误模式
+      视觉落地 · 重叠匹配
+      与场景重建
+      情境变换
+      空间逻辑
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: images
+    to: sources
     type: primary
-  - from: n2
-    to: n3
+  - from: sources
+    to: taxonomy
     type: primary
-  - from: n3
-    to: n4
+  - from: taxonomy
+    to: annotate
     type: primary
-  - from: n4
-    to: n5
+  - from: annotate
+    to: select
     type: primary
-  - from: n5
-    to: n6
+  - from: select
+    to: question
     type: primary
-  - from: n6
-    to: n7
+  - from: question
+    to: rationale
     type: primary
-  - from: n7
-    to: n8
+  - from: rationale
+    to: qc
+    type: primary
+  - from: qc
+    to: release
+    type: primary
+  - from: release
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: score
+    type: primary
+  - from: score
+    to: analyze
     type: primary
 modules: []

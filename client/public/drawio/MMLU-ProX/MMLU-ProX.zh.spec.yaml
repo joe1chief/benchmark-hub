@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMLU-ProX 构建流程
-  description: 对齐论文的 MMLU-ProX 构建流程：把 MMLU-Pro 通过 LLM 辅助翻译和专家审校扩展为并行多语言版本，覆盖 29 种语言，用于跨语言推理评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文通过四阶段翻译与专家核验，将 MMLU-Pro 并行扩展至 29 种语言；每语言含 11,829 道完整版题目与 658 道轻量版题目。
+  legend: 每个版本预留 70 道验证题用于构造提示，实际评测题量分别为 11,759 和 588。
 nodes:
-  - id: n1
-    label: MMLU-Pro
+  - id: source
+    label: |-
+      以 MMLU-Pro 为源数据
+      57 个学科 · 14 个领域
+      每题十个选项
+      英文推理型题目
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 翻译生成
+      x: 20
+      'y': 40
+  - id: clean
+    label: |-
+      整理英文源题
+      删除或合并重复题
+      修复语法与符号
+      对齐问题与选项
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 专家审校
+      x: 300
+      'y': 40
+  - id: translate
+    label: |-
+      阶段一：初始翻译
+      使用 Claude 3.7 Sonnet
+      保留术语与文化含义
+      保持数学代码及格式
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: reflect
+    label: |-
+      阶段二：自我反思
+      检查与源文对应关系
+      核验名称与专业术语
+      发现增译或漏译
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: improve
+    label: |-
+      阶段三：改进翻译
+      应用反思反馈
+      仅解释缺少对等词的内容
+      保留引文与单位
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: examine
+    label: |-
+      阶段四：外部检查
+      o3 检查四种非洲语言
+      GPT-4.1 检查其余 25 种
+      标记显著差异
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: verify
+    label: |-
+      执行专家核验
+      每领域抽取 20 题
+      覆盖 15 种语言
+      每语言两名母语译者
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: ratings
+    label: |-
+      三维度一至五分评价
+      准确性 · 流畅性 · 完整性
+      两人均低于三分则重译
+      各类别均分需高于四分
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: full
+    label: |-
+      汇总 29 种并行语言
+      每语言 11,829 道题
+      各语言题目完全一致
+      30 余专家 · 400 多小时
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: lite
+    label: |-
+      构建 MMLU-ProX Lite
+      每领域均匀抽取 5%
+      保留全部 14 个领域
+      每语言 658 道题
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: reserve
+    label: |-
+      预留提示样例
+      留出 70 道验证题
+      完整版实际评测 11,759 题
+      轻量版实际评测 588 题
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 29语言
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 并行题目
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 轻量集
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: LLM评测
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 平均准确率
+      x: 300
+      'y': 420
+  - id: evaluate
+    label: |-
+      评测多语言模型
+      零样本与五样本思维链
+      解析模型所选选项
+      报告各语言准确率
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: clean
     type: primary
-  - from: n2
-    to: n3
+  - from: clean
+    to: translate
     type: primary
-  - from: n3
-    to: n4
+  - from: translate
+    to: reflect
     type: primary
-  - from: n4
-    to: n5
+  - from: reflect
+    to: improve
     type: primary
-  - from: n5
-    to: n6
+  - from: improve
+    to: examine
     type: primary
-  - from: n6
-    to: n7
+  - from: examine
+    to: verify
     type: primary
-  - from: n7
-    to: n8
+  - from: verify
+    to: ratings
+    type: primary
+  - from: ratings
+    to: full
+    type: primary
+  - from: full
+    to: lite
+    type: primary
+  - from: lite
+    to: reserve
+    type: primary
+  - from: reserve
+    to: evaluate
     type: primary
 modules: []

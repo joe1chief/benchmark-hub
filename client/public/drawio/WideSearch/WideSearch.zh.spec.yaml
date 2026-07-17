@@ -1,0 +1,320 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WideSearch 任务构建校准与评测流程
+  description: >-
+    WideSearch从真实用户查询出发，由人工筛选、澄清并通过穷尽式网页搜索构建标准答案，同时记录完成时间、搜索查询、关键词和唯一页面数。流程先移除无工具语言模型可完整回答的问题，再移除人工耗时少于10分钟或唯一页面少于10个的任务。在最终验证循环中，商业智能体先为每个候选任务生成一个响应，自动评测器与人工专家分别对同一个响应评分。若自动评分与人工评分的相似度低于95%，则修订任务与标准答案标注并重复该流程。因此，95%表示评分者一致度，而不是响应与标准表的相似度。另在Section
+    4.3中，论文对200个抽样响应进行独立验证，各评判模型与人工评测的一致度均不低于97.8%。论文最终集含200题，中英文各100题，覆盖18个主题。评测先解析Markdown表格与表头，按主键对齐行，再把单元格分流到精确、数值、日期、URL或GPT-4.1语义检查，报告整表完全正确的成功率以及行级和单元格级F1。多次运行使用Avg@N、成功率Pass@N与F1
+    Max@N。
+  legend: >-
+    来源：WideSearch arXiv:2508.07999, Section 3.3 and Figure 3 for the five-stage construction pipeline. In 'Iterative
+    Refinement and Validation,' the paper defines the 95 percent threshold as similarity between automated-evaluation
+    and expert-human scores on the same commercial-agent response. Section 4.3 and Table 3 separately report at least
+    97.8 percent automated-human consistency on 200 sampled responses. Sections 3.4-3.5 and Appendix D define the
+    200-task bilingual composition, table parsing, primary-key alignment, hybrid cell scoring, and SR/Row-F1/Item-F1
+    aggregation. Official repository: https://github.com/ByteDance-Seed/WideSearch.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: real_queries
+    label: 真实用户查询
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: human_clarify
+    label: 人工筛选与澄清
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: gold_search
+    label: 穷尽搜索与标准表
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: parametric_gate
+    label: 无工具LLM可完整作答？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: drop_query
+    label: 淘汰任务
+    type: loss
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: difficulty_gate
+    label: 至少10分钟且10个页面？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: commercial_response
+    label: 商业智能体响应
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 160
+  - id: auto_score
+    label: 自动评测得分
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: human_score
+    label: 人工专家得分
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: score_agreement_gate
+    label: 自动与人工评分相似度≥95%？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: revise_gold
+    label: 修订任务与标准答案标注
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: wide_set
+    label: 200道中英文任务 / 18主题
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 160
+  - id: search_agent
+    label: 运行搜索智能体
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: parse_gate
+    label: Markdown表格与表头有效？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 740
+  - id: zero_score
+    label: 记零分
+    type: loss
+    size: xl
+    position:
+      x: 2840
+      'y': 960
+  - id: primary_align
+    label: 按主键对齐行
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 960
+  - id: cell_router
+    label: 单元格类型？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 1180
+  - id: exact_eval
+    label: 精确匹配
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 1400
+  - id: numeric_eval
+    label: 数值核查
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1400
+  - id: date_eval
+    label: 日期核查
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 1400
+  - id: url_eval
+    label: URL核查
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1400
+  - id: semantic_eval
+    label: GPT-4.1语义核查
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 1400
+  - id: cell_scores
+    label: 单元格与行精确率 / 召回率 / F1
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 1620
+  - id: wide_metrics
+    label: 整表成功率与行/单元格F1
+    type: formula
+    size: xl
+    position:
+      x: 2840
+      'y': 1620
+  - id: multi_run
+    label: 多次运行：Avg@N / Pass@N / Max@N
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 1840
+edges:
+  - from: real_queries
+    to: human_clarify
+    type: primary
+  - from: human_clarify
+    to: gold_search
+    type: primary
+  - from: gold_search
+    to: parametric_gate
+    type: primary
+  - from: parametric_gate
+    to: drop_query
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: parametric_gate
+    to: difficulty_gate
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: difficulty_gate
+    to: commercial_response
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: difficulty_gate
+    to: drop_query
+    type: optional
+    label: 未通过
+    labelPosition: end
+  - from: commercial_response
+    to: auto_score
+    type: primary
+  - from: commercial_response
+    to: human_score
+    type: primary
+  - from: auto_score
+    to: score_agreement_gate
+    type: primary
+  - from: human_score
+    to: score_agreement_gate
+    type: primary
+  - from: score_agreement_gate
+    to: wide_set
+    type: primary
+    label: 一致度≥95%
+    labelPosition: end
+  - from: score_agreement_gate
+    to: revise_gold
+    type: optional
+    label: 一致度<95%
+    labelPosition: end
+  - from: revise_gold
+    to: commercial_response
+    type: optional
+    label: 重新生成响应并评分
+    labelPosition: start
+  - from: wide_set
+    to: search_agent
+    type: primary
+  - from: search_agent
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: primary_align
+    type: primary
+    label: 有效
+    labelPosition: end
+  - from: parse_gate
+    to: zero_score
+    type: optional
+    label: 无效
+    labelPosition: end
+  - from: primary_align
+    to: cell_router
+    type: primary
+  - from: cell_router
+    to: exact_eval
+    type: primary
+    label: 精确
+    labelPosition: end
+  - from: cell_router
+    to: numeric_eval
+    type: primary
+    label: 数值
+    labelPosition: end
+  - from: cell_router
+    to: date_eval
+    type: primary
+    label: 日期
+    labelPosition: end
+  - from: cell_router
+    to: url_eval
+    type: primary
+    label: URL 评估
+    labelPosition: end
+  - from: cell_router
+    to: semantic_eval
+    type: primary
+    label: 语义
+    labelPosition: end
+  - from: exact_eval
+    to: cell_scores
+    type: primary
+  - from: numeric_eval
+    to: cell_scores
+    type: primary
+  - from: date_eval
+    to: cell_scores
+    type: primary
+  - from: url_eval
+    to: cell_scores
+    type: primary
+  - from: semantic_eval
+    to: cell_scores
+    type: primary
+  - from: zero_score
+    to: wide_metrics
+    type: data
+  - from: cell_scores
+    to: wide_metrics
+    type: primary
+  - from: wide_metrics
+    to: multi_run
+    type: primary
+modules: []

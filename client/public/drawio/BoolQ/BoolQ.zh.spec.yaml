@@ -5,98 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BoolQ 构建流程
-  description: 基于论文对齐 BoolQ：沿用 Natural Questions 风格的搜索查询收集流程，筛选可能的是非问题，匹配维基百科页面和人工选段， 标注 yes/no 答案，切分训练/开发/测试集，抽样审核标注质量，并用准确率评测模型。
-  legend: 实线箭头表示数据构建和评测主路径。
+  description: >-
+    按论文对齐的 BoolQ 流程：从匿名 Google 搜索查询中启发式筛出自然的是非问题，仅保留前五条结果含维基百科页面的查询， 经过三步人工判断与标注，再与 Natural Questions
+    的是非题合并，切分训练、开发和测试集，抽样核验标注质量并以准确率评测。
+  legend: 实线表示构建与评测主流程；上方分支表示独立的标注质量抽检。
 nodes:
-  - id: nq
-    label: NQ
+  - id: queries
+    label: |-
+      匿名 Google
+      搜索查询
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: 筛选
+      'y': 220
+  - id: yes_no_filter
+    label: |-
+      启发式筛选
+      可能的是非问题
     type: process
-    size: xl
+    size: large
     position:
-      x: 300
-      'y': 160
-  - id: wiki
-    label: 维基
-    type: database
-    size: xl
+      x: 240
+      'y': 220
+  - id: wiki_gate
+    label: |-
+      前五条结果含
+      维基百科页面
+    type: process
+    size: large
     position:
-      x: 560
-      'y': 160
-  - id: annotate
-    label: 标注
-    type: user
-    size: xl
+      x: 440
+      'y': 220
+  - id: quality
+    label: |-
+      看页面前判断
+      问题是否合格
+    type: process
+    size: large
     position:
-      x: 820
-      'y': 160
+      x: 640
+      'y': 220
   - id: passage
-    label: 段落
-    type: document
-    size: xl
+    label: |-
+      定位证据段落或
+      标记不可回答
+    type: user
+    size: large
     position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: 切分
+      x: 840
+      'y': 220
+  - id: answer
+    label: |-
+      标注“是 / 否”
+      答案
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
+      x: 1040
+      'y': 220
+  - id: pool
+    label: |-
+      新采 1.3 万 + NQ 0.3 万
+      合计 1.6 万
+    type: database
+    size: large
+    position:
+      x: 1240
+      'y': 220
   - id: audit
-    label: 审核
-    type: decision
-    size: xl
-    position:
-      x: 1600
-      'y': 160
-  - id: models
-    label: 模型
+    label: |-
+      抽检 110 题
+      标注准确率 90%
     type: process
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 70
-  - id: accuracy
-    label: 准确率
+      x: 1440
+      'y': 40
+  - id: split
+    label: 官方切分
+    type: decision
+    size: large
+    position:
+      x: 1440
+      'y': 300
+  - id: train
+    label: |-
+      训练集 0.94 万
+      NQ 题仅在此处
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 160
+  - id: dev
+    label: 开发集 0.32 万
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 300
+  - id: test
+    label: 测试集 0.32 万
+    type: document
+    size: large
+    position:
+      x: 1640
+      'y': 440
+  - id: model
+    label: |-
+      问题 + 段落输入
+      预测是 / 否
+    type: process
+    size: large
+    position:
+      x: 1840
+      'y': 300
+  - id: score
+    label: 模型准确率
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 250
+      x: 2040
+      'y': 300
 edges:
-  - from: nq
-    to: filter
+  - from: queries
+    to: yes_no_filter
     type: primary
-  - from: filter
-    to: wiki
+  - from: yes_no_filter
+    to: wiki_gate
     type: primary
-  - from: wiki
-    to: annotate
+  - from: wiki_gate
+    to: quality
     type: primary
-  - from: annotate
+  - from: quality
     to: passage
     type: primary
   - from: passage
+    to: answer
+    type: primary
+  - from: answer
+    to: pool
+    type: primary
+  - from: pool
+    to: audit
+    type: data
+  - from: pool
     to: split
     type: primary
   - from: split
-    to: audit
+    to: train
     type: primary
-  - from: audit
-    to: models
+  - from: split
+    to: dev
     type: primary
-  - from: audit
-    to: accuracy
+  - from: split
+    to: test
     type: primary
-  - from: models
-    to: accuracy
+  - from: train
+    to: model
+    type: primary
+  - from: dev
+    to: model
+    type: primary
+  - from: test
+    to: model
+    type: primary
+  - from: model
+    to: score
     type: primary
 modules: []

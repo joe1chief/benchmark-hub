@@ -1,0 +1,165 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MultiPL-E 构建与评测流程
+  description: 按论文展示 HumanEval 与 MBPP 规范化、编译到 18 个目标语言、容器化功能判题及 19 语言并行基准的 pass@k 报告。
+  legend: 先从左到右阅读基准翻译，再从右到左阅读模型评测；18 指目标语言，计入 Python 源版本后并行套件共 19 种语言。
+nodes:
+  - id: sources
+    label: |-
+      Python 源基准
+      HumanEval：164 题
+      MBPP：描述 + 断言
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: normalize
+    label: |-
+      基准规范化
+      HumanEval：排除 3 题、修改 2 题
+      MBPP：隐藏断言 + 推断签名
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: compilers
+    label: |-
+      18 个小型编译器
+      仅面向基准而非完整编译器
+      每个目标语言约 200 行代码
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: prompt_translation
+    label: |-
+      翻译模型提示
+      函数签名 + 描述 + 文档测试
+      替换 Python 专用术语
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: test_translation
+    label: |-
+      翻译可执行合同
+      单元测试 + 类型化值
+      类型注解 + 局部类型推断
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      并行基准套件
+      MultiPL-HumanEval + MultiPL-MBPP
+      18 个目标；含 Python 共 19 种
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: model_prompt
+    label: |-
+      目标语言提示
+      语法 / 术语 / 文档测试提示语言
+      隐藏单元测试不向模型公开
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: sample
+    label: |-
+      采样代码补全
+      Codex + CodeGen + InCoder
+      语言专用停止序列
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: sandbox
+    label: |-
+      容器化沙箱
+      需要时先编译
+      按语言超时运行
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: unit_tests
+    label: |-
+      功能正确性门
+      通过全部翻译后的隐藏单测
+      不使用文本相似度判题
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: classify
+    label: |-
+      分类每个补全
+      成功 / 语法 / 运行时 / 类型
+      语言与模型错误分析
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      MultiPL-E 结果
+      Pass@1 / Pass@10 / Pass@100
+      每题每温度采样 200 次
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
+edges:
+  - from: sources
+    to: normalize
+    type: primary
+  - from: normalize
+    to: compilers
+    type: primary
+  - from: compilers
+    to: prompt_translation
+    type: primary
+  - from: prompt_translation
+    to: test_translation
+    type: primary
+  - from: test_translation
+    to: release
+    type: primary
+  - from: release
+    to: model_prompt
+    type: primary
+  - from: model_prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: sandbox
+    type: primary
+  - from: sandbox
+    to: unit_tests
+    type: primary
+  - from: unit_tests
+    to: classify
+    type: primary
+  - from: classify
+    to: report
+    type: primary
+modules: []

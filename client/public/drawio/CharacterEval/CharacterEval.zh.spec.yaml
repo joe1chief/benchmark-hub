@@ -5,85 +5,226 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CharacterEval 构建流程
-  description: 与论文对齐的 CharacterEval 构建流程：从中文小说和剧本分段，使用 GPT-4 抽取角色扮演对话， 过滤短对话和问题样本，人工质检，从百度百科补全角色档案，并用 CharacterRM 支持评测。
-  legend: 实线箭头表示对话抽取、质检、角色档案补全、奖励模型训练和评测流程。
+  description: >-
+    按 ACL 论文构建并评测 77 个角色的 1,785 段中文角色扮演对话和 11,376 个样本：用 GPT-4 切分剧情并抽取对话， 经 ABAB 与轮数过滤、人工质检、角色档案补全，再用 12 项主观指标和 MBTI
+    人格回测评估。
+  legend: 实线表示数据构建与评测，虚线表示人类标签进入 CharacterRM。
 nodes:
   - id: sources
-    label: 来源
+    label: |-
+      收集中文小说与剧本
+      覆盖多种体裁、场景和主要角色
+      保持对原始作品的忠实性
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: gpt4
-    label: GPT-4
+      'y': 220
+  - id: principles
+    label: |-
+      遵循四项采集原则
+      原作忠实 • 分布多样
+      多轮对话 • 人在回路
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: plot_division
+    label: |-
+      用 GPT-4 识别剧情转折
+      在语义边界切分叙事文本
+      保证每个片段包含完整剧情
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: preprocess
-    label: 预处理
+      x: 640
+      'y': 220
+  - id: extract
+    label: |-
+      用 GPT-4 抽取角色扮演对话
+      保留台词、行为与场景
+      把回复表示为行为加台词
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: qc
-    label: 人工质检
-    type: decision
+      x: 940
+      'y': 220
+  - id: filter
+    label: |-
+      过滤对话结构与长度
+      保留两角色 ABAB 对话直到第三人加入
+      仅保留超过五轮的对话
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1240
+      'y': 220
+  - id: human_qc
+    label: |-
+      人工审查连贯性与质量
+      移除损坏或低质量样本
+      保留真实多轮角色互动
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 220
   - id: profiles
-    label: 角色档案
-    type: document
+    label: |-
+      补全角色档案
+      从百度百科获取知识、行为和说话风格
+      收集角色 MBTI 标签用于回测
+    type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: data
-    label: 11376样本
-    type: document
+      x: 1840
+      'y': 80
+  - id: release
+    label: |-
+      发布论文版本 CharacterEval
+      77 个角色 • 1,785 段对话
+      11,376 个样本 • 按样本而非对话划分
+    type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: reward
-    label: CharacterRM
+      x: 1840
+      'y': 340
+  - id: model
+    label: |-
+      运行角色扮演对话 Agent
+      输入角色档案与多轮上下文
+      生成行为与台词
     type: process
     size: xl
     position:
-      x: 1600
+      x: 2140
+      'y': 220
+  - id: human_labels
+    label: |-
+      12 位标注员评价模型回答
+      稀疏主观指标矩阵 • 五分量表
+      人类判断用于训练 CharacterRM
+    type: user
+    size: xl
+    position:
+      x: 2440
+      'y': 0
+  - id: rm
+    label: |-
+      训练 CharacterRM
+      以 Baichuan2-13B-base 为骨干
+      判断 12 项主观指标
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 0
+  - id: conversation
+    label: |-
+      对话能力
+      流畅性 • 连贯性 • 一致性
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 0
+  - id: character
+    label: |-
+      角色一致性
+      知识暴露 • 准确 • 幻觉
+      人设行为 • 人设台词
+    type: process
+    size: xl
+    position:
+      x: 3040
       'y': 160
-  - id: eval
-    label: 13指标
+  - id: attractiveness
+    label: |-
+      角色扮演吸引力
+      类人性 • 沟通技巧
+      表达多样性 • 共情
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 320
+  - id: personality
+    label: |-
+      人格回测
+      心理访谈与 MBTI 分类
+      对照角色标签报告 MBTI 准确率
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 480
+  - id: report
+    label: |-
+      报告四维 13 项指标
+      比较通用与角色扮演专用 LLM
+      分析不同对话轮次的质量
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 220
 edges:
   - from: sources
-    to: gpt4
+    to: principles
     type: primary
-  - from: gpt4
-    to: preprocess
+  - from: principles
+    to: plot_division
     type: primary
-  - from: preprocess
-    to: qc
+  - from: plot_division
+    to: extract
     type: primary
-  - from: qc
+  - from: extract
+    to: filter
+    type: primary
+  - from: filter
+    to: human_qc
+    type: primary
+  - from: human_qc
     to: profiles
     type: primary
+  - from: human_qc
+    to: release
+    type: primary
   - from: profiles
-    to: data
+    to: model
+    type: data
+  - from: release
+    to: model
     type: primary
-  - from: data
-    to: reward
+  - from: model
+    to: human_labels
     type: primary
-  - from: reward
-    to: eval
+  - from: human_labels
+    to: rm
+    type: data
+  - from: rm
+    to: conversation
+    type: primary
+  - from: rm
+    to: character
+    type: primary
+  - from: rm
+    to: attractiveness
+    type: primary
+  - from: model
+    to: personality
+    type: primary
+  - from: conversation
+    to: report
+    type: primary
+  - from: character
+    to: report
+    type: primary
+  - from: attractiveness
+    to: report
+    type: primary
+  - from: personality
+    to: report
     type: primary
 modules: []

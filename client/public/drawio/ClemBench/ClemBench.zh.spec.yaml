@@ -4,86 +4,186 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ClemBench 构建流程
-  description: 对齐论文的 clembench2024 构建流程：用游戏模板、解析规则和游戏流程定义对话游戏， 由 GameMaster 实例化新题目并运行 LLM 自我对弈，按形式完成率和游戏质量评分， 再与人类专家和多语言案例比较。
-  legend: 实线箭头表示游戏定义、实例生成、自我对弈评测和基线分析流程。
+  title: clembench-2024 构建流程
+  description: >-
+    与论文对齐的 clembench 流程：对话游戏将可复用提示模板、回答解析器和游戏逻辑与新采样实例分离；程序化 GameMaster 运行 LLM 自我对弈，形式分与质量分组成
+    clemscore，并以人类和多语言研究验证难度及可扩展性。
+  legend: 实线表示游戏构建与评分主流程；分支表示人类基线与多语言验证研究。
 nodes:
-  - id: templates
-    label: 游戏模板
-    type: document
+  - id: games
+    label: |-
+      选择能力探测型对话游戏
+      指令遵循 • 策略目标 • 语言理解
+      具有完全可定义的目标与终止状态
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: parsers
-    label: 解析规则
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: master
-    label: GameMaster
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: instances
-    label: 新实例
+      'y': 220
+  - id: templates
+    label: |-
+      编写提示模板
+      定义玩家角色与逐轮指令
+      将游戏规格与具体实例分离
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 340
+      'y': 40
+  - id: parsers
+    label: |-
+      实现解析器与游戏流程
+      强制回答符合格式
+      检测合法动作与终止状态
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 400
+  - id: instances
+    label: |-
+      创建全新游戏实例
+      从现有池采样或轻量人工选择目标
+      降低固定实例的数据污染风险
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: master
+    label: |-
+      实例化程序化 GameMaster
+      用具体实例填充模板
+      控制轮次、状态与游戏专属规则
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
   - id: selfplay
-    label: LLM自我对弈
+    label: |-
+      运行 LLM 对 LLM 自我对弈
+      逐轮提示双方玩家角色
+      记录完整离线对话 episode
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: 游戏评分
-    type: document
+      x: 1240
+      'y': 220
+  - id: formal
+    label: |-
+      衡量形式正确性
+      统计完整玩到终局的游戏比例
+      暴露格式与协议失败
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1540
+      'y': 40
+  - id: quality
+    label: |-
+      计算游戏专属质量
+      应用每个游戏的主要指标
+      将质量归一化到 0—100
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: aggregate
+    label: |-
+      计算 clemscore
+      结合形式正确性与对弈质量
+      先按游戏平均，再跨游戏汇总
+    type: terminal
+    size: xl
+    position:
+      x: 1840
+      'y': 220
   - id: human
-    label: 人类基线
+    label: |-
+      建立人类专家基线
+      作者配对每游戏进行 10—15 个 episode
+      不使用同一玩家创建的实例
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: multi
-    label: 多语言案例
+      x: 2140
+      'y': 40
+  - id: multilingual
+    label: |-
+      开展多语言案例研究
+      母语者翻译模板与目标表达
+      保持相同解析器和游戏逻辑
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 400
+  - id: validation
+    label: |-
+      验证基准属性
+      新实例与旧实例排名相关 0.71
+      比较人类上限与语言影响
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: report
+    label: |-
+      发布动态基准结果
+      clemscore • 完成比例 • 质量分
+      模型排名 + 人类 + 多语言分析
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2740
+      'y': 220
 edges:
-  - from: templates
+  - from: games
+    to: templates
+    type: primary
+  - from: games
     to: parsers
     type: primary
-  - from: parsers
-    to: master
+  - from: templates
+    to: instances
     type: primary
-  - from: master
+  - from: parsers
     to: instances
     type: primary
   - from: instances
+    to: master
+    type: primary
+  - from: master
     to: selfplay
     type: primary
   - from: selfplay
-    to: scores
+    to: formal
     type: primary
-  - from: scores
+  - from: selfplay
+    to: quality
+    type: primary
+  - from: formal
+    to: aggregate
+    type: primary
+  - from: quality
+    to: aggregate
+    type: primary
+  - from: aggregate
     to: human
     type: primary
+  - from: aggregate
+    to: multilingual
+    type: primary
   - from: human
-    to: multi
+    to: validation
+    type: primary
+  - from: multilingual
+    to: validation
+    type: primary
+  - from: validation
+    to: report
     type: primary
 modules: []

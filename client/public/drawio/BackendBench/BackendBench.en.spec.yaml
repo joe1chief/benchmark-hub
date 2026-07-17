@@ -1,0 +1,220 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: BackendBench Build Process
+  description: >-
+    Official-repository-aligned construction and evaluation of custom PyTorch backends; BackendBench has no standalone
+    paper, so the software implementation and launch methodology are the primary source.
+  legend: >-
+    Solid arrows show backend construction and scoring; dashed arrows carry real-model traces, human audit, or
+    correctness/performance feedback into kernel refinement.
+nodes:
+  - id: pytorch_surface
+    label: |-
+      Define PyTorch Operator Surface
+      271 Operators for OpInfo Correctness
+      Filter Random, Allocation, and Unsupported Ops
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: hf_traces
+    label: |-
+      Collect Real Hugging Face Model Traces
+      124 Performance Operators
+      Preserve Frequent, Large, Real Tensor Shapes
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 440
+  - id: directories
+    label: |-
+      Create One Inspectable Directory per Operator
+      Empty Implementation Stub and Versioned Attempts
+      Keep Evaluation Harness Outside Generated Code
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 220
+  - id: variants
+    label: |-
+      Map PyTorch Operator Variants
+      Functional • In-Place • Preallocated Out
+      One Kernel Handles All Registered Forms
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: generate
+    label: |-
+      Write Custom Kernel Implementation
+      Human or LLM • Triton / PyTorch / CuTeDSL / Helion
+      Follow Exact Operator Signature and Semantics
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: refine
+    label: |-
+      Iterate Kernel Attempts with Feedback
+      Default Five LLM Attempts
+      Fix Compilation and Correctness, Then Optimize Speed
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: register
+    label: |-
+      Compile and Register Backend
+      torch.library CUDA Dispatch Override
+      Run Existing Models without Modeling-Code Changes
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: smoke
+    label: |-
+      Run Smoke Gate
+      Load Every Available Implementation
+      Reject Compile, Dispatch, or Basic Execution Failure
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: opinfo
+    label: |-
+      Run OpInfo Correctness Suite
+      Average 13 Tests per Operator
+      Zero Size • NaN/Inf • Dtypes • Broadcast • Extremes
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: facto
+    label: |-
+      Optionally Run FACTO Suite
+      Additional Generated Edge Cases
+      Same Reference-vs-Backend Correctness Contract
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: torchbench
+    label: |-
+      Run TorchBench Trace Suite
+      Average 110 Real-Shape Tests per Operator
+      Compare against PyTorch Eager on Identical Inputs
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: correctness
+    label: |-
+      Verify Numerical Correctness
+      Nested Structures • equal_nan • atol/rtol 1e-2
+      Operator Pass Requires Every Correctness Test
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 80
+  - id: performance
+    label: |-
+      Benchmark Correct Kernels Safely
+      triton.do_bench Synchronization and Warmup
+      Geometric Speedup versus Eager
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: aggregate
+    label: |-
+      Aggregate Backend Scores
+      Mean All-Tests Operator Pass Rate
+      Geomean Speedup • Perf@p for Correct and Faster Ops
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 220
+  - id: report
+    label: |-
+      Publish Reproducible Run Artifacts
+      Full Results • Per-Operator CSV • Failed Tests
+      Summary of Correctness, Performance, and Perf@p
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 220
+edges:
+  - from: pytorch_surface
+    to: directories
+    type: primary
+  - from: directories
+    to: variants
+    type: primary
+  - from: variants
+    to: generate
+    type: primary
+  - from: generate
+    to: refine
+    type: primary
+  - from: generate
+    to: register
+    type: primary
+  - from: refine
+    to: register
+    type: primary
+  - from: register
+    to: smoke
+    type: primary
+  - from: smoke
+    to: opinfo
+    type: primary
+  - from: smoke
+    to: facto
+    type: optional
+  - from: smoke
+    to: torchbench
+    type: primary
+  - from: hf_traces
+    to: torchbench
+    type: data
+  - from: opinfo
+    to: correctness
+    type: primary
+  - from: facto
+    to: correctness
+    type: optional
+  - from: torchbench
+    to: correctness
+    type: primary
+  - from: torchbench
+    to: performance
+    type: primary
+  - from: correctness
+    to: aggregate
+    type: primary
+  - from: performance
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+modules: []

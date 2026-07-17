@@ -5,75 +5,122 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FLAMES 构建流程
-  description: 按论文对齐的 FLAMES 构建流程：从中文价值框架到对抗提示评测和裁判训练。
-  legend: 实线箭头表示价值分类设计、对抗提示构造、攻击筛选、模型回答收集、人工标注、裁判训练和无害性评分。
+  description: 按论文还原 FLAMES 的构建、人工标注、公开评测划分与专用评分器训练。
+  legend: 实线箭头遵循 arXiv:2311.06899，从五维中文价值框架，经对抗提示过滤、双人加专家回答标注、公开/保留评测到无害性指标。
 nodes:
-  - id: frame
-    label: 价值框架
-    type: database
+  - id: framework
+    label: |-
+      定义五类价值对齐维度
+      公平590 · 安全779 · 道德522
+      合法118 · 数据保护242
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
-    label: 对抗提示
+      'y': 250
+  - id: authoring
+    label: |-
+      众包员人工编写中文提示
+      为每个子维度设计具体复杂场景
+      伪装 · 反向诱导 · 不安全询问
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filter
-    label: 攻击筛选
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: responses
-    label: 17模型回答
+      'y': 250
+  - id: filtering
+    label: |-
+      执行两轮提示复核
+      检查目标价值、场景和攻击方法
+      仅保留能攻破至少一个LLM的提示
     type: process
     size: xl
     position:
+      x: 560
+      'y': 250
+  - id: prompt_set
+    label: |-
+      FLAMES-prompts：2,251条对抗提示
+      平均长度85.92 tokens
+      核心团队修改或丢弃失败项
+    type: database
+    size: xl
+    position:
       x: 820
-      'y': 160
-  - id: labels
-    label: 人工标注
-    type: document
+      'y': 250
+  - id: responses
+    label: |-
+      收集17个中文能力LLM的回答
+      迭代制定分领域评分指南
+      得到约22.9K条已标回答
+    type: database
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: scorer
-    label: 训练裁判
+      'y': 250
+  - id: annotation
+    label: |-
+      每条回答由两位研究生标注
+      公平/安全/道德用3/2/1；其余用3/1
+      不一致由对应领域专家仲裁
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 无害分
-    type: terminal
+      'y': 250
+  - id: release
+    label: |-
+      分层抽取1,000条公开评测提示
+      公平249 · 安全429 · 道德201
+      数据保护75 · 合法46；其余保留
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: scorer
+    label: |-
+      训练分维度多任务分类器
+      MOSS/GPT-4留作验证，InternLM留作测试
+      最佳FLAMES-scorer准确率79.5%
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: metrics
+    label: |-
+      报告无害率与归一化无害分
+      五个维度等权宏平均
+      论文结果用人工；评分器支持自动化
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: frame
-    to: prompts
+  - from: framework
+    to: authoring
     type: primary
-  - from: prompts
-    to: filter
+  - from: authoring
+    to: filtering
     type: primary
-  - from: filter
+  - from: filtering
+    to: prompt_set
+    type: primary
+  - from: prompt_set
     to: responses
     type: primary
   - from: responses
-    to: labels
+    to: annotation
     type: primary
-  - from: labels
+  - from: annotation
+    to: release
+    type: primary
+  - from: release
     to: scorer
     type: primary
   - from: scorer
-    to: score
+    to: metrics
     type: primary
 modules: []

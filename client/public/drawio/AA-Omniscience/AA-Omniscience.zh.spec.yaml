@@ -4,121 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AA-Omniscience 构建流程
-  description: 基于 arXiv:2511.13029 论文整理的 AA-Omniscience 构建与评测流程。
-  legend: 实线表示基准构建与评测主流程；虚线表示用于保证可靠性和校准评估的审核/过滤回路。
+  title: AA-Omniscience 构建与评测流程
+  description: 对齐论文的信源选择、智能体题目整理、公开集与全量集边界、闭卷作答、四分类判分及知识可靠性评分流程。
+  legend: 上排构建 6,000 题全量基准及 600 题公开子集；下排从右到左展示无工具评测与指标汇总。
 nodes:
-  - id: domains
+  - id: sources
     label: |-
-      领域与主题范围
-      6 个经济相关领域
-      42 个主题
+      选择权威信源材料
+      第一方资料及公认的一手 / 二手来源
+      优先最新版本与较近的首次可回答时间
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: sources
+      'y': 100
+  - id: coverage
     label: |-
-      权威来源
-      一手、主要、二手来源
-      最新事实
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: generator
-    label: |-
-      问题生成 agent
-      从来源文本中抽取
-      事实型问题
+      确定经济相关覆盖范围
+      6 个领域 • 42 个主题
+      商业、人文、健康、法律、软件、理工科
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: filters
+      x: 320
+      'y': 100
+  - id: generate
     label: |-
-      筛选与修订
-      难度、歧义
-      来源依赖、精确性
-    type: decision
+      自动化问题生成智能体
+      从信源事实生成问题
+      要求短而精确的答案并注明格式
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: dataset
+      x: 600
+      'y': 100
+  - id: curate
     label: |-
-      问题集
-      6,000 道总题量
-      公开 10% 子集
+      过滤并修订
+      移除相似、歧义、过易或依赖原文的问题
+      用多个前沿实验室模型检验难度
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: validate
+    label: |-
+      人工复核与验证
+      仅有一个无歧义正确答案
+      困难 • 精确 • 上下文自足
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      AA-Omniscience 数据集
+      全量评测：6,000 题
+      公开集：有代表性的 600 题（10%）
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      闭卷评测提示
+      领域 + 主题 + 单个问题
+      无额外上下文或工具；有把握才回答
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
   - id: answer
     label: |-
-      模型答题
-      无上下文、无工具
-      有把握才回答
+      被测模型回答
+      简短答案或明确弃答
+      对完整评测集单次运行
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: grading
+      x: 1160
+      'y': 440
+  - id: grade
     label: |-
-      Gemini 评分器
-      正确 / 部分正确
-      错误 / 未尝试
+      Gemini 2.5 Flash Preview（09-2025）
+      按人工一致性选出的推理判分器
+      比较问题、金标准答案与模型预测
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 880
+      'y': 440
+  - id: classes
+    label: |-
+      四分类判定
+      正确 • 部分正确
+      错误 • 未作答
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
   - id: metrics
     label: |-
       可靠性指标
-      OI: \(100(c-i)/(c+p+i+a)\)
-      准确率 + 幻觉率
-    type: formula
+      OI = 100 ×（正确数 − 错误数）/ 总题数
+      准确率 • 幻觉率 • 运行成本
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      AA-Omniscience 结果
+      全量集支持总体及领域级可靠性分析
+      公开子集仅适合总体估计，不适合主题级结论
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
 edges:
-  - from: domains
-    to: sources
-    type: primary
   - from: sources
-    to: generator
+    to: coverage
     type: primary
-  - from: generator
-    to: filters
-    type: data
-    label: 候选问题
-  - from: filters
-    to: generator
-    type: optional
-    label: 修订或移除
-  - from: filters
-    to: dataset
+  - from: coverage
+    to: generate
     type: primary
-    label: 通过题目
-  - from: dataset
+  - from: generate
+    to: curate
+    type: primary
+  - from: curate
+    to: validate
+    type: primary
+  - from: validate
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
     to: answer
     type: primary
-  - from: dataset
-    to: grading
-    type: data
-    label: 标准答案
   - from: answer
-    to: grading
+    to: grade
     type: primary
-    label: 模型答案
-  - from: grading
+  - from: grade
+    to: classes
+    type: primary
+  - from: classes
     to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

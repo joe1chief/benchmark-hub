@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "AIME / MathArena 构建流程",
+  "title": "AIME / MathArena 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 8,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "competitions",
-      "label": "定期数学竞赛\nAIME 和更难竞赛\n新发布题目",
+      "id": "stream",
+      "label": "监控定期举办的数学竞赛\n使用刚发布且经主办方审核的题目\n保留竞赛日期以追踪污染风险",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "selection",
-      "label": "竞赛选择\n有声誉且有挑战\n排除已饱和竞赛",
-      "type": "decision",
+      "id": "select",
+      "label": "选择权威且高难的竞赛\n同时覆盖最终答案题与证明题\n排除 Kangaroo 等已被模型饱和的来源",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "extraction",
-      "label": "题目抽取\n来自原始竞赛来源\n统一格式模板",
+      "id": "extract",
+      "label": "从原始来源提取\n统一题目与解答模板\n人工检查错字、不一致与格式问题",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "realtime_eval",
-      "label": "实时评估\n贴近发布日期运行\n降低污染风险",
+      "id": "snapshot",
+      "label": "MathArena 论文快照\nAIME 30 • HMMT 30 • BRUMO 30 • CMIMC 40\nUSAMO 6 • IMO 6 • Project Euler 20 = 162 题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "models",
+      "label": "选择排行榜模型\n总体领先 • 开源权重领先 • 成本–性能 Pareto\n排除不满足任一条件的非推理模型",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "answer_branch",
-      "label": "最终答案路径\nboxed answer 提示\n规则解析器加 sympy 校验",
+      "id": "generate",
+      "label": "在竞赛发布附近生成解答\n使用供应商推荐设置 • 不额外调参\n每题 4 个回答；标记竞赛后发布的模型",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "proof_branch",
-      "label": "证明题路径\n专家制定评分标准\n匿名双人评分",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "review",
-      "label": "人工复核与 judge\n标记解析失败\n语义等价检查",
+      "id": "route",
+      "label": "题目属于哪种格式？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "leaderboard",
-      "label": "MathArena 结果\nrank 区间和准确率\n公开榜单与模型回答",
+      "id": "answer",
+      "label": "最终答案评分\n要求 boxed 答案 • 自定义 LaTeX → SymPy 解析器\nGemini 2.5 Flash 交叉检查；人工处理标记项 / 分歧",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "proof",
+      "label": "自然语言证明评分\n专家先制定贴近竞赛的部分分评分方案\n2 名独立裁判对匿名证明评分并给出理由",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "计算竞赛得分\n答案题：4 次回答上的 Pass@1 / 准确率\n证明题：按 Rubric 加权的部分分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "statistics",
+      "label": "估计统计不确定性\n成对置换检验得到排名置信区间\n小规模竞赛用伯努利准确率置信区间",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "publish",
+      "label": "发布 MathArena 结果\n公开排行榜 + 单条模型回答\n竞赛得分、排名区间、成本与发布日期警告",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,52 +88,74 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "competitions",
-      "to": "selection",
+      "from": "stream",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "selection",
-      "to": "extraction",
+      "from": "select",
+      "to": "extract",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "extraction",
-      "to": "realtime_eval",
+      "from": "extract",
+      "to": "snapshot",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "realtime_eval",
-      "to": "answer_branch",
-      "type": "primary",
-      "label": "AIME 答案题"
+      "from": "snapshot",
+      "to": "models",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "realtime_eval",
-      "to": "proof_branch",
-      "type": "data",
-      "label": "证明竞赛"
+      "from": "models",
+      "to": "generate",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "answer_branch",
-      "to": "review",
-      "type": "data"
+      "from": "generate",
+      "to": "route",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "proof_branch",
-      "to": "review",
-      "type": "data"
+      "from": "route",
+      "to": "answer",
+      "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "review",
-      "to": "leaderboard",
+      "from": "route",
+      "to": "proof",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "answer",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "proof",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "score",
+      "to": "statistics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "statistics",
+      "to": "publish",
       "type": "primary"
     }
   ],

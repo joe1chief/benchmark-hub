@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMLongBench 构建流程
-  description: 对齐论文的 MMLongBench 构建流程：组合多类长上下文视觉语言任务、图像来源与标准化 token 长度，评估 LCVLM 的综合多模态长上下文能力。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文将 16 个现有数据集的 13,331 个样本整理为五类长上下文视觉语言任务，并为每个样本提供五档标准跨模态长度。
+  legend: 各任务分别采用准确率、子串精确匹配或基于 GPT-4o 的流畅度 F1，并非使用单一统一指标。
 nodes:
-  - id: n1
-    label: 任务池
+  - id: source
+    label: |-
+      选择 16 个现有数据集
+      覆盖自然与合成图像
+      复用已有高质量标注
+      不再新增众包标注
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 五类任务
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 图文输入
+      x: 20
+      'y': 40
+  - id: categories
+    label: |-
+      组织五类任务
+      视觉 RAG · NIAH · ICL
+      PDF 摘要
+      长文档视觉问答
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 长度控制
+      x: 300
+      'y': 40
+  - id: vrag
+    label: |-
+      构建视觉 RAG 上下文
+      维基文本切为百词段落
+      在不同深度插入金标准证据
+      添加干扰段直至目标长度
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 标准输入
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: LCVLM评测
+      x: 580
+      'y': 40
+  - id: niah
+    label: |-
+      改造 NIAH 任务
+      控制负例图像或网页文本
+      混合文本与图像针
+      测试检索 · 计数 · 推理
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 任务得分
-    type: document
+      x: 860
+      'y': 40
+  - id: icl
+    label: |-
+      构建多样例上下文学习
+      五档依次使用 5 · 10 · 20 · 40 · 50 类
+      平衡上下文示例数量
+      随机映射整数标签
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 长上下文分析
+      x: 1140
+      'y': 40
+  - id: summary
+    label: |-
+      渲染摘要任务 PDF
+      使用 GovReport 与 Multi-LexSum
+      将参考摘要分解为原子事实
+      准备模型评判指标
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: docvqa
+    label: |-
+      改造长文档视觉问答
+      使用三个文档问答数据集
+      保留包含答案的页面
+      通过页面截断控制长度
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: tokenize
+    label: |-
+      统一计算跨模态词元
+      按视觉编码器计算图像块
+      应用像素重排
+      合并图像与文本词元
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: lengths
+    label: |-
+      标准化五档输入长度
+      8K · 16K · 32K 词元
+      64K · 128K 词元
+      支持继续扩展长度
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: dataset
+    label: |-
+      汇总 MMLongBench
+      共 13,331 个样本
+      五类任务 · 16 个数据集
+      每样本提供多档长度
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: evaluate
+    label: |-
+      评测 46 个长上下文模型
+      每档抽样 4,050 个样本
+      每模型运行五档长度
+      合计 20,250 次评测
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      按任务报告指标
+      准确率与子串精确匹配
+      摘要采用 GPT-4o 流畅度 F1
+      按任务与长度汇总
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: categories
     type: primary
-  - from: n2
-    to: n3
+  - from: categories
+    to: vrag
     type: primary
-  - from: n3
-    to: n4
+  - from: vrag
+    to: niah
     type: primary
-  - from: n4
-    to: n5
+  - from: niah
+    to: icl
     type: primary
-  - from: n5
-    to: n6
+  - from: icl
+    to: summary
     type: primary
-  - from: n6
-    to: n7
+  - from: summary
+    to: docvqa
     type: primary
-  - from: n7
-    to: n8
+  - from: docvqa
+    to: tokenize
+    type: primary
+  - from: tokenize
+    to: lengths
+    type: primary
+  - from: lengths
+    to: dataset
+    type: primary
+  - from: dataset
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []

@@ -246,9 +246,14 @@ function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
   );
 }
 
-function DrawioSvgChart({ src, alt, isDark }: { src: string; alt: string; isDark: boolean }) {
+export function getDrawioImageWidth(naturalWidth: number | null, scale: number) {
+  return naturalWidth ? `${Math.round(naturalWidth * scale)}px` : `${scale * 100}%`;
+}
+
+export function DrawioSvgChart({ src, alt, isDark }: { src: string; alt: string; isDark: boolean }) {
   const [scale, setScale] = useState(0.9);
   const [error, setError] = useState(false);
+  const [naturalWidth, setNaturalWidth] = useState<number | null>(null);
 
   if (error) {
     return (
@@ -289,13 +294,14 @@ function DrawioSvgChart({ src, alt, isDark }: { src: string; alt: string; isDark
           <RotateCcw size={12} />
         </button>
       </div>
-      <div className="overflow-auto" style={{ maxHeight: '680px' }}>
+      <div className="overflow-auto bg-white" style={{ maxHeight: '680px' }}>
         <img
           src={src}
           alt={alt}
+          onLoad={(event) => setNaturalWidth(event.currentTarget.naturalWidth)}
           onError={() => setError(true)}
           className="block max-w-none"
-          style={{ width: `${scale * 100}%`, minWidth: 720 }}
+          style={{ width: getDrawioImageWidth(naturalWidth, scale), minWidth: 720 }}
         />
       </div>
     </div>

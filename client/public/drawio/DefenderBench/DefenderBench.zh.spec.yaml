@@ -5,75 +5,136 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DefenderBench 构建流程
-  description: 对齐论文的 DefenderBench 流程：从网络安全任务家族到模块化智能体环境评测。
-  legend: 实线箭头表示数据准备、环境搭建、智能体回合、任务指标和总分。
+  description: 对齐论文的公开网络安全数据转模块化交互智能体环境流程。
+  legend: 实线箭头表示固定随机种子预处理、任务族环境、智能体回合与归一化汇总。
 nodes:
-  - id: families
-    label: 任务家族
+  - id: sources
+    label: |-
+      公开网络安全来源
+      CyberBattleSim · 钓鱼数据 · 威胁情报
+      CodeXGLUE · Devign · CVEFix
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prep
-    label: 数据预处理
+      'y': 210
+  - id: preprocess
+    label: |-
+      数据预处理模块
+      下载缓存 · 固定随机种子打乱
+      过滤 · 测试与少样本抽样
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: env
-    label: 任务环境
-    type: process
+      'y': 210
+  - id: suite
+    label: 五类网络安全任务
+    type: decision
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: agent
-    label: 智能体接口
-    type: process
+      'y': 210
+  - id: intrusion
+    label: |-
+      网络入侵
+      链式 + 夺旗文本游戏
+      JSON 状态 · 三种动作 · 100 步
+    type: document
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: episode
-    label: 回合执行
-    type: terminal
+      'y': 50
+  - id: detection
+    label: |-
+      检测与知识
+      恶意文本 500 · 网站 500 · 情报问答 500
+      漏洞检测 CG 500 + DV 500
+    type: document
+    size: xl
+    position:
+      x: 820
+      'y': 210
+  - id: fixing
+    label: |-
+      漏洞修复
+      12,107 次提交 → 单方法/单漏洞过滤
+      240 个多语言代码样本
+    type: document
+    size: xl
+    position:
+      x: 820
+      'y': 370
+  - id: environment
+    label: |-
+      交互任务环境
+      指令 + 样本 + 可选少样本 + 历史
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: metrics
-    label: 任务指标
-    type: document
+      'y': 210
+  - id: agent
+    label: |-
+      标准智能体接口
+      动作 → 观察 → 格式反馈
+      最多 5 步；入侵最多 100 步
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 基准总分
-    type: document
+      'y': 210
+  - id: metrics
+    label: |-
+      任务原生指标
+      入侵胜率 · 宏平均 F1 · CodeBLEU
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 210
+  - id: aggregate
+    label: |-
+      DefenderBench 分数
+      八项已报告任务指标无权重平均
+      五次运行取平均
+    type: terminal
+    size: xl
+    position:
+      x: 1860
+      'y': 210
 edges:
-  - from: families
-    to: prep
+  - from: sources
+    to: preprocess
     type: primary
-  - from: prep
-    to: env
+  - from: preprocess
+    to: suite
     type: primary
-  - from: env
+  - from: suite
+    to: intrusion
+    type: primary
+  - from: suite
+    to: detection
+    type: primary
+  - from: suite
+    to: fixing
+    type: primary
+  - from: intrusion
+    to: environment
+    type: primary
+  - from: detection
+    to: environment
+    type: primary
+  - from: fixing
+    to: environment
+    type: primary
+  - from: environment
     to: agent
     type: primary
   - from: agent
-    to: episode
-    type: primary
-  - from: episode
     to: metrics
     type: primary
   - from: metrics
-    to: score
+    to: aggregate
     type: primary
 modules: []

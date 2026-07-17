@@ -1,79 +1,294 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: EvalPlus 构建流程
-  description: 按论文对齐的 EvalPlus 构建流程：从原始代码基准到自动测试增强和 pass@k 评测。
-  legend: 实线箭头表示基准增强流程：原始任务、输入契约、LLM种子、类型变异、差分测试、可选精简以及 pass@k 评分。
+  title: EvalPlus 构建与评测流程
+  description: 按论文 v3 对齐的 EvalPlus 流程。主构建链展示论文中的 HumanEval+ 具体方案；独立旁注标记论文发表后的官方 MBPP+ 扩展。数据构建与下游模型评测使用不同行展示。
+  legend: 实线表示论文主构建及评测流程；虚线表示拒绝路径或可选约简；反馈回路只把唯一且符合契约的变异输入加入种子池。独立的 MBPP+ 旁注不属于 NeurIPS 论文流程。
 nodes:
   - id: base
-    label: 原始基准
+    label: |-
+      HumanEval 基础集
+      164 道 Python 任务
+      金标准 + 平均 9.6 个测试
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: contracts
-    label: 输入契约
+      'y': 60
+  - id: curate
+    label: |-
+      论文版 HumanEval+ 整理
+      重写并测试全部金标准
+      83 / 164 题手写契约
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 60
+  - id: prompt
+    label: |-
+      三类提示
+      修正金标准 + 抽样基础输入
+      复杂 • 边界 • 困难
     type: document
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 600
+      'y': 60
   - id: seeds
-    label: LLM种子
+    label: |-
+      ChatGPT 种子输入
+      每题约 30 个
+      解析 + 去重
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: mutate
-    label: 类型变异
+      x: 880
+      'y': 60
+  - id: seed_gate
+    label: |-
+      种子是否唯一
+      且符合契约？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 60
+  - id: discard_seed
+    label: |-
+      丢弃
+      无效 / 重复种子
+    type: terminal
+    size: large
+    position:
+      x: 1180
+      'y': 230
+  - id: seed_pool
+    label: |-
+      有效种子池
+      符合契约的输入
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 60
+  - id: budget_gate
+    label: |-
+      停止生成？
+      1,000 个新增输入
+      或一小时
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 60
+  - id: mutation
+    label: |-
+      类型感知变异
+      随机种子 + 递归编辑
+      复用 ingredient 片段
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: oracle
-    label: 差分判定
+      x: 1720
+      'y': 400
+  - id: mutant_gate
+    label: |-
+      变异输入是否唯一
+      且符合契约？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: full
+    label: |-
+      HumanEval+ 完整集（论文 v3）
+      164 题 • 平均 764.1 个测试
+      测试约为基础集 80 倍
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: reduction_requirements
+    label: |-
+      可选约简要求
+      分支覆盖 • 变异体杀伤
+      其他模型样本杀伤（留一法）
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: set_cover
+    label: |-
+      贪心集合覆盖
+      保留全部要求
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: mini
+    label: |-
+      HumanEval+-Mini（论文 v3）
+      平均 16.1 个测试
+      约比完整集小 47 倍
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: post_paper_mbpp
+    label: |-
+      论文后官方扩展
+      MBPP+ v0.2.0 • 378 题
+      测试约 35 倍 • 无 Mini
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: sampling
+    label: |-
+      论文评测采样
+      每个温度 200 个程序
+      0.2 • 0.4 • 0.6 • 0.8 + 贪心
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 780
+  - id: execute
+    label: |-
+      差分执行
+      修正金标准生成期望输出
+      最少 0.2 秒 • 金标准用时 4 倍
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 780
+  - id: correctness
+    label: |-
+      功能正确性
+      Base：全部基础测试通过
+      Plus：基础与新增测试均通过
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 780
+  - id: score
+    label: |-
+      论文结果
+      贪心 Pass@1★
+      无偏 Pass@1 / 10 / 100
+      Base 与 Plus 对比
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: mini
-    label: 精简套件
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 780
 edges:
   - from: base
-    to: contracts
+    to: curate
     type: primary
-  - from: contracts
+  - from: curate
+    to: prompt
+    type: primary
+  - from: prompt
     to: seeds
     type: primary
   - from: seeds
-    to: mutate
+    to: seed_gate
     type: primary
-  - from: mutate
-    to: oracle
+  - from: seed_gate
+    to: seed_pool
     type: primary
-  - from: oracle
+    label: 是：保留
+    labelPosition: center
+  - from: seed_gate
+    to: discard_seed
+    type: optional
+    label: 否：丢弃
+    labelPosition: center
+  - from: seed_pool
+    to: budget_gate
+    type: primary
+  - from: budget_gate
+    to: mutation
+    type: primary
+    label: 否：继续变异
+    labelPosition: center
+  - from: mutation
+    to: mutant_gate
+    type: primary
+  - from: mutant_gate
+    to: seed_pool
+    type: primary
+    label: 是：加入种子池
+    labelPosition: center
+    waypoints:
+      - x: 1560
+        'y': 300
+      - x: 1560
+        'y': 210
+  - from: mutant_gate
+    to: mutation
+    type: optional
+    label: 否：丢弃并重试
+    labelPosition: center
+    waypoints:
+      - x: 1500
+        'y': 580
+      - x: 1840
+        'y': 580
+  - from: budget_gate
+    to: full
+    type: primary
+    label: 是：构建完整集
+    labelPosition: center
+    waypoints:
+      - x: 2000
+        'y': 640
+      - x: 1280
+        'y': 640
+  - from: full
+    to: reduction_requirements
+    type: data
+    label: 可选约简
+    labelPosition: center
+  - from: reduction_requirements
+    to: set_cover
+    type: data
+  - from: set_cover
     to: mini
+    type: data
+  - from: full
+    to: sampling
     type: primary
   - from: mini
+    to: sampling
+    type: data
+    label: 可选 Mini 实验
+    labelPosition: center
+    waypoints:
+      - x: 440
+        'y': 700
+      - x: 1280
+        'y': 700
+  - from: sampling
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
     to: score
     type: primary
 modules: []

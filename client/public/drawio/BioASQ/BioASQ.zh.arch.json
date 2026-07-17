@@ -7,62 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 14,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "pubmed",
-      "label": "PubMed",
+      "id": "sources",
+      "label": "整合生物医学知识来源\nMEDLINE / PubMed 与 PubMed Central\nMeSH、本体、数据库与 RDF 三元组",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "mesh_train",
-      "label": "MeSH",
+      "id": "task1a_train",
+      "label": "构建 Task 1a 训练数据\n标题 + 摘要 + 已有 MeSH 标签\n索引日期早于 2013 年 3 月 1 日",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "task1a_test",
+      "label": "创建每周未标注测试集\n三批 × 每批六周 • 新文章不重复\n选择预计 90 天内获 MeSH 的期刊",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "task1a",
-      "label": "任务1a",
+      "id": "task1a_submit",
+      "label": "运行在线语义索引\n21 小时内预测 MeSH 标题\n提交时不可见人工标签",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "task1a_gold",
+      "label": "等待 NLM 人工索引标签\n逐步揭示真实 MeSH\n挑战结束时冻结已获标签",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "task1a_metrics",
+      "label": "评分 Task 1a 分类\n平面 Micro-F1\n分层最低公共祖先 F Measure",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "experts",
-      "label": "专家",
+      "label": "生物医学专家编写真实问题\n是非 • 事实 • 列表 • 摘要\n用论文与本体建立答案依据",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "qa_gold",
-      "label": "QA金标",
-      "type": "document",
+      "label": "构建 Task 1b 金标准基准\n29 道开发题 + 282 道测试题\n概念 • 文档 • 片段 • 三元组 • 答案",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "phase_a",
-      "label": "阶段A",
+      "label": "运行 Task 1b Phase A 检索\n返回概念、论文、片段与 RDF 三元组\n每题上限 100 / 100 / 100 / 1,000",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "phase_a_metrics",
+      "label": "评分 Phase A 检索\nMAP / GMAP • Precision • Recall • F Measure\n片段使用 offset 感知匹配",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "phase_b",
-      "label": "阶段B",
+      "label": "运行 Task 1b Phase B 作答\n提供金标准 Phase-A 证据\n输出精确答案和不超过 200 词的理想摘要",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "指标",
-      "type": "document",
+      "id": "exact_metrics",
+      "label": "评分精确答案\n是非准确率 • 事实严格/宽松准确率 + MRR\n列表 Precision、Recall 与 F Measure",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ideal_metrics",
+      "label": "评分理想答案\n自动 ROUGE 摘要指标\n生物医学专家人工质量评估",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "results",
-      "label": "结果",
+      "label": "发布 BioASQ 挑战结果\n语义索引与问答榜单\n公开数据、评测服务、运行结果与基线",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,49 +100,103 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "pubmed",
-      "to": "mesh_train",
+      "from": "sources",
+      "to": "task1a_train",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "mesh_train",
-      "to": "task1a",
+      "from": "task1a_train",
+      "to": "task1a_test",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "task1a",
-      "to": "metrics",
+      "from": "task1a_test",
+      "to": "task1a_submit",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "task1a_submit",
+      "to": "task1a_gold",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "task1a_gold",
+      "to": "task1a_metrics",
+      "type": "data"
+    },
+    {
+      "id": "edge-6",
+      "from": "task1a_metrics",
+      "to": "results",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "sources",
+      "to": "experts",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "experts",
       "to": "qa_gold",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-9",
       "from": "qa_gold",
       "to": "phase_a",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-10",
+      "from": "phase_a",
+      "to": "phase_a_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "phase_a_metrics",
+      "to": "results",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
       "from": "phase_a",
       "to": "phase_b",
-      "type": "primary"
+      "type": "optional"
     },
     {
-      "id": "edge-7",
+      "id": "edge-13",
+      "from": "qa_gold",
+      "to": "phase_b",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
       "from": "phase_b",
-      "to": "metrics",
+      "to": "exact_metrics",
       "type": "primary"
     },
     {
-      "id": "edge-8",
-      "from": "metrics",
+      "id": "edge-15",
+      "from": "phase_b",
+      "to": "ideal_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "exact_metrics",
+      "to": "results",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "ideal_metrics",
       "to": "results",
       "type": "primary"
     }

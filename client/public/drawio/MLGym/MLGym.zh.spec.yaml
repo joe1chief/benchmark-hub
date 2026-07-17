@@ -4,86 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MLGym 构建流程
-  description: 对齐论文的 MLGym-Bench 构建流程：把开放式 AI 研究任务包装为 Gym 环境，让 Agent 围绕数据、代码、训练和分析迭代，并与任务基线比较评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MLGym-Bench 构建流程
+  description: 按论文重建 13 个开放式 AI 研究任务的策展与配置、沙盒 Gym 执行合同，以及四次运行下最佳尝试与最佳提交的性能剖面评测。
+  legend: 各任务指标不同，因此跨任务汇总使用性能剖面及其曲线下面积；validate 可重复调用，submit 会终止运行，每次运行最多 50 次 智能体-环境交互。
 nodes:
-  - id: n1
-    label: 研究任务
+  - id: curate
+    label: |-
+      策展 13 个开放研究任务
+      计算机视觉 · 自然语言处理
+      强化学习 · 博弈论
+      SAT 与表格预测
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 13项基准
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Gym封装
+      x: 20
+      'y': 40
+  - id: task_contract
+    label: |-
+      用配置定义每个任务
+      数据集 · 可选起始代码
+      只读评测脚本
+      依赖 · 超时 · 记忆设置
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 工作区环境
+      x: 300
+      'y': 40
+  - id: artifacts
+    label: |-
+      规定灵活提交产物
+      模型权重 · 预测结果
+      强化学习策略 · 博弈函数
+      任务专用提交规则
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Agent迭代
+      x: 580
+      'y': 40
+  - id: environment
+    label: |-
+      构建 Gymnasium 环境
+      启动本地 Docker
+      安装任务依赖
+      将代码与数据复制到工作区
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 运行实验
-    type: decision
+      x: 860
+      'y': 40
+  - id: safety
+    label: |-
+      执行可复现权限控制
+      使用非 root 智能体用户
+      保持数据集只读
+      禁止修改评测代码
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 比较基线
-    type: document
+      x: 1140
+      'y': 40
+  - id: harness
+    label: |-
+      接入智能体运行框架
+      搜索 · 查看 · 编辑 · Shell 工具
+      Validate 与 Submit 命令
+      统一实验条件
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 任务得分
+      x: 1420
+      'y': 40
+  - id: research_loop
+    label: |-
+      运行研究循环
+      提出假设 · 修改代码
+      训练 · 分析 · 迭代
+      最多 50 次交互
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: validate
+    label: |-
+      验证中间尝试
+      运行任务评测脚本
+      返回测试指标作为反馈
+      允许重复验证
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: submit
+    label: |-
+      提交最终产物
+      Submit 命令终止运行
+      否则自动提交最后状态
+      执行任务训练超时
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: replicate
+    label: |-
+      重复四次独立运行
+      使用不同随机种子
+      记录每次有效尝试
+      保留最终提交
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: profiles
+    label: |-
+      构建两组性能剖面
+      Best Attempt@4 · 任一验证
+      Best Submission@4 · 最终产物
+      比较相对任务表现
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告跨任务结果
+      性能剖面曲线下面积
+      各任务原始指标
+      成本与可靠性分析
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: curate
+    to: task_contract
     type: primary
-  - from: n2
-    to: n3
+  - from: task_contract
+    to: artifacts
     type: primary
-  - from: n3
-    to: n4
+  - from: artifacts
+    to: environment
     type: primary
-  - from: n4
-    to: n5
+  - from: environment
+    to: safety
     type: primary
-  - from: n5
-    to: n6
+  - from: safety
+    to: harness
     type: primary
-  - from: n6
-    to: n7
+  - from: harness
+    to: research_loop
     type: primary
-  - from: n7
-    to: n8
+  - from: research_loop
+    to: validate
+    type: primary
+  - from: validate
+    to: submit
+    type: primary
+  - from: submit
+    to: replicate
+    type: primary
+  - from: replicate
+    to: profiles
+    type: primary
+  - from: profiles
+    to: report
     type: primary
 modules: []

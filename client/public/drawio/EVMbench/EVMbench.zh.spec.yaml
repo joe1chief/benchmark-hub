@@ -5,75 +5,109 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EVMbench 构建流程
-  description: 按论文对齐的 EVMbench 构建流程：从真实审计漏洞到本地 Ethereum 程序化评分。
-  legend: 实线箭头表示审计来源、漏洞筛选、oracle补丁/利用、本地EVM、检测/修补/利用模式、程序化评分和指标统计。
+  description: 按论文还原 EVMbench 在检测、修补和利用三种模式下的构建与评测流程。
+  legend: 实线箭头表示从公开审计发现、安服专家质检、隔离环境、分模式评测到三次重复汇总的论文流程。
 nodes:
-  - id: audits
-    label: 审计报告
+  - id: source
+    label: |-
+      从公开智能合约审计开始
+      主要来自 Code4rena 报告
+      另加入部分 Tempo 安全场景
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: vulns
-    label: 漏洞筛选
+      'y': 250
+  - id: screen
+    label: |-
+      筛选真实严重漏洞
+      o3 识别高危资金损失问题
+      保留 Solidity、2023年7月后且许可合规样本
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: oracle
-    label: Oracle工件
-    type: document
+      'y': 250
+  - id: curate
+    label: |-
+      OtterSec 专家人工质检
+      去除不适用或无法稳定复现的案例
+      最终 40 次审计中的 120 个漏洞
+    type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: env
-    label: 本地EVM
+      'y': 250
+  - id: environments
+    label: |-
+      构建隔离的 Ubuntu 24.04 环境
+      代码仓 · 审计范围 · 已知问题上下文
+      禁止联网；评分器位于独立容器
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
+      'y': 250
   - id: modes
-    label: 检修利用
-    type: process
+    label: |-
+      实例化三种评测模式
+      检测 120 · 修补 45个/22仓库
+      利用 24个/16仓库
+    type: database
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: grade
-    label: 程序评分
-    type: terminal
+      'y': 250
+  - id: agent
+    label: |-
+      用接近真实审计的输入运行智能体
+      检测提交审计报告 · 修补直接改代码
+      利用向本地 Anvil 提交交易
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 召回成功
-    type: document
+      'y': 250
+  - id: grading
+    label: |-
+      按模式执行验证
+      GPT-5 匹配报告 · 隐藏利用测试
+      重放交易并用 Rust 状态评分器检查
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: metrics
+    label: |-
+      每种设置独立重复三次
+      报告漏洞召回率 / 修补率 / 利用率
+      bootstrap 置信区间与成本
+    type: terminal
+    size: xl
+    position:
+      x: 1860
+      'y': 250
 edges:
-  - from: audits
-    to: vulns
+  - from: source
+    to: screen
     type: primary
-  - from: vulns
-    to: oracle
+  - from: screen
+    to: curate
     type: primary
-  - from: oracle
-    to: env
+  - from: curate
+    to: environments
     type: primary
-  - from: env
+  - from: environments
     to: modes
     type: primary
   - from: modes
-    to: grade
+    to: agent
     type: primary
-  - from: grade
-    to: score
+  - from: agent
+    to: grading
+    type: primary
+  - from: grading
+    to: metrics
     type: primary
 modules: []

@@ -4,118 +4,193 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ART 构建流程
-  description: 基于 arXiv:2601.08988，对齐 ART 的四阶段 EHR 场景挖掘、临床任务合成、质量审核和 MedAgentBench 评测流程。
-  legend: 实线表示 ART 基准生成与评测主流程；虚线表示专家审核和未来 QA-agent 路由。
+  title: ART 构建与评测流程
+  description: 按论文呈现从真实 EHR 格式数据中挖掘高风险临床场景、生成平衡的行动式推理任务基准、审核临床忠实度， 并在实时 FHIR 环境中评测医疗 Agent 的完整流程。
+  legend: 此处 ART 指行动式推理任务，而非自动化红队。论文评测共 600 题：检索、时间聚合、阈值或条件推理各 200 题，患者数据保持真实且不被改写。
 nodes:
-  - id: ehr_source
+  - id: failures
     label: |-
-      真实 EHR 观测
-      5 万记录 / 695 名患者
-      实验室代码与时间戳
-    type: database
+      分析医疗 Agent 失败
+      对照 MedAgentBench 输出与标准任务
+      检索 • 聚合 • 条件逻辑
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: scenario_agent
+      'y': 260
+  - id: ehr
+    label: |-
+      挖掘真实 EHR 格式观测
+      695 名患者的 50,000 条记录
+      保留化验值、时间戳与人口学信息
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 260
+  - id: mode
     label: |-
       场景识别 Agent
-      检索、聚合
-      阈值失败模式
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: synthesis
-    label: |-
-      任务生成 Agent
-      GPT-4o-mini 改写
-      保留真实临床数据
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: task_schema
-    label: |-
-      结构化 ART 任务
-      指令、上下文
-      标准答案与 MRN
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: quality
-    label: |-
-      质量审核
-      源数据对齐检查
-      临床专家 HITL 复核
+      该病例针对哪类失败模式？
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: benchmark
+      x: 600
+      'y': 260
+  - id: retrieval
     label: |-
-      平衡评测集
-      600 个任务
-      每类失败模式 200 个
+      检索场景
+      11 种化验代码 • 稀疏或密集读数
+      最新值与 23-25 小时边界案例
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: aggregation
+    label: |-
+      聚合场景
+      24 小时内至少 3 个有效测量
+      血糖 • 血钾 • 血钠
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 260
+  - id: conditional
+    label: |-
+      阈值与条件场景
+      七档数值范围 + 人口学阈值
+      检索 → 比较 → 条件执行
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 480
+  - id: generate
+    label: |-
+      任务生成 Agent
+      GPT-4o-mini / Claude 3.5 改写措辞与上下文
+      真实临床数值保持不变
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 260
+  - id: dataset
+    label: |-
+      打包平衡的 ART 基准
+      每类 200 题，共 600 题
+      指令 • 上下文 • 标准答案 • 匿名 MRN
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: medagentbench
+      x: 1440
+      'y': 260
+  - id: automatic_audit
     label: |-
-      AgentBench 评测
-      FHIR 实时 EHR API
-      无状态温度 0
+      自动回查源 EHR
+      复核数值、时间窗口与阈值
+      剔除任何与来源不一致的任务
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 680
+  - id: clinical_audit
+    label: |-
+      人在回路临床审核
+      专家检查代表性子集
+      事实相关性 • 逻辑 • 阈值一致性
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: environment
+    label: |-
+      运行实时临床环境
+      MedAgentBench + FHIR R5 API 调用
+      无状态 • 温度 0 • 无对话历史
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 680
+  - id: agents
+    label: |-
+      评测两个医疗 Agent
+      GPT-4o-mini 与 Claude 3.5 Sonnet
+      执行检索、聚合与条件动作
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 680
+  - id: score
+    label: |-
+      精确匹配成功率
+      最终结果对比 EHR 派生标准答案
+      本研究不逐步判定推理过程
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 680
+  - id: report
+    label: |-
+      报告各失败模式差距
+      检索 100% / 100%
+      聚合 28% / 64% • 条件 32% / 38%
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: results
-    label: |-
-      成功率报告
-      按类别 exact match
-      检索、聚合、阈值
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 680
 edges:
-  - from: ehr_source
-    to: scenario_agent
+  - from: failures
+    to: ehr
     type: primary
-  - from: scenario_agent
-    to: synthesis
+  - from: ehr
+    to: mode
     type: primary
-  - from: synthesis
-    to: task_schema
+  - from: mode
+    to: retrieval
     type: primary
-  - from: task_schema
-    to: quality
+  - from: mode
+    to: aggregation
     type: primary
-  - from: quality
-    to: benchmark
+  - from: mode
+    to: conditional
     type: primary
-  - from: quality
-    to: synthesis
-    type: optional
-    label: 修改低置信任务
-  - from: benchmark
-    to: medagentbench
+  - from: retrieval
+    to: generate
     type: primary
-  - from: medagentbench
-    to: results
+  - from: aggregation
+    to: generate
     type: primary
-  - from: results
-    to: quality
-    type: optional
-    label: 未来 QA-agent 路由
+  - from: conditional
+    to: generate
+    type: primary
+  - from: generate
+    to: dataset
+    type: primary
+  - from: dataset
+    to: automatic_audit
+    type: primary
+  - from: automatic_audit
+    to: clinical_audit
+    type: primary
+  - from: clinical_audit
+    to: environment
+    type: primary
+  - from: environment
+    to: agents
+    type: primary
+  - from: agents
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
 modules: []

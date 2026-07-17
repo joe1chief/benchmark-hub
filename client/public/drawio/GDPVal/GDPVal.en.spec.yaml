@@ -5,77 +5,150 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GDPVal Build Process
-  description: Paper-aligned GDPVal flow from GDP and BLS occupation sampling to expert pairwise grading.
+  description: Paper-aligned construction, quality control, gold-set release, and expert-comparison evaluation flow for GDPVal.
   legend: >-
-    Solid arrows show sector and occupation selection, expert task creation, review loop, gold subset release, model
-    deliverables, expert pairwise grading, and win-rate reporting.
+    Solid arrows follow arXiv:2510.04374. Counts distinguish the 1,320-task full benchmark from the public 220-task gold
+    subset; automated grading is experimental and is not shown as the primary metric.
 nodes:
   - id: sectors
-    label: GDP Sectors
+    label: |-
+      Select economically material U.S. sectors
+      each contributes more than 5% of GDP
+      retain 9 sectors
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: jobs
-    label: BLS Jobs
+      'y': 250
+  - id: occupations
+    label: |-
+      Select predominantly digital occupations
+      GPT-4o classifies O*NET tasks; ≥60% digital
+      top wage/employment choices yield 44 occupations
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: tasks
-    label: Expert Work
-    type: document
+      'y': 250
+  - id: experts
+    label: |-
+      Recruit and qualify occupation experts
+      interview · background check · training · quiz
+      ≥4 years' experience; 14 years on average
+    type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: review
-    label: Review Loop
-    type: decision
+      'y': 250
+  - id: task_authoring
+    label: |-
+      Experts author authentic work products
+      request + optional reference files + deliverable
+      map each task to an O*NET work activity
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: gold
-    label: Gold Subset
+      'y': 250
+  - id: metadata
+    label: |-
+      Record economic and realism metadata
+      difficulty · representativeness · completion time
+      estimated value = expert time × occupation wage
     type: document
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: grade
-    label: Pairwise
-    type: terminal
+      'y': 250
+  - id: quality
+    label: |-
+      Screen, review, comment, and revise
+      automated checks plus at least 3 human reviews
+      5 human reviews per task on average
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Win Rate
-    type: document
+      'y': 250
+  - id: full_set
+    label: |-
+      Assemble the full benchmark
+      1,320 tasks · at least 30 per occupation
+      average task requires about 7 expert-hours
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: gold
+    label: |-
+      Release the 220-task gold subset
+      5 tasks per occupation with request/reference files
+      scrub expert identifiers from deliverables
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: model_runs
+    label: |-
+      Generate model deliverables
+      three independent samples per task
+      compare complete artifacts, not short answers
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: grading
+    label: |-
+      Blind occupation experts to provenance
+      pair model output against human deliverable
+      3 graders × 3 samples = 9 comparisons per task
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: metric
+    label: |-
+      Report head-to-head deliverable win rate
+      human expert work is the reference baseline
+      experimental grader: 66% vs 71% human agreement
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 250
 edges:
   - from: sectors
-    to: jobs
+    to: occupations
     type: primary
-  - from: jobs
-    to: tasks
+  - from: occupations
+    to: experts
     type: primary
-  - from: tasks
-    to: review
+  - from: experts
+    to: task_authoring
     type: primary
-  - from: review
+  - from: task_authoring
+    to: metadata
+    type: primary
+  - from: metadata
+    to: quality
+    type: primary
+  - from: quality
+    to: full_set
+    type: primary
+  - from: full_set
     to: gold
     type: primary
   - from: gold
-    to: grade
+    to: model_runs
     type: primary
-  - from: grade
-    to: score
+  - from: model_runs
+    to: grading
+    type: primary
+  - from: grading
+    to: metric
     type: primary
 modules: []

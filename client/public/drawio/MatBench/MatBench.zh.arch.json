@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "title": "MatBench 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 12,
+    "edges": 11,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "sources",
+      "label": "汇集 10 个材料数据源\n包含 DFT 与实验数据\n光学、热学、电子与热力学\n拉伸与弹性属性",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "clean",
+      "label": "逐源标准化和清洗\n仅保留材料输入与一个目标值\n删除辅助元数据\n剔除非物理、稀有或无关记录",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "tasks",
+      "label": "定义 13 项 MatBench 任务\n10 项回归 · 3 项分类\n输入为成分或晶体结构\n每项 312–132,752 条样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "folds",
+      "label": "固定五个外层折\n随机种子 · 18012019\n80% 训练/验证 · 20% 测试\n分类任务采用分层划分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fit",
+      "label": "仅在各训练折内调参\n使用嵌套交叉验证\n在外层训练分区拟合\n预测对应留出测试分区",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "original_metrics",
+      "label": "使用原始任务指标\n回归 · 平均绝对误差\n分类 · ROC-AUC\n对五折结果取平均",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "baselines",
+      "label": "发布可复现参考结果\nDummy · 随机森林\nAutomatminer · CGCNN · MEGNet\n在相同外层折上比较",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "select_four",
+      "label": "Intern-S1 适配器选择 4 项任务\n钢材 · 实验带隙\n实验金属分类 · 玻璃形成\n使用 OpenCompass 任务文件",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "构造零样本生成式提示\n插入每道材料问题\n要求模型输出自由文本\n保留数值或类别真值",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "按目标类型裁判回答\n数值 · 由 LLM 抽取浮点数\n分类 · 由 LLM 判断是否正确\n汇总任务级预测",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "adapter_metrics",
+      "label": "计算适配器任务得分\n数值任务 · MAE\n分类任务 · 准确率\n分别保留四项结果",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "形成 Intern-S1 综合分\n带隙 · (2 − MAE) / 2 × 100\n钢材 · (2000 − MAE) / 2000 × 100\n再合并两项分类准确率",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "sources",
+      "to": "clean",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "clean",
+      "to": "tasks",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "tasks",
+      "to": "folds",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "folds",
+      "to": "fit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "fit",
+      "to": "original_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "original_metrics",
+      "to": "baselines",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "tasks",
+      "to": "select_four",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "select_four",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "prompt",
+      "to": "parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "parse",
+      "to": "adapter_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "adapter_metrics",
+      "to": "aggregate",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

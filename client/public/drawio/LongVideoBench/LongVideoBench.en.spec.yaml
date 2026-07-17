@@ -6,87 +6,204 @@ meta:
   routing: orthogonal
   title: LongVideoBench Build Process
   description: >-
-    Paper-aligned construction of LongVideoBench: web videos are collected across duration and content groups, filtered
-    by subtitle and quality criteria, manually curated, annotated with referring-reasoning multiple-choice questions,
-    and evaluated by accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned collection of diverse long videos with temporally aligned subtitles, Q-Align and human filtering,
+    three-role referring-reasoning annotation, interleaved inputs, and duration- and category-aware accuracy evaluation.
+  legend: >-
+    Counts follow arXiv:2407.15754: 3,763 videos from 119 channels in 10 content categories and four non-contiguous
+    duration groups; 6,678 MCQs in 17 fine-grained categories, split into 1,337 validation and 5,341 test questions.
 nodes:
-  - id: sources
-    label: Video Sources
+  - id: groups
+    label: |-
+      Define Video Sampling Groups
+      Durations · (8s,15s] · (15s,60s]
+      (180s,600s] · (900s,3,600s]
+      Cover 10 Diverse Content Categories
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: channels
+    label: |-
+      Select 119 Web-video Channels
+      99 Landscape · 20 Portrait
+      Movie · Life · News · Knowledge Groups
+      Sample Topics Uniformly within Groups
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: subs
-    label: Sub Filter
+      x: 300
+      'y': 40
+  - id: download
+    label: |-
+      Download Candidate Videos
+      Require Resolution of at Least 720P
+      Preserve Layout · Topic · Duration Metadata
+      Assign the Four Duration Groups
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: whisper
-    label: Whisper Subs
+      x: 580
+      'y': 40
+  - id: subtitles
+    label: |-
+      Ensure English Subtitles
+      On Transcript Platforms Drop Missing or Non-English
+      Otherwise Generate with Whisper-V3-Large
+      Retain Timestamped Subtitle Chunks
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 860
+      'y': 40
   - id: quality
-    label: Quality Score
-    type: decision
+    label: |-
+      Filter Visual and Content Quality
+      Score Video Quality with Q-Align
+      Remove Especially Low-quality Candidates
+      Manually Reject Unusable Videos
+    type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: manual
-    label: Manual Filter
+      x: 1140
+      'y': 40
+  - id: video_set
+    label: |-
+      Finalize 3,763 Videos
+      Preserve All 10 Content Categories
+      Cover the Four Target Duration Groups
+      Keep Complete Videos and Subtitles
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: train_annotators
+    label: |-
+      Train Experienced Annotators
+      Explain Each Question Category
+      Display Timestamp-aligned Subtitles on Video
+      Require Watching the Full Video First
     type: user
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: queries
-    label: Ref Queries
+      x: 1700
+      'y': 40
+  - id: questions
+    label: |-
+      Author Referring-reasoning MCQs
+      L1 Perception · L2 Relation
+      Cover 17 Fine-grained Question Categories
+      Add 3–4 Relevant Distractor Options
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: mcq
-    label: Human MCQs
-    type: document
+      x: 1700
+      'y': 420
+  - id: grounding
+    label: |-
+      Ground Every Referred Context
+      Highlight the Referring Query in the Question
+      Label Frame Indices for Referred Moments
+      Span Single or Multiple Video Moments
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: Accuracy
+      x: 1420
+      'y': 420
+  - id: qc
+    label: |-
+      Apply Three-role Annotation Quality Control
+      Primary Annotator Creates and Filters
+      Examiner Checks Category and Requirements
+      Reviser Corrects the Problematic 20%
+    type: user
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: release
+    label: |-
+      Release 6,678 Human MCQs
+      Validation · 752 Videos / 1,337 Questions
+      Test · 3,011 Videos / 5,341 Questions
+      Retain Duration and Question-category Labels
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: interleave
+    label: |-
+      Build Interleaved Model Inputs
+      Sample Video Frames over Time
+      Insert Each Subtitle between Surrounding Frames
+      Align by the Subtitle Mid-timestamp
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: evaluate
+    label: |-
+      Run Zero-shot LMM Evaluation
+      Tune Frame Settings on Validation Data
+      Select One Multiple-choice Answer per Item
+      Use the Chosen Setting on the Test Split
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      Report Multiple-choice Accuracy
+      Overall Validation and Test Accuracy
+      Break Down Four Duration Groups
+      Break Down 17 Question Categories
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: sources
-    to: subs
+  - from: groups
+    to: channels
     type: primary
-  - from: subs
-    to: whisper
+  - from: channels
+    to: download
     type: primary
-  - from: whisper
+  - from: download
+    to: subtitles
+    type: primary
+  - from: subtitles
     to: quality
     type: primary
   - from: quality
-    to: manual
+    to: video_set
     type: primary
-  - from: manual
-    to: queries
+  - from: video_set
+    to: train_annotators
     type: primary
-  - from: queries
-    to: mcq
+  - from: train_annotators
+    to: questions
     type: primary
-  - from: mcq
-    to: metric
+  - from: questions
+    to: grounding
+    type: primary
+  - from: grounding
+    to: qc
+    type: primary
+  - from: qc
+    to: release
+    type: primary
+  - from: release
+    to: interleave
+    type: primary
+  - from: interleave
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []

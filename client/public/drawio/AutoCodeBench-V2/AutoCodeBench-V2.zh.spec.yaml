@@ -4,131 +4,136 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AutoCodeBench-V2 构建流程
-  description: 基于 arXiv:2508.09101，对齐 AutoCodeBench 系列的 AutoCodeGen 流程：多语言种子抽取、 沙箱测试生成、逆向题目生成、三阶段过滤、系列子集构建与 Pass@1 评测。
-  legend: 实线表示自动化构建与评测主流程；虚线表示沙箱验证和质量控制反馈。
+  title: AutoCodeBench-V2 构建与评测流程
+  description: 以证据边界区分原始 AutoCodeGen 论文与后续官方 V2 发布、闭源模型和沙箱迭代精炼、 更新数据集及已公开的 V2 评测教程。
+  legend: 先从左到右、再从右到左阅读；橙色节点区分论文与后续官方 V2 证据。
 nodes:
-  - id: seeds
+  - id: paper
     label: |-
-      Stack-Edu 种子
-      GitHub 教育代码
-      函数/类/文件级
+      论文记载的 AutoCodeGen
+      Stack-Edu 种子 + LLM-沙箱交互
+      逆向生成题目 + 三阶段过滤
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: solutions
+      'y': 100
+  - id: original
     label: |-
-      解法生成
-      DeepSeek-V3 few-shot
-      自包含代码
+      论文产物：AutoCodeBench
+      3,920 题 / 20 种语言
+      发布为 autocodebench.jsonl
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: sandbox
+      x: 320
+      'y': 100
+  - id: boundary
     label: |-
-      沙箱验证
-      支持 20+ 语言
-      可执行性检查
-    type: terminal
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: tests
-    label: |-
-      测试函数
-      公开 <=3 用例
-      私有 7+ 边界用例
+      独立的官方 V2 发布
+      2025年8月论文未定义该版本
+      2025年12月4日正式宣布
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: problem_generation
+      x: 600
+      'y': 100
+  - id: release
     label: |-
-      逆向生成题目
-      语言与 I/O 规格
-      不暴露解法提示
+      V2 迭代精炼
+      从原始数据集出发
+      顶级闭源模型 + 沙箱反馈
     type: document
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: filtering
+      x: 880
+      'y': 100
+  - id: snapshot
     label: |-
-      三阶段过滤
-      10 次采样控难度
-      R1 评判与标注
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: benchmark
-    label: |-
-      AutoCodeBench
-      3,920 道题
-      20 语言 / 14 类别
+      V2 数据发布
+      初版：1,000题 / 20种语言
+      2026年2月17日修正版：998题
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: series
+      x: 1160
+      'y': 100
+  - id: distribution
     label: |-
-      系列变体
-      ACB-Lite 按通过数
-      ACB-Complete 测基座
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: evaluation
-    label: |-
-      模型评测
-      Pass@1
-      30+ LLM 标准提示
+      难度分布
+      初版136/218/646；修正版136/217/645
+      与原3,920题完全相同的题面为0
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 100
+  - id: schema
+    label: |-
+      V2 记录结构
+      question + signature + output
+      full_test_func + language + difficulty
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: predict
+    label: |-
+      官方 Quick Start：模型输出
+      替换 output 字段
+      使用指定的单围栏代码系统提示
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: sandbox
+    label: |-
+      V2 沙箱验证
+      hunyuansandbox/multi-language-sandbox:v2
+      call_sandbox.py 并发数 32
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: report
+    label: |-
+      V2 可执行结果
+      用 full_test_func 验证答案
+      Pass@1 榜单与分项统计
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 440
 edges:
-  - from: seeds
-    to: solutions
+  - from: paper
+    to: original
     type: primary
-  - from: solutions
+  - from: original
+    to: boundary
+    type: primary
+  - from: boundary
+    to: release
+    type: primary
+  - from: release
+    to: snapshot
+    type: primary
+  - from: snapshot
+    to: distribution
+    type: primary
+  - from: distribution
+    to: schema
+    type: primary
+  - from: schema
+    to: predict
+    type: primary
+  - from: predict
     to: sandbox
     type: primary
   - from: sandbox
-    to: tests
+    to: report
     type: primary
-  - from: tests
-    to: problem_generation
-    type: primary
-  - from: problem_generation
-    to: filtering
-    type: primary
-  - from: filtering
-    to: benchmark
-    type: primary
-  - from: benchmark
-    to: series
-    type: primary
-  - from: series
-    to: evaluation
-    type: primary
-  - from: sandbox
-    to: solutions
-    type: optional
-    label: 修复失败
-  - from: filtering
-    to: problem_generation
-    type: optional
-    label: 丢弃或重生成
 modules: []

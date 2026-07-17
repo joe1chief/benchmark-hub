@@ -6,86 +6,162 @@ meta:
   routing: orthogonal
   title: MME Build Process
   description: >-
-    Paper-aligned construction of MME: manually designed image instruction-answer pairs are organized into perception
-    and cognition subtasks, evaluated with concise prompts, and scored quantitatively for MLLM capability.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MME workflow: ten perception and four cognition subtasks use public images without source annotations
+    plus newly photographed or generated images; all 2,374 instruction-answer pairs over 1,187 images are manually
+    written as one yes and one no question per image, then scored by ACC, ACC+, and perception/cognition totals.
+  legend: Solid arrows separate perception and cognition sourcing before a shared manual QA and scoring pipeline.
 nodes:
-  - id: n1
-    label: Image Pool
-    type: database
-    size: xl
+  - id: taxonomy
+    label: 14 Subtasks
+    type: decision
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 14 Tasks
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Manual QA
+      'y': 240
+  - id: perception
+    label: |-
+      Perception: 10
+      Recognition + OCR
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Leak Guard
+      x: 240
+      'y': 80
+  - id: cognition
+    label: |-
+      Cognition: 4
+      Reason / Calc / Text / Code
+    type: document
+    size: large
+    position:
+      x: 240
+      'y': 400
+  - id: public_images
+    label: |-
+      COCO + Public Sets
+      Images Only
+    type: database
+    size: large
+    position:
+      x: 440
+      'y': 80
+  - id: new_images
+    label: |-
+      Manual Photos +
+      Diffusion Images
+    type: database
+    size: large
+    position:
+      x: 440
+      'y': 400
+  - id: manual_qa
+    label: |-
+      All QA Manually Written
+      No Source Annotations
+    type: user
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: dataset
+    label: |-
+      1,187 Images
+      2,374 QA Pairs
+    type: database
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: pair_rule
+    label: |-
+      2 Questions / Image
+      One Yes + One No
+    type: document
+    size: large
+    position:
+      x: 1040
+      'y': 240
+  - id: prompt
+    label: |-
+      Zero-shot Prompt
+      “Answer yes or no”
     type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Prompt Set
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: MLLM Eval
-    type: decision
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: Percept/Cog
-    type: document
-    size: xl
+      'y': 240
+  - id: scoring
+    label: Score Outputs
+    type: decision
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Score
+      x: 1440
+      'y': 240
+  - id: acc
+    label: |-
+      ACC
+      Per Question
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 1640
+      'y': 80
+  - id: acc_plus
+    label: |-
+      ACC+
+      Both Answers Correct
+    type: terminal
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: totals
+    label: |-
+      Subtask = ACC + ACC+
+      Perception 2000 / Cognition 800
+    type: terminal
+    size: large
+    position:
+      x: 1640
+      'y': 400
 edges:
-  - from: n1
-    to: n2
+  - from: taxonomy
+    to: perception
     type: primary
-  - from: n2
-    to: n3
+  - from: taxonomy
+    to: cognition
     type: primary
-  - from: n3
-    to: n4
+  - from: perception
+    to: public_images
     type: primary
-  - from: n4
-    to: n5
+  - from: cognition
+    to: new_images
     type: primary
-  - from: n5
-    to: n6
+  - from: public_images
+    to: manual_qa
     type: primary
-  - from: n6
-    to: n7
+  - from: new_images
+    to: manual_qa
     type: primary
-  - from: n7
-    to: n8
+  - from: manual_qa
+    to: dataset
+    type: primary
+  - from: dataset
+    to: pair_rule
+    type: primary
+  - from: pair_rule
+    to: prompt
+    type: primary
+  - from: prompt
+    to: scoring
+    type: primary
+  - from: scoring
+    to: acc
+    type: primary
+  - from: scoring
+    to: acc_plus
+    type: primary
+  - from: scoring
+    to: totals
     type: primary
 modules: []

@@ -1,0 +1,168 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WinoGrande 构建流程
+  description: >-
+    论文对齐的 WinoGrande 流程：AMT 标注员根据随机 WikiHow 锚词编写受约束孪生句，三人验证把 77K 题筛为 53K， RoBERTa 嵌入与 AFLITE 删除机器可检测捷径，最终 12,282 题去偏核心集加
+    31K 过滤训练题组成约 44K 发布集。
+  legend: 实线箭头表示众包、三人验证、AFLITE 去偏、发布集汇合及准确率评测。
+nodes:
+  - id: anchors
+    label: |-
+      随机 WikiHow 文章
+      非功能词锚点
+      社会或物理领域
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: writing
+    label: |-
+      AMT 孪生句编写
+      15–30 词 / 重合度 ≥70%
+      小改动切换正确指代
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 240
+  - id: initial
+    label: |-
+      初始收集
+      77K 道问题
+      约 38K 对孪生句
+    type: database
+    size: large
+    position:
+      x: 560
+      'y': 240
+  - id: validation
+    label: |-
+      三人验证
+      多数人选对
+      两选项无歧义
+      不可由局部词关联作答
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 240
+  - id: valid
+    label: |-
+      人工有效池
+      53K 题（68%）
+    type: database
+    size: large
+    position:
+      x: 1080
+      'y': 240
+  - id: embed
+    label: |-
+      RoBERTa 嵌入模型
+      训练 5K / 验证 1K
+      丢弃这 6K
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 240
+  - id: aflite
+    label: |-
+      在剩余 47K 上运行 AFLITE
+      64 个线性分类器
+      m=10K / k=500 / τ=0.75
+      迭代删除易预测样本
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 240
+  - id: core
+    label: |-
+      去偏核心集：12,282
+      训练 9,248 / 开发 1,267
+      测试 1,767
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 60
+  - id: extra
+    label: |-
+      AFLITE 过滤资源
+      31K 额外训练题
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 420
+  - id: release
+    label: |-
+      WinoGrande 发布集
+      共约 44K 道问题
+      多种训练规模
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 240
+  - id: task
+    label: |-
+      填空任务
+      在两个指代对象中选一
+    type: process
+    size: large
+    position:
+      x: 2380
+      'y': 240
+  - id: score
+    label: |-
+      准确率
+      学习曲线 + 人类对比
+    type: terminal
+    size: large
+    position:
+      x: 2640
+      'y': 240
+edges:
+  - from: anchors
+    to: writing
+    type: primary
+  - from: writing
+    to: initial
+    type: primary
+  - from: initial
+    to: validation
+    type: primary
+  - from: validation
+    to: valid
+    type: primary
+  - from: valid
+    to: embed
+    type: primary
+  - from: embed
+    to: aflite
+    type: primary
+  - from: aflite
+    to: core
+    type: primary
+  - from: aflite
+    to: extra
+    type: data
+  - from: core
+    to: release
+    type: primary
+  - from: extra
+    to: release
+    type: data
+  - from: release
+    to: task
+    type: primary
+  - from: task
+    to: score
+    type: primary
+modules: []

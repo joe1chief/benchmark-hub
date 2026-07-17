@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "title": "BackendBench 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 15,
+    "edges": 18,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "pytorch_surface",
+      "label": "定义 PyTorch 算子范围\n271 个算子用于 OpInfo 正确性\n过滤随机、内存分配与不支持算子",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "hf_traces",
+      "label": "收集真实 Hugging Face 模型 trace\n124 个性能算子\n保留高频、大型、真实 tensor shape",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "directories",
+      "label": "为每个算子创建可审计目录\n空实现 stub 与版本化尝试\n生成代码不能修改评测框架",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "variants",
+      "label": "映射 PyTorch 算子变体\n函数式 • 原地 • 预分配 out\n一个 kernel 覆盖所有注册形式",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "编写自定义 kernel 实现\n人工或 LLM • Triton / PyTorch / CuTeDSL / Helion\n严格遵守算子签名与语义",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "refine",
+      "label": "按反馈迭代 kernel 尝试\nLLM 默认最多五次\n先修编译和正确性，再优化速度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "register",
+      "label": "编译并注册 backend\ntorch.library CUDA dispatch 覆盖\n无需改模型代码即可运行现有模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "smoke",
+      "label": "运行 Smoke 门禁\n加载每个可用实现\n拒绝编译、dispatch 或基本执行失败",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "opinfo",
+      "label": "运行 OpInfo 正确性套件\n每算子平均 13 个测试\n空 tensor • NaN/Inf • dtype • 广播 • 极值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "facto",
+      "label": "可选运行 FACTO 套件\n补充生成式边界测试\n复用参考实现对 backend 的正确性合同",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "torchbench",
+      "label": "运行 TorchBench trace 套件\n每算子平均 110 个真实 shape 测试\n同一输入下对比 PyTorch eager",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correctness",
+      "label": "验证数值正确性\n嵌套结构 • equal_nan • atol/rtol 1e-2\n算子必须通过全部正确性测试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "performance",
+      "label": "安全测量正确 kernel 的性能\ntriton.do_bench 同步与 warmup\n相对 eager 的几何平均加速",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "汇总 backend 分数\n全测试通过的算子平均通过率\n几何平均加速 • 正确且快于 p 的 Perf@p",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "发布可复现运行产物\n全量结果 • 算子级 CSV • 失败测试\n正确性、性能与 Perf@p 汇总",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "pytorch_surface",
+      "to": "directories",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "directories",
+      "to": "variants",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "variants",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "generate",
+      "to": "refine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "generate",
+      "to": "register",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "refine",
+      "to": "register",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "register",
+      "to": "smoke",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "smoke",
+      "to": "opinfo",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "smoke",
+      "to": "facto",
+      "type": "optional"
+    },
+    {
+      "id": "edge-10",
+      "from": "smoke",
+      "to": "torchbench",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "hf_traces",
+      "to": "torchbench",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "opinfo",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "facto",
+      "to": "correctness",
+      "type": "optional"
+    },
+    {
+      "id": "edge-14",
+      "from": "torchbench",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "torchbench",
+      "to": "performance",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "correctness",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "performance",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "aggregate",
+      "to": "report",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

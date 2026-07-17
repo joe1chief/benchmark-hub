@@ -4,86 +4,175 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AMO-Bench 构建流程
-  description: 按论文对齐的AMO-Bench构建流程：专家原创题目与解答，执行盲审质量检查、原创性核验和人工加模型难度筛选，保留50题并按答案类型采用混合评分。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: AMO-Bench 构建与评测流程
+  description: 对齐论文的 AMO-Bench 专家原创、盲审质量检查、原创性核验、人类与模型难度筛选、 按答案类型评分、评分质检和 32 次采样汇总流程。
+  legend: 上排实现论文的四阶段构建；下排将 39 道可解析答案与 11 道描述性答案分流给不同评分器，再报告 AVG@32。
 nodes:
-  - id: n1
-    label: 数学专家
+  - id: experts
+    label: |-
+      招募数学专家
+      来自顶尖高校 / 教育机构
+      数学奥赛获奖者或有竞赛命题经验
     type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 原创题与解答
+      'y': 100
+  - id: create
+    label: |-
+      独立原创题目
+      给出最终答案
+      同时撰写详细的人工逐步解答
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 3人以上盲审
+      x: 320
+      'y': 100
+  - id: quality
+    label: |-
+      至少 3 名专家盲审质量
+      检查题面无歧义且逻辑正确
+      要求知识范围属于 MO / IMO 竞赛
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 原创性检查
+      x: 600
+      'y': 100
+  - id: originality
+    label: |-
+      核验真正原创性
+      与 AIME24/25 等现有集合做 10-gram 匹配
+      网页搜索 + 专家回忆相似竞赛题
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: difficulty
+    label: |-
+      应用难度门禁
+      人类专家确认达到或超过 IMO 难度
+      至少 2 个先进模型在各 3 次采样中无法稳定解出
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      发布 50 道 AMO-Bench 题
+      代数 11 • 函数 / 数列 13 • 几何 5
+      数论 9 • 组合 12
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: sample
+    label: |-
+      每模型每题生成 32 个回答
+      推理模型温度 1.0 / 非推理模型 0.7
+      Top-k 50 • Top-p 0.95 • 使用最大可用长度
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 470
+  - id: route
+    label: 属于哪种答案类型？
     type: decision
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 难度筛选
-    type: decision
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 50道题
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 混合评分
+      x: 1160
+      'y': 470
+  - id: parser
+    label: |-
+      39 道题使用解析器评分
+      数值 • 集合 • 变量表达式
+      math-verify 等价性；4 位小数精度 / 变量代入
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: AVG@32
+      x: 880
+      'y': 360
+  - id: llm_judge
+    label: |-
+      11 道描述题使用 LLM 评分
+      o4-mini (Low) 判断语义正确性
+      5 次独立裁判采样多数投票
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 580
+  - id: correctness
+    label: |-
+      得到单回答正确性
+      合并解析器与 LLM 裁判结果
+      预评测期间人工复核后处理
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: report
+    label: |-
+      AMO-Bench 结果
+      AVG@32 = 32 个采样回答的平均准确率
+      另分析 Pass@32、输出长度、题类与 AMO-Bench-P
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 360
+  - id: validate
+    label: |-
+      验证混合评分器
+      人工检查 10 个 LLM 的 1,000 个回答
+      大规模评测前达到 99.2% 评分准确率
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 580
 edges:
-  - from: n1
-    to: n2
+  - from: experts
+    to: create
     type: primary
-  - from: n2
-    to: n3
+  - from: create
+    to: quality
     type: primary
-  - from: n3
-    to: n4
+  - from: quality
+    to: originality
     type: primary
-  - from: n4
-    to: n5
+  - from: originality
+    to: difficulty
     type: primary
-  - from: n5
-    to: n6
+  - from: difficulty
+    to: release
     type: primary
-  - from: n6
-    to: n7
+  - from: release
+    to: sample
     type: primary
-  - from: n7
-    to: n8
+  - from: sample
+    to: route
+    type: primary
+  - from: route
+    to: parser
+    type: primary
+  - from: route
+    to: llm_judge
+    type: primary
+  - from: parser
+    to: correctness
+    type: primary
+  - from: llm_judge
+    to: correctness
+    type: primary
+  - from: correctness
+    to: report
+    type: primary
+  - from: correctness
+    to: validate
     type: primary
 modules: []

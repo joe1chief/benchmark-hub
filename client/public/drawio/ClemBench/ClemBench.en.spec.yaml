@@ -4,89 +4,187 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ClemBench Build Process
+  title: clembench-2024 Build Process
   description: >-
-    Paper-aligned construction flow for clembench2024: dialogue games are specified by templates, parsers, and game
-    flows; a GameMaster instantiates fresh instances for LLM self-play; scores are computed from formal play and game
-    quality, then compared with human and multilingual baselines.
-  legend: Solid arrows show game specification, instance generation, self-play evaluation, and baseline analysis.
+    Paper-aligned clembench flow: dialogue games separate reusable templates, response parsers, and game logic from
+    freshly sampled instances; a programmatic GameMaster runs LLM self-play, formal and quality scores form clemscore,
+    and human plus multilingual studies validate challenge and extensibility.
+  legend: Solid arrows show game construction and scoring; branches show human and multilingual validation studies.
 nodes:
-  - id: templates
-    label: Game Templates
-    type: document
+  - id: games
+    label: |-
+      Select Capability-probing Dialogue Games
+      Instruction Following • Strategy • Language Understanding
+      Fully Specifiable Goals and Terminal States
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: parsers
-    label: Parsing Rules
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: master
-    label: GameMaster
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: instances
-    label: Fresh Set
+      'y': 220
+  - id: templates
+    label: |-
+      Write Prompt Templates
+      Define Player Roles and Turn Instructions
+      Keep Game Specification Separate from Instances
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 340
+      'y': 40
+  - id: parsers
+    label: |-
+      Implement Parsers and Game Flow
+      Enforce Well-formed Responses
+      Detect Valid Actions and Terminal States
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 400
+  - id: instances
+    label: |-
+      Create Fresh Game Instances
+      Sample Existing Pools or Lightly Curate Targets
+      Reduce Fixed-instance Contamination Risk
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: master
+    label: |-
+      Instantiate the Programmatic GameMaster
+      Fill Templates with Concrete Instances
+      Control Turns, State, and Game-specific Rules
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
   - id: selfplay
-    label: LLM Self-play
+    label: |-
+      Run LLM-vs-LLM Self-play
+      Prompt Both Player Roles Turn by Turn
+      Record Complete Offline Dialogue Episodes
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: Game Scores
-    type: document
+      x: 1240
+      'y': 220
+  - id: formal
+    label: |-
+      Measure Formal Play
+      Percentage of Games Played to End
+      Expose Formatting and Protocol Failures
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1540
+      'y': 40
+  - id: quality
+    label: |-
+      Score Game-specific Quality
+      Apply Each Game's Main Metric
+      Normalize Quality to a 0–100 Scale
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: aggregate
+    label: |-
+      Compute clemscore
+      Combine Formal Play and Quality
+      Average Main Metrics by Game, Then across Games
+    type: terminal
+    size: xl
+    position:
+      x: 1840
+      'y': 220
   - id: human
-    label: Human Baseline
+    label: |-
+      Establish Human Expert Baselines
+      Author Pairings Play 10–15 Episodes per Game
+      Exclude Instances Created by the Same Player
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: multi
-    label: Multilingual
+      x: 2140
+      'y': 40
+  - id: multilingual
+    label: |-
+      Run Multilingual Case Study
+      Native Speakers Translate Templates and Targets
+      Preserve the Same Parser and Game Logic
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 400
+  - id: validation
+    label: |-
+      Validate Benchmark Properties
+      Fresh-instance Rank Correlation 0.71
+      Compare Human Ceiling and Language Effects
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: report
+    label: |-
+      Publish Dynamic Benchmark Results
+      clemscore • % Played • Quality Score
+      Model Ranking + Human + Multilingual Analysis
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2740
+      'y': 220
 edges:
-  - from: templates
+  - from: games
+    to: templates
+    type: primary
+  - from: games
     to: parsers
     type: primary
-  - from: parsers
-    to: master
+  - from: templates
+    to: instances
     type: primary
-  - from: master
+  - from: parsers
     to: instances
     type: primary
   - from: instances
+    to: master
+    type: primary
+  - from: master
     to: selfplay
     type: primary
   - from: selfplay
-    to: scores
+    to: formal
     type: primary
-  - from: scores
+  - from: selfplay
+    to: quality
+    type: primary
+  - from: formal
+    to: aggregate
+    type: primary
+  - from: quality
+    to: aggregate
+    type: primary
+  - from: aggregate
     to: human
     type: primary
+  - from: aggregate
+    to: multilingual
+    type: primary
   - from: human
-    to: multi
+    to: validation
+    type: primary
+  - from: multilingual
+    to: validation
+    type: primary
+  - from: validation
+    to: report
     type: primary
 modules: []

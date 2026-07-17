@@ -5,85 +5,137 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMLU-Redux 构建流程
-  description: 对齐论文的 MMLU-Redux 构建流程：跨学科抽样 MMLU 题目，用错误标注协议人工分析、修正或标记，并用于更可靠的准确率比较。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 对齐论文的分层抽样、专家层级标注、可靠性分析与修正后评测流程。
+  legend: 上排从左向右、中央一排从右向左阅读；底部分支复核标注一致性。
 nodes:
-  - id: n1
-    label: MMLU题目
+  - id: source
+    label: |-
+      原始 MMLU 测试集
+      多项选择题
+      保留原始答案
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 57学科
+      'y': 100
+  - id: sample
+    label: |-
+      分层随机抽样
+      57 学科 x 每科 100 题
+      共 5,700 题
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 抽样集合
+      x: 320
+      'y': 100
+  - id: presentation
+    label: |-
+      类型 1：题目评估
+      题干 / 选项是否清晰
+      表述是否完备
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: groundtruth
+    label: |-
+      类型 2：标准答案核验
+      0 / 1 / 多个正确选项？
+      MMLU 标签是否匹配？
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: evidence
+    label: |-
+      14 位人类专家
+      精确匹配题源检索
+      可信证据或标记“需专家”
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: record
+    label: |-
+      结构化标注记录
+      错误类型 + 来源 + 原因
+      建议正确答案
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 错误协议
+      x: 1160
+      'y': 440
+  - id: agreement
+    label: |-
+      可靠性复核
+      3 位标注者 / 5 个高错学科
+      Cohen's Kappa > 0.6
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 人工审校
+      x: 1160
+      'y': 720
+  - id: dataset
+    label: |-
+      MMLU-Redux
+      5,700 题人工重标
+      覆盖全部 57 学科
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: estimate
+    label: |-
+      分层错误率估计
+      完整 MMLU 约 6.49%
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 修正标签
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Redux集合
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
+      x: 600
+      'y': 440
+  - id: evaluation
+    label: |-
+      重新评测模型准确率
+      全部题 vs 正确 / 修正题
+      分析模型排名变化
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: sample
     type: primary
-  - from: n2
-    to: n3
+  - from: sample
+    to: presentation
     type: primary
-  - from: n3
-    to: n4
+  - from: presentation
+    to: groundtruth
     type: primary
-  - from: n4
-    to: n5
+  - from: groundtruth
+    to: evidence
     type: primary
-  - from: n5
-    to: n6
+  - from: evidence
+    to: record
     type: primary
-  - from: n6
-    to: n7
+  - from: record
+    to: dataset
     type: primary
-  - from: n7
-    to: n8
+  - from: record
+    to: agreement
+    type: data
+  - from: agreement
+    to: dataset
+    type: data
+  - from: dataset
+    to: estimate
+    type: primary
+  - from: estimate
+    to: evaluation
     type: primary
 modules: []

@@ -7,50 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
       "id": "exams",
-      "label": "医疗考试",
+      "label": "收集西班牙公共医疗年度考试\n用于申请医疗系统专科职位\n采用 2013 年以来的官方试题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "areas",
-      "label": "六类领域",
+      "id": "domains",
+      "label": "保留六类医疗领域\n医学 · 药学 · 心理学\n护理学 · 生物学 · 化学",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "clean",
-      "label": "清理题目",
-      "type": "decision",
+      "label": "按来源规则排除题目\nPDF 公式难解析，故不含放射物理\n删除官方考试后被判无效的题目",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "json",
-      "label": "QA JSON",
+      "id": "schema",
+      "label": "将每道选择题序列化\n题目 ID/文本 · 可选图片路径\n选项 ID/文本 · 正确答案 ID",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "年份切分",
+      "label": "保留官方按年份切分\n2013-14 训练 2,657 · 2015 开发 1,366\n之后考试测试 2,742 · 总计 6,765",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "spanish",
+      "label": "保留西班牙文 HEAD-QA\n2013-14 每题五个选项\n之后每题四个选项",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "translate",
-      "label": "英文版本",
+      "label": "用 Google API 构造 HEAD-QA-EN\n翻译题干和答案选项\n保留 ID、标签、图片和年份切分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "audit",
+      "label": "抽检 60 道随机翻译\n两名双语人员评分语义充分性\n一名英语母语者评分流畅度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run_es",
+      "label": "运行西班牙文选择题评测\n论文基线未利用图片\n每题选择唯一答案选项",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run_en",
+      "label": "运行英文/跨语言评测\n输入翻译后的题目和选项\n每题选择唯一答案选项",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "准确率/分数",
+      "label": "与官方答案 ID 比较\n报告准确率与 POINTS\n答对 +3 · 答错 -1",
       "type": "terminal",
       "size": "xl"
     }
@@ -59,36 +83,66 @@
     {
       "id": "edge-1",
       "from": "exams",
-      "to": "areas",
+      "to": "domains",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "areas",
+      "from": "domains",
       "to": "clean",
       "type": "primary"
     },
     {
       "id": "edge-3",
       "from": "clean",
-      "to": "json",
+      "to": "schema",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "json",
+      "from": "schema",
       "to": "split",
       "type": "primary"
     },
     {
       "id": "edge-5",
       "from": "split",
-      "to": "translate",
+      "to": "spanish",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "split",
+      "to": "translate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "spanish",
+      "to": "run_es",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "translate",
+      "to": "audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "audit",
+      "to": "run_en",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "run_es",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "run_en",
       "to": "score",
       "type": "primary"
     }

@@ -5,85 +5,190 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMBench-CN 构建流程
-  description: 对齐来源的 MMBench-CN 构建流程：中文版本沿用 MMBench 图像问题能力体系，使用经验证的中文题面、开发/测试划分、CircularEval 和选项抽取来评估中文视觉问答准确率。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    对齐论文的 MMBench-CN 流程：三级能力体系指导志愿者收集并经两路模型辅助质检；GPT-4 翻译 3,217 道精选英文图像多选题并由人工核验，再按 4:6 划分开发/测试，经启发式/GPT-4 选项抽取和全轮正确的
+    CircularEval 计算中文分能力准确率。
+  legend: 实线箭头表示收集与评测；上、下分支是互补的两种质量控制。
 nodes:
-  - id: n1
-    label: MMBench基础
-    type: database
+  - id: taxonomy
+    label: |-
+      三级能力体系
+      感知 + 推理
+      六个 L-2 / 二十个 L-3 能力
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 中文版本
+      'y': 240
+  - id: exemplars
+    label: |-
+      冷启动样例
+      作者为每个 L-3 能力
+      编写 10–20 道 MCQ
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 中文划分
-    type: document
+      x: 320
+      'y': 240
+  - id: collection
+    label: |-
+      学生志愿者扩充
+      超过 80% 来自互联网
+      其余来自公开数据验证集
+    type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 图像选择题
+      x: 600
+      'y': 240
+  - id: raw
+    label: |-
+      原始图像多选题
+      图像 + 问题 + 2–4 个选项
+      + 一个正确答案
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 240
+  - id: text_qc
+    label: |-
+      纯文本可答质检
+      多数强 LLM 纯文本答对
+      → 人工核验；确属纯文本则移除
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 循环评估
+      x: 1160
+      'y': 60
+  - id: wrong_qc
+    label: |-
+      错题质检
+      所有强 VLM 都答错
+      → 人工核验；题目有误则移除
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 选项抽取
-    type: decision
+      x: 1160
+      'y': 420
+  - id: dataset
+    label: |-
+      英文 MMBench 来源集
+      3,217 道题
+      每个 L-3 能力至少 125 题
+    type: database
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 提交评测
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 中文准确率
-    type: terminal
+      x: 1440
+      'y': 240
+  - id: translate
+    label: |-
+      GPT-4 中文翻译
+      翻译问题 + 选项
+      保留专名 / 符号 / 代码
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 240
+  - id: verify_translation
+    label: |-
+      人工翻译核验
+      检查有效性 + 准确性
+      中英文题逐项对齐
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: split
+    label: |-
+      开发 / 测试 = 4:6
+      开发：公开金标
+      测试：隐藏金标
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+  - id: model
+    label: |-
+      VLM 开放式预测
+      图像 + 中文 MCQ 提示
+    type: process
+    size: large
+    position:
+      x: 2560
+      'y': 240
+  - id: extraction
+    label: |-
+      选项抽取
+      先做启发式标签匹配
+      GPT-4-0125 兜底；否则 Z
+    type: process
+    size: xl
+    position:
+      x: 2800
+      'y': 240
+  - id: circular
+    label: |-
+      CircularEval
+      N 轮循环移动选项
+      每一轮正确才算整题正确
+    type: process
+    size: xl
+    position:
+      x: 3080
+      'y': 240
+  - id: metric
+    label: |-
+      官方测试提交
+      总体 + 20 项能力准确率
+    type: terminal
+    size: xl
+    position:
+      x: 3360
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: taxonomy
+    to: exemplars
     type: primary
-  - from: n2
-    to: n3
+  - from: exemplars
+    to: collection
     type: primary
-  - from: n3
-    to: n4
+  - from: collection
+    to: raw
     type: primary
-  - from: n4
-    to: n5
+  - from: raw
+    to: text_qc
     type: primary
-  - from: n5
-    to: n6
+  - from: raw
+    to: wrong_qc
     type: primary
-  - from: n6
-    to: n7
+  - from: text_qc
+    to: dataset
     type: primary
-  - from: n7
-    to: n8
+  - from: wrong_qc
+    to: dataset
+    type: primary
+  - from: dataset
+    to: translate
+    type: primary
+  - from: translate
+    to: verify_translation
+    type: primary
+  - from: verify_translation
+    to: split
+    type: primary
+  - from: split
+    to: model
+    type: primary
+  - from: model
+    to: extraction
+    type: primary
+  - from: extraction
+    to: circular
+    type: primary
+  - from: circular
+    to: metric
     type: primary
 modules: []

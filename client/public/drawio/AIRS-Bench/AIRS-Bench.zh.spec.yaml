@@ -4,117 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIRS-Bench 构建流程
-  description: 基于 arXiv:2602.06855 对齐的 AIRS-Bench 科研 agent 任务构建与评估流程。
-  legend: 实线表示任务来源、打包和 harness 评估主流程；虚线表示 SOTA 校验与隐藏标签准备路径。
+  title: AIRS-Bench 构建与评测流程
+  description: 对齐论文的 AIRS-Bench 科研 Agent 任务来源、核验、筛选、封装、Agent 执行、任务计分、非线性归一化与汇总报告流程。
+  legend: 上排从约 100 个候选任务构建 20 项最终任务；下排在隐藏测试标签下执行 Agent， 并报告有效提交率、归一化分数和 Elo。
 nodes:
-  - id: sources
+  - id: source
     label: |-
-      论文与榜单来源
-      PapersWithCode SOTA 结果
-      2020 至 2025 ML 论文
+      获取候选科研任务
+      PapersWithCode 排行榜 + SOTA 论文
+      优先 2020–2025 成果和 Hugging Face 数据
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
+      'y': 100
+  - id: eligibility
     label: |-
-      数据集筛选
-      HuggingFace 可用
-      有 train/test 划分
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: manual_create
-    label: |-
-      人工创建任务
-      核验 metric 与 split
-      必要时更新 SOTA
+      应用准入条件
+      明确的机器学习目标 • 训练 / 测试划分
+      数据可用且评测指标可复现
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: select20
+      x: 320
+      'y': 100
+  - id: verify
     label: |-
-      基准任务选择
-      约 100 个候选
-      选 7 类中的 20 个任务
-    type: process
+      人工创建并核验每项任务
+      对齐论文指标、划分和评测协议
+      确认引用 SOTA；发现更优结果则更新
+    type: user
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: metadata
+      x: 600
+      'y': 100
+  - id: candidates
     label: |-
-      metadata.yaml
-      problem、dataset、metric
-      SOTA 分数和论文信息
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: task_files
-    label: |-
-      任务文件
-      project_description
-      prepare 与 evaluate 脚本
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: datasets
-    label: |-
-      准备后的数据
-      train split 可见
-      test 标签对 agent 隐藏
+      建立候选任务池
+      约 100 项任务
+      来自约 85 篇机器学习论文和数据集
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
+      x: 880
+      'y': 100
+  - id: select
     label: |-
-      agent 评估
-      AIRA-dojo 与 MLGym
-      24h GPU 运行和 normalized score
+      筛选最终任务集
+      考虑 Agent 表现与排序保真度
+      保留 7 类分布并控制评测成本
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: package
+    label: |-
+      封装 20 项任务（17 篇论文 / 16 个数据集）
+      project_description • metadata.yaml
+      prepare / evaluate / evaluate_prepare 脚本
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: environment
+    label: |-
+      准备 Agent 环境
+      训练标签可见 • 测试标签隐藏
+      不提供基线代码；可联网并使用缓存资源
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: agent
+    label: |-
+      运行端到端科研 Agent
+      AIRA-dojo One-Shot / Greedy 或 MLGym ReAct
+      单张 H200、24 小时内开发、训练、验证并预测
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: raw_score
+    label: |-
+      评估提交的预测结果
+      任务专用 evaluate.py 使用隐藏测试标签
+      记录原始指标与提交有效性
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: normalize
+    label: |-
+      归一化每项任务分数
+      φ(s) = −log10 |s − 最优值|
+      最差观测运行 = 0 • 文献 SOTA = 1
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: aggregate
+    label: |-
+      跨任务与随机种子汇总
+      平均归一化分数
+      有效提交率 + 两两比较 Elo 评级
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      AIRS-Bench 结果
+      比较 14 个模型–Scaffold Agent
+      报告可靠性、科研质量和相对排序
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: sources
-    to: filter
+  - from: source
+    to: eligibility
     type: primary
-  - from: filter
-    to: manual_create
+  - from: eligibility
+    to: verify
     type: primary
-  - from: manual_create
-    to: filter
-    type: optional
-    label: 核验 SOTA 与 split
-  - from: manual_create
-    to: select20
+  - from: verify
+    to: candidates
     type: primary
-  - from: select20
-    to: metadata
+  - from: candidates
+    to: select
     type: primary
-  - from: select20
-    to: task_files
-    type: data
-  - from: metadata
-    to: datasets
+  - from: select
+    to: package
     type: primary
-  - from: task_files
-    to: datasets
-    type: data
-  - from: datasets
-    to: evaluation
+  - from: package
+    to: environment
+    type: primary
+  - from: environment
+    to: agent
+    type: primary
+  - from: agent
+    to: raw_score
+    type: primary
+  - from: raw_score
+    to: normalize
+    type: primary
+  - from: normalize
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
 modules: []

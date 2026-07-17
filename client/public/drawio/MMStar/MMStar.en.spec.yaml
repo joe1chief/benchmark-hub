@@ -6,86 +6,140 @@ meta:
   routing: orthogonal
   title: MMStar Build Process
   description: >-
-    Paper-aligned construction of MMStar: filter existing multimodal samples for visual necessity, verify them by human
-    review, balance capability axes, and report accuracy plus multimodal gain/leakage.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MMStar workflow: 22,401 samples from six multimodal benchmarks are screened by eight text-only LLMs,
+    stratified by 16 LVLMs, and reviewed by three experts for visual dependence and low leakage; 1,500 balanced samples
+    are evaluated with accuracy, multimodal gain, and multimodal leakage.
+  legend: Solid arrows show source filtering, difficulty stratification, expert curation, balanced selection, and evaluation.
 nodes:
-  - id: n1
-    label: Source Pool
+  - id: sources
+    label: |-
+      Six Source Benchmarks
+      MMBench / SEED / MMMU
+      ScienceQA / AI2D / MathVista
+      22,401 Samples
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: LLM Filter
+      'y': 220
+  - id: text_probe
+    label: |-
+      Text-only Coarse Filter
+      8 Strong LLMs; No Images
+    type: process
+    size: large
+    position:
+      x: 300
+      'y': 220
+  - id: text_gate
+    label: |-
+      Keep if LLM Hits ≤2
+      22,401 → 11,607
+    type: process
+    size: large
+    position:
+      x: 560
+      'y': 220
+  - id: lvlm_probe
+    label: |-
+      16 LVLM Probe
+      Easy 12–16 / Moderate 8–11
+      Hard 4–7 / Tough 0–3 Hits
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Human Review
+      x: 820
+      'y': 220
+  - id: experts
+    label: |-
+      Three-expert Review
+      Visual Dependency
+      Minimal Leakage + Advanced Skill
+      Capability Coverage
     type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Visual Need
-    type: decision
+      x: 1080
+      'y': 220
+  - id: dataset
+    label: |-
+      MMStar: 1,500 Samples
+      6 Capabilities × 250
+      Relatively Balanced 18 Axes
+    type: database
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 1500 Samples
-    type: document
-    size: xl
+      x: 1340
+      'y': 220
+  - id: image_run
+    label: |-
+      LVLM + Image
+      Score S_v
+    type: process
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 6 Abilities
+      x: 1600
+      'y': 40
+  - id: text_run
+    label: |-
+      Same LVLM without Image
+      Score S_wv
+    type: process
+    size: large
+    position:
+      x: 1600
+      'y': 220
+  - id: base_run
+    label: |-
+      LLM Base before Multimodal Training
+      Score S_t
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: MG/ML
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: LVLM Eval
+      x: 1600
+      'y': 400
+  - id: metrics
+    label: |-
+      Accuracy + MG / ML
+      MG = S_v − S_wv
+      ML = max(0, S_wv − S_t)
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1880
+      'y': 220
 edges:
-  - from: n1
-    to: n2
+  - from: sources
+    to: text_probe
     type: primary
-  - from: n2
-    to: n3
+  - from: text_probe
+    to: text_gate
     type: primary
-  - from: n3
-    to: n4
+  - from: text_gate
+    to: lvlm_probe
     type: primary
-  - from: n4
-    to: n5
+  - from: lvlm_probe
+    to: experts
     type: primary
-  - from: n5
-    to: n6
+  - from: experts
+    to: dataset
     type: primary
-  - from: n6
-    to: n7
+  - from: dataset
+    to: image_run
     type: primary
-  - from: n7
-    to: n8
+  - from: dataset
+    to: text_run
     type: primary
+  - from: dataset
+    to: base_run
+    type: data
+  - from: image_run
+    to: metrics
+    type: primary
+  - from: text_run
+    to: metrics
+    type: primary
+  - from: base_run
+    to: metrics
+    type: data
 modules: []

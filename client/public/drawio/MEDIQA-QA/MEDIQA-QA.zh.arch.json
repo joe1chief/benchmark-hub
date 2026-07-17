@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "MEDIQA-QA Build Process (Chinese)",
+  "title": "MEDIQA-QA 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "questions",
-      "label": "健康问题",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "chiqa",
-      "label": "CHiQA",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "judged",
-      "label": "人工答案",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "nli",
-      "label": "NLI/RQE",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "medquad",
-      "label": "MedQuAD",
+      "id": "train_questions",
+      "label": "形成两组训练问题\nTREC 2017 LiveQA · 104 题\nAlexa 常见疾病 · 104 题\n面向消费者健康信息需求",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "train_candidates",
+      "label": "将训练问题提交给 CHiQA\n检索网页候选答案\nLiveQA · 839 个答案\nAlexa · 862 个答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "eval_questions",
+      "label": "形成留出消费者问题\n验证集 · 25 题\n测试集 · 150 题\n保留真实医学提问",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "eval_candidates",
+      "label": "检索留出集 CHiQA 答案\n验证集 · 234 个答案\n测试集 · 1,107 个答案\n保留系统原始排序",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "expert_labels",
+      "label": "医学专家判断每个答案\n4 优秀 · 3 正确但不完整\n2 相关 · 1 错误\n人工重排为第 1 至第 11 名",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "发布 MEDIQA-QA\n383 个问题 · 3,042 个答案\n训练集 · 验证集 · 测试集\n相关性分数与参考排序",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "support",
+      "label": "可选加入推理证据\n对 MedQuAD 47K 问答做 RQE\n对候选答案做 NLI\n蕴涵 · 矛盾 · 中立",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "predict",
+      "label": "为给定候选答案打分\n使用问题 · 答案 · 来源\n原始排序与其他特征\n生成相关性预测",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter",
+      "label": "过滤答案相关性\n保留有用医学答案\n剔除错误候选答案\n输出二元相关性判断",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "rerank",
-      "label": "过滤重排",
+      "label": "重排剩余答案\n将最佳答案置于首位\n保留完整候选顺序\n符合官方提交合同",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "submit",
-      "label": "问答提交",
+      "id": "classification_metrics",
+      "label": "评估相关性分类\n准确率\n精确率\n对照专家分数",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metric",
-      "label": "准确率",
+      "id": "ranking_metrics",
+      "label": "评估答案排序\n平均倒数排名\nSpearman 秩相关系数\n报告全部四项官方指标",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +88,68 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "questions",
-      "to": "chiqa",
+      "from": "train_questions",
+      "to": "train_candidates",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "chiqa",
-      "to": "judged",
+      "from": "train_candidates",
+      "to": "eval_questions",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "judged",
-      "to": "nli",
+      "from": "eval_questions",
+      "to": "eval_candidates",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "nli",
-      "to": "medquad",
+      "from": "eval_candidates",
+      "to": "expert_labels",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "medquad",
-      "to": "rerank",
+      "from": "expert_labels",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "rerank",
-      "to": "submit",
+      "from": "dataset",
+      "to": "support",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "submit",
-      "to": "metric",
+      "from": "support",
+      "to": "predict",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "predict",
+      "to": "filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "filter",
+      "to": "rerank",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "rerank",
+      "to": "classification_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "classification_metrics",
+      "to": "ranking_metrics",
       "type": "primary"
     }
   ],

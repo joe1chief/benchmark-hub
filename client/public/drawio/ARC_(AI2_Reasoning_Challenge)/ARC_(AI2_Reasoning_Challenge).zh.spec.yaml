@@ -4,118 +4,172 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC 构建流程
-  description: 基于 arXiv:1803.05457 重绘的 AI2 Reasoning Challenge 题目收集、Challenge/Easy 过滤、语料构建与基线评测流程。
-  legend: 实线表示题集构建和公开发布主流程；虚线表示可选 ARC Corpus 支撑与基线失败分析。
+  title: AI2 推理挑战集构建与评测流程
+  description: 对齐论文的自然科学考试题收集、双简单求解器划分 Easy/Challenge、配套 ARC Corpus 构建与公开基线评测流程。
+  legend: Challenge 集由算法门禁定义：题目必须同时被 Waterloo 语料检索求解器和 PMI 词共现求解器答错。 可选的 1400 万句 ARC Corpus 用于研究支持，但不改变 Easy/Challenge 归属。
 nodes:
-  - id: sources
+  - id: source
     label: |-
-      公开科学考试
-      自然小学科学题
-      人类编写测验
+      收集公版科学考试题
+      面向 3–9 年级、由人类命制
+      自然题面 • 无图表 • 通常四选一
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: question_set
+      'y': 100
+  - id: normalize
     label: |-
-      ARC 题目集
-      7787 道非图形选择题
-      覆盖 3 到 9 年级
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: simple_solvers
-    label: |-
-      难度过滤器
-      IR 与 PMI 求解器
-      尝试回答每题
+      规范化 ARC 题集
+      统一题干、选项与正确答案
+      保留 7,787 题
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: split
+      x: 320
+      'y': 100
+  - id: ir
     label: |-
-      Challenge/Easy 划分
-      2590 难题，5197 易题
-      train/dev/test 分区
+      运行检索基线
+      搜索 Waterloo Web Corpus
+      依据检索文本为候选答案打分
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: pmi
+    label: |-
+      运行 PMI 词共现基线
+      衡量问题词与答案词关联
+      预测得分最高选项
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: gate
+    label: 两个简单求解器是否都答错？
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: corpus
+      x: 1160
+      'y': 100
+  - id: challenge
     label: |-
-      ARC Corpus
-      1400 万科学句子
-      搜索模板与 AristoMini
+      ARC Challenge 集
+      两个求解器均失败 • 2,590 题
+      训练 / 开发 / 测试 = 1,119 / 299 / 1,172
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: analysis
+      x: 1160
+      'y': 310
+  - id: easy
     label: |-
-      推理类型分析
-      知识类型分类
-      抽样约 95% 覆盖
+      ARC Easy 集
+      至少一个求解器成功 • 5,197 题
+      训练 / 开发 / 测试 = 2,251 / 570 / 2,376
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 310
+  - id: package
+    label: |-
+      发布 ARC 问题包
+      Easy + Challenge = 7,787
+      保留选择题标签与数据划分
     type: document
     size: xl
     position:
-      x: 820
-      'y': 250
+      x: 1300
+      'y': 560
+  - id: corpus
+    label: |-
+      构建可选 ARC Corpus
+      约 100 个手写查询覆盖 80 个科学主题
+      AristoMini 过滤 → 1400 万科学句子
+    type: database
+    size: xl
+    position:
+      x: 1020
+      'y': 560
   - id: baselines
     label: |-
-      基线系统
-      IR、PMI、BiDAF
-      DecompAttn 与 DGEM
+      在 Challenge 集评测公开基线
+      IR • PMI • BiDAF • DecompAttn • DGEM
+      与随机选择比较
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: release
+      x: 740
+      'y': 560
+  - id: score
     label: |-
-      ARC 公开发布
-      数据、语料、模型
-      排行榜挑战
+      计算选择题准确率
+      正确选项得 1 分
+      求解器并列选择时给分数比例
+    type: process
+    size: xl
+    position:
+      x: 460
+      'y': 560
+  - id: publish
+    label: |-
+      公开 ARC 资源
+      题集 + 1400 万句语料库
+      基线实现 + 排行榜
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 180
+      'y': 560
 edges:
-  - from: sources
-    to: question_set
+  - from: source
+    to: normalize
     type: primary
-  - from: question_set
-    to: simple_solvers
+  - from: normalize
+    to: ir
     type: primary
-  - from: simple_solvers
-    to: split
+  - from: ir
+    to: pmi
     type: primary
-  - from: split
+  - from: pmi
+    to: gate
+    type: primary
+  - from: gate
+    to: challenge
+    type: primary
+  - from: gate
+    to: easy
+    type: primary
+  - from: challenge
+    to: package
+    type: primary
+    waypoints:
+      - x: 1260
+        'y': 500
+      - x: 1400
+        'y': 500
+  - from: easy
+    to: package
+    type: primary
+    waypoints:
+      - x: 1540
+        'y': 520
+      - x: 1400
+        'y': 520
+  - from: package
     to: corpus
-    type: data
-    label: 可选支撑语料
+    type: primary
   - from: corpus
-    to: analysis
+    to: baselines
     type: data
-  - from: split
-    to: baselines
-    type: primary
-  - from: analysis
-    to: baselines
-    type: optional
   - from: baselines
-    to: release
+    to: score
     type: primary
-  - from: release
-    to: question_set
-    type: optional
-    label: 排行榜提交
+  - from: score
+    to: publish
+    type: primary
 modules: []

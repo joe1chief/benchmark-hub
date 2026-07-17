@@ -1,0 +1,126 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: EQ-Bench 构建流程
+  description: 对齐论文：构建 60 道情绪理解对话题，并按与参考情绪强度的距离计算分数。
+  legend: 实线箭头复现 arXiv:2312.06281：GPT-4 生成对话、作者制定参考答案、零样本批评与修订、解析重试、归一化与总分计算。
+nodes:
+  - id: seeds
+    label: |-
+      随机采样多样化对话种子
+      地点 · 作者风格
+      冲突 / 紧张的宽泛情境
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 250
+  - id: dialogues
+    label: |-
+      生成情绪张力对话
+      GPT-4 编写正面或负面的冲突场景
+      保留细腻的人际互动
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 250
+  - id: references
+    label: |-
+      作者构建每道问题
+      选择 4 种差异化候选情绪
+      作者自行设定 0–10 参考强度
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 250
+  - id: dataset
+    label: |-
+      EQ-Bench 测试集
+      60 道英文情绪理解问题
+      作者参考答案避免 GPT-4 裁判偏差
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 250
+  - id: prompt
+    label: |-
+      使用原始零样本提示
+      首轮 0–10 评分 → 逐步批评
+      按可解析格式给出修订评分
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+  - id: retry
+    label: |-
+      解析两组情绪评分
+      初始温度 0.01
+      失败则加 0.15；超过 5 次停止
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 250
+  - id: normalize
+    label: |-
+      将每组 4 情绪归一化为总和 10
+      对比模型与归一化参考向量
+      聚焦相对情绪强度
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 250
+  - id: question_score
+    label: |-
+      为每个可解析答案计分
+      10 − 绝对评分差之和
+      随机作答校准为 0
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: final_score
+    label: |-
+      分别平均首轮与修订轮
+      取更高的整轮分数而非逐题择优
+      可解析题 <50/60 即失败 · 满分 100
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+edges:
+  - from: seeds
+    to: dialogues
+    type: primary
+  - from: dialogues
+    to: references
+    type: primary
+  - from: references
+    to: dataset
+    type: primary
+  - from: dataset
+    to: prompt
+    type: primary
+  - from: prompt
+    to: retry
+    type: primary
+  - from: retry
+    to: normalize
+    type: primary
+  - from: normalize
+    to: question_score
+    type: primary
+  - from: question_score
+    to: final_score
+    type: primary
+modules: []

@@ -6,86 +6,197 @@ meta:
   routing: orthogonal
   title: ACEBench Build Process
   description: >-
-    Paper-aligned construction of ACEBench: organize tool-use cases into Normal, Special, and Agent settings, evaluate
-    function calls under incomplete or multi-turn conditions, and analyze fine-grained error causes.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned ACEBench workflow: LLMs synthesize stable APIs and Normal/Special dialogues while experts abstract
+    real scenarios into Agent sandboxes and questions; automated and multi-expert verification produces 2,000 Chinese
+    and English entries evaluated with category-specific accuracy contracts and a sample-size-weighted overall score.
+  legend: >-
+    Solid arrows show the automated Normal/Special branch, expert Agent branch, shared verification, and
+    category-specific evaluation.
 nodes:
-  - id: n1
-    label: Tool Scenarios
+  - id: api_refs
+    label: |-
+      Technical Documents
+      Real API References
     type: database
+    size: large
+    position:
+      x: 40
+      'y': 80
+  - id: api_synthesis
+    label: |-
+      Self-evolving API Tree
+      4,538 Synthetic APIs
+      8 Domains / 68 Subdomains
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 80
+  - id: normal_special
+    label: |-
+      LLM-generated Normal + Special
+      Select 3–6 Candidate APIs
+      Template or 3-agent Dialogue
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 80
+  - id: scenarios
+    label: |-
+      Real-world Scenario Abstraction
+      State Variables + Business Rules
+    type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Normal
+      'y': 440
+  - id: sandbox
+    label: |-
+      Expert-built Sandbox
+      Interfaces + Preconditions
+      State + Execution Monitoring
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Special
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Agent
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Function Calls
+      x: 300
+      'y': 440
+  - id: agent_data
+    label: |-
+      Expert Agent Data
+      Iterative Question Design
+      Multi-step / Multi-turn
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Rule Eval
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Error Types
+      x: 560
+      'y': 440
+  - id: auto_qc
+    label: |-
+      Automated Quality Inspection
+      Rules: Clarity / Executability
+      Dialogue Accuracy / Consistency
+      LLM Verification + Voting
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
+      x: 840
+      'y': 260
+  - id: triage
+    label: |-
+      Human-assisted Triage
+      3 LLMs Flag Error Candidates
+    type: process
+    size: xl
+    position:
+      x: 1120
+      'y': 260
+  - id: expert_qc
+    label: |-
+      Expert Quality Loop
+      2 Independent Reviews
+      Third Expert Consolidates
+      Re-evaluate; 3 Rounds
+    type: user
+    size: xl
+    position:
+      x: 1400
+      'y': 260
+  - id: dataset
+    label: |-
+      ACEBench
+      2,000 Annotated Entries
+      Parallel Chinese + English
+      Normal / Special / Agent
+    type: database
+    size: xl
+    position:
+      x: 1680
+      'y': 260
+  - id: normal_eval
+    label: |-
+      Normal Evaluation
+      AST Match to Candidate Answers
+      Exact Accuracy 0 / 1
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 40
+  - id: special_eval
+    label: |-
+      Special Evaluation
+      Detect Missing / Wrong Params
+      or Task–Function Mismatch
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 260
+  - id: agent_eval
+    label: |-
+      Agent Evaluation
+      GPT-4o User Simulator
+      End-to-end + Process Accuracy
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 480
+  - id: overall
+    label: |-
+      Overall Accuracy
+      Category Weights ∝ √Sample Size
+      Fine-grained Error Analysis
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2240
+      'y': 260
 edges:
-  - from: n1
-    to: n2
+  - from: api_refs
+    to: api_synthesis
     type: primary
-  - from: n2
-    to: n3
+  - from: api_synthesis
+    to: normal_special
     type: primary
-  - from: n3
-    to: n4
+  - from: scenarios
+    to: sandbox
     type: primary
-  - from: n4
-    to: n5
+  - from: sandbox
+    to: agent_data
     type: primary
-  - from: n5
-    to: n6
+  - from: normal_special
+    to: auto_qc
     type: primary
-  - from: n6
-    to: n7
+  - from: agent_data
+    to: auto_qc
     type: primary
-  - from: n7
-    to: n8
+  - from: auto_qc
+    to: triage
+    type: primary
+  - from: triage
+    to: expert_qc
+    type: primary
+  - from: expert_qc
+    to: dataset
+    type: primary
+  - from: dataset
+    to: normal_eval
+    type: primary
+  - from: dataset
+    to: special_eval
+    type: primary
+  - from: dataset
+    to: agent_eval
+    type: primary
+  - from: normal_eval
+    to: overall
+    type: primary
+  - from: special_eval
+    to: overall
+    type: primary
+  - from: agent_eval
+    to: overall
     type: primary
 modules: []

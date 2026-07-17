@@ -6,86 +6,174 @@ meta:
   routing: orthogonal
   title: MMLU-CF Build Process
   description: >-
-    Paper-aligned construction of MMLU-CF: broader-domain MCQs are collected under decontamination rules, split into
-    public validation and closed test sets with matched difficulty, and scored by zero/few-shot accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned construction of 20,000 contamination-free multiple-choice questions from more than 200 billion public
+    web documents, with matched public-validation and closed-test splits.
+  legend: The three contamination-free transformations are applied after model-based quality and safety filtering.
 nodes:
-  - id: n1
-    label: Broad Sources
+  - id: crawl
+    label: |-
+      Crawl Public Web Documents
+      More Than 200 Billion Documents
+      Over 3,000 Source Domains
+      Extract 14 Data Fields
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: MCQ Pool
+      x: 20
+      'y': 40
+  - id: extract
+    label: |-
+      Rule-extract MCQ Candidates
+      Identify Questions and Choices
+      Recover Answers and Explanations
+      Form a 2.7-million Pool
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 3 Rules
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Clean Set
+      x: 300
+      'y': 40
+  - id: clean
+    label: |-
+      Apply Format and Language Rules
+      Require Four Complete Choices
+      Normalize Labels and Answers
+      Deduplicate to 1.66 Million
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Val/Test
+      x: 580
+      'y': 40
+  - id: difficulty
+    label: |-
+      Rate Difficulty with GPT-4o
+      Use Five-shot Demonstrations
+      Assign Scores from Zero to Nine
+      Prefer Challenging Questions
+    type: user
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: sample
+    label: |-
+      Sample a Balanced 50K Pool
+      Center Difficulty Near Six
+      Balance Categories and Domains
+      Prefer Items with Explanations
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Closed Test
-    type: decision
+      x: 1140
+      'y': 40
+  - id: check
+    label: |-
+      Run Three-model Checking
+      GPT-4o · Gemini · Claude
+      Rate Quality and Harmlessness
+      Keep Mean Rating Above Four
+    type: user
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Prompt Eval
-    type: document
+      x: 1420
+      'y': 40
+  - id: dedup
+    label: |-
+      Remove Semantic Redundancy
+      Use GPT-4o Pairwise Checking
+      Preserve Diverse Subjects
+      Retain Over 1,000 Domains
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
+      x: 1420
+      'y': 420
+  - id: rephrase
+    label: |-
+      Apply Rule One: Rephrase
+      Rewrite Every Question Stem
+      Preserve Meaning and Answer
+      Break Verbatim Memorization
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: shuffle
+    label: |-
+      Apply Rule Two: Shuffle Choices
+      Preserve None-or-all-last Cases
+      Shuffle Only Their First Three
+      Update the Answer Position
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: replace
+    label: |-
+      Rule Three at 50 Percent
+      Replace Any One Choice with
+      None of the Other Choices
+      Keep Correct Valid; Skip Specials
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: split
+    label: |-
+      Create Matched Dataset Splits
+      10K Public Validation Items
+      10K Closed Test Items
+      Match Difficulty and Categories
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: evaluate
+    label: |-
+      Evaluate Language Models
+      Run Zero-shot and Five-shot
+      Parse the Selected Option
+      Report Exact Accuracy
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: crawl
+    to: extract
     type: primary
-  - from: n2
-    to: n3
+  - from: extract
+    to: clean
     type: primary
-  - from: n3
-    to: n4
+  - from: clean
+    to: difficulty
     type: primary
-  - from: n4
-    to: n5
+  - from: difficulty
+    to: sample
     type: primary
-  - from: n5
-    to: n6
+  - from: sample
+    to: check
     type: primary
-  - from: n6
-    to: n7
+  - from: check
+    to: dedup
     type: primary
-  - from: n7
-    to: n8
+  - from: dedup
+    to: rephrase
+    type: primary
+  - from: rephrase
+    to: shuffle
+    type: primary
+  - from: shuffle
+    to: replace
+    type: primary
+  - from: replace
+    to: split
+    type: primary
+  - from: split
+    to: evaluate
     type: primary
 modules: []

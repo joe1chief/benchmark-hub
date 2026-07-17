@@ -1,0 +1,300 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WorldVQA Atomic-Knowledge Construction and Evaluation
+  description: >-
+    Ten expert annotators build atomic visual-knowledge items under isolation, coverage, granularity, and
+    visual-reliability gates. For global expansion, regional labeling identifies underrepresented regions, GPT/Kimi
+    association search proposes candidates, and human annotators curate the final additions. ISC deduplication against
+    LAION/Common Crawl, five-model difficulty stratification, mandatory secondary review for Hard items, and parallel
+    Gemini-3-Pro plus blind-human verification follow. The final 3,500 pairs are judged with GPT-oss-120b and reported
+    with accuracy, attempt rate, CGA, and F-score; People is excluded from the eight-category overall.
+  legend: >-
+    Source: WorldVQA arXiv:2602.02537v1, Sections 2.1-2.6, Table 2, Section 3.1, Table 3, and Appendix A; official
+    project https://worldvqa2026.github.io/WorldVQA/, repository https://github.com/MoonshotAI/WorldVQA/, and dataset
+    https://huggingface.co/datasets/moonshotai/WorldVQA. Version pin: 3,500 pairs and nine categories.. Solid arrows
+    show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: world_taxonomy
+    label: Nine Knowledge Categories
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: expert_collection
+    label: 10-Expert Entity + QA Curation
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: design_gates
+    label: Atomic / Coverage / Granularity / Visual Gates
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: global_expansion
+    label: Regional Labeling + GPT/Kimi Association Search -> Human Curation
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: isc_gate
+    label: ISC Similarity > 0.95?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: recollect_frame
+    label: Recollect Video Screenshot
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: five_model_probe
+    label: Five-MLLM Difficulty Probe
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: trivial_gate
+    label: All Five Correct?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: discard_trivial
+    label: Discard Trivial Item
+    type: loss
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: difficulty_tiers
+    label: Easy / Medium / Hard
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: easy_downsample
+    label: Randomly Downsample Easy
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: hard_review
+    label: 'Hard: Secondary Human Review'
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: audit_ready
+    label: Easy Sample + Medium + Reviewed Hard
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 160
+  - id: gemini_audit
+    label: Gemini-3-Pro Visual Audit
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 40
+  - id: blind_answer
+    label: Blind Human Answer
+    type: user
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: dual_gate
+    label: Audits Agree + Pass?
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 160
+  - id: manual_audit
+    label: Manual Divergence Audit
+    type: user
+    size: xl
+    position:
+      x: 3400
+      'y': 280
+  - id: purge_item
+    label: Purge Error / Ambiguity
+    type: loss
+    size: xl
+    position:
+      x: 3960
+      'y': 280
+  - id: worldvqa_set
+    label: 3,500 VQA Pairs
+    type: database
+    size: xl
+    position:
+      x: 3680
+      'y': 40
+  - id: model_answers
+    label: Model Answers / Refusals
+    type: document
+    size: xl
+    position:
+      x: 3680
+      'y': 520
+  - id: gptoss_judge
+    label: GPT-oss-120b Judge
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: metric_router
+    label: Accuracy / Attempt / CGA / F
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: overall_report
+    label: 8-Category Overall + People Separate
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+edges:
+  - from: world_taxonomy
+    to: expert_collection
+    type: primary
+  - from: expert_collection
+    to: design_gates
+    type: primary
+  - from: design_gates
+    to: global_expansion
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: design_gates
+    to: expert_collection
+    type: optional
+    label: Reject / Rework
+    labelPosition: start
+  - from: global_expansion
+    to: isc_gate
+    type: primary
+  - from: isc_gate
+    to: recollect_frame
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: recollect_frame
+    to: isc_gate
+    type: optional
+    label: Recheck
+    labelPosition: start
+  - from: isc_gate
+    to: five_model_probe
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: five_model_probe
+    to: trivial_gate
+    type: primary
+  - from: trivial_gate
+    to: discard_trivial
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: trivial_gate
+    to: difficulty_tiers
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: difficulty_tiers
+    to: hard_review
+    type: primary
+    label: Hard
+    labelPosition: end
+  - from: difficulty_tiers
+    to: audit_ready
+    type: data
+    label: Medium
+    labelPosition: center
+    waypoints:
+      - x: 2200
+        'y': 200
+      - x: 2480
+        'y': 200
+  - from: easy_downsample
+    to: audit_ready
+    type: primary
+  - from: hard_review
+    to: audit_ready
+    type: primary
+  - from: audit_ready
+    to: gemini_audit
+    type: primary
+  - from: audit_ready
+    to: blind_answer
+    type: primary
+  - from: difficulty_tiers
+    to: easy_downsample
+    type: primary
+    label: Easy
+    labelPosition: end
+  - from: gemini_audit
+    to: dual_gate
+    type: primary
+  - from: blind_answer
+    to: dual_gate
+    type: primary
+  - from: dual_gate
+    to: worldvqa_set
+    type: primary
+    label: Agree + Pass
+    labelPosition: end
+  - from: dual_gate
+    to: manual_audit
+    type: optional
+    label: Diverge
+    labelPosition: end
+  - from: manual_audit
+    to: worldvqa_set
+    type: primary
+    label: Retain
+    labelPosition: end
+  - from: manual_audit
+    to: purge_item
+    type: optional
+    label: Error / Ambiguity
+    labelPosition: end
+  - from: worldvqa_set
+    to: model_answers
+    type: primary
+  - from: model_answers
+    to: gptoss_judge
+    type: primary
+  - from: gptoss_judge
+    to: metric_router
+    type: primary
+  - from: metric_router
+    to: overall_report
+    type: primary
+modules: []

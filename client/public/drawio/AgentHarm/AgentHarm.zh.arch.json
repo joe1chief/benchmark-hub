@@ -7,56 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 13,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "categories",
-      "label": "危害分类体系\n11 类 harm categories\n每类 10 个基础行为",
+      "id": "taxonomy",
+      "label": "定义危害覆盖范围\n11 类危害\n每类 10 个基础行为",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "人工编写任务\n110 个恶意行为\n独立人工 review",
+      "id": "base_behaviors",
+      "label": "人工编写 110 个基础行为\n明确恶意 • 可数字化执行\n多步骤依赖 • 不含真实身份",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "independent_review",
+      "label": "独立人工复核\n每个问题都由\n非原作者检查",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "augmentation",
+      "label": "构造四种有害变体\n详细版 • 开放版\n各含有/不含首个工具提示",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "benign",
-      "label": "良性对应任务\n能力基线\n保持相同 agent 技能",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "augment",
-      "label": "任务增强\ndetailed、open-ended\nhint-included 变体",
+      "label": "改写良性对应任务\n保留相同主题与 Agent 能力\n去除明确恶意意图",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "tools",
-      "label": "合成工具\n104 个 proxy tools\nInspect 评估框架",
+      "label": "实现 104 个合成工具\nInspect 独立函数\n无副作用与真实世界危害",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "rubrics",
-      "label": "人工评分 rubrics\n窄范围 semantic judges\n单独跟踪 refusal judge",
+      "label": "编写细粒度评分规则\n目标调用 • 顺序 • 参数\n必要时做窄范围语义检查",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "数据集发布\n共 440 个任务\n10/60/30 划分",
+      "id": "package",
+      "label": "封装 AgentHarm\n440 个有害任务 + 良性对应集\n验证 44 • 公开 264 • 私有 132",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "evaluation",
-      "label": "AgentHarm 评估\ndirect、forced tool、jailbreak\nharm score 与 refusals",
+      "id": "run_harmful",
+      "label": "运行有害 Agent 评测\n直接指令 • 强制工具调用\n通用越狱模板",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run_benign",
+      "label": "运行良性能力对照\n使用同类 Agent 能力\n估计无拒答时的任务能力",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "trace_checks",
+      "label": "评审完整轨迹\n确定性规则检查\n按评分条件给予部分分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "refusal",
+      "label": "单独判断拒答\n检查 Agent 的每条消息\n跟踪非拒答任务表现",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "汇报 AgentHarm 结果\nHarm Score • 拒答率\n非拒答与良性任务能力",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,59 +94,99 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "categories",
-      "to": "behaviors",
+      "from": "taxonomy",
+      "to": "base_behaviors",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "behaviors",
-      "to": "benign",
-      "type": "data",
-      "label": "paired baseline"
+      "from": "base_behaviors",
+      "to": "independent_review",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "behaviors",
-      "to": "augment",
+      "from": "independent_review",
+      "to": "augmentation",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "augment",
-      "to": "tools",
-      "type": "primary"
+      "from": "independent_review",
+      "to": "benign",
+      "type": "data"
     },
     {
       "id": "edge-5",
-      "from": "augment",
-      "to": "rubrics",
-      "type": "primary"
+      "from": "base_behaviors",
+      "to": "tools",
+      "type": "data"
     },
     {
       "id": "edge-6",
-      "from": "tools",
-      "to": "splits",
-      "type": "primary"
+      "from": "base_behaviors",
+      "to": "rubrics",
+      "type": "data"
     },
     {
       "id": "edge-7",
-      "from": "rubrics",
-      "to": "splits",
+      "from": "augmentation",
+      "to": "package",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "splits",
-      "to": "evaluation",
-      "type": "primary"
+      "from": "benign",
+      "to": "package",
+      "type": "data"
     },
     {
       "id": "edge-9",
-      "from": "benign",
-      "to": "evaluation",
-      "type": "optional",
-      "label": "能力基线"
+      "from": "tools",
+      "to": "package",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "rubrics",
+      "to": "package",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "package",
+      "to": "run_harmful",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "package",
+      "to": "run_benign",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "run_harmful",
+      "to": "trace_checks",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "run_benign",
+      "to": "trace_checks",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "trace_checks",
+      "to": "refusal",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "refusal",
+      "to": "score",
+      "type": "primary"
     }
   ],
   "modules": []

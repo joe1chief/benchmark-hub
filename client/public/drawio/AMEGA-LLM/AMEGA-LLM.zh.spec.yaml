@@ -4,119 +4,193 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AMEGA-LLM 构建流程
-  description: 基于 npj Digital Medicine 7:358 重绘的 AMEGA 医学指南遵循评测构建与自动评分流程。
-  legend: 实线表示病例构建和模型评测主流程；虚线表示 reask、重复评审与人工验证保护机制。
+  title: AMEGA-LLM 构建与评测流程
+  description: 对齐论文的 AMEGA：医生基于指南构建临床病例，通过准则级 GPT-4 判断、条件性 Reask、 重复多数投票、加权计分与评估器验证，完成自动化口试评测。
+  legend: 本图固定采用论文快照的 20 个病例、135 个问题和 1,337 项准则；官方仓库后来扩展为 24 个病例、163 个问题和 1,497 项准则。
 nodes:
   - id: guidelines
     label: |-
-      医学指南基础
-      当前临床指南
-      医师专业经验
+      选择当前临床指南
+      来自权威的美国与全球医学组织
+      覆盖诊断、治疗、监测与随访
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 100
+  - id: physicians
+    label: |-
+      由资深医生构建基准
+      每位均有超过 5 年临床经验
+      选择指南并将建议转化为病例
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 100
   - id: cases
     label: |-
-      临床病例设计
-      20 个诊断场景
-      覆盖 13 个专科
+      编写 20 个虚构临床病例
+      覆盖 13 个医学专科
+      主诉、病史、查体、化验与影像
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
+      x: 600
+      'y': 100
   - id: questions
     label: |-
-      开放式问题
-      135 个临床交互问题
-      诊断与治疗推理
+      每病例编写 6–8 个连续问题
+      总计 135 个开放式问题
+      探查鉴别、检查、治疗、并发症与随访
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: criteria
+      x: 880
+      'y': 100
+  - id: rubrics
     label: |-
-      加权评分标准
-      1337 个评分元素
-      源自指南要求
+      定义指南衍生的加权 Rubric
+      1,337 个独立评分元素
+      按临床重要性加权 • 每病例最多 50 分
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: candidate
+      x: 1160
+      'y': 100
+  - id: release
     label: |-
-      候选模型
-      回答每个病例问题
-      可触发 reask
-    type: terminal
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: evaluator
-    label: |-
-      GPT-4 评估器
-      解析答案与标准
-      抽取临床概念
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: voting
-    label: |-
-      重复布尔评审
-      11 次并行评估
-      多数投票与置信度
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: |-
-      聚合得分报告
-      标准到病例逐级汇总
-      每病例最高 50 分
+      医生复核并发布 AMEGA
+      每病例由至少 1 名其他医生复核并迭代修订
+      每病例 20–30 小时 • 总计超过 400 小时
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      模拟零样本临床口试
+      先给初始病例，再逐题提问
+      统一提示；不提供示范答案
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 470
+  - id: candidate
+    label: |-
+      候选模型回答
+      回答当前临床问题
+      按顺序继续完成整个病例
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 470
+  - id: evaluator
+    label: |-
+      GPT-4-0613 评估器
+      提取临床概念并检查每项 Rubric 元素
+      返回各准则是否满足的 True / False 向量
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 470
+  - id: gate
+    label: 准则是否全满足 / 是否允许 Reask？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: reask
+    label: |-
+      引导式 Reask 与自我反思
+      告知未满足准则，让候选补充细节
+      对会造成即时后果的关键错误跳过 Reask
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 690
+  - id: voting
+    label: |-
+      稳定准则判断
+      每项准则运行 11 次并行评估
+      多数投票 + 由一致率得到 0–1 置信度
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 470
+  - id: score
+    label: |-
+      AMEGA 指南遵循结果
+      布尔结果乘权重后求和
+      问题 / 病例分、50 分均值、归一化缺陷与成本
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: validate
+    label: |-
+      验证评估器可靠性
+      50 次模拟；11 次后趋于稳定
+      临床专家比较 2 个病例 + 抽查病例 3 与 5
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 580
 edges:
   - from: guidelines
+    to: physicians
+    type: primary
+  - from: physicians
     to: cases
     type: primary
   - from: cases
     to: questions
     type: primary
   - from: questions
-    to: criteria
+    to: rubrics
     type: primary
-  - from: criteria
+  - from: rubrics
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
     to: candidate
-    type: data
-    label: 病例与问题
+    type: primary
   - from: candidate
     to: evaluator
     type: primary
   - from: evaluator
+    to: gate
+    type: primary
+  - from: gate
+    to: reask
+    type: primary
+    waypoints:
+      - x: 730
+        'y': 650
+      - x: 1290
+        'y': 650
+  - from: reask
+    to: candidate
+    type: optional
+  - from: gate
     to: voting
     type: primary
   - from: voting
-    to: candidate
-    type: optional
-    label: 允许时重新追问
-  - from: voting
-    to: scores
+    to: score
     type: primary
-  - from: scores
-    to: evaluator
-    type: optional
-    label: 专家抽查验证
+  - from: voting
+    to: validate
+    type: primary
 modules: []

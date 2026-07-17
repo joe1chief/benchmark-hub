@@ -5,117 +5,186 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AgentHarm 构建流程
-  description: 基于 arXiv:2410.09024 对齐的 AgentHarm 基准构建与有害 agent 评估流程。
-  legend: 实线表示任务构建、工具集成和评分主流程；虚线表示私有划分以及拒答/越狱评估分支。
+  description: 基于 arXiv:2410.09024 对齐的有害/良性 Agent 任务、合成工具、细粒度评分规则与越狱评测流程。
+  legend: AgentHarm 测量恶意多步骤任务是否真正执行成功，而不只判断有害文本；确定性规则之外仅对窄语义条件使用 LLM 评审。
 nodes:
-  - id: categories
+  - id: taxonomy
     label: |-
-      危害分类体系
-      11 类 harm categories
+      定义危害覆盖范围
+      11 类危害
       每类 10 个基础行为
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: behaviors
+      'y': 280
+  - id: base_behaviors
     label: |-
-      人工编写任务
-      110 个恶意行为
-      独立人工 review
+      人工编写 110 个基础行为
+      明确恶意 • 可数字化执行
+      多步骤依赖 • 不含真实身份
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: independent_review
+    label: |-
+      独立人工复核
+      每个问题都由
+      非原作者检查
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: augmentation
+    label: |-
+      构造四种有害变体
+      详细版 • 开放版
+      各含有/不含首个工具提示
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
+      x: 880
+      'y': 40
   - id: benign
     label: |-
-      良性对应任务
-      能力基线
-      保持相同 agent 技能
+      改写良性对应任务
+      保留相同主题与 Agent 能力
+      去除明确恶意意图
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: augment
-    label: |-
-      任务增强
-      detailed、open-ended
-      hint-included 变体
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
+      x: 600
+      'y': 180
   - id: tools
     label: |-
-      合成工具
-      104 个 proxy tools
-      Inspect 评估框架
+      实现 104 个合成工具
+      Inspect 独立函数
+      无副作用与真实世界危害
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
+      x: 600
+      'y': 340
   - id: rubrics
     label: |-
-      人工评分 rubrics
-      窄范围 semantic judges
-      单独跟踪 refusal judge
+      编写细粒度评分规则
+      目标调用 • 顺序 • 参数
+      必要时做窄范围语义检查
     type: document
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: splits
+      x: 600
+      'y': 500
+  - id: package
     label: |-
-      数据集发布
-      共 440 个任务
-      10/60/30 划分
+      封装 AgentHarm
+      440 个有害任务 + 良性对应集
+      验证 44 • 公开 264 • 私有 132
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
+      x: 880
+      'y': 300
+  - id: run_harmful
     label: |-
-      AgentHarm 评估
-      direct、forced tool、jailbreak
-      harm score 与 refusals
+      运行有害 Agent 评测
+      直接指令 • 强制工具调用
+      通用越狱模板
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 180
+  - id: run_benign
+    label: |-
+      运行良性能力对照
+      使用同类 Agent 能力
+      估计无拒答时的任务能力
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 420
+  - id: trace_checks
+    label: |-
+      评审完整轨迹
+      确定性规则检查
+      按评分条件给予部分分
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: refusal
+    label: |-
+      单独判断拒答
+      检查 Agent 的每条消息
+      跟踪非拒答任务表现
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 650
+  - id: score
+    label: |-
+      汇报 AgentHarm 结果
+      Harm Score • 拒答率
+      非拒答与良性任务能力
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1160
+      'y': 650
 edges:
-  - from: categories
-    to: behaviors
+  - from: taxonomy
+    to: base_behaviors
     type: primary
-  - from: behaviors
+  - from: base_behaviors
+    to: independent_review
+    type: primary
+  - from: independent_review
+    to: augmentation
+    type: primary
+  - from: independent_review
     to: benign
     type: data
-    label: paired baseline
-  - from: behaviors
-    to: augment
-    type: primary
-  - from: augment
+  - from: base_behaviors
     to: tools
-    type: primary
-  - from: augment
+    type: data
+  - from: base_behaviors
     to: rubrics
-    type: primary
-  - from: tools
-    to: splits
-    type: primary
-  - from: rubrics
-    to: splits
-    type: primary
-  - from: splits
-    to: evaluation
+    type: data
+  - from: augmentation
+    to: package
     type: primary
   - from: benign
-    to: evaluation
-    type: optional
-    label: 能力基线
+    to: package
+    type: data
+  - from: tools
+    to: package
+    type: data
+  - from: rubrics
+    to: package
+    type: data
+  - from: package
+    to: run_harmful
+    type: primary
+  - from: package
+    to: run_benign
+    type: data
+  - from: run_harmful
+    to: trace_checks
+    type: primary
+  - from: run_benign
+    to: trace_checks
+    type: data
+  - from: trace_checks
+    to: refusal
+    type: primary
+  - from: refusal
+    to: score
+    type: primary
 modules: []

@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Med-HALT 构建流程
+  description: 与论文及官方项目页对齐地展示 Med-HALT 的多国医学考试题、PubMed 记忆数据、三类推理幻觉测试、四类记忆幻觉测试与双指标评测。
+  legend: 实线箭头依次表示 18866 个推理样本与 4916 个记忆样本的构造、七种测试、结构化输出解析，以及准确率和逐点分数报告。
+nodes:
+  - id: india
+    label: |-
+      汇集印度医学考试题
+      AIIMS PG：6660 题
+      NEET PG：2855 题
+      合计 MedMCQA 9515 题
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: otherexams
+    label: |-
+      加入三地医学考试
+      西班牙 HeadQA：4068
+      美国 MedQA：2801
+      台湾 MedQA：2482
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: rhtpool
+    label: |-
+      形成推理测试数据池
+      四国多学科医学选择题
+      每项 RHT 使用 18866 样本
+      覆盖多种临床推理类型
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: pubmed
+    label: |-
+      构建 PubMed 记忆数据
+      共 4916 篇文献样本
+      保留摘要 PMID 标题链接
+      每项 MHT 使用相同样本池
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: fct
+    label: |-
+      推理测试一：FCT
+      随机建议一个候选答案
+      要求判断其正确与否
+      并解释各选项依据
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: nota
+    label: |-
+      推理测试二：NOTA
+      将原正确项替换为以上皆非
+      要求识别无有效原选项
+      检验拒绝错误信息能力
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: fqt
+    label: |-
+      推理测试三：FQT
+      构造虚假或无意义医学题
+      人类专家与 GPT-3.5 混合生成
+      检验能否识别不可答问题
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: mht_a
+    label: |-
+      记忆测试一与二
+      摘要映射 PubMed 链接
+      PMID 映射论文标题
+      检验文献标识事实回忆
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: mht_b
+    label: |-
+      记忆测试三与四
+      标题映射 PubMed 链接
+      链接反向映射论文标题
+      检验双向文献信息检索
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: models
+    label: |-
+      运行代表性语言模型
+      Text-Davinci 与 GPT-3.5
+      Llama-2、MPT 与 Falcon
+      不作任务专用微调
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: parse
+    label: |-
+      解析结构化模型输出
+      期望返回有效 JSON
+      处理格式错误与异常响应
+      映射到每项测试预测
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: correct
+    label: |-
+      判断推理与检索正确性
+      每个预测赋二元结果
+      正确记为一错误记为零
+      分测试累计命中数量
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: metrics
+    label: |-
+      计算两类评测指标
+      各测试报告 Accuracy
+      同时报告 Pointwise Score
+      再计算 RHT 与 MHT 平均值
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      发布 Med-HALT 结果
+      横向比较七种测试
+      分析模型幻觉倾向
+      支持安全医疗模型研究
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: india
+    to: otherexams
+    type: primary
+  - from: otherexams
+    to: rhtpool
+    type: primary
+  - from: rhtpool
+    to: pubmed
+    type: primary
+  - from: pubmed
+    to: fct
+    type: primary
+  - from: fct
+    to: nota
+    type: primary
+  - from: nota
+    to: fqt
+    type: primary
+  - from: fqt
+    to: mht_a
+    type: primary
+  - from: mht_a
+    to: mht_b
+    type: primary
+  - from: mht_b
+    to: models
+    type: primary
+  - from: models
+    to: parse
+    type: primary
+  - from: parse
+    to: correct
+    type: primary
+  - from: correct
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
+modules: []

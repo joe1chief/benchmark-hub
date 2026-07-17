@@ -4,86 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MILU Build Process (Chinese)
-  description: MILU 的论文对齐构建流程：收集印度中心的多选题，覆盖 Indic 语言、学科和领域，必要时清洗与翻译，划分验证/测试集，并用准确率评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MILU 构建流程
+  description: 按论文重建 MILU 的印度本土考试题收集、多层清洗、学科归并、低资源缺口补齐、数据发布以及零样本与少样本准确率评测流程。
+  legend: MILU 包含覆盖 11 种语言、41 个学科和八大领域的 79,617 道测试题及独立 8,933 道验证题；GPT-4o 用于补齐学科-语言缺口， IndicTrans2 仅用于恢复主题标签。
 nodes:
-  - id: sources
-    label: 考试来源
+  - id: collect
+    label: |-
+      抓取已发布考试试卷
+      超过 40 类考试
+      国家级 · 邦级 · 区域级网站
+      超过 15 万道原始问题
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: langs
-    label: 11语言
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: subjects
-    label: 41学科
+      x: 20
+      'y': 40
+  - id: coverage
+    label: |-
+      保留印度本土覆盖
+      11 种印度语言
+      通识与文化知识
+      邦史 · 艺术 · 法律 · 理工
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: domains
-    label: 8领域
+      x: 300
+      'y': 40
+  - id: format_filter
+    label: |-
+      统一多项选择格式
+      去除阅读理解题
+      去除图像问题
+      去除超过 4 个选项的题目
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: translate
-    label: 翻译补齐
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
+      x: 580
+      'y': 40
   - id: clean
-    label: 清洗检查
-    type: decision
+    label: |-
+      执行多层清洗
+      人工检查大规模样本
+      IndicLID 加 Unicode 语言过滤
+      去除重复问题
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: splits
-    label: 验证/测试
+      x: 860
+      'y': 40
+  - id: recover_tags
+    label: |-
+      恢复缺失主题标签
+      初始仅 45% 标签准确
+      用 IndicTrans2 翻译成英文
+      GPT-4o-mini 生成约 2 万标签
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: taxonomy
+    label: |-
+      归并主题分类体系
+      NV-Embed-v2 标签向量
+      K-means 聚为 50 簇
+      人工合并为 41 学科 · 8 领域
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: gap_fill
+    label: |-
+      补齐学科-语言缺口
+      每个组合至少 100 题
+      从相同英文科目抽题
+      用任务感知 GPT-4o 翻译
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: final_audit
+    label: |-
+      执行最终语言审计
+      从每种语言抽样
+      人工验证准确性
+      修正剩余错误
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: dataset
+    label: |-
+      发布 MILU 测试集
+      79,617 道四选一问题
+      11 种语言 · 41 个学科
+      八个主要领域
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: validation
+    label: |-
+      保留独立验证集
+      8,933 个样本
+      提供上下文示例
+      不与测试计分混合
     type: document
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: 准确率
+      x: 580
+      'y': 420
+  - id: evaluate
+    label: |-
+      评测多项选择模型
+      零样本 · 一样本 · 五样本
+      解析所选选项
+      对照标准答案
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      报告准确率
+      按语言与领域汇总
+      分析学科与资源等级
+      比较 42 个模型
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: sources
-    to: langs
+  - from: collect
+    to: coverage
     type: primary
-  - from: langs
-    to: subjects
+  - from: coverage
+    to: format_filter
     type: primary
-  - from: subjects
-    to: domains
-    type: primary
-  - from: domains
-    to: translate
-    type: primary
-  - from: translate
+  - from: format_filter
     to: clean
     type: primary
   - from: clean
-    to: splits
+    to: recover_tags
     type: primary
-  - from: splits
-    to: metric
+  - from: recover_tags
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: gap_fill
+    type: primary
+  - from: gap_fill
+    to: final_audit
+    type: primary
+  - from: final_audit
+    to: dataset
+    type: primary
+  - from: dataset
+    to: validation
+    type: primary
+  - from: validation
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
     type: primary
 modules: []

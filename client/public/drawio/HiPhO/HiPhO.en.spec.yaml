@@ -6,86 +6,226 @@ meta:
   routing: orthogonal
   title: HiPhO Build Process
   description: >-
-    Paper-aligned HiPhO construction pipeline from official Olympiad exam PDFs through structured extraction, human
-    verification, official marking rubrics, model answers, and medal-score evaluation.
-  legend: Solid arrows show the primary dataset construction and evaluation flow.
+    Paper-aligned HiPhO construction from influential 2024-2025 physics Olympiads with human scores through OCR,
+    complete expert verification, structured marking schemes, multimodal annotation, answer/step grading, and medal
+    comparison.
+  legend: >-
+    Seven of 13 exams provide official marking schemes and four allow multiple official solutions; the other six use the
+    answer-level path. Every extracted question-answer pair is manually checked.
 nodes:
-  - id: exam
-    label: Exam PDFs
-    type: document
+  - id: select
+    label: |-
+      Select Recent Physics Olympiads
+      Seven Influential Competitions in 2024-2025
+      Require Available Human Scores
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: extract
-    label: PDF Extract
+      'y': 420
+  - id: source
+    label: |-
+      Collect 13 Official Exam Papers
+      Problem PDFs · Official Answers
+      Medal Scorelines for Every Exam
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 420
+  - id: ocr
+    label: |-
+      Extract PDFs with OCR Tools
+      Reflow Text into Editable Markdown
+      Preserve LaTeX Physical Expressions
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
+      x: 640
+      'y': 420
   - id: match
-    label: QA Matching
+    label: |-
+      Match Questions to Answers
+      Align Indices and Numbering Patterns
+      Associate Required Figures and Exam Context
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 940
+      'y': 420
   - id: verify
-    label: Human Verify
+    label: |-
+      Manually Verify Every QA Pair
+      Experts Fix OCR Errors and Mismatches
+      Validate Answers against Original Exams
     type: user
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: rubric
-    label: Rubrics
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: subq
-    label: Subquestions
-    type: document
-    size: xl
-    position:
       x: 1240
+      'y': 420
+  - id: marking
+    label: |-
+      Structure Official Marking Schemes
+      Seven Exams Provide Step-level Criteria
+      Convert Criteria to Model-readable Rubrics
+    type: document
+    size: xl
+    position:
+      x: 1540
       'y': 160
-  - id: answers
-    label: Model Answers
+  - id: refine
+    label: |-
+      Refine Verified Problems
+      Complete Context · Structure Subquestions
+      Specify Required Units without Easier Content
     type: process
     size: xl
     position:
-      x: 1480
+      x: 1540
+      'y': 680
+  - id: annotate
+    label: |-
+      Add Fine-grained Annotations
+      Five Physics Fields · Four Modality Types
+      Six Answer Types · Three Difficulty Levels
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 420
+  - id: benchmark
+    label: |-
+      Release Unified HiPhO JSON
+      360 Problems · 519 Subquestions
+      308 English + 52 Chinese Problems
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 420
+  - id: model
+    label: |-
+      Generate Complete Model Solutions
+      Text-only or Text-plus-figure Input
+      Preserve Ordered Subquestion Answers
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 420
+  - id: answer_grade
+    label: |-
+      Perform Answer-level Grading
+      Rule-based Math Verifier First
+      Strong Model Reviews Failed Equivalent Matches
+    type: process
+    size: xl
+    position:
+      x: 2740
       'y': 160
+  - id: route
+    label: |-
+      Is a Marking Scheme Available?
+      Seven Exams = Step-level Path
+      Six Exams = Answer-level-only Path
+    type: decision
+    size: xl
+    position:
+      x: 2740
+      'y': 680
+  - id: step_grade
+    label: |-
+      Award Step-level Partial Credit
+      Strong Model Checks Each Official Marking Point
+      Four Multi-solution Exams Take Best Scheme
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 500
+  - id: answer_only
+    label: |-
+      Use Answer-level Result Only
+      Apply to Six Exams without Marking Schemes
+      Correct Final Answer Receives Full Credit
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 820
+  - id: problem_score
+    label: |-
+      Compute Each Problem Score
+      Correct Final Answer = Full Credit
+      Otherwise Preserve Earned Intermediate Steps
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 420
   - id: medal
-    label: Medal Scores
+    label: |-
+      Report Exam Scores and Medals
+      Sum Problem Scores for Each of 13 Exams
+      Map to Official Gold · Silver · Bronze Cutoffs
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 3640
+      'y': 420
 edges:
-  - from: exam
-    to: extract
+  - from: select
+    to: source
     type: primary
-  - from: extract
+  - from: source
+    to: ocr
+    type: primary
+  - from: ocr
     to: match
     type: primary
   - from: match
     to: verify
     type: primary
   - from: verify
-    to: rubric
+    to: marking
+    type: secondary
+  - from: verify
+    to: refine
     type: primary
-  - from: rubric
-    to: subq
+  - from: marking
+    to: annotate
+    type: secondary
+  - from: refine
+    to: annotate
     type: primary
-  - from: subq
-    to: answers
+  - from: annotate
+    to: benchmark
     type: primary
-  - from: answers
+  - from: benchmark
+    to: model
+    type: primary
+  - from: model
+    to: answer_grade
+    type: primary
+  - from: model
+    to: route
+    type: secondary
+  - from: route
+    to: step_grade
+    type: primary
+  - from: route
+    to: answer_only
+    type: secondary
+  - from: answer_grade
+    to: problem_score
+    type: primary
+  - from: step_grade
+    to: problem_score
+    type: primary
+  - from: answer_only
+    to: problem_score
+    type: secondary
+  - from: problem_score
     to: medal
     type: primary
 modules: []

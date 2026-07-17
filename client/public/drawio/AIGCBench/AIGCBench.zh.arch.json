@@ -1,107 +1,143 @@
 {
   "version": 1,
-  "title": "AIGCBench 构建流程",
+  "title": "AIGCBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "真实数据对",
+      "id": "webvid",
+      "label": "参考视频-文本分支\n从 WebVid10M 验证集按视频子类型\n采样 1,000 对数据",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "文本组合器",
+      "id": "laion",
+      "label": "无参考图像-文本分支\n从 LAION-Aesthetics 随机采样 925 对\n支持无需参考视频的指标",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompts",
+      "label": "合成提示分支\n组合主体 • 行为 • 背景 • 图像风格\n随机生成 3,000 条模板提示",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "GPT-4扩写",
+      "id": "enrich",
+      "label": "使用 GPT-4 扩写提示\n让内容更加生动、丰富\n保留四部分语义组合",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "SDXL生成筛选",
+      "id": "generate",
+      "label": "生成并筛选图像\nSDXL Base • 1280×720 • 16:9\nT2I-CompBench 指标筛出前 2,003 对",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "3928个样本",
-      "type": "document",
+      "id": "release",
+      "label": "汇总 AIGCBench\n1,000 + 925 + 2,003 = 3,928 个样本\n同时支持参考视频与无参考评测",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "图生视频模型",
+      "id": "i2v",
+      "label": "运行图生视频模型\n输入每个控制图像及对应文本\n生成候选视频",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "11项指标",
+      "id": "normalize",
+      "label": "统一视频输入\n除特别说明外均取前 16 帧\n需要时从参考视频采样 4 个关键帧",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "人工验证",
+      "id": "metrics",
+      "label": "计算 4 个维度的 11 项指标\n控制-视频对齐 • 运动效果\n时序一致性 • 视频质量",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "AIGCBench 指标报告\n参考式 / 无参考 CLIP 与 SSIM • MSE • RAFT 光流\n相邻帧一致性 • 帧数 • DOVER",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "human",
+      "label": "通过用户研究验证评测标准\n42 人 • 5 种方法各采样 30 个结果\n在相同四个维度上投票选优",
+      "type": "user",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "webvid",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "laion",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "prompts",
+      "to": "enrich",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "enrich",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "generate",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "release",
+      "to": "i2v",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "i2v",
+      "to": "normalize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "normalize",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "metrics",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "report",
+      "to": "human",
       "type": "primary"
     }
   ],

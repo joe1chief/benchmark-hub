@@ -7,57 +7,87 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 13,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
       "id": "source",
-      "label": "Crowd prompt source\n200k Chatbot Arena prompts\nconfigurable live data",
+      "label": "Chatbot Arena Pool\n200,000 Prompts",
       "type": "database",
-      "size": "xl"
+      "size": "large"
     },
     {
       "id": "cleanup",
-      "label": "Initial filtering\nremove duplicates\nmulti-turn and non-English",
+      "label": "Initial Filtering\nDedup / Single-turn / English",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "clustering",
-      "label": "Topic modeling\nembeddings, UMAP, HDBSCAN\n4000 topic clusters",
+      "id": "topics",
+      "label": "BERTopic Pipeline\nEmbed → UMAP → HDBSCAN\n4,000 Topics",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "quality",
-      "label": "GPT-4-Turbo scoring\nseven prompt qualities\nprompt and cluster scores",
-      "type": "decision",
-      "size": "xl"
+      "label": "GPT-4-Turbo Labels\nSeven Quality Indicators",
+      "type": "process",
+      "size": "large"
     },
     {
-      "id": "sampling",
-      "label": "High-quality sampling\nscore >=6, cluster mean >=5\n250 clusters x 2 prompts",
+      "id": "gate",
+      "label": "Quality Gates\nPrompt ≥ 6\nCluster Mean ≥ 5",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "label_audit",
+      "label": "Label Audit: 200 Queries\n3-model Majority Vote\n85.6% Agreement",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "sample",
+      "label": "Diverse Sampling\n250 Clusters × 2",
+      "type": "process",
+      "size": "large"
+    },
+    {
       "id": "safety",
-      "label": "Final cleanup\nremove PII and offensive text\n500 challenging prompts",
+      "label": "Safety Cleanup\nRemove PII / Offensive Text",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "dataset",
+      "label": "Arena-Hard-Auto\n500 Hard Prompts",
+      "type": "database",
+      "size": "large"
+    },
+    {
+      "id": "responses",
+      "label": "Candidate vs Baseline\nResponses for 500 Prompts",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "judge",
+      "label": "Pairwise LLM Judge\nCoT + Position Swap\n1,000 Judgments / Model",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judging",
-      "label": "Pairwise judge games\nbaseline model comparison\nCoT and position swap",
-      "type": "terminal",
+      "id": "bt",
+      "label": "Bradley-Terry Fit\nWin Rate + 95% CI\nOptional Style Controls",
+      "type": "formula",
       "size": "xl"
     },
     {
-      "id": "scores",
-      "label": "Benchmark quality report\n1000 judgments per model\nBT scores and CI",
-      "type": "database",
+      "id": "report",
+      "label": "Benchmark Validation\nSeparability / Agreement\nBrier + Human Alignment",
+      "type": "terminal",
       "size": "xl"
     }
   ],
@@ -71,52 +101,68 @@
     {
       "id": "edge-2",
       "from": "cleanup",
-      "to": "clustering",
+      "to": "topics",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "clustering",
+      "from": "topics",
       "to": "quality",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "quality",
-      "to": "sampling",
+      "to": "gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "sampling",
-      "to": "safety",
-      "type": "primary"
+      "from": "quality",
+      "to": "label_audit",
+      "type": "optional"
     },
     {
       "id": "edge-6",
-      "from": "safety",
-      "to": "judging",
+      "from": "gate",
+      "to": "sample",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "judging",
-      "to": "scores",
+      "from": "sample",
+      "to": "safety",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "scores",
-      "to": "quality",
-      "type": "optional",
-      "label": "200-query label validation"
+      "from": "safety",
+      "to": "dataset",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "scores",
-      "to": "source",
-      "type": "optional",
-      "label": "human-preference alignment"
+      "from": "dataset",
+      "to": "responses",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "responses",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "judge",
+      "to": "bt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "bt",
+      "to": "report",
+      "type": "primary"
     }
   ],
   "modules": []

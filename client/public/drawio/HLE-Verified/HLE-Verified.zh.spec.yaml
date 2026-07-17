@@ -5,75 +5,188 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HLE-Verified 构建流程
-  description: 对齐论文的 HLE-Verified 流程：从原始 HLE 到组件级验证、修复、不确定标注和准确率复评。
-  legend: 实线箭头表示原始 HLE 输入、组件验证、专家/模型证据、修复、裁决和 verified 评测。
+  description: 按当前论文呈现 HLE-Verified 的两阶段验证、修复、发布和对比评测流程。
+  legend: 668 个未修改金集绕过第二阶段；可修复条目进入下分支，最终裁决得到 1,143 个修订条目或 689 个有记录的不确定条目，三者互不重叠。
 nodes:
-  - id: hle
-    label: 原始HLE
+  - id: raw
+    label: |-
+      从原始 HLE 全部 2,500 题出发
+      保留题目、图像、答案和解析
+      审计发布后的基准噪声
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 300
   - id: components
-    label: 三类组件
+    label: |-
+      将每题拆为三类组件
+      题目（含图片）· 最终答案
+      解析作为辅助一致性信号
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 300
+  - id: experts
+    label: |-
+      收集独立领域专家判断
+      对题目和答案做二元有效性验证
+      诊断解析不一致和歧义
+    type: process
+    size: xl
+    position:
+      x: 680
+      'y': 80
+  - id: models
+    label: |-
+      加入第一阶段模型辅助证据
+      多前沿模型 pass@8 复核
+      归一化答案并检查语义等价
+    type: process
+    size: xl
+    position:
+      x: 680
+      'y': 520
   - id: stage1
-    label: 一阶段验证
+    label: |-
+      由内部专家保守裁决
+      要求题目和答案均有效
+      排除高风险歧义且不修改内容
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 1020
+      'y': 300
   - id: gold
-    label: 668金集
+    label: |-
+      保留 668 个金集条目
+      按原始发布内容验证通过
+      不做实质修改
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1360
+      'y': 80
   - id: stage2
-    label: 双轨修复
+    label: |-
+      将有缺陷但可修复项送入第二阶段
+      保持原始评测目标不变
+      聚焦可独立裁决的领域
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: adjudicate
-    label: 专家裁决
+      x: 1360
+      'y': 520
+  - id: repairs
+    label: |-
+      获取两组独立专家修复
+      题目修复 → 解析修复 → 答案修复
+      附变更说明；模型仅提供辅助方案
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 520
+  - id: final
+    label: |-
+      执行最终专家裁决
+      选择或综合成规范修复版本
+      要求正确且仅做必要最小修改
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 验证准确率
+      x: 2040
+      'y': 520
+  - id: revised
+    label: |-
+      认证 1,143 个修订条目
+      重新验证其评测适用性
+      记录修改组件和错误类型
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 520
+  - id: uncertain
+    label: |-
+      保留 689 个不确定条目
+      记录不确定性来源
+      标注仍需哪类专家知识
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 760
+  - id: release
+    label: |-
+      发布三个互斥的认知状态子集
+      668 金集 · 1,143 修订 · 689 不确定
+      含轨迹、裁决说明和 19 类缺陷
+    type: database
+    size: xl
+    position:
+      x: 2720
+      'y': 520
+  - id: evaluate
+    label: |-
+      对比原始 HLE 与 HLE-Verified
+      完整集及修改题目/答案的子集
+      报告准确率与校准误差
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3060
+      'y': 520
 edges:
-  - from: hle
+  - from: raw
     to: components
     type: primary
   - from: components
+    to: experts
+    type: primary
+  - from: components
+    to: models
+    type: primary
+  - from: experts
+    to: stage1
+    type: primary
+  - from: models
     to: stage1
     type: primary
   - from: stage1
     to: gold
     type: primary
-  - from: gold
+  - from: stage1
     to: stage2
     type: primary
   - from: stage2
-    to: adjudicate
+    to: repairs
     type: primary
-  - from: adjudicate
-    to: score
+  - from: repairs
+    to: final
+    type: primary
+  - from: final
+    to: revised
+    type: primary
+  - from: final
+    to: uncertain
+    type: primary
+  - from: gold
+    to: release
+    type: primary
+    waypoints:
+      - x: 2720
+        'y': 80
+      - x: 2720
+        'y': 440
+  - from: revised
+    to: release
+    type: primary
+  - from: uncertain
+    to: release
+    type: primary
+  - from: release
+    to: evaluate
     type: primary
 modules: []

@@ -5,105 +5,167 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMMMU Build Process
-  description: Paper-aligned construction and evaluation workflow for CMMMU, based on arXiv:2401.11944.
-  legend: Solid arrows show the data pipeline; dashed arrows mark manual quality-control filters.
+  description: >-
+    Paper-aligned construction and evaluation of CMMMU. Organizers and educated annotators curate college-level Chinese
+    multimodal questions from license-compliant sources, apply expert and contamination filters, balance sparse fields,
+    and release a 12K benchmark scored by rule-based answer extraction and micro-average accuracy.
+  legend: Solid arrows trace source curation, three quality gates, release, and evaluation.
 nodes:
-  - id: sources
-    label: |-
-      Sources
-      20+
-    type: document
+  - id: source_plan
+    label: License-Compliant Websites and Books; At Least 20 Sources per Subject
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: annotators
-    label: Annotators
+      'y': 170
+  - id: organizers
+    label: Paper Organizers Gather Candidate Materials
     type: user
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filters
-    label: Img filters
-    type: decision
+      'y': 170
+  - id: annotators
+    label: Undergraduate-or-Higher Annotators Create Multimodal Questions
+    type: user
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: balance
-    label: Balance
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: authorqc
-    label: Author QC
+      'y': 170
+  - id: item_filter
+    label: Initial Item Filters
     type: decision
     size: xl
     position:
       x: 820
-      'y': 250
-  - id: contamination
-    label: Leakage QC
+      'y': 170
+  - id: balance
+    label: Organizers Supplement Sparse Subjects
     type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: dataset
-    label: |-
-      CMMMU
-      12K
-    type: database
+      'y': 60
+  - id: author_qc
+    label: Author Verification
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 280
+  - id: difficulty_filter
+    label: College-Level Answer Gate
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: image_types
-    label: 39 images
+      'y': 170
+  - id: contamination
+    label: Drop Items Solved without OCR by GPT-4, Qwen, DeepSeek and Yi
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 170
+  - id: benchmark
+    label: 'CMMMU: 12K Questions, 6 Disciplines, Over 30 Subjects'
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 170
+  - id: metadata
+    label: 39 Image Types, Subfield Metadata and Multiple Question Formats
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 70
-  - id: eval
-    label: Rule eval
+      x: 2120
+      'y': 60
+  - id: model_input
+    label: Present Chinese Question, Options and Associated Image
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 280
+  - id: extraction
+    label: Rule-Based Answer Extraction across Question Formats
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 280
+  - id: accuracy
+    label: Micro-Average Accuracy
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 170
+  - id: error_analysis
+    label: Analyze 150 GPT-4V Errors, 5 per Subject
+    type: user
+    size: xl
+    position:
+      x: 2640
+      'y': 340
+  - id: report
+    label: Discipline, Image-Type and Error Analysis Report
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 250
+      x: 2900
+      'y': 170
 edges:
-  - from: sources
+  - from: source_plan
+    to: organizers
+    type: primary
+  - from: organizers
     to: annotators
     type: primary
   - from: annotators
-    to: filters
+    to: item_filter
     type: primary
-  - from: filters
+  - from: item_filter
     to: balance
-    type: data
-    label: sparse topics
-  - from: filters
-    to: authorqc
+    type: primary
+  - from: item_filter
+    to: author_qc
     type: primary
   - from: balance
-    to: authorqc
+    to: difficulty_filter
     type: primary
-  - from: authorqc
+  - from: author_qc
+    to: difficulty_filter
+    type: primary
+  - from: difficulty_filter
     to: contamination
     type: primary
-    label: verified items
   - from: contamination
-    to: dataset
+    to: benchmark
     type: primary
-  - from: dataset
-    to: image_types
-    type: data
-    label: metadata
-  - from: dataset
-    to: eval
+  - from: benchmark
+    to: metadata
+    type: primary
+  - from: benchmark
+    to: model_input
+    type: primary
+  - from: model_input
+    to: extraction
+    type: primary
+  - from: extraction
+    to: accuracy
+    type: primary
+  - from: accuracy
+    to: error_analysis
+    type: primary
+  - from: metadata
+    to: report
+    type: primary
+  - from: accuracy
+    to: report
+    type: primary
+  - from: error_analysis
+    to: report
     type: primary
 modules: []

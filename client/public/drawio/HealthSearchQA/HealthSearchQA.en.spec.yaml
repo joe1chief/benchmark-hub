@@ -6,76 +6,183 @@ meta:
   routing: orthogonal
   title: HealthSearchQA Build Process
   description: >-
-    Paper-aligned HealthSearchQA pipeline from medical seed terms and search-engine query retrieval to consumer health
-    questions and clinician/lay human evaluation as part of MultiMedQA.
-  legend: Solid arrows show query curation, open-domain answer generation, human rating axes, and benchmark use.
+    Paper-aligned construction of 3,375 question-only consumer-health queries and the separate MultiMedQA pilot human
+    evaluation, which used 100 HealthSearchQA questions within a 140-question three-dataset sample.
+  legend: >-
+    The open benchmark contains questions, not reference answers. The clinician and lay ratings shown here describe the
+    paper's sampled evaluation study, not annotations attached to all 3,375 questions.
 nodes:
   - id: seeds
-    label: Seed Terms
+    label: |-
+      Define Medical Seed Data
+      Medical Conditions + Associated Symptoms
+      Represent Consumer Health Concerns
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: search
-    label: Search Queries
+      'y': 380
+  - id: retrieve
+    label: |-
+      Retrieve Commonly Searched Questions
+      Public Search-engine-generated Queries
+      Shown to All Users Entering the Seed Terms
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 380
   - id: curate
-    label: 3375 Qs
+    label: |-
+      Curate HealthSearchQA
+      3,375 Common Consumer Medical Questions
+      English · Open Domain · Question Only
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: response
-    label: Free Answer
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: axes
-    label: Clinician Axes
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: rating
-    label: Human Rating
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 640
+      'y': 380
   - id: suite
-    label: MultiMedQA
+    label: |-
+      Add as MultiMedQA's Seventh Dataset
+      Free-text Response Format
+      No Reference Answer Used for Automatic Accuracy
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 380
+  - id: framework
+    label: |-
+      Design Human-evaluation Framework
+      Clinician Focus Groups in UK · US · India
+      Add Consensus · Harm · Completeness · Bias
+    type: user
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: pilot
+    label: |-
+      Refine Instructions and Scales
+      Three Clinicians Rate 25 Tuples per Dataset
+      Iterate until Rating Approaches Converge
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 100
+  - id: sample
+    label: |-
+      Build 140-question Evaluation Sample
+      100 HealthSearchQA + 20 LiveQA
+      + 20 MedicationQA · Disjoint from Tuning
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 660
+  - id: answers
+    label: |-
+      Produce Three Answer Sets
+      Qualified Clinician References
+      Flan-PaLM + Med-PaLM Responses
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 660
+  - id: blind
+    label: |-
+      Blind Answer Provenance
+      One Clinician Rates Each Answer
+      Pool of 9 Clinicians across US · UK · India
+    type: user
+    size: xl
+    position:
+      x: 1840
+      'y': 380
+  - id: clinician_axes
+    label: |-
+      Apply 12 Clinician Axes
+      Consensus · Harm Severity / Likelihood
+      Correct / Incorrect Understanding · Recall · Reasoning
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 180
+  - id: content_axes
+    label: |-
+      Check Response Content
+      Inappropriate / Incorrect · Missing Content
+      Potential Demographic Bias
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 180
+  - id: lay
+    label: |-
+      Add Lay-user Utility Ratings
+      Five Non-medical Raters in India
+      Intent · Helpfulness · Actionability
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 620
+  - id: statistics
+    label: |-
+      Report Human-evaluation Results
+      100 Non-parametric Bootstrap Replicas
+      95% Bootstrap Percentile Intervals
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2740
+      'y': 380
 edges:
   - from: seeds
-    to: search
+    to: retrieve
     type: primary
-  - from: search
+  - from: retrieve
     to: curate
     type: primary
   - from: curate
-    to: response
-    type: primary
-  - from: response
-    to: axes
-    type: primary
-  - from: axes
-    to: rating
-    type: primary
-  - from: rating
     to: suite
     type: primary
+  - from: suite
+    to: framework
+    type: secondary
+  - from: framework
+    to: pilot
+    type: primary
+  - from: suite
+    to: sample
+    type: primary
+  - from: sample
+    to: answers
+    type: primary
+  - from: pilot
+    to: blind
+    type: secondary
+  - from: answers
+    to: blind
+    type: primary
+  - from: blind
+    to: clinician_axes
+    type: primary
+  - from: clinician_axes
+    to: content_axes
+    type: primary
+  - from: blind
+    to: lay
+    type: secondary
+  - from: content_axes
+    to: statistics
+    type: primary
+  - from: lay
+    to: statistics
+    type: secondary
 modules: []

@@ -1,0 +1,202 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: TruthfulQA 构建流程
+  description: 论文对齐的 TruthfulQA 流程：作者对抗性编写常见误解问题，合并 437 道经 GPT-3 筛选题与 380 道基于经验的未筛题， 添加真假参考答案和来源并做外部验证，再评测零样本生成任务与基于似然的多项选择任务。
+  legend: 实线箭头表示基准构建、外部验证以及生成与多项选择两条评测支路。
+nodes:
+  - id: authors
+    label: |-
+      作者编写问题
+      针对人类常见误解
+      覆盖 38 个类别
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: adversarial
+    label: |-
+      对抗性设计
+      诱发模仿性虚假回答
+    type: process
+    size: large
+    position:
+      x: 300
+      'y': 240
+  - id: filtered_probe
+    label: |-
+      GPT-3-175B 探测
+      多次非零温随机采样
+      删除持续答对的问题
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 60
+  - id: filtered
+    label: |-
+      已筛集合
+      437 道问题
+    type: document
+    size: large
+    position:
+      x: 820
+      'y': 60
+  - id: unfiltered
+    label: |-
+      基于经验继续编写
+      不经目标模型测试
+      380 道未筛问题
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 420
+  - id: dataset
+    label: |-
+      TruthfulQA 测试集
+      817 题 / 38 个类别
+      仅限真实零样本设置
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 240
+  - id: references
+    label: |-
+      每题证据
+      真假参考答案集合
+      可靠公开来源
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 240
+  - id: external_validation
+    label: |-
+      外部验证
+      100 题标签复核：7% 分歧
+      250 题人类基线
+    type: user
+    size: xl
+    position:
+      x: 1600
+      'y': 240
+  - id: zero_shot
+    label: |-
+      真实零样本模型评测
+      无样例；不调参
+    type: process
+    size: large
+    position:
+      x: 1860
+      'y': 240
+  - id: generation
+    label: |-
+      生成任务
+      输出完整句子答案
+      贪心解码（T=0）
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 60
+  - id: gen_judges
+    label: |-
+      人工标签 + GPT 判分器
+      真实性 / 信息量
+      6.9K 参考 + 15.5K 模型输出
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 60
+  - id: generation_scores
+    label: |-
+      生成任务得分
+      真实比例 / 有信息比例
+      GPT-judge / GPT-info
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: multiple_choice
+    label: |-
+      多项选择任务
+      真假参考答案作为选项
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 420
+  - id: likelihood
+    label: |-
+      为每个选项打分
+      条件似然
+      在全部参考答案上归一化
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 420
+  - id: mc_score
+    label: |-
+      多选真实性
+      真实答案的总概率
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 420
+edges:
+  - from: authors
+    to: adversarial
+    type: primary
+  - from: adversarial
+    to: filtered_probe
+    type: primary
+  - from: filtered_probe
+    to: filtered
+    type: primary
+  - from: adversarial
+    to: unfiltered
+    type: primary
+  - from: filtered
+    to: dataset
+    type: primary
+  - from: unfiltered
+    to: dataset
+    type: primary
+  - from: dataset
+    to: references
+    type: primary
+  - from: references
+    to: external_validation
+    type: primary
+  - from: external_validation
+    to: zero_shot
+    type: primary
+  - from: zero_shot
+    to: generation
+    type: primary
+  - from: zero_shot
+    to: multiple_choice
+    type: primary
+  - from: generation
+    to: gen_judges
+    type: primary
+  - from: gen_judges
+    to: generation_scores
+    type: primary
+  - from: multiple_choice
+    to: likelihood
+    type: primary
+  - from: likelihood
+    to: mc_score
+    type: primary
+modules: []

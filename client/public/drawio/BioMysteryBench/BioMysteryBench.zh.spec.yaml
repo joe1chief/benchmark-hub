@@ -5,95 +5,167 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BioMysteryBench 构建流程
-  description: 基于 Anthropic Claude Opus 4.6 system card 中 BioMysteryBench 段落对齐：模型获得未处理的生物数据集， 使用计算生物学和生信工具，推断隐藏的生物扰动或感染，并与真值比较计分。
-  legend: 实线表示模型面对的分析流程；虚线表示工具和隐藏真值支持。
+  description: 按官方方法构建与评估 99 道客观生物信息学谜题：从真实而嘈杂的组学数据出发，经验证 notebook、专家人类基线、 与方法无关的最终答案评分，并分别报告人类可解与人类困难子集。
+  legend: 实线表示任务构建与评测，虚线表示验证或专家质检证据进入发布基准。
 nodes:
   - id: raw_data
-    label: 组学
+    label: |-
+      收集原始或最小处理的组学数据
+      WGS • RNA-seq • scRNA-seq • 甲基化 • ChIP-seq
+      宏基因组 • Hi-C • 蛋白组 • 代谢组
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: mysteries
-    label: 谜题
+      'y': 220
+  - id: experts
+    label: |-
+      领域专家编写科研谜题
+      覆盖不同生物信息学方向
+      使用真实实验或临床数据
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 220
+  - id: objective_truth
+    label: |-
+      把答案锚定到客观真值
+      可控数据属性或正交验证元数据
+      避免主观科研结论
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: validation
+    label: |-
+      提交验证 Notebook
+      证明所需信号确实存在于数据
+      验证可以比从零发现更容易
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: package
+    label: |-
+      封装每道题
+      问题 • 匿名数据包 • 答案 rubric
+      允许访问的网络域名与数据使用条款
     type: document
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: tools
-    label: 工具
+      x: 880
+      'y': 220
+  - id: human_trials
+    label: |-
+      最多五位领域专家从零作答
+      至少一人答对即标为人类可解
+      无人答对的题进入额外质检
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: hard_qc
+    label: |-
+      复核所有人类未解题
+      基准人员与额外专家检查有效性
+      移除四道畸形或损坏问题
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: process_data
-    label: 处理
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 250
-  - id: analysis
-    label: 分析
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: hypothesis
-    label: 假设
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: answer
-    label: 答案
-    type: terminal
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: truth
-    label: 真值
+      x: 1440
+      'y': 40
+  - id: release
+    label: |-
+      发布 99 道 BioMysteryBench 问题
+      76 道人类可解 • 23 道人类困难
+      完整数据约 159 GB • 题面材料 CC BY 4.0
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: score
-    label: 计分
+      x: 1440
+      'y': 220
+  - id: environment
+    label: |-
+      准备生物信息学容器
+      最小标准工具 • 可用 pip 与 conda 安装
+      可访问 NCBI、Ensembl 等批准数据库
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: solve
+    label: |-
+      Agent 执行端到端分析
+      交替进行计算分析与生物学推理
+      可选择任意有效分析路线
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 220
+  - id: grade
+    label: |-
+      评分最终生物学结论
+      对照客观答案 Rubric 而非限定方法
+      每道题运行五次 episode
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 220
+  - id: report
+    label: |-
+      报告准确率与解题一致性
+      分开统计 76 道可解与 23 道困难题
+      题内 Bootstrap 并展示 0/5 至 5/5 次数
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 70
+      x: 2560
+      'y': 220
 edges:
   - from: raw_data
-    to: mysteries
+    to: experts
     type: primary
-  - from: mysteries
-    to: process_data
+  - from: experts
+    to: objective_truth
     type: primary
-  - from: tools
-    to: process_data
+  - from: objective_truth
+    to: validation
+    type: primary
+  - from: objective_truth
+    to: package
+    type: primary
+  - from: validation
+    to: package
     type: data
-  - from: process_data
-    to: analysis
+  - from: package
+    to: human_trials
     type: primary
-  - from: analysis
-    to: hypothesis
+  - from: human_trials
+    to: hard_qc
     type: primary
-  - from: hypothesis
-    to: answer
-    type: primary
-  - from: answer
-    to: score
-    type: primary
-  - from: truth
-    to: score
+  - from: hard_qc
+    to: release
     type: data
+  - from: package
+    to: release
+    type: primary
+  - from: release
+    to: environment
+    type: primary
+  - from: environment
+    to: solve
+    type: primary
+  - from: solve
+    to: grade
+    type: primary
+  - from: grade
+    to: report
+    type: primary
 modules: []

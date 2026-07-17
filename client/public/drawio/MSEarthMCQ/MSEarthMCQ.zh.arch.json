@@ -1,0 +1,218 @@
+{
+  "version": 1,
+  "title": "MSEarthMCQ 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 15,
+    "edges": 17,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "papers",
+      "label": "收集地球科学论文\n超过 40 万份 PDF\n覆盖五大地球圈层\n来源为学术论文",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "解析并分类论文\n用 MinerU 将 PDF 转为 JSON\n摘要匹配圈层关键词\n分配学科类别",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter",
+      "label": "筛选科学图像\n使用 Qwen2.5-VL-72B\n要求与地球科学相关\n保留约 8.3 万篇论文",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "align",
+      "label": "对齐图像与图注\n提取 MinerU 图像资产\n用正则检测图号\n匹配正文中的图像引用",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "context",
+      "label": "抽取支持性上下文\n保留引用目标图的段落\n要求段落超过两个句子\n保留 64,560 篇论文",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "refine",
+      "label": "生成精炼图注\n输入图像与原始图注\n加入论文上下文推理\n使用 GPT-4o",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "生成候选选择题\n输入图像与两种图注\n使用 GPT-4o\n以论文证据约束问答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "phase_a",
+      "label": "阶段 A 投票结果？\n原始图注\n五个 MLLM",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "phase_b",
+      "label": "阶段 B：正确率 >60%？\n精炼图注\n同一组五个 MLLM",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "phase_c",
+      "label": "阶段 C：正确率 >60%？\n精炼图注\n三个 70B+ MLLM",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "sample",
+      "label": "抽取 MCQ 基准样本\n阶段 A 抽取 900 题\n阶段 B 1,800 · C 300\n形成 3,000 道候选题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "expert",
+      "label": "由地球科学专家验证\n要求具备硕士背景\n检查完整性与答案正确性\n移除 216 道无效题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "发布 MSEarthMCQ\n2,784 道图像落地选择题\n发现题 2,117 · 感知题 667\n单图 1,255 · 多图 1,529",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "执行准确率评测\n使用结构化选择题提示\n以正则抽取预测选项\n与标准选项进行比较",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "discard",
+      "label": "丢弃候选题\n过于简单或存在缺陷",
+      "type": "loss",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "papers",
+      "to": "parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "parse",
+      "to": "filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "filter",
+      "to": "align",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "align",
+      "to": "context",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "context",
+      "to": "refine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "refine",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "generate",
+      "to": "phase_a",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "phase_a",
+      "to": "phase_b",
+      "type": "primary",
+      "label": "错误 >40% · 继续分析"
+    },
+    {
+      "id": "edge-9",
+      "from": "phase_b",
+      "to": "phase_c",
+      "type": "primary",
+      "label": "正确 ≤60% · 继续分析"
+    },
+    {
+      "id": "edge-10",
+      "from": "phase_c",
+      "to": "sample",
+      "type": "primary",
+      "label": "正确 >60% · 困难问答"
+    },
+    {
+      "id": "edge-11",
+      "from": "sample",
+      "to": "expert",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "expert",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "release",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "phase_a",
+      "to": "discard",
+      "type": "optional",
+      "label": "全部答对 · 过于简单"
+    },
+    {
+      "id": "edge-15",
+      "from": "phase_a",
+      "to": "sample",
+      "type": "primary",
+      "label": "其余 · 简单问答"
+    },
+    {
+      "id": "edge-16",
+      "from": "phase_b",
+      "to": "sample",
+      "type": "primary",
+      "label": "正确 >60% · 专业问答"
+    },
+    {
+      "id": "edge-17",
+      "from": "phase_c",
+      "to": "discard",
+      "type": "optional",
+      "label": "正确 ≤60% · 缺陷题"
+    }
+  ],
+  "modules": []
+}

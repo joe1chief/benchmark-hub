@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "ACPBench Hard 构建流程",
+  "title": "ACPBench Hard 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "domains",
-      "label": "规划领域\n13 个 PDDL 领域\n继承自 ACPBench",
+      "id": "pddl",
+      "label": "生成 PDDL 领域与问题文件\n沿用 ACPBench 的 13 个规划领域\nALFWorld 直接使用现有 PDDL，不运行生成器",
       "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "tasks",
-      "label": "原子规划推理任务\n7 类 ACP 任务\n追加 next action",
-      "type": "process",
       "size": "xl"
     },
     {
       "id": "planner",
-      "label": "符号规划支持\n当前状态作为初始状态\n高质量 planner + 备选 planner",
+      "label": "运行 Top-K / Top-Quality 规划器\n产生多条有效计划\n保留规划任务、当前状态与目标",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "questions",
-      "label": "开放式自然语言问题\n模板化 PDDL 转文本\n生成式答案格式",
-      "type": "document",
+      "id": "sample",
+      "label": "采样计划或中间状态\n按不同任务选择所需材料\n无法确定可达性时跳过该状态",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "answers",
-      "label": "保存符号答案\n可执行动作、状态变化\n计划、事实、landmarks",
-      "type": "database",
+      "id": "symbolic",
+      "label": "生成符号化问题与答案\n适用性 • 推演 • 可达性 • 动作可达性\n验证 • 论证 • 地标 • 下一动作",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "validators",
-      "label": "任务级验证器\n解析模型生成答案\n按任务规则校验正确性",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "model_eval",
-      "label": "LLM 评测\n回答各类生成式任务\n不再提供多选项",
+      "id": "translate",
+      "label": "使用领域模板翻译\nPDDL 事实与动作 → 自然语言\n保留事实、动作、计划、代价及证据集用于判分",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "ACPBench Hard 结果\n按任务统计 accuracy\n诊断规划推理能力",
+      "label": "ACPBench Hard 数据集\nDev：每任务 40 例，共 320 例\nTest：每领域 10 题 × 13 × 8 任务 = 1,040 题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "开放式模型评测\n自然语言上下文 + 任务指令 + 2 个样例\n温度 0 • 最多生成 1,000 token",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "任务专用语法解析器\n提取动作列表、事实列表、计划或序号\n拒绝无法解析或非法的符号",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "选择验证路径？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "stored",
+      "label": "存储值 / 模拟检查\n适用性与推演要求集合完全匹配\n首个无效序号；论证检查真子序列且仍为有效计划",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "solve",
+      "label": "规划器支撑的检查\n可达性 • 动作可达性 • 地标\n下一动作必须使最优目标距离减少 1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "ACPBench Hard 结果\n按任务 / 领域统计二元正确性与准确率\n默认要求完整答案；适用性可附加 Jaccard 分析",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,58 +88,74 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "domains",
-      "to": "tasks",
+      "from": "pddl",
+      "to": "planner",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "domains",
-      "to": "planner",
-      "type": "data"
+      "from": "planner",
+      "to": "sample",
+      "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "tasks",
-      "to": "questions",
+      "from": "sample",
+      "to": "symbolic",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "planner",
-      "to": "questions",
-      "type": "primary",
-      "label": "状态与计划"
+      "from": "symbolic",
+      "to": "translate",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "questions",
-      "to": "answers",
+      "from": "translate",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "answers",
-      "to": "validators",
-      "type": "data"
+      "from": "release",
+      "to": "inference",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "questions",
-      "to": "model_eval",
+      "from": "inference",
+      "to": "parse",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "model_eval",
-      "to": "validators",
-      "type": "primary",
-      "label": "生成答案"
+      "from": "parse",
+      "to": "route",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "validators",
-      "to": "release",
+      "from": "route",
+      "to": "stored",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "route",
+      "to": "solve",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "stored",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "solve",
+      "to": "report",
       "type": "primary"
     }
   ],

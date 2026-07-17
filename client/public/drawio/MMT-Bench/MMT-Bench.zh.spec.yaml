@@ -4,88 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMT-Bench Build Process
-  description: >-
-    Paper-aligned construction of MMT-Bench: gather datasets for task names, normalize metadata, generate multi-choice
-    visual questions, organize a task map, and evaluate LVLM multitask performance.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMT-Bench 构建流程
+  description: 按论文构建覆盖 32 个元任务与 162 个子任务的 31,325 道多模态多选题，再对 32 个 LVLM 执行分层准确率评测与任务地图分析。
+  legend: 候选子任务必须具备基础多模态能力、能挑战现有 LVLM，并且有公开可获取的测试样本。
 nodes:
-  - id: n1
-    label: 任务名称
-    type: document
+  - id: meta
+    label: |-
+      构思元任务
+      由论文合著者提出候选
+      执行去重与重要性筛选
+      保留 32 个元任务
+    type: user
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 网络数据
+      x: 20
+      'y': 40
+  - id: subtasks
+    label: |-
+      将元任务分解为子任务
+      要求属于基础多模态能力
+      要求能挑战当前模型
+      要求具有公开测试样本
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: search
+    label: |-
+      搜索候选数据集
+      Google · Papers With Code
+      Kaggle · ChatGPT
+      评估相关性与可用性
     type: database
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 元数据
+      x: 580
+      'y': 40
+  - id: sample
+    label: |-
+      抽取来源数据
+      每子任务最多 200 个样本
+      执行随机抽样
+      平衡各贡献数据集
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 规则/ChatGPT
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 选择题
+      x: 860
+      'y': 40
+  - id: metadata
+    label: |-
+      构建统一元数据
+      存储多模态输入
+      补充问答所需信息
+      标注能力与视觉提示类型
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 任务地图
+      x: 1140
+      'y': 40
+  - id: mcq
+    label: |-
+      生成多项选择问答
+      使用人工规则或 ChatGPT
+      最多构造八个选项
+      保留唯一标准答案
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 30个LVLM
+      x: 1420
+      'y': 40
+  - id: release
+    label: |-
+      汇总 MMT-Bench
+      共 31,325 道问题
+      32 个元任务 · 162 个子任务
+      13 种输入 · 14 类能力
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: evaluate
+    label: |-
+      评测 32 个公开 LVLM
+      使用 OpenCompass 流程
+      输入任务特定模态
+      生成一个模型回答
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 得分
+      x: 1140
+      'y': 420
+  - id: extract
+    label: |-
+      三阶段抽取答案
+      先读取选项字母
+      再匹配选项内容
+      最后询问 ChatGPT · 失败记 Z
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: score
+    label: |-
+      计算准确率
+      将预测选项与标准答案比较
+      先按子任务汇总
+      再平均为元任务分数
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: vectors
+    label: |-
+      构建 162 个任务向量
+      LoRA 微调 Qwen-VL-Chat
+      每个子任务训练三轮
+      以余弦距离比较向量
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      发布分层任务地图
+      聚类相关子任务
+      比较模型排名
+      报告整体多任务结果
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: meta
+    to: subtasks
     type: primary
-  - from: n2
-    to: n3
+  - from: subtasks
+    to: search
     type: primary
-  - from: n3
-    to: n4
+  - from: search
+    to: sample
     type: primary
-  - from: n4
-    to: n5
+  - from: sample
+    to: metadata
     type: primary
-  - from: n5
-    to: n6
+  - from: metadata
+    to: mcq
     type: primary
-  - from: n6
-    to: n7
+  - from: mcq
+    to: release
     type: primary
-  - from: n7
-    to: n8
+  - from: release
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: extract
+    type: primary
+  - from: extract
+    to: score
+    type: primary
+  - from: score
+    to: vectors
+    type: primary
+  - from: vectors
+    to: report
     type: primary
 modules: []

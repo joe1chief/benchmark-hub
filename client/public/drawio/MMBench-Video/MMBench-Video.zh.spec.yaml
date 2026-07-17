@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMBench-Video 构建流程
-  description: 对齐论文的 MMBench-Video 构建流程：筛选网页长视频，按视频能力体系人工编写问题，用 GPT-4 评审自由回答，并评估 LVLM 长视频理解能力。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文重建 609 个长时多镜头 YouTube 视频上的 1,998 个自由问答对，包括时序必要性过滤与 GPT-4 评分。
+  legend: 随机单帧重复实验用于识别无需时序视频证据即可回答的问题。
 nodes:
-  - id: n1
-    label: 网页视频
+  - id: collect
+    label: |-
+      收集 YouTube 视频
+      覆盖 16 个主要类别
+      保留标题与字幕
+      强调多样网页内容
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 609个视频
+      x: 20
+      'y': 40
+  - id: clips
+    label: |-
+      选择长时多镜头片段
+      去除短于 30 秒的视频
+      问答证据最多来自六分钟
+      保留真实世界主题
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 能力体系
+      x: 300
+      'y': 40
+  - id: taxonomy
+    label: |-
+      定义三级能力体系
+      感知与推理两大类
+      九项二级能力
+      26 项叶子能力
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 人工问答
+      x: 580
+      'y': 40
+  - id: author
+    label: |-
+      人工为每个视频编写多题
+      每题对应一项或多项能力
+      鼓励时序必要问题
+      提供详细标准答案
+    type: user
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: guidelines
+    label: |-
+      执行五项编写准则
+      避免写入明确时间戳
+      使用多样自由表达
+      问题与能力分类对齐
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 开放问题
+      x: 1140
+      'y': 40
+  - id: crosscheck
+    label: |-
+      交叉验证每个问答对
+      检查准确性与准则遵循
+      确认标准答案细节
+      准备时序过滤
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: GPT-4评审
-    type: decision
+      x: 1420
+      'y': 40
+  - id: frames
+    label: |-
+      探测时序必要性
+      随机抽取单帧
+      GPT-4V 用四个种子作答
+      得到四个候选回答
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: LVLM评测
-    type: document
+      x: 1420
+      'y': 420
+  - id: filter
+    label: |-
+      过滤静态问题
+      GPT-4 评分四个回答
+      平均分至少 2.5 即移除
+      共丢弃 246 题
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 视频得分
+      x: 1140
+      'y': 420
+  - id: dataset
+    label: |-
+      汇总 MMBench-Video
+      609 个视频 · 1,998 个问答对
+      平均时长 165.4 秒
+      每个视频平均 32.6 个镜头
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: infer
+    label: |-
+      生成视频模型回答
+      按时间顺序采样多帧
+      可选加入字幕
+      保留自由文本回答
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: judge
+    label: |-
+      使用 GPT-4 评判
+      对比候选与标准答案
+      依据语义内容相似度
+      忽略语法差异
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: score
+    label: |-
+      报告零至三分
+      零分错误 · 三分完全正确
+      汇总整体与各能力得分
+      评估整体视频理解
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: collect
+    to: clips
     type: primary
-  - from: n2
-    to: n3
+  - from: clips
+    to: taxonomy
     type: primary
-  - from: n3
-    to: n4
+  - from: taxonomy
+    to: author
     type: primary
-  - from: n4
-    to: n5
+  - from: author
+    to: guidelines
     type: primary
-  - from: n5
-    to: n6
+  - from: guidelines
+    to: crosscheck
     type: primary
-  - from: n6
-    to: n7
+  - from: crosscheck
+    to: frames
     type: primary
-  - from: n7
-    to: n8
+  - from: frames
+    to: filter
+    type: primary
+  - from: filter
+    to: dataset
+    type: primary
+  - from: dataset
+    to: infer
+    type: primary
+  - from: infer
+    to: judge
+    type: primary
+  - from: judge
+    to: score
     type: primary
 modules: []

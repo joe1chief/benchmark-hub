@@ -5,85 +5,138 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMLU-Pro 构建流程
-  description: 对齐论文的 MMLU-Pro 构建流程：在 MMLU 基础上加入更难的推理题，移除简单/噪声题，选项扩展到十个，并用准确率与提示稳定性分析评估模型。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    依据论文重绘的 MMLU-Pro 流程：把 MMLU 的 57 科合并成 14 领域，并移除被八个筛选模型中超过四个答对的 过易题；加入 STEM Website、TheoremQA 和 SciBench，使用
+    GPT-4-Turbo 抽取短答案、生成干扰项并人工核对 解答；把选项扩展到接近十个；第一阶段专家核对答案正确性与选择题适用性，Gemini-1.5-Pro 再标记可能为正确 答案的假负干扰项供人工定向复核；最终保留 12,032
+    题，以五样本思维链、正则答案抽取和准确率评测。
+  legend: 两类来源在选项扩增前合并，随后进入两阶段专家复核。
 nodes:
-  - id: n1
-    label: MMLU基础
+  - id: mmlu
+    label: 原始MMLU
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 新增来源
+      'y': 100
+  - id: filter
+    label: 八模型过易筛选
     type: process
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 过滤噪声
+      x: 240
+      'y': 100
+  - id: new_sources
+    label: 三个新增来源
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 340
+  - id: extract
+    label: GPT-4抽取与核对
+    type: process
+    size: large
+    position:
+      x: 240
+      'y': 340
+  - id: integrate
+    label: 整合为14领域
+    type: process
+    size: large
+    position:
+      x: 460
+      'y': 220
+  - id: augment
+    label: 扩展至近十选项
+    type: process
+    size: large
+    position:
+      x: 680
+      'y': 220
+  - id: phase1
+    label: 专家第一阶段
+    type: process
+    size: large
+    position:
+      x: 900
+      'y': 220
+  - id: gemini
+    label: Gemini假负扫描
+    type: process
+    size: large
+    position:
+      x: 1120
+      'y': 220
+  - id: phase2
+    label: 人工第二阶段
+    type: process
+    size: large
+    position:
+      x: 1340
+      'y': 220
+  - id: final_set
+    label: 最终12032题
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 14领域
+      x: 1560
+      'y': 220
+  - id: cot
+    label: 五样本思维链
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 10个选项
+      x: 1780
+      'y': 220
+  - id: parse
+    label: 正则抽取A至J
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: CoT评测
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 提示测试
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
+      x: 2000
+      'y': 220
+  - id: score
     label: 准确率
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2220
+      'y': 220
 edges:
-  - from: n1
-    to: n2
+  - from: mmlu
+    to: filter
     type: primary
-  - from: n2
-    to: n3
+  - from: new_sources
+    to: extract
     type: primary
-  - from: n3
-    to: n4
+  - from: filter
+    to: integrate
     type: primary
-  - from: n4
-    to: n5
+  - from: extract
+    to: integrate
     type: primary
-  - from: n5
-    to: n6
+  - from: integrate
+    to: augment
     type: primary
-  - from: n6
-    to: n7
+  - from: augment
+    to: phase1
     type: primary
-  - from: n7
-    to: n8
+  - from: phase1
+    to: gemini
+    type: primary
+  - from: gemini
+    to: phase2
+    type: primary
+  - from: phase2
+    to: final_set
+    type: primary
+  - from: final_set
+    to: cot
+    type: primary
+  - from: cot
+    to: parse
+    type: primary
+  - from: parse
+    to: score
     type: primary
 modules: []

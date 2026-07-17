@@ -4,88 +4,196 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ACEBench Build Process
+  title: ACEBench 构建流程
   description: >-
-    Paper-aligned construction of ACEBench: organize tool-use cases into Normal, Special, and Agent settings, evaluate
-    function calls under incomplete or multi-turn conditions, and analyze fine-grained error causes.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    论文对齐的 ACEBench 流程：LLM 合成稳定 API 与 Normal/Special 对话，专家把真实场景抽象为 Agent 沙箱与问题； 自动和多专家质检产出 2,000
+    条中英文数据，再按三类各自的评分合同评测并以样本数平方根加权汇总。
+  legend: 实线箭头表示自动 Normal/Special 支路、专家 Agent 支路、共享质检及分类评测。
 nodes:
-  - id: n1
-    label: 工具场景
+  - id: api_refs
+    label: |-
+      技术文档
+      真实 API 参考
     type: database
+    size: large
+    position:
+      x: 40
+      'y': 80
+  - id: api_synthesis
+    label: |-
+      自演化 API 上下文树
+      4,538 个合成 API
+      8 大领域 / 68 个子领域
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 80
+  - id: normal_special
+    label: |-
+      LLM 生成 Normal + Special
+      每例选择 3–6 个候选 API
+      模板或三智能体对话
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 80
+  - id: scenarios
+    label: |-
+      真实场景抽象
+      状态变量 + 业务规则
+    type: user
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Normal
+      'y': 440
+  - id: sandbox
+    label: |-
+      专家构建沙箱
+      接口 + 前置条件
+      状态与执行监控
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Special
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Agent
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 函数调用
+      x: 300
+      'y': 440
+  - id: agent_data
+    label: |-
+      专家构建 Agent 数据
+      迭代式问题设计
+      多步 / 多轮
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 规则评测
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 错误类型
+      x: 560
+      'y': 440
+  - id: auto_qc
+    label: |-
+      自动质量检查
+      规则：清晰度 / 可执行性
+      对话准确性 / 数据一致性
+      LLM 验证 + 投票
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
+      x: 840
+      'y': 260
+  - id: triage
+    label: |-
+      人工辅助初筛
+      3 个 LLM 标记错误候选
+    type: process
+    size: xl
+    position:
+      x: 1120
+      'y': 260
+  - id: expert_qc
+    label: |-
+      专家质量循环
+      2 位专家独立审核
+      第 3 位专家汇总修订
+      重评；共 3 轮优化
+    type: user
+    size: xl
+    position:
+      x: 1400
+      'y': 260
+  - id: dataset
+    label: |-
+      ACEBench
+      2,000 条标注数据
+      中英文平行版本
+      Normal / Special / Agent
+    type: database
+    size: xl
+    position:
+      x: 1680
+      'y': 260
+  - id: normal_eval
+    label: |-
+      Normal 评测
+      AST 匹配候选答案
+      精确准确率 0 / 1
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 40
+  - id: special_eval
+    label: |-
+      Special 评测
+      识别参数缺失 / 错误
+      或任务与函数不匹配
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 260
+  - id: agent_eval
+    label: |-
+      Agent 评测
+      GPT-4o 用户模拟器
+      端到端 + 过程准确率
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 480
+  - id: overall
+    label: |-
+      总体准确率
+      分类权重 ∝ √样本数
+      细粒度错误分析
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2240
+      'y': 260
 edges:
-  - from: n1
-    to: n2
+  - from: api_refs
+    to: api_synthesis
     type: primary
-  - from: n2
-    to: n3
+  - from: api_synthesis
+    to: normal_special
     type: primary
-  - from: n3
-    to: n4
+  - from: scenarios
+    to: sandbox
     type: primary
-  - from: n4
-    to: n5
+  - from: sandbox
+    to: agent_data
     type: primary
-  - from: n5
-    to: n6
+  - from: normal_special
+    to: auto_qc
     type: primary
-  - from: n6
-    to: n7
+  - from: agent_data
+    to: auto_qc
     type: primary
-  - from: n7
-    to: n8
+  - from: auto_qc
+    to: triage
+    type: primary
+  - from: triage
+    to: expert_qc
+    type: primary
+  - from: expert_qc
+    to: dataset
+    type: primary
+  - from: dataset
+    to: normal_eval
+    type: primary
+  - from: dataset
+    to: special_eval
+    type: primary
+  - from: dataset
+    to: agent_eval
+    type: primary
+  - from: normal_eval
+    to: overall
+    type: primary
+  - from: special_eval
+    to: overall
+    type: primary
+  - from: agent_eval
+    to: overall
     type: primary
 modules: []

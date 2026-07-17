@@ -1,0 +1,154 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: CommonsenseQA 构建流程
+  description: >-
+    论文对齐的 CommonsenseQA 流程：把筛选后的 ConceptNet 三元组按同一来源、同一关系和三个目标分组，合格众包标注员 编写可区分问题和两类困难干扰项，独立标注员验证质量，最终 12,247
+    道五选一题使用主要随机划分和准确率。
+  legend: 实线箭头表示 ConceptNet 筛选、子图构建、众包问题与干扰项、验证、可选上下文和评测。
+nodes:
+  - id: conceptnet
+    label: |-
+      ConceptNet
+      32M 个常识三元组
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 200
+  - id: filter
+    label: |-
+      过滤通用 / 弱关系边
+      保留 236,208 个 (q, r, a) 三元组
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 200
+  - id: group
+    label: |-
+      按同一来源 q + 关系 r 分组
+      三个语义相近目标
+      约 43K 个问题集
+    type: process
+    size: xl
+    position:
+      x: 540
+      'y': 200
+  - id: questions
+    label: |-
+      AMT 编写问题
+      每组编写 3 题
+      每题一个目标正确
+      避免表面线索
+    type: user
+    size: xl
+    position:
+      x: 800
+      'y': 200
+  - id: worker_gate
+    label: |-
+      出题员质量门
+      至少 75% 的问题通过验证
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 200
+  - id: distractors
+    label: |-
+      加入两个困难干扰项
+      一个同关系 ConceptNet 目标
+      一个由标注员编写的可信选项
+      合计 5 个选项
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 200
+  - id: verification
+    label: |-
+      独立验证标注员
+      每题 2 人验证
+      至少 1 人答对才保留
+      过滤 15%
+    type: user
+    size: xl
+    position:
+      x: 1580
+      'y': 200
+  - id: context
+    label: |-
+      可选 Web 上下文
+      问题 + 每个候选答案查询
+      100 条片段 × 5 个答案
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 200
+  - id: dataset
+    label: |-
+      CommonsenseQA
+      16,242 道初稿 → 12,247 道最终题
+      英文五选一问题
+    type: database
+    size: xl
+    position:
+      x: 2100
+      'y': 200
+  - id: split
+    label: |-
+      主要随机划分
+      训练 80% / 开发 10% / 测试 10%
+      另有概念不重叠划分
+    type: database
+    size: xl
+    position:
+      x: 2360
+      'y': 200
+  - id: score
+    label: |-
+      选择一个答案
+      测试集准确率
+      人类多数票基线
+    type: terminal
+    size: xl
+    position:
+      x: 2620
+      'y': 200
+edges:
+  - from: conceptnet
+    to: filter
+    type: primary
+  - from: filter
+    to: group
+    type: primary
+  - from: group
+    to: questions
+    type: primary
+  - from: questions
+    to: worker_gate
+    type: primary
+  - from: worker_gate
+    to: distractors
+    type: primary
+  - from: distractors
+    to: verification
+    type: primary
+  - from: verification
+    to: context
+    type: primary
+  - from: context
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split
+    type: primary
+  - from: split
+    to: score
+    type: primary
+modules: []

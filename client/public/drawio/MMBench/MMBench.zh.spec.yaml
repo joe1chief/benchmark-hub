@@ -5,85 +5,190 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMBench 构建流程
-  description: 对齐论文的 MMBench 构建流程：按 20 个能力维度收集图像多选题，发布中英文版本，用 CircularEval 和稳健选项抽取进行评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: >-
+    按论文对齐的 MMBench 流程：以感知和推理的三级能力体系指导志愿者从互联网与公开验证集图像采题， 通过两种带人工复核的过滤机制去除纯文本可答和错误样本，形成 3,217 题并制作人工核验的中文版，按 4:6 切分后以
+    CircularEval 和稳健选项抽取计算准确率。
+  legend: 实线表示构建与评测主流程；下方答案路径表示启发式匹配失败后的 GPT-4 回退。
 nodes:
-  - id: n1
-    label: 来源题池
+  - id: l1
+    label: |-
+      一级能力
+      感知与推理
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 20项能力
+      'y': 240
+  - id: taxonomy
+    label: |-
+      6 个二级类别
+      20 个三级能力
     type: process
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 2974题
+      x: 240
+      'y': 240
+  - id: examples
+    label: |-
+      每个三级能力
+      先编 10–20 道示例
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 中英文集
+      x: 440
+      'y': 240
+  - id: volunteers
+    label: |-
+      学生志愿者
+      扩充图像选择题
+    type: user
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: sources
+    label: |-
+      互联网超 80%
+      公开验证集图像约 20%
+    type: database
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: text_filter
+    label: |-
+      多数 LLM 纯文本答对
+      再由人工复核
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 质量控制
+      x: 1040
+      'y': 240
+  - id: wrong_filter
+    label: |-
+      所有 VLM 均答错
+      再由人工复核
     type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 循环评估
-    type: decision
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: 选项抽取
+      'y': 240
+  - id: curated
+    label: |-
+      3,217 道题
+      每项三级能力至少 125 题
+    type: database
+    size: large
+    position:
+      x: 1440
+      'y': 240
+  - id: bilingual
+    label: |-
+      GPT-4 翻译中文版
+      人工核验
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: split
+    label: |-
+      开发集 40%：答案公开
+      测试集 60%：答案保密
     type: document
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
+      x: 1840
+      'y': 240
+  - id: circular
+    label: |-
+      CircularEval
+      N 次循环轮换选项
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 240
+  - id: heuristic
+    label: |-
+      启发式选项
+      是否匹配成功
+    type: decision
+    size: large
+    position:
+      x: 2240
+      'y': 120
+  - id: gpt4
+    label: |-
+      未匹配时
+      GPT-4 抽取选项
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 380
+  - id: all_passes
+    label: |-
+      N 次轮换
+      必须全部答对
+    type: process
+    size: large
+    position:
+      x: 2440
+      'y': 240
+  - id: score
+    label: |-
+      CircularEval
+      Top-1 准确率
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2640
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: l1
+    to: taxonomy
     type: primary
-  - from: n2
-    to: n3
+  - from: taxonomy
+    to: examples
     type: primary
-  - from: n3
-    to: n4
+  - from: examples
+    to: sources
     type: primary
-  - from: n4
-    to: n5
+  - from: sources
+    to: volunteers
     type: primary
-  - from: n5
-    to: n6
+  - from: volunteers
+    to: text_filter
     type: primary
-  - from: n6
-    to: n7
+  - from: text_filter
+    to: wrong_filter
     type: primary
-  - from: n7
-    to: n8
+  - from: wrong_filter
+    to: curated
+    type: primary
+  - from: curated
+    to: bilingual
+    type: primary
+  - from: bilingual
+    to: split
+    type: primary
+  - from: split
+    to: circular
+    type: primary
+  - from: circular
+    to: heuristic
+    type: primary
+  - from: heuristic
+    to: all_passes
+    type: primary
+  - from: heuristic
+    to: gpt4
+    type: data
+  - from: gpt4
+    to: all_passes
+    type: primary
+  - from: all_passes
+    to: score
     type: primary
 modules: []

@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MLVU 构建流程
-  description: 对齐论文的 MLVU 构建流程：收集多类型长视频，组织成九类评估任务，标注全局与局部理解问题，并用于评估多模态模型的长视频理解能力。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按论文重建通用长视频集合、九类任务的人工/数据集改编/合成标注流程、精确开发与测试集发布，以及选择题和生成题的独立评测。
+  legend: MLVU 包含 1,730 个视频和 3,102 个问题，其中开发集 2,593 题、测试集 509 题；开发集选择题为四选一、测试集为六选一， 生成题由 GPT-4 按每类任务两个维度评分。
 nodes:
-  - id: n1
-    label: 长视频来源
+  - id: ulvc
+    label: |-
+      构建通用长视频集合
+      电影 · 电视剧 · 纪录片
+      监控 · 第一视角 · 动画
+      游戏及其他长视频来源
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 类型覆盖
+      x: 20
+      'y': 40
+  - id: prepare
+    label: |-
+      选择 · 编辑 · 合成视频
+      使用完整视频或长片段
+      按需降分辨率或裁剪
+      形成 1,730 个基准视频
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 裁剪处理
+      x: 300
+      'y': 40
+  - id: framework
+    label: |-
+      定义三类长视频理解层级
+      整体 · 使用全局信息
+      单细节 · 一个关键情节
+      多细节 · 联合多处证据
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 九类任务
+      x: 580
+      'y': 40
+  - id: holistic
+    label: |-
+      创建整体理解任务
+      主题推理 · 355
+      异常识别 · 239
+      视频摘要 · 257
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 问答标注
+      x: 860
+      'y': 40
+  - id: single
+    label: |-
+      创建单细节任务
+      针式问答 · 415 · 第一视角推理 · 405
+      情节问答 · 589
+      子场景描述 · 247
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 开发/测试集
-    type: decision
+      x: 1140
+      'y': 40
+  - id: multi
+    label: |-
+      创建多细节任务
+      动作排序 · 329
+      动作计数 · 266
+      合成探针片段与背景视频
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: MLLM评测
+      x: 1420
+      'y': 40
+  - id: annotation
+    label: |-
+      组合多种标注策略
+      人工问题 · 摘要 · 描述
+      改编 UCF-Crime 与 Ego4D
+      GPT-4 辅助针式问答 · 合成动作
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: quality
+    label: |-
+      执行任务专用质量门禁
+      避免答案泄露和音频依赖
+      确认背景中无探针或目标动作
+      使用唯一线索与评分点
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: dataset
+    label: |-
+      汇总 MLVU
+      3,102 个问题 · 九类任务
+      选择题与生成题格式
+      片段级标注
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: split
+    label: |-
+      拆分开发集与测试集
+      开发集 · 2,593 · 四选一
+      测试集 · 509 · 六选一
+      保留每类任务
     type: document
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: LVU得分
+      x: 580
+      'y': 420
+  - id: multiple_choice
+    label: |-
+      评测多项选择任务
+      模型零样本推理
+      均匀抽帧或帧率抽样
+      选项准确率 · M-Avg
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: generation
+    label: |-
+      用 GPT-4 评测生成任务
+      描述 · 准确性与相关性
+      摘要 · 完整性与可靠性
+      平均 0 至 10 分 · G-Avg
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: ulvc
+    to: prepare
     type: primary
-  - from: n2
-    to: n3
+  - from: prepare
+    to: framework
     type: primary
-  - from: n3
-    to: n4
+  - from: framework
+    to: holistic
     type: primary
-  - from: n4
-    to: n5
+  - from: holistic
+    to: single
     type: primary
-  - from: n5
-    to: n6
+  - from: single
+    to: multi
     type: primary
-  - from: n6
-    to: n7
+  - from: multi
+    to: annotation
     type: primary
-  - from: n7
-    to: n8
+  - from: annotation
+    to: quality
+    type: primary
+  - from: quality
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split
+    type: primary
+  - from: split
+    to: multiple_choice
+    type: primary
+  - from: multiple_choice
+    to: generation
     type: primary
 modules: []

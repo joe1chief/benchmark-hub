@@ -4,88 +4,174 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMVP Build Process
-  description: >-
-    Paper-aligned construction of MMVP: mine CLIP-blind image pairs with CLIP and DINOv2 similarity, design paired
-    questions, and score multimodal visual-pattern failures.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMVP 构建流程
+  description: 按论文构建 150 个 CLIP 盲点图像对和 300 道直接问题，再以配对计分评测九类系统性视觉模式上的视觉落地能力。
+  legend: 同一图像对的两道独立问题都回答正确时，该图像对才计为正确。
 nodes:
-  - id: n1
-    label: 图像对
+  - id: corpus
+    label: |-
+      收集图像语料
+      ImageNet-1K
+      LAION-Aesthetics
+      形成候选图像对
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: CLIP嵌入
+      x: 20
+      'y': 40
+  - id: clip
+    label: |-
+      使用 CLIP 编码
+      CLIP ViT-L-14
+      计算成对图像嵌入
+      度量余弦相似度
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: DINO嵌入
+      x: 300
+      'y': 40
+  - id: dino
+    label: |-
+      使用 DINOv2 编码
+      DINOv2 ViT-L-14
+      作为纯视觉参照
+      度量余弦相似度
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 盲点对
-    type: decision
+      x: 580
+      'y': 40
+  - id: filter
+    label: |-
+      应用盲点对筛选
+      CLIP 相似度高于 0.95
+      DINOv2 相似度低于 0.6
+      保留两种表征分歧对
+    type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 人工问题
+      x: 860
+      'y': 40
+  - id: inspect
+    label: |-
+      人工检查图像对
+      定位明显视觉差异
+      识别 CLIP 忽略的细节
+      选择有诊断价值的内容
+    type: user
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: questions
+    label: |-
+      编写配对问题
+      每张图像对应一道问题
+      探测被忽略的视觉细节
+      保持直接且无歧义
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 300题
-    type: document
+      x: 1420
+      'y': 40
+  - id: release
+    label: |-
+      汇总 MMVP-MLLM
+      150 个图像对
+      300 道问题
+      每对包含两道问题
+    type: database
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 配对计分
+      x: 1420
+      'y': 420
+  - id: categorize
+    label: |-
+      归纳系统性失败模式
+      向 GPT-4 提供问题与选项
+      按视觉特征执行分类
+      得到九类模式
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 9类模式
+      x: 1140
+      'y': 420
+  - id: patterns
+    label: |-
+      覆盖九类视觉模式
+      方向 · 存在 · 状态
+      数量 · 位置 · 外观
+      结构 · 文本 · 视角
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: inference
+    label: |-
+      独立询问每道题
+      输入一张图像与问题
+      消除聊天历史偏差
+      每题记录一个回答
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: human
+    label: |-
+      执行人类研究
+      随机呈现全部 300 道题
+      检查问题是否简单直观
+      平均单题准确率 95.7%
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: score
+    label: |-
+      计算配对准确率
+      要求同一对两题全对
+      否则该图像对记零分
+      报告模型与人类差距
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: corpus
+    to: clip
     type: primary
-  - from: n2
-    to: n3
+  - from: clip
+    to: dino
     type: primary
-  - from: n3
-    to: n4
+  - from: dino
+    to: filter
     type: primary
-  - from: n4
-    to: n5
+  - from: filter
+    to: inspect
     type: primary
-  - from: n5
-    to: n6
+  - from: inspect
+    to: questions
     type: primary
-  - from: n6
-    to: n7
+  - from: questions
+    to: release
     type: primary
-  - from: n7
-    to: n8
+  - from: release
+    to: categorize
+    type: primary
+  - from: categorize
+    to: patterns
+    type: primary
+  - from: patterns
+    to: inference
+    type: primary
+  - from: inference
+    to: human
+    type: primary
+  - from: human
+    to: score
     type: primary
 modules: []

@@ -5,95 +5,199 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CG-Bench 构建流程
-  description: 基于论文的 CG-Bench 构建流程：从定义域手动收集长视频，标注问答线索三元组，经迭代质检后发布，并用多选题、白盒线索定位、黑盒线索恢复和线索辅助开放问答评估。
-  legend: 实线箭头表示视频收集、标注、质检、发布和评测流程。
+  description: 按论文构建并评测 1,219 个长视频与 12,129 个问答线索三元组：经过七轮视频复核、多阶段问答难度过滤，标注 14,362 个时间线索区间，并开展长视频、白盒、黑盒和线索辅助开放问答评测。
+  legend: 实线表示构建与评测，虚线表示质量筛选证据。
 nodes:
-  - id: videos
-    label: 长视频
+  - id: collect
+    label: |-
+      人工收集互联网视频
+      时长超过 10 分钟 • 保留音频与字幕
+      避免复用既有学术视频数据集
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: domains
-    label: 14个根域
+      'y': 220
+  - id: taxonomy_video
+    label: |-
+      用 4–8 个词标记视频内容
+      14 个根类 • 171 个二级类 • 638 个三级类
+      平衡领域与 10–80 分钟时长
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: 7轮筛选
-    type: decision
+      x: 340
+      'y': 220
+  - id: review_video
+    label: |-
+      开展七轮人工视频复核
+      检查内容相关性、质量与多样性
+      保留 1,219 个精选长视频
+    type: user
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: taxonomy
-    label: 问题分类
-    type: process
+      x: 640
+      'y': 220
+  - id: question_taxonomy
+    label: |-
+      建立问题分类体系
+      感知 • 推理 • 幻觉
+      细分感知与推理子类别
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 220
   - id: qac
-    label: 问答线索
-    type: document
+    label: |-
+      每个视频标注 6–15 个 QAC 三元组
+      看完整视频 • 使用标注者母语
+      先写问答，再标一个或多个线索区间
+    type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1240
+      'y': 220
   - id: options
-    label: 多选选项
+    label: |-
+      构造多项选择题选项
+      每题加入 4–7 个负样本
+      时间线索区间覆盖完整事件
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: review
-    label: 迭代质检
-    type: decision
+      x: 1540
+      'y': 220
+  - id: manual_qc
+    label: |-
+      人工复核问题、选项与答案
+      拒绝弱样本并要求修订
+      监控线索时长与时间位置多样性
+    type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: dataset
-    label: 12,129组QAC
-    type: document
+      x: 1840
+      'y': 80
+  - id: model_qc
+    label: |-
+      保证视频依赖与难度
+      GPT-4 移除纯文本可答问题
+      MLLM 移除稀疏帧或小模型易答问题
+    type: process
     size: xl
     position:
-      x: 1860
+      x: 1840
+      'y': 340
+  - id: release
+    label: |-
+      发布 CG-Bench
+      1,219 个视频 • 12,129 个 QAC 三元组
+      14,362 个线索区间 • 平均 19.24 秒
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: mcq
+    label: |-
+      长视频与线索片段多选题
+      完整视频对比合并后的标注线索片段
+      报告 long-acc. 与 clue-acc.
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 0
+  - id: white_box
+    label: |-
+      白盒线索定位
+      模型输出一个或多个时间区间
+      mIoU • rec.@IoU • acc.@IoU
+    type: process
+    size: xl
+    position:
+      x: 2440
       'y': 160
-  - id: eval
-    label: 线索评测
+  - id: black_box
+    label: |-
+      黑盒可信度
+      比较完整视频与仅线索片段准确率
+      CRR = min(long-acc., clue-acc.) / clue-acc.
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 320
+  - id: open_ended
+    label: |-
+      线索辅助开放问答
+      GPT-4o 先判断文本，必要时请求视觉线索
+      只从标注区间采样辅助帧
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 480
+  - id: report
+    label: |-
+      报告准确率、定位与可信度
+      按感知、推理与幻觉细分
+      诊断长视频理解中的上下文稀释
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 160
+      x: 2740
+      'y': 220
 edges:
-  - from: videos
-    to: domains
+  - from: collect
+    to: taxonomy_video
     type: primary
-  - from: domains
-    to: filter
+  - from: taxonomy_video
+    to: review_video
     type: primary
-  - from: filter
-    to: taxonomy
+  - from: review_video
+    to: question_taxonomy
     type: primary
-  - from: taxonomy
+  - from: question_taxonomy
     to: qac
     type: primary
   - from: qac
     to: options
     type: primary
   - from: options
-    to: review
+    to: manual_qc
     type: primary
-  - from: review
-    to: dataset
+  - from: options
+    to: model_qc
     type: primary
-  - from: dataset
-    to: eval
+  - from: manual_qc
+    to: release
+    type: primary
+  - from: model_qc
+    to: release
+    type: data
+  - from: release
+    to: mcq
+    type: primary
+  - from: release
+    to: white_box
+    type: primary
+  - from: release
+    to: black_box
+    type: primary
+  - from: release
+    to: open_ended
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: white_box
+    to: report
+    type: primary
+  - from: black_box
+    to: report
+    type: primary
+  - from: open_ended
+    to: report
     type: primary
 modules: []

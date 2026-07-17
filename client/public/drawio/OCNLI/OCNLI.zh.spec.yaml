@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OCNLI 构建与评测流程
+  description: 对齐论文，从五种原生中文体裁构建 56,486 个 NLI 句对，依次执行四种假设生成策略、五标签复核、受控划分以及模型与人工准确率评测。
+  legend: 简单、中等、困难分别指同一前提与标签下第一个、第二个和第三个生成的假设，表示生成顺序，并非独立标定的难度分数。
+nodes:
+  - id: source
+    label: |-
+      收集原生中文前提句
+      政府 · 新闻 · 文学
+      电视谈话 · 电话对话
+      同时覆盖书面与口语体裁
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: preprocess
+    label: |-
+      预处理来源句子
+      移除 Callhome 标注符号
+      保留 8–50 个汉字的句子
+      不从英文数据自动翻译
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: annotators
+    label: |-
+      招募 145 名假设撰写者
+      中文母语者
+      中国高校本科生与研究生
+      中文或其他语言专业
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: protocol
+    label: |-
+      改编 MNLI 假设生成协议
+      蕴含 · 中立 · 矛盾
+      假设与前提重叠不超过 70%
+      控制单人贡献量
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: classic
+    label: |-
+      生成两个初始子集
+      SINGLE 每标签一个 · 11,986
+      MULTI 每标签最多三个 · 12,328
+      第一/二/三个对应简单/中等/困难
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: controlled
+    label: |-
+      增加两个偏差控制子集
+      ENCOURAGE 鼓励多样性 · 16,584
+      奖励减少否定词
+      CONSTRAINT 约束否定词 · 15,627
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: corpus
+    label: |-
+      形成原始 OCNLI 语料
+      56,486 个前提—假设句对
+      四种假设生成策略
+      五种原生中文体裁
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: verify
+    label: |-
+      每个子集约抽取 15% 复标
+      每对由四人独立判断
+      加入原撰写者初始标签
+      每条共获得五个标签
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: agreement
+    label: |-
+      检查复标一致性
+      至少三票一致率 98.3–98.8%
+      比较子集与生成顺序
+      保留质量验证证据
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: gold
+    label: |-
+      确定 NLI 标准标签
+      对五个标签多数投票
+      无多数票样本标记为“-”
+      评测时可排除
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: split
+    label: |-
+      创建主数据划分
+      随机选取 6,000 条已复标 MULTI
+      开发集 3,000 + 测试集 3,000
+      平衡简单/中等/困难
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: train
+    label: |-
+      组装训练集发布版本
+      剩余约 50,000 个句对
+      包含全部 SINGLE 与 MULTI
+      另发布 30k train.small
+    type: database
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: baselines
+    label: |-
+      评测中文 NLI 基线
+      CBOW · biLSTM · ESIM
+      中文 BERT-base · RoBERTa-large
+      报告准确率
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      用人工表现验证难度
+      五名新学生 · 300 条测试样本
+      人工 90.3% 对 RoBERTa 78.2%
+      报告约 12 个百分点差距
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: source
+    to: preprocess
+    type: primary
+  - from: preprocess
+    to: annotators
+    type: primary
+  - from: annotators
+    to: protocol
+    type: primary
+  - from: protocol
+    to: classic
+    type: primary
+  - from: classic
+    to: controlled
+    type: primary
+  - from: controlled
+    to: corpus
+    type: primary
+  - from: corpus
+    to: verify
+    type: primary
+  - from: verify
+    to: agreement
+    type: primary
+  - from: agreement
+    to: gold
+    type: primary
+  - from: gold
+    to: split
+    type: primary
+  - from: split
+    to: train
+    type: primary
+  - from: train
+    to: baselines
+    type: primary
+  - from: baselines
+    to: report
+    type: primary
+modules: []

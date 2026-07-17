@@ -5,77 +5,124 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FLAMES Build Process
-  description: Paper-aligned FLAMES flow from Chinese value framework to adversarial prompt evaluation and scorer training.
+  description: Paper-aligned construction, human annotation, public evaluation split, and specified-scorer training for FLAMES.
   legend: >-
-    Solid arrows show value taxonomy design, adversarial prompt creation, attack filtering, LLM response collection,
-    human annotation, scorer training, and harmlessness reporting.
+    Solid arrows follow arXiv:2311.06899 from the five-dimensional Chinese value framework through adversarial prompt
+    filtering, two-plus-expert response annotation, public/held-back evaluation, and harmlessness metrics.
 nodes:
-  - id: frame
-    label: Value Frame
-    type: database
+  - id: framework
+    label: |-
+      Define five value-alignment dimensions
+      fairness 590 · safety 779 · morality 522
+      legality 118 · data protection 242
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
-    label: Adv Prompts
+      'y': 250
+  - id: authoring
+    label: |-
+      Crowdworkers manually write Chinese prompts
+      concrete complex scenarios per subcomponent
+      disguise · reverse induction · unsafe inquiry
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filter
-    label: Attack Filter
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: responses
-    label: 17 LLMs
+      'y': 250
+  - id: filtering
+    label: |-
+      Apply two prompt-review rounds
+      verify target value, scenario, and attack method
+      retain only prompts that attack at least one LLM
     type: process
     size: xl
     position:
+      x: 560
+      'y': 250
+  - id: prompt_set
+    label: |-
+      FLAMES-prompts: 2,251 adversarial prompts
+      average length 85.92 tokens
+      core team modifies or discards failures
+    type: database
+    size: xl
+    position:
       x: 820
-      'y': 160
-  - id: labels
-    label: Human Label
-    type: document
+      'y': 250
+  - id: responses
+    label: |-
+      Collect responses from 17 Chinese-capable LLMs
+      iteratively refine field-specific scoring guidance
+      obtain approximately 22.9K annotated responses
+    type: database
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: scorer
-    label: Scorer Train
+      'y': 250
+  - id: annotation
+    label: |-
+      Two graduate annotators label every response
+      3/2/1 for fairness, safety, morality; 3/1 otherwise
+      field expert adjudicates disagreements
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Harmless
-    type: terminal
+      'y': 250
+  - id: release
+    label: |-
+      Stratify 1,000 public evaluation prompts
+      249 fairness · 429 safety · 201 morality
+      75 data protection · 46 legality; retain the rest
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: scorer
+    label: |-
+      Train dimension-specific multitask classifiers
+      hold out MOSS/GPT-4 for validation and InternLMs for test
+      best FLAMES-scorer accuracy: 79.5%
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: metrics
+    label: |-
+      Report harmless rate and normalized harmless score
+      macro-average the five equally weighted dimensions
+      use humans for paper results; scorer enables automation
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: frame
-    to: prompts
+  - from: framework
+    to: authoring
     type: primary
-  - from: prompts
-    to: filter
+  - from: authoring
+    to: filtering
     type: primary
-  - from: filter
+  - from: filtering
+    to: prompt_set
+    type: primary
+  - from: prompt_set
     to: responses
     type: primary
   - from: responses
-    to: labels
+    to: annotation
     type: primary
-  - from: labels
+  - from: annotation
+    to: release
+    type: primary
+  - from: release
     to: scorer
     type: primary
   - from: scorer
-    to: score
+    to: metrics
     type: primary
 modules: []

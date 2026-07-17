@@ -1,0 +1,165 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HumanEval+ 构建与评测流程
+  description: 对齐论文的标准答案修复、契约过滤、LLM 种子与类型感知变异、可选测试集约简、 沙盒执行及无偏 Pass@k 评测流程。
+  legend: 上排从左到右为基准构建，下排从右到左为模型评测；HumanEval+ 保留 HumanEval 的 164 题，并将每题平均测试数从 9.6 扩展到 764.1。
+nodes:
+  - id: base
+    label: |-
+      HumanEval 基础集
+      164 个 Python 签名 + 文档字符串任务
+      每题平均 9.6 个手写测试
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: oracle
+    label: |-
+      修复测试标准答案
+      重写并测试每个金标准解答
+      原实现超过 10% 不正确
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: contracts
+    label: |-
+      程序输入契约
+      为 83 / 164 题手写前置条件
+      排除无效或未定义输入
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: seeds
+    label: |-
+      ChatGPT 种子输入
+      每题约 30 个，来自三组提示
+      金标准代码 + 既有输入 + 边界用例指令
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: mutation
+    label: |-
+      类型感知变异
+      材料复用 + 复合类型递归变异
+      一小时预算内生成 1,000 个输入
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      HumanEval+ 发布集
+      164 题；平均 764.1 个测试（80×）
+      可选 Mini：集合覆盖约简 47× 至 16.1 个测试
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      HumanEval 问题输入
+      Python 函数签名 + 文档字符串
+      补全函数体
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: sample
+    label: |-
+      论文评测采样
+      温度 0.2 / 0.4 / 0.6 / 0.8 各生成 200 个程序
+      另做贪心解码
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: complete
+    label: |-
+      候选 Python 补全
+      保持要求的函数签名
+      隔离每个生成程序
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: execute
+    label: |-
+      沙盒差分执行
+      运行基础 + 新增测试输入
+      由重写后的金标准代码生成期望输出
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: correctness
+    label: |-
+      功能正确性门控
+      每个适用测试都必须通过
+      任一不匹配、错误或超时即拒绝样本
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      HumanEval+ 结果
+      无偏 Pass@1 / Pass@10 / Pass@100
+      比较基础集、Plus 与可选 Mini
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
+edges:
+  - from: base
+    to: oracle
+    type: primary
+  - from: oracle
+    to: contracts
+    type: primary
+  - from: contracts
+    to: seeds
+    type: primary
+  - from: seeds
+    to: mutation
+    type: primary
+  - from: mutation
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: complete
+    type: primary
+  - from: complete
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
+    to: report
+    type: primary
+modules: []

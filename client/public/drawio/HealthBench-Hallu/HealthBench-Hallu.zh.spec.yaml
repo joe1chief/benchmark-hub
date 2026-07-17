@@ -1,0 +1,187 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HealthBench-Hallu 构建流程
+  description: 与论文一致的高精度原子声明抽取、实时权威搜索、证据标注与加权医疗幻觉评分流程。
+  legend: HealthBench-Hallu 是针对 HealthBench 任务模型输出的评测框架，不是另行构建的问题集。 报告没有披露该评测的独立样本数量。
+nodes:
+  - id: healthbench
+    label: |-
+      复用 HealthBench 任务
+      开放式医疗健康对话
+      未引入独立问题集
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: response
+    label: |-
+      生成长篇模型回答
+      评估模型内部医疗知识
+      保留专业声明与上下文
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: scope
+    label: |-
+      定义事实错误范围
+      生成内容中的医疗误解
+      分流两种主要失败模式
+    type: decision
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: knowledge_error
+    label: |-
+      知识错误
+      错误临床事实或规则
+      将正确知识误用于当前情境
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 80
+  - id: evidence_error
+    label: |-
+      证据错误
+      虚构文献或临床数据
+      歪曲因果关系
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 520
+  - id: extract
+    label: |-
+      用 GPT-5 抽取原子声明
+      采用高精度评测配置
+      提高细粒度声明覆盖率
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: normalize
+    label: |-
+      规范化可验证单元
+      拆分事实并消解指代
+      去噪/干扰项 · 按顺序去重
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: search
+    label: |-
+      实时验证每条声明
+      对权威来源执行多轮搜索
+      要求充分临床证据 · 不用缓存
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: verdict
+    label: |-
+      分配证据结论
+      将声明与所收集证据比对
+      支持 · 不确定 · 反驳
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: supported
+    label: |-
+      支持 · 权重 0.0
+      权威证据支持该声明
+      计为事实正确
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 0
+  - id: uncertain
+    label: |-
+      不确定 · 权重 0.5
+      证据不足或存在歧义
+      表示中等事实风险
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: refuted
+    label: |-
+      反驳 · 权重 1.0
+      证据与声明矛盾
+      表示严重事实错误
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 600
+  - id: score
+    label: |-
+      报告医疗幻觉风险
+      按声明计算加权幻觉率
+      同时展示反驳率与不确定率
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+edges:
+  - from: healthbench
+    to: response
+    type: primary
+  - from: response
+    to: scope
+    type: primary
+  - from: scope
+    to: knowledge_error
+    type: primary
+  - from: scope
+    to: evidence_error
+    type: secondary
+  - from: knowledge_error
+    to: extract
+    type: primary
+  - from: evidence_error
+    to: extract
+    type: secondary
+  - from: extract
+    to: normalize
+    type: primary
+  - from: normalize
+    to: search
+    type: primary
+  - from: search
+    to: verdict
+    type: primary
+  - from: verdict
+    to: supported
+    type: primary
+  - from: verdict
+    to: uncertain
+    type: primary
+  - from: verdict
+    to: refuted
+    type: secondary
+  - from: supported
+    to: score
+    type: primary
+  - from: uncertain
+    to: score
+    type: primary
+  - from: refuted
+    to: score
+    type: secondary
+modules: []

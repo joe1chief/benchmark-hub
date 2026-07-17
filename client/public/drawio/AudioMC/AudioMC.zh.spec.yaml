@@ -4,131 +4,217 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AudioMC 构建流程
-  description: 基于 arXiv:2512.14865，对齐 Audio MultiChallenge 的轴设计、agentic 失败蓝图、人机协同录音、 rubric 质检和固定上下文评测流程。
-  legend: 实线表示数据构建和评测主流程；虚线表示质检、蓝图修订和评判一致性反馈。
+  title: Audio MultiChallenge 构建流程
+  description: 基于 arXiv:2512.14865 对齐的音频原生蓝图生成、人工对话采集、质量控制与固定上下文评测流程。
+  legend: 合成 Agent 用于发现失败策略，但发布集音频来自人类录制的 3-8 轮无脚本对话；评测只针对最后一轮，并按原子量规评分。
 nodes:
   - id: axes
     label: |-
-      音频原生轴
-      IM、IR、SC
-      新增语音编辑
-    type: document
+      定义四个音频评测轴
+      推理记忆 • 指令保持
+      自洽性 • 语音编辑
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: taxonomy
+      'y': 170
+  - id: seeds
     label: |-
-      轴-主题-人设
-      人工整理分类
-      目标失败模式
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: agentic_loop
-    label: |-
-      Agentic 蓝图循环
-      Planner、Tester、TTS
-      触发音频模型失败
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: blueprint
-    label: |-
-      人类可用蓝图
-      提取核心陷阱
-      轴专属指引
+      采样蓝图种子
+      评测轴 + 主题 + 人设
+      覆盖音频线索与编辑行为
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: human_audio
+      x: 320
+      'y': 170
+  - id: planner
     label: |-
-      人类录音
-      3 到 8 轮
-      无脚本自然语音
-    type: terminal
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: rubrics
-    label: |-
-      原子 Rubric
-      最终轮二元标准
-      只衡量目标轴
+      Planner 设计失败策略
+      o3 推理 Agent
+      目标成功后继续增加复杂度
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: qc
+      x: 600
+      'y': 40
+  - id: tester
     label: |-
-      三阶段质检
-      训练 Reviewer
-      独立团队审核
-    type: decision
+      Tester 生成用户提示
+      GPT-4o 文本用户 Agent
+      用 GPT-4o-mini TTS 转为语音
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
+      x: 600
+      'y': 300
+  - id: synthetic_loop
     label: |-
-      AudioMC 数据集
-      452 段对话
-      47 说话人 / 1,712 Rubric
+      探测目标 Audio LM
+      GPT-4o Audio Preview 或 Gemini 2.5 Pro
+      迭代至失败或达到轮数上限
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 170
+  - id: blueprint
+    label: |-
+      提取人类可读蓝图
+      保留评测轴特定失败逻辑
+      只提供策略而非脚本
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 170
+  - id: human_recording
+    label: |-
+      人在回路录制对话
+      3-8 轮无脚本交互
+      改写、增加约束或切换主题
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 170
+  - id: natural_audio
+    label: |-
+      保留自然音频特征
+      停顿 • 噪声 • 附和 • 不流畅
+      话中与跨轮次自我修正
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: rubrics
+    label: |-
+      编写末轮评分量规
+      原子化 • 准确 • 自包含
+      必要时互斥
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 500
+  - id: qc
+    label: |-
+      运行三阶段质量控制
+      训练后评审员 • 独立质检
+      内部研究团队审核
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 500
+  - id: release
+    label: |-
+      发布 Audio MultiChallenge
+      452 段对话 • 47 名说话人 • 15 小时
+      1,712 条实例特定量规
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 70
-  - id: evaluation
+      x: 600
+      'y': 500
+  - id: fixed_context
     label: |-
-      固定上下文评测
-      base64 音频历史
-      o4 Mini 判分 APR/ARS
+      注入固定对话上下文
+      用户轮次为 Base64 音频
+      助手轮次为原始文本
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 250
+      x: 320
+      'y': 500
+  - id: final_turn
+    label: |-
+      只生成最后一轮回答
+      所有模型接收相同历史
+      避免顺序评测的对话漂移
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 500
+  - id: judge
+    label: |-
+      逐条判断原子准则
+      LLM-as-a-Judge 评审文本回答
+      二元量规满足标签
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 790
+  - id: metrics
+    label: |-
+      计算 APR 与 ARS
+      APR 要求单题全部量规通过
+      ARS 平均各准则满足情况
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 790
+  - id: report
+    label: |-
+      汇报音频对话能力差距
+      总体与四评测轴结果
+      分析音频时长与线索保持
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 790
 edges:
   - from: axes
-    to: taxonomy
+    to: seeds
     type: primary
-  - from: taxonomy
-    to: agentic_loop
+  - from: seeds
+    to: planner
     type: primary
-  - from: agentic_loop
+  - from: seeds
+    to: tester
+    type: data
+  - from: planner
+    to: synthetic_loop
+    type: primary
+  - from: tester
+    to: synthetic_loop
+    type: primary
+  - from: synthetic_loop
     to: blueprint
     type: primary
   - from: blueprint
-    to: human_audio
+    to: human_recording
     type: primary
-  - from: human_audio
+  - from: human_recording
+    to: natural_audio
+    type: primary
+  - from: natural_audio
     to: rubrics
     type: primary
   - from: rubrics
     to: qc
     type: primary
   - from: qc
-    to: dataset
+    to: release
     type: primary
-  - from: dataset
-    to: evaluation
+  - from: release
+    to: fixed_context
     type: primary
-  - from: qc
-    to: human_audio
-    type: optional
-    label: 修订任务
-  - from: evaluation
-    to: rubrics
-    type: optional
-    label: 评判一致性审核
+  - from: fixed_context
+    to: final_turn
+    type: primary
+  - from: final_turn
+    to: judge
+    type: primary
+  - from: judge
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
 modules: []

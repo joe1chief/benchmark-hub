@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "AIRS-Bench 构建流程",
+  "title": "AIRS-Bench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "sources",
-      "label": "论文与榜单来源\nPapersWithCode SOTA 结果\n2020 至 2025 ML 论文",
+      "id": "source",
+      "label": "获取候选科研任务\nPapersWithCode 排行榜 + SOTA 论文\n优先 2020–2025 成果和 Hugging Face 数据",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "数据集筛选\nHuggingFace 可用\n有 train/test 划分",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "manual_create",
-      "label": "人工创建任务\n核验 metric 与 split\n必要时更新 SOTA",
+      "id": "eligibility",
+      "label": "应用准入条件\n明确的机器学习目标 • 训练 / 测试划分\n数据可用且评测指标可复现",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "select20",
-      "label": "基准任务选择\n约 100 个候选\n选 7 类中的 20 个任务",
-      "type": "process",
+      "id": "verify",
+      "label": "人工创建并核验每项任务\n对齐论文指标、划分和评测协议\n确认引用 SOTA；发现更优结果则更新",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "metadata",
-      "label": "metadata.yaml\nproblem、dataset、metric\nSOTA 分数和论文信息",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "task_files",
-      "label": "任务文件\nproject_description\nprepare 与 evaluate 脚本",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "datasets",
-      "label": "准备后的数据\ntrain split 可见\ntest 标签对 agent 隐藏",
+      "id": "candidates",
+      "label": "建立候选任务池\n约 100 项任务\n来自约 85 篇机器学习论文和数据集",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "evaluation",
-      "label": "agent 评估\nAIRA-dojo 与 MLGym\n24h GPU 运行和 normalized score",
+      "id": "select",
+      "label": "筛选最终任务集\n考虑 Agent 表现与排序保真度\n保留 7 类分布并控制评测成本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "package",
+      "label": "封装 20 项任务（17 篇论文 / 16 个数据集）\nproject_description • metadata.yaml\nprepare / evaluate / evaluate_prepare 脚本",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "environment",
+      "label": "准备 Agent 环境\n训练标签可见 • 测试标签隐藏\n不提供基线代码；可联网并使用缓存资源",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "agent",
+      "label": "运行端到端科研 Agent\nAIRA-dojo One-Shot / Greedy 或 MLGym ReAct\n单张 H200、24 小时内开发、训练、验证并预测",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "raw_score",
+      "label": "评估提交的预测结果\n任务专用 evaluate.py 使用隐藏测试标签\n记录原始指标与提交有效性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "normalize",
+      "label": "归一化每项任务分数\nφ(s) = −log10 |s − 最优值|\n最差观测运行 = 0 • 文献 SOTA = 1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "跨任务与随机种子汇总\n平均归一化分数\n有效提交率 + 两两比较 Elo 评级",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "AIRS-Bench 结果\n比较 14 个模型–Scaffold Agent\n报告可靠性、科研质量和相对排序",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,57 +88,68 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "sources",
-      "to": "filter",
+      "from": "source",
+      "to": "eligibility",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "filter",
-      "to": "manual_create",
+      "from": "eligibility",
+      "to": "verify",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "manual_create",
-      "to": "filter",
-      "type": "optional",
-      "label": "核验 SOTA 与 split"
+      "from": "verify",
+      "to": "candidates",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "manual_create",
-      "to": "select20",
+      "from": "candidates",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "select20",
-      "to": "metadata",
+      "from": "select",
+      "to": "package",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "select20",
-      "to": "task_files",
-      "type": "data"
+      "from": "package",
+      "to": "environment",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "metadata",
-      "to": "datasets",
+      "from": "environment",
+      "to": "agent",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "task_files",
-      "to": "datasets",
-      "type": "data"
+      "from": "agent",
+      "to": "raw_score",
+      "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "datasets",
-      "to": "evaluation",
+      "from": "raw_score",
+      "to": "normalize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "normalize",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "aggregate",
+      "to": "report",
       "type": "primary"
     }
   ],

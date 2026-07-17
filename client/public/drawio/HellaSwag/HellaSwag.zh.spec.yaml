@@ -5,75 +5,149 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HellaSwag 构建流程
-  description: 对齐论文的 HellaSwag 构建流程：ActivityNet/WikiHow 上下文、GPT 候选结尾、BERT 对抗过滤、 人工一致性过滤、in-domain/zero-shot 划分和准确率评测。
-  legend: 实线箭头表示来源收集、对抗负例生成、人工一致性过滤、划分创建和评分。
+  description: 对齐论文的 HellaSwag 流程：从 ActivityNet 与 WikiHow 上下文，经 GPT 负例生成、 BERT-Large 迭代对抗过滤、人工验证、类别划分和四选一准确率评测。
+  legend: 实线表示构建与评测；虚线循环表示持续用困难候选替换易判负例直到收敛。
 nodes:
-  - id: sources
-    label: 数据来源
+  - id: activity
+    label: |-
+      ActivityNet字幕
+      上下文与真实结尾
+      活动类别标签
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: endings
-    label: GPT结尾
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: af
-    label: BERT过滤
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: human
-    label: 人工过滤
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: best
-    label: 高一致上下文
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: splits
-    label: 域内/零样本
+      'y': 80
+  - id: wikihow
+    label: |-
+      抓取WikiHow
+      80K组上下文
+      与后续段落
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 400
+  - id: candidates
+    label: |-
+      微调GPT
+      过量生成错误结尾
+      WikiHow采用两句结尾
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 240
+  - id: af
+    label: |-
+      BERT-Large对抗过滤
+      随机虚拟划分
+      每轮重新初始化
+    type: decision
+    size: xl
+    position:
+      x: 520
+      'y': 240
+  - id: replace
+    label: |-
+      用困难候选
+      替换易判负例
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 440
+  - id: human
+    label: |-
+      众包验证
+      1个真实+5个过滤结尾
+      替换看似真实的负例
+    type: user
+    size: xl
+    position:
+      x: 760
+      'y': 240
+  - id: curated
+    label: |-
+      高一致上下文
+      ActivityNet 25K
+      WikiHow 45K
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 240
+  - id: split
+    label: |-
+      共70K
+      训练50K
+      验证10K+测试10K
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: categories
+    label: |-
+      每个验证/测试集
+      域内类别5K
+      留出类别5K
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 240
+  - id: model
+    label: |-
+      四选一
+      1个真实+3个负例
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 240
   - id: score
-    label: 准确率
+    label: |-
+      准确率
+      总体/域内/零样本
+      与分来源结果
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 1960
+      'y': 240
 edges:
-  - from: sources
-    to: endings
+  - from: activity
+    to: candidates
     type: primary
-  - from: endings
+  - from: wikihow
+    to: candidates
+    type: primary
+  - from: candidates
     to: af
     type: primary
+  - from: af
+    to: replace
+    type: optional
+  - from: replace
+    to: candidates
+    type: optional
   - from: af
     to: human
     type: primary
   - from: human
-    to: best
+    to: curated
     type: primary
-  - from: best
-    to: splits
+  - from: curated
+    to: split
     type: primary
-  - from: splits
+  - from: split
+    to: categories
+    type: primary
+  - from: categories
+    to: model
+    type: primary
+  - from: model
     to: score
     type: primary
 modules: []

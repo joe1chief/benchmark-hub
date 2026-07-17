@@ -1,56 +1,80 @@
 {
   "version": 1,
-  "title": "HalluEval 构建流程",
+  "title": "HaluEval 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "seeds",
-      "label": "任务种子",
+      "id": "task_seeds",
+      "label": "抽取 30,000 个任务种子\nHotpotQA · OpenDialKG · CNN/DailyMail\n问答、对话、摘要各 10,000 个",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "幻觉采样",
+      "label": "生成两个幻觉候选\nChatGPT 一次性完整指令\n加逐步学习指令的对话式生成",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "filter",
-      "label": "难例过滤",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "general",
-      "label": "通用查询",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "labels",
-      "label": "人工标注",
+      "label": "筛选高难幻觉\n由含标准答案示例的 ChatGPT 评判\n保留最可信的候选答案",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "35K样本",
+      "id": "auto_set",
+      "label": "定稿 30,000 个任务样本\n事实/正常答案与选中的\n幻觉对应答案配对",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "识别评测",
+      "id": "alpaca",
+      "label": "从 Alpaca 52K 查询开始\n每个查询采样三条 ChatGPT 回答\n面向通用指令跟随场景",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "divergence",
+      "label": "按回答分歧排序\n计算两两 BERTScore 平均相似度\n保留相似度最低的 5,000 个查询",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "annotate",
+      "label": "每条保留回答由三人标注\n幻觉是/否与对应文本片段\n不可验证 · 非事实 · 不相关",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_set",
+      "label": "对人工标签做多数投票\n30 名合格标注员 · Fleiss kappa 0.811\n5,000 条回答 · 977 条含幻觉",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "merge",
+      "label": "汇总 HaluEval\n30,000 个任务样本 + 5,000 个通用样本\n共 35,000 个幻觉/正常样本",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "构造幻觉识别输入\n随机呈现正常或幻觉输出\n要求判断内容是否含幻觉",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "报告幻觉识别准确率\n问答 · 知识支撑对话\n摘要 · 通用查询",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,7 +82,7 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "seeds",
+      "from": "task_seeds",
       "to": "sample",
       "type": "primary"
     },
@@ -71,25 +95,49 @@
     {
       "id": "edge-3",
       "from": "filter",
-      "to": "general",
+      "to": "auto_set",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "general",
-      "to": "labels",
+      "from": "auto_set",
+      "to": "merge",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "labels",
-      "to": "dataset",
-      "type": "primary"
+      "from": "alpaca",
+      "to": "divergence",
+      "type": "secondary"
     },
     {
       "id": "edge-6",
-      "from": "dataset",
-      "to": "eval",
+      "from": "divergence",
+      "to": "annotate",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-7",
+      "from": "annotate",
+      "to": "human_set",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-8",
+      "from": "human_set",
+      "to": "merge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-9",
+      "from": "merge",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "inference",
+      "to": "score",
       "type": "primary"
     }
   ],

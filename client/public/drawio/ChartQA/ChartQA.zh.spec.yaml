@@ -5,85 +5,208 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ChartQA 构建流程
-  description: 对齐论文的 ChartQA 构建流程：从四个网站来源收集真实图表，配套人工问题和基于摘要的 T5 生成问题， 清洗并划分数据，同时用 ChartOCR 抽取表格供多模态问答模型评测。
-  legend: 实线箭头表示图表收集、问答生成、清洗、划分和模型评测流程。
+  description: >-
+    按论文构建并评测 20,882 张真实图表、9,608 个人工问题和 23,111 个 T5 生成问题：人工支路采用两位 AMT 工作者质检， 自动支路从摘要做答案感知生成、表内答案过滤与测试集人工清洗，最终用精确或 5%
+    宽松规则评分。
+  legend: 实线表示人工与机器问答流程，虚线表示图表元数据进入标注。
 nodes:
   - id: sources
-    label: 在线图表
-    type: cloud
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: metadata
-    label: 图表元数据
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: human
-    label: 人工问答
-    type: user
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: t5
-    label: T5生成问答
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: clean
-    label: 问答清洗
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: 数据划分
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: chartocr
-    label: ChartOCR表格
+    label: |-
+      抓取 20,882 张真实图表
+      Statista • Pew Research • Our World in Data • OECD
+      覆盖多主题、多风格及柱/线/饼图
     type: database
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: models
-    label: ChartQA模型
+      x: 40
+      'y': 220
+  - id: artifacts
+    label: |-
+      保存可用图表产物
+      图像 • 数据表 • 元数据 • SVG • 描述
+      从 SVG 抽取图表元素边界框
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: human_author
+    label: |-
+      ChartQA-H：AMT 工作者每图编写两组问答
+      强调视觉与组合推理
+      使用图表图像及可用上下文
+    type: user
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: human_verify
+    label: |-
+      第二位工作者独立作答
+      答案完全一致则接受
+      人工解决分歧
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 40
+  - id: human_set
+    label: |-
+      完成 9,608 个人工问题
+      训练 7,398 • 验证 960 • 测试 1,250
+      对应 4,804 张图表
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 40
+  - id: summaries
+    label: |-
+      ChartQA-M：使用 Statista 人工摘要
+      保留自然语言变化
+      把摘要与图表数据表配对
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 400
+  - id: t5
+    label: |-
+      两个经 SQuAD 微调的 T5 模型
+      从摘要抽取候选答案
+      生成答案感知问题
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 400
+  - id: machine_filter
+    label: |-
+      过滤无效生成问题
+      要求答案出现在图表数据表中
+      审计 1,250 对：86.64% 完整且正确
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: machine_set
+    label: |-
+      人工清洗机器生成测试集
+      完成 23,111 个机器问题
+      训练 20,901 • 验证 960 • 测试 1,250
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: release
+    label: |-
+      发布 ChartQA
+      20,882 张图表 • 共 32,719 个问题
+      分别保留人工与机器生成划分
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: input
+    label: |-
+      评测开放词表图表问答
+      输入图表图像与问题
+      覆盖检索、视觉、组合与混合类型
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: answer
+    label: |-
+      生成答案
+      模型可结合视觉特征与抽取数据表
+      返回数值或非数值文本
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: numeric
+    label: |-
+      数值答案
+      与真值误差在 5% 内即正确
+      宽松准确率容忍抽取噪声
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 80
+  - id: text
+    label: |-
+      非数值答案
+      必须与真值精确匹配
+      不使用宽松容差
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 360
+  - id: report
+    label: |-
+      报告准确率与宽松准确率
+      分开统计 ChartQA-H 与 ChartQA-M
+      分析视觉与逻辑推理差距
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3040
+      'y': 220
 edges:
   - from: sources
-    to: metadata
+    to: artifacts
     type: primary
-  - from: metadata
-    to: human
+  - from: artifacts
+    to: human_author
     type: primary
-  - from: human
+  - from: artifacts
+    to: summaries
+    type: data
+  - from: human_author
+    to: human_verify
+    type: primary
+  - from: human_verify
+    to: human_set
+    type: primary
+  - from: summaries
     to: t5
     type: primary
   - from: t5
-    to: clean
+    to: machine_filter
     type: primary
-  - from: clean
-    to: split
+  - from: machine_filter
+    to: machine_set
     type: primary
-  - from: split
-    to: chartocr
+  - from: human_set
+    to: release
     type: primary
-  - from: chartocr
-    to: models
+  - from: machine_set
+    to: release
+    type: primary
+  - from: release
+    to: input
+    type: primary
+  - from: input
+    to: answer
+    type: primary
+  - from: answer
+    to: numeric
+    type: primary
+  - from: answer
+    to: text
+    type: primary
+  - from: numeric
+    to: report
+    type: primary
+  - from: text
+    to: report
     type: primary
 modules: []

@@ -6,86 +6,190 @@ meta:
   routing: orthogonal
   title: MMBench Build Process
   description: >-
-    Paper-aligned construction of MMBench: image multiple-choice questions are collected across 20 ability dimensions,
-    released in English and Chinese, evaluated with CircularEval, and scored by robust choice extraction.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MMBench workflow: a three-level perception/reasoning taxonomy guides volunteer collection from the
+    Internet and public validation images, two human-backed filters remove text-only and wrong items, 3,217 questions
+    receive verified Chinese versions and a 4:6 split, then CircularEval and robust choice extraction yield accuracy.
+  legend: Solid arrows show construction and evaluation; the lower answer path is the GPT-4 fallback after heuristic matching.
 nodes:
-  - id: n1
-    label: Source Pool
+  - id: l1
+    label: |-
+      L1: Perception
+      and Reasoning
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 20 Abilities
+      'y': 240
+  - id: taxonomy
+    label: |-
+      6 L2 Categories
+      20 L3 Skills
     type: process
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 2974 MCQ
+      x: 240
+      'y': 240
+  - id: examples
+    label: |-
+      10–20 Seed MCQs
+      per L3 Skill
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: EN/CN Sets
+      x: 440
+      'y': 240
+  - id: volunteers
+    label: |-
+      Student Volunteers
+      Expand Image MCQs
+    type: user
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: sources
+    label: |-
+      Internet >80%
+      Public Val Images ~20%
+    type: database
+    size: large
+    position:
+      x: 640
+      'y': 240
+  - id: text_filter
+    label: |-
+      LLM Majority Text-only
+      Human Verification
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Quality QC
+      x: 1040
+      'y': 240
+  - id: wrong_filter
+    label: |-
+      All VLMs Fail
+      Human Verification
     type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: CircularEval
-    type: decision
-    size: xl
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: Extract
+      'y': 240
+  - id: curated
+    label: |-
+      3,217 Questions
+      At Least 125 / L3
+    type: database
+    size: large
+    position:
+      x: 1440
+      'y': 240
+  - id: bilingual
+    label: |-
+      GPT-4 Chinese Version
+      Human Verified
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: split
+    label: |-
+      Dev 40%: Answers Open
+      Test 60%: Private
     type: document
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
+      x: 1840
+      'y': 240
+  - id: circular
+    label: |-
+      CircularEval
+      N Choice Rotations
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 240
+  - id: heuristic
+    label: |-
+      Heuristic Choice
+      Matched?
+    type: decision
+    size: large
+    position:
+      x: 2240
+      'y': 120
+  - id: gpt4
+    label: |-
+      If Unmatched
+      GPT-4 Extractor
+    type: process
+    size: large
+    position:
+      x: 2240
+      'y': 380
+  - id: all_passes
+    label: |-
+      Correct on All
+      N Circular Passes
+    type: process
+    size: large
+    position:
+      x: 2440
+      'y': 240
+  - id: score
+    label: |-
+      CircularEval
+      Top-1 Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2640
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: l1
+    to: taxonomy
     type: primary
-  - from: n2
-    to: n3
+  - from: taxonomy
+    to: examples
     type: primary
-  - from: n3
-    to: n4
+  - from: examples
+    to: sources
     type: primary
-  - from: n4
-    to: n5
+  - from: sources
+    to: volunteers
     type: primary
-  - from: n5
-    to: n6
+  - from: volunteers
+    to: text_filter
     type: primary
-  - from: n6
-    to: n7
+  - from: text_filter
+    to: wrong_filter
     type: primary
-  - from: n7
-    to: n8
+  - from: wrong_filter
+    to: curated
+    type: primary
+  - from: curated
+    to: bilingual
+    type: primary
+  - from: bilingual
+    to: split
+    type: primary
+  - from: split
+    to: circular
+    type: primary
+  - from: circular
+    to: heuristic
+    type: primary
+  - from: heuristic
+    to: all_passes
+    type: primary
+  - from: heuristic
+    to: gpt4
+    type: data
+  - from: gpt4
+    to: all_passes
+    type: primary
+  - from: all_passes
+    to: score
     type: primary
 modules: []

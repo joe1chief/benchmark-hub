@@ -5,75 +5,203 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EgoTempo 构建流程
-  description: 按论文对齐的 EgoTempo 构建流程：从第一视角视频到时序 VideoQA 评测。
-  legend: 实线箭头表示视频来源、时序任务分类、问答构造、反捷径检查、全视频模型运行、答案匹配和准确率统计。
+  description: 对齐论文的 Ego4D 视频片段构建、Gemini 辅助时序问答整理、捷径过滤与受控视频证据评测。
+  legend: 实线箭头展示基准构建；输入分支在相同开放问答评分协议下比较纯文本、单帧与多帧证据。
 nodes:
-  - id: videos
-    label: 第一视角视频
+  - id: source
+    label: |-
+      Ego4D 源视频
+      多样真实场景
+      带时间戳的第一视角叙述
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: types
-    label: 十类任务
+      'y': 250
+  - id: windows
+    label: |-
+      推导叙述时间窗口
+      叙述时间戳 + 局部及全局间隔
+      短片段平均约 5 秒
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: qa
-    label: 问答构造
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: filter
-    label: 捷径检查
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: run
-    label: 视频作答
+      'y': 250
+  - id: clips
+    label: |-
+      合并连续片段
+      最多 120 条叙述或 120 秒
+      保留时序问题所需上下文
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: match
-    label: 答案匹配
-    type: terminal
+      x: 560
+      'y': 250
+  - id: caption
+    label: |-
+      Gemini 1.5 Pro 零样本描述
+      输入视频片段与叙述
+      为交互叙述补充背景细节
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 准确率
+      x: 820
+      'y': 250
+  - id: taxonomy
+    label: |-
+      按 10 类能力生成开放问答
+      动作、事件、物体的顺序与计数，
+      预测、空间关系及对象定位
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 250
+  - id: review
+    label: |-
+      人工视频依据复核
+      对照片段验证问题与答案
+      移除无关或缺少时序复杂度的样本
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 250
+  - id: shortcut
+    label: |-
+      单帧捷径门槛
+      剔除 Gemini 仅凭一帧即可答对的样本
+      保留真实时序依赖
+    type: process
+    size: xl
+    position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: benchmark
+    label: |-
+      EgoTempo 基准
+      500 个问答对 · 每类 50 个
+      221 段视频的 365 个片段 · 40 场景
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: inputs
+    label: |-
+      受控证据设置
+      使用相同问题与标准答案
+    type: decision
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: text
+    label: |-
+      纯文本
+      诊断常识与语言捷径
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 10
+  - id: single
+    label: |-
+      单帧
+      诊断静态视觉捷径
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: video
+    label: |-
+      多帧
+      受控采样率 S = 0.1、0.5、1 FPS
+      并做固定帧数及采样策略消融
+    type: document
+    size: xl
+    position:
+      x: 2380
+      'y': 490
+  - id: prediction
+    label: |-
+      多模态模型开放式预测
+      运行商用与开源视频模型
+      Gemini Flash 与 Pro 生成数据隔离
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 250
+  - id: judge
+    label: |-
+      Gemini 1.5 Pro 评委
+      比较预测与标准答案
+      给出正确或错误及理由
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 250
+  - id: report
+    label: |-
+      准确率与时序证据增益
+      10 类能力分项
+      绝对分及单帧→视频提升倍率
+    type: terminal
+    size: xl
+    position:
+      x: 3160
+      'y': 250
 edges:
-  - from: videos
-    to: types
+  - from: source
+    to: windows
     type: primary
-  - from: types
-    to: qa
+  - from: windows
+    to: clips
     type: primary
-  - from: qa
-    to: filter
+  - from: clips
+    to: caption
     type: primary
-  - from: filter
-    to: run
+  - from: caption
+    to: taxonomy
     type: primary
-  - from: run
-    to: match
+  - from: taxonomy
+    to: review
     type: primary
-  - from: match
-    to: score
+  - from: review
+    to: shortcut
+    type: primary
+  - from: shortcut
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: inputs
+    type: primary
+  - from: inputs
+    to: text
+    type: primary
+  - from: inputs
+    to: single
+    type: primary
+  - from: inputs
+    to: video
+    type: primary
+  - from: text
+    to: prediction
+    type: primary
+  - from: single
+    to: prediction
+    type: primary
+  - from: video
+    to: prediction
+    type: primary
+  - from: prediction
+    to: judge
+    type: primary
+  - from: judge
+    to: report
     type: primary
 modules: []

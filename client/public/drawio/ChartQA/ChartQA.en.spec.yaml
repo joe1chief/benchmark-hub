@@ -6,87 +6,208 @@ meta:
   routing: orthogonal
   title: ChartQA Build Process
   description: >-
-    Paper-aligned construction flow for ChartQA: real-world charts are collected from four web sources, paired with
-    human and T5-generated questions, cleaned and split, and paired with chart-table extraction for multimodal QA model
-    evaluation.
-  legend: Solid arrows show dataset collection, QA generation, cleaning, and model evaluation flow.
+    Paper-aligned construction and evaluation of 20,882 real-world charts with 9,608 human-written and 23,111
+    T5-generated questions, combining a two-worker AMT quality path with summary-based answer-aware generation,
+    answer-in-table filtering, manual test cleaning, and exact or 5-percent-relaxed answer scoring.
+  legend: Solid arrows show the human and machine QA pipelines; dashed arrows carry chart metadata into annotation.
 nodes:
   - id: sources
-    label: Online Charts
-    type: cloud
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: metadata
-    label: Chart Metadata
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: human
-    label: Human QA
-    type: user
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: t5
-    label: T5 QA
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: clean
-    label: QA Cleaning
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: Data Splits
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: chartocr
-    label: OCR Tables
+    label: |-
+      Crawl 20,882 Real-world Charts
+      Statista • Pew Research • Our World in Data • OECD
+      Diverse Topics, Styles, Bar, Line, and Pie Charts
     type: database
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: models
-    label: ChartQA Models
+      x: 40
+      'y': 220
+  - id: artifacts
+    label: |-
+      Preserve Available Chart Artifacts
+      Images • Tables • Metadata • SVG • Descriptions
+      Extract Chart-element Bounding Boxes from SVG
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: human_author
+    label: |-
+      ChartQA-H: AMT Worker Authors Two QA Pairs
+      Emphasize Visual and Compositional Reasoning
+      Use Chart Images and Available Context
+    type: user
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: human_verify
+    label: |-
+      Second Worker Independently Answers
+      Accept Exact Agreement
+      Manually Resolve Disagreements
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 40
+  - id: human_set
+    label: |-
+      Finalize 9,608 Human Questions
+      Train 7,398 • Validation 960 • Test 1,250
+      4,804 Associated Charts
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 40
+  - id: summaries
+    label: |-
+      ChartQA-M: Use Human-written Statista Summaries
+      Preserve Natural Language Variation
+      Pair Summaries with Chart Tables
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 400
+  - id: t5
+    label: |-
+      Two SQuAD-tuned T5 Models
+      Extract Candidate Answers from Summaries
+      Generate Answer-aware Questions
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 400
+  - id: machine_filter
+    label: |-
+      Filter Invalid Generated Questions
+      Require the Answer to Appear in the Chart Table
+      Audit 1,250 Pairs: 86.64% Complete and Correct
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: machine_set
+    label: |-
+      Manually Clean the Machine Test Set
+      Finalize 23,111 Machine Questions
+      Train 20,901 • Validation 960 • Test 1,250
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: release
+    label: |-
+      Release ChartQA
+      20,882 Charts • 32,719 Total Questions
+      Human and Machine Splits Kept Separately
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: input
+    label: |-
+      Evaluate Open-vocabulary Chart QA
+      Input Chart Image plus Question
+      Cover Retrieval, Visual, Compositional, and Mixed Types
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: answer
+    label: |-
+      Generate the Answer
+      Model May Combine Visual Features and Extracted Table
+      Return Numeric or Non-numeric Text
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: numeric
+    label: |-
+      Numeric Answer
+      Correct within 5% of Gold
+      Relaxed Accuracy Handles Extraction Noise
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 80
+  - id: text
+    label: |-
+      Non-numeric Answer
+      Require Exact Match with Gold
+      No Relaxed Tolerance
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 360
+  - id: report
+    label: |-
+      Report Accuracy and Relaxed Accuracy
+      Separate ChartQA-H and ChartQA-M
+      Analyze Visual versus Logical Reasoning Gaps
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3040
+      'y': 220
 edges:
   - from: sources
-    to: metadata
+    to: artifacts
     type: primary
-  - from: metadata
-    to: human
+  - from: artifacts
+    to: human_author
     type: primary
-  - from: human
+  - from: artifacts
+    to: summaries
+    type: data
+  - from: human_author
+    to: human_verify
+    type: primary
+  - from: human_verify
+    to: human_set
+    type: primary
+  - from: summaries
     to: t5
     type: primary
   - from: t5
-    to: clean
+    to: machine_filter
     type: primary
-  - from: clean
-    to: split
+  - from: machine_filter
+    to: machine_set
     type: primary
-  - from: split
-    to: chartocr
+  - from: human_set
+    to: release
     type: primary
-  - from: chartocr
-    to: models
+  - from: machine_set
+    to: release
+    type: primary
+  - from: release
+    to: input
+    type: primary
+  - from: input
+    to: answer
+    type: primary
+  - from: answer
+    to: numeric
+    type: primary
+  - from: answer
+    to: text
+    type: primary
+  - from: numeric
+    to: report
+    type: primary
+  - from: text
+    to: report
     type: primary
 modules: []

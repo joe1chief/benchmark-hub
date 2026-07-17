@@ -5,85 +5,180 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CiteBench 构建流程
-  description: 对齐论文的 CiteBench 构建流程：将四个引文生成数据集统一到一个任务定义，转换为带标签输入结构， 规范引用锚点，并用于标准化基线、迁移和话语结构评测。
-  legend: 实线箭头表示源数据统一、schema 构建和标准化评测流程。
+  description: 与论文对齐的 CiteBench 流程：将四个引文文本数据集映射成统一生成任务，用来源专属脚本转换为通用标签化结构并规范引文锚点， 再通过抽取式与神经基线、迁移实验、自动指标、篇章诊断和人工判断完成评测。
+  legend: 实线表示数据统一与评测主流程；分支分别表示迁移、篇章与人工分析。
 nodes:
   - id: sources
-    label: 源数据集
+    label: |-
+      收集四个来源数据集
+      ABURAED • CHEN • LU • XING
+      覆盖计算语言学、计算机与多学科论文
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 220
   - id: task
-    label: 统一任务
+    label: |-
+      定义引文文本生成任务
+      输入：被引论文 + 引用论文上下文
+      目标：原始引文句或引文片段
     type: document
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
+  - id: transform
+    label: |-
+      执行来源专属转换
+      获取并重建各官方数据集
+      不额外过滤样本
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
   - id: schema
-    label: 标签输入
+    label: |-
+      序列化统一标签化输入
+      被引摘要 + ABS 标签的引用论文摘要
+      CTX_B 标签前文 + CTX_A 标签后文
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 940
+      'y': 220
   - id: anchors
-    label: 锚点格式
+    label: |-
+      规范引文锚点
+      目标参考文献映射为 [0]
+      其他参考文献映射为 #OTHEREFR
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1240
+      'y': 220
+  - id: splits
+    label: |-
+      发布统一数据划分
+      训练 322,037 • 验证 23,016
+      测试 13,712 • 合计 358,765
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 220
   - id: baselines
-    label: 基线模型
-    type: terminal
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: metrics
-    label: 指标工具
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: transfer
-    label: 迁移测试
+    label: |-
+      训练标准化基线
+      LexRank 抽取式基线
+      LED 直接监督生成模型
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: discourse
-    label: 话语分析
+      x: 1840
+      'y': 220
+  - id: generation
+    label: |-
+      生成引文文本
+      使用统一输入与目标格式
+      比较单数据集训练与联合训练
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: metrics
+    label: |-
+      计算文本相似度
+      ROUGE-1 • ROUGE-2 • ROUGE-L
+      与标准引文文本计算 BERTScore
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2440
+      'y': 40
+  - id: transfer
+    label: |-
+      测试跨数据集迁移
+      在单一或多个来源上训练
+      评估域内与域外泛化
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: discourse
+    label: |-
+      分析引文篇章功能
+      引用意图分类
+      基于 CORWA 的功能诊断
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 400
+  - id: human
+    label: |-
+      开展人工评测
+      判断可读性与一致性
+      比较生成文本和标准引文文本
+    type: user
+    size: xl
+    position:
+      x: 2740
+      'y': 400
+  - id: report
+    label: |-
+      汇总多数据集基准结果
+      聚合相似度、迁移与篇章分析
+      揭示领域与数据集差异
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
 edges:
   - from: sources
     to: task
     type: primary
   - from: task
+    to: transform
+    type: primary
+  - from: transform
     to: schema
     type: primary
   - from: schema
     to: anchors
     type: primary
   - from: anchors
+    to: splits
+    type: primary
+  - from: splits
     to: baselines
     type: primary
   - from: baselines
+    to: generation
+    type: primary
+  - from: generation
     to: metrics
     type: primary
-  - from: metrics
+  - from: generation
     to: transfer
     type: primary
-  - from: transfer
+  - from: generation
     to: discourse
+    type: primary
+  - from: discourse
+    to: human
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
+  - from: transfer
+    to: report
+    type: primary
+  - from: human
+    to: report
     type: primary
 modules: []

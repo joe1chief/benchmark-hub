@@ -4,122 +4,177 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC Build Process
+  title: AI2 Reasoning Challenge Construction and Evaluation
   description: >-
-    Paper-aligned AI2 Reasoning Challenge question collection, Challenge/Easy filtering, corpus construction, and
-    baseline evaluation workflow based on arXiv:1803.05457.
+    Paper-aligned workflow for collecting natural science exam questions, using two simple solvers to define the Easy
+    and Challenge sets, building the supporting ARC Corpus, and evaluating public baselines.
   legend: >-
-    Solid arrows show question set construction and benchmark release; dashed arrows mark optional ARC Corpus support
-    and baseline failure analysis.
+    Challenge membership is algorithmic: a question must be missed by both the Waterloo-corpus retrieval solver and the
+    PMI word-co-occurrence solver. The optional 14M-sentence ARC Corpus supports research but does not alter the
+    Easy/Challenge assignment.
 nodes:
-  - id: sources
+  - id: source
     label: |-
-      Public science exams
-      natural grade-school questions
-      human-authored tests
+      Collect Public-Domain Science Exam Questions
+      Human-Authored for Grades 3–9
+      Natural • Non-Diagram • Usually Four Choices
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: question_set
+      'y': 100
+  - id: normalize
     label: |-
-      ARC questions
-      7787 non-diagram MCQs
-      grades 3 through 9
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: simple_solvers
-    label: |-
-      Difficulty filters
-      IR solver plus PMI solver
-      answer each question
+      Normalize the ARC Question Set
+      Standardize Stem, Options, and Correct Choice
+      Retain 7,787 Questions
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: split
+      x: 320
+      'y': 100
+  - id: ir
     label: |-
-      Challenge and Easy split
-      2590 hard, 5197 easy
-      train/dev/test partitions
+      Run Retrieval Baseline
+      Search the Waterloo Web Corpus
+      Score Candidate Answers from Retrieved Text
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: pmi
+    label: |-
+      Run PMI Co-Occurrence Baseline
+      Measure Question–Answer Word Association
+      Predict the Highest-Scoring Option
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: gate
+    label: Did Both Simple Solvers Answer Incorrectly?
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: corpus
+      x: 1160
+      'y': 100
+  - id: challenge
     label: |-
-      ARC Corpus
-      14M science sentences
-      search templates and AristoMini
+      ARC Challenge Set
+      Both Solvers Failed • 2,590 Questions
+      Train / Dev / Test = 1,119 / 299 / 1,172
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: analysis
+      x: 1160
+      'y': 310
+  - id: easy
     label: |-
-      Reasoning analysis
-      knowledge type categories
-      95% coverage sample
+      ARC Easy Set
+      At Least One Solver Succeeded • 5,197 Questions
+      Train / Dev / Test = 2,251 / 570 / 2,376
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 310
+  - id: package
+    label: |-
+      Release the ARC Question Package
+      Easy + Challenge = 7,787
+      Preserve Multiple-Choice Labels and Splits
     type: document
     size: xl
     position:
-      x: 820
-      'y': 250
+      x: 1300
+      'y': 560
+  - id: corpus
+    label: |-
+      Build the Optional ARC Corpus
+      ~100 Hand-Written Queries over 80 Science Topics
+      AristoMini Filtering → 14M Science Sentences
+    type: database
+    size: xl
+    position:
+      x: 1020
+      'y': 560
   - id: baselines
     label: |-
-      Baseline systems
-      IR, PMI, BiDAF
-      DecompAttn and DGEM
+      Evaluate Public Baselines on Challenge
+      IR • PMI • BiDAF • DecompAttn • DGEM
+      Compare with Random Choice
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: release
+      x: 740
+      'y': 560
+  - id: score
     label: |-
-      Public ARC release
-      dataset, corpus, models
-      leaderboard challenge
+      Score Multiple-Choice Accuracy
+      One Point for the Correct Option
+      Fractional Credit When a Solver Ties Choices
+    type: process
+    size: xl
+    position:
+      x: 460
+      'y': 560
+  - id: publish
+    label: |-
+      Publish ARC Resources
+      Question Sets + 14M-Sentence Corpus
+      Baseline Implementations + Leaderboard
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 180
+      'y': 560
 edges:
-  - from: sources
-    to: question_set
+  - from: source
+    to: normalize
     type: primary
-  - from: question_set
-    to: simple_solvers
+  - from: normalize
+    to: ir
     type: primary
-  - from: simple_solvers
-    to: split
+  - from: ir
+    to: pmi
     type: primary
-  - from: split
+  - from: pmi
+    to: gate
+    type: primary
+  - from: gate
+    to: challenge
+    type: primary
+  - from: gate
+    to: easy
+    type: primary
+  - from: challenge
+    to: package
+    type: primary
+    waypoints:
+      - x: 1260
+        'y': 500
+      - x: 1400
+        'y': 500
+  - from: easy
+    to: package
+    type: primary
+    waypoints:
+      - x: 1540
+        'y': 520
+      - x: 1400
+        'y': 520
+  - from: package
     to: corpus
-    type: data
-    label: optional support
+    type: primary
   - from: corpus
-    to: analysis
+    to: baselines
     type: data
-  - from: split
-    to: baselines
-    type: primary
-  - from: analysis
-    to: baselines
-    type: optional
   - from: baselines
-    to: release
+    to: score
     type: primary
-  - from: release
-    to: question_set
-    type: optional
-    label: leaderboard submissions
+  - from: score
+    to: publish
+    type: primary
 modules: []

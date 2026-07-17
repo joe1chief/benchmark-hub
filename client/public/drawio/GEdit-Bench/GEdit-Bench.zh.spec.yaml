@@ -5,75 +5,122 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GEdit-Bench 构建流程
-  description: 对齐论文的 GEdit-Bench 流程：从真实用户编辑案例到脱敏测试集和 VIEScore 评测。
-  legend: 实线箭头表示真实用户收集、任务分类、相似指令过滤、脱敏、模型编辑和 VIEScore 评判。
+  description: 与论文一致的 GEdit-Bench 真实用户收集、隐私处理、双语化和 VIEScore 评测流程。
+  legend: 实线箭头对应 Step1X-Edit 论文（arXiv:2504.17761）。完整 606 例基准与仅统计所有参评模型有效输出时使用的 较小交集子集相互区分。
 nodes:
-  - id: users
-    label: 真实用户
+  - id: collect
+    label: |-
+      收集超过 1,000 个真实编辑实例
+      来源包括 Reddit 类互联网用户请求
+      保留真实用户图像与编辑意图
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: collect
-    label: 千余编辑
+      'y': 250
+  - id: taxonomy
+    label: |-
+      人工整理编辑指令
+      划分为 11 类真实编辑任务
+      过滤用途相似的指令以保持多样性
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: taxonomy
-    label: 11类任务
+      'y': 250
+  - id: privacy
+    label: |-
+      对用户上传图像去标识化
+      在多个公开搜索引擎执行反向搜图
+      用视觉和语义一致的公开图像替换
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: filter
-    label: 多样性筛选
-    type: decision
+      'y': 250
+  - id: fallback
+    label: |-
+      无替代图像时保留原始意图
+      改为最小幅度修改编辑指令
+      维持图像与指令的忠实对应
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: bench
-    label: 606测试
+      'y': 250
+  - id: bilingual
+    label: |-
+      每张图像配两种语言指令
+      分别提供英文与中文表述
+      人工筛查措辞与图像适用性
     type: document
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: models
-    label: 编辑模型
-    type: process
+      'y': 250
+  - id: release
+    label: |-
+      汇总 606 个真实测试实例
+      参考图像 + 真实编辑请求
+      公开基准覆盖 11 类编辑任务
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: VIEScore
-    type: terminal
+      'y': 250
+  - id: edit
+    label: |-
+      运行开源与闭源编辑模型
+      输入源图像和英文或中文指令
+      保留成功生成的编辑结果
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 250
+  - id: subsets
+    label: |-
+      区分完整集与有效输出视图
+      完整基准：606 个实例
+      共同有效输出交集：英文 434 · 中文 422
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 250
+  - id: score
+    label: |-
+      使用两个 VLM 评委执行 VIEScore
+      GPT-4.1 与 Qwen2.5-VL-72B
+      语义一致性 · 感知质量 · 综合得分
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 250
 edges:
-  - from: users
-    to: collect
-    type: primary
   - from: collect
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: filter
+    to: privacy
     type: primary
-  - from: filter
-    to: bench
+  - from: privacy
+    to: fallback
     type: primary
-  - from: bench
-    to: models
+  - from: fallback
+    to: bilingual
     type: primary
-  - from: models
+  - from: bilingual
+    to: release
+    type: primary
+  - from: release
+    to: edit
+    type: primary
+  - from: edit
+    to: subsets
+    type: primary
+  - from: subsets
     to: score
     type: primary
 modules: []

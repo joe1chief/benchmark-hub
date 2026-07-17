@@ -1,0 +1,177 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MathQA 构建流程
+  description: 按论文还原将 AQuA-RAT 中可解的多项选择数学文字题转化为 MathQA 可执行运算程序标注，并用答案准确率评测的完整流程。
+  legend: MathQA 使用 58 种领域感知运算。论文表格中的精确总数为 37,259，正文也将其概述为 37,200 或 37k。
+nodes:
+  - id: source
+    label: |-
+      从 AQuA-RAT 开始
+      英文 GRE/GMAT 数学文字题
+      题目 · 五个选项 · 解题说明
+      保留正确选项
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: screen
+    label: |-
+      选择可解的数值题
+      排除不可用噪声样本
+      去除高阶多项式题
+      去除答案完全非数值的题
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: language
+    label: |-
+      定义表示语言
+      58 种领域感知运算
+      题中数值 · 预定义常量
+      前序运算结果均可作参数
+    type: document
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: categorize
+    label: |-
+      按词频划分数学领域
+      几何 · 物理 · 概率
+      盈亏 · 通用 · 其他
+      据此缩小可选运算范围
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: annotate
+    label: |-
+      众包编写运算程序
+      依次选择运算和合法参数
+      每提交一步立即执行
+      将结果加入下一步参数列表
+    type: user
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: gate
+    label: |-
+      执行提交门槛
+      至少使用一个题中数值
+      最终结果必须非常接近
+      正确选项的数值
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: worker_qa
+    label: |-
+      控制众包标注员质量
+      随机插入预设测试题
+      必须维持准确率阈值
+      不可信标注重新入池
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: validate
+    label: |-
+      验证题目与程序对齐
+      三名验证者至少两票通过
+      验证准确率 94.64%
+      专家抽查 500 题中 92% 有效
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: expand
+    label: |-
+      扩展到相似题目
+      将具体数值替换为占位符
+      使用 Levenshtein 距离匹配
+      编辑距离不超过四个词
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: dataset
+    label: |-
+      汇总 MathQA
+      37,259 道题 · 五个选项
+      对齐的可执行运算程序
+      每个程序平均 5.3 步运算
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: split
+    label: |-
+      随机拆分数据集
+      训练集 · 80%
+      开发集 · 12%
+      测试集 · 8%
+    type: document
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: evaluate
+    label: |-
+      评测答案准确率
+      解码并执行候选程序束
+      将计算值匹配到选项
+      按是否选中正确项计分
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: source
+    to: screen
+    type: primary
+  - from: screen
+    to: language
+    type: primary
+  - from: language
+    to: categorize
+    type: primary
+  - from: categorize
+    to: annotate
+    type: primary
+  - from: annotate
+    to: gate
+    type: primary
+  - from: gate
+    to: worker_qa
+    type: primary
+  - from: worker_qa
+    to: validate
+    type: primary
+  - from: validate
+    to: expand
+    type: primary
+  - from: expand
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split
+    type: primary
+  - from: split
+    to: evaluate
+    type: primary
+modules: []

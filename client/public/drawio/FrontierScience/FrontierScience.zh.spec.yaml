@@ -5,75 +5,154 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FrontierScience 构建流程
-  description: 按论文对齐的 FrontierScience 构建流程：从专家原创科学题到 gold 集评分。
-  legend: 实线箭头表示专家招募、双轨任务、原创题目、同行复核、gold 集筛选、模型作答和精确/量规评分。
+  description: 按论文对齐的双轨专家命题、审查、黄金集筛选与评分流程。
+  legend: 上支为奥赛轨、下支为研究轨，对应 arXiv:2601.21165 第 2.1–2.4 节；两支汇入 160 题开源黄金集后继续采用各自评分协议。
 nodes:
-  - id: experts
-    label: 专家池
+  - id: disciplines
+    label: |-
+      招募物理、化学和生物专家
+      构建两条互补能力轨道
+      所有题目均为原创纯文本任务
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tracks
-    label: 双轨任务
+      'y': 260
+  - id: olympiad_authors
+    label: |-
+      奥赛专家池
+      42 位奖牌得主或国家队教练
+      共 108 枚奖牌：金 45 · 银 37 · 铜 26
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: draft
-    label: 原创题目
+      'y': 80
+  - id: research_authors
+    label: |-
+      研究专家池
+      45 位博士科学家：博士生、博后、教师
+      真实研究子问题，至少需 3–5 小时
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: review
-    label: 同行复核
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: gold
-    label: Gold集
+      x: 300
+      'y': 440
+  - id: olympiad_tasks
+    label: |-
+      创作自包含奥赛题
+      难度至少达到国际奥赛水平
+      数值/表达式答案或生物模糊字符串
     type: document
     size: xl
     position:
+      x: 560
+      'y': 80
+  - id: research_tasks
+    label: |-
+      创作开放式研究子问题
+      完整满分解答 + 元数据
+      独立客观评分项合计 10 分
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 440
+  - id: olympiad_review
+    label: |-
+      用内部模型筛难；答对则修订
+      至少 1 次独立评审 + 整体评审
+      作者与评审达成一致，否则丢弃
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 80
+  - id: research_review
+    label: |-
+      用内部模型评分筛难
+      至少 2 次独立评审 + 元评审
+      作者与评审达成一致，否则丢弃
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 440
+  - id: gold
+    label: |-
+      专家元评审并发布
+      500+ 奥赛题 → 100 道黄金题
+      200+ 研究题 → 60 道黄金题；其余保留
+    type: database
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: answer
-    label: 模型作答
+      'y': 260
+  - id: olympiad_grade
+    label: |-
+      无浏览评测奥赛答案
+      GPT-5 裁判比较数值/表达式/短语
+      20 次独立试验取平均准确率
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: grade
-    label: 量规评分
+      'y': 80
+  - id: research_grade
+    label: |-
+      无浏览评测研究答案
+      GPT-5 高推理裁判分配评分项分数
+      ≥7/10 为成功；30 次试验取平均
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 440
+  - id: report
+    label: |-
+      分轨报告准确率
+      奥赛：受约束的精确推理
+      研究：开放过程与最终答案质量
     type: terminal
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 260
 edges:
-  - from: experts
-    to: tracks
+  - from: disciplines
+    to: olympiad_authors
     type: primary
-  - from: tracks
-    to: draft
+  - from: disciplines
+    to: research_authors
     type: primary
-  - from: draft
-    to: review
+  - from: olympiad_authors
+    to: olympiad_tasks
     type: primary
-  - from: review
+  - from: research_authors
+    to: research_tasks
+    type: primary
+  - from: olympiad_tasks
+    to: olympiad_review
+    type: primary
+  - from: research_tasks
+    to: research_review
+    type: primary
+  - from: olympiad_review
+    to: gold
+    type: primary
+  - from: research_review
     to: gold
     type: primary
   - from: gold
-    to: answer
+    to: olympiad_grade
     type: primary
-  - from: answer
-    to: grade
+  - from: gold
+    to: research_grade
+    type: primary
+  - from: olympiad_grade
+    to: report
+    type: primary
+  - from: research_grade
+    to: report
     type: primary
 modules: []

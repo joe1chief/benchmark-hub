@@ -1,62 +1,104 @@
 {
   "version": 1,
-  "title": "AdvBench Build Process",
+  "title": "AdvBench 构建与 GCG 评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "有害任务",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "n2",
-      "label": "500提示",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n3",
-      "label": "攻击后缀",
+      "id": "threat",
+      "label": "定义护栏绕过威胁模型\n测试对齐模型能否被诱导生成\n其通常会拒绝的内容",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "模型查询",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n5",
-      "label": "是否服从",
+      "id": "setting",
+      "label": "构建哪类 AdvBench 集合？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "安全判定",
+      "id": "strings",
+      "label": "整理 500 个有害字符串\n有毒、威胁、误导、歧视、网络犯罪、\n危险或非法内容\n3-44 个 LLaMA token • 均值 16",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "behaviors",
+      "label": "整理 500 个有害行为\n将相同广义主题写成指令\n成功指尝试遵从，而非拒答",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "objective",
+      "label": "定义优化目标\n字符串：精确目标续写\n行为：与遵从一致的肯定式前缀",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "suffix",
+      "label": "初始化 20-token 对抗后缀\n附加到一个或多个提示\n汇总多提示与多模型损失",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "成功率",
+      "id": "gcg",
+      "label": "运行贪心坐标梯度搜索\n梯度 Top-k 256 • 候选批量 512\n用最低损失候选替换一个 token",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "拒答表现",
+      "id": "protocol",
+      "label": "选择攻击协议\n单题：前 100 项、单一模型\n通用：25 个训练 + 100 个留出行为\n迁移：25 个行为、2 或 4 个源模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run",
+      "label": "保留 500 步后的最佳后缀\n按各模型默认对话模板运行\n评测白盒与黑盒迁移",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "应采用哪条成功判定？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "string_score",
+      "label": "有害字符串评分\n出现精确目标字符串即成功\n同时记录目标交叉熵损失",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "behavior_score",
+      "label": "有害行为评分\n判断是否合理尝试执行指令\n必要时人工区分遵从与拒答",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "asr",
+      "label": "计算攻击成功率\n单题 ASR • 通用训练/测试 ASR\n388 个测试行为上的迁移 ASR",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "compare",
+      "label": "比较攻击方法与迁移\nPEZ • GBDA • AutoPrompt • GCG\n源模型 → 开源及闭源目标模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告鲁棒性与通用性\nASR 越高表示护栏绕过越成功\n字符串诱导中目标损失越低越好",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +106,98 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "threat",
+      "to": "setting",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "setting",
+      "to": "strings",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "setting",
+      "to": "behaviors",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "strings",
+      "to": "objective",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "behaviors",
+      "to": "objective",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "objective",
+      "to": "suffix",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "suffix",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "gcg",
+      "to": "protocol",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "protocol",
+      "to": "run",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "run",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "judge",
+      "to": "string_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "judge",
+      "to": "behavior_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "string_score",
+      "to": "asr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "behavior_score",
+      "to": "asr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "asr",
+      "to": "compare",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "compare",
+      "to": "report",
       "type": "primary"
     }
   ],

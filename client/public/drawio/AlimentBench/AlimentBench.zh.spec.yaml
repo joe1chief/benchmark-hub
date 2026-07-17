@@ -4,86 +4,166 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlimentBench 构建流程
-  description: 以Hunyuan报告“AlimentBench”拼写展示的AlignBench v1.1论文流程：整理真实场景中文查询，形成8类683题，以网页证据核验参考答案，再由规则校准的多维LLM裁判评分。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: AlignBench 构建流程
+  description: >-
+    对齐论文、在报告中拼写为 AlimentBench 的 AlignBench v1.1 流程：真实中文场景先通过四项查询规则并归入八类体系；GPT-4 草拟参考答案，人工结合网页证据修订，三类模型过滤掉较容易的一半，最终对 683
+    个查询按任务特定维度做规则校准的 1–10 分逐点评审。
+  legend: 实线箭头表示整理与评测；上方分支为知识密集型参考答案补充证据。
 nodes:
-  - id: n1
-    label: 真实场景
+  - id: sources
+    label: |-
+      真实中文场景
+      在线聊天服务用法
+      + 研究者编写的难题
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 查询整理
+      'y': 240
+  - id: rules
+    label: |-
+      查询整理规则
+      任务导向 / 清晰流畅
+      复杂困难 / 脱敏安全
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 8个类别
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 683个查询
+      x: 320
+      'y': 240
+  - id: taxonomy
+    label: |-
+      八类能力体系
+      语言 / 中文 / 问答 / 写作
+      逻辑 / 数学 / 角色 / 专业
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 网页证据
+      x: 600
+      'y': 240
+  - id: draft
+    label: |-
+      GPT-4 参考答案草稿
+      作为每题起始答案
+    type: process
+    size: large
+    position:
+      x: 880
+      'y': 240
+  - id: human_review
+    label: |-
+      人工参考答案复核
+      逐条修订与完善
+      检查正确性和质量
+    type: user
+    size: xl
+    position:
+      x: 1120
+      'y': 240
+  - id: evidence
+    label: |-
+      知识密集型证据
+      标注员网页检索
+      记录 URL + 原文引述
     type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 人工参考
+      x: 1400
+      'y': 60
+  - id: verified
+    label: |-
+      已核验候选三元组
+      查询 + 类别 + 参考答案
+      需要时附网页证据
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 规则校准裁判
+      x: 1680
+      'y': 240
+  - id: difficulty
+    label: |-
+      三模型难度过滤
+      GPT-3.5 / ChatGLM API / 讯飞星火
+      GPT-4 判分；移除最易 50%
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 1-10分
+      x: 1960
+      'y': 240
+  - id: dataset
+    label: |-
+      AlignBench
+      683 个中文查询
+      八个主要类别
+    type: database
+    size: xl
+    position:
+      x: 2240
+      'y': 240
+  - id: model
+    label: |-
+      待评模型回复
+      按类别设置生成温度
+    type: process
+    size: large
+    position:
+      x: 2520
+      'y': 240
+  - id: judge
+    label: |-
+      GPT-4 逐点评审
+      任务特定维度 + 思维链
+      详细规则校准
+    type: process
+    size: xl
+    position:
+      x: 2760
+      'y': 240
+  - id: score
+    label: |-
+      分维度得分 + 总体 1–10 分
+      人工参考答案锚定为 8 分
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 3040
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: sources
+    to: rules
     type: primary
-  - from: n2
-    to: n3
+  - from: rules
+    to: taxonomy
     type: primary
-  - from: n3
-    to: n4
+  - from: taxonomy
+    to: draft
     type: primary
-  - from: n4
-    to: n5
+  - from: draft
+    to: human_review
     type: primary
-  - from: n5
-    to: n6
+  - from: human_review
+    to: evidence
+    type: data
+    label: 知识密集型
+  - from: evidence
+    to: verified
+    type: data
+  - from: human_review
+    to: verified
     type: primary
-  - from: n6
-    to: n7
+    label: 其他查询
+  - from: verified
+    to: difficulty
     type: primary
-  - from: n7
-    to: n8
+  - from: difficulty
+    to: dataset
+    type: primary
+  - from: dataset
+    to: model
+    type: primary
+  - from: model
+    to: judge
+    type: primary
+  - from: judge
+    to: score
     type: primary
 modules: []

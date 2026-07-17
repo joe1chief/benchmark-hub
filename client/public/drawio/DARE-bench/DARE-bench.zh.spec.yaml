@@ -4,76 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DARE-bench 构建流程
-  description: 对齐论文的 DARE-bench 流程：从 Kaggle 数据源到沙盒验证的数据科学任务。
-  legend: 实线箭头对应论文四阶段：数据来源、任务设计、后处理和最终化。
+  title: DARE-bench 构建与评测流程
+  description: 对齐论文的 Kaggle 数据采集、任务构造、可验证真值构建、沙盒数据科学执行与分变体评分流程。
+  legend: 上排从左到右为基准构建，下排从右到左为智能体评测；数量采用论文完整的 6,300 题， 而不是官方仓库当前公开的较小许可筛选子集。
 nodes:
-  - id: source
-    label: Kaggle数据
+  - id: sources
+    label: |-
+      Kaggle 数据集采集
+      通过官方 API 获取开放许可表格数据
+      网页描述 + 列预览
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: 元数据过滤
+      'y': 100
+  - id: feasibility
+    label: |-
+      LLM 可行性分析
+      识别目标、特征、类型与时间频率
+      仅保留定义良好的预测任务
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: design
-    label: LLM任务设计
+      x: 320
+      'y': 100
+  - id: families
+    label: |-
+      六种任务变体
+      分类 IF / MM；回归 IF / MM
+      时间序列 XF / CF
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: post
-    label: 后处理
+      x: 600
+      'y': 100
+  - id: postprocess
+    label: |-
+      受控后处理
+      随机切分；时间序列按时间切分
+      IF 训练集 20% 噪声 + 实体检查 / 重采样
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: sandbox
-    label: 沙盒验证
+      x: 880
+      'y': 100
+  - id: ground_truth
+    label: |-
+      可验证真值
+      IF：沙盒参考代码 + 固定随机种子
+      MM / 时间序列：原始遮蔽标签
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      论文基准：6,300 题
+      5,948 训练 + 352 评测
+      分类 2,468 / 回归 1,888 / 时间序列 1,944
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: input
+    label: |-
+      智能体任务输入
+      问题 + 元数据 + 训练 / 测试文件
+      遮蔽目标 + 代码沙盒工具
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: agent
+    label: |-
+      有界智能体循环
+      标准评测：5 轮交互
+      每轮沙盒最长 200 秒
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: execute
+    label: |-
+      执行数据科学代码
+      加载 / 清洗 / 拟合 / 预测
+      输出按行对齐的预测文件
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: route
+    label: |-
+      按变体路由验证器
+      IF 使用模拟参考输出
+      MM / 时间序列使用遮蔽真值
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: score
+    label: |-
+      客观评分
+      分类 / 回归 IF：精确 0 或 1；分类 MM：Macro-F1
+      回归 + 时间序列：截断 R²；多目标取平均
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      DARE-bench 结果
+      六种变体得分 + 汇总
+      可复现标签；不使用裁判模型
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: artifacts
-    label: 基准制品
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 可验证评测
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
 edges:
-  - from: source
-    to: filter
+  - from: sources
+    to: feasibility
     type: primary
-  - from: filter
-    to: design
+  - from: feasibility
+    to: families
     type: primary
-  - from: design
-    to: post
+  - from: families
+    to: postprocess
     type: primary
-  - from: post
-    to: sandbox
+  - from: postprocess
+    to: ground_truth
     type: primary
-  - from: sandbox
-    to: artifacts
+  - from: ground_truth
+    to: release
     type: primary
-  - from: artifacts
-    to: eval
+  - from: release
+    to: input
+    type: primary
+  - from: input
+    to: agent
+    type: primary
+  - from: agent
+    to: execute
+    type: primary
+  - from: execute
+    to: route
+    type: primary
+  - from: route
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

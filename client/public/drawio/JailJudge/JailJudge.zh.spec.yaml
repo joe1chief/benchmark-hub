@@ -4,86 +4,177 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: JailJudge Build Process (ZH)
-  description: 对齐论文的 JailJudge 构建流程：从复杂有害场景和 LLM 响应到人工标签、训练/测试切分、多 Agent 细粒度评分、Guard 调优和裁判指标。
-  legend: 实线箭头表示基准数据构建、多 Agent 裁判、Guard 训练与评测。
+  title: JailJudge 构建流程
+  description: 对齐论文的 JailJudge 构建流程：从六类有害提示和多样模型回答出发，分别构建人工标注测试集与 MultiAgent 监督数据，再微调 JAILJUDGE Guard 并评测裁判质量。
+  legend: 提示-回答池分叉为人工标注 ID/OOD 测试集与 MultiAgent 训练真值两条路径，仅在裁判评测阶段汇合。
 nodes:
-  - id: scenes
-    label: 风险场景
-    type: document
+  - id: prompts
+    label: |-
+      构建六类有害提示来源
+      原始 · 合成原始 · 对抗改写
+      多语言 · 真实世界 · 欺骗性提示
+      细化为 14 个危害类别
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: labels
-    label: 人工标签
+      x: 20
+      'y': 40
+  - id: responses
+    label: |-
+      收集多样目标回答
+      闭源与开源大模型
+      系统级与模型级防御
+      同时包含安全与不安全输出
+    type: cloud
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: pool
+    label: |-
+      形成提示-回答配对池
+      覆盖性 · 多样性 · 平衡性
+      JAILJUDGETRAIN 来源配对
+      35K+ 指令微调条目
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: annotation
+    label: |-
+      人工测试标注
+      按 MLCommons 政策培训标注员
+      人工标签与 GPT-4 交叉比较
+      重标分歧项并执行多数投票
     type: user
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: test
-    label: 测试集
-    type: document
+      x: 860
+      'y': 40
+  - id: testsets
+    label: |-
+      发布 JAILJUDGETEST
+      ID：4.5K+ 广泛风险配对
+      OOD：十种语言 6K+ 配对
+      人工二元金标准标签
+    type: database
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: train
-    label: 训练数据
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: multi
-    label: 多Agent
+      x: 1140
+      'y': 40
+  - id: judging
+    label: |-
+      MultiAgent 初判阶段
+      多个 Judging Agent
+      推理解释与 1–10 分
+      将分数转换为证据质量
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: score
-    label: 细粒度分
+      x: 580
+      'y': 380
+  - id: voting
+    label: |-
+      证据聚合与投票
+      用 Dempster 规则合并裁判证据
+      Voting Agent 接受或拒绝
+      保留理由与不确定性
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
+      x: 860
+      'y': 380
+  - id: inference
+    label: |-
+      Inference Agent
+      读取聚合后的裁判结果
+      读取全部投票结果
+      输出最终理由与 1–10 分
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: groundtruth
+    label: |-
+      构建可解释训练真值
+      细粒度分数与推理说明
+      阈值 alpha 转为二元标签
+      监督 JAILJUDGETRAIN
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 380
   - id: guard
-    label: Guard模型
+    label: |-
+      指令微调 JAILJUDGE Guard
+      基于 Llama-2-7B
+      输入：用户提示与目标回答
+      输出：解释与 1–10 分
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
+      x: 1700
+      'y': 380
+  - id: evaluate
+    label: |-
+      评测越狱裁判
+      JAILJUDGE ID 与 OOD
+      另测 JBB Behaviors 和 WILDTEST
+      比较 MultiAgent、Guard 与基线
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 40
   - id: metrics
-    label: 裁判指标
+    label: |-
+      汇报裁判质量
+      准确率 · 精确率 · 召回率 · F1
+      GPT-4 解释质量评分：1–5
+      按场景与语言细分
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2260
+      'y': 40
 edges:
-  - from: scenes
-    to: labels
+  - from: prompts
+    to: responses
     type: primary
-  - from: labels
-    to: test
+  - from: responses
+    to: pool
     type: primary
-  - from: test
-    to: train
+  - from: pool
+    to: annotation
     type: primary
-  - from: train
-    to: multi
+  - from: annotation
+    to: testsets
     type: primary
-  - from: multi
-    to: score
+  - from: pool
+    to: judging
+    type: secondary
+  - from: judging
+    to: voting
     type: primary
-  - from: score
+  - from: voting
+    to: inference
+    type: primary
+  - from: inference
+    to: groundtruth
+    type: primary
+  - from: groundtruth
     to: guard
     type: primary
+  - from: testsets
+    to: evaluate
+    type: primary
   - from: guard
+    to: evaluate
+    type: primary
+  - from: evaluate
     to: metrics
     type: primary
 modules: []

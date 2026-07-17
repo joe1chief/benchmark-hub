@@ -5,88 +5,228 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CValues Build Process
-  description: >-
-    Paper-aligned construction flow for CValues: safety and responsibility taxonomies seed expert-in-the-loop prompt
-    collection, producing human-evaluation prompts and multi-choice prompts for automatic evaluation of Chinese LLM
-    value alignment.
-  legend: Solid arrows show prompt collection and evaluation-set construction.
+  description: Paper-aligned safety and responsibility prompt collection, human evaluation, and automatic MCQ construction.
+  legend: Solid arrows show the two official construction and evaluation routes.
 nodes:
-  - id: taxonomy
-    label: Taxonomy
+  - id: criteria
+    label: |-
+      Two ascending criteria
+      Level 1 safety · Level 2 responsibility
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 210
   - id: safety
-    label: Safety
+    label: |-
+      Safety taxonomy
+      ten risk scenarios
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: resp
-    label: Responsibility
+      'y': 70
+  - id: responsibility
+    label: |-
+      Responsibility taxonomy
+      eight professional domains
     type: process
+    size: xl
+    position:
+      x: 300
+      'y': 350
+  - id: attack
+    label: |-
+      Crowdworker red-teaming
+      attack early ChatPLUG chatbot
+    type: user
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: human
-    label: Human Set
-    type: document
+      'y': 70
+  - id: experts
+    label: |-
+      100 Bottles of Poison for AI
+      eight experts × 100 induced questions
+    type: user
+    size: xl
+    position:
+      x: 560
+      'y': 350
+  - id: safety_prompts
+    label: |-
+      Select successful triggers
+      1,300 safety prompts
+    type: database
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: mcq
-    label: MCQ Set
-    type: document
+      'y': 70
+  - id: resp_prompts
+    label: |-
+      Expert-authored set
+      800 responsibility prompts
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 350
+  - id: raw
+    label: |-
+      Human-evaluation set
+      2,100 adversarial / induced prompts
+    type: database
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: human_eval
-    label: Human Eval
-    type: process
+      'y': 210
+  - id: human_split
+    label: Human evaluation protocol
+    type: decision
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: auto_eval
-    label: Auto Eval
+      'y': 70
+  - id: safety_human
+    label: |-
+      Safety responses
+      three annotators · vote · safe ratio
     type: process
     size: xl
     position:
       x: 1600
-      'y': 160
-  - id: cvalues
-    label: CValues
-    type: terminal
+      'y': 20
+  - id: resp_human
+    label: |-
+      Responsibility representative
+      ChatPLUG-13B ×3 · expert 1–10 score
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 130
+  - id: responses
+    label: |-
+      Multiple LLM responses
+      generated for each raw prompt
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 350
+  - id: categorize
+    label: |-
+      Human categorization
+      safe / unsafe or responsible / irresponsible
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 350
+  - id: rewrite
+    label: |-
+      Fill missing opposite
+      ChatGPT rewrites one response when needed
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 160
+      'y': 350
+  - id: mcq
+    label: |-
+      Pair opposite responses
+      swap positions to control position bias
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 350
+  - id: auto_set
+    label: |-
+      Automatic set: 4,312 MCQs
+      2,600 safety + 1,712 responsibility
+    type: database
+    size: xl
+    position:
+      x: 2380
+      'y': 350
+  - id: auto_score
+    label: |-
+      Automatic evaluation
+      accuracy · accuracy excluding refusals
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 350
+  - id: report
+    label: |-
+      CValues report
+      human generation + automatic recognition
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 210
 edges:
-  - from: taxonomy
+  - from: criteria
     to: safety
     type: primary
+  - from: criteria
+    to: responsibility
+    type: primary
   - from: safety
-    to: resp
+    to: attack
     type: primary
-  - from: resp
-    to: human
+  - from: responsibility
+    to: experts
     type: primary
-  - from: human
+  - from: attack
+    to: safety_prompts
+    type: primary
+  - from: experts
+    to: resp_prompts
+    type: primary
+  - from: safety_prompts
+    to: raw
+    type: primary
+  - from: resp_prompts
+    to: raw
+    type: primary
+  - from: raw
+    to: human_split
+    type: primary
+  - from: human_split
+    to: safety_human
+    type: primary
+  - from: human_split
+    to: resp_human
+    type: primary
+  - from: safety_human
+    to: report
+    type: primary
+  - from: resp_human
+    to: report
+    type: primary
+  - from: raw
+    to: responses
+    type: primary
+  - from: responses
+    to: categorize
+    type: primary
+  - from: categorize
+    to: rewrite
+    type: primary
+  - from: rewrite
     to: mcq
     type: primary
   - from: mcq
-    to: human_eval
+    to: auto_set
     type: primary
-  - from: human_eval
-    to: auto_eval
+  - from: auto_set
+    to: auto_score
     type: primary
-  - from: auto_eval
-    to: cvalues
+  - from: auto_score
+    to: report
     type: primary
 modules: []

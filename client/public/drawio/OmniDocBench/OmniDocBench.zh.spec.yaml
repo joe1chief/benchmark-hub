@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OmniDocBench 构建与评测流程
+  description: 对齐论文完成多样 PDF 文档解析页面的筛选、半自动标注、专家核验与多层级评测。
+  legend: 最终基准含九类文档的 981 页和超过 10 万条标注；6,000 页是标注候选量，并非最终发布规模。
+nodes:
+  - id: sources
+    label: |-
+      收集超过 20 万份 PDF
+      来源含 Common Crawl
+      Google · 百度 · 内部数据
+      覆盖多样文档类型
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: cluster
+    label: |-
+      聚类页面视觉外观
+      用 ResNet-50 提取特征
+      通过 Faiss 聚为十个中心
+      显式覆盖版式多样性
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: sample
+    label: |-
+      采样 6,000 个候选页面
+      从聚类中心附近抽取
+      保留视觉多样页面
+      准备属性筛查
+    type: document
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: balance
+    label: |-
+      标注并平衡页面
+      文档类型 · 版式 · 语言
+      筛选为 981 页
+      覆盖九类文档
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: preannotate
+    label: |-
+      生成自动预标注
+      微调 LayoutLMv3
+      PaddleOCR · UniMERNet
+      GPT-4o 预标表格内容
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: layout
+    label: |-
+      标注 19 类版面元素
+      记录边界框与属性
+      覆盖块级和行内元素
+      保留页面几何信息
+    type: document
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: relations
+    label: |-
+      记录文档元素关系
+      标注阅读顺序
+      连接标题与所属对象
+      记录跨页关系
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: content
+    label: |-
+      转写元素内容
+      Unicode 文本 · LaTeX 公式
+      HTML 与 LaTeX 表格
+      逐字符校正
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: human
+    label: |-
+      执行人工精修
+      修正框与阅读顺序
+      使用 Tables Generator 与 latexlive
+      修复关系和内容
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: qc
+    label: |-
+      执行最终质量控制
+      CDM 检测渲染失败
+      三名研究人员复核修正
+      验证全部标注
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: release
+    label: |-
+      发布 OmniDocBench
+      981 页 · 九类文档
+      超过 10 万条标注
+      15 个属性标签
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: preprocess
+    label: |-
+      归一化模型 Markdown
+      移除图像和起始标签
+      提取表格 · 公式 · 代码
+      切分文本并记录阅读顺序
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: match
+    label: |-
+      匹配预测与真值
+      执行相邻搜索
+      按归一化编辑距离模糊匹配
+      应用忽略规则
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: report
+    label: |-
+      报告多层级指标
+      文本 NED · 表格 TEDS 与 NED
+      公式 CDM · NED · BLEU
+      按任务属性报告阅读顺序 NED
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: sources
+    to: cluster
+    type: primary
+  - from: cluster
+    to: sample
+    type: primary
+  - from: sample
+    to: balance
+    type: primary
+  - from: balance
+    to: preannotate
+    type: primary
+  - from: preannotate
+    to: layout
+    type: primary
+  - from: layout
+    to: relations
+    type: primary
+  - from: relations
+    to: content
+    type: primary
+  - from: content
+    to: human
+    type: primary
+  - from: human
+    to: qc
+    type: primary
+  - from: qc
+    to: release
+    type: primary
+  - from: release
+    to: preprocess
+    type: primary
+  - from: preprocess
+    to: match
+    type: primary
+  - from: match
+    to: report
+    type: primary
+modules: []

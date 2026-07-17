@@ -1,62 +1,86 @@
 {
   "version": 1,
-  "title": "JailJudge Build Process (ZH)",
+  "title": "JailJudge 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "scenes",
-      "label": "风险场景",
-      "type": "document",
+      "id": "prompts",
+      "label": "构建六类有害提示来源\n原始 · 合成原始 · 对抗改写\n多语言 · 真实世界 · 欺骗性提示\n细化为 14 个危害类别",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "labels",
-      "label": "人工标签",
+      "id": "responses",
+      "label": "收集多样目标回答\n闭源与开源大模型\n系统级与模型级防御\n同时包含安全与不安全输出",
+      "type": "cloud",
+      "size": "xl"
+    },
+    {
+      "id": "pool",
+      "label": "形成提示-回答配对池\n覆盖性 · 多样性 · 平衡性\nJAILJUDGETRAIN 来源配对\n35K+ 指令微调条目",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "annotation",
+      "label": "人工测试标注\n按 MLCommons 政策培训标注员\n人工标签与 GPT-4 交叉比较\n重标分歧项并执行多数投票",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "test",
-      "label": "测试集",
-      "type": "document",
+      "id": "testsets",
+      "label": "发布 JAILJUDGETEST\nID：4.5K+ 广泛风险配对\nOOD：十种语言 6K+ 配对\n人工二元金标准标签",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "train",
-      "label": "训练数据",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "multi",
-      "label": "多Agent",
+      "id": "judging",
+      "label": "MultiAgent 初判阶段\n多个 Judging Agent\n推理解释与 1–10 分\n将分数转换为证据质量",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "细粒度分",
+      "id": "voting",
+      "label": "证据聚合与投票\n用 Dempster 规则合并裁判证据\nVoting Agent 接受或拒绝\n保留理由与不确定性",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "Inference Agent\n读取聚合后的裁判结果\n读取全部投票结果\n输出最终理由与 1–10 分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "groundtruth",
+      "label": "构建可解释训练真值\n细粒度分数与推理说明\n阈值 alpha 转为二元标签\n监督 JAILJUDGETRAIN",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "guard",
-      "label": "Guard模型",
+      "label": "指令微调 JAILJUDGE Guard\n基于 Llama-2-7B\n输入：用户提示与目标回答\n输出：解释与 1–10 分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "evaluate",
+      "label": "评测越狱裁判\nJAILJUDGE ID 与 OOD\n另测 JBB Behaviors 和 WILDTEST\n比较 MultiAgent、Guard 与基线",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "裁判指标",
+      "label": "汇报裁判质量\n准确率 · 精确率 · 召回率 · F1\nGPT-4 解释质量评分：1–5\n按场景与语言细分",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,43 +88,73 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "scenes",
-      "to": "labels",
+      "from": "prompts",
+      "to": "responses",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "labels",
-      "to": "test",
+      "from": "responses",
+      "to": "pool",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "test",
-      "to": "train",
+      "from": "pool",
+      "to": "annotation",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "train",
-      "to": "multi",
+      "from": "annotation",
+      "to": "testsets",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "multi",
-      "to": "score",
-      "type": "primary"
+      "from": "pool",
+      "to": "judging",
+      "type": "secondary"
     },
     {
       "id": "edge-6",
-      "from": "score",
-      "to": "guard",
+      "from": "judging",
+      "to": "voting",
       "type": "primary"
     },
     {
       "id": "edge-7",
+      "from": "voting",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "inference",
+      "to": "groundtruth",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "groundtruth",
+      "to": "guard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "testsets",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
       "from": "guard",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "evaluate",
       "to": "metrics",
       "type": "primary"
     }

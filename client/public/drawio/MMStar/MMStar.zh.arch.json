@@ -1,62 +1,74 @@
 {
   "version": 1,
-  "title": "MMStar Build Process",
+  "title": "MMStar 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 10,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "样本池",
+      "id": "sources",
+      "label": "六个来源基准\nMMBench / SEED / MMMU\nScienceQA / AI2D / MathVista\n22,401 个样本",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "LLM筛选",
+      "id": "text_probe",
+      "label": "纯文本粗筛\n8 个强 LLM；不输入图像",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "text_gate",
+      "label": "LLM 命中数 ≤2 才保留\n22,401 → 11,607",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "lvlm_probe",
+      "label": "16 个 LVLM 探测\n易 12–16 / 中 8–11\n难 4–7 / 极难 0–3 次命中",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "人工审核",
+      "id": "experts",
+      "label": "三位专家审核\n视觉依赖\n最小泄漏 + 高级能力\n能力覆盖",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "视觉依赖",
-      "type": "decision",
+      "id": "dataset",
+      "label": "MMStar：1,500 个样本\n6 项能力 × 250\n18 个维度相对均衡",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "1500样本",
-      "type": "document",
-      "size": "xl"
+      "id": "image_run",
+      "label": "LVLM + 图像\n得分 S_v",
+      "type": "process",
+      "size": "large"
     },
     {
-      "id": "n6",
-      "label": "6项能力",
+      "id": "text_run",
+      "label": "同一 LVLM 不输入图像\n得分 S_wv",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "base_run",
+      "label": "多模态训练前的 LLM 基座\n得分 S_t",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "MG/ML指标",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n8",
-      "label": "LVLM评测",
+      "id": "metrics",
+      "label": "准确率 + MG / ML\nMG = S_v − S_wv\nML = max(0, S_wv − S_t)",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,45 +76,69 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "sources",
+      "to": "text_probe",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "text_probe",
+      "to": "text_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "text_gate",
+      "to": "lvlm_probe",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "lvlm_probe",
+      "to": "experts",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "experts",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "dataset",
+      "to": "image_run",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "dataset",
+      "to": "text_run",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dataset",
+      "to": "base_run",
+      "type": "data"
+    },
+    {
+      "id": "edge-9",
+      "from": "image_run",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "text_run",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "base_run",
+      "to": "metrics",
+      "type": "data"
     }
   ],
   "modules": []

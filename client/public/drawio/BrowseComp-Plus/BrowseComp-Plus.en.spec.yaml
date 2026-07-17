@@ -6,100 +6,213 @@ meta:
   routing: orthogonal
   title: BrowseComp-Plus Build Process
   description: >-
-    Paper-aligned construction of BrowseComp-Plus: original BrowseComp questions are expanded with mined evidence,
-    human-verified supporting documents, hard negative documents, a fixed 100k-document corpus, retriever-tool agent
-    evaluation, and metrics for accuracy, recall, search calls, calibration, and retrieval quality.
-  legend: Solid arrows show corpus construction and controlled agent/retriever evaluation.
+    Paper-aligned conversion of 1,266 BrowseComp questions into 830 human-verified queries over a fixed corpus of
+    100,195 deduplicated documents, with hard negatives, evidence and gold qrels, controlled retriever-agent runs,
+    answer and citation scoring, and standalone retrieval diagnostics.
+  legend: >-
+    Solid arrows show corpus construction and agent evaluation; dashed arrows carry corpus statistics and qrels into
+    diagnostic reports.
 nodes:
-  - id: browsecomp
-    label: BrowseComp
+  - id: original
+    label: |-
+      Start from Original BrowseComp
+      1,266 Complex Question-Answer Pairs
+      Replace Dynamic Black-Box Web Evaluation
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: mine
-    label: Mine
+      'y': 220
+  - id: o3_mining
+    label: |-
+      Use OpenAI o3 with Web Search
+      Produce Clues, Candidate URLs, and Evidence Snippets
+      Scrape Candidate Pages
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: verify
-    label: Verify
+      x: 320
+      'y': 220
+  - id: initial_filter
+    label: |-
+      Filter Hallucinated URLs and Scraping Failures
+      Retain Initial Evidence for 1,142 Queries
+      Send Evidence Chains to Human Review
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: negatives
-    label: Negatives
-    type: process
+      x: 600
+      'y': 220
+  - id: human_verify
+    label: |-
+      Fourteen Student Annotators Verify Evidence
+      More than 400 Hours • Over 80% Agreement
+      Check Each Clue and Complete Answering Chain
+    type: user
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: corpus
-    label: Corpus
+      x: 880
+      'y': 40
+  - id: verified
+    label: |-
+      Finalize 830 Verified Queries
+      Label Evidence Documents Needed for Reasoning
+      Label Gold Documents that Also Contain the Final Answer
     type: database
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: retriever
-    label: Retriever
+      x: 1160
+      'y': 40
+  - id: decompose
+    label: |-
+      GPT-4o Decomposes Each Query
+      Average Seven Search Sub-Queries
+      Target Topically Related Distractors
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 880
+      'y': 400
+  - id: hard_negatives
+    label: |-
+      Mine Hard Negatives with Google Search API
+      Related but Not Useful for the Final Answer
+      Add Challenging Retrieval Distractors
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: corpus
+    label: |-
+      Build the Fixed Deduplicated Corpus
+      100,195 Documents across 830 Queries
+      Average 6.1 Evidence • 76.28 Negatives • 2.9 Gold
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: retrievers
+    label: |-
+      Configure Controlled Retrieval
+      BM25 • Qwen3-Embedding 0.6B / 4B / 8B
+      ReasonIR 8B • Oracle Evidence Context
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: topk
+    label: |-
+      Return Top-5 Search Results per Call
+      Truncate Each Result to 512 Tokens
+      Optional get-document Tool Opens Full Content
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 220
   - id: agent
-    label: Agent
+    label: |-
+      Deep-Research Agent Iterates
+      Plan Searches • Read Results • Cross-Check Evidence
+      Return Final Answer with Document Citations
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: judge
-    label: Judge
-    type: decision
+      x: 2280
+      'y': 220
+  - id: answer_score
+    label: |-
+      Score End-to-End Answering
+      Normalized Answer Accuracy and Recall
+      Count Search Calls and Agent Cost
+    type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: metrics
-    label: Metrics
+      x: 2560
+      'y': 40
+  - id: citation_score
+    label: |-
+      Score Citation Grounding
+      Precision and Recall against Positive Documents
+      Preserve Per-Query Metrics
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 220
+  - id: retrieval_score
+    label: |-
+      Score Standalone Retrieval
+      Evidence and Gold Recall@5 / 100 / 1000
+      NDCG@10 against Released Qrels
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 400
+  - id: report
+    label: |-
+      Report Controlled Agent and Retriever Results
+      Disentangle Retrieval, Reasoning, Citations, and Context
+      Compare BM25, Dense Retrieval, Oracle, and Ablations
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2840
+      'y': 220
 edges:
-  - from: browsecomp
-    to: mine
+  - from: original
+    to: o3_mining
     type: primary
-  - from: mine
-    to: verify
+  - from: o3_mining
+    to: initial_filter
     type: primary
-  - from: verify
-    to: negatives
+  - from: initial_filter
+    to: human_verify
     type: primary
-  - from: verify
+  - from: human_verify
+    to: verified
+    type: primary
+  - from: initial_filter
+    to: decompose
+    type: primary
+  - from: decompose
+    to: hard_negatives
+    type: primary
+  - from: verified
     to: corpus
     type: primary
-  - from: negatives
+  - from: hard_negatives
     to: corpus
     type: primary
   - from: corpus
-    to: retriever
+    to: retrievers
     type: primary
-  - from: retriever
+  - from: retrievers
+    to: topk
+    type: primary
+  - from: topk
     to: agent
     type: primary
   - from: agent
-    to: judge
+    to: answer_score
     type: primary
-  - from: judge
-    to: metrics
+  - from: agent
+    to: citation_score
+    type: primary
+  - from: retrievers
+    to: retrieval_score
+    type: primary
+  - from: answer_score
+    to: report
+    type: primary
+  - from: citation_score
+    to: report
+    type: primary
+  - from: retrieval_score
+    to: report
     type: primary
 modules: []

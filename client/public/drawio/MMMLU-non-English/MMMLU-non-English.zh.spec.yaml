@@ -5,85 +5,173 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MMMLU-non-English 构建流程
-  description: 对齐来源的 MMMLU-non-English 构建流程：从 OpenAI MMMLU 翻译集出发，选择非英语语种，保留 MMLU 学科与选项，并按 DeepSeek 风格 5-shot EM/准确率评测。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按 DeepSeek-V3 报告派生并评测非英语 MMMLU 套件：使用 14 个专业人工翻译版本、五样本上下文、基于困惑度的多选题评测与精确匹配。
+  legend: 这是 DeepSeek-V3 报告采用的 OpenAI MMMLU 评测变体，并非另行翻译的数据集。
 nodes:
-  - id: n1
-    label: MMMLU数据
+  - id: source
+    label: |-
+      使用 OpenAI MMMLU
+      专业人工翻译
+      源自 MMLU 测试题
+      公开评测资源
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 非英语语种
+      x: 20
+      'y': 40
+  - id: select
+    label: |-
+      选择非英语套件
+      保留全部 14 个翻译版本
+      不含英语测试题
+      保持 Locale 身份
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 57个学科
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 选择题选项
+      x: 300
+      'y': 40
+  - id: locale_a
+    label: |-
+      第一组 Locale
+      阿拉伯 · 孟加拉 · 德语
+      西语 · 法语 · 印地语
+      印尼语
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 5-shot提示
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: PPL评分
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 精确匹配
+      x: 580
+      'y': 40
+  - id: locale_b
+    label: |-
+      第二组 Locale
+      意大利 · 日语 · 韩语
+      葡萄牙 · 斯瓦希里 · 约鲁巴
+      简体中文
     type: document
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 跨语种准确率
+      x: 860
+      'y': 40
+  - id: structure
+    label: |-
+      保持 MMLU 结构
+      覆盖 57 类知识学科
+      每题四个答案选项
+      每题保留标准答案
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: framework
+    label: |-
+      加载 DeepSeek 框架
+      使用统一内部评测器
+      所有模型采用同一设置
+      使用表三中的基准名称
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: prompt
+    label: |-
+      构造五样本上下文
+      遵循报告中的设置
+      呈现多项选择题
+      评测各基础模型
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 420
+  - id: ppl
+    label: |-
+      执行困惑度评测
+      为候选选项打分
+      使用模型似然
+      生成一个预测选项
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: match
+    label: |-
+      执行精确匹配
+      将预测选项
+      与标准答案比较
+      记录正确或错误
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: aggregate
+    label: |-
+      聚合非英语得分
+      汇总全部 Locale 套件
+      保持相同五样本规则
+      报告 EM 百分比
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: compare
+    label: |-
+      对比四个基础模型
+      DeepSeek-V2 · Qwen2.5-72B
+      LLaMA-3.1-405B
+      DeepSeek-V3
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: report
+    label: |-
+      发布表三结果
+      64.0 · 74.8 · 73.8 · 79.4
+      使用完全一致的内部设置
+      MMMLU 非英语 EM
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 20
+      'y': 420
 edges:
-  - from: n1
-    to: n2
+  - from: source
+    to: select
     type: primary
-  - from: n2
-    to: n3
+  - from: select
+    to: locale_a
     type: primary
-  - from: n3
-    to: n4
+  - from: locale_a
+    to: locale_b
     type: primary
-  - from: n4
-    to: n5
+  - from: locale_b
+    to: structure
     type: primary
-  - from: n5
-    to: n6
+  - from: structure
+    to: framework
     type: primary
-  - from: n6
-    to: n7
+  - from: framework
+    to: prompt
     type: primary
-  - from: n7
-    to: n8
+  - from: prompt
+    to: ppl
+    type: primary
+  - from: ppl
+    to: match
+    type: primary
+  - from: match
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: compare
+    type: primary
+  - from: compare
+    to: report
     type: primary
 modules: []

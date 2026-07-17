@@ -7,57 +7,93 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 14,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
       "id": "search",
-      "label": "网页搜索",
+      "label": "网络图片搜索\n查询词“infographics”\n下载超过 10,000 张图片",
       "type": "cloud",
       "size": "xl"
     },
     {
-      "id": "dedupe",
-      "label": "去重",
+      "id": "phash",
+      "label": "感知哈希第一轮去重\n移除近 2,000 张重复图片",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "QA对",
-      "type": "document",
+      "id": "ocr_dedupe",
+      "label": "第二轮去重\nAmazon Textract OCR 文本词元\n按 Jaccard 相似度比较",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "answers",
-      "label": "二次答案",
+      "id": "pool",
+      "label": "标注候选池\n约 7,000 张多样信息图",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "workers",
+      "label": "放弃噪声超过 40% 的众包试点\n内部工具 + 90 分钟讲解 + 测验\n筛选 13 名可密切沟通的标注者",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "stage1",
+      "label": "第一阶段标注\n可拒绝不适合的图片\n创建问题与答案对\n超过 3 万题后停止",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "split",
+      "label": "按图片随机互斥划分\n约 80% / 10% / 10%\n训练 · 验证 · 测试",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "stage2",
+      "label": "验证与测试集第二阶段\n不同标注者独立补充答案\n可标记“无法回答”",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "types",
-      "label": "QA类型",
+      "label": "标注问答类型\n答案来源四类 · 证据五类\n操作：计数 / 排序 / 算术",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "filter",
+      "label": "质量与答案规则\n移除 1.9% 无法回答题\n保留小写去重后的参考答案\n多片段答案接受任意排列",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "最终 InfographicVQA\n30,035 个问题 · 5,485 张图片\n来自 2,594 个网站域\n问题划分 23,946 / 2,801 / 3,288",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "数据划分",
+      "id": "evaluate",
+      "label": "基于图片与问题执行 VQA\n使用 Textract OCR 文本与边界框\n输出抽取式、多片段或数值答案",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "baselines",
-      "label": "M4C/LayoutLM",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "metrics",
-      "label": "ANLS",
+      "id": "metric",
+      "label": "主指标 ANLS + 严格准确率\n统一小写 · 多参考取最佳\n归一化编辑相似度阈值 0.5",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "human",
+      "label": "测试集人工参考\n志愿者回答全部测试问题\n接近满分的人类表现",
+      "type": "user",
       "size": "xl"
     }
   ],
@@ -65,44 +101,86 @@
     {
       "id": "edge-1",
       "from": "search",
-      "to": "dedupe",
+      "to": "phash",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "dedupe",
-      "to": "qa",
+      "from": "phash",
+      "to": "ocr_dedupe",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "qa",
-      "to": "answers",
+      "from": "ocr_dedupe",
+      "to": "pool",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "answers",
-      "to": "types",
+      "from": "pool",
+      "to": "workers",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "types",
-      "to": "splits",
+      "from": "workers",
+      "to": "stage1",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "splits",
-      "to": "baselines",
+      "from": "stage1",
+      "to": "split",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "baselines",
-      "to": "metrics",
+      "from": "split",
+      "to": "stage2",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "stage2",
+      "to": "types",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "types",
+      "to": "filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "filter",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "dataset",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "evaluate",
+      "to": "metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "dataset",
+      "to": "human",
+      "type": "optional"
+    },
+    {
+      "id": "edge-14",
+      "from": "human",
+      "to": "metric",
+      "type": "optional"
     }
   ],
   "modules": []

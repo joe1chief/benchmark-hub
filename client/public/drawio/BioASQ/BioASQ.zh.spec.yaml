@@ -5,81 +5,170 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BioASQ 构建流程
-  description: 基于论文对齐原始 BioASQ 流程：任务 1a 使用 PubMed/MEDLINE 题名摘要和 MeSH 标签评测大规模语义索引； 任务 1b 由生物医学专家构造问题、阶段A检索目标、阶段B精确/理想答案，并采用自动与人工指标。
-  legend: 上方为语义索引流程；下方为生物医学问答流程。
+  description: 严格对齐 2015 年 BMC Bioinformatics 开放论文，展示首届 BioASQ 生物医学语义索引与问答挑战的两类任务。
+  legend: 上支路为 Task 1a 在线 MeSH 索引，下支路为专家构建的 Task 1b 问答；虚线传递延迟到达的人工标签或金标准 Phase-A 证据。
 nodes:
-  - id: pubmed
-    label: PubMed
+  - id: sources
+    label: |-
+      整合生物医学知识来源
+      MEDLINE / PubMed 与 PubMed Central
+      MeSH、本体、数据库与 RDF 三元组
     type: database
     size: xl
     position:
       x: 40
-      'y': 70
-  - id: mesh_train
-    label: MeSH
+      'y': 280
+  - id: task1a_train
+    label: |-
+      构建 Task 1a 训练数据
+      标题 + 摘要 + 已有 MeSH 标签
+      索引日期早于 2013 年 3 月 1 日
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: task1a_test
+    label: |-
+      创建每周未标注测试集
+      三批 × 每批六周 • 新文章不重复
+      选择预计 90 天内获 MeSH 的期刊
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: task1a
-    label: 任务1a
+      x: 600
+      'y': 40
+  - id: task1a_submit
+    label: |-
+      运行在线语义索引
+      21 小时内预测 MeSH 标题
+      提交时不可见人工标签
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: experts
-    label: 专家
+      x: 880
+      'y': 40
+  - id: task1a_gold
+    label: |-
+      等待 NLM 人工索引标签
+      逐步揭示真实 MeSH
+      挑战结束时冻结已获标签
     type: user
     size: xl
     position:
-      x: 40
-      'y': 250
+      x: 1160
+      'y': 40
+  - id: task1a_metrics
+    label: |-
+      评分 Task 1a 分类
+      平面 Micro-F1
+      分层最低公共祖先 F Measure
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: experts
+    label: |-
+      生物医学专家编写真实问题
+      是非 • 事实 • 列表 • 摘要
+      用论文与本体建立答案依据
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 420
   - id: qa_gold
-    label: QA金标
-    type: document
+    label: |-
+      构建 Task 1b 金标准基准
+      29 道开发题 + 282 道测试题
+      概念 • 文档 • 片段 • 三元组 • 答案
+    type: database
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 600
+      'y': 420
   - id: phase_a
-    label: 阶段A
+    label: |-
+      运行 Task 1b Phase A 检索
+      返回概念、论文、片段与 RDF 三元组
+      每题上限 100 / 100 / 100 / 1,000
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
+      x: 880
+      'y': 280
+  - id: phase_a_metrics
+    label: |-
+      评分 Phase A 检索
+      MAP / GMAP • Precision • Recall • F Measure
+      片段使用 offset 感知匹配
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 260
   - id: phase_b
-    label: 阶段B
+    label: |-
+      运行 Task 1b Phase B 作答
+      提供金标准 Phase-A 证据
+      输出精确答案和不超过 200 词的理想摘要
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: metrics
-    label: 指标
-    type: document
+      x: 880
+      'y': 540
+  - id: exact_metrics
+    label: |-
+      评分精确答案
+      是非准确率 • 事实严格/宽松准确率 + MRR
+      列表 Precision、Recall 与 F Measure
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1160
+      'y': 460
+  - id: ideal_metrics
+    label: |-
+      评分理想答案
+      自动 ROUGE 摘要指标
+      生物医学专家人工质量评估
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 660
   - id: results
-    label: 结果
+    label: |-
+      发布 BioASQ 挑战结果
+      语义索引与问答榜单
+      公开数据、评测服务、运行结果与基线
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 380
 edges:
-  - from: pubmed
-    to: mesh_train
+  - from: sources
+    to: task1a_train
     type: primary
-  - from: mesh_train
-    to: task1a
+  - from: task1a_train
+    to: task1a_test
     type: primary
-  - from: task1a
-    to: metrics
+  - from: task1a_test
+    to: task1a_submit
+    type: primary
+  - from: task1a_submit
+    to: task1a_gold
+    type: primary
+  - from: task1a_gold
+    to: task1a_metrics
+    type: data
+  - from: task1a_metrics
+    to: results
+    type: primary
+  - from: sources
+    to: experts
     type: primary
   - from: experts
     to: qa_gold
@@ -88,12 +177,27 @@ edges:
     to: phase_a
     type: primary
   - from: phase_a
+    to: phase_a_metrics
+    type: primary
+  - from: phase_a_metrics
+    to: results
+    type: primary
+  - from: phase_a
     to: phase_b
+    type: optional
+  - from: qa_gold
+    to: phase_b
+    type: data
+  - from: phase_b
+    to: exact_metrics
     type: primary
   - from: phase_b
-    to: metrics
+    to: ideal_metrics
     type: primary
-  - from: metrics
+  - from: exact_metrics
+    to: results
+    type: primary
+  - from: ideal_metrics
     to: results
     type: primary
 modules: []

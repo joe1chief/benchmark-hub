@@ -5,77 +5,208 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HalluQA Build Process
-  description: >-
-    Paper-aligned HalluQA construction pipeline for Chinese hallucination QA, covering misleading-pattern design, model
-    probes, answer sets, expert quality control, and GPT-4 judging.
-  legend: Solid arrows show adversarial question creation, sample filtering, annotation, quality control, and evaluation.
+  description: Paper-aligned three-stream curation of 450 adversarial Chinese hallucination questions and GPT-4 evaluation.
+  legend: >-
+    HalluQA contains 175 misleading, 69 misleading-hard, and 206 knowledge questions. The streams target imitative
+    falsehoods and factual errors, then share answer/evidence annotation and quality assurance.
 nodes:
-  - id: patterns
-    label: CN Patterns
-    type: document
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: probes
-    label: Model Probes
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: select
-    label: Adversarial
+  - id: route
+    label: |-
+      Design Chinese adversarial questions
+      history · culture · customs · social phenomena
+      route by hallucination cause and difficulty
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: answers
-    label: Answer Sets
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: qc
-    label: Expert QC
+      x: 40
+      'y': 300
+  - id: misleading_design
+    label: |-
+      Write misleading questions
+      20 TruthfulQA-inspired patterns
+      adapted to Chinese cultural contexts
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
-    label: 450 Qs
+      x: 340
+      'y': 40
+  - id: glm_probe
+    label: |-
+      Probe GLM-130B five times
+      six manually written Chinese QA examples
+      retain if falsehood appears at least 3/5
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: misleading_set
+    label: |-
+      Finalize misleading set
+      175 author-written questions
+      22 represented domains
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 940
+      'y': 40
+  - id: hard_design
+    label: |-
+      Collect difficult Chinese web confusions
+      ask ChatGPT 3.5 for adversarial questions
+      require inherently misleading premises
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: hard_set
+    label: |-
+      Finalize misleading-hard set
+      69 author-reviewed questions
+      15 represented domains
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 300
+  - id: knowledge_design
+    label: |-
+      Ten Chinese graduate interns write questions
+      factual knowledge across broad domains
+      prepare candidate prompts and answers
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 560
+  - id: dual_probe
+    label: |-
+      Probe ChatGPT and Puyu five times each
+      both models must be wrong at least 3/5
+      collect about 1,000 candidates
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: knowledge_set
+    label: |-
+      NLP expert selects knowledge set
+      verify annotations and retain 206 questions
+      14 represented domains
+    type: database
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: annotate
+    label: |-
+      Add answer sets and evidence
+      misleading: four correct + four wrong
+      knowledge: at least one correct + one wrong
+    type: document
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: quality
+    label: |-
+      Apply stream-specific quality checks
+      external links/explanations support answers
+      independent authors rewrite or discard defects
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: dataset
+    label: |-
+      Release HalluQA
+      450 adversarial Chinese questions
+      30 domains · 175 + 69 + 206
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: inference
+    label: |-
+      Require one answer per question
+      fluent · direct · supported by correct examples
+      refusal counts as hallucination unless unanswerable
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 300
   - id: judge
-    label: GPT-4 Judge
+    label: |-
+      Judge with GPT-4-0613
+      correct-answer examples plus five criteria
+      five votes · temperature 0 · top-p 0.5
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: score
+    label: |-
+      Report non-hallucination rate
+      percentage of 450 answers judged clean
+      five-vote judge agrees 93.50% with humans
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2740
+      'y': 300
 edges:
-  - from: patterns
-    to: probes
+  - from: route
+    to: misleading_design
     type: primary
-  - from: probes
-    to: select
+  - from: misleading_design
+    to: glm_probe
     type: primary
-  - from: select
-    to: answers
+  - from: glm_probe
+    to: misleading_set
     type: primary
-  - from: answers
-    to: qc
+  - from: route
+    to: hard_design
     type: primary
-  - from: qc
+  - from: hard_design
+    to: hard_set
+    type: primary
+  - from: route
+    to: knowledge_design
+    type: secondary
+  - from: knowledge_design
+    to: dual_probe
+    type: secondary
+  - from: dual_probe
+    to: knowledge_set
+    type: secondary
+  - from: misleading_set
+    to: annotate
+    type: primary
+  - from: hard_set
+    to: annotate
+    type: primary
+  - from: knowledge_set
+    to: annotate
+    type: secondary
+  - from: annotate
+    to: quality
+    type: primary
+  - from: quality
     to: dataset
     type: primary
   - from: dataset
+    to: inference
+    type: primary
+  - from: inference
     to: judge
+    type: primary
+  - from: judge
+    to: score
     type: primary
 modules: []

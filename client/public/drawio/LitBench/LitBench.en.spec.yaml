@@ -6,86 +6,185 @@ meta:
   routing: orthogonal
   title: LitBench Build Process
   description: >-
-    Paper-aligned LitBench pipeline from Reddit writing samples through preference-pair filtering, length debiasing,
-    verifier training, and human validation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned construction of debiased creative-writing preference pairs from r/WritingPrompts, with independently
+    curated post-2023 test and pre-2023 training sets, reward-model evaluation, and online human validation.
+  legend: >-
+    Counts follow arXiv:2507.00769 / EACL 2026: 2,480 test pairs from 3,543 stories and 43,827 training pairs from
+    50,309 stories. Community upvotes are used as preference signals after engagement, temporal, and length controls.
 nodes:
-  - id: reddit_stories
-    label: Reddit Stories
-    type: document
+  - id: source
+    label: |-
+      Start from r/WritingPrompts
+      Stories Share a Writing Prompt
+      Reddit Upvotes Supply Preference Signals
+      Preserve Story · Prompt · Time Metadata
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
+      x: 20
+      'y': 260
+  - id: test_raw
+    label: |-
+      Collect the Held-out Benchmark
+      Query Reddit with PRAW
+      Search Top 100 Results for 5,000+ Prompt IDs
+      Keep Stories Posted after 2 January 2023
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: train_raw
+    label: |-
+      Source the Training Corpus
+      Use MIT-licensed WritingPrompts Preferences
+      Take Stories Posted before 2023
+      Keep Training Separate from the Held-out Test
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 480
   - id: story_filter
-    label: Story Filter
+    label: |-
+      Filter Stories Independently in Each Split
+      Require at Least 10 Upvotes
+      Keep 50+ Words and at Most 2,048 Tokens
+      Remove Low-signal or Excessively Long Entries
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: pair_filter
-    label: Pair Filter
+      x: 620
+      'y': 260
+  - id: pairs
+    label: |-
+      Form Within-prompt Story Pairs
+      Compare Two Responses to the Same Prompt
+      Mark Higher-upvote Story as Chosen
+      Retain the Pair Metadata
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 900
+      'y': 260
+  - id: preference_filter
+    label: |-
+      Strengthen the Preference Signal
+      Require at Least 25% Upvote Difference
+      Chosen Story Must Have Been Posted Later
+      Reduce Marginal and Exposure-time Bias
+    type: process
+    size: xl
+    position:
+      x: 1180
+      'y': 260
   - id: length_debias
-    label: Length Debias
+    label: |-
+      Debias Story-length Differences
+      Build a 100-bin Length-difference Histogram
+      Prune Pairs toward a Symmetric Distribution
+      Balance Longer and Shorter Chosen Stories
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: train_test
-    label: Train/Test
-    type: document
+      x: 1460
+      'y': 260
+  - id: release
+    label: |-
+      Release LitBench Data Resources
+      Test · 2,480 Pairs from 3,543 Stories
+      Train · 43,827 Pairs from 50,309 Stories
+      Apply the Same Curation Separately to Both
+    type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: reward_models
-    label: Reward Models
+      x: 1740
+      'y': 260
+  - id: judges
+    label: |-
+      Evaluate Zero-shot LLM Judges
+      Present Unlabeled Stories A and B
+      Swap Both Orders to Control Position Bias
+      Compare the Verdict with Human Preference
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: llm_judges
-    label: LLM Judges
+      x: 2040
+      'y': 40
+  - id: rewards
+    label: |-
+      Train Creative-writing Reward Models
+      Bradley–Terry Discriminative Models
+      Generative Models with or without Rationale
+      Test Agreement on the Debiased Benchmark
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
+      x: 2040
+      'y': 260
   - id: human_study
-    label: Human Study
+    label: |-
+      Validate Rankings Online with Humans
+      Generate New Stories with GPT-4.1 and GPT-4o
+      Rank Them with the Trained Reward Model
+      Ask Annotators for Pairwise Preferences
+    type: user
+    size: xl
+    position:
+      x: 2040
+      'y': 480
+  - id: report
+    label: |-
+      Report Agreement with Human Preferences
+      Compare Off-the-shelf and Trained Judges
+      Best Zero-shot Judge Reaches 73%
+      Bradley–Terry and Generative Models Reach 78%
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2340
+      'y': 260
 edges:
-  - from: reddit_stories
+  - from: source
+    to: test_raw
+    type: primary
+  - from: source
+    to: train_raw
+    type: primary
+  - from: test_raw
+    to: story_filter
+    type: primary
+  - from: train_raw
     to: story_filter
     type: primary
   - from: story_filter
-    to: pair_filter
+    to: pairs
     type: primary
-  - from: pair_filter
+  - from: pairs
+    to: preference_filter
+    type: primary
+  - from: preference_filter
     to: length_debias
     type: primary
   - from: length_debias
-    to: train_test
+    to: release
     type: primary
-  - from: train_test
-    to: reward_models
+  - from: release
+    to: judges
     type: primary
-  - from: reward_models
-    to: llm_judges
+  - from: release
+    to: rewards
     type: primary
-  - from: llm_judges
+  - from: release
     to: human_study
+    type: primary
+  - from: judges
+    to: report
+    type: primary
+  - from: rewards
+    to: report
+    type: primary
+  - from: human_study
+    to: report
     type: primary
 modules: []

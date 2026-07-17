@@ -1,0 +1,153 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GenExam 构建流程
+  description: 按论文呈现多学科图像收集、标注、专家复核以及严格/宽松评分流程。
+  legend: GenExam 将学科绘图题转化为带真值图和逐题评分点的文生图考试；计数与公式均对应 arXiv:2509.14232。
+nodes:
+  - id: taxonomy
+    label: |-
+      定义对齐 ISCED-F 的分类体系
+      10 个学科 · 四个层级
+      各层类别数 10/40/132/236
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: collect
+    label: |-
+      收集约 4 万张候选图
+      按分类关键词搜索考试与教材网页
+      并汇入 7 个学科知识数据集
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 300
+  - id: filter
+    label: |-
+      应用启发式过滤
+      删除重复、低分辨率、水印
+      以及非英文文本图
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: gpt_filter
+    label: |-
+      GPT-5 评定四项图像属性
+      文本密度 · 领域 · 复杂度
+      学科知识密度 → 保留 6,500 张
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 300
+  - id: draft
+    label: |-
+      GPT-5 起草考试式提示
+      生成原子化是/否评分问题
+      每题各评分点权重之和为 1
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: review
+    label: |-
+      3 名博士标注员交叉复核
+      图像 · 提示 · 评分点
+      删除重复并修正不精确内容
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: release
+    label: |-
+      发布 1,000 道考试样本
+      10 学科 · 每题一张真值图
+      平均 74.8 词、6.9 个评分点
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: mini
+    label: |-
+      派生 GenExam-Mini
+      按第三级分类分层抽样
+      保持与完整集近似分布 · 共 487 题
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: generate
+    label: |-
+      根据每条提示生成一张图
+      使用各模型默认文生图设置
+      可评测完整集或 Mini
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: judge
+    label: |-
+      GPT-5 裁判参考真值图
+      回答评分点得到语义正确性 0–1
+      拼写/逻辑/可读性分别评 0–2
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: score
+    label: |-
+      报告严格分与宽松分
+      严格分要求语义为 1
+      且拼写、逻辑、可读性均为 2
+      宽松权重 0.7/0.1/0.1/0.1
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 300
+edges:
+  - from: taxonomy
+    to: collect
+    type: primary
+  - from: collect
+    to: filter
+    type: primary
+  - from: filter
+    to: gpt_filter
+    type: primary
+  - from: gpt_filter
+    to: draft
+    type: primary
+  - from: draft
+    to: review
+    type: primary
+  - from: review
+    to: release
+    type: primary
+  - from: release
+    to: mini
+    type: primary
+  - from: mini
+    to: generate
+    type: primary
+  - from: generate
+    to: judge
+    type: primary
+  - from: judge
+    to: score
+    type: primary
+modules: []

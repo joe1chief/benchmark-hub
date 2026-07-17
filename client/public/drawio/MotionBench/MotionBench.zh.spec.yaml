@@ -1,0 +1,211 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MotionBench 构建与评测流程
+  description: 对齐论文展示三路视频整理、细粒度运动问答生成、纯图像捷径过滤、人工复核、划分与准确率评测。
+  legend: 最终基准含 5,385 个视频与 8,052 道选择题，覆盖运动识别、位置、动作顺序、重复计数、运动对象和相机运动。
+nodes:
+  - id: goal
+    label: |-
+      定义细粒度运动评测
+      关注动态而非静态感知
+      六类运动导向任务
+      多项选择视频问答
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 230
+  - id: intricate
+    label: |-
+      收集复杂交互视频
+      Panda-70M · Pexels
+      自行收集的电影片段
+      用 PySceneDetect 划分事件
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: fields
+    label: |-
+      收集特定领域视频
+      MedVid · SportsSloMo · Ha-ViD
+      最小边大于 448
+      时长 3 至 60 秒
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 230
+  - id: synthetic
+    label: |-
+      在 Unity 中渲染合成视频
+      20 种动作 · 6 个角色 · 5 个场景
+      从 15 个视角中采样
+      人工移除遮挡样本
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: captions
+    label: |-
+      标注动态字幕
+      15 名本科以上标注员
+      持续 20 个工作日
+      二次复核
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: generate
+    label: |-
+      生成复杂交互问答
+      GPT-4o 每视频生成 6 题
+      问题依据动态字幕
+      覆盖运动专属推理
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: shortcut
+    label: |-
+      删除静态捷径题
+      仅看首帧的 GPT-4o
+      Qwen2-VL · GLM-4V-plus
+      三者全答对则丢弃
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: review
+    label: |-
+      人工复核复杂交互问答
+      10 名标注员持续 5 天
+      删除歧义或错误题
+      分类并二次复核
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: direct
+    label: |-
+      构建另外两路问答
+      直接标注特定领域问答
+      按真值自动生成合成问答
+      2,530 加 600 道
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: combine
+    label: |-
+      合并三路问答
+      复杂：2,355 视频 · 4,922 问答
+      特定：2,430 视频 · 2,530 问答
+      合成：600 视频 · 600 问答
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: categories
+    label: |-
+      标注六类运动任务
+      MR 识别 · LM 位置
+      AO 顺序 · RC 计数 · MO 对象
+      CM 相机运动
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: split
+    label: |-
+      发布并随机划分
+      5,385 视频 · 8,052 问答
+      开发集 4,020 · 测试集 4,034
+      测试标签通过在线提交评测
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 650
+  - id: evaluate
+    label: |-
+      评测视频语言模型
+      追加仅回复最佳选项指令
+      用正则解析首个大写字母
+      保留随机基线
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 650
+  - id: report
+    label: |-
+      报告运动理解表现
+      总体选择题准确率
+      六个类别分别的准确率
+      标注密度 68.4
+    type: terminal
+    size: xl
+    position:
+      x: 980
+      'y': 650
+edges:
+  - from: goal
+    to: intricate
+    type: primary
+  - from: goal
+    to: fields
+    type: primary
+  - from: goal
+    to: synthetic
+    type: primary
+  - from: intricate
+    to: captions
+    type: primary
+  - from: captions
+    to: generate
+    type: primary
+  - from: generate
+    to: shortcut
+    type: primary
+  - from: shortcut
+    to: review
+    type: primary
+  - from: fields
+    to: direct
+    type: primary
+  - from: synthetic
+    to: direct
+    type: primary
+  - from: review
+    to: combine
+    type: primary
+  - from: direct
+    to: combine
+    type: primary
+  - from: combine
+    to: categories
+    type: primary
+  - from: categories
+    to: split
+    type: primary
+  - from: split
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: report
+    type: primary
+modules: []

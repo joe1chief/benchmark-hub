@@ -7,89 +7,185 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 15,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "mimic",
-      "label": "MIMIC数据",
+      "id": "data",
+      "label": "使用两个需授权的临床数据库\nMIMIC-III v1.4 + MIMIC-IV v2.2\n所有模型共享同一队列合同",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "队列过滤",
+      "id": "tasks",
+      "label": "定义三类预测任务\n住院时长：三分类\n死亡与再入院：二分类",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "cohort",
+      "label": "筛选患者队列\n仅保留首次就诊\n排除未满 18 岁和有缺失值的记录",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "分层划分",
+      "label": "创建分层数据划分\n训练 • 验证 • 测试\n各模型家族使用完全相同划分",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "balance",
-      "label": "训练平衡",
+      "label": "仅平衡训练标签\n对训练集执行欠采样\n验证集和测试集保持不变",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "structured",
+      "label": "准备结构化机器学习特征\n诊断 • 操作 • 用药 • 药物\n保留编码后的临床变量",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "text",
-      "label": "代码转文本",
-      "type": "document",
+      "label": "将代码转换为 LLM 可读文本\nICD-9/10 诊断与操作描述\nATC 用药与药物描述",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "models",
-      "label": "模型评测",
+      "id": "ml",
+      "label": "训练 11 个传统模型\nLR • SVM • 决策树 • XGBoost • KNN\nMLP • Transformer • RNN 等",
       "type": "terminal",
       "size": "xl"
     },
     {
+      "id": "llms",
+      "label": "评测 22 个语言模型\n14 个通用 LLM + 8 个医疗 LLM\n比较模型规模与解码温度",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "测试 LLM 提示策略\n直接提示 • 思维链 • 自我反思\n角色扮演 • 上下文学习",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "finetune",
+      "label": "测试任务专属微调\n完整与部分 LoRA 变体\n评估训练数据规模影响",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "predictions",
+      "label": "收集保留集预测\n使用相同验证／测试病例\n直接比较 ML 与 LLM 输出",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "metrics",
-      "label": "F1/AUROC",
-      "type": "document",
+      "label": "应用任务专属指标\n住院时长：Macro F1 + AUROC\n死亡／再入院：F1 + AUROC",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告重复实验比较\n五次运行的 95% 置信区间\n混淆矩阵 + 损失曲线 + 结论",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "mimic",
-      "to": "filter",
+      "from": "data",
+      "to": "tasks",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "filter",
-      "to": "split",
+      "from": "tasks",
+      "to": "cohort",
       "type": "primary"
     },
     {
       "id": "edge-3",
+      "from": "cohort",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
       "from": "split",
       "to": "balance",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-5",
+      "from": "balance",
+      "to": "structured",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "balance",
       "to": "text",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "text",
-      "to": "models",
+      "id": "edge-7",
+      "from": "structured",
+      "to": "ml",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "models",
+      "id": "edge-8",
+      "from": "text",
+      "to": "llms",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "llms",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "llms",
+      "to": "finetune",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "ml",
+      "to": "predictions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "prompt",
+      "to": "predictions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "finetune",
+      "to": "predictions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "predictions",
       "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "metrics",
+      "to": "report",
       "type": "primary"
     }
   ],

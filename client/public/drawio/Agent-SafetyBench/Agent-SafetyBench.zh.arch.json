@@ -7,56 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
       "id": "taxonomy",
-      "label": "安全分类体系\n8 类风险\n10 类失败模式",
+      "label": "定义安全分类体系\n8 类安全风险\n10 种失败模式",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "format",
-      "label": "测试用例 schema\n风险、指令/对话\n环境、失败模式",
+      "id": "legacy_sources",
+      "label": "汇集已有样本\nR-Judge • AgentDojo • GuardAgent\nToolEmu • ToolSword • InjecAgent",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "environments",
-      "label": "交互式环境\nJSON 工具 schema\nPython 环境类",
+      "id": "environment_names",
+      "label": "生成新环境名称\nGPT-4o • Claude 3.5 • Gemini 1.5\n300 个候选环境",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "refine",
-      "label": "精炼已有数据\n明确失败模式\n去重并标准化环境",
+      "label": "精炼已有数据\n明确失败模式 • 去重\n统一环境与参数",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "augment",
-      "label": "数据增强\n300 个新环境名\n每类风险 250 个 case",
+      "label": "生成缺失样本\n按风险类别控制指令\n标注预期危险行为",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "quality",
-      "label": "质量控制\n人工预检\n脚本校验、后检、交叉验证",
-      "type": "decision",
+      "id": "merge",
+      "label": "平衡八类风险\n876 个精炼样本 + 1,124 个新样本\n每类风险 250 个样本",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "schema",
+      "label": "编码测试样本结构\n风险 • 指令或对话\n环境 • 失败模式",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "environments",
+      "label": "实现动态交互环境\nJSON 工具定义 + Python 类\n可配置初始化参数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "precheck",
+      "label": "作者人工预检\n逐条检查生成样本\n修复无效指令与风险归类",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "automatic_checks",
+      "label": "自动化验证\n解析 JSON 并执行 Python\n验证工具与环境行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "interaction_qc",
+      "label": "后检与交叉验证\n4,000 条 Agent 交互记录\n人工标注并修订样本",
+      "type": "user",
       "size": "xl"
     },
     {
       "id": "benchmark",
-      "label": "基准发布\n349 个环境\n2,000 个测试用例",
+      "label": "发布 Agent-SafetyBench\n349 个动态环境\n2,000 个验证后测试样本",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "scorer",
-      "label": "Agent 评测\n工具交互记录\nfinetuned scorer -> safety score",
+      "label": "训练安全评分器\n用 4,000 条记录微调 Qwen2.5-7B\n留出集准确率 91.5%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agent_eval",
+      "label": "评测 16 个 Agent\n动态工具交互循环\n保留完整轨迹",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "汇报安全结果\n安全轨迹占比作为 Safety Score\n按风险与失败模式拆分",
       "type": "terminal",
       "size": "xl"
     }
@@ -65,57 +107,98 @@
     {
       "id": "edge-1",
       "from": "taxonomy",
-      "to": "format",
+      "to": "legacy_sources",
       "type": "primary"
     },
     {
       "id": "edge-2",
       "from": "taxonomy",
-      "to": "environments",
+      "to": "environment_names",
       "type": "data"
     },
     {
       "id": "edge-3",
-      "from": "format",
+      "from": "legacy_sources",
       "to": "refine",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "environments",
+      "from": "environment_names",
       "to": "augment",
       "type": "primary"
     },
     {
       "id": "edge-5",
       "from": "refine",
-      "to": "quality",
+      "to": "merge",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "augment",
-      "to": "quality",
+      "to": "merge",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "quality",
-      "to": "refine",
-      "type": "optional",
-      "label": "修订无效 case"
+      "from": "merge",
+      "to": "schema",
+      "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "quality",
-      "to": "benchmark",
+      "from": "schema",
+      "to": "environments",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "benchmark",
-      "to": "scorer",
+      "from": "environments",
+      "to": "precheck",
       "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "precheck",
+      "to": "automatic_checks",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "automatic_checks",
+      "to": "interaction_qc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "interaction_qc",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "interaction_qc",
+      "to": "scorer",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "benchmark",
+      "to": "agent_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "agent_eval",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "scorer",
+      "to": "report",
+      "type": "data"
     }
   ],
   "modules": []

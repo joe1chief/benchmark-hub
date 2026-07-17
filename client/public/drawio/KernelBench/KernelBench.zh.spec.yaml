@@ -1,0 +1,165 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: KernelBench 构建与评测流程
+  description: 对齐论文的工作负载整理、三级 PyTorch 任务打包、自定义内核生成、随机正确性检查、 硬件计时与 fast_p 评分流程。
+  legend: 上排依次展示任务打包与论文中的三级基准分区；下排从右到左为单样例生成和目标 GPU 评测。
+nodes:
+  - id: workloads
+    label: |-
+      真实 AI 工作负载
+      现代深度学习算子与模型
+      Level 3 架构来自热门 GitHub 仓库
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: format
+    label: |-
+      标准 PyTorch 任务格式
+      含 init + forward 的 torch.nn.Module Model
+      get_inputs + get_init_inputs 固定形状 / 精度
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: level1
+    label: |-
+      Level 1 分区：100 题
+      单个原始操作
+      卷积、矩阵乘、损失、激活、归一化
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: level2
+    label: |-
+      Level 2 分区：100 题
+      多算子序列
+      独立内核之外的融合优化机会
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: level3
+    label: |-
+      Level 3 分区：50 题
+      完整机器学习架构
+      AlexNet、MiniGPT 等端到端模型
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      论文基准：250 题
+      仅用于评测；不提供金标准内核
+      PyTorch 参考实现是真值与计时基线
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      单样例优化提示
+      一个加法 Model / ModelNew 示例
+      参考 Model + 精确输入生成器
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: generate
+    label: |-
+      贪心内核生成
+      返回带自定义优化的 ModelNew
+      CUDA / PTX / CUTLASS / Triton 或其他库
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: compile
+    label: |-
+      编译并执行
+      在目标 GPU 构建内联扩展
+      拒绝编译、运行、形状或数值错误
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: correctness
+    label: |-
+      随机正确性门控
+      比较 Model 与 ModelNew 输出
+      五组随机输入必须全部匹配
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: timing
+    label: |-
+      目标 GPU 计时
+      预热 3 次 + 100 次 CUDA Event 测量
+      平均加速比 = PyTorch Eager 时间 / ModelNew 时间
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      KernelBench 结果
+      fast(p)：正确且加速比超过 p
+      fast(0) = 正确率；fast(1) = 快于 PyTorch
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
+edges:
+  - from: workloads
+    to: format
+    type: primary
+  - from: format
+    to: level1
+    type: primary
+  - from: level1
+    to: level2
+    type: primary
+  - from: level2
+    to: level3
+    type: primary
+  - from: level3
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: generate
+    type: primary
+  - from: generate
+    to: compile
+    type: primary
+  - from: compile
+    to: correctness
+    type: primary
+  - from: correctness
+    to: timing
+    type: primary
+  - from: timing
+    to: report
+    type: primary
+modules: []

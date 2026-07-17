@@ -4,114 +4,220 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: All-Angles 构建流程
-  description: 基于 arXiv:2504.15280 重绘的 All-Angles 多视角场景基准构建与评估流程。
-  legend: 实线表示场景选择、问题标注、配对问题构造和模型评测主流程；虚线表示人工质检反馈。
+  title: All-Angles Bench 构建流程
+  description: 基于 arXiv:2504.15280 对齐的多视角场景筛选、问题构建、人工质检与 MLLM 评测流程。
+  legend: 每个样本都是三选一且只有一个正确答案；配对问题通过受控变换检验模型能否保持跨视角对应关系。
 nodes:
-  - id: scenes
+  - id: source_scenes
     label: |-
-      多视角数据来源
-      Ego-Exo4D 与 EgoHumans
-      90 个真实世界场景
+      从多视角视频数据出发
+      83 个 Ego-Exo4D 场景
+      7 个 EgoHumans 场景
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
+      'y': 170
+  - id: select_scenes
     label: |-
-      六类任务
-      计数、属性、距离
-      方向、操作、相机姿态
+      人工筛选 90 个场景
+      至少包含三个有效视角
+      覆盖多样真实活动
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 170
+  - id: view_set
+    label: |-
+      整理每组视角
+      最终保留 4–5 个空间分散视图
+      图像缩放至 796 × 448
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 170
+  - id: task_design
+    label: |-
+      设计六类推理任务
+      计数 • 属性 • 距离 • 方向
+      物体操作 • 相机姿态
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 170
+  - id: draft
+    label: |-
+      使用 GPT-4o 起草问题
+      每场景每任务三题
+      相机姿态每场景一题
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 170
+  - id: view_policy
+    label: |-
+      应用任务特定视角策略
+      计数与相机姿态使用全部视图
+      其他任务随机使用两个视图
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 170
+  - id: human_review
+    label: |-
+      八名 STEM 博士标注员全量复核
+      移除无效问题
+      优化措辞与答案选项
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: mcq
+    label: |-
+      强制选择题合同
+      三个答案选项
+      且仅有一个正确答案
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: draft_questions
-    label: |-
-      MLLM 初始出题
-      基于多视角视觉信息
-      按任务模板生成问题
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: annotation
-    label: |-
-      人工标注
-      8 名标注员检查图像
-      删除无效或歧义项
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: answer_check
-    label: |-
-      答案与选项审查
-      修正错误选项
-      每题一个正确答案
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 70
+      x: 1160
+      'y': 500
   - id: paired
     label: |-
-      配对问题生成
-      改写或调整视角顺序
-      保持视觉对应关系
+      构造配对问题
+      改写、交换方位或更换视图
+      保持底层对应关系不变
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: dataset
+      x: 880
+      'y': 500
+  - id: final_qc
     label: |-
-      All-Angles Bench
-      2,132 个问答对
-      85.3% 有配对问题
-    type: document
+      最终人工质检
+      核验视觉证据与唯一答案
+      除计数外配对覆盖率 85.3%
+    type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: evaluation
+      x: 600
+      'y': 500
+  - id: benchmark
     label: |-
-      多视角评测
-      27 个 MLLM
-      250 题人类子集
+      发布 All-Angles Bench
+      2,132 个问答对 • 90 个场景
+      六类多视角任务
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 500
+  - id: model_eval
+    label: |-
+      评测 27 个 MLLM
+      标准选择题提示
+      解析三个答案选项之一
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 500
+  - id: accuracy
+    label: |-
+      计算准确率
+      总体与任务类别分项
+      比较开源与闭源模型
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 790
+  - id: consistency
+    label: |-
+      测量配对不一致率
+      比较对应问题的答案
+      诊断跨视角不稳定性
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 790
+  - id: human
+    label: |-
+      建立人类参考
+      分层抽取 250 题子集
+      覆盖全部六类任务
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 790
+  - id: report
+    label: |-
+      汇报多视角能力差距
+      准确率 • 配对一致性
+      模型与人类表现差距
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 790
 edges:
-  - from: scenes
-    to: tasks
+  - from: source_scenes
+    to: select_scenes
     type: primary
-  - from: tasks
-    to: draft_questions
+  - from: select_scenes
+    to: view_set
     type: primary
-  - from: draft_questions
-    to: annotation
+  - from: view_set
+    to: task_design
     type: primary
-  - from: annotation
-    to: answer_check
+  - from: task_design
+    to: draft
     type: primary
-  - from: answer_check
+  - from: draft
+    to: view_policy
+    type: primary
+  - from: view_policy
+    to: human_review
+    type: primary
+  - from: human_review
+    to: mcq
+    type: primary
+  - from: mcq
     to: paired
     type: primary
   - from: paired
-    to: dataset
+    to: final_qc
     type: primary
-  - from: dataset
-    to: evaluation
+  - from: final_qc
+    to: benchmark
     type: primary
-  - from: answer_check
-    to: annotation
-    type: optional
-    label: 质检回路
+  - from: benchmark
+    to: model_eval
+    type: primary
+  - from: model_eval
+    to: accuracy
+    type: primary
+  - from: model_eval
+    to: consistency
+    type: data
+  - from: benchmark
+    to: human
+    type: data
+  - from: accuracy
+    to: report
+    type: primary
+  - from: consistency
+    to: report
+    type: primary
+  - from: human
+    to: report
+    type: primary
 modules: []

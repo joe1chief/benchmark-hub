@@ -4,76 +4,149 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CodeElo 构建流程
-  description: 对齐论文的 CodeElo 流程：从 CodeForces 题目采集到官方在线评判，再计算可与人类比较的 Elo 评分。
-  legend: 实线箭头表示题目摄取、官方评判与 Elo 评分。
+  title: CodeElo 构建与定级流程
+  description: 对齐论文的近期 Codeforces 评级竞赛收集、官方平台直接评测、比赛计分及可与人类比较的 Elo 估计流程。
+  legend: 先从左到右阅读基准构建行，再从右到左阅读评测与定级行。
 nodes:
-  - id: cf
-    label: CodeForces
+  - id: contests
+    label: |-
+      Codeforces 评级竞赛
+      2024年5月4日至11月4日
+      排除仅 Div. 1 的竞赛
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 100
+  - id: dataset
+    label: |-
+      CodeElo 题集
+      54 场竞赛 / 387 题
+      分区、难度 Rating 与算法标签
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 100
   - id: parse
-    label: 解析HTML
+    label: |-
+      解析并保留题面
+      描述 / 输入输出 / 样例 / 说明
+      用原始 HTML 保留公式与版式
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: tags
-    label: 标签评级
+      x: 600
+      'y': 100
+  - id: prompt
+    label: |-
+      竞赛编程提示
+      要求推理过程 + 完整 C++ 程序
+      测试时隐藏算法标签
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: recent
-    label: 近期测试
+      x: 880
+      'y': 100
+  - id: sample
+    label: |-
+      最多生成 8 次尝试
+      解析最后一个围栏代码块
+      保留每题的尝试顺序
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: code
-    label: 模型代码
-    type: document
+      x: 1160
+      'y': 100
+  - id: submit
+    label: |-
+      直接提交官方平台
+      自动机器人将代码发送至 Codeforces
+      遵循学术虚拟参赛协议
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1440
+      'y': 100
   - id: judge
-    label: 官方评判
+    label: |-
+      Codeforces 官方评测
+      隐藏测试 + 特殊 / 交互评测器
+      平台统一时间与内存限制
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: score
+    label: |-
+      重建竞赛得分
+      仅通过全部平台测试才算 Accepted
+      成功前的失败尝试计入罚分
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: rank
+    label: |-
+      放入人类选手排名
+      将模型名次与 n 名参赛者比较
+      用二分搜索求期望 Rating
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: aggregate
+    label: |-
+      汇总 54 场竞赛
+      平均各场 Elo Rating
+      保留逐场波动分析
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      可与人类比较的报告
+      Elo Rating + 人类百分位
+      Pass@1 / @2 / @4 / @8 与标签分析
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: elo
-    label: Elo评分
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: cf
+  - from: contests
+    to: dataset
+    type: primary
+  - from: dataset
     to: parse
     type: primary
   - from: parse
-    to: tags
+    to: prompt
     type: primary
-  - from: tags
-    to: recent
+  - from: prompt
+    to: sample
     type: primary
-  - from: recent
-    to: code
+  - from: sample
+    to: submit
     type: primary
-  - from: code
+  - from: submit
     to: judge
     type: primary
   - from: judge
-    to: elo
+    to: score
+    type: primary
+  - from: score
+    to: rank
+    type: primary
+  - from: rank
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
 modules: []

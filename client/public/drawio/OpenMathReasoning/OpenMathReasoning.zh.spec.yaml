@@ -1,0 +1,205 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OpenMathReasoning 数据集构建流程
+  description: 依据论文和官方数据卡，从AoPS问题构建长思维链解答、工具集成推理数据和GenSelect样例。
+  legend: 论文流水线报告540K问题；官方发布卡已更正为306K个有公开解答的问题，并另提供193K条仅问题记录。
+nodes:
+  - id: source
+    label: |-
+      收集AoPS论坛讨论
+      除Middle School Math外全部论坛
+      获取620K条讨论
+      保留数学上下文
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: extract
+    label: |-
+      用Qwen2.5-32B抽取问题
+      识别每篇帖子中的全部问题
+      允许零个一个或多个问题
+      得到580K个问题
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: classify
+    label: |-
+      分类每个问题
+      证明题或非证明题
+      多选或二元问题
+      有效或无效
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: filter
+    label: |-
+      移除不适合格式
+      删除多选题
+      删除是非题和无效题
+      论文阶段保留550K
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: transform
+    label: |-
+      规范为可回答问题
+      把证明题转换为答案题
+      尽可能抽取最终答案
+      保留无法抽取答案的问题
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: decontam
+    label: |-
+      执行基准去污染
+      由LLM比对热门数学任务
+      移除高度相似问题
+      论文流水线报告540K
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: correction
+    label: |-
+      对齐官方发布更正
+      仅306K个问题进入解答分集
+      193K个样例保持仅问题
+      流水线Bug丢失137K个证明题
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: cot_generate
+    label: |-
+      生成长思维链候选
+      使用DeepSeek-R1和QwQ-32B
+      每题最多32个
+      温度0.7且Top-p 0.95
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: cot_filter
+    label: |-
+      过滤思维链解答
+      检查预期最终答案
+      Qwen2.5-32B判断等价
+      必要时用多数答案
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 420
+  - id: cot_release
+    label: |-
+      保留长推理数据
+      2.7M条DeepSeek-R1解答
+      0.5M条QwQ-32B解答
+      合计3.2M条CoT
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 420
+  - id: tir_seed
+    label: |-
+      启动工具集成推理
+      提示LIMO-Qwen-32B使用Python
+      生成1.2M个候选
+      筛为15K条阶段零样例
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 420
+  - id: tir_iterate
+    label: |-
+      迭代TIR训练与生成
+      先训练QwQ再训练14B模型
+      过滤正确且使用代码的解答
+      得到1.7M条TIR
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 420
+  - id: genselect
+    label: |-
+      构建GenSelect数据
+      改写忠实的解答摘要
+      比较多个候选解答
+      生成566K条选择样例
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: release
+    label: |-
+      发布OpenMathReasoning
+      含CoT、TIR、GenSelect和额外问题
+      官方卡约5.68M行
+      同时发布代码和OpenMath-Nemotron模型
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 420
+edges:
+  - from: source
+    to: extract
+    type: primary
+  - from: extract
+    to: classify
+    type: primary
+  - from: classify
+    to: filter
+    type: primary
+  - from: filter
+    to: transform
+    type: primary
+  - from: transform
+    to: decontam
+    type: primary
+  - from: decontam
+    to: correction
+    type: primary
+  - from: correction
+    to: cot_generate
+    type: primary
+  - from: cot_generate
+    to: cot_filter
+    type: primary
+  - from: cot_filter
+    to: cot_release
+    type: primary
+  - from: cot_release
+    to: tir_seed
+    type: primary
+  - from: tir_seed
+    to: tir_iterate
+    type: primary
+  - from: tir_iterate
+    to: genselect
+    type: primary
+  - from: genselect
+    to: release
+    type: primary
+modules: []

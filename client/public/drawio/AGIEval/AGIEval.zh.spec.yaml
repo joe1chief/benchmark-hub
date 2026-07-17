@@ -5,117 +5,175 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AGIEval 构建流程
-  description: 基于 arXiv:2304.06364 对齐的 AGIEval 基准构建与评估流程。
-  legend: 实线表示考试题到基准构建和模型评估主流程；虚线表示题型过滤和人类表现参考路径。
+  description: 对齐论文的 AGIEval 流程：从官方人类考试和复用考试数据集，经客观题过滤、 双语 20 任务组装、四种提示设置，到按题型计算指标。
+  legend: 实线表示数据构建、人类参考成绩和模型评测。
 nodes:
-  - id: exam_pool
+  - id: official_sources
     label: |-
-      官方考试池
-      高考、SAT、LSAT
-      GMAT、GRE、AMC、AIME
+      官方公开考试
+      高考/SAT/LSAT
+      GRE/GMAT/法考/公考
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: exam_selection
+      'y': 80
+  - id: reused_sources
     label: |-
-      考试选择
-      标准化高质量考试
-      强调人类推理和真实场景
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: objective_filter
-    label: |-
-      客观题过滤
-      移除主观题
-      保留选择题和填空题
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: data_collection
-    label: |-
-      数据来源收集
-      公开考试题源
-      LSAT、LogiQA、MATH、JEC-QA
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: dataset
-    label: |-
-      AGIEval 数据集
-      8,062 道题
-      中英双语覆盖
+      复用考试数据集
+      LogiQA/MATH/AQuA-RAT
+      JEC-QA与LSAT数据
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: human_baselines
+      x: 40
+      'y': 400
+  - id: select
     label: |-
-      人类表现基线
-      平均和顶尖考生
-      缩放到任务分数
-    type: user
-    size: xl
-    position:
-      x: 1080
-      'y': 70
-  - id: model_eval
-    label: |-
-      模型评估
-      零样本、少样本
-      chain-of-thought 提示
+      选择标准化考试
+      人类推理能力
+      与真实场景相关
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: metrics_release
+      x: 280
+      'y': 240
+  - id: objective
     label: |-
-      结果与发布
-      accuracy、EM、F1
-      公开输出和代码
+      移除主观题
+      保留选择与填空题
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 240
+  - id: normalize
+    label: |-
+      统一数据来源
+      MATH与两类JEC-QA
+      各下采样至1K
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 240
+  - id: dataset
+    label: |-
+      AGIEval
+      20项任务/8,062题
+      中文与英文
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 240
+  - id: humans
+    label: |-
+      人类参考
+      平均与顶尖考生
+    type: user
+    size: xl
+    position:
+      x: 1240
+      'y': 80
+  - id: prompts
+    label: |-
+      提示设置
+      零样本/5样本
+      使用/不使用CoT
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: generation
+    label: |-
+      贪心生成
+      温度0
+      最多2,048词元
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 400
+  - id: format
+    label: |-
+      问题题型
+      选择或填空？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: mcq
+    label: |-
+      选择题
+      分类准确率
+    type: document
+    size: xl
+    position:
+      x: 1960
+      'y': 260
+  - id: fill
+    label: |-
+      填空题
+      精确匹配与F1
+    type: document
+    size: xl
+    position:
+      x: 1960
+      'y': 500
+  - id: report
+    label: |-
+      分任务结果
+      模型对比人类
+      公开输出与代码
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2200
+      'y': 240
 edges:
-  - from: exam_pool
-    to: exam_selection
+  - from: official_sources
+    to: select
     type: primary
-  - from: exam_selection
-    to: objective_filter
-    type: data
-    label: 选定考试
-  - from: objective_filter
-    to: exam_selection
-    type: optional
-    label: 移除主观题
-  - from: objective_filter
-    to: data_collection
+  - from: reused_sources
+    to: select
     type: primary
-  - from: data_collection
+  - from: select
+    to: objective
+    type: primary
+  - from: objective
+    to: normalize
+    type: primary
+  - from: normalize
     to: dataset
     type: primary
   - from: dataset
-    to: human_baselines
-    type: data
-  - from: dataset
-    to: model_eval
+    to: humans
     type: primary
-  - from: human_baselines
-    to: metrics_release
-    type: data
-  - from: model_eval
-    to: metrics_release
+  - from: dataset
+    to: prompts
+    type: primary
+  - from: prompts
+    to: generation
+    type: primary
+  - from: generation
+    to: format
+    type: primary
+  - from: format
+    to: mcq
+    type: primary
+  - from: format
+    to: fill
+    type: primary
+  - from: humans
+    to: report
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: fill
+    to: report
     type: primary
 modules: []

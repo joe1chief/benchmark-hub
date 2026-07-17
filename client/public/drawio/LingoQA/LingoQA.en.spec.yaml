@@ -6,86 +6,193 @@ meta:
   routing: orthogonal
   title: LingoQA Build Process
   description: >-
-    Paper-aligned LingoQA pipeline from driving clips through action/scenery QA generation, human evaluation labels, and
-    Lingo-Judge scoring.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned construction of autonomous-driving video QA through separate action and scenery pipelines, a
+    double-labeled human evaluation set, and a human-correlated DeBERTaV3 Lingo-Judge.
+  legend: >-
+    Counts follow arXiv:2312.14115: 28,000 four-second scenarios and 419.9K QA annotations in total. The paper gives
+    conflicting action-branch QA totals, so this diagram preserves only the unambiguous aggregate count.
 nodes:
-  - id: drive_clips
-    label: Drive Clips
-    type: document
+  - id: sessions
+    label: |-
+      Record Autonomous-driving Sessions
+      Capture Forward-facing Video and Vehicle State
+      Retain Perception and Policy Context
+      Identify Notable Driving Behaviors
+    type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: action_data
-    label: Action Data
+      x: 20
+      'y': 260
+  - id: clips
+    label: |-
+      Extract Four-second Video Scenarios
+      Sample Frames at 1 Hz
+      Average Ground-truth Answer Is 17.2 Words
+      Route Clips to Two Construction Pipelines
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: gpt_rewrite
-    label: GPT Rewrite
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: scenery_data
-    label: Scenery Data
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: gpt4_qa
-    label: GPT-4 QA
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: eval_labels
-    label: Eval Labels
+      x: 300
+      'y': 260
+  - id: action_seed
+    label: |-
+      Action Branch · Author Behavior Seeds
+      Operator Describes Situation and Action
+      Add Lights · Detections · Weather
+      Add Speed · Steering · Road Metadata
     type: user
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: lingo_judge
-    label: LingoJudge
+      x: 580
+      'y': 40
+  - id: action_qa
+    label: |-
+      Generate and Balance Action QA
+      Prompt Action · Justification · Questions · Hints
+      GPT-3.5 Rephrases · Answers · Extends
+      Cap Each Action and Policy Type at 500
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: vqa_scores
-    label: VQA Scores
+      x: 900
+      'y': 40
+  - id: scenery_seed
+    label: |-
+      Scenery Branch · Densely Annotate Video
+      Three 30-minute Driving Sessions
+      Use ELAN across about 15 Caption Categories
+      Align Captions to Every 1 Hz Frame
+    type: user
+    size: xl
+    position:
+      x: 580
+      'y': 480
+  - id: scenery_qa
+    label: |-
+      Generate Scenery-perception QA
+      Prompt GPT-4 with Chain-of-thought Examples
+      Derive Questions from Dense Captions
+      Produce about 43 QA Items per Video
+    type: process
+    size: xl
+    position:
+      x: 900
+      'y': 480
+  - id: corpus
+    label: |-
+      Merge the LingoQA Training Corpus
+      24,577 Action Snippets
+      28K Unique Four-second Scenarios Overall
+      419.9K QA Annotations Overall
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 260
+  - id: competencies
+    label: |-
+      Cover Nine Driving Competencies
+      Action · Justification · Attention
+      Identification · Localisation · Description
+      Counting · Anticipation · Counterfactual
+    type: process
+    size: xl
+    position:
+      x: 1500
+      'y': 260
+  - id: eval_questions
+    label: |-
+      Create a Separate Human Evaluation Set
+      In-house Labelers Write 500 Questions
+      More Than 20 Evaluators Participate
+      Keep Questions Grounded in Driving Clips
+    type: user
+    size: xl
+    position:
+      x: 1780
+      'y': 260
+  - id: references
+    label: |-
+      Collect Two Answers per Question
+      Assign Different Workers for Double Labels
+      Review Semantic Disagreements
+      Relabel Twice and Resolve by Majority Semantics
+    type: user
+    size: xl
+    position:
+      x: 2060
+      'y': 260
+  - id: judge
+    label: |-
+      Train the DeBERTaV3 Lingo-Judge
+      Input Question · Human Answer · Model Answer
+      LoRA-train on Human Correctness Labels
+      Add Active-learning Corrections from Old Models
+    type: process
+    size: xl
+    position:
+      x: 2060
+      'y': 600
+  - id: score
+    label: |-
+      Score Answers without Video Input
+      Predict Correctness against Each Reference
+      Take the Maximum over 2 References per Question
+      Average Question Scores for the Model
+    type: process
+    size: xl
+    position:
+      x: 1780
+      'y': 600
+  - id: report
+    label: |-
+      Validate and Report LingoQA Scores
+      Judge Held-out Accuracy Is 95%
+      Spearman 0.950 · Pearson 0.993 across 17 Models
+      Compare with Human and Text Metrics
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1500
+      'y': 600
 edges:
-  - from: drive_clips
-    to: action_data
+  - from: sessions
+    to: clips
     type: primary
-  - from: action_data
-    to: gpt_rewrite
+  - from: clips
+    to: action_seed
     type: primary
-  - from: gpt_rewrite
-    to: scenery_data
+  - from: clips
+    to: scenery_seed
     type: primary
-  - from: scenery_data
-    to: gpt4_qa
+  - from: action_seed
+    to: action_qa
     type: primary
-  - from: gpt4_qa
-    to: eval_labels
+  - from: scenery_seed
+    to: scenery_qa
     type: primary
-  - from: eval_labels
-    to: lingo_judge
+  - from: action_qa
+    to: corpus
     type: primary
-  - from: lingo_judge
-    to: vqa_scores
+  - from: scenery_qa
+    to: corpus
+    type: primary
+  - from: corpus
+    to: competencies
+    type: primary
+  - from: competencies
+    to: eval_questions
+    type: primary
+  - from: eval_questions
+    to: references
+    type: primary
+  - from: references
+    to: judge
+    type: primary
+  - from: judge
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

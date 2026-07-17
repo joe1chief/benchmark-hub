@@ -1,0 +1,246 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ImgEdit-Bench 构建流程
+  description: 与论文一致的基准流程：人工整理的网络图片分别形成 734 例 Basic、47 例理解-定位-编辑 UGE 和 30 例多轮套件；单轮与多轮输出进入不同评分路径。
+  legend: 实线表示基准构建与主要评分；虚线表示辅助伪造检测以及单独训练的开放 ImgEdit-Judge。
+nodes:
+  - id: design
+    label: |-
+      能力框架设计
+      基础编辑 + 复杂 UGE
+      真实多轮使用场景
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 300
+  - id: basic_source
+    label: |-
+      人工收集网络基础图片
+      六个大类 · 每类十个代表概念
+      简洁背景或显著主体
+    type: cloud
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: basic_prompts
+    label: |-
+      九类常见编辑任务
+      添加 · 移除 · 属性修改 · 替换 · 风格
+      背景 · 动作 · 抠图 · 混合编辑
+      GPT-4o 生成指令 → 人工过滤
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: basic_set
+    label: |-
+      Basic-Edit 套件
+      734 个测试案例
+      短指令至复杂指令
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: uge_source
+    label: |-
+      人工整理 47 张复杂图片
+      遮挡 · 同类多实例
+      伪装目标 · 不常见主体
+    type: cloud
+    size: xl
+    position:
+      x: 300
+      'y': 300
+  - id: uge_prompts
+    label: |-
+      人工设计 UGE 指令
+      空间推理 · 多对象协调
+      复合 / 细粒度 / 大范围编辑
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 300
+  - id: uge_set
+    label: |-
+      UGE 套件
+      47 个困难单轮案例
+      理解 + 定位 + 编辑
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 300
+  - id: multi_source
+    label: |-
+      三个多轮维度
+      内容记忆 · 内容理解 · 版本回退
+      每类十张图 · 人工设计指令
+    type: user
+    size: xl
+    position:
+      x: 300
+      'y': 560
+  - id: multi_set
+    label: |-
+      多轮套件
+      30 个案例 · 每例三轮交互
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 560
+  - id: single_run
+    label: |-
+      生成单轮编辑结果
+      所有模型使用相同图片与指令
+      模型原生分辨率 · 重复三次
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 160
+  - id: multi_run
+    label: |-
+      顺序生成多轮编辑
+      保留完整轮次历史与版本
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 560
+  - id: gpt_score
+    label: |-
+      GPT-4o 任务专用细则
+      1–5 分指令遵循
+      编辑质量 · 细节保留
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 80
+  - id: cap
+    label: |-
+      评分门控
+      编辑质量与细节保留分
+      不得高于指令遵循分
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 80
+  - id: fake
+    label: |-
+      辅助 FakeShield
+      编辑伪影定位召回率
+      量化可检测的伪造感
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 300
+  - id: human
+    label: |-
+      人工多轮评测
+      依详细细则做是 / 否判断
+      记忆 · 理解 · 回退
+    type: user
+    size: xl
+    position:
+      x: 1420
+      'y': 560
+  - id: judge_train
+    label: |-
+      可选开放 ImgEdit-Judge
+      用 20 万条评分微调 Qwen2.5-VL-7B
+      60 图人工研究 · 接近 70% 一致
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 300
+  - id: report
+    label: |-
+      报告 ImgEdit-Bench 结果
+      Basic 分类均分 · UGE 均分
+      多轮成功率 + 辅助伪造分
+    type: terminal
+    size: xl
+    position:
+      x: 1990
+      'y': 300
+edges:
+  - from: design
+    to: basic_source
+    type: primary
+  - from: basic_source
+    to: basic_prompts
+    type: primary
+  - from: basic_prompts
+    to: basic_set
+    type: primary
+  - from: design
+    to: uge_source
+    type: primary
+  - from: uge_source
+    to: uge_prompts
+    type: primary
+  - from: uge_prompts
+    to: uge_set
+    type: primary
+  - from: design
+    to: multi_source
+    type: primary
+  - from: multi_source
+    to: multi_set
+    type: primary
+  - from: basic_set
+    to: single_run
+    type: primary
+  - from: uge_set
+    to: single_run
+    type: primary
+  - from: multi_set
+    to: multi_run
+    type: primary
+  - from: single_run
+    to: gpt_score
+    type: primary
+  - from: gpt_score
+    to: cap
+    type: primary
+  - from: cap
+    to: report
+    type: primary
+  - from: single_run
+    to: fake
+    type: optional
+  - from: fake
+    to: report
+    type: optional
+  - from: multi_run
+    to: human
+    type: primary
+  - from: human
+    to: report
+    type: primary
+    waypoints:
+      - x: 1900
+        'y': 610
+      - x: 1900
+        'y': 420
+  - from: gpt_score
+    to: judge_train
+    type: optional
+  - from: judge_train
+    to: report
+    type: optional
+modules: []
