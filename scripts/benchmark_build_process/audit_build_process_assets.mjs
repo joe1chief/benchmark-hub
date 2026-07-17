@@ -304,6 +304,7 @@ function buildUnresolvedQueue({
   strictIssues,
   visualIssues,
   paperAlignmentIssues,
+  paperEligibleIds,
   languageIssues,
   svgIssues,
   topologyIssues,
@@ -343,12 +344,6 @@ function buildUnresolvedQueue({
     ...topologyIssues,
   ].map((issue) => issue.id));
   const visualIssueIds = new Set(visualIssues.map((issue) => issue.id));
-  const paperIssueIds = new Set([
-    ...paperAlignmentIssues,
-    ...sourceIssues.filter((issue) => (
-      ['missing_source_url', 'missing_source_locator'].includes(issue.issue)
-    )),
-  ].map((issue) => issue.id));
   const coreIssueIds = new Set([
     ...brokenReferences,
     ...aggregateIssues,
@@ -373,7 +368,7 @@ function buildUnresolvedQueue({
       visual: Boolean(manifestEntry)
         && !visualIssueIds.has(id)
         && manifestEntry.review_status === 'visually_reviewed',
-      paper: Boolean(manifestEntry) && !paperIssueIds.has(id),
+      paper: paperEligibleIds.has(id),
     };
     if (Object.values(gates).every(Boolean)) return [];
 
@@ -1053,12 +1048,12 @@ export function auditBuildProcessAssets(root) {
     ...paperAlignmentIssues,
     ...sourceIssues,
   ].map((issue) => issue.id));
-  const paperAlignedTotal = [...paperAlignmentCandidateIds]
+  const paperEligibleIds = new Set([...paperAlignmentCandidateIds]
     .filter((id) => manifestIdCounts.get(id) === 1)
     .filter((id) => aggregateIdCounts.get(id) === 1)
     .filter((id) => detailIdCounts.get(id) === 1)
     .filter((id) => !paperBlockingIds.has(id))
-    .length;
+  );
 
   const summary = {
     detail_total: detailFiles.length,
@@ -1077,7 +1072,7 @@ export function auditBuildProcessAssets(root) {
     visually_reviewed_total: manifest.filter(
       (entry) => entry.review_status === 'visually_reviewed',
     ).length,
-    paper_aligned_total: paperAlignedTotal,
+    paper_aligned_total: paperEligibleIds.size,
     missing_ids: [...new Set(missingIds)].sort(),
     broken_references: brokenReferences,
     language_issues: languageIssues,
@@ -1106,6 +1101,7 @@ export function auditBuildProcessAssets(root) {
     strictIssues,
     visualIssues,
     paperAlignmentIssues,
+    paperEligibleIds,
     languageIssues,
     svgIssues,
     topologyIssues,

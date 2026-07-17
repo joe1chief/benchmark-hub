@@ -903,6 +903,11 @@ test('rejects duplicate benchmark ids in the aggregate list', () => {
       count: 2,
     },
   ]);
+  assert.equal(summary.paper_aligned_total, 0);
+  assert.equal(summary.unresolved_queue[0].gates.paper, false);
+  assert.ok(
+    summary.unresolved_queue[0].issues.includes('id_set:duplicate_list_record'),
+  );
 });
 
 test('rejects duplicate benchmark ids in the manifest', () => {
@@ -931,6 +936,11 @@ test('rejects duplicate benchmark ids in the manifest', () => {
       count: 2,
     },
   ]);
+  assert.equal(summary.paper_aligned_total, 0);
+  assert.equal(summary.unresolved_queue[0].gates.paper, false);
+  assert.ok(
+    summary.unresolved_queue[0].issues.includes('id_set:duplicate_manifest_record'),
+  );
 });
 
 test('rejects duplicate benchmark ids across detail files', () => {
@@ -957,6 +967,11 @@ test('rejects duplicate benchmark ids across detail files', () => {
       count: 2,
     },
   ]);
+  assert.equal(summary.paper_aligned_total, 0);
+  assert.equal(summary.unresolved_queue[0].gates.paper, false);
+  assert.ok(
+    summary.unresolved_queue[0].issues.includes('id_set:duplicate_detail_record'),
+  );
 });
 
 test('rejects an aggregate path that agrees with the manifest but has no file', () => {
@@ -1980,8 +1995,13 @@ test('rejects conflicting duplicate aggregate records without order-dependent wi
   const second = JSON.parse(secondResult.stdout);
 
   assert.deepEqual(first, second);
+  assert.equal(first.paper_aligned_total, 0);
   assert.equal(first.unresolved_queue[0].gates.id_set, false);
   assert.equal(first.unresolved_queue[0].gates.core, false);
+  assert.equal(first.unresolved_queue[0].gates.paper, false);
+  assert.ok(
+    first.unresolved_queue[0].issues.includes('id_set:duplicate_list_record'),
+  );
 });
 
 test('does not count a passed paper review when a duplicate record is pending', () => {
