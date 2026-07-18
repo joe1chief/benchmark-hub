@@ -4,145 +4,163 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CraneMath 训练语料构建与验证流程
-  description: 按 Olmo 3 对齐的流程：以许可更宽松的模型复现 SwallowMath、发布 CraneMath，并通过中期训练 microanneal 验证，而不是把它当成独立 benchmark。
-  legend: 橙色表示语料与 benchmark 的身份边界；下方节点仅表示数据消融。
+  title: CraneMath 重写语料与效用验证
+  description: 按固定版本还原仅训练用 CraneMath 语料的构建与消融，并区分源池、最终混合、归一化变化和评测身份。
+  legend: 虚线表示来源、披露边界或派生统计；实线表示主要数据流。
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      FineMath4+ 自然产生的
-      高质量数学网页文本
-      对比池含 9.61B tokens
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 190
-  - id: recipe
-    label: |-
-      复现 SwallowMath 重写配方
-      使用其公开提示
-      避免 Llama 许可证限制
+      证据冻结
+      arXiv:2512.13961v2
+      GitHub @1a9daced · 源池 @091589c
     type: document
     size: xl
     position:
       x: 320
-      'y': 190
+      'y': 40
+  - id: source
+    label: |-
+      FineMath4+ 训练源 @e92b25a
+      6,699,493 个训练样本
+      仅 train 划分
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
   - id: rewrite
     label: |-
-      用 Qwen3-32B 重写 FineMath4+
-      独立生成许可更宽松的复现数据
+      SwallowMath 公开提示
+      Qwen3-32B：每例一次重写
     type: process
     size: xl
     position:
-      x: 600
-      'y': 190
+      x: 320
+      'y': 300
   - id: corpus
     label: |-
-      CraneMath 源数据池
-      5.62B 英文合成数学 tokens
-      发布 6.55M 文档
+      移除生成失败项
+      CraneMath：6,553,181 个文档
+      5.625B tokens · 仅训练
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: construction_boundary
+    label: |-
+      构建披露边界
+      无专属人工检查或去重
+      无评测划分、自纠错或验证器
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: pool
+    label: |-
+      论文表 5：源池
+      5.62B tokens · 6.55M 文档
     type: database
     size: xl
     position:
       x: 880
-      'y': 190
-  - id: identity
-    label: CraneMath 是独立评测集吗？
-    type: decision
+      'y': 300
+  - id: mix
+    label: |-
+      Olmo 3 的 100B 中期训练混合
+      5.62B tokens = 5.63%
+      7.24M 文档
+    type: process
     size: xl
     position:
       x: 1160
-      'y': 190
-  - id: boundary
-    label: |-
-      没有测试划分、逐题准确率、推理提示
-      或 CraneMath 专属评分协议
-      它是中期训练数据
-    type: document
-    size: xl
-    position:
-      x: 1440
       'y': 40
-  - id: mix
-    label: |-
-      Olmo 3 第二阶段 Dolmino 混合
-      CraneMath 占 100B-token 混合的 5.63%
-      发布混合列出 7.24M 文档
-    type: process
-    size: xl
-    position:
-      x: 1440
-      'y': 310
   - id: anneal
     label: |-
-      数据质量 Microanneal
-      从已见 6T 预训练 tokens 的基础模型出发
-      50% 网页数据与 50% 候选源混合
+      CraneMath Microanneal
+      从已见 6T 预训练 tokens 的模型开始
+      50% 预训练网页 · 50% 候选源
     type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: compare
+    label: |-
+      对比六种运行
+      退火前基线 · FineMath4+
+      SwallowMath · CraneMath
+      2× CraneMath
+      CraneMath + 原始文档
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: raw_lift
+    label: |-
+      主文相对退火前的原始提升
+      MATH +18.5 · GSM8K +27.4 分
+    type: terminal
     size: xl
     position:
       x: 1720
-      'y': 310
-  - id: compare
+      'y': 300
+  - id: normalized
     label: |-
-      对比退火前基线、FineMath4+、
-      SwallowMath、CraneMath、双份 CraneMath
-      以及 CraneMath 加原始文档
+      表 41：归一化 Δ
+      （退火分数 − 退火前分数）/
+      目标 tokens 数（B）
+      Crane 4.34B → MATH 4.26
+      GSM8K 6.32
     type: process
     size: xl
     position:
       x: 2000
-      'y': 310
-  - id: metrics
+      'y': 300
+  - id: boundary
     label: |-
-      测量 MATH、GSM8K 与 MMLU 变化
-      主分析中 CraneMath 原始提升为
-      MATH 18.5、GSM8K 27.4 分
-    type: terminal
+      身份 / 评测边界
+      这是训练数据，不是评测基准
+      不报告 CraneMath 逐题准确率或模型排名
+    type: document
     size: xl
     position:
       x: 2280
-      'y': 310
-  - id: conclusion
-    label: |-
-      验证训练数据效用
-      不报告 CraneMath 准确率
-      也不在该语料上排列模型
-    type: terminal
-    size: xl
-    position:
-      x: 2560
-      'y': 310
+      'y': 300
 edges:
+  - from: evidence
+    to: rewrite
+    type: data
   - from: source
-    to: recipe
-    type: primary
-  - from: recipe
     to: rewrite
     type: primary
   - from: rewrite
     to: corpus
     type: primary
   - from: corpus
-    to: identity
+    to: construction_boundary
+    type: data
+  - from: corpus
+    to: pool
     type: primary
-  - from: identity
-    to: boundary
-    type: primary
-  - from: identity
+  - from: pool
     to: mix
     type: primary
-  - from: mix
+  - from: pool
     to: anneal
     type: primary
   - from: anneal
     to: compare
     type: primary
   - from: compare
-    to: metrics
+    to: raw_lift
     type: primary
-  - from: metrics
-    to: conclusion
+  - from: raw_lift
+    to: normalized
+    type: data
+  - from: normalized
+    to: boundary
     type: primary
 modules: []

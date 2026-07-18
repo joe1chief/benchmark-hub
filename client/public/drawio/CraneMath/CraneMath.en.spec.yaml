@@ -4,147 +4,162 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CraneMath Training-Corpus Construction and Validation Process
+  title: CraneMath Rewrite Corpus and Utility Validation
   description: >-
-    Olmo 3-aligned flow for recreating SwallowMath with permissive generation, releasing CraneMath, and validating it
-    through midtraining microanneals rather than treating it as a standalone benchmark.
-  legend: Orange marks the corpus-versus-benchmark identity boundary; lower nodes show data ablation only.
+    Fixed-version construction and ablation flow for the train-only CraneMath corpus, separating source-pool, final-mix,
+    normalized-delta and benchmark-identity boundaries.
+  legend: Dashed links mark provenance, disclosure limits, or derived statistics; solid links mark the main data flow.
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      FineMath4+ Naturally Occurring
-      High-Quality Mathematical Web Text
-      9.61B Tokens in the Compared Pool
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 190
-  - id: recipe
-    label: |-
-      Reproduce the SwallowMath Rewrite Recipe
-      Use Its Published Prompt
-      Avoid Llama License Restrictions
+      Evidence Freeze
+      arXiv:2512.13961v2 · GitHub @1a9daced
+      Pool @091589c
     type: document
     size: xl
     position:
       x: 320
-      'y': 190
+      'y': 40
+  - id: source
+    label: |-
+      FineMath4+ Train Source @e92b25a
+      6,699,493 Examples
+      Train Split Only
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
   - id: rewrite
     label: |-
-      Rewrite FineMath4+ with Qwen3-32B
-      Independent Permissively Licensed Recreation
+      Published SwallowMath Prompt
+      Qwen3-32B: One Rewrite per Example
     type: process
     size: xl
     position:
-      x: 600
-      'y': 190
+      x: 320
+      'y': 300
   - id: corpus
     label: |-
-      CraneMath Source Pool
-      5.62B English Synthetic Math Tokens
-      6.55M Released Documents
+      Drop Generation Failures
+      CraneMath: 6,553,181 Documents
+      5.625B Tokens · Train-Only
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: construction_boundary
+    label: |-
+      Construction Disclosure Boundary
+      No Dedicated Manual Review or Dedup
+      No Eval Split, Self-Correction or Verifier
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: pool
+    label: |-
+      Paper Table 5: Source Pool
+      5.62B Tokens · 6.55M Documents
     type: database
     size: xl
     position:
       x: 880
-      'y': 190
-  - id: identity
-    label: Is CraneMath a Standalone Evaluation Set?
-    type: decision
+      'y': 300
+  - id: mix
+    label: |-
+      Olmo 3 100B Midtraining Mix
+      5.62B Tokens = 5.63%
+      7.24M Documents
+    type: process
     size: xl
     position:
       x: 1160
-      'y': 190
-  - id: boundary
-    label: |-
-      No Test Split, Item Accuracy, Prompted Inference
-      or CraneMath-Specific Scoring Protocol
-      It Is Midtraining Data
-    type: document
-    size: xl
-    position:
-      x: 1440
       'y': 40
-  - id: mix
-    label: |-
-      Olmo 3 Stage-2 Dolmino Mix
-      CraneMath Is 5.63% of the 100B-Token Mix
-      Released Mix Lists 7.24M Documents
-    type: process
-    size: xl
-    position:
-      x: 1440
-      'y': 310
   - id: anneal
     label: |-
-      Data-Quality Microanneal
-      Start from Base Model after 6T Pretraining Tokens
-      Mix 50% Web Data and 50% Candidate Source
+      CraneMath Microanneal
+      Start after 6T Pretraining Tokens
+      50% Pretrain Web · 50% Candidate
     type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: compare
+    label: |-
+      Compare Six Runs
+      Pre-Anneal Baseline · FineMath4+
+      SwallowMath · CraneMath · 2× CraneMath
+      CraneMath + Original Documents
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: raw_lift
+    label: |-
+      Main-Text Raw Lift over Pre-Anneal
+      MATH +18.5 · GSM8K +27.4 Points
+    type: terminal
     size: xl
     position:
       x: 1720
-      'y': 310
-  - id: compare
+      'y': 300
+  - id: normalized
     label: |-
-      Compare Pre-Anneal Baseline, FineMath4+,
-      SwallowMath, CraneMath, Duplicated CraneMath
-      and CraneMath plus Original Documents
+      Table 41: Normalized Δ
+      (Anneal − Pre-Anneal) / Target Tokens Seen (B)
+      Crane 4.34B → MATH 4.26 · GSM8K 6.32
     type: process
     size: xl
     position:
       x: 2000
-      'y': 310
-  - id: metrics
+      'y': 300
+  - id: boundary
     label: |-
-      Measure Changes on MATH, GSM8K and MMLU
-      CraneMath Raw Lift: 18.5 and 27.4 Points
-      MATH / GSM8K in Main Analysis
-    type: terminal
+      Identity / Evaluation Boundary
+      Training Data, Not a Benchmark
+      No CraneMath Item Accuracy or Model Ranking
+    type: document
     size: xl
     position:
       x: 2280
-      'y': 310
-  - id: conclusion
-    label: |-
-      Validate Training-Data Utility
-      Do Not Report CraneMath Accuracy
-      or Rank Models on the Corpus
-    type: terminal
-    size: xl
-    position:
-      x: 2560
-      'y': 310
+      'y': 300
 edges:
+  - from: evidence
+    to: rewrite
+    type: data
   - from: source
-    to: recipe
-    type: primary
-  - from: recipe
     to: rewrite
     type: primary
   - from: rewrite
     to: corpus
     type: primary
   - from: corpus
-    to: identity
+    to: construction_boundary
+    type: data
+  - from: corpus
+    to: pool
     type: primary
-  - from: identity
-    to: boundary
-    type: primary
-  - from: identity
+  - from: pool
     to: mix
     type: primary
-  - from: mix
+  - from: pool
     to: anneal
     type: primary
   - from: anneal
     to: compare
     type: primary
   - from: compare
-    to: metrics
+    to: raw_lift
     type: primary
-  - from: metrics
-    to: conclusion
+  - from: raw_lift
+    to: normalized
+    type: data
+  - from: normalized
+    to: boundary
     type: primary
 modules: []

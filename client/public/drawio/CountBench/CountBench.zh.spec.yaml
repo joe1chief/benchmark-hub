@@ -5,57 +5,67 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CountBench 构建与评测流程
-  description: 按论文还原从 LAION-400M 构建平衡且人工验证的 540 图像计数基准，以及九分类零样本图文相似度评测。
-  legend: 实线依次表示自动过滤、平衡、人工验证、保留测试集发布和零样本评分。
+  description: 按固定论文与发布版本，还原从 LAION-400M 构建 540 条 CountBench 测试集，以及论文定义的九描述零样本计数选择与两项指标。
+  legend: 实线表示基准构建与评测；虚线表示论文和发布版本证据边界。
 nodes:
+  - id: evidence
+    label: |-
+      论文 + 发布版本边界
+      arXiv:2302.12066v1 · §§4、5.1
+      官方 JSON @ 2c573a8：540 条
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: laion
     label: |-
       公开 LAION-400M
-      图像与描述对
+      图像—描述对
     type: database
     size: xl
     position:
       x: 40
-      'y': 190
+      'y': 300
   - id: number_filter
     label: |-
-      保留英文 two 到 ten 计数词
-      排除日期、年龄、时间、地址
-      及其他非可见数量用法
+      保留英文拼写计数词 two 至 ten
+      非拼写数字或大于 ten 的数字
+      多用于日期、时间与地址
     type: process
     size: xl
     position:
       x: 320
-      'y': 190
+      'y': 300
   - id: detector
     label: |-
       现成目标检测器
-      统计每类检测对象数量
-      描述匹配图中数量最多的类别
+      统计每类对象的检测数量
+      描述数量须匹配数量最多的类别
     type: process
     size: xl
     position:
       x: 600
-      'y': 190
+      'y': 300
   - id: candidate
     label: |-
       自动过滤候选
-      数量严重失衡：two 超过 158K
-      ten 仅约 100
+      “two”超过 158K
+      “ten”仅约 100
     type: database
     size: xl
     position:
       x: 880
-      'y': 190
+      'y': 300
   - id: balance
     label: |-
-      初步平衡数量
-      每个数字保留 100 到 200 个候选
+      初步平衡每个数量
+      每个数量保留 100–200 个候选
     type: process
     size: xl
     position:
       x: 1160
-      'y': 190
+      'y': 300
   - id: verify
     label: |-
       人工验证
@@ -65,47 +75,52 @@ nodes:
     size: xl
     position:
       x: 1440
-      'y': 190
+      'y': 300
   - id: dataset
     label: |-
-      CountBench 仅作测试
-      每个数量 60 对 × 9 = 540
-      与计数训练集无重叠
+      最终平衡：60 × 9 = 540
+      CountBench 仅作测试集
+      与计数训练集 C 无重叠
     type: database
     size: xl
     position:
       x: 1720
-      'y': 190
+      'y': 300
   - id: captions
     label: |-
       创建九条候选描述
-      用 two 到 ten 替换数字
+      数量覆盖 two 至 ten
       一条正确 + 八条反事实
     type: process
     size: xl
     position:
       x: 2000
-      'y': 190
+      'y': 300
   - id: similarity
     label: |-
-      零样本 VLM 推理
-      计算图文相似度
-      选择得分最高的数字
+      CLIP-B/32 + BASIC-S 零样本评测
+      计算九条描述的图文相似度
+      最高得分对应预测数量
     type: process
     size: xl
     position:
       x: 2280
-      'y': 190
-  - id: report
+      'y': 300
+  - id: metrics
     label: |-
-      报告计数准确率
-      与平均数量偏差
+      计数准确率
+      平均 [预测数量 = 真实数量]
+      平均绝对数量偏差
+      平均 |预测数量 − 真实数量|
     type: terminal
     size: xl
     position:
       x: 2560
-      'y': 190
+      'y': 300
 edges:
+  - from: evidence
+    to: laion
+    type: data
   - from: laion
     to: number_filter
     type: primary
@@ -131,6 +146,6 @@ edges:
     to: similarity
     type: primary
   - from: similarity
-    to: report
+    to: metrics
     type: primary
 modules: []

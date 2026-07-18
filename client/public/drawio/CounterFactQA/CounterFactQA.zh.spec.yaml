@@ -4,132 +4,117 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CounterFactQA 已披露评测流程
-  description: 按公开边界展示 Qwen3 内部 CounterFactQA。报告说明目标行为与分阶段得分，但未公开数据、构建、提示、裁判、题数或分数公式。
-  legend: 橙色判断节点表示公开披露边界；不推断任何未披露的 benchmark 机制。
+  title: CounterFactQA 已披露评测边界
+  description: 只展示 Qwen3 内部 CounterFactQA 的公开证据：目标行为与表 22 的阶段/模式数值；数据构建和评分机制均未披露。
+  legend: 实线表示已披露的检查点结果；虚线表示未公开的数据集与评分细节。
 nodes:
-  - id: report
+  - id: evidence
     label: |-
       Qwen3 技术报告
-      内部 CounterFactQA
-      用于监控训练后能力
+      arXiv:2505.09388v1 · 表 22
+      官方仓库 @ 7a2f61f；无数据集
     type: document
     size: xl
     position:
       x: 40
-      'y': 190
-  - id: questions
+      'y': 220
+  - id: hidden_set
     label: |-
+      内部 CounterFactQA
       反事实问题
-      模型应识别非事实前提
-      并避免生成幻觉答案
+      识别非事实前提
+      避免生成幻觉答案
     type: database
     size: xl
     position:
-      x: 320
-      'y': 190
-  - id: construction
-    label: 构建已披露？
-    type: decision
-    size: xl
-    position:
-      x: 600
-      'y': 190
-  - id: unknowns
+      x: 340
+      'y': 220
+  - id: dataset_boundary
     label: |-
-      公开资料未说明
-      来源 / 题数 / 划分 / 提示
-      标准答案 / 污染策略
+      数据集未发布
+      来源 · 题数 · 划分 · 提示
+      标准答案 · 污染策略均未披露
     type: document
     size: xl
     position:
-      x: 880
-      'y': 60
-  - id: stages
+      x: 340
+      'y': 0
+  - id: stage2
     label: |-
-      评测 Qwen3-32B 各阶段
-      阶段二推理 RL
-      阶段三模式融合 / 阶段四通用 RL
+      阶段二 · 推理 RL
+      思考模式：50.4
+      未报告非思考模式
     type: process
     size: xl
     position:
-      x: 880
-      'y': 300
-  - id: modes
+      x: 700
+      'y': 40
+  - id: stage3
     label: |-
-      思考与非思考模式
-      按各阶段可用模式运行
+      阶段三 · 思考模式融合
+      思考：61.3（+10.9）
+      非思考：64.3
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 300
-  - id: output
+      x: 700
+      'y': 220
+  - id: stage4
     label: |-
-      模型生成回答
-      目标：拒绝或纠正错误前提
-      且不编造答案
+      阶段四 · 通用 RL
+      思考：68.1（+6.8）
+      非思考：66.4（+2.1）
     type: process
     size: xl
     position:
-      x: 1440
-      'y': 300
-  - id: scorer
-    label: 评分协议已披露？
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 300
-  - id: boundary
-    label: |-
-      公开资料未说明
-      裁判 / 量表 / 分数单位
-      聚合公式
-    type: document
-    size: xl
-    position:
-      x: 2000
-      'y': 300
+      x: 700
+      'y': 400
   - id: table
     label: |-
-      表 22 报告原始百分数值
-      比较阶段二 / 三 / 四及不同模式
-      不重建未披露指标
+      表 22 原始百分数值
+      仅用于阶段/模式监控
+      未标注为准确率
     type: terminal
     size: xl
     position:
-      x: 2280
-      'y': 190
+      x: 1060
+      'y': 220
+  - id: score_boundary
+    label: |-
+      评分协议边界
+      裁判 · 量表 · 分数单位 · 公式
+      均未披露；不重建隐藏指标
+    type: document
+    size: xl
+    position:
+      x: 1060
+      'y': 0
 edges:
-  - from: report
-    to: questions
+  - from: evidence
+    to: hidden_set
     type: primary
-  - from: questions
-    to: construction
-    type: primary
-  - from: construction
-    to: unknowns
-    type: primary
-  - from: construction
-    to: stages
-    type: primary
-  - from: unknowns
+  - from: hidden_set
+    to: dataset_boundary
+    type: data
+  - from: hidden_set
+    to: stage2
+    type: data
+  - from: hidden_set
+    to: stage3
+    type: data
+  - from: hidden_set
+    to: stage4
+    type: data
+  - from: stage2
     to: table
     type: primary
-  - from: stages
-    to: modes
-    type: primary
-  - from: modes
-    to: output
-    type: primary
-  - from: output
-    to: scorer
-    type: primary
-  - from: scorer
-    to: boundary
-    type: primary
-  - from: boundary
+  - from: stage3
     to: table
     type: primary
+  - from: stage4
+    to: table
+    type: primary
+  - from: table
+    to: score_boundary
+    type: data
 modules: []

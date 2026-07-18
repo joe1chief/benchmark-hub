@@ -4,10 +4,21 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CraftBench 身份与 AWM 环境合成流程
-  description: 按论文对齐的 AWM 合成流程，明确 CraftBench 只是名为“定制制造作业跟踪器”的一个场景，而非拥有独立数据集或分数的 benchmark。
-  legend: 橙色表示身份边界；下方路径是 AWM 通用环境与奖励流程。
+  title: CraftBench 记录与 AWM 合成流程
+  description: 按固定证据还原 CraftBench 场景记录及其 AWM 构建产物，并明确训练环境与独立评测基准的边界。
+  legend: 虚线表示来源或奖励证据；主路径表示从场景到可执行环境的合成。
 nodes:
+  - id: evidence
+    label: |-
+      证据冻结
+      arXiv:2602.10090v3
+      GitHub @85e322f
+      AWM-1K @dde80a0
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 40
   - id: seeds
     label: |-
       100 个热门域名
@@ -16,144 +27,154 @@ nodes:
     size: xl
     position:
       x: 40
-      'y': 190
-  - id: scenarios
+      'y': 300
+  - id: scenario_filter
     label: |-
-      Self-Instruct 扩展场景
-      CRUD 分类器与嵌入去重
-      限制过度代表类别
+      Self-Instruct 场景扩展
+      CRUD 分类器
+      嵌入去重：余弦值 < 0.85
+      设置类别上限
     type: process
     size: xl
     position:
       x: 320
-      'y': 190
+      'y': 300
   - id: collection
     label: |-
-      AWM 集合：1,000 个场景
-      CraftBench 仅在附录表 16 中列为
-      “定制制造作业跟踪器”
+      AWM 集合
+      1,000 个唯一场景
     type: database
     size: xl
     position:
       x: 600
-      'y': 190
-  - id: identity
-    label: 是否发布独立 benchmark 协议？
-    type: decision
+      'y': 300
+  - id: craft_record
+    label: |-
+      CraftBench：定制制造作业跟踪器
+      官方 ID（下划线分隔）
+      manufacturing · execution
+      system · 1
+    type: database
     size: xl
     position:
       x: 880
-      'y': 190
-  - id: boundary
-    label: |-
-      没有独立 CraftBench 论文、题数、划分、
-      提示、评测运行或指标
-      公开资料只给出场景名称
-    type: document
-    size: xl
-    position:
-      x: 1160
-      'y': 40
+      'y': 300
   - id: tasks
     label: |-
-      AWM 通用任务合成
-      每场景 10 个可由 API 完成的登录后任务
-      总计 10,000 个任务
+      该场景含 10 个任务
+      可由 API 完成 · 登录后场景
+      AWM 总计 10,000 个任务
     type: process
     size: xl
     position:
       x: 1160
-      'y': 310
-  - id: database
+      'y': 300
+  - id: sqlite
     label: |-
-      生成 SQLite 模式与样例数据
-      定义状态空间和初始状态
-    type: process
+      SQLite 状态与初始数据
+      Craft：18 张表 · 114 条插入
+    type: database
     size: xl
     position:
       x: 1440
-      'y': 310
-  - id: tools
+      'y': 300
+  - id: interface
     label: |-
-      生成 Python 工具层
-      以 MCP 暴露动作、观测和状态转移
+      SQLAlchemy · Pydantic
+      FastAPI · MCP：18 个 API 组
+      50 个端点；每个端点成为工具
     type: process
     size: xl
     position:
       x: 1720
-      'y': 310
+      'y': 300
   - id: verifier
     label: |-
-      生成任务验证代码
+      任务验证器
       比较执行前后数据库状态
-      同时生成成功与失败标准
+      提取成功与失败标准
     type: process
     size: xl
     position:
       x: 2000
-      'y': 310
-  - id: validate
+      'y': 300
+  - id: self_correct
     label: |-
-      执行组件与健康检查
-      错误摘要并最多自修复 5 次
-      环境启动错误阈值为零
+      基于执行的自纠错
+      traceback 压缩至 200–500 tokens
+      回灌并最多重试 5 次
     type: process
     size: xl
     position:
       x: 2280
-      'y': 310
-  - id: agent
+      'y': 300
+  - id: tolerance
     label: |-
-      AWM 训练交互
-      智能体先列工具再进行多轮调用
-      这不是 CraftBench 专属测试
+      重试后保留最低错误率尝试
+      模式 / 数据允许 10% 错误
+      环境启动错误阈值：0%
     type: process
     size: xl
     position:
       x: 2560
-      'y': 310
-  - id: reward
+      'y': 300
+  - id: boundary
     label: |-
-      代码增强 GPT-5 判分器
-      完成 / 部分完成 / 智能体错误 / 环境错误
-      这是 AWM 奖励，不是 CraftBench 独立分数
-    type: terminal
+      身份 / 评测边界
+      无独立划分、提示、评测程序
+      或 CraftBench 指标
+    type: document
     size: xl
     position:
       x: 2840
-      'y': 310
+      'y': 300
+  - id: awm_reward
+    label: |-
+      代码增强 GPT-5 判分器
+      仅用于 AWM 训练奖励
+      完成 = 1.0 · 部分完成 = 0.1
+      其他 = 0.0
+      格式错误 = −1；提前终止
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 40
 edges:
+  - from: evidence
+    to: craft_record
+    type: data
   - from: seeds
-    to: scenarios
+    to: scenario_filter
     type: primary
-  - from: scenarios
+  - from: scenario_filter
     to: collection
     type: primary
   - from: collection
-    to: identity
+    to: craft_record
     type: primary
-  - from: identity
-    to: boundary
-    type: primary
-  - from: identity
+  - from: craft_record
     to: tasks
     type: primary
   - from: tasks
-    to: database
+    to: sqlite
     type: primary
-  - from: database
-    to: tools
+  - from: sqlite
+    to: interface
     type: primary
-  - from: tools
+  - from: interface
     to: verifier
     type: primary
   - from: verifier
-    to: validate
+    to: self_correct
     type: primary
-  - from: validate
-    to: agent
+  - from: self_correct
+    to: tolerance
     type: primary
-  - from: agent
-    to: reward
+  - from: tolerance
+    to: boundary
     type: primary
+  - from: verifier
+    to: awm_reward
+    type: data
 modules: []
