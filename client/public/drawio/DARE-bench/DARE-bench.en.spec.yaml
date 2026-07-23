@@ -4,76 +4,247 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DARE-bench Build Process
-  description: Paper-aligned DARE-bench pipeline from Kaggle dataset sourcing to sandbox-validated data-science tasks.
-  legend: 'Solid arrows follow the four paper stages: sourcing, task design, post-process, and finalization.'
+  title: DARE-bench Build and Evaluation Process
+  description: >-
+    Paper-version curation with variant-specific post-processing, verifiable ground truth, and an explicit
+    public-release boundary.
+  legend: >-
+    Solid arrows are the paper pipeline; the dashed branch records the smaller license-filtered official release at a
+    pinned commit.
 nodes:
-  - id: source
-    label: Kaggle Data
+  - id: evidence
+    label: |-
+      DARE-bench · ICLR 2026
+      arXiv:2602.24288v1
+      official repo @ 0144714
+      paper and public release separated
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: sources
+    label: |-
+      Kaggle Dataset Sourcing
+      official API · tabular format
+      valid open license
+      web-crawled descriptions
+      column previews + metadata
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: Meta Filter
+      'y': 360
+  - id: feasibility
+    label: |-
+      LLM Feasibility Analysis
+      target · features · data types
+      timestamp · frequency
+      exogenous features
+      retain well-posed predictive tasks
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: design
-    label: LLM Design
+      x: 320
+      'y': 360
+  - id: families
+    label: |-
+      Six Task Variants
+      Classification IF / MM
+      Regression IF / MM
+      Time-series XF / CF
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: post
-    label: Post-process
+      x: 600
+      'y': 360
+  - id: route
+    label: Variant-specific post-process
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: if_post
+    label: |-
+      Classification / Regression IF
+      random train-test split
+      inject noise into roughly 20%
+      of training data
+      keep test data clean
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: sandbox
-    label: Sandbox Test
+      x: 1160
+      'y': 80
+  - id: mm_post
+    label: |-
+      Classification / Regression MM
+      random train-test split
+      keep training labels
+      mask target columns at test time
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: ts_post
+    label: |-
+      Time-series XF / CF
+      chronological split
+      entity leakage checks
+      resample irregular series
+      when required
+      XF keeps exogenous test features
+      CF keeps timestamp / entity
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 640
+  - id: if_ground_truth
+    label: |-
+      IF Verifiable Reference Output
+      execute load / preprocess
+      fit / predict
+      sandboxed reference code + fixed seed
+      validate solvability and reproducibility
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: label_ground_truth
+    label: |-
+      Outcome Ground Truth
+      MM / XF / CF use
+      original masked labels
+      standardized metadata and files
+      no reference-code sandbox required
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: paper_release
+    label: |-
+      Paper Benchmark · 6,300 Tasks
+      5,948 train + 352 evaluation
+      most recently updated held out
+      Classification 2,468 · Regression 1,888
+      Time series 1,944
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: public_release
+    label: |-
+      License-filtered Release @ 0144714
+      4,274 train + 324 evaluation tasks
+      2,137 train + 162 evaluation sources
+      public subset smaller than paper
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 80
+  - id: task_input
+    label: |-
+      Standardized Agent Task
+      natural-language question + metadata
+      train / masked-test files
+      code-execution tool
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 360
+  - id: agent
+    label: |-
+      Standard Evaluation Loop
+      5 turns
+      200 s code-execution timeout
+      load · clean · fit · predict
+      emit row-aligned prediction.csv
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 360
+  - id: verifier
+    label: |-
+      Deterministic Variant Verifier
+      IF exact match
+      Classification-MM Macro-F1
+      Regression-MM / XF / CF
+      clipped R² to [0, 1]
+      average targets · no judge model
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: report
+    label: |-
+      DARE-bench Report
+      six variant scores
+      objective and reproducible
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: artifacts
-    label: Bench Files
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Auto Score
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 2840
+      'y': 360
 edges:
-  - from: source
-    to: filter
+  - from: evidence
+    to: sources
+    type: data
+  - from: sources
+    to: feasibility
     type: primary
-  - from: filter
-    to: design
+  - from: feasibility
+    to: families
     type: primary
-  - from: design
-    to: post
+  - from: families
+    to: route
     type: primary
-  - from: post
-    to: sandbox
+  - from: route
+    to: if_post
     type: primary
-  - from: sandbox
-    to: artifacts
+  - from: route
+    to: mm_post
     type: primary
-  - from: artifacts
-    to: eval
+  - from: route
+    to: ts_post
+    type: primary
+  - from: if_post
+    to: if_ground_truth
+    type: primary
+  - from: mm_post
+    to: label_ground_truth
+    type: primary
+  - from: ts_post
+    to: label_ground_truth
+    type: primary
+  - from: if_ground_truth
+    to: paper_release
+    type: primary
+  - from: label_ground_truth
+    to: paper_release
+    type: primary
+  - from: paper_release
+    to: public_release
+    type: data
+  - from: paper_release
+    to: task_input
+    type: primary
+  - from: task_input
+    to: agent
+    type: primary
+  - from: agent
+    to: verifier
+    type: primary
+  - from: verifier
+    to: report
     type: primary
 modules: []

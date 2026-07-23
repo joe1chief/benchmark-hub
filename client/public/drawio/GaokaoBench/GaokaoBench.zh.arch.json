@@ -7,50 +7,80 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 12,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "exams",
-      "label": "高考试题",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "convert",
-      "label": "解析标注",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "types",
-      "label": "客观/主观题",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "prompt",
-      "label": "零样本提示",
+      "id": "evidence",
+      "label": "一手证据\narXiv:2305.12474v3\n官方仓库 6dbb24f8",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "match",
-      "label": "客观匹配",
-      "type": "decision",
+      "id": "source_pdfs",
+      "label": "全国高考试卷来源\n2010–2022 年全部全国卷\n文理科共 9 个学科",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "grade",
-      "label": "人工评分",
+      "id": "digitize",
+      "label": "脚本与人工联合数字化\nPDF → 结构化 JSON\n数学公式 → LaTeX",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "折算总分",
+      "id": "release",
+      "label": "发布 2,811 道题\n客观题 1,781：1,418/273/64/26\n主观题 1,030：786/218/26",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "按题型/学科定制零样本提示\n多数要求【解析】→ eoe\n部分仅答案：七选五、改错\n及多项语文阅读\n全部要求【答案】→ eoa",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "按题型分流\n客观题进入规则解析\n主观题进入评分路径",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "objective_parser",
+      "label": "解析客观题输出\n单选：末个 A–D\n多小题：标记匹配，否则前序字母\n多选：标记位置 >0 时取其后\n否则扫描末 10 字符\n七选五：前 5 个 A–G",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "objective_score",
+      "label": "按题目分值加权精确匹配\n物理多选：全对 6 分\n正确子集 3 分 · 多选 0 分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_grade",
+      "label": "论文主路径：主观题人工评分\n每份答案由两位教师评分\n取两人平均分",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "repo_judge",
+      "label": "固定版仓库替代裁判\nGPT-4-1106-preview · T 0\n调用侧 max_tokens=4,096\nAPI请求未传；默认不含评分点\n解析【总分】；非空分数均值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "汇总得分率\n实得分 / 满分\n分学科客观与主观得分率\n理科/文科折算总分 / 750",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "agreement",
+      "label": "对比裁判与人工分数\nSpearman ρ + Kendall τ\n论文裁判输入人工评分点",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +88,86 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "exams",
-      "to": "convert",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source_pdfs",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "convert",
-      "to": "types",
+      "from": "source_pdfs",
+      "to": "digitize",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "types",
-      "to": "prompt",
+      "from": "digitize",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "prompt",
-      "to": "match",
+      "from": "release",
+      "to": "prompt",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "match",
-      "to": "grade",
+      "from": "prompt",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "grade",
-      "to": "score",
+      "from": "route",
+      "to": "objective_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "objective_parser",
+      "to": "objective_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "objective_score",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "route",
+      "to": "human_grade",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "human_grade",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "route",
+      "to": "repo_judge",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "repo_judge",
+      "to": "aggregate",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "human_grade",
+      "to": "agreement",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "repo_judge",
+      "to": "agreement",
       "type": "primary"
     }
   ],

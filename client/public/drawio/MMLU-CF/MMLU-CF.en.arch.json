@@ -1,107 +1,352 @@
 {
   "version": 1,
-  "title": "MMLU-CF Build Process",
+  "title": "MMLU-CF Build and Evaluation Process",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 30,
+    "edges": 25,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "Broad Sources",
+      "id": "web_corpus",
+      "label": "Public-Open Web Corpus\nMore Than 200 Billion Documents\nOver 3,000 Website Domains\n14 Subject Fields",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "MCQ Pool",
+      "id": "extract",
+      "label": "Rule-Based MCQ Extraction\nRecover Questions + Choices\nRecover Answer + Optional Explanation\n2.7 Million Raw MCQs",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "3 Rules",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n4",
-      "label": "Clean Set",
+      "id": "clean",
+      "label": "Rule Cleaning + Deduplication\nExactly 4 Nonempty A–D Choices\nQuestion ≥10 Characters · English\nNormalize Formats · Deduplicate\n2.7M → 1.66M Questions",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "Val/Test",
+      "id": "difficulty",
+      "label": "GPT-4o Difficulty Labeling\nFive-Shot MMLU Reference\nRate Every Item from 0 to 9\n1.66 Million Inputs",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "sample_50k",
+      "label": "Difficulty-Aware Sampling\nNormal Distribution Centered at 6\nBalance Fields · Maximize Domains\nPrefer Explanations → 50K",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "Closed Test",
+      "id": "llm_check",
+      "label": "Three-Model Quality + Safety Check\nGPT-4o · Gemini · Claude\nFive Quality + Four Safety Criteria\nMean Rating >4 → 20K in Fig. 3",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "semantic_dedup",
+      "label": "Semantic Redundancy Detection\nGPT-4o Checks Identical Meaning\nRemove Semantically Identical Items\nFinal Sources Span >1,000 Domains",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rephrase",
+      "label": "Rule 1 · Rephrase Stem\nRewrite Every Question\nPreserve Meaning + Gold Answer\nReduce Verbatim Memorization",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "shuffle",
+      "label": "Rule 2 · Shuffle Choices\nRecompute the Answer Position\nIf Last Is None/All Above\nShuffle Only the First Three",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "replace",
+      "label": "Rule 3 · 50% Random Replacement\nReplace One Choice with None Other\nSkip Special Last-Choice Items\nReplaced Gold Remains Valid",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "split",
+      "label": "Matched Final Split\nPreserve Difficulty Distribution\nPreserve Category Distribution\n20,000 Questions Total",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "public_val",
+      "label": "Public Validation Split\n10,000 Questions\nIndependent Evaluation Access\nLater Released on Hugging Face",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "closed_test",
+      "label": "Closed Test Split\n10,000 Questions\nHidden to Limit Malicious Leakage\nEvaluation by Maintainers",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "paper_eval",
+      "label": "Paper Evaluation Protocol\n40+ Models via OpenCompass\nZero-Shot + Five-Shot\nNo CoT except Added Explanations",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_report",
+      "label": "Paper-Reported Scores\nAccuracy on Test + Validation\nOverall = Mean of 14 Fields\nTable Δ = Test − Validation",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "hf_snapshot",
+      "label": "Fixed Public Data Snapshot\nHF c25b89a · 10,000 Validation\n5 Dev Examples per Field\nQuestion · A–D · Answer",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "oc_loader",
+      "label": "Public OpenCompass Support\nCommit e039f3e · 2025-01-09\nMap Each *_val Split to Test\nLoader Does Not Pin HF Revision",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "shot_route",
+      "label": "Evaluation Shot Setting?",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "Prompt Eval",
+      "id": "five_demos",
+      "label": "Five-Shot Demonstrations\nFixed IDs 0, 1, 2, 3, 4\nFive Dev Items per Field\nSame MCQ Template + Gold Letter",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "Accuracy",
+      "id": "public_prompt",
+      "label": "OC e039f3e Few/Zero Configs\nThere is a single choice question (with answers).\nAnswer the question by replying A, B, C or D.\nThen Question + Four Labeled Options",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "Model Generation\nGenInferencer Produces Text\nDecoding Comes from Model Config\nFailed Task/Partition Returns Nonzero\nOther Tasks Continue; Runner Reports Failure",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "first_option_postprocess\nAnswer-Phrase Regexes First\nThen “X:” · Then Bare A–D\nNo Match → Empty String",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "field_accuracy",
+      "label": "Exact Field Accuracy\nPrediction Letter = Gold Letter\nCorrect / All Items × 100\nEmpty Parse Is Included as Wrong",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "public_macro",
+      "label": "Public Group Score\nUnweighted Mean of 14 Fields\nValidation Only · Test Stays Hidden\nResult Depends on Model Config",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "paper_version",
+      "label": "Version Boundary\narXiv 2412.15194v1 · 2024-12-19\nPaper Pins No Repository Revision\nReview Uses GitHub fd89eefd",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "rights_boundary",
+      "label": "Access + License Boundary\nPublic Validation: CDLA-Permissive-2.0\nGitHub Documentation/Code: MIT\nClosed Test: Not Downloadable",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "schema_boundary",
+      "label": "Released-Row Boundary\nNo Category/URL/Source/Item ID\nField Identity Lives in Split Names\nRow-Level Provenance Is Unreleased",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "reproducibility_gap",
+      "label": "Reproducibility Boundary\nCrawl + Transform Code Unreleased\nHidden Data/Evaluator Unavailable\nPaper Pins No OC/Decoder Revision\nConstruction LLM Revisions Unpinned",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "metric_boundary",
+      "label": "Δ Reporting Contradiction\nPaper Text Calls Δ “Absolute”\nTable Contains Negative Values\nEntries Equal Test − Validation",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_boundary",
+      "label": "Prompt-Config Boundary\nRecommended Few/Zero Include\nthe Words “with Answers”\nDefault Generation Config Omits Them\nPaper Pins Neither OC Config",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "web_corpus",
+      "to": "extract",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "extract",
+      "to": "clean",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "clean",
+      "to": "difficulty",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "difficulty",
+      "to": "sample_50k",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "sample_50k",
+      "to": "llm_check",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "llm_check",
+      "to": "semantic_dedup",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "semantic_dedup",
+      "to": "rephrase",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "rephrase",
+      "to": "shuffle",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "shuffle",
+      "to": "replace",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "replace",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "split",
+      "to": "public_val",
+      "type": "primary",
+      "label": "Public"
+    },
+    {
+      "id": "edge-12",
+      "from": "split",
+      "to": "closed_test",
+      "type": "primary",
+      "label": "Closed"
+    },
+    {
+      "id": "edge-13",
+      "from": "public_val",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "closed_test",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "paper_eval",
+      "to": "paper_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "public_val",
+      "to": "hf_snapshot",
+      "type": "secondary",
+      "label": "Later public release"
+    },
+    {
+      "id": "edge-17",
+      "from": "hf_snapshot",
+      "to": "oc_loader",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "oc_loader",
+      "to": "shot_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "shot_route",
+      "to": "public_prompt",
+      "type": "primary",
+      "label": "Zero-shot"
+    },
+    {
+      "id": "edge-20",
+      "from": "shot_route",
+      "to": "five_demos",
+      "type": "primary",
+      "label": "Five-shot"
+    },
+    {
+      "id": "edge-21",
+      "from": "five_demos",
+      "to": "public_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "public_prompt",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "generate",
+      "to": "parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "parse",
+      "to": "field_accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "field_accuracy",
+      "to": "public_macro",
       "type": "primary"
     }
   ],

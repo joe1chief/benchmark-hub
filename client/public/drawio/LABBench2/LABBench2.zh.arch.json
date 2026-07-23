@@ -1,0 +1,331 @@
+{
+  "version": 1,
+  "title": "LABBench2 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 21,
+    "edges": 31,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "evidence",
+      "label": "主要证据与固定版本\narXiv:2604.09554v2 · 2026-05-05\nGit c028ecdc · 2026-05-07\nHF 27d12d72 · 2026-03-13\n官方排行榜核验于 2026-07-21",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "scope",
+      "label": "定义五类科研能力\n文献理解与检索 1,287 · 数据访问 86\n分子生物学 400 · 实验方案排错 125\n实验规划 14 · 合计 1,912\n开放式检索与文件任务",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "literature_pipeline",
+      "label": "专家文献路线 · 1,137 行\nLitQA3 168 · 专利 121 · 临床 120\n补充 125 · 图 101×3 · 表 100×3\n博士级签约专家 · 专用平台\n仅由指定来源回答 · 签约与内部专家多轮审核",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "sourcequality_pipeline",
+      "label": "SourceQualQA · 150 行\n从 100 篇开放系统综述开始\n提取因果问题 · 排除研究 · 专家组理由\n当前 file 模式提供被排除研究的 PDF\n最终人工检查专家可回答性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dbqa_pipeline",
+      "label": "DbQA2 · 86 行\n用 LLM 分析 1,000 篇近期 bioRxiv 论文\n按来源占比排序 · 人工整理与补充\n43 个来源 → 内部与签约专家编题\n多轮审核与修订",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "seqqa_pipeline",
+      "label": "SeqQA2 · 400 行\n内部生物学家定义 20 个模板\n每类扩展 20 个设计或真实序列变体\n保留逐题模式与验证器参数\n构建 20 类任务专用验证器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "protocol_pipeline",
+      "label": "ProtocolQA2 · 125 行\nprotocols.io · STAR Methods · 专家方案\n专家提供的部分方案尚未发表\n签约专家注入一个会导致明确失败的错误\n构造情景与结果 · 后缀要求只答一个错误",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "cloning_pipeline",
+      "label": "CloningQA · 14 行\n限制性连接 · Gibson · Golden Gate\n设计 DNA / 酶与端到端步骤\n要求输出可解析 DSL 以供计算机模拟检查\n论文未披露任务构建来源",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "发布 LABBench2 · 1,912 行评测数据\n五类规模：1,287 + 86 + 400 + 125 + 14\nHF all + 15 个配置 · 唯一 split 名为 train\n自动门控 Parquet · 公开 GCS 附件\nideal · sources · mode · 评分器元数据",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "document_modes",
+      "label": "物化文档与检索模式\n图：inject/PDF/图像 · 各 101\n表：inject/PDF/图像 · 各 100\n文献/专利/临床/补充/Db：inject\nSourceQuality/ProtocolQA2：file",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sequence_modes",
+      "label": "物化序列输入模式\nSeqQA2：inject 400 · file 400\nretrieve 200\nCloning：inject/file/retrieve · 各 14\n按逐题 mode 过滤支持\n自主检索 ≠ harness 模式别名",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "evaluate",
+      "label": "运行官方评测框架\n基础系统：不提供工具\n工具增强：主要提供网络搜索与代码执行\n路由模式专用提示、文件与检索输入\nHybridEvaluator 按 tag 分发",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "semantic_judge",
+      "label": "通用语义 LLM 评分器\nLitQA3 · 专利 · 临床试验\nSourceQuality · Protocol\nClaude Sonnet 4.5 · 温度 0\n接受语义或数值等价\n正确 1 · 错误 / 不确定 / 评分异常 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dbqa_judge",
+      "label": "DbQA2 召回率 LLM 评分器\n召回率 = 匹配的期望项 / 期望项总数\n数值默认允许 ±5% · 必须精确时除外\n召回率 ≥ 0.95 → 1\n较低召回率 / 不确定 / 评分异常 → 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "numeric_judge",
+      "label": "数值 LLM 评分器\nFigQA2* · TableQA2* · SuppQA2\n绝对或相对误差 < 1e-6\n遵循题目明确要求的输出格式\n正确 1 · 其他 / 不确定 / 评分异常 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "seqqa_verifier",
+      "label": "SeqQA2 确定性验证器\n用逐题 answer_regex 解析 [answer]\n合并 validator_params 与抽取字段\n调用 20 类任务专用验证器之一\n通过 1 · 解析 / 文件 / 验证失败 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cloning_verifier",
+      "label": "CloningQA DSL 验证器\n解析并执行 [protocol] 表达式\n相似度 = 1 − 编辑距离 / 最大长度\n与参考序列相似度 ≥ 0.95 · 支持环状旋转\n可选酶切片段检查 · 任一失败记 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "计算评测指标\nOverall = 正确数 /（完成数 + 运行失败数）\nAttempted = 正确数 / 完成数\n每个运行失败均记 0\n按能力类 · 模式 · 类型 · 基础/工具拆分",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "leaderboard",
+      "label": "官方在线排行榜\n对 15 个子基准做宏平均\n重复运行取均值 · 展示标准误差\n汇总对比要求覆盖至少 14/15\n2026-07-21 观测：9 个模型 · 201 次运行",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "release_drift",
+      "label": "发布与结果漂移\nv1 / OpenReview 1,883 → arXiv v2 1,912\n2026-03-13：替换 150 条 SourceQuality\ninject → file · 03-23 runner 修复\n博客 1,892 + HF 论文号已过时",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "制品与披露边界\n任务数据自动门控 · 框架与 GCS 文件公开\ntrain 只是 split 名称，不代表用于训练\n未报告 train/dev/test、去重或污染检查流程\n未披露 Cloning 题目构建来源与质控",
+      "type": "document",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "evidence",
+      "to": "scope",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "scope",
+      "to": "literature_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "scope",
+      "to": "sourcequality_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "scope",
+      "to": "dbqa_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "scope",
+      "to": "seqqa_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "scope",
+      "to": "protocol_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "scope",
+      "to": "cloning_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "literature_pipeline",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "sourcequality_pipeline",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "dbqa_pipeline",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "seqqa_pipeline",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "protocol_pipeline",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "cloning_pipeline",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "dataset",
+      "to": "document_modes",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "dataset",
+      "to": "sequence_modes",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "document_modes",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "sequence_modes",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "evaluate",
+      "to": "semantic_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "evaluate",
+      "to": "dbqa_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "evaluate",
+      "to": "numeric_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "evaluate",
+      "to": "seqqa_verifier",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "evaluate",
+      "to": "cloning_verifier",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "semantic_judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "dbqa_judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "numeric_judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "seqqa_verifier",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "cloning_verifier",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "score",
+      "to": "leaderboard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "dataset",
+      "to": "release_drift",
+      "type": "data"
+    },
+    {
+      "id": "edge-30",
+      "from": "release_drift",
+      "to": "artifact_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-31",
+      "from": "leaderboard",
+      "to": "artifact_boundary",
+      "type": "data"
+    }
+  ],
+  "modules": []
+}

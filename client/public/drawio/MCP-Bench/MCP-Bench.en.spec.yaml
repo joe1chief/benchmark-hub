@@ -2,156 +2,116 @@ meta:
   profile: academic-paper
   theme: academic-color
   source: generated
-  layout: horizontal
+  layout: vertical
   routing: orthogonal
   title: MCP-Bench Construction, Execution, and Scoring
   description: >-
     Based on arXiv v1 and a pinned official code/task commit; separates benchmark construction, MCP environment and task
     synthesis, agent execution/evaluation, and score aggregation.
   legend: >-
-    Upper area shows task construction and release; middle shows MCP execution; lower area shows rule metrics, the LLM
-    judge, and the four-axis overall score. Edges carry no text.
+    Four light lanes separate construction, execution, evaluation, and aggregation. Branch and loop labels state the
+    quality decision, the 20-round stop condition, and the five-run shuffled-judge protocol.
 nodes:
   - id: mcp_ecosystem
     label: 28 MCPs·250
     type: database
+    module: construction
     size: medium
-    position:
-      x: 40
-      'y': 40
   - id: dependency_map
     label: Sets·dep map
     type: process
+    module: construction
     size: medium
-    position:
-      x: 200
-      'y': 40
   - id: task_pair
     label: Detailed·fuzzy
     type: document
+    module: construction
     size: medium
-    position:
-      x: 360
-      'y': 40
   - id: quality_gate
     label: S9·U5 gate
     type: decision
+    module: construction
     size: medium
-    position:
-      x: 520
-      'y': 40
   - id: retry_task
     label: Discard·retry
     type: process
+    module: construction
     size: medium
-    position:
-      x: 360
-      'y': 136
   - id: human_review
     label: Human review
     type: process
+    module: construction
     size: medium
-    position:
-      x: 520
-      'y': 136
   - id: release_tasks
     label: 3 JSON·104
     type: database
+    module: construction
     size: medium
-    position:
-      x: 600
-      'y': 232
   - id: fuzzy_request
     label: Fuzzy request
     type: document
+    module: execution
     size: medium
-    position:
-      x: 760
-      'y': 328
   - id: mcp_environment
     label: MCP env
     type: process
+    module: execution
     size: medium
-    position:
-      x: 600
-      'y': 328
   - id: tool_discovery
     label: Tool discovery
     type: process
+    module: execution
     size: medium
-    position:
-      x: 440
-      'y': 328
   - id: round_planner
     label: Round planner
     type: process
+    module: execution
     size: medium
-    position:
-      x: 280
-      'y': 328
   - id: continue_gate
     label: Continue ≤20?
     type: decision
+    module: execution
     size: medium
-    position:
-      x: 120
-      'y': 328
   - id: parallel_calls
     label: Calls + state
     type: process
+    module: execution
     size: medium
-    position:
-      x: 120
-      'y': 424
   - id: final_response
     label: Final response
     type: document
+    module: execution
     size: medium
-    position:
-      x: 280
-      'y': 552
   - id: judge_refs
     label: Hidden refs
     type: document
+    module: evaluation
     size: medium
-    position:
-      x: 760
-      'y': 552
   - id: eval_evidence
     label: Eval evidence
     type: database
+    module: evaluation
     size: medium
-    position:
-      x: 440
-      'y': 552
   - id: schema_axis
     label: Schema mean
     type: process
+    module: evaluation
     size: medium
-    position:
-      x: 360
-      'y': 680
   - id: shuffled_judges
-    label: 5 judge runs
+    label: Run shuffled judge
     type: process
+    module: evaluation
     size: medium
-    position:
-      x: 600
-      'y': 776
   - id: judge_axes
-    label: 3 judge axes
-    type: process
+    label: 5 runs done?
+    type: decision
+    module: evaluation
     size: medium
-    position:
-      x: 600
-      'y': 872
   - id: overall_score
     label: 4-axis mean
     type: terminal
+    module: aggregation
     size: medium
-    position:
-      x: 440
-      'y': 872
 edges:
   - from: mcp_ecosystem
     to: dependency_map
@@ -165,17 +125,25 @@ edges:
   - from: quality_gate
     to: retry_task
     type: secondary
+    label: Fail
   - from: retry_task
     to: task_pair
     type: secondary
+    label: Retry
     waypoints:
-      - x: 420
-        'y': 216
-      - x: 420
-        'y': 100
+      - x: 732
+        'y': 178
+      - x: 428
+        'y': 178
   - from: quality_gate
     to: human_review
     type: primary
+    label: Pass
+    waypoints:
+      - x: 640
+        'y': 88
+      - x: 824
+        'y': 88
   - from: human_review
     to: release_tasks
     type: primary
@@ -183,10 +151,10 @@ edges:
     to: fuzzy_request
     type: primary
     waypoints:
-      - x: 740
-        'y': 262
-      - x: 740
-        'y': 358
+      - x: 1120
+        'y': 208
+      - x: 184
+        'y': 208
   - from: fuzzy_request
     to: mcp_environment
     type: primary
@@ -202,36 +170,86 @@ edges:
   - from: continue_gate
     to: parallel_calls
     type: primary
+    label: Continue
   - from: parallel_calls
     to: round_planner
     type: secondary
+    label: Next round
+    waypoints:
+      - x: 884
+        'y': 360
+      - x: 580
+        'y': 360
   - from: continue_gate
     to: final_response
     type: secondary
+    label: Stop
     waypoints:
-      - x: 80
-        'y': 520
-      - x: 340
-        'y': 520
+      - x: 792
+        'y': 272
+      - x: 976
+        'y': 272
   - from: final_response
     to: eval_evidence
     type: primary
+    waypoints:
+      - x: 1120
+        'y': 388
+      - x: 336
+        'y': 388
   - from: eval_evidence
     to: schema_axis
     type: primary
   - from: eval_evidence
     to: shuffled_judges
     type: primary
+    waypoints:
+      - x: 276
+        'y': 540
+      - x: 580
+        'y': 540
   - from: judge_refs
     to: shuffled_judges
     type: secondary
+    waypoints:
+      - x: 124
+        'y': 568
+      - x: 580
+        'y': 568
   - from: shuffled_judges
     to: judge_axes
     type: primary
+  - from: judge_axes
+    to: shuffled_judges
+    type: secondary
+    label: More runs
+    waypoints:
+      - x: 732
+        'y': 448
+      - x: 580
+        'y': 448
   - from: schema_axis
     to: overall_score
     type: primary
+    waypoints:
+      - x: 428
+        'y': 560
+      - x: 184
+        'y': 560
   - from: judge_axes
     to: overall_score
     type: primary
-modules: []
+    label: Aggregate 3 axes
+modules:
+  - id: construction
+    label: 1 · Benchmark construction
+    color: $primary
+  - id: execution
+    label: 2 · Live MCP execution
+    color: $secondary
+  - id: evaluation
+    label: 3 · Evidence and judging
+    color: $accentLight
+  - id: aggregation
+    label: 4 · Score aggregation
+    color: $secondaryLight

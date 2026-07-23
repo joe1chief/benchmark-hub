@@ -1,96 +1,186 @@
 {
   "version": 1,
-  "title": "HallusionBench 构建流程",
+  "title": "HallusionBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "taxonomy",
-      "label": "视觉题型",
+      "id": "evidence",
+      "label": "一手证据\narXiv 2310.14566v5 · 第3–4节\n仓库 744007c · HallusionBench.json\nSHA256 ca6e0fb",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "images",
-      "label": "346图像",
-      "type": "database",
+      "id": "taxonomy",
+      "label": "视觉依赖（VD）\n必须依赖视觉上下文\n视觉补充（VS）\n无图也可回答",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "edits",
-      "label": "人工改图",
+      "id": "collect",
+      "label": "人类专家整理\n165 张原始图像\n181 张人工编辑图像\n合计 346 张图像",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "edit",
+      "label": "人工图像编辑\n翻转 · 顺序反转 · 遮挡\nOCR · 对象 · 颜色编辑",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "是/否问答",
-      "type": "document",
+      "id": "inputs",
+      "label": "输入分布\n178 道无图题\n447 道原图题\n504 道编辑图题",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "controls",
-      "label": "控制题对",
+      "id": "pairs",
+      "label": "455 个控制题对\n1,129 道二值问题\nVD 591 · VS 538",
       "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "response",
+      "label": "LVLM 回答\n是 / 否 / 不确定\n同一问题跨控制条件",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "GPT-4评测",
+      "label": "论文纯文本 GPT-4 裁判协议\n正确 / 错误 / 不清楚\n温度 0 · 重复 3 次\n报告平均结果",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "准确率指标",
+      "id": "harness",
+      "label": "固定代码\n每行 1 次正确性裁判调用\n未显式传入 temperature 参数\n解析：incorrect→0 · correct→1\n其他→2",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "rules",
+      "label": "计分规则\nVS 无图时不确定可接受\n将裁判结果转为二值",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "正确性指标\naAcc · fAcc · qAcc\n简单 / 困难题准确率",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "diagnose",
+      "label": "分析性诊断\n是/否偏置 · 一致性\n控制题对决策树",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "failure",
+      "label": "失败归因\n语言幻觉\n视觉错觉\n混合 / 不确定",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "公开工件边界\nHallusionBench.json：1,129 行\n固定快照；模型生成逻辑\n由用户实现",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "taxonomy",
-      "to": "images",
+      "from": "evidence",
+      "to": "taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "images",
-      "to": "edits",
+      "from": "taxonomy",
+      "to": "collect",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "edits",
-      "to": "qa",
+      "from": "collect",
+      "to": "edit",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "qa",
-      "to": "controls",
+      "from": "collect",
+      "to": "inputs",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "controls",
-      "to": "judge",
+      "from": "edit",
+      "to": "inputs",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "judge",
-      "to": "metrics",
+      "from": "inputs",
+      "to": "pairs",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "pairs",
+      "to": "response",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "response",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "judge",
+      "to": "rules",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "judge",
+      "to": "harness",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "rules",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "rules",
+      "to": "diagnose",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-13",
+      "from": "diagnose",
+      "to": "failure",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "pairs",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

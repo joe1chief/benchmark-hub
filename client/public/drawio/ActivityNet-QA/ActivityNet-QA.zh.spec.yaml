@@ -4,88 +4,234 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ActivityNet-QA Build Process
-  description: >-
-    Paper-aligned construction of ActivityNet-QA: derive complex web videos from ActivityNet, crowdsource fully
-    annotated question-answer pairs, clean and analyze the dataset, and benchmark VideoQA models.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: ActivityNet-QA 构建与评测流程
+  description: 对齐论文的类别均衡视频采样、受控双语问答标注、质量复核与评测流程。
+  legend: 多人复核只覆盖抽样部分，是可选质量支路；论文未披露该样本规模和标注员数量。
 nodes:
-  - id: n1
-    label: ActivityNet
+  - id: videos
+    label: |-
+      类别均衡视频采样
+      5,800 个 ActivityNet v1.3 视频
+      训练/验证均衡 • 测试随机
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 网络视频
+      'y': 100
+  - id: author
+    label: |-
+      众包编写问答
+      每视频 10 对中文问答
     type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: 众包问答
-    type: user
+      'y': 100
+  - id: types
+    label: |-
+      控制问题覆盖
+      覆盖动作 + 空间 + 时间问题
+      其余问题自由、不限题型
+    type: process
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: 问答对
-    type: document
+      'y': 100
+  - id: length_gate
+    label: |-
+      限制问答长度
+      问题 ≤20 词 • 答案 ≤5 词
+    type: process
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: 质量清洗
+      'y': 100
+  - id: yes_no_balance
+    label: |-
+      均衡是非答案
+      比例接近 1:1
     type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: 统计分析
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: VideoQA评测
+      'y': 100
+  - id: quality
+    label: |-
+      双重检查每条答案
+      由另一名标注员独立复核
+      不可回答问题返工
     type: process
     size: xl
     position:
+      x: 1240
+      'y': 100
+  - id: random_audit
+    label: |-
+      复核抽样部分
+      多人标注 • 多数投票
+      规模与人数未披露
+    type: user
+    size: xl
+    position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
-    type: terminal
+      'y': 300
+  - id: translate
+    label: |-
+      中译英质检
+      生成四个翻译引擎结果
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 100
+  - id: translation_gate
+    label: |-
+      CIDEr 共识门控
+      平均相似度是否超过阈值？
+    type: decision
+    size: xl
+    position:
+      x: 1960
+      'y': 100
+  - id: baidu_translation
+    label: |-
+      保留百度翻译
+      共识通过阈值
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 0
+  - id: manual_translation
+    label: |-
+      人工翻译
+      处理低共识问答
+    type: user
+    size: xl
+    position:
+      x: 2200
+      'y': 240
+  - id: release
+    label: |-
+      ActivityNet-QA
+      问答：32,000 / 18,000 / 8,000
+      视频：3,200 / 1,800 / 800
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 100
+  - id: prediction
+    label: |-
+      VideoQA 预测
+      视频 + 问题 → 答案
+    type: document
+    size: xl
+    position:
+      x: 2440
+      'y': 660
+  - id: exact
+    label: |-
+      精确匹配准确率
+      预测等于参考答案
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 560
+  - id: wups
+    label: |-
+      WUPS 相似度
+      阈值 0.9 与 0.0
+      仅报告总体分数
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 860
+  - id: aggregate
+    label: |-
+      按题型汇总精确匹配
+      动作 • 空间 • 时间 • 自由
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 660
+  - id: report
+    label: |-
+      报告结果
+      精确匹配：总体 + 分题型
+      WUPS：仅总体
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 660
 edges:
-  - from: n1
-    to: n2
+  - from: videos
+    to: author
     type: primary
-  - from: n2
-    to: n3
+  - from: author
+    to: types
     type: primary
-  - from: n3
-    to: n4
+  - from: types
+    to: length_gate
     type: primary
-  - from: n4
-    to: n5
+  - from: length_gate
+    to: yes_no_balance
     type: primary
-  - from: n5
-    to: n6
+  - from: yes_no_balance
+    to: quality
     type: primary
-  - from: n6
-    to: n7
+  - from: quality
+    to: translate
     type: primary
-  - from: n7
-    to: n8
+  - from: quality
+    to: random_audit
+    type: optional
+    label: 抽样部分
+  - from: random_audit
+    to: translate
+    type: optional
+  - from: translate
+    to: translation_gate
+    type: primary
+  - from: translation_gate
+    to: baidu_translation
+    type: primary
+    label: 超过阈值
+  - from: translation_gate
+    to: manual_translation
+    type: optional
+    label: 未过阈值
+  - from: baidu_translation
+    to: release
+    type: primary
+  - from: manual_translation
+    to: release
+    type: primary
+  - from: release
+    to: prediction
+    type: primary
+  - from: prediction
+    to: exact
+    type: primary
+  - from: prediction
+    to: wups
+    type: primary
+    waypoints:
+      - x: 2320
+        'y': 900
+      - x: 1320
+        'y': 900
+  - from: exact
+    to: aggregate
+    type: primary
+  - from: wups
+    to: report
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
 modules: []

@@ -1,89 +1,445 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLU-ProX 构建流程
-  description: 对齐论文的 MMLU-ProX 构建流程：把 MMLU-Pro 通过 LLM 辅助翻译和专家审校扩展为并行多语言版本，覆盖 29 种语言，用于跨语言推理评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMLU-ProX v2 构建与评测流程
+  description: 锁定 v2 版本，展示英文清洗、四阶段翻译、专家门禁、完整 / 轻量发布、论文评测，以及后续公开 lm-evaluation-harness 的解析、分母和失败语义。
+  legend: 箭头表示已披露流程 / 数据流；论文 v2 评测与 v2 之后的公开 harness 分开呈现；底部无连线卡片是审计边界，不是构建步骤。
 nodes:
-  - id: n1
-    label: MMLU-Pro
+  - id: mmlu_pro
+    label: |-
+      MMLU-Pro 英文源题
+      侧重推理的多项选择题
+      14 个学科领域
+      最多 10 个答案选项
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 翻译生成
+      'y': 80
+  - id: curate
+    label: |-
+      人工清洗英文源题
+      删除 / 合并完全与部分重复题
+      修正语法 · 连字符 · 符号
+      修复题干与选项不匹配
+      4 名跨学科专家 · 约 20 小时
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: initial_translate
+    label: |-
+      I · 初始翻译
+      Claude Sonnet 3.7
+      保持公式 · 代码 · 货币符号
+      翻译单位但不改变数值
+      F.1 后文又要求单位与源文完全一致
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: self_reflect
+    label: |-
+      II · 自我反思
+      对照译文与英文原文
+      检查专名与专业术语
+      标记多余说明与增译
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 专家审校
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 29语言
+      x: 880
+      'y': 80
+  - id: improve
+    label: |-
+      III · 翻译改进
+      应用自我反思反馈
+      §3.3 允许为无对应概念加解释
+      附录 F 却要求不得加任何解释
+      保持引号与 JSON 结构
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 并行题目
+      x: 1160
+      'y': 80
+  - id: external_exam
+    label: |-
+      IV · 外部检查
+      O3：SW · ZU · YO · WO
+      GPT-4.1：其余目标语言
+      仅标记显著差异
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: manual_review
+    label: |-
+      标记项复核
+      人工检查 + 人工翻译
+      仅显著问题进入此步骤
+      外检提示与参数未发布
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 轻量集
+      x: 1440
+      'y': 400
+  - id: expert_sample
+    label: |-
+      专家核验样本
+      20 × 14 = 280 道共同题
+      15 种语言 · 每种 2 名译者
+      >30 名专家 · >400 小时
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: expert_gate
+    label: 任一指标是否两位译者均低于 3？
     type: decision
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: LLM评测
-    type: document
+      x: 880
+      'y': 400
+  - id: retranslate
+    label: |-
+      重译整个学科
+      针对该语言与类别执行
+      仅约鲁巴语法律类触发
+      恢复翻译质量
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 平均准确率
+      x: 600
+      'y': 580
+  - id: approved
+    label: |-
+      15 语言抽样审计结果
+      准确性 · 流畅性 · 完整性
+      三项均按 1–5 分评定
+      目标 >4；论文后文又称 ≥4
+      其余 14 语言未做专家核验
     type: terminal
     size: xl
     position:
+      x: 600
+      'y': 180
+  - id: full_release
+    label: |-
+      MMLU-ProX 完整版
+      29 种并行语言
+      专家抽样覆盖 15 语言
+      其余 14 语言未专家核验
+      11,829 = 验证 70 + 测试 11,759
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: lite_release
+    label: |-
+      MMLU-ProX Lite 固定快照
+      每语言 658 题
+      验证 70 + 测试 588
+      发布测试集约为 5% 分层样本
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: paper_eval
+    label: |-
+      论文 v2 评测 · 36 个模型
+      29 种语言 · 主要五样本 CoT
+      另有零样本 · H100 >1 万 GPUh
+      仓库：vLLM 0.7.3
+      405B 例外：vLLM 0.6.6
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 720
+  - id: paper_report
+    label: |-
+      论文报告证据
+      每种语言的准确率
+      总体 AVG 覆盖 29 种语言
+      Full–Lite 平均差 1.14 个百分点
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 720
+  - id: public_harness
+    label: |-
+      后续公开 Harness 参照
+      提交 0b45cc7 · 2025-08-26
+      新增 29 语言 + Lite 任务
+      晚于论文 v2
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 1040
+  - id: version_route
+    label: 评测哪一种发布版本？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 1040
+  - id: full_input
+    label: |-
+      完整版评测输入
+      每语言 11,759 道测试题
+      划分为 14 个领域任务
+      数据集：li-lab/MMLU-ProX
+      HF revision 未锁定
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 920
+  - id: lite_input
+    label: |-
+      Lite 评测输入
+      每语言 588 道测试题
+      划分为 14 个领域任务
+      数据集：MMLU-ProX-Lite
+      HF revision 未锁定
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 1160
+  - id: shot_route
+    label: Harness 样本设置 / CLI 覆盖？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 1040
+  - id: five_demos
+    label: |-
+      五样本 CoT 演示
+      取前 5 道验证题
+      按领域与语言分别选取
+      保留本地化推理与答案
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 1220
+  - id: eval_prompt
+    label: |-
+      本地化生成提示
+      领域说明 + 问题
+      仅输出非空 A–J 选项
+      以逐步思考提示结尾
+    type: document
+    size: xl
+    position:
       x: 1720
-      'y': 160
+      'y': 1040
+  - id: generate
+    label: |-
+      确定性生成配置
+      do_sample=false · 温度 0
+      最多 2048 token · 停止标记
+      运行时失败将中止任务
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 1040
+  - id: parse
+    label: |-
+      按语言定制的答案后缀正则
+      在本地化答案短语中
+      提取首个匹配的 A–J
+      答案短语匹配区分大小写
+      无匹配 → [invalid]
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1040
+  - id: accuracy
+    label: |-
+      精确匹配题级准确率
+      比较时忽略大小写与标点
+      无效解析计入分母并判错
+      对全部测试题取均值
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 1040
+  - id: public_result
+    label: |-
+      公开 Harness 语言分数
+      14 领域按题量加权平均
+      等价于题级微平均
+      完整版与 Lite 分别报告
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 1040
+  - id: version_boundary
+    label: |-
+      论文版本 + 开发成本
+      v1：13 语言 · 25 模型
+      GPT-4o 检查 · 人工核验进行中
+      v2：29 · 36 · 完整核验协议
+      整个基准开发成本约 8 万美元
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 1540
+  - id: lite_boundary
+    label: |-
+      Lite 抽样矛盾
+      论文称 20 × 14“得到 658”
+      算术结果应为 280 而非 658
+      发布版为 70 + 588、按比例取样
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 1540
+  - id: release_boundary
+    label: |-
+      发布 Schema 与许可
+      18 字段，含 ID · CoT · 来源
+      可空选项 · 实测每题 3–10 个
+      Full/Lite HF 数据卡声明 MIT
+      项目仓库无 LICENSE 文件
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 1540
+  - id: reproducibility_gap
+    label: |-
+      复现边界
+      论文未锁定 Harness 提交
+      Harness 未锁定 HF 数据 revision
+      Full/Lite CLI 的 chat template 不同
+      外检提示与 Lite 种子未发布
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 1540
 edges:
-  - from: n1
-    to: n2
+  - from: mmlu_pro
+    to: curate
     type: primary
-  - from: n2
-    to: n3
+  - from: curate
+    to: initial_translate
     type: primary
-  - from: n3
-    to: n4
+  - from: initial_translate
+    to: self_reflect
     type: primary
-  - from: n4
-    to: n5
+  - from: self_reflect
+    to: improve
     type: primary
-  - from: n5
-    to: n6
+  - from: improve
+    to: external_exam
     type: primary
-  - from: n6
-    to: n7
+  - from: external_exam
+    to: manual_review
     type: primary
-  - from: n7
-    to: n8
+  - from: manual_review
+    to: full_release
+    type: primary
+  - from: manual_review
+    to: expert_sample
+    type: secondary
+    label: 15 语言抽样审计
+  - from: expert_sample
+    to: expert_gate
+    type: primary
+  - from: expert_gate
+    to: approved
+    type: primary
+    label: 否
+  - from: expert_gate
+    to: retranslate
+    type: primary
+    label: 是
+  - from: retranslate
+    to: approved
+    type: primary
+  - from: retranslate
+    to: full_release
+    type: secondary
+    label: 合入已触发修订
+  - from: full_release
+    to: lite_release
+    type: primary
+    label: 高效子集
+  - from: full_release
+    to: paper_eval
+    type: primary
+  - from: lite_release
+    to: paper_eval
+    type: primary
+  - from: paper_eval
+    to: paper_report
+    type: primary
+  - from: full_release
+    to: public_harness
+    type: secondary
+    label: 后续实现
+  - from: lite_release
+    to: public_harness
+    type: secondary
+  - from: public_harness
+    to: version_route
+    type: primary
+  - from: version_route
+    to: full_input
+    type: primary
+    label: 完整版
+  - from: version_route
+    to: lite_input
+    type: primary
+    label: 精简版
+  - from: full_input
+    to: shot_route
+    type: primary
+  - from: lite_input
+    to: shot_route
+    type: primary
+  - from: shot_route
+    to: eval_prompt
+    type: primary
+    label: CLI 覆盖为零样本
+  - from: shot_route
+    to: five_demos
+    type: primary
+    label: 默认五样本
+  - from: five_demos
+    to: eval_prompt
+    type: primary
+  - from: eval_prompt
+    to: generate
+    type: primary
+  - from: generate
+    to: parse
+    type: primary
+  - from: parse
+    to: accuracy
+    type: primary
+  - from: accuracy
+    to: public_result
     type: primary
 modules: []

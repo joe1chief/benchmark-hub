@@ -1,0 +1,215 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Chatbot Arena 构建流程
+  description: >-
+    对齐论文快照的 Chatbot Arena 流程：同意公开数据条款的用户完成匿名多轮对战，身份关键词过滤形成偏好快照，重加权 Bradley-Terry 估计生成近似排名；安全标记、多样性、投票质量和异常 IP
+    分析均独立于排名输入。
+  legend: 实线表示数据采集与排名；虚线表示不参与排名计算的论文验证分析。
+nodes:
+  - id: user
+    label: |-
+      实时众包用户
+      接受数据公开发布条款
+      提交新鲜、开放式提示
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: pair
+    label: |-
+      抽取匿名模型对
+      投票前隐藏模型身份
+      偏向实力接近的模型对
+      非均匀抽样降低不确定性
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: battle
+    label: |-
+      并排多轮对战
+      向两个模型发送相同用户消息
+      继续对话直至用户能够判断
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: vote
+    label: |-
+      记录成对偏好
+      模型 A • 模型 B • 平局 • 都不好
+      保存两段对话与投票
+    type: document
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: content_filter
+    label: |-
+      身份关键词过滤
+      移除提及模型或公司的对话
+      保持模型匿名性
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: safety_flag
+    label: |-
+      OpenAI 审核安全标记
+      标记不安全请求：3%
+      不作为排名输入过滤器
+    type: document
+    size: xl
+    position:
+      x: 1240
+      'y': 0
+  - id: snapshot
+    label: |-
+      论文快照（2024-01-21）
+      约 24 万票 • 超 9 万用户 • 超 50 模型
+      超 100 种语言 • 英语占 77%
+      近期每日 1–2K 个有效投票
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 220
+  - id: topic_model
+    label: |-
+      主题建模方法
+      text-embedding-3-small：1,536 维
+      UMAP -> 5；HDBSCAN 最小簇 32
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 0
+  - id: diversity
+    label: |-
+      600 个长尾主题簇
+      每簇抽取 10 个提示
+      GPT-4-Turbo 生成主题标签
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 0
+  - id: experts
+    label: |-
+      专家重标 160 场对战
+      研究生盲评并核查事实
+      众包—专家一致率：72.8%–83.1%
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 440
+  - id: anomaly
+    label: |-
+      独立异常 IP 分析
+      序贯 p 值 + Fisher 合并
+      在第 1–100 票中随机检查 5 次
+      用 25 异常 + 25 正常用户验证
+      不作为排名输入过滤器
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 440
+  - id: win_matrix
+    label: |-
+      估计成对胜率矩阵
+      对非均匀模型对抽样做逆概率加权
+      目标为模型对上的均匀分布
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: bt
+    label: |-
+      重加权 Bradley–Terry 极大似然
+      每场权重为 1 / P(pair)
+      估计总体 BT 系数
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: intervals
+    label: |-
+      Sandwich 稳健置信区间
+      大样本时优先于 Bootstrap
+      经多重性校正的近似排名
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: leaderboard
+    label: |-
+      发布论文时期排行榜
+      BT 分数 • 胜率 • 置信区间
+      给出含不确定性的近似排名
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+edges:
+  - from: user
+    to: pair
+    type: primary
+  - from: pair
+    to: battle
+    type: primary
+  - from: battle
+    to: vote
+    type: primary
+  - from: vote
+    to: content_filter
+    type: primary
+  - from: vote
+    to: safety_flag
+    type: data
+  - from: content_filter
+    to: snapshot
+    type: primary
+  - from: snapshot
+    to: win_matrix
+    type: primary
+  - from: snapshot
+    to: topic_model
+    type: data
+  - from: topic_model
+    to: diversity
+    type: data
+  - from: snapshot
+    to: experts
+    type: data
+  - from: snapshot
+    to: anomaly
+    type: data
+    waypoints:
+      - x: 1680
+        'y': 360
+      - x: 1740
+        'y': 490
+  - from: win_matrix
+    to: bt
+    type: primary
+  - from: bt
+    to: intervals
+    type: primary
+  - from: intervals
+    to: leaderboard
+    type: primary
+modules: []

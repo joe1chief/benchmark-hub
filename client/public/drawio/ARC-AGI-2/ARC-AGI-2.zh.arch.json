@@ -1,62 +1,110 @@
 {
   "version": 1,
-  "title": "ARC-AGI-2 构建流程",
+  "title": "ARC-AGI-2 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 16,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "核心先验",
+      "id": "sources",
+      "label": "ARC 任务来源\nARC-AGI-2 新题 + 历史未用题\nARC-AGI-1 + 新训练题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "任务策划",
+      "id": "design",
+      "label": "过量生成评测候选\n多规则 / 多步骤组合\n情境规则 + 上下文内符号",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "人类Pass@2",
+      "id": "humans",
+      "label": "运行受控人类测试\n407 人 • 515 个会话\n1,848 个测试对 • 13,405 次尝试",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "gate",
+      "label": "≥2 人各自在前两次尝试内\n解出 ≥1 个测试对？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "校准评测集",
+      "id": "calibrate",
+      "label": "通过筛选门槛\n估算经验难度\n整题完整正确率",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "1000 + 3×120",
+      "id": "dedupe",
+      "label": "冗余共识审查\n两两可视化比较\n标记可共享同一程序的任务对",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "partition",
+      "label": "保留非冗余任务\n划分 3 类评测集\n平均人类准确率差 ≤1 个百分点\n新题优先→私有；曾公开题→公开",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "public_training",
+      "label": "组装公开训练集 • 1,000 题\n已验证任务库 • 难度范围广\n不做校准；并非全部完成完整人测",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "eval_sets",
+      "label": "公开 / 半私有 / 私有\n各 120 道评测题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "remove",
+      "label": "排除候选题\n未达纳入门槛或被判冗余",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "最终验证评测题\n两位外部人员完成每道评测题\n额外任务：由原作者之外人员审查",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "format",
+      "label": "呈现静态网格任务\n通常 2–5 个示例 + 1–2 个测试输入\n1×1–30×30 • 10 种符号 / 颜色",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "示例对",
-      "type": "document",
+      "id": "competition",
+      "label": "在 Kaggle 安全沙箱运行\n120 半私有 + 120 私有\n离线 • 4×L4 • 12 小时 • 禁止联网",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "输出网格",
-      "type": "document",
+      "id": "predict",
+      "label": "每个测试输入给出两个候选网格\n从示例中归纳规则\n确定尺寸与每个输出单元",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "像素与成本",
+      "id": "score",
+      "label": "Pass@2 像素级精确整题规则\n每个输入的两个候选任一可匹配\n所有测试输入必须通过",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "排行榜结果\nKaggle：半私有实时得分\n私有集最终名次\nARC：得分 × 每题成本",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +112,98 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "sources",
+      "to": "design",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "sources",
+      "to": "public_training",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "design",
+      "to": "humans",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "humans",
+      "to": "gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "gate",
+      "to": "calibrate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
-      "type": "primary"
+      "from": "gate",
+      "to": "remove",
+      "type": "optional"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "calibrate",
+      "to": "dedupe",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dedupe",
+      "to": "partition",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "dedupe",
+      "to": "remove",
+      "type": "optional"
+    },
+    {
+      "id": "edge-10",
+      "from": "partition",
+      "to": "eval_sets",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "eval_sets",
+      "to": "validate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "validate",
+      "to": "format",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "format",
+      "to": "competition",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "competition",
+      "to": "predict",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "predict",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],

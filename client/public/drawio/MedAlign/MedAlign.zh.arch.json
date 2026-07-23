@@ -1,0 +1,369 @@
+{
+  "version": 1,
+  "title": "MedAlign 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 27,
+    "edges": 29,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "recruit",
+      "label": "通过邮件招募临床指令作者\n共 15 名执业临床医生\n覆盖 7 个医学专科\n通过在线表单提交",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "collect",
+      "label": "第一阶段：收集指令\n构想日常 EHR 工作情境\n提交 1314 条问题或命令\n附患者特征与临床语境",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "dedup_gate",
+      "label": "是否存在 ROUGE-L 相似度\n高于 0.7 的近重复指令？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "near_duplicate",
+      "label": "移除近乎相同的指令\n不进入 983 条指令目录",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "catalog",
+      "label": "保留 MedAlign 指令目录\n共 983 条去重指令\n其中 407 条适用于一般患者\n六大类与二十个子类",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "general_gate",
+      "label": "指令是否标记为\n适用于一般患者？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "catalog_only",
+      "label": "保留为仅含指令的记录\n不匹配 EHR 也不生成参考回复\n仍属于全部 983 条指令",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "query",
+      "label": "第二阶段：构造检索查询\n指令 + 患者特征\n+ 预期临床语境\n对比 BM25Okapi 与随机采样",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ehr_pool",
+      "label": "准备纵向 EHR 索引\n含时间戳的结构与文本事件\nOMOP CDM → 每份记录一个 XML\n随机抽取 77200 名患者",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "retrieve",
+      "label": "检索并审核候选病历\nBM25 为每条查询返回 top-5\n按排名复核并在首个相关项停止\n随机基线使用同一患者池",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "relevance_gate",
+      "label": "top-5 中是否至少一份 EHR\n经人工判定为相关？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "unmatched",
+      "label": "不进入有依据回复的子集\ntop-5 中没有相关 EHR\n指令仍保留在 983 条目录中",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "response",
+      "label": "第三阶段：撰写专家回复\n优先分配同专科非原作者\n检查可行性与 EHR 信息充分性\n以病历最新时间为锚作答",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "发布论文中的 MedAlign 合同\n983 条指令 · 303 条参考回复\n303 个相关配对 · 276 份不同 EHR\nBM25 top-5 为 74% · 随机为 38%",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "访问与版本边界\n完整数据需 Redivis + CITI + DUA\n论文 v2 为 276 份 EHR；仓库称 275\n回复阶段剔除量未披露",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "evaluation",
+      "label": "评测六种模型配置\nGPT-4 多配置 · Vicuna-7B/13B · MPT-7B\n使用相同指令与匹配 EHR 提示\n为生成预留 256 Tokens",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "context_gate",
+      "label": "是否使用 GPT-4 32k\n多步精炼配置？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "direct_context",
+      "label": "构造单上下文提示\n扣除提示、指令与 256 Tokens\n从病历开头截断\n尽量保留最近的 EHR 内容",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "mr_context",
+      "label": "执行多步精炼\n将完整 EHR 切为 30k-token 块\n从最早到最新依次处理\n更新或保留上一版回复",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "output_gate",
+      "label": "模型 API 是否返回\n临床文本回复？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "filter_error",
+      "label": "保留内容过滤错误结果\n44 题影响至少一个 GPT-4 配置\n主分析正确性：失败输出记错\n补充分析排除后为 259 题\n主表 303 题的排名处理未披露",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "clinician_review",
+      "label": "九名临床医生盲法评测\n向医生展示完整且未截断的 EHR\n不评自己提交的指令或回复\n随机模型顺序并允许并列\n其中 50 个配对由三人复核",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "correctness",
+      "label": "记录二元临床正确性\n临床不当、改变解释的错误\n或未回答指令 → 错误\n主分母为每种配置 303 个配对",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ranking",
+      "label": "汇总人工偏好\n按相关性与适当性排序\n报告平均排名与严格胜率\n内容过滤错误的排名处理未披露",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "automated",
+      "label": "计算自动文本生成指标\n无源指标只使用标准参考回复\nCOMET 与 UniEval 另用 BM25 EHR 片段\n将指标得分转换为模型排名",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "发布 MedAlign 评测结果\n正确率 · 平均排名 · 两两胜率\n指标排名与人工排名的平均 Kendall Tau\n分析模型与上下文长度影响",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "no_harness",
+      "label": "可复现性边界\n已锁定公开仓库只有样例而无评测器\n自由文本输出不存在答案解析器\n仓库未发布自动指标代码版本",
+      "type": "document",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "recruit",
+      "to": "collect",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "collect",
+      "to": "dedup_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "dedup_gate",
+      "to": "catalog",
+      "type": "primary",
+      "label": "否 · 最终保留 983 条"
+    },
+    {
+      "id": "edge-4",
+      "from": "dedup_gate",
+      "to": "near_duplicate",
+      "type": "optional",
+      "label": "是 · 移除"
+    },
+    {
+      "id": "edge-5",
+      "from": "catalog",
+      "to": "general_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "general_gate",
+      "to": "query",
+      "type": "primary",
+      "label": "是 · 407 条指令"
+    },
+    {
+      "id": "edge-7",
+      "from": "general_gate",
+      "to": "catalog_only",
+      "type": "optional",
+      "label": "否 · 仅保留在目录"
+    },
+    {
+      "id": "edge-8",
+      "from": "query",
+      "to": "retrieve",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "ehr_pool",
+      "to": "retrieve",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "retrieve",
+      "to": "relevance_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "relevance_gate",
+      "to": "response",
+      "type": "primary",
+      "label": "是 · 303 条指令"
+    },
+    {
+      "id": "edge-12",
+      "from": "relevance_gate",
+      "to": "unmatched",
+      "type": "optional",
+      "label": "否 · 无有依据回复"
+    },
+    {
+      "id": "edge-13",
+      "from": "response",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "catalog",
+      "to": "release",
+      "type": "optional",
+      "label": "全部 983 条指令记录"
+    },
+    {
+      "id": "edge-15",
+      "from": "release",
+      "to": "release_boundary",
+      "type": "optional",
+      "label": "受限访问与版本漂移"
+    },
+    {
+      "id": "edge-16",
+      "from": "release",
+      "to": "evaluation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "evaluation",
+      "to": "context_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "context_gate",
+      "to": "mr_context",
+      "type": "primary",
+      "label": "是 · GPT-4 32k + MR"
+    },
+    {
+      "id": "edge-19",
+      "from": "context_gate",
+      "to": "direct_context",
+      "type": "primary",
+      "label": "否 · 单上下文"
+    },
+    {
+      "id": "edge-20",
+      "from": "mr_context",
+      "to": "output_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "direct_context",
+      "to": "output_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "output_gate",
+      "to": "clinician_review",
+      "type": "primary",
+      "label": "是 · 评测回复"
+    },
+    {
+      "id": "edge-23",
+      "from": "output_gate",
+      "to": "filter_error",
+      "type": "optional",
+      "label": "否 · API 内容过滤"
+    },
+    {
+      "id": "edge-24",
+      "from": "filter_error",
+      "to": "correctness",
+      "type": "optional",
+      "label": "仅主分析正确性 · 强制记错"
+    },
+    {
+      "id": "edge-25",
+      "from": "clinician_review",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "correctness",
+      "to": "ranking",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "ranking",
+      "to": "automated",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "automated",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "report",
+      "to": "no_harness",
+      "type": "optional",
+      "label": "公开代码边界"
+    }
+  ],
+  "modules": []
+}

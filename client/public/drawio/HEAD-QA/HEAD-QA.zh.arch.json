@@ -7,50 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "固定证据边界\narXiv:1906.04701v1\naghie/head-qa @ da54ff2\ndvilares/head_qa @ d444ead\n数据集脚本版本 1.1.0",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "exams",
-      "label": "医疗考试",
+      "label": "收集西班牙公共医疗考试\n医疗系统专业岗位资格考试\n使用 2013 年起的官方试卷",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "areas",
-      "label": "六类领域",
+      "id": "domains",
+      "label": "保留六个医疗领域\n医学 · 药学 · 心理学\n护理 · 生物学 · 化学",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "clean",
-      "label": "清理题目",
-      "type": "decision",
+      "label": "按来源实施排除\n放射物理的 PDF 公式难以可靠解析\n移除考试后被官方作废的题目",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "json",
-      "label": "QA JSON",
+      "id": "schema",
+      "label": "官方记录 schema\nname / year / category / qid\nqtext / ra / 可选 image\nanswers 包含 aid + atext",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "年份切分",
+      "label": "官方按年份切分\n2013-14 训练：2,657\n2015 验证：1,366\n后续测试：2,742 · 总计 6,765",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "spanish",
+      "label": "西班牙文视图：同一 6,765 行\n2013-14：五个选项\n后续考试：四个选项\n约 14% 医学题引用图像",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "translate",
-      "label": "英文版本",
+      "label": "用 Google API 翻译成英文\n翻译题干与答案文本\n保留 ID / 标签 / 图像 / 切分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "audit",
+      "label": "抽检 60 条随机翻译\n双语充分性：4.35 / 5\n第二位充分性：4.71 / 5\n英语母语流畅度：4 / 5",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run_es",
+      "label": "论文西班牙文基线\nLength / Random / Blind / IR\n不使用题目引用的图像\n无规范 LLM 提示词或生成配置",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run_en",
+      "label": "论文英文 / 跨语言实验\n使用翻译后的题目与选项\nLength / Random / Blind / IR / DrQA\n官方代码中 DrQA 仅用于英文\n无规范 LLM 提示词或生成配置",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "官方 eval.py 契约\n预测行 = qid + 答案 ID\n真值行 = qid + 答案 ID\n\"-\" 表示未作答",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "准确率/分数",
+      "label": "准确率 + 宏观 P/R/F1\n官方 POINTS 计分\n答对 × 3 · 答错 × -1\n未作答贡献 0",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,37 +94,79 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "exams",
-      "to": "areas",
-      "type": "primary"
+      "from": "evidence",
+      "to": "exams",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "areas",
-      "to": "clean",
+      "from": "exams",
+      "to": "domains",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "clean",
-      "to": "json",
+      "from": "domains",
+      "to": "clean",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "json",
-      "to": "split",
+      "from": "clean",
+      "to": "schema",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "schema",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "split",
+      "to": "spanish",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
       "from": "split",
       "to": "translate",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-8",
+      "from": "spanish",
+      "to": "run_es",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
       "from": "translate",
+      "to": "audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "audit",
+      "to": "run_en",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "run_es",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "run_en",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "parser",
       "to": "score",
       "type": "primary"
     }

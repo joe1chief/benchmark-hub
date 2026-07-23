@@ -6,7 +6,7 @@ meta:
   routing: orthogonal
   title: GAIA 数据集构建与验证流程
   description: 基于 arXiv:2311.12983v1 的人工问题设计、独立验证、分歧诊断、修订或删除、分级与发布拆分。
-  legend: 两名新标注员独立作答；三方一致直接通过，单个验证者作答错误可在诊断后保留，其余分歧修订或删除。
+  legend: 两名新标注员独立作答；一致或确认是验证者失误可直接通过；可修订分歧须重新验证，不可修订或复验失败的候选被删除。
 nodes:
   - id: seeds
     label: 种子题与指南
@@ -51,61 +51,75 @@ nodes:
       x: 736
       'y': 88
   - id: compare
-    label: 比对并诊断分歧
-    type: process
+    label: 可按原样通过？
+    type: decision
     size: medium
     position:
       x: 912
       'y': 88
   - id: accept
-    label: 一致或验证者失误
+    label: 一致 / 验证者失误
     type: process
     size: medium
     position:
-      x: 816
-      'y': 224
+      x: 1120
+      'y': 32
   - id: repair
-    label: 修订，否则删除
+    label: 修订问题
     type: process
     size: medium
     position:
-      x: 1008
-      'y': 224
+      x: 1120
+      'y': 144
+  - id: revalidate
+    label: 重新验证通过？
+    type: decision
+    size: medium
+    position:
+      x: 1328
+      'y': 144
+  - id: discard
+    label: 删除候选
+    type: terminal
+    size: medium
+    position:
+      x: 1536
+      'y': 272
   - id: validated
     label: 通过验证的题
     type: database
     size: medium
     position:
-      x: 912
-      'y': 352
+      x: 1536
+      'y': 88
   - id: levels
     label: 按步骤/工具分级
     type: process
     size: medium
     position:
-      x: 736
-      'y': 352
+      x: 1744
+      'y': 88
   - id: final
     label: GAIA 466题
     type: database
     size: medium
     position:
-      x: 560
-      'y': 352
+      x: 1952
+      'y': 88
   - id: dev
     label: Dev 166+答案
     type: terminal
     size: medium
     position:
-      x: 368
-      'y': 296
+      x: 2160
+      'y': 32
   - id: test
     label: Test 300藏答案
     type: terminal
     size: medium
     position:
-      x: 368
-      'y': 408
+      x: 2160
+      'y': 144
 edges:
   - from: seeds
     to: craft
@@ -130,13 +144,22 @@ edges:
     type: primary
   - from: compare
     to: repair
-    type: primary
+    type: optional
+  - from: compare
+    to: discard
+    type: optional
   - from: accept
     to: validated
     type: primary
   - from: repair
+    to: revalidate
+    type: primary
+  - from: revalidate
     to: validated
     type: primary
+  - from: revalidate
+    to: discard
+    type: optional
   - from: validated
     to: levels
     type: primary

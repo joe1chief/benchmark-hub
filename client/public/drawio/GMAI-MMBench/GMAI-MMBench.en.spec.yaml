@@ -5,77 +5,215 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GMAI-MMBench Build Process
-  description: Paper-aligned GMAI-MMBench flow from worldwide medical datasets to lexical-tree VQA and macro accuracy evaluation.
+  description: >-
+    Paper-versioned medical-data construction and evaluation flow, with the current public runner kept as a separate
+    reproducibility boundary.
   legend: >-
-    Solid arrows show dataset collection, standardization, lexical-tree tagging, VQA generation, manual validation, and
-    LVLM scoring.
+    Solid arrows follow arXiv:2408.03361v7. The dashed branch records behavior of the pinned public VLMEvalKit runner;
+    it is not substituted for the paper's multi-select protocol.
 nodes:
-  - id: sources
-    label: 284 Datasets
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: standard
-    label: Standardize
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: tree
-    label: Lexical Tree
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: qa
-    label: VQA Pairs
+  - id: evidence
+    label: |-
+      Evidence boundary
+      paper 2408.03361v7
+      repo d8a6a326 · data a8c7450a
+      VLMEvalKit 7055d301
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: validate
-    label: Manual Check
-    type: decision
+      x: 40
+      'y': 320
+  - id: collect
+    label: |-
+      Collect 2D/3D medical datasets
+      retain 268 public + 16 hospital sets
+      classification · detection · segmentation
+    type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: eval
-    label: LVLM Eval
+      x: 340
+      'y': 320
+  - id: standardize
+    label: |-
+      Standardize data
+      SA-Med2D-20M protocol → 2D RGB
+      MeSH: expand · unify · merge left/right
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
+      x: 640
+      'y': 320
+  - id: taxonomy
+    label: |-
+      Build lexical taxonomy
+      38 modalities · 18 tasks · 18 departments
+      4 granularities; 3 labelers + vote merge
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 320
+  - id: question_templates
+    label: |-
+      Generate question templates
+      per modality × task × granularity
+      10 labels × 10 GPT-4o candidates
+      manual review; modality → placeholder
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: option_pools
+    label: |-
+      Build option pools
+      global: other labels in source dataset
+      local: shared by modality/task/granularity
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 540
+  - id: assemble
+    label: |-
+      Assemble VQA candidates
+      sample template; restore modality
+      add correct answer + up to 4 options
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 320
+  - id: validate
+    label: |-
+      Manual validation
+      require 3 cues; image must be necessary
+      drop wrong answer · unclear target · poor image
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 320
+  - id: select
+    label: |-
+      Balance and diversify
+      ≤30 cases per answer; keep all if fewer
+      vary appearance · source · age · gender
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 320
+  - id: release
+    label: |-
+      Release 25,831 VQA pairs
+      validation 4,550 · test 21,281
+      test key withheld; organizer scoring
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 320
+  - id: paper_prompt
+    label: |-
+      Paper evaluation prompt
+      single: select the correct option
+      multi: select all; comma-separated letters
+      zero-shot; no examples
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 100
+  - id: paper_parser
+    label: |-
+      Paper answer extraction
+      option letters first
+      else ChatGPT-3.5-turbo-0613
+      unextractable output = error
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 100
+  - id: paper_metric
+    label: |-
+      Paper metrics
+      single ACC = correct / questions
+      multi ACC = match / predicted
+      multi recall = match / ground truth
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3340
+      'y': 100
+  - id: runner_boundary
+    label: |-
+      Pinned VLMEvalKit
+      GMAI inherits ImageMCQDataset
+      Question + Options; exact suffix
+      Please select the correct answer
+      from the options above.
+      exact_matching / optional judge; no multi-select
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 540
+  - id: muir_boundary
+    label: |-
+      Adjacent-class correction
+      direct-letter prompt belongs to MUIRDataset
+      GMAIMMBenchDataset does not use it
+    type: document
+    size: xl
+    position:
+      x: 3140
+      'y': 540
 edges:
-  - from: sources
-    to: standard
+  - from: evidence
+    to: collect
     type: primary
-  - from: standard
-    to: tree
+  - from: collect
+    to: standardize
     type: primary
-  - from: tree
-    to: qa
+  - from: standardize
+    to: taxonomy
     type: primary
-  - from: qa
+  - from: taxonomy
+    to: question_templates
+    type: primary
+  - from: taxonomy
+    to: option_pools
+    type: primary
+  - from: question_templates
+    to: assemble
+    type: primary
+  - from: option_pools
+    to: assemble
+    type: primary
+  - from: assemble
     to: validate
     type: primary
   - from: validate
-    to: eval
+    to: select
     type: primary
-  - from: eval
-    to: score
+  - from: select
+    to: release
     type: primary
+  - from: release
+    to: paper_prompt
+    type: primary
+  - from: paper_prompt
+    to: paper_parser
+    type: primary
+  - from: paper_parser
+    to: paper_metric
+    type: primary
+  - from: release
+    to: runner_boundary
+    type: data
+  - from: runner_boundary
+    to: muir_boundary
+    type: data
 modules: []

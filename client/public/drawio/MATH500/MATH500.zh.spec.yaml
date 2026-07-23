@@ -1,89 +1,578 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MATH500 Build Process (Chinese)
-  description: MATH500 作为 MATH 的 500 题实用评测子集，继承竞赛题构建、学科与难度信息、分步解答、框选答案归一化和精确匹配评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  canvas: auto
+  grid:
+    size: 8
+    snap: true
+  title: MATH500 构建、发布、判分与论文评测流程
+  description: >-
+    基于 MATH arXiv:2103.03874v2、《Let's Verify Step by Step》arXiv:2305.20050v1、 OpenAI 官方提交
+    7ecc794703b2877f63226f2477a49b34f9b25163，以及内容寻址的 MATH500 测试划分 SHA-256
+    35dc41080a3680858b27fa7e0533d2d547825316fc5dafe5d316f4ccc5a06132 进行证据边界复原。
+  legend: 实线依次表示父数据集构建、非标准公开划分、答案判分和论文的固定样本 Best-of-N 实验。 公开仓库未发布生成器或奖励模型权重，也未给出通用推理提示或完整解答的答案抽取器。
 nodes:
-  - id: source
-    label: MATH来源
+  - id: b1
+    label: |-
+      B1 · 父 MATH 数据来源
+      高中数学竞赛
+      AMC 10 / AMC 12 / AIME 等
+      许多题目可从 AoPS 获取
     type: database
+    module: build
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: slice
-    label: 500子集
-    type: process
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b2
+    label: |-
+      B2 · 父 MATH 数据合同
+      12,500 题 · 训练 7,500 / 测试 5,000
+      7 个学科 · 难度 1–5
+      题目 + 完整解答 + 方框答案
+      LaTeX · 图形使用 Asymptote 源码
+    type: database
+    module: build
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: subjects
-    label: 七类学科
+      x: 320
+      'y': 192
+    style:
+      fontSize: 8
+  - id: b3
+    label: |-
+      B3 · 扩大训练题覆盖
+      目标：减少对 7,500 道训练题的过拟合
+      使用原测试集中的 4,500 题
+      用于 PRM800K / 奖励模型训练
     type: process
+    module: build
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: levels
-    label: 难度标签
+      x: 600
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b4
+    label: |-
+      B4 · 创建非标准划分
+      从原测试集均匀随机选 500 题
+      留作评测
+      另 4,500 题加入原 7,500 题训练集
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 880
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b5
+    label: |-
+      B5 · 检查代表性
+      论文图 5：学科直方图
+      + 难度等级直方图
+      仅进行子集选择
+      论文未报告新标注
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 1160
+      'y': 192
+    style:
+      fontSize: 9
+  - id: r1
+    label: |-
+      R1 · PRM800K 官方固定版本
+      提交 7ecc7947 · 2023-06-01
+      OpenAI 仓库 · MIT
+      数据使用 Git LFS 存储
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 1160
+      'y': 688
+    style:
+      fontSize: 9
+  - id: r2
+    label: |-
+      R2 · 已发布划分文件
+      train.jsonl · 12,000 行
+      test.jsonl · 500 行
+      测试 LFS SHA-256 · 35dc4108…
+      训练 / 测试 ID 无重叠
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 880
+      'y': 688
+    style:
+      fontSize: 8
+  - id: r3
+    label: |-
+      R3 · MATH500 测试合同
+      500 行 · 500 个唯一 ID
+      全部来自原 MATH 测试集
+      problem / solution / answer
+      subject / level / unique_id
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 600
+      'y': 688
+    style:
+      fontSize: 9
+  - id: r4
+    label: |-
+      固定训练文件审计
+      12,000 行 · 11,999 个唯一 ID
+      一个 ID 重复两次，解答不同
+      两行 answer 为空
+      不影响 500 行测试集
     type: document
+    module: release
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: format
-    label: LaTeX/Asy
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: solve
-    label: 步骤解答
+      x: 320
+      'y': 688
+    style:
+      fontSize: 8
+  - id: r5
+    label: |-
+      发布 / 可复现性边界
+      公开：划分 + 参考 + 判分器 + eval.py
+      私有：生成器 / ORM / PRM 权重
+      无通用提示或答案抽取器
+      无官方在线提交 / 排行榜
     type: document
+    module: release
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: norm
-    label: 答案归一
+      x: 40
+      'y': 688
+    style:
+      fontSize: 8
+  - id: e1
+    label: |-
+      E1 · 预先抽取答案合同
+      grade_answer(given_answer, ground_truth)
+      两个输入必须已是字符串
+      未发布从完整解答抽取答案的实现
+      候选为 None → False
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 40
+      'y': 1120
+    style:
+      fontSize: 8
+  - id: g1
+    label: |-
+      E2 · 精确匹配接受层
+      对两个字符串做 Hendrycks 归一化
+      相同 → True
+      否则再做 PRM 自定义归一化
+      相同 → True · 否则继续
     type: process
+    module: evaluate
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: 准确率
+      x: 320
+      'y': 1120
+    style:
+      fontSize: 8
+  - id: g2
+    label: |-
+      E3 · 结构约束
+      拆分元组 / 区间元素
+      要求相同元数 + 相同括号类型
+      两个分数必须精确相同
+      整数与非整数 → False
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 600
+      'y': 1120
+    style:
+      fontSize: 8
+  - id: g3
+    label: |-
+      E4 · 保守的 SymPy 回退
+      仅处理前面未匹配的元素
+      拒绝异常幂或 >2 个未知字母
+      解析参考值 − 候选值
+      化简为 0 → 等价 · 异常 → False
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 880
+      'y': 1120
+    style:
+      fontSize: 8
+  - id: g4
+    label: |-
+      E5 · 产生 is_correct
+      每个候选答案得到布尔值
+      README 警告判分器较保守
+      可能拒绝正确答案或接受错误答案
     type: terminal
+    module: evaluate
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1160
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: e2
+    label: |-
+      E6 · 公开预评分样本 Blob
+      eval.py 硬编码 Azure 路径
+      每题最多 1,860 个候选
+      1,024 tokens 内无答案者已丢弃
+      2.159 GB · 可变 / 无仓库哈希
+    type: database
+    module: evaluate
+    size: xl
+    position:
+      x: 1440
+      'y': 1120
+    style:
+      fontSize: 8
+  - id: e3
+    label: |-
+      E7 · 选择论文评测方法
+      --method prm 或 orm
+      读取已存储 prm_score / orm_score
+      读取已存储 is_correct
+      eval.py 不调用 grade_answer
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1440
+      'y': 1440
+    style:
+      fontSize: 8
+  - id: e4
+    label: |-
+      E8 · 重采样 Best-of-N
+      400 次试验 · 每题补到 1,860 个
+      未设随机种子的打乱 · 抽取 N 个
+      N = 10, 25, 50, 75, 100, 200, 300,
+      400, 500, 750, 1000, 1250, 1500, 1860
+      移除填充与缺失答案
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1160
+      'y': 1440
+    style:
+      fontSize: 8
+  - id: e5
+    label: |-
+      E9 · 选最高分候选
+      PRM：最大已存储 prm_score
+      论文 PRM 分：步骤分数乘积
+      中性步骤视为正确
+      ORM：最大已存储 orm_score
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 880
+      'y': 1440
+    style:
+      fontSize: 8
+  - id: m1
+    label: |-
+      M1 · 每个 N 的准确率
+      已选 is_correct → 1
+      无候选 / 错误 → 0
+      正确题数 / 500
+    type: formula
+    module: evaluate
+    size: xl
+    position:
+      x: 600
+      'y': 1440
+    style:
+      fontSize: 9
+  - id: m2
+    label: |-
+      M2 · 报告论文结果
+      400 次试验的均值 + 标准差
+      Best-of-N 曲线
+      N=1,860：PRM 78.2 / ORM 72.4
+      论文多数投票 69.6 · eval.py 未实现
+    type: terminal
+    module: evaluate
+    size: xl
+    position:
+      x: 320
+      'y': 1440
+    style:
+      fontSize: 8
 edges:
-  - from: source
-    to: slice
+  - from: b1
+    to: b2
     type: primary
-  - from: slice
-    to: subjects
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b2
+    to: b3
     type: primary
-  - from: subjects
-    to: levels
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b3
+    to: b4
     type: primary
-  - from: levels
-    to: format
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b4
+    to: b5
     type: primary
-  - from: format
-    to: solve
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b5
+    to: r1
     type: primary
-  - from: solve
-    to: norm
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r1
+    to: r2
     type: primary
-  - from: norm
-    to: metric
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r2
+    to: r3
     type: primary
-modules: []
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r3
+    to: r4
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r4
+    to: r5
+    type: optional
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r5
+    to: e1
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e1
+    to: g1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: g1
+    to: g2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: g2
+    to: g3
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: g3
+    to: g4
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: g4
+    to: e2
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e2
+    to: e3
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e3
+    to: e4
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e4
+    to: e5
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e5
+    to: m1
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: m1
+    to: m2
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+modules:
+  - id: build
+    label: 构建
+    color: $primaryLight
+  - id: release
+    label: 发布
+    color: $secondaryLight
+  - id: evaluate
+    label: 评测
+    color: $accentLight

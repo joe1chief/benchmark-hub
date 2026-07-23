@@ -9,6 +9,7 @@ import {
   Home as HomeIcon, ChevronRight as ChevronRightIcon, Star
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
 
 interface Props {
   benchmark: Benchmark | null;
@@ -192,10 +193,11 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
     ? allBenchmarks.filter(x => x.family === b.family && x.id !== b.id)
     : [];
 
-  const relatedBenchmarks = (b.related_benchmarks || [])
-    .map(name => allBenchmarks.find(x => x.name === name))
-    .filter((x): x is Benchmark => !!x)
-    .slice(0, 6);
+  const relatedBenchmarks = resolveRelatedBenchmarks(
+    allBenchmarks,
+    b.related_benchmarks || [],
+    b.id,
+  ).slice(0, 6);
 
   const drawerBg = isDark ? 'bg-[#111111]' : 'bg-white';
   const borderColor = isDark ? 'border-gray-800' : 'border-gray-100';

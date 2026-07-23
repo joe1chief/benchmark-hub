@@ -1,0 +1,280 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MathOlympiad-Bench 构建与评测流程
+  description: 按 Goedel-Prover-V2 论文对齐地展示对 Compfiles 与 IMOSLLean4 形式化题目的人工整理、语句级 Lean 核验、 360 条记录发布，以及带可选验证器反馈自我修正的整段证明评测。
+  legend: 带标签分支明确展示人工修复与编译回路。基准构建阶段用 sorry 占位符核验形式化语句；评测阶段用模型生成证明替换占位符， 仅将 Lean 接受的证明计为成功。论文定义一般化 Pass@N 指标，主要比较采用 Pass@32。
+nodes:
+  - id: sources
+    label: |-
+      汇集现有形式化题目
+      来源为 Compfiles 与 IMOSLLean4
+      聚焦奥林匹克级数学题
+      保留非形式化原题文本
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: composition
+    label: |-
+      汇总竞赛覆盖范围
+      158 道 IMO 正赛题，1959–2024
+      131 道 IMO 候选题，2006–2023
+      68 道全国奥赛题与 3 道谜题
+    type: process
+    size: xl
+    position:
+      x: 380
+      'y': 40
+  - id: issue_gate
+    label: |-
+      来源记录是否存在问题？
+      陈述不完整、分散于多文件
+      含多个定理或不兼容 Mathlib
+    type: decision
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: repair
+    label: |-
+      由人工整理记录
+      补全题目陈述
+      合并定义与依赖
+      拆分定理并修复 Mathlib 兼容性
+    type: user
+    size: xl
+    position:
+      x: 1100
+      'y': 300
+  - id: normalize
+    label: |-
+      规范化单条基准记录
+      仅保留一个形式化定理
+      配对一个对应的非形式化陈述
+      保持题意与假设不变
+    type: process
+    size: xl
+    position:
+      x: 1100
+      'y': 40
+  - id: compile_statement
+    label: |-
+      核验形式化语句
+      将证明替换为 by sorry
+      在目标 Mathlib 环境中编译
+      检查语法与环境依赖
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: statement_gate
+    label: |-
+      语句使用 sorry 占位后
+      是否能够编译？
+    type: decision
+    size: xl
+    position:
+      x: 1820
+      'y': 40
+  - id: release
+    label: |-
+      发布 MathOlympiad-Bench
+      共 360 条人工核验记录
+      每条含形式定理与非形式化陈述
+      覆盖代数、数论、组合与几何
+    type: database
+    size: xl
+    position:
+      x: 2180
+      'y': 40
+  - id: overlap_audit
+    label: |-
+      审核重叠的 IMO 题
+      与 MiniF2F 对照
+      至少发现三处后者陈述偏弱或不符
+      本基准未观察到同类问题
+    type: terminal
+    size: xl
+    position:
+      x: 2540
+      'y': 300
+  - id: setup
+    label: |-
+      准备形式证明评测
+      使用 Lean 4.9.0-rc1
+      提供完整上下文与待证定理
+      独立采样 N 次证明尝试
+    type: document
+    size: xl
+    position:
+      x: 2180
+      'y': 600
+  - id: generate
+    label: |-
+      首轮生成整段证明
+      论文上限为 30,000 词元
+      从模型输出提取证明
+      组装候选 Lean 文件
+    type: process
+    size: xl
+    position:
+      x: 1820
+      'y': 600
+  - id: proof_gate
+    label: |-
+      Lean 是否完整编译通过
+      且不含 apply? 或 exact? 策略？
+    type: decision
+    size: xl
+    position:
+      x: 1460
+      'y': 600
+  - id: pass_sample
+    label: |-
+      接受本次证明尝试
+      记录一个成功样本
+      停止修正该次尝试
+    type: process
+    size: xl
+    position:
+      x: 1100
+      'y': 600
+  - id: correction_gate
+    label: |-
+      是否启用自我修正
+      且尚未用完两轮修复？
+    type: decision
+    size: xl
+    position:
+      x: 1460
+      'y': 880
+  - id: revise
+    label: |-
+      根据验证器反馈修正
+      输入上一版输出与 Lean 错误
+      生成下一版证明
+      总输出预算为 40,000 词元
+    type: process
+    size: xl
+    position:
+      x: 1820
+      'y': 880
+  - id: fail_sample
+    label: |-
+      将本次尝试记为失败
+      标准模式或已达到修复上限
+    type: process
+    size: xl
+    position:
+      x: 1100
+      'y': 880
+  - id: aggregate
+    label: |-
+      汇总 Pass@N
+      N 次尝试至少一条成功则该题通过
+      主要比较采用 N = 32
+      分别报告直接生成与自我修正
+    type: terminal
+    size: xl
+    position:
+      x: 740
+      'y': 740
+edges:
+  - from: sources
+    to: composition
+    type: primary
+  - from: composition
+    to: issue_gate
+    type: primary
+  - from: issue_gate
+    to: repair
+    type: optional
+    label: 发现问题 · 修复
+    waypoints:
+      - x: 840
+        'y': 220
+      - x: 1200
+        'y': 220
+  - from: issue_gate
+    to: normalize
+    type: primary
+    label: 无问题 · 规范化
+  - from: repair
+    to: normalize
+    type: primary
+    label: 已修复
+  - from: normalize
+    to: compile_statement
+    type: primary
+  - from: compile_statement
+    to: statement_gate
+    type: primary
+  - from: statement_gate
+    to: release
+    type: primary
+    label: 编译通过 · 保留
+  - from: statement_gate
+    to: repair
+    type: optional
+    label: 编译失败 · 修复
+    waypoints:
+      - x: 1940
+        'y': 230
+      - x: 1200
+        'y': 230
+  - from: release
+    to: overlap_audit
+    type: optional
+    label: 重叠题 · 审核
+    waypoints:
+      - x: 2280
+        'y': 220
+      - x: 2640
+        'y': 220
+  - from: release
+    to: setup
+    type: primary
+  - from: setup
+    to: generate
+    type: primary
+  - from: generate
+    to: proof_gate
+    type: primary
+  - from: proof_gate
+    to: pass_sample
+    type: primary
+    label: 通过 · 接受
+  - from: proof_gate
+    to: correction_gate
+    type: optional
+    label: 失败
+  - from: correction_gate
+    to: revise
+    type: primary
+    label: 仍有轮次 · 修正
+  - from: correction_gate
+    to: fail_sample
+    type: optional
+    label: 标准模式或到限 · 停止
+  - from: revise
+    to: proof_gate
+    type: primary
+    label: 重新编译
+    waypoints:
+      - x: 1920
+        'y': 780
+      - x: 1560
+        'y': 780
+  - from: pass_sample
+    to: aggregate
+    type: primary
+  - from: fail_sample
+    to: aggregate
+    type: optional
+modules: []

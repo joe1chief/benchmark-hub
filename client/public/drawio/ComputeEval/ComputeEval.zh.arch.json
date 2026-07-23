@@ -1,96 +1,184 @@
 {
   "version": 1,
-  "title": "ComputeEval 构建流程",
+  "title": "ComputeEval 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 13,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "tasks",
-      "label": "CUDA任务",
+      "id": "evidence",
+      "label": "证据边界\n未发现独立论文\n官方 2026.1 快照\n@ 19ba74f",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "author",
+      "label": "混合式题目编写\nNVIDIA 工程师\n+ 前沿模型辅助\n全部题目与标签\n均经人工复核",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "provenance_boundary",
+      "label": "编写来源边界\n模型辅助占比\n未披露\n逐题模型辅助来源\n未披露",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "kernel",
-      "label": "内核生成",
+      "id": "domains",
+      "label": "7 个 CUDA 领域组\n518 道 CUDA C++\n48 道 CUDA Python\nRuntime / Kernel\nGPU 库 / cuTile",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "contract",
+      "label": "自包含题目合同\n提示与上下文\n构建 / 测试命令\n隐藏测试与参考解\n可选性能负载",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "ci",
+      "label": "CI 质量门禁\n参考解必须编译\n并通过测试\n验证框架与规格\n+ 必需 API",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "2026.1 发布集\n566 道题 / 7 个领域组\n499 道带性能负载",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "生成阶段可见信息\n提示与上下文可见\n构建与硬件要求可见\n隐藏测试与参考解\n保持不可见",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "workspace",
+      "label": "隔离评测工作区\n写入上下文\n候选解与隐藏测试\nDocker 或显式\n本地执行",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "compile",
-      "label": "编译测试",
+      "label": "合约与构建\n检查通过？\n检查 source_references\n运行 build_command\n再运行 test_command",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "profile",
-      "label": "性能剖析",
+      "id": "correctness",
+      "label": "隐藏测试\n是否通过？\n执行 test_command\n构建成功后\n退出码为 0 即通过",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "performance",
+      "label": "仅处理正确候选\n可选 benchmark_command\nCUPTI / NCU 分析\n耗时 / 吞吐量\n相对基线加速比",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "search",
-      "label": "搜索优化",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "select",
-      "label": "最佳内核",
+      "id": "report",
+      "label": "ComputeEval 结果\n总体 / 分领域 Pass@k\n延迟 / 加速比\nSM / DRAM 吞吐量",
       "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "score",
-      "label": "通过加速",
-      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "tasks",
-      "to": "kernel",
+      "from": "evidence",
+      "to": "author",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "kernel",
-      "to": "compile",
+      "from": "author",
+      "to": "domains",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "compile",
-      "to": "profile",
-      "type": "primary"
+      "from": "author",
+      "to": "provenance_boundary",
+      "type": "secondary"
     },
     {
       "id": "edge-4",
-      "from": "profile",
-      "to": "search",
+      "from": "domains",
+      "to": "contract",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "search",
-      "to": "select",
+      "from": "contract",
+      "to": "ci",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "select",
-      "to": "score",
+      "from": "ci",
+      "to": "release",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "release",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "generate",
+      "to": "workspace",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "workspace",
+      "to": "compile",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "compile",
+      "to": "correctness",
+      "type": "primary",
+      "label": "是 · 运行隐藏测试"
+    },
+    {
+      "id": "edge-11",
+      "from": "correctness",
+      "to": "performance",
+      "type": "primary",
+      "label": "通过 · 可选性能分析"
+    },
+    {
+      "id": "edge-12",
+      "from": "performance",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "compile",
+      "to": "report",
+      "type": "optional",
+      "label": "否 · 编译或合约检查失败"
+    },
+    {
+      "id": "edge-14",
+      "from": "correctness",
+      "to": "report",
+      "type": "optional",
+      "label": "失败 · 跳过性能分析"
     }
   ],
   "modules": []

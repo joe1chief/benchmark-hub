@@ -7,50 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "scenes",
-      "label": "3D场景",
+      "id": "evidence",
+      "label": "固定证据边界\narXiv:2406.05756v1\n仓库 @ 75792fc\nHF 数据集 @ e2733ca",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "sources",
+      "label": "选择带标注的具身三维场景\nMatterport3D 测试集 · ScanNet 验证集\nAI2-THOR：7 类 ALFRED 任务 / 93 个场景",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "images",
-      "label": "RGB-D帧",
+      "id": "frames",
+      "label": "采集目标 RGB-D 图像\nMP3D / ScanNet 中随机选择视点\nAI2-THOR 每个 PDDL 子目标后选取关键帧",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "triples",
-      "label": "空间三元组",
+      "id": "project",
+      "label": "将带标注的三维物体投影到图像\n相机参数 + 三维坐标\n得到二维框及框内平均深度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "relations",
+      "label": "仅对不重叠边界框提取三元组\n整框几何：上 / 下 / 左 / 右\n平均深度：近 / 远\n所有关系均采用观察者视角",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "qa",
-      "label": "问答模板",
+      "label": "生成多项选择题\n四类方向关系使用 5 种模板\n不相关关系作为错误选项\n聚合物体生成最近 / 最远问题",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "filter",
-      "label": "样本过滤",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "eval",
-      "label": "LVLM评测",
+      "label": "自动过滤边界框并平衡分布\n宽或高小于 50 像素即剔除\n宽或高超过对应图像轴一半即剔除\n保持空间关系分布平衡",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "准确率",
+      "id": "verify",
+      "label": "逐样本人工核验\n相关物体必须唯一且清晰可辨\n目标空间关系必须正确\n每个负选项都必须错误",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "per_source",
+      "label": "问答 / 图像 / 物体类别 / 场景\nMP3D：1,201 / 928 / 133 / 26\nAI2-THOR：1,239 / 683 / 95 / 93\nScanNet：1,200 / 570 / 35 / 175",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "EmbSpatial-Bench 评测集\n3,640 个问答 · 2,181 张 RGB-D 图像\n277 个场景 · 294 个物体类别\n六类平衡的自我中心空间关系",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evaluation",
+      "label": "LVLM 零样本评测\n生成式：解析模型预测的选项\n似然式：arg max Pθ(选项 | 图像, 问题)\n分别报告两种策略的准确率",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "scenes",
-      "to": "images",
-      "type": "primary"
+      "from": "evidence",
+      "to": "sources",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "images",
-      "to": "triples",
+      "from": "sources",
+      "to": "frames",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "triples",
-      "to": "qa",
+      "from": "frames",
+      "to": "project",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "project",
+      "to": "relations",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "relations",
+      "to": "qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "qa",
       "to": "filter",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-7",
       "from": "filter",
-      "to": "eval",
+      "to": "verify",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "eval",
-      "to": "score",
+      "id": "edge-8",
+      "from": "verify",
+      "to": "per_source",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "per_source",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "dataset",
+      "to": "evaluation",
       "type": "primary"
     }
   ],

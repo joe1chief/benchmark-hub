@@ -4,76 +4,191 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DLC-Bench 构建流程
-  description: 按论文对齐的 DLC-Bench 构建流程：从分割数据到无参考的局部详细描述评测。
-  legend: 实线箭头表示掩码关键词采集、VLM描述扩展、SSL网页图扩展、属性构建、模型描述、无参考判分和细节/幻觉评分。
+  title: DLC-Bench 构建与评测流程
+  description: 按论文版本还原基准题目整理和识别门控的免参考评分，并与 DLC-SDP 训练数据流水线明确分开。
+  legend: 实线表示基准主流程；证据卡固定论文、代码与发布数据版本。
 nodes:
-  - id: seg
-    label: 分割掩码
+  - id: evidence
+    label: |-
+      DLC-Bench · arXiv:2504.16072v1
+      代码 @ 153ad3d · 数据 @ 2336d95
+      DLC-SDP 训练数据流水线
+      不属于本基准构建流程
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: source
+    label: |-
+      Objects365 v2 验证子集
+      选择高难对象区域
+      人工标注分割掩码
+      每个基准实例对应一个目标区域
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: expand
-    label: VLM扩写
+      'y': 360
+  - id: allocation
+    label: |-
+      将 100 个区域分配给三个 VLM
+      GPT-4o：34
+      Gemini 1.5 Pro：35
+      Claude 3.5 Sonnet：31
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: ssl
-    label: SSL网页图
-    type: process
+      x: 320
+      'y': 360
+  - id: question_route
+    label: 两类问题
+    type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: attrs
-    label: 属性集合
+      x: 600
+      'y': 360
+  - id: positive
+    label: |-
+      正向细节问题
+      对象 / 部件：颜色 · 形状
+      纹理 · 材料 · 大小
+      人工补充缺项 · 修正错误
+      移除幻觉 / 歧义
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: caption
-    label: 模型描述
+      x: 880
+      'y': 140
+  - id: negative
+    label: |-
+      负向幻觉问题
+      错位：掩码外对象
+      幻觉：常见部件
+      缺失 / 不可见 / 遮挡
+      检查是否避开无依据细节
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 580
+  - id: curate
+    label: |-
+      人工问答整理
+      逐题检查
+      删除歧义 / 不清晰案例
+      保证选项互斥
+      基准图像与训练图像去重
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1160
+      'y': 360
+  - id: artifact
+    label: |-
+      固定 DLC-Bench 产物 @ 2336d95
+      100 个区域实例
+      来自 77 张源图像
+      共 892 道问题
+      392 道正向 + 500 道负向
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: caption
+    label: |-
+      候选局部描述
+      图像 + 目标掩码
+      生成详细区域描述
+      无需参考描述
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
   - id: judge
-    label: 无参考判分
+    label: |-
+      Meta-Llama-3.1-8B-Instruct
+      官方纯文本裁判
+      温度 0 · 最多 300 token
+      每题选择一个选项
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 360
+  - id: recognition
+    label: |-
+      识别门控
+      识别题前置
+      若对象识别错误
+      所有问题得分上限 ≤ 0
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 360
+  - id: score
+    label: |-
+      逐题计分
+      正向：1 / 0.5 / 0 / -1
+      负向：省略无依据细节 = 1
+      幻觉 = -1；中间情形 = 0
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: report
+    label: |-
+      DLC-Bench 报告
+      逐实例平均
+      正向平均 · 负向平均
+      最终为正向与负向两者平均
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 细节评分
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 2840
+      'y': 360
 edges:
-  - from: seg
-    to: expand
+  - from: evidence
+    to: source
+    type: data
+  - from: source
+    to: allocation
     type: primary
-  - from: expand
-    to: ssl
+  - from: allocation
+    to: question_route
     type: primary
-  - from: ssl
-    to: attrs
+  - from: question_route
+    to: positive
     type: primary
-  - from: attrs
+  - from: question_route
+    to: negative
+    type: primary
+  - from: positive
+    to: curate
+    type: primary
+  - from: negative
+    to: curate
+    type: primary
+  - from: curate
+    to: artifact
+    type: primary
+  - from: artifact
     to: caption
     type: primary
   - from: caption
     to: judge
     type: primary
   - from: judge
+    to: recognition
+    type: primary
+  - from: recognition
     to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

@@ -5,75 +5,212 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Design2Code Build Process
-  description: Paper-aligned Design2Code flow from real webpage curation to screenshot-to-code visual and human evaluation.
-  legend: Solid arrows show webpage collection, quality filtering, reference creation, code generation, and evaluation.
+  description: >-
+    Paper-aligned curation of 484 real-world screenshot-to-code pages from C4 plus a separately sourced 80-page GitHub
+    Pages HARD set. Automatic metrics score rendered outputs; the paper's human study validates those metrics rather
+    than scoring each benchmark run.
+  legend: >-
+    Read the main C4 curation row left-to-right, then the screenshot-to-code evaluation row right-to-left. Side branches
+    mark the separately sourced HARD data and the offline human metric-validation study.
 nodes:
   - id: c4
-    label: C4 Web Links
+    label: |-
+      C4 Validation Links
+      Scrape Real Webpages
+      Inline All CSS
+      One HTML File per Page
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: scrape
-    label: Scrape Inline
+      'y': 100
+  - id: raw
+    label: |-
+      Initial Real-Web Pool
+      127.9k CSS-Inlined
+      Single-HTML Pages
+      Preserve Layout + Complexity
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: auto_filter
+    label: |-
+      Automatic Filter + Dedup
+      Remove >100k GPT-2 Tokens
+      Remove Image-Only / Text-Only
+      Deduplicate 127.9k
+      -> 14k Candidates
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: Auto Filters
+      x: 600
+      'y': 100
+  - id: isolate
+    label: |-
+      Evaluation-Ready Pages
+      Remove External Dependencies
+      Replace Multimedia
+      with Placeholders
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 880
+      'y': 100
   - id: manual
-    label: Manual Pick
+    label: |-
+      Two-Author Curation
+      Joint 200 -> 75%
+      Then Split Random 7k
+      Standalone / Safety
+      Format / Diversity
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: sets
+    label: |-
+      Evaluation Sets
+      Main: 484 C4 Pages
+      HARD: 80 GitHub Pages
+      Separate Source
+      Same Filter Family
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: reference
-    label: Reference Shot
+      x: 1440
+      'y': 100
+  - id: hard_source
+    label: |-
+      HARD GitHub Pages
+      80 Pages
+      Allowed-License Repos
+      Final Selection to 80
+      Not Disclosed
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 270
+  - id: screenshot
+    label: |-
+      Model Input
+      Reference Screenshot Only
+      Source Code Not Exposed
+      Direct / Text-Augmented
+      Self-Revision Prompts
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1440
+      'y': 440
   - id: code
-    label: Generate Code
+    label: |-
+      Multimodal Generation
+      Produce HTML + CSS
+      Reference Source Code
+      Not Exposed
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Visual Eval
+      x: 1160
+      'y': 440
+  - id: render
+    label: |-
+      Browser Rendering
+      Execute Generated Code
+      Capture Generated
+      Webpage Screenshot
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: match
+    label: |-
+      Element Matching
+      Text + Non-Text Blocks
+      Hungarian Assignment
+      by Text Similarity
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: metrics
+    label: |-
+      Automatic Metrics
+      Block-Match / Text
+      Position / Color
+      High-Level CLIP
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      Design2Code Results
+      Block-Match / Text
+      Position / Color
+      Main + HARD CLIP
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
+  - id: human
+    label: |-
+      Separate Human Study
+      100 Examples x 5
+      Majority Vote
+      435 Win/Lose; 50/50 Split
+      79.9% Test Accuracy
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 650
 edges:
   - from: c4
-    to: scrape
+    to: raw
     type: primary
-  - from: scrape
-    to: filter
+  - from: raw
+    to: auto_filter
     type: primary
-  - from: filter
+  - from: auto_filter
+    to: isolate
+    type: primary
+  - from: isolate
     to: manual
     type: primary
   - from: manual
-    to: reference
+    to: sets
     type: primary
-  - from: reference
+  - from: hard_source
+    to: sets
+    type: data
+  - from: sets
+    to: screenshot
+    type: primary
+  - from: screenshot
     to: code
     type: primary
   - from: code
-    to: eval
+    to: render
     type: primary
+  - from: render
+    to: match
+    type: primary
+  - from: match
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
+    type: primary
+  - from: metrics
+    to: human
+    type: secondary
 modules: []

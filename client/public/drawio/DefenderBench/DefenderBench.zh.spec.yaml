@@ -5,75 +5,309 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DefenderBench 构建流程
-  description: 对齐论文的 DefenderBench 流程：从网络安全任务家族到模块化智能体环境评测。
-  legend: 实线箭头表示数据准备、环境搭建、智能体回合、任务指标和总分。
+  description: 对齐论文与实现的五类网络安全任务构建及八项报告指标流程。
+  legend: 实线表示固定版本工具链；任务节点保留论文与 loader 的差异，不把论文意图误写成发布实现。
 nodes:
-  - id: families
-    label: 任务家族
-    type: database
+  - id: evidence_boundary
+    label: |-
+      证据边界
+      arXiv 2506.00739v4
+      仓库 e431098e
+      Zenodo DOI 13118970
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prep
-    label: 数据预处理
-    type: process
+      'y': 330
+  - id: sources
+    label: |-
+      公开上游来源
+      无冻结整包数据集
+      工具链下载并缓存输入
+      上游版本可能漂移
+    type: database
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: env
-    label: 任务环境
+      'y': 330
+  - id: preprocess
+    label: |-
+      各任务预处理
+      固定种子打乱与筛选
+      测试与少样本抽取
+      CVEFix 另用种子 42
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: agent
-    label: 智能体接口
-    type: process
+      'y': 330
+  - id: suite
+    label: 五类任务
+    type: decision
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: episode
-    label: 回合执行
-    type: terminal
+      'y': 330
+  - id: intrusion
+    label: |-
+      网络入侵
+      固定实现为 Chain10 与 ToyCTF6
+      JSON/文本游戏 · 3 个动作
+    type: document
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: metrics
-    label: 任务指标
+      'y': 10
+  - id: malicious
+    label: |-
+      恶意内容检测
+      文本 20,137 · 网页 15,612
+      论文：测试 500 + 每类 ICL 10
+      网页 loader 缺陷：两池均为正类
     type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 170
+  - id: cti
+    label: |-
+      CTI 多选问答
+      2,500 → 2,338
+      测试 500 + ICL 20
+      论文：移除不可访问链接
+      loader 仅检查 URL 含 http
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 330
+  - id: vuln_detect
+    label: |-
+      漏洞检测
+      两个报告列共享同一语料
+      同一 2,732 行 Devign 测试集
+      同一种子 → 同一 500 行子集
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 490
+  - id: fixing
+    label: |-
+      漏洞修复
+      12,107 次提交 · 4,249 个项目
+      仓库筛选 → 8 种语言 × 30
+      240 个测试样本 · 论文/仓库有差异
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 650
+  - id: intrusion_episode
+    label: |-
+      入侵回合
+      动作 → 观察历史
+      最多 100 个智能体步骤
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 基准总分
-    type: document
+      'y': 90
+  - id: static_episode
+    label: |-
+      静态任务回合
+      最多 5 次总尝试
+      首答计为第 1 次
+      格式错误后反馈并重试
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 530
+  - id: intrusion_metrics
+    label: |-
+      两项入侵百分比
+      占领节点 / 总节点
+      是接管比例，非二元胜负
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 90
+  - id: task_metrics
+    label: |-
+      六个静态报告列
+      5 个 Macro-F1 列
+      CodeBLEU 权重
+      0.1 / 0.1 / 0.4 / 0.4
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 530
+  - id: aggregate
+    label: |-
+      论文表格 DefenderBench 总分
+      DefB = 8 列百分数求和 / 8
+      官方 runner 未计算该总分
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 330
+  - id: repeat
+    label: |-
+      评测报告
+      每项实验 5 次独立运行
+      报告运行均值
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 330
 edges:
-  - from: families
-    to: prep
+  - from: evidence_boundary
+    to: sources
     type: primary
-  - from: prep
-    to: env
+  - from: sources
+    to: preprocess
     type: primary
-  - from: env
-    to: agent
+  - from: preprocess
+    to: suite
     type: primary
-  - from: agent
-    to: episode
+  - from: suite
+    to: intrusion
     type: primary
-  - from: episode
-    to: metrics
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: suite
+    to: malicious
     type: primary
-  - from: metrics
-    to: score
+    style:
+      exitX: 1
+      exitY: 0.35
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: suite
+    to: cti
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: suite
+    to: vuln_detect
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.65
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: suite
+    to: fixing
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: intrusion
+    to: intrusion_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: malicious
+    to: static_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: cti
+    to: static_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: vuln_detect
+    to: static_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: fixing
+    to: static_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: intrusion_episode
+    to: intrusion_metrics
+    type: primary
+  - from: static_episode
+    to: task_metrics
+    type: primary
+  - from: intrusion_metrics
+    to: aggregate
+    type: primary
+  - from: task_metrics
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: repeat
     type: primary
 modules: []

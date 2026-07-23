@@ -1,0 +1,429 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedAlign 构建与评测流程
+  description: 与论文 v2 对齐地展示临床指令收集与 OMOP 到 XML 的病历准备、BM25 配对、303 条临床参考回复、六种配置生成、人工复核及自动指标相关性。
+  legend: 实线表示保留的策展与评测流；带标签决策区分去重、407 条匹配子集、top-5 相关病历、上下文处理与 API 结果。 虚线分支展示未匹配记录、访问与版本漂移，以及未发布评测器的边界。
+nodes:
+  - id: recruit
+    label: |-
+      通过邮件招募临床指令作者
+      共 15 名执业临床医生
+      覆盖 7 个医学专科
+      通过在线表单提交
+    type: user
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: collect
+    label: |-
+      第一阶段：收集指令
+      构想日常 EHR 工作情境
+      提交 1314 条问题或命令
+      附患者特征与临床语境
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 40
+  - id: dedup_gate
+    label: |-
+      是否存在 ROUGE-L 相似度
+      高于 0.7 的近重复指令？
+    type: decision
+    size: xl
+    position:
+      x: 660
+      'y': 40
+  - id: near_duplicate
+    label: |-
+      移除近乎相同的指令
+      不进入 983 条指令目录
+    type: terminal
+    size: xl
+    position:
+      x: 660
+      'y': 200
+  - id: catalog
+    label: |-
+      保留 MedAlign 指令目录
+      共 983 条去重指令
+      其中 407 条适用于一般患者
+      六大类与二十个子类
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: general_gate
+    label: |-
+      指令是否标记为
+      适用于一般患者？
+    type: decision
+    size: xl
+    position:
+      x: 1300
+      'y': 40
+  - id: catalog_only
+    label: |-
+      保留为仅含指令的记录
+      不匹配 EHR 也不生成参考回复
+      仍属于全部 983 条指令
+    type: terminal
+    size: xl
+    position:
+      x: 1300
+      'y': 200
+  - id: query
+    label: |-
+      第二阶段：构造检索查询
+      指令 + 患者特征
+      + 预期临床语境
+      对比 BM25Okapi 与随机采样
+    type: process
+    size: xl
+    position:
+      x: 1620
+      'y': 40
+  - id: ehr_pool
+    label: |-
+      准备纵向 EHR 索引
+      含时间戳的结构与文本事件
+      OMOP CDM → 每份记录一个 XML
+      随机抽取 77200 名患者
+    type: database
+    size: xl
+    position:
+      x: 1940
+      'y': 40
+  - id: retrieve
+    label: |-
+      检索并审核候选病历
+      BM25 为每条查询返回 top-5
+      按排名复核并在首个相关项停止
+      随机基线使用同一患者池
+    type: process
+    size: xl
+    position:
+      x: 1940
+      'y': 380
+  - id: relevance_gate
+    label: |-
+      top-5 中是否至少一份 EHR
+      经人工判定为相关？
+    type: decision
+    size: xl
+    position:
+      x: 1620
+      'y': 380
+  - id: unmatched
+    label: |-
+      不进入有依据回复的子集
+      top-5 中没有相关 EHR
+      指令仍保留在 983 条目录中
+    type: terminal
+    size: xl
+    position:
+      x: 1620
+      'y': 680
+  - id: response
+    label: |-
+      第三阶段：撰写专家回复
+      优先分配同专科非原作者
+      检查可行性与 EHR 信息充分性
+      以病历最新时间为锚作答
+    type: user
+    size: xl
+    position:
+      x: 1300
+      'y': 380
+  - id: release
+    label: |-
+      发布论文中的 MedAlign 合同
+      983 条指令 · 303 条参考回复
+      303 个相关配对 · 276 份不同 EHR
+      BM25 top-5 为 74% · 随机为 38%
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 380
+  - id: release_boundary
+    label: |-
+      访问与版本边界
+      完整数据需 Redivis + CITI + DUA
+      论文 v2 为 276 份 EHR；仓库称 275
+      回复阶段剔除量未披露
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 680
+  - id: evaluation
+    label: |-
+      评测六种模型配置
+      GPT-4 多配置 · Vicuna-7B/13B · MPT-7B
+      使用相同指令与匹配 EHR 提示
+      为生成预留 256 Tokens
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 380
+  - id: context_gate
+    label: |-
+      是否使用 GPT-4 32k
+      多步精炼配置？
+    type: decision
+    size: xl
+    position:
+      x: 340
+      'y': 380
+  - id: direct_context
+    label: |-
+      构造单上下文提示
+      扣除提示、指令与 256 Tokens
+      从病历开头截断
+      尽量保留最近的 EHR 内容
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 680
+  - id: mr_context
+    label: |-
+      执行多步精炼
+      将完整 EHR 切为 30k-token 块
+      从最早到最新依次处理
+      更新或保留上一版回复
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 680
+  - id: output_gate
+    label: |-
+      模型 API 是否返回
+      临床文本回复？
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 980
+  - id: filter_error
+    label: |-
+      保留内容过滤错误结果
+      44 题影响至少一个 GPT-4 配置
+      主分析正确性：失败输出记错
+      补充分析排除后为 259 题
+      主表 303 题的排名处理未披露
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 1260
+  - id: clinician_review
+    label: |-
+      九名临床医生盲法评测
+      向医生展示完整且未截断的 EHR
+      不评自己提交的指令或回复
+      随机模型顺序并允许并列
+      其中 50 个配对由三人复核
+    type: user
+    size: xl
+    position:
+      x: 340
+      'y': 980
+  - id: correctness
+    label: |-
+      记录二元临床正确性
+      临床不当、改变解释的错误
+      或未回答指令 → 错误
+      主分母为每种配置 303 个配对
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 980
+  - id: ranking
+    label: |-
+      汇总人工偏好
+      按相关性与适当性排序
+      报告平均排名与严格胜率
+      内容过滤错误的排名处理未披露
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 980
+  - id: automated
+    label: |-
+      计算自动文本生成指标
+      无源指标只使用标准参考回复
+      COMET 与 UniEval 另用 BM25 EHR 片段
+      将指标得分转换为模型排名
+    type: process
+    size: xl
+    position:
+      x: 1300
+      'y': 980
+  - id: report
+    label: |-
+      发布 MedAlign 评测结果
+      正确率 · 平均排名 · 两两胜率
+      指标排名与人工排名的平均 Kendall Tau
+      分析模型与上下文长度影响
+    type: terminal
+    size: xl
+    position:
+      x: 1620
+      'y': 980
+  - id: no_harness
+    label: |-
+      可复现性边界
+      已锁定公开仓库只有样例而无评测器
+      自由文本输出不存在答案解析器
+      仓库未发布自动指标代码版本
+    type: document
+    size: xl
+    position:
+      x: 1620
+      'y': 1260
+edges:
+  - from: recruit
+    to: collect
+    type: primary
+  - from: collect
+    to: dedup_gate
+    type: primary
+  - from: dedup_gate
+    to: catalog
+    type: primary
+    label: 否 · 最终保留 983 条
+    labelPosition: end
+  - from: dedup_gate
+    to: near_duplicate
+    type: optional
+    label: 是 · 移除
+    labelPosition: end
+  - from: catalog
+    to: general_gate
+    type: primary
+  - from: general_gate
+    to: query
+    type: primary
+    label: 是 · 407 条指令
+    labelPosition: end
+  - from: general_gate
+    to: catalog_only
+    type: optional
+    label: 否 · 仅保留在目录
+    labelPosition: end
+  - from: query
+    to: retrieve
+    type: primary
+  - from: ehr_pool
+    to: retrieve
+    type: primary
+  - from: retrieve
+    to: relevance_gate
+    type: primary
+  - from: relevance_gate
+    to: response
+    type: primary
+    label: 是 · 303 条指令
+    labelPosition: end
+  - from: relevance_gate
+    to: unmatched
+    type: optional
+    label: 否 · 无有依据回复
+    labelPosition: end
+  - from: response
+    to: release
+    type: primary
+  - from: catalog
+    to: release
+    type: optional
+    label: 全部 983 条指令记录
+    labelPosition: end
+    waypoints:
+      - x: 1100
+        'y': 250
+      - x: 1100
+        'y': 300
+  - from: release
+    to: release_boundary
+    type: optional
+    label: 受限访问与版本漂移
+    labelPosition: end
+  - from: release
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: context_gate
+    type: primary
+  - from: context_gate
+    to: mr_context
+    type: primary
+    label: 是 · GPT-4 32k + MR
+    labelPosition: end
+  - from: context_gate
+    to: direct_context
+    type: primary
+    label: 否 · 单上下文
+    labelPosition: end
+  - from: mr_context
+    to: output_gate
+    type: primary
+  - from: direct_context
+    to: output_gate
+    type: primary
+    waypoints:
+      - x: 440
+        'y': 870
+      - x: 120
+        'y': 870
+  - from: output_gate
+    to: clinician_review
+    type: primary
+    label: 是 · 评测回复
+    labelPosition: end
+  - from: output_gate
+    to: filter_error
+    type: optional
+    label: 否 · API 内容过滤
+    labelPosition: end
+  - from: filter_error
+    to: correctness
+    type: optional
+    label: 仅主分析正确性 · 强制记错
+    labelPosition: end
+    waypoints:
+      - x: 120
+        'y': 1480
+      - x: 760
+        'y': 1480
+      - x: 760
+        'y': 1180
+  - from: clinician_review
+    to: correctness
+    type: primary
+  - from: correctness
+    to: ranking
+    type: primary
+  - from: ranking
+    to: automated
+    type: primary
+  - from: automated
+    to: report
+    type: primary
+  - from: report
+    to: no_harness
+    type: optional
+    label: 公开代码边界
+    labelPosition: end
+modules: []

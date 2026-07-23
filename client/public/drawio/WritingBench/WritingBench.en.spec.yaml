@@ -1,0 +1,264 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WritingBench Query Construction and Dynamic-Criteria Evaluation
+  description: >-
+    WritingBench creates a six-domain, 100-subdomain taxonomy, drafts and diversifies queries with GPT-4o and
+    Claude-3.5-Sonnet, has 30 trained annotators collect and clean supporting materials, and uses five experts to
+    filter, adapt, prune, and cross-validate the final 1,000 bilingual queries. Claude-3.7 generates exactly five
+    query-specific criteria, humans review them, and Claude-3.7 or the 155K-item Qwen2.5-7B critic scores each criterion
+    from 1 to 10; the five scores are averaged.
+  legend: >-
+    Source: WritingBench arXiv:2503.05244v4, Figure 2, Sections 3.1.1-3.1.2, Table 2, Sections 3.2-3.3, Section 4.1,
+    Table 4, and Appendices A.3, A.5.2, B, and C.2-C.6; official repository https://github.com/X-PLUG/WritingBench.
+    Version pin: current/paper-v4 1,000-query release, not the initial 1,239-query snapshot. Section 3.3 24K-to-12K SFT
+    selection is downstream validation, not benchmark construction.. Solid arrows show the main flow explicitly
+    supported by the paper or official documentation.
+nodes:
+  - id: writing_taxonomy
+    label: 6 Domains / 100 Subdomains
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: llm_drafts
+    label: GPT-4o + Claude Drafts
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: six_dim_diversity
+    label: Six-Dimension Diversification
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: material_collection
+    label: 30-Annotator Material Collection
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: expert_gate
+    label: Five-Expert Screen Pass?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: discard_query
+    label: Discard Query
+    type: loss
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: refine_query
+    label: Adapt Query + Prune Material
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: peer_validation
+    label: Peer-Validate Expert Additions
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: writing_set
+    label: 1,000 Queries / 445 ZH + 555 EN
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: criteria_generator
+    label: 'Claude-3.7: Exactly 5 Criteria'
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+  - id: criteria_review
+    label: Human Criteria Review
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: response_generation
+    label: Generate Writing Response
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: judge_router
+    label: Claude Judge or Trained Critic
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: claude_judge
+    label: Claude-3.7 Judge
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: critic_judge
+    label: Qwen2.5-7B Critic
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 680
+  - id: criterion_scores
+    label: Five Independent Scores (1-10)
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: mean_score
+    label: Mean of Five Criteria
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: writing_report
+    label: Overall + Requirement Reports
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: model_response_pool
+    label: ~40-Model Response Pool
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: claude_labels
+    label: Claude-3.7 Criterion Labels
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 760
+  - id: critic_sft
+    label: ~155K SFT -> Qwen2.5-7B Critic
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+edges:
+  - from: writing_taxonomy
+    to: llm_drafts
+    type: primary
+  - from: llm_drafts
+    to: six_dim_diversity
+    type: primary
+  - from: six_dim_diversity
+    to: material_collection
+    type: primary
+  - from: material_collection
+    to: expert_gate
+    type: primary
+  - from: expert_gate
+    to: discard_query
+    type: optional
+    label: Reject
+    labelPosition: end
+  - from: expert_gate
+    to: refine_query
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: refine_query
+    to: writing_set
+    type: primary
+  - from: refine_query
+    to: peer_validation
+    type: optional
+    label: Expert Additions
+    labelPosition: end
+  - from: peer_validation
+    to: writing_set
+    type: primary
+  - from: writing_set
+    to: criteria_generator
+    type: primary
+  - from: criteria_generator
+    to: criteria_review
+    type: primary
+  - from: criteria_review
+    to: response_generation
+    type: primary
+    label: Approved
+    labelPosition: end
+  - from: criteria_review
+    to: criteria_generator
+    type: optional
+    label: Revise
+    labelPosition: start
+  - from: response_generation
+    to: judge_router
+    type: primary
+  - from: judge_router
+    to: claude_judge
+    type: primary
+    label: Claude-3.7
+    labelPosition: end
+  - from: judge_router
+    to: critic_judge
+    type: primary
+    label: Critic
+    labelPosition: end
+  - from: claude_judge
+    to: criterion_scores
+    type: primary
+  - from: critic_judge
+    to: criterion_scores
+    type: primary
+  - from: criterion_scores
+    to: mean_score
+    type: primary
+  - from: mean_score
+    to: writing_report
+    type: primary
+  - from: writing_set
+    to: model_response_pool
+    type: data
+    label: Critic Training
+    labelPosition: center
+    waypoints:
+      - x: 2300
+        'y': 100
+      - x: 2300
+        'y': 700
+  - from: model_response_pool
+    to: claude_labels
+    type: data
+  - from: claude_labels
+    to: critic_sft
+    type: primary
+  - from: critic_sft
+    to: critic_judge
+    type: data
+    label: Trained Critic
+    labelPosition: end
+modules: []

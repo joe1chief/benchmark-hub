@@ -1,0 +1,158 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GenEval Build Process
+  description: >-
+    Versioned prompt generation, image production, detector and color verification, binary scoring, and human
+    validation.
+  legend: >-
+    Dotted arrow denotes pinned paper/repository evidence; solid arrows denote benchmark construction and evaluation.
+    Prompts and metadata live in the repository; no separate official dataset release exists.
+nodes:
+  - id: evidence
+    label: |-
+      Primary evidence
+      arXiv:2310.11513v1
+      official repo af4902f2
+      no separate official dataset
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: templates
+    label: |-
+      Define six task templates
+      80 COCO classes · 10 colors
+      counts 2–4 · 4 positions
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 100
+  - id: sampling
+    label: |-
+      Sample with seed 43
+      all 80 single-object prompts
+      five other tasks × 100
+      YAML-form deduplicate
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 100
+  - id: prompt_set
+    label: |-
+      Release 553 structured prompts
+      task counts: 80/99/80/94/100/100
+      include/exclude metadata clauses
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 100
+  - id: generate
+    label: |-
+      Generate 4 images per prompt
+      keep each model's default settings
+      preserve evaluation metadata
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 100
+  - id: detect
+    label: |-
+      COCO Mask2Former detection
+      threshold 0.3 · counting 0.9
+      maximum 16 objects per class
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 100
+  - id: geometry
+    label: |-
+      Check include/exclude constraints
+      count + center-based position
+      offset 0.1 dims · direction >0.5
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 390
+  - id: color_binding
+    label: |-
+      CLIP ViT-L/14 color classifier
+      box crop + segmentation mask
+      #999 background · 10 candidates
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 390
+  - id: binary
+    label: |-
+      Binary correctness per image
+      pass only if all requested clauses pass
+      retain a failure reason
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 390
+  - id: aggregate
+    label: |-
+      Mean correctness over images
+      report all six task scores
+      unweighted mean is overall score
+    type: terminal
+    size: xl
+    position:
+      x: 560
+      'y': 390
+  - id: human_validation
+    label: |-
+      Human validation: 6,000 labels
+      1,200 images · 5 annotators each
+      83% vs 88%; 860 unanimous → 91%
+    type: terminal
+    size: xl
+    position:
+      x: 300
+      'y': 390
+edges:
+  - from: evidence
+    to: templates
+    type: data
+  - from: templates
+    to: sampling
+    type: primary
+  - from: sampling
+    to: prompt_set
+    type: primary
+  - from: prompt_set
+    to: generate
+    type: primary
+  - from: generate
+    to: detect
+    type: primary
+  - from: detect
+    to: geometry
+    type: primary
+  - from: geometry
+    to: color_binding
+    type: primary
+  - from: color_binding
+    to: binary
+    type: primary
+  - from: binary
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: human_validation
+    type: primary
+modules: []

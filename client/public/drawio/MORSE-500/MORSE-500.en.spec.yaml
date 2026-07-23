@@ -1,0 +1,277 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MORSE-500 Build Process
+  description: >-
+    Paper-aligned construction, two-stage quality assurance, and exact-match evaluation of 500 question-embedded videos
+    across six reasoning categories.
+  legend: >-
+    Failed technical or cognitive checks return to script refinement; extractor exceptions remain in the scoring flow.
+    Source: arXiv:2506.05523v1, Sections 2.1-3.1; official code commit 07743de.
+nodes:
+  - id: design
+    label: |-
+      Define Six Reasoning Categories
+      Adapt Benchmarks, Animations,
+      Robotics and Physics Tasks
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: implement
+    label: |-
+      Prototype and Implement Scripts
+      Domain Experts · Vibe Coding
+      Manim · Matplotlib · OpenCV · MoviePy
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: generate
+    label: |-
+      Parameterize and Generate Variants
+      Five Complexity Dimensions
+      Deterministic Labels · Embedded Questions
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: auto_qc
+    label: |-
+      Automated Checks Pass?
+      ≥512p · Codec · Complete Content
+      Parameter-label Consistency
+    type: decision
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: human_qc
+    label: |-
+      Author Review Passes?
+      Clear · One Answer · Visually Grounded
+      Appropriate, Human-solvable Difficulty
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: release
+    label: |-
+      Assemble MORSE-500
+      500 Videos · 3.1 Hours
+      A64 · M84 · P64
+      Plan100 · S108 · T80
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: repair
+    label: |-
+      Refine Scripts and Parameters
+      Fix Artifacts, Timing and Contrast
+      Typically 2-3 Rounds per Category
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 280
+  - id: prepare
+    label: |-
+      Prepare Evaluation Video
+      Preserve Aspect Ratio
+      Maximum Side 512 Pixels
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 520
+  - id: native_route
+    label: Native Video Input?
+    type: decision
+    size: lg
+    position:
+      x: 1160
+      'y': 540
+  - id: full_video
+    label: Supply Entire Clip
+    type: process
+    size: lg
+    position:
+      x: 900
+      'y': 400
+  - id: frame_input
+    label: |-
+      Sample Image Frames
+      2 FPS · At Most 32
+    type: process
+    size: lg
+    position:
+      x: 900
+      'y': 680
+  - id: infer
+    label: |-
+      Run Model Inference
+      “Answer the question in this video.”
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 540
+  - id: extract
+    label: |-
+      Extract Short Answer
+      Qwen2.5-72B-Instruct-AWQ
+      Temperature 0 · First Nonempty Line
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 540
+  - id: extraction_ok
+    label: Extractor Call Succeeds?
+    type: decision
+    size: lg
+    position:
+      x: 80
+      'y': 560
+  - id: candidate
+    label: |-
+      Use Extracted Candidate
+      Strip Outer Whitespace
+    type: process
+    size: lg
+    position:
+      x: 80
+      'y': 860
+  - id: extraction_error
+    label: |-
+      Record Literal “Error”
+      Keep Row for Comparison
+    type: loss
+    size: lg
+    position:
+      x: 340
+      'y': 860
+  - id: compare
+    label: |-
+      Exact String Comparison
+      Omit Stripped-empty or “non” Gold
+      astype(str): Missing → “nan” and Remains
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 840
+  - id: score
+    label: |-
+      Report Accuracy
+      Correct / Remaining Questions
+      Overall and Six Categories
+    type: terminal
+    size: xl
+    position:
+      x: 900
+      'y': 840
+edges:
+  - from: design
+    to: implement
+    type: primary
+  - from: implement
+    to: generate
+    type: primary
+  - from: generate
+    to: auto_qc
+    type: primary
+  - from: auto_qc
+    to: human_qc
+    type: primary
+    label: Pass
+    labelPosition: center
+  - from: auto_qc
+    to: repair
+    type: optional
+    label: Fail · technical
+    labelPosition: center
+  - from: human_qc
+    to: release
+    type: primary
+    label: Pass
+    labelPosition: center
+  - from: human_qc
+    to: repair
+    type: optional
+    label: Fail · cognitive
+    labelPosition: center
+  - from: repair
+    to: implement
+    type: optional
+    label: Revise and regenerate
+    labelPosition: center
+    waypoints:
+      - x: 720
+        'y': 440
+      - x: 400
+        'y': 460
+      - x: 400
+        'y': 180
+  - from: release
+    to: prepare
+    type: primary
+  - from: prepare
+    to: native_route
+    type: primary
+  - from: native_route
+    to: full_video
+    type: primary
+    label: Yes · full clip
+    labelPosition: center
+  - from: native_route
+    to: frame_input
+    type: primary
+    label: No · frames
+    labelPosition: center
+  - from: full_video
+    to: infer
+    type: primary
+  - from: frame_input
+    to: infer
+    type: primary
+  - from: infer
+    to: extract
+    type: primary
+  - from: extract
+    to: extraction_ok
+    type: primary
+  - from: extraction_ok
+    to: candidate
+    type: primary
+    label: Yes · candidate
+    labelPosition: center
+  - from: extraction_ok
+    to: extraction_error
+    type: optional
+    label: No · exception
+    labelPosition: center
+  - from: candidate
+    to: compare
+    type: primary
+    waypoints:
+      - x: 240
+        'y': 780
+      - x: 720
+        'y': 780
+  - from: extraction_error
+    to: compare
+    type: optional
+  - from: compare
+    to: score
+    type: primary
+modules: []

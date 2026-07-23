@@ -1,0 +1,167 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HealthBench Hard 构建流程
+  description: 对齐论文、公开数据与当前参考 runner 的 HealthBench Hard 难例筛选及带符号量表评分流程。
+  legend: 实线表示公开的构建与评测主流程；虚线表示固定的一手证据及公开/私有资产边界。后加的可选 runner 参数不属于论文协议。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2505.08775v1
+      数据 40ee1968 · runner 652c89d0
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 96
+  - id: full
+    label: |-
+      HealthBench 全量来源
+      5,000 段对话 · 48,562 条准则
+      带符号分值 −10 到 10
+    type: database
+    size: xl
+    position:
+      x: 304
+      'y': 96
+  - id: models
+    label: |-
+      五个提供商模型
+      o3 · Grok 3 · Gemini 2.5 Pro
+      Claude 3.7 扩展思考
+      Llama 4 Maverick
+    type: process
+    size: xl
+    position:
+      x: 568
+      'y': 96
+  - id: score_candidates
+    label: |-
+      逐例计算分数
+      逐准则判断命中或未命中
+      带符号总和 / 正分上限
+    type: process
+    size: xl
+    position:
+      x: 832
+      'y': 96
+  - id: all_zero
+    label: |-
+      删除无正分样本
+      无模型获得正分
+      约移除 1.5%
+    type: process
+    size: xl
+    position:
+      x: 1096
+      'y': 96
+  - id: average
+    label: |-
+      对提供商分数取平均
+      避免只针对单一模型家族
+      选最低 1,000 例
+    type: process
+    size: xl
+    position:
+      x: 1360
+      'y': 96
+  - id: hard_set
+    label: |-
+      HealthBench Hard 公开行:
+      发布 2025-05-08-21-00-10
+      SHA: b0320430 · 1,000 行
+    type: database
+    size: xl
+    position:
+      x: 1624
+      'y': 96
+  - id: inference
+    label: |-
+      生成被评回答
+      完整对话作为上下文
+      回答最后用户消息
+    type: process
+    size: xl
+    position:
+      x: 1624
+      'y': 384
+  - id: grade
+    label: |-
+      参考量表评分器
+      GPT-4.1-2025-04-14
+      逐准则输出 JSON 布尔值
+    type: process
+    size: xl
+    position:
+      x: 1360
+      'y': 384
+  - id: example_score
+    label: |-
+      原始样本分
+      命中带符号分值总和 / 正分上限
+      负分准则可降低分数
+    type: process
+    size: xl
+    position:
+      x: 1096
+      'y': 384
+  - id: aggregate
+    label: |-
+      HealthBench Hard 分数
+      1,000 例均值 · 截断到 [0,1]
+      维度切片沿用同一规则
+    type: terminal
+    size: xl
+    position:
+      x: 832
+      'y': 384
+  - id: artifact_boundary
+    label: |-
+      资产边界
+      筛选分数矩阵不在公开行中
+      保留少量私有同分布留出集
+      可选 GPT-5.4/长度参数为后加功能
+    type: document
+    size: xl
+    position:
+      x: 568
+      'y': 384
+edges:
+  - from: evidence
+    to: full
+    type: data
+  - from: full
+    to: models
+    type: primary
+  - from: models
+    to: score_candidates
+    type: primary
+  - from: score_candidates
+    to: all_zero
+    type: primary
+  - from: all_zero
+    to: average
+    type: primary
+  - from: average
+    to: hard_set
+    type: primary
+  - from: hard_set
+    to: inference
+    type: primary
+  - from: inference
+    to: grade
+    type: primary
+  - from: grade
+    to: example_score
+    type: primary
+  - from: example_score
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: artifact_boundary
+    type: data
+modules: []

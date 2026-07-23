@@ -4,76 +4,148 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CountBench 构建流程
-  description: 对齐论文的 CountBench 流程：从 LAION-400M 过滤到人工验证的 540 张图像计数分类评测。
-  legend: 实线箭头表示数字过滤、对象数量验证、平衡和零样本评测。
+  title: CountBench 构建与评测流程
+  description: 按固定论文与发布版本，还原从 LAION-400M 构建 540 条 CountBench 测试集，以及论文定义的九描述零样本计数选择与两项指标。
+  legend: 实线表示基准构建与评测；虚线表示论文和发布版本证据边界。
 nodes:
+  - id: evidence
+    label: |-
+      论文 + 发布版本边界
+      arXiv:2302.12066v1 · §§4、5.1
+      官方 JSON @ 2c573a8：540 条
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: laion
-    label: LAION-400M
+    label: |-
+      公开 LAION-400M
+      图像—描述对
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: num
-    label: 数字过滤
+      'y': 300
+  - id: number_filter
+    label: |-
+      保留英文拼写计数词 two 至 ten
+      非拼写数字或大于 ten 的数字
+      多用于日期、时间与地址
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: detect
-    label: 检测校验
+      x: 320
+      'y': 300
+  - id: detector
+    label: |-
+      现成目标检测器
+      统计每类对象的检测数量
+      描述数量须匹配数量最多的类别
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 600
+      'y': 300
+  - id: candidate
+    label: |-
+      自动过滤候选
+      “two”超过 158K
+      “ten”仅约 100
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 300
   - id: balance
-    label: 数量平衡
+    label: |-
+      初步平衡每个数量
+      每个数量保留 100–200 个候选
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: human
-    label: 人工验证
+      x: 1160
+      'y': 300
+  - id: verify
+    label: |-
+      人工验证
+      描述数量必须匹配
+      图中清晰可见对象
     type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: 540图像
-    type: document
+      x: 1440
+      'y': 300
+  - id: dataset
+    label: |-
+      最终平衡：60 × 9 = 540
+      CountBench 仅作测试集
+      与计数训练集 C 无重叠
+    type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 零样本评测
+      x: 1720
+      'y': 300
+  - id: captions
+    label: |-
+      创建九条候选描述
+      数量覆盖 two 至 ten
+      一条正确 + 八条反事实
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 300
+  - id: similarity
+    label: |-
+      CLIP-B/32 + BASIC-S 零样本评测
+      计算九条描述的图文相似度
+      最高得分对应预测数量
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+  - id: metrics
+    label: |-
+      计数准确率
+      平均 [预测数量 = 真实数量]
+      平均绝对数量偏差
+      平均 |预测数量 − 真实数量|
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2560
+      'y': 300
 edges:
+  - from: evidence
+    to: laion
+    type: data
   - from: laion
-    to: num
+    to: number_filter
     type: primary
-  - from: num
-    to: detect
+  - from: number_filter
+    to: detector
     type: primary
-  - from: detect
+  - from: detector
+    to: candidate
+    type: primary
+  - from: candidate
     to: balance
     type: primary
   - from: balance
-    to: human
+    to: verify
     type: primary
-  - from: human
-    to: bench
+  - from: verify
+    to: dataset
     type: primary
-  - from: bench
-    to: eval
+  - from: dataset
+    to: captions
+    type: primary
+  - from: captions
+    to: similarity
+    type: primary
+  - from: similarity
+    to: metrics
     type: primary
 modules: []

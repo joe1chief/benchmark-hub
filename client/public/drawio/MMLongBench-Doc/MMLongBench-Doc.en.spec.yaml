@@ -1,91 +1,664 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLongBench-Doc Build Process
+  title: MMLongBench-Doc v3 Build and Evaluation Process
   description: >-
-    Paper-aligned construction of MMLongBench-Doc: build a long-document multimodal benchmark from lengthy PDFs, expert
-    questions, evidence annotations, cross-page reasoning, and unanswerable cases, then score LVLM answers by F1.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-v3 and fixed-repository reconstruction of 135 long PDFs and 1,082 expert questions, including source/new
+    annotation routes, three-round quality control, visual versus OCR input processing, the GPT-4o extraction prompt,
+    parser failure behavior, format-specific rules, and generalized Accuracy/F1 denominators.
+  legend: >-
+    Solid arrows are execution paths; dotted arrows mark provenance or drift. Decision outcomes use English labels. The
+    academic-color theme supplies the default 11pt node font. This stand-alone benchmark is distinct from the 961-row
+    preprocessed MMLongBench-Doc slice embedded in MMLongBench.
 nodes:
-  - id: n1
-    label: Lengthy PDFs
-    type: database
+  - id: evidence
+    label: |-
+      Fixed Evidence Boundary
+      arXiv 2407.01523v3 · 12 Nov 2024
+      Git + Data 88b5f09 · 1,082 Rows
+      v3/Data = 1,082; README Says 1,091
+      Apache-2.0 Code · CC BY-NC 4.0 Data
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Rich Layouts
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Expert Qs
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Evidence Tags
-    type: document
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Cross-Page Qs
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: No-Answer Qs
+      'y': 520
+  - id: document_route
+    label: Document Source?
     type: decision
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: LVLM/OCR Eval
-    type: process
+      x: 320
+      'y': 520
+  - id: existing_docs
+    label: |-
+      76 Existing-dataset PDFs
+      DUDE · SlideVQA
+      ChartQA · FinanceBench
+      Keep >15 Pages; Down-sample Sources
+      Exclude License-restricted Documents
+    type: database
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: F1 Score
-    type: terminal
+      x: 600
+      'y': 380
+  - id: new_docs
+    label: |-
+      59 Newly Collected PDFs
+      24 arXiv Papers
+      21 Guidelines · 14 Brochures
+      ManualsLib + Google Search
+      Manually Check Academic Availability
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 660
+  - id: annotators
+    label: |-
+      Train Ten Author-Annotators
+      Doctors/PhD Students · Three Practice PDFs
+      Then 54 Batches · 2–4 PDFs Each
+      60–90 Minutes per PDF
+      Review Each Batch + Give Feedback
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: question_route
+    label: Question Route?
+    type: decision
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 520
+  - id: new_questions
+    label: |-
+      Author 965 New Questions
+      ≈3 per Existing PDF · ≈6 per New PDF
+      Favor Cross-page and Unanswerable
+      Balance Text · Layout · Table
+      Chart · Image + Evidence Metadata
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 720
+  - id: source_outcome
+    label: |-
+      Audit 425 Source Questions
+      Six Defects: Evidence · Repetition
+      Ambiguity · Decontextualization
+      Low Relevance · Shortcut
+      Retain, Revise, or Remove?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+  - id: retain_source
+    label: |-
+      Retain
+      No Blocking Defect
+      Preserve Answer + Metadata
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 140
+  - id: revise_source
+    label: |-
+      Revise · 32.2% of 425
+      Correct Answer / Evidence
+      Decontextualize or Clarify
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 300
+  - id: remove_source
+    label: |-
+      Remove · 46.1% of 425
+      Repetition / Shortcut or
+      Other Unrepairable Defect
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 460
+  - id: candidates
+    label: |-
+      Merge 1,176 Candidates
+      211 Retained/Revised + 965 New
+      Questions + Short Answers
+      Evidence Pages / Sources / Format
+    type: database
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: relevance_gate
+    label: |-
+      GPT-4o Correct
+      without the PDF?
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: relevance_remove
+    label: |-
+      QC1 Removal
+      94 Low Document-relevance Items
+      Exclude from Final Denominator
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 360
+  - id: reflection_gate
+    label: |-
+      GPT-4o with PDF
+      Disagrees with Reference?
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 620
+  - id: reflection_revise
+    label: |-
+      QC2 Expert Self-reflection
+      Return Inconsistencies to Annotator
+      13.8% Identified as Problematic
+      Revise Annotation as Needed
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 500
+  - id: crosscheck_gate
+    label: |-
+      Independent Annotator
+      Flags an Inconsistency?
+    type: decision
+    size: xl
+    position:
+      x: 4240
+      'y': 620
+  - id: adjudicate
+    label: |-
+      QC3 Meta-annotation
+      17.5% Inconsistent · κ = 0.42
+      Two Primary Authors Decide
+      Revise When Necessary
+    type: user
+    size: xl
+    position:
+      x: 4520
+      'y': 500
+  - id: dataset
+    label: |-
+      MMLongBench-Doc v3
+      135 PDFs · 1,082 Questions
+      184 Source + 898 New
+      494 Single · 365 Cross-page
+      223 Unanswerable
+    type: database
+    size: xl
+    position:
+      x: 4800
+      'y': 620
+  - id: vision_input
+    label: |-
+      LVLM Visual Route
+      Render Every PDF Page at 144 DPI
+      GPT-4o/GPT-4V/Gemini: Page Images
+      Claude: At Most 20 Images
+      Open Models: Concatenate to 1 or 5
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 920
+  - id: ocr_input
+    label: |-
+      OCR + LLM Route
+      Tesseract Extracts Page Text
+      Truncate Beyond Model Context
+      Charts / Images Remain Lossy
+      Comparison Route, Not Gold Input
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 1160
+  - id: extraction
+    label: |-
+      Generate then Extract
+      Prompt: Document + Question; Be Concise
+      Candidate T=0 · max_new_tokens=1024
+      GPT-4o Emits “Extracted answer:”
+      + “Answer format:”; T=0 · max_tokens=256
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1040
+  - id: parse_gate
+    label: |-
+      Both Marker Splits
+      Produce an Answer?
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 1040
+  - id: local_zero
+    label: |-
+      Parse / Extractor Failure
+      Extractor Exception Returns “Failed”
+      run_lvlm.py: “Failed to extract” → 0
+      run_api.py: Uncaught Parse Exception
+      API Evaluation Aborts
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 780
+  - id: answer_format
+    label: |-
+      Reference Answer Format?
+      Extractor-declared Format Is Ignored
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 1300
+  - id: string_score
+    label: |-
+      Str / None
+      Normalize Case, Units, Quotes
+      Regex-sensitive → Exact Equality
+      Else ANLS, Threshold τ = 0.5
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1080
+  - id: integer_score
+    label: |-
+      Int
+      Convert Prediction through float → int
+      Exact Equality, Else 0
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1240
+  - id: float_score
+    label: |-
+      Float
+      Strip Units / Percent Sign
+      Accept x/100, x, or 100x
+      Relative Tolerance = 1%
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1400
+  - id: list_score
+    label: |-
+      List
+      Python eval on “[ … ]” Prediction
+      Unequal Length → 0; Sort Elements
+      Exact Numeric/Sensitive Else
+      Minimum Pairwise ANLS
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1560
+  - id: report
+    label: |-
+      Generalized Metrics
+      Accuracy = Mean over 1,082 Scored Rows
+      Positive Recall Denominator = 859
+      Precision Denominator = Predicted Positives
+      F1 = Harmonic Mean; Groups 494/365/223
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 1300
 edges:
-  - from: n1
-    to: n2
+  - from: evidence
+    to: document_route
     type: primary
-  - from: n2
-    to: n3
+  - from: document_route
+    to: existing_docs
     type: primary
-  - from: n3
-    to: n4
+    label: Existing
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: document_route
+    to: new_docs
     type: primary
-  - from: n4
-    to: n5
+    label: New
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: existing_docs
+    to: annotators
     type: primary
-  - from: n5
-    to: n6
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: new_docs
+    to: annotators
     type: primary
-  - from: n6
-    to: n7
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: annotators
+    to: question_route
     type: primary
-  - from: n7
-    to: n8
+  - from: question_route
+    to: source_outcome
     type: primary
+    label: Source
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: question_route
+    to: new_questions
+    type: primary
+    label: New
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: source_outcome
+    to: retain_source
+    type: primary
+    label: Retain
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+  - from: source_outcome
+    to: revise_source
+    type: primary
+    label: Revise
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: source_outcome
+    to: remove_source
+    type: primary
+    label: Remove
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+  - from: retain_source
+    to: candidates
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: revise_source
+    to: candidates
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: new_questions
+    to: candidates
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.85
+  - from: candidates
+    to: relevance_gate
+    type: primary
+  - from: relevance_gate
+    to: relevance_remove
+    type: primary
+    label: 'Yes'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: relevance_gate
+    to: reflection_gate
+    type: primary
+    label: 'No'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: reflection_gate
+    to: reflection_revise
+    type: primary
+    label: 'Yes'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: reflection_gate
+    to: crosscheck_gate
+    type: primary
+    label: 'No'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.7
+  - from: reflection_revise
+    to: crosscheck_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: crosscheck_gate
+    to: adjudicate
+    type: primary
+    label: 'Yes'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: crosscheck_gate
+    to: dataset
+    type: primary
+    label: 'No'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.7
+  - from: adjudicate
+    to: dataset
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: dataset
+    to: vision_input
+    type: primary
+    label: Visual
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0.25
+      exitY: 1
+      entryX: 1
+      entryY: 0.5
+  - from: dataset
+    to: ocr_input
+    type: primary
+    label: OCR text
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0.75
+      exitY: 1
+      entryX: 1
+      entryY: 0.5
+  - from: vision_input
+    to: extraction
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.3
+  - from: ocr_input
+    to: extraction
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.7
+  - from: extraction
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: answer_format
+    type: primary
+    label: Valid
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.7
+      entryX: 1
+      entryY: 0.5
+  - from: parse_gate
+    to: local_zero
+    type: primary
+    label: Invalid
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.3
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: string_score
+    type: primary
+    label: String
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.15
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: integer_score
+    type: primary
+    label: Integer
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.38
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: float_score
+    type: primary
+    label: Float
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.62
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: list_score
+    type: primary
+    label: List
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.85
+      entryX: 1
+      entryY: 0.5
+  - from: string_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.2
+  - from: integer_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.4
+  - from: float_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.6
+  - from: list_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.8
 modules: []

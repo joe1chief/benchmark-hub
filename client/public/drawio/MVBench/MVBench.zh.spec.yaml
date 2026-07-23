@@ -1,0 +1,461 @@
+meta:
+  profile: academic-paper
+  source: edited
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MVBench 证据对齐构建与评测流程
+  description: 将论文 v4 的静态到动态任务设计与自动问答构建、修正后的公开数据版本，以及独立版本化的 VideoChat2 参考评测笔记本分层展示，避免把论文规则与发布数据或后续代码混为一谈。
+  legend: 实线箭头表示论文披露的构建或代码评测流程，判断分支标明真实结果；中间未连接卡片仅记录发布、权利和 论文到数据的边界，不暗示论文未披露的处理步骤。
+nodes:
+  - id: evidence
+    label: |-
+      固定一手证据
+      论文 · arXiv 2311.17005v4
+      官方仓库 · 4dd8210b
+      HF 数据集 · 230a2d4f
+      审计精确版本
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 192
+  - id: spatial_tasks
+    label: |-
+      扩展九类空间任务
+      动作 · 物体 · 位置 · 场景
+      计数 · 属性 · 姿态 · 字符
+      认知 → 20 项时序任务
+      排除单帧捷径
+    type: process
+    size: xl
+    position:
+      x: 352
+      'y': 192
+  - id: sources
+    label: |-
+      选择 11 个公开视频数据集
+      第一 / 第三人称视角
+      室内 / 室外场景
+      真实 / 模拟视频
+    type: database
+    size: xl
+    position:
+      x: 624
+      'y': 192
+  - id: temporal_gate
+    label: |-
+      视频片段是否具备时序敏感性？
+      包含有意义的运动
+      主要为 5-35 秒
+    type: decision
+    size: xl
+    position:
+      x: 896
+      'y': 192
+  - id: exclude
+    label: |-
+      排除候选样本
+      运动可忽略
+      上下文过长
+      未通过数据源专用规则
+    type: terminal
+    size: xl
+    position:
+      x: 896
+      'y': 512
+  - id: source_rules
+    label: |-
+      应用难度 + 数据源规则
+      难度合适且答案可区分？
+      STAR · 平移视频起止点
+      CLEVRER · 排除超过 10 个条件
+    type: process
+    size: xl
+    position:
+      x: 1168
+      'y': 192
+  - id: source_rule_gate
+    label: 应用难度与数据源规则后是否符合条件？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 192
+  - id: mcq_gate
+    label: 是否已有可用的多项选择问答？
+    type: decision
+    size: xl
+    position:
+      x: 1712
+      'y': 192
+  - id: direct_qa
+    label: |-
+      直接采用现有问答
+      保留标准答案
+      保留公开标注
+      保留任务专用筛选结果
+    type: process
+    size: xl
+    position:
+      x: 1984
+      'y': 32
+  - id: generate_question
+    label: |-
+      使用 ChatGPT 生成问题
+      遵循时序任务定义
+      问题落在视频标注上
+      附录 · 需要时生成 3-5 个问题
+    type: process
+    size: xl
+    position:
+      x: 1984
+      'y': 352
+  - id: candidate_gate
+    label: 模板能否提供候选选项？
+    type: decision
+    size: xl
+    position:
+      x: 2256
+      'y': 352
+  - id: template_options
+    label: |-
+      构造模板候选项
+      使用真实标注
+      示例 · 正确 / 反义 / 不确定
+      示例 · 方向 + 静止
+    type: process
+    size: xl
+    position:
+      x: 2528
+      'y': 256
+  - id: llm_options
+    label: |-
+      使用 LLM 构造候选项
+      意外动作 / 开放式问答
+      转换答案并生成干扰项
+      保持标准答案正确
+    type: process
+    size: xl
+    position:
+      x: 2528
+      'y': 448
+  - id: sample_options
+    label: |-
+      论文 · 每题采样 3-5 个选项
+      从可用候选项中抽取
+      对每道问题应用
+      保留标准答案
+    type: process
+    size: xl
+    position:
+      x: 2800
+      'y': 192
+  - id: shuffle_options
+    label: |-
+      打乱选项顺序
+      消除位置规律
+      保持答案映射
+    type: process
+    size: xl
+    position:
+      x: 3072
+      'y': 192
+  - id: length_balance
+    label: |-
+      使用 LLM 平衡选项长度
+      减少长答案泄漏
+      保持相近且合理的文本长度
+    type: process
+    size: xl
+    position:
+      x: 3344
+      'y': 192
+  - id: release
+    label: |-
+      汇总论文版 MVBench
+      20 项时序任务
+      每项任务 200 道选择题
+      共 4,000 道选择题
+    type: database
+    size: xl
+    position:
+      x: 3616
+      'y': 192
+  - id: release_snapshot
+    label: |-
+      固定的公开数据快照
+      20 个 JSON 配置 · 4,000 行
+      签名字段 · 问题 + 答案 + 候选
+      唯一值 · 3,569 / 4,000
+      重复 · 151 组 / 582 行
+      1,000 行带起止时间
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 672
+  - id: release_drift
+    label: |-
+      论文到发布数据的偏差
+      论文要求 3-5 个选项
+      HF 含 5 行单选项 + 118 行双选项
+      仓库说明约 30 道重复问答被替换
+    type: document
+    size: xl
+    position:
+      x: 352
+      'y': 672
+  - id: rights_boundary
+    label: |-
+      发布与权利边界
+      HF 卡片 · MIT + 使用确认条款
+      视频权利仍归原始来源
+      320 个 NTU 视频需人工申请
+    type: document
+    size: xl
+    position:
+      x: 624
+      'y': 672
+  - id: eval_load
+    label: |-
+      载入参考笔记本输入
+      任务 JSON + 源视频 / 帧
+      保留原始视频元数据
+      选择 VideoChat2 评测路径
+    type: process
+    size: xl
+    position:
+      x: 3616
+      'y': 864
+  - id: bound_gate
+    label: 是否存在起止时间边界？
+    type: decision
+    size: xl
+    position:
+      x: 3344
+      'y': 864
+  - id: bounded_clip
+    label: |-
+      限定到标注时间段
+      将秒数转换为帧范围
+      在区间中心均匀取帧
+    type: process
+    size: xl
+    position:
+      x: 3072
+      'y': 752
+  - id: full_clip
+    label: |-
+      使用完整视频 / 帧序列
+      保留数据集专用解码器
+      在完整范围中心均匀取帧
+    type: process
+    size: xl
+    position:
+      x: 3072
+      'y': 976
+  - id: sample_frames
+    label: |-
+      VideoChat2 笔记本参考实现
+      均匀采样 16 帧
+      缩放并中心裁剪到 224
+      其他模型自行规定输入
+    type: process
+    size: xl
+    position:
+      x: 2800
+      'y': 864
+  - id: eval_prompt
+    label: |-
+      应用论文评测提示词
+      关注因果 / 顺序 / 运动
+      追加“仅给出最佳选项”
+      回答以 Best option: ( 开始
+    type: document
+    size: xl
+    position:
+      x: 2528
+      'y': 864
+  - id: decode_parse
+    label: |-
+      确定性生成 + 笔记本解析
+      do_sample = False · max_new_tokens = 100
+      仅保留首行 · 返回文本前加左括号
+      转小写 / 切分 · 取双方首个词元
+    type: process
+    size: xl
+    position:
+      x: 2256
+      'y': 864
+  - id: score_row
+    label: |-
+      确定性计算行级得分
+      两个选项词元互相包含 · 1
+      先移除预测词元中的句点
+      否则 · 0
+      忽略答案内容 · 不使用 LLM 裁判
+    type: process
+    size: xl
+    position:
+      x: 1984
+      'y': 864
+  - id: aggregate
+    label: |-
+      汇总行级准确率
+      各任务正确数 / 总数
+      总体正确数 / 4,000
+      每项任务均为 200 行
+    type: process
+    size: xl
+    position:
+      x: 1712
+      'y': 864
+  - id: report
+    label: |-
+      报告 MVBench 结果
+      20 项任务准确率
+      总体平均准确率
+      不使用 LLM 裁判
+    type: terminal
+    size: xl
+    position:
+      x: 1440
+      'y': 864
+edges:
+  - from: evidence
+    to: spatial_tasks
+    type: primary
+  - from: spatial_tasks
+    to: sources
+    type: primary
+  - from: sources
+    to: temporal_gate
+    type: primary
+  - from: temporal_gate
+    to: source_rules
+    type: primary
+    label: 具备时序敏感性
+    labelPosition: end
+  - from: temporal_gate
+    to: exclude
+    type: primary
+    label: 过短 / 过长
+    labelPosition: end
+  - from: source_rules
+    to: source_rule_gate
+    type: primary
+  - from: source_rule_gate
+    to: mcq_gate
+    type: primary
+    label: 符合条件
+    labelPosition: end
+  - from: source_rule_gate
+    to: exclude
+    type: primary
+    label: 不符合条件
+    labelPosition: end
+  - from: mcq_gate
+    to: direct_qa
+    type: primary
+    label: 是 · 直接采用
+    labelPosition: end
+  - from: mcq_gate
+    to: generate_question
+    type: primary
+    label: 否 · 生成问题
+    labelPosition: end
+  - from: generate_question
+    to: candidate_gate
+    type: primary
+  - from: candidate_gate
+    to: template_options
+    type: primary
+    label: 是 · 模板构造
+    labelPosition: end
+  - from: candidate_gate
+    to: llm_options
+    type: primary
+    label: 否 · LLM 构造
+    labelPosition: end
+  - from: direct_qa
+    to: sample_options
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+  - from: template_options
+    to: sample_options
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: llm_options
+    to: sample_options
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
+  - from: sample_options
+    to: shuffle_options
+    type: primary
+  - from: shuffle_options
+    to: length_balance
+    type: primary
+  - from: length_balance
+    to: release
+    type: primary
+  - from: release
+    to: eval_load
+    type: primary
+  - from: eval_load
+    to: bound_gate
+    type: primary
+  - from: bound_gate
+    to: bounded_clip
+    type: primary
+    label: 有时间边界
+    labelPosition: end
+  - from: bound_gate
+    to: full_clip
+    type: primary
+    label: 完整视频 / 帧
+    labelPosition: end
+  - from: bounded_clip
+    to: sample_frames
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.25
+  - from: full_clip
+    to: sample_frames
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.75
+  - from: sample_frames
+    to: eval_prompt
+    type: primary
+  - from: eval_prompt
+    to: decode_parse
+    type: primary
+  - from: decode_parse
+    to: score_row
+    type: primary
+  - from: score_row
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+modules: []

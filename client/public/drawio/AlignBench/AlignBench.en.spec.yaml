@@ -1,121 +1,223 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: AlignBench Build Process
   description: >-
-    Paper-aligned Chinese alignment benchmark data curation and rule-calibrated LLM-as-Judge workflow for AlignBench,
-    based on arXiv:2311.18743.
+    AlignBench curates 683 real-scenario Chinese queries through human-in-the-loop reference verification and a
+    three-model difficulty filter, then applies the fixed GPT-4-0613 protocol, score-dictionary parsing, and official
+    reasoning/language aggregation.
   legend: >-
-    Solid arrows show query curation, evidence-backed references, and automatic judging; dashed arrows mark filtering
-    and human validation feedback.
+    The layered rows form one path. Candidate generation exposes the 0.7 creative-task setting; the judge is fixed to
+    gpt-4-0613 at T=0.1. Final aggregation weights reasoning and language group means equally.
 nodes:
-  - id: scenarios
+  - id: sources
     label: |-
-      Real Chinese scenarios
-      online service usage
-      researcher-written prompts
+      Real Chinese Scenarios
+      Online Chat-Service Usage
+      Researcher-Written Challenges
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: taxonomy
+      'y': 80
+  - id: rules
     label: |-
-      Task taxonomy
-      8 major categories
-      broad alignment capabilities
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: query_rules
-    label: |-
-      Query selection rules
-      task-oriented and fluent
-      complex, safe, and practical
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: evidence
-    label: |-
-      Web evidence collection
-      URLs and quotations
-      for knowledge-heavy queries
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: references
-    label: |-
-      Human-verified references
-      GPT-4 drafts
-      annotator review and revision
+      Four Query Rules
+      Task-Oriented • Clear and Fluent
+      Challenging • Desensitized
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: difficulty
+      x: 320
+      'y': 80
+  - id: taxonomy
     label: |-
-      Difficulty filtering
-      LLMs score candidate queries
-      discard easier half
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: benchmark_set
-    label: |-
-      AlignBench set
-      683 real-scenario queries
-      category + reference answer
+      Paper Categories 1–4
+      Fundamental Language Ability
+      Advanced Chinese Understanding
+      Open-ended Questions • Writing Ability
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 600
+      'y': 80
+    style:
+      fontSize: 10
+  - id: taxonomy_more
+    label: |-
+      Paper Categories 5–8
+      Logical Reasoning • Mathematics
+      Task-oriented Role Play • Professional Knowledge
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 80
+    style:
+      fontSize: 10
+  - id: draft
+    label: |-
+      GPT-4 Reference Draft
+      Starting Point for Each Query
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 80
+  - id: human_review
+    label: |-
+      Human Reference Verification
+      Revise and Refine Drafts
+      Check Correctness and Quality
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: evidence
+    label: |-
+      Knowledge-Intensive Evidence
+      Web Search during Human Verification
+      Record URLs and Quotations
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: verified
+    label: |-
+      Verified Candidate Triples
+      Query + Category + Reference
+      Attach Evidence When Required
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: difficulty
+    label: |-
+      Three-Model Difficulty Filter
+      GPT-3.5-Turbo • ChatGLM • Sparkdesk
+      GPT-4 Scores; Drop Easiest 50%
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: dataset
+    label: |-
+      Release AlignBench
+      683 Chinese Queries
+      Eight Main Categories
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: model
+    label: |-
+      Generate Target LLM Response
+      Fixed-Answer Categories: T = 0.1
+      Target T = 0.7 for Open / Writing / Role
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 360
   - id: judge
     label: |-
-      Rule-calibrated judge
-      multi-dimensional point-wise scoring
-      CoT critique and final rating
+      Fixed gpt-4-0613 Point-Wise Judge
+      Judge T = 0.1
+      Query + Reference + Target Response
+      Task-Specific Dimensions + CoT
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: score_dict
+    label: |-
+      Parse Last Score Dictionary
+      Integer Scores for Each Dimension
+      Read 'Overall Score'; Regex Fallback
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 640
+  - id: aggregate
+    label: |-
+      Aggregate Official Results
+      Reasoning = mean(Math, Logic)
+      Language = mean(6 language categories)
+      Overall = (Reasoning + Language) / 2
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 640
+  - id: score
+    label: |-
+      AlignBench Results
+      Category • Reasoning • Language
+      Overall Score on the 1–10 Scale
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 600
+      'y': 640
 edges:
-  - from: scenarios
+  - from: sources
+    to: rules
+    type: primary
+  - from: rules
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: query_rules
+    to: taxonomy_more
     type: primary
-  - from: query_rules
+  - from: taxonomy_more
+    to: draft
+    type: primary
+  - from: draft
+    to: human_review
+    type: primary
+  - from: human_review
     to: evidence
-    type: primary
-  - from: evidence
-    to: references
     type: data
-  - from: references
+    label: knowledge-intensive
+  - from: evidence
+    to: verified
+    type: data
+  - from: human_review
+    to: verified
+    type: primary
+    label: other queries
+    waypoints:
+      - x: 1260
+        'y': 240
+  - from: verified
     to: difficulty
     type: primary
   - from: difficulty
-    to: benchmark_set
+    to: dataset
     type: primary
-  - from: benchmark_set
+  - from: dataset
+    to: model
+    type: primary
+  - from: model
     to: judge
     type: primary
   - from: judge
-    to: references
-    type: optional
-    label: human agreement check
+    to: score_dict
+    type: primary
+  - from: score_dict
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: score
+    type: primary
 modules: []

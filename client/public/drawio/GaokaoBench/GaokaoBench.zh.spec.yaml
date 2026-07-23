@@ -5,75 +5,178 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GaokaoBench 构建流程
-  description: 对齐论文的 GaokaoBench 流程：从 2010-2022 高考试题到客观/主观评分和折算总分。
-  legend: 实线箭头表示试题收集、脚本/人工转换、题型划分、提示作答、客观匹配、人工/LLM评分和总分折算。
+  description: 基于论文和固定版代码的试卷数字化、分题型答案解析、人工评分、仓库裁判与分数汇总流程。
+  legend: 虚线箭头表示固定版本证据或替代对比路径；实线箭头表示基准构建和评分主流程。
 nodes:
-  - id: exams
-    label: 高考试题
-    type: database
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2305.12474v3
+      官方仓库 6dbb24f8
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: convert
-    label: 解析标注
-    type: process
+      'y': 260
+  - id: source_pdfs
+    label: |-
+      全国高考试卷来源
+      2010–2022 年全部全国卷
+      文理科共 9 个学科
+    type: database
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: types
-    label: 客观/主观题
+      'y': 260
+  - id: digitize
+    label: |-
+      脚本与人工联合数字化
+      PDF → 结构化 JSON
+      数学公式 → LaTeX
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: prompt
-    label: 零样本提示
-    type: document
+      'y': 260
+  - id: release
+    label: |-
+      发布 2,811 道题
+      客观题 1,781：1,418/273/64/26
+      主观题 1,030：786/218/26
+    type: database
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: match
-    label: 客观匹配
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: grade
-    label: 人工评分
+      'y': 260
+  - id: prompt
+    label: |-
+      按题型/学科定制零样本提示
+      多数要求【解析】→ eoe
+      部分仅答案：七选五、改错
+      及多项语文阅读
+      全部要求【答案】→ eoa
     type: process
     size: xl
     position:
+      x: 1080
+      'y': 260
+  - id: route
+    label: |-
+      按题型分流
+      客观题进入规则解析
+      主观题进入评分路径
+    type: decision
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 折算总分
-    type: terminal
+      'y': 260
+  - id: objective_parser
+    label: |-
+      解析客观题输出
+      单选：末个 A–D
+      多小题：标记匹配，否则前序字母
+      多选：标记位置 >0 时取其后
+      否则扫描末 10 字符
+      七选五：前 5 个 A–G
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 80
+  - id: objective_score
+    label: |-
+      按题目分值加权精确匹配
+      物理多选：全对 6 分
+      正确子集 3 分 · 多选 0 分
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 80
+  - id: human_grade
+    label: |-
+      论文主路径：主观题人工评分
+      每份答案由两位教师评分
+      取两人平均分
+    type: user
+    size: xl
+    position:
+      x: 1600
+      'y': 300
+  - id: repo_judge
+    label: |-
+      固定版仓库替代裁判
+      GPT-4-1106-preview · T 0
+      调用侧 max_tokens=4,096
+      API请求未传；默认不含评分点
+      解析【总分】；非空分数均值
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 520
+  - id: aggregate
+    label: |-
+      汇总得分率
+      实得分 / 满分
+      分学科客观与主观得分率
+      理科/文科折算总分 / 750
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 260
+  - id: agreement
+    label: |-
+      对比裁判与人工分数
+      Spearman ρ + Kendall τ
+      论文裁判输入人工评分点
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 520
 edges:
-  - from: exams
-    to: convert
+  - from: evidence
+    to: source_pdfs
+    type: data
+  - from: source_pdfs
+    to: digitize
     type: primary
-  - from: convert
-    to: types
+  - from: digitize
+    to: release
     type: primary
-  - from: types
+  - from: release
     to: prompt
     type: primary
   - from: prompt
-    to: match
+    to: route
     type: primary
-  - from: match
-    to: grade
+  - from: route
+    to: objective_parser
     type: primary
-  - from: grade
-    to: score
+  - from: objective_parser
+    to: objective_score
+    type: primary
+  - from: objective_score
+    to: aggregate
+    type: primary
+  - from: route
+    to: human_grade
+    type: primary
+  - from: human_grade
+    to: aggregate
+    type: primary
+  - from: route
+    to: repo_judge
+    type: data
+  - from: repo_judge
+    to: aggregate
+    type: data
+  - from: human_grade
+    to: agreement
+    type: data
+  - from: repo_judge
+    to: agreement
     type: primary
 modules: []

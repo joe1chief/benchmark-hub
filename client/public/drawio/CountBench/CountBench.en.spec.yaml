@@ -4,78 +4,150 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CountBench Build Process
+  title: CountBench Build and Evaluation Process
   description: >-
-    Paper-aligned CountBench flow from LAION-400M filtering to manually verified 540-image count classification
-    evaluation.
-  legend: Solid arrows show number filtering, object-count verification, balancing, and zero-shot evaluation.
+    Paper- and release-pinned construction of the 540-record CountBench test set from LAION-400M, followed by the
+    paper's nine-caption zero-shot count selection and two reported metrics.
+  legend: Solid arrows show benchmark construction and evaluation; the dashed arrow pins the evidence boundary.
 nodes:
+  - id: evidence
+    label: |-
+      Paper + Release Boundary
+      arXiv:2302.12066v1 · §§4, 5.1
+      Official JSON @ 2c573a8: 540 Rows
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: laion
-    label: LAION-400M
+    label: |-
+      Public LAION-400M
+      Image–Caption Pairs
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: num
-    label: Number Filter
+      'y': 300
+  - id: number_filter
+    label: |-
+      Keep Spelled Counts: Two through Ten
+      Non-spelled or Higher than Ten Numbers
+      Usually Indicate Dates, Time, or Addresses
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: detect
-    label: Detector Check
+      x: 320
+      'y': 300
+  - id: detector
+    label: |-
+      Off-the-shelf Object Detector
+      Count Detections per Object Class
+      Keep Caption Count = Most Prevalent Class
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 600
+      'y': 300
+  - id: candidate
+    label: |-
+      Automatically Filtered Candidates
+      Severe Imbalance: 158K+ for “Two”
+      versus about 100 for “Ten”
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 300
   - id: balance
-    label: Balance Counts
+    label: |-
+      Pre-balance Each Number
+      Keep 100–200 Candidates per Number
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: human
-    label: Human Verify
+      x: 1160
+      'y': 300
+  - id: verify
+    label: |-
+      Manual Verification
+      Caption Count Must Match
+      Clearly Visible Objects
     type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: 540 Images
-    type: document
+      x: 1440
+      'y': 300
+  - id: dataset
+    label: |-
+      Final Rebalance: 60 × 9 = 540
+      CountBench Test Set Only
+      No Overlap with Counting Training Set C
+    type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: Zero-shot Eval
+      x: 1720
+      'y': 300
+  - id: captions
+    label: |-
+      Create Nine Candidate Captions
+      Counts “Two” through “Ten”
+      One Correct + Eight Counterfactuals
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 300
+  - id: similarity
+    label: |-
+      CLIP-B/32 + BASIC-S Zero-shot
+      Image–Text Similarity for Nine Captions
+      Highest Score Predicts the Count
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+  - id: metrics
+    label: |-
+      Counting Accuracy
+      Mean [Predicted Count = True Count]
+      Mean Absolute Deviation
+      Mean |Predicted Count − True Count|
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2560
+      'y': 300
 edges:
+  - from: evidence
+    to: laion
+    type: data
   - from: laion
-    to: num
+    to: number_filter
     type: primary
-  - from: num
-    to: detect
+  - from: number_filter
+    to: detector
     type: primary
-  - from: detect
+  - from: detector
+    to: candidate
+    type: primary
+  - from: candidate
     to: balance
     type: primary
   - from: balance
-    to: human
+    to: verify
     type: primary
-  - from: human
-    to: bench
+  - from: verify
+    to: dataset
     type: primary
-  - from: bench
-    to: eval
+  - from: dataset
+    to: captions
+    type: primary
+  - from: captions
+    to: similarity
+    type: primary
+  - from: similarity
+    to: metrics
     type: primary
 modules: []

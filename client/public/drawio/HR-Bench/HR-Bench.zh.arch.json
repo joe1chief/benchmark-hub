@@ -7,90 +7,234 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 18,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "证据与固定版本\narXiv 2408.15556v1 · 仓库 5ad1177\nHugging Face 数据集 83b9013",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "images",
-      "label": "8K图像",
+      "label": "收集 200 张 8K 图像\n开放 DIV8K 与互联网来源\n保留完整分辨率原图",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "tasks",
-      "label": "FSP+FCP",
+      "id": "boxes",
+      "label": "人工标注相关目标的边界框\n标出与问题对应的对象\n保留目标在 8K 图像中的坐标",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "annotate",
-      "label": "人工问答",
+      "id": "generate",
+      "label": "在边界框内裁剪图像\nGPT-4o 生成问答对\n聚焦需视觉落地的细节",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "coords",
-      "label": "目标坐标",
-      "type": "document",
+      "id": "review",
+      "label": "人工专家逐对复核\n删除错误或有歧义的问题\n保留难以靠猜测回答的样本",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "crops",
-      "label": "4K裁剪",
+      "id": "route",
+      "label": "分配感知任务\n单实例细粒度信息\n或跨实例关系",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "fsp",
+      "label": "FSP · 100 个样本\n属性识别 · OCR\n视觉提示",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fcp",
+      "label": "FCP · 100 个样本\n地图分析 · 图表分析\n空间关系",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "versions",
+      "label": "构建两个分辨率视图\n8K 保留原图\n4K 围绕相关目标裁剪并保持宽高比",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "options",
-      "label": "多选项",
+      "label": "构造 4 个 A-D 选项\n两个视图绑定同一标准答案\n保持问题与目标的对应关系",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "准确+不确定",
+      "id": "paper_protocol",
+      "label": "论文协议\n循环位移完整 A-D 序列\n每个选项移到下一位置\n运行 4 次并报告平均 ACC",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_rows",
+      "label": "固定 HF 发布差异 · 83b9013\n四行组：标准答案 A → B → C → D\n完整选项顺序不是循环位移",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "eval_prompt",
+      "label": "候选 MLLM 提示与输出\nQuestion + Options A-D + 选择指令\n将候选回答交给评测器",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "aux_judge",
+      "label": "仓库辅助 Yes/No 评判器\n要求 llm_path；具体模型未固定\n标准答案 + 候选回答\ntop_p 0.8 · top_k 40 · 温度 0.2",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "yn_parser",
+      "label": "转为小写并匹配 yes/no 前缀\nyes → 1\nno 或其他任何前缀 → 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_score",
+      "label": "仓库聚合\n按 cycle_category 分组\n对类别与 all 计算 gpt_score 均值\n再平均各组；分别报告 4K 与 8K",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "pilot",
+      "label": "试验性分辨率研究\n准确率 + 分辨率相关的\n下一 token 不确定度\n不属于基准主评测",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "5ad1177 官方产物边界\n4K 800 行 + 8K 800 行\n每视图 200 道题 × 4 行\n论文/发布置换差异已明确标出\nDC² 是推理方法，不是基准构建步骤",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "images",
-      "to": "tasks",
-      "type": "primary"
+      "from": "evidence",
+      "to": "images",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "tasks",
-      "to": "annotate",
+      "from": "images",
+      "to": "boxes",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "annotate",
-      "to": "coords",
+      "from": "boxes",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "coords",
-      "to": "crops",
+      "from": "generate",
+      "to": "review",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "crops",
-      "to": "options",
+      "from": "review",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "options",
-      "to": "metrics",
+      "from": "route",
+      "to": "fsp",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "route",
+      "to": "fcp",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "fsp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "fcp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "versions",
+      "to": "options",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "options",
+      "to": "paper_protocol",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "options",
+      "to": "release_rows",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "release_rows",
+      "to": "eval_prompt",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-14",
+      "from": "eval_prompt",
+      "to": "aux_judge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-15",
+      "from": "aux_judge",
+      "to": "yn_parser",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-16",
+      "from": "yn_parser",
+      "to": "repo_score",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-17",
+      "from": "versions",
+      "to": "pilot",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-18",
+      "from": "paper_protocol",
+      "to": "artifact_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "repo_score",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

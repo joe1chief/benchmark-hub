@@ -1,0 +1,206 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OJBench Build and Evaluation Process
+  description: >-
+    Paper-aligned construction from NOI and ICPC tasks, full organizer-test validation, complete special-judge removal,
+    NOI-only verified translation with an explicit ICPC bypass, source-specific difficulty labeling, fenced-code
+    parsing, and full-judge Pass@1/Pass@8 scoring.
+  legend: >-
+    The upper lane builds the benchmark left-to-right. NOI alone passes through GPT-4o translation; ICPC bypasses that
+    step. Both then use source-specific difficulty rules before merging into the 232-problem release. The lower lane
+    evaluates eight Python and C++ candidates under the published 10-second and 1-GiB judge limits.
+nodes:
+  - id: sources
+    label: |-
+      Competition Sources
+      159 Luogu NOI Problems
+      73 Official ICPC Problems
+      Organizer Tests Included
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: test_gate
+    label: |-
+      Validate Organizer Tests
+      Run Correct Contestant Submissions
+      Remove Incomplete or Erroneous Sets
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: judge_gate
+    label: |-
+      Standard-Judge Gate
+      Require Direct Output Comparison
+      Remove All Special Judge Tasks
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: translation
+    label: |-
+      Translate NOI Statements
+      GPT-4o Produces English
+      Manual Meaning + Format Check
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: difficulty_route
+    label: |-
+      Problem Source
+      NOI or ICPC?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: noi_difficulty
+    label: |-
+      NOI Solver-Vote Rating
+      Easy 2–3 • Medium 4–5
+      Hard 6–7
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: icpc_difficulty
+    label: |-
+      ICPC Ranking Statistics
+      passed submissions / all submissions
+      × attempted teams / all teams
+      Easy ≥0.4 • Hard ≤0.1
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 200
+  - id: release
+    label: |-
+      OJBench Release
+      232 Problems
+      36 Easy • 79 Medium • 117 Hard
+      Python + C++ Evaluation
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: prompt
+    label: |-
+      Competition Problem Input
+      Statement • Constraints • Examples
+      Request Target-Language Program
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: sample
+    label: |-
+      8 Candidates per Problem
+      Official Model Hyperparameters
+      Reasoning max_tokens = 64k
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: extract
+    label: |-
+      Response Parser
+      Extract Fenced Target Language Code
+      Narrow main() Append Case Only
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: execute
+    label: |-
+      Full Official Judge
+      Run All Organizer Tests
+      Python + C++
+      10 s • 1 GiB
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: correctness
+    label: |-
+      Exact Correctness Gate
+      Every Test Must Pass
+      Any Failure Rejects Candidate
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: report
+    label: |-
+      OJBench Results
+      Pass@1 + Pass@8
+      Python + C++
+      By Source and Difficulty
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 520
+edges:
+  - from: sources
+    to: test_gate
+    type: primary
+  - from: test_gate
+    to: judge_gate
+    type: primary
+  - from: judge_gate
+    to: difficulty_route
+    type: primary
+  - from: difficulty_route
+    to: translation
+    type: primary
+    label: NOI
+  - from: translation
+    to: noi_difficulty
+    type: primary
+  - from: difficulty_route
+    to: icpc_difficulty
+    type: primary
+    label: ICPC • bypass translation
+  - from: noi_difficulty
+    to: release
+    type: primary
+  - from: icpc_difficulty
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: extract
+    type: primary
+  - from: extract
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
+    to: report
+    type: primary
+modules: []

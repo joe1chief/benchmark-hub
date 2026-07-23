@@ -1,0 +1,201 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WISE Paper Protocol Build and Evaluation
+  description: >-
+    The paper builds 1,000 knowledge-intensive text-to-image prompts across 25 subdomains from educational materials,
+    encyclopedias and public references, common-sense problem sets, and LLM-assisted candidates. Human annotators
+    rewrite or discard candidates to enforce visual answerability, one inferable target, stable facts, natural wording,
+    explicit expected visual cues, and prompt-answer-explanation consistency. After the benchmark is finalized, Table 4
+    reports a descriptive cultural-distribution audit: full WISE is 56.6% global/neutral, 22.6% Western, and 20.8%
+    non-Western; the Cultural Common Sense subset is 17.75%, 41.50%, and 40.75%, respectively. The paper specifies
+    neither an acceptance threshold nor a rebalance loop. Generated images are scored by GPT-4o-2024-05-13 on
+    consistency, realism, and aesthetic quality from 0 to 2, and WiScore is (0.7C + 0.2R + 0.1A) / 2. This entry is
+    pinned to the paper protocol rather than the later binary WISE_Verified repository default.
+  legend: >-
+    Source: WISE arXiv:2503.07265v4, Section 3.1 and Tables 3-4 for sourcing, quality control, and the descriptive
+    cultural-distribution audit; Section 3.2 Equation (1) and Appendices D-E for WiScore; Appendices H-I for seed and
+    human validation; official repository https://github.com/PKU-YuanGroup/WISE. Version pin: this entry follows the
+    paper WiScore protocol, not the repository-default WISE_Verified maintenance protocol. Table 4 is an audit, not a
+    build gate.. Solid arrows show the main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: knowledge_sources
+    label: Knowledge Sources
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: prompt_candidates
+    label: Prompt Candidates
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: visual_gate
+    label: Visual + One Target?
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: human_refine
+    label: Human Rewrite + Explain
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: discard_candidate
+    label: Discard Candidate
+    type: loss
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: quality_gate
+    label: Prompt QC Pass?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: culture_audit
+    label: Cultural Distribution Audit
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: wise_set
+    label: 1,000 Prompts / 25 Subdomains
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: generate_image
+    label: Generate Image
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: vlm_judge
+    label: GPT-4o C / R / A (0-2)
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: wiscore
+    label: WiScore = (0.7C+0.2R+0.1A)/2
+    type: formula
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: seed_audit
+    label: Five-Seed Stability Audit
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: human_validation
+    label: Five-Annotator Validation
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 760
+  - id: wise_report
+    label: Paper-Protocol Results
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: culture_report
+    label: Descriptive Distribution Report · No Gate / Rebalance
+    type: output
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+edges:
+  - from: knowledge_sources
+    to: prompt_candidates
+    type: data
+  - from: prompt_candidates
+    to: visual_gate
+    type: primary
+  - from: visual_gate
+    to: human_refine
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: visual_gate
+    to: discard_candidate
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: human_refine
+    to: quality_gate
+    type: primary
+  - from: quality_gate
+    to: human_refine
+    type: optional
+    label: Revise
+    labelPosition: start
+  - from: wise_set
+    to: generate_image
+    type: primary
+  - from: generate_image
+    to: vlm_judge
+    type: primary
+  - from: vlm_judge
+    to: wiscore
+    type: primary
+  - from: wiscore
+    to: wise_report
+    type: primary
+  - from: generate_image
+    to: seed_audit
+    type: optional
+    label: Appendix H
+    labelPosition: center
+  - from: vlm_judge
+    to: human_validation
+    type: optional
+    label: Appendix I
+    labelPosition: center
+  - from: seed_audit
+    to: wise_report
+    type: optional
+  - from: human_validation
+    to: wise_report
+    type: optional
+  - from: quality_gate
+    to: wise_set
+    type: primary
+    label: Pass
+    labelPosition: end
+    waypoints:
+      - x: 1280
+        'y': 160
+      - x: 1840
+        'y': 160
+  - from: wise_set
+    to: culture_audit
+    type: optional
+    label: Table 4 audit
+    labelPosition: center
+  - from: culture_audit
+    to: culture_report
+    type: optional
+modules: []

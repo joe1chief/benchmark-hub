@@ -6,78 +6,145 @@ meta:
   routing: orthogonal
   title: HellaSwag Build Process
   description: >-
-    Paper-aligned HellaSwag construction pipeline from ActivityNet/WikiHow contexts through GPT ending generation, BERT
-    adversarial filtering, human filtering, split construction, and accuracy evaluation.
+    Paper- and fixed-repository-aligned construction from ActivityNet and WikiHow through GPT generation, adversarial
+    filtering, human validation, release reconciliation, and four-way evaluation.
   legend: >-
-    Solid arrows show source collection, adversarial negative generation, human agreement filtering, split creation, and
-    scoring.
+    Solid arrows show the disclosed build and evaluation path. Dashed arrows identify pinned evidence and the gap
+    between the paper target release and the files present in the fixed official repository snapshot.
 nodes:
-  - id: sources
-    label: Sources
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: endings
-    label: GPT Endings
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: af
-    label: BERT AF
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: human
-    label: Human Filter
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: best
-    label: Best Contexts
+  - id: evidence
+    label: |-
+      Primary evidence
+      arXiv:1905.07830v1
+      official repo a29ff8e9
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: splits
-    label: In/Zero Split
+      x: 40
+      'y': 360
+  - id: activity
+    label: |-
+      ActivityNet Captions
+      temporal captions + activity labels
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 304
+      'y': 96
+  - id: wikihow
+    label: |-
+      WikiHow scrape · 80K pairs
+      context + follow-up paragraphs
+      at most three sentences
+    type: database
+    size: xl
+    position:
+      x: 304
+      'y': 624
+  - id: candidates
+    label: |-
+      GPT candidate generation
+      5 epochs ActivityNet · 2 epochs WikiHow
+      random sampling · nucleus p=0.98
+      choose two-sentence WikiHow outputs
+    type: process
+    size: xl
+    position:
+      x: 568
+      'y': 360
+  - id: af
+    label: |-
+      Iterative adversarial filtering
+      BERT-Large reinitialized each round
+      random 80/20 · four-way
+      3 negatives sampled · replace to converge
+    type: process
+    size: xl
+    position:
+      x: 832
+      'y': 360
+  - id: human
+    label: |-
+      Human validation
+      six choices · one true + five AF
+      replace plausible negatives
+      keep 3 least-picked · 25K + 45K
+    type: user
+    size: xl
+    position:
+      x: 1096
+      'y': 360
+  - id: paper_release
+    label: |-
+      Paper target release · 70K
+      train 50K · val 10K · test 10K
+      val/test: 5K in-domain + 5K zero-shot
+    type: database
+    size: xl
+    position:
+      x: 1360
+      'y': 360
+  - id: artifact_boundary
+    label: |-
+      Official repo snapshot a29ff8e9
+      train 39,905 · val 10,042
+      test 10,003 · test unlabeled
+      raw WikiHow / generator artifacts absent
+    type: document
+    size: xl
+    position:
+      x: 1624
+      'y': 360
+  - id: model
+    label: |-
+      Four-way completion input
+      ctx · ctx_a + ctx_b · four endings
+      label in train/val · test probabilities
+    type: process
+    size: xl
+    position:
+      x: 1888
+      'y': 360
   - id: score
-    label: Accuracy
+    label: |-
+      Official evaluation
+      accuracy: overall · in-domain
+      zero-shot · source breakdown
+      test submission: probability CSV
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2152
+      'y': 360
 edges:
-  - from: sources
-    to: endings
+  - from: evidence
+    to: activity
+    type: data
+  - from: evidence
+    to: wikihow
+    type: data
+  - from: activity
+    to: candidates
     type: primary
-  - from: endings
+  - from: wikihow
+    to: candidates
+    type: primary
+  - from: candidates
     to: af
     type: primary
   - from: af
     to: human
     type: primary
   - from: human
-    to: best
+    to: paper_release
     type: primary
-  - from: best
-    to: splits
+  - from: paper_release
+    to: artifact_boundary
+    type: data
+  - from: artifact_boundary
+    to: model
     type: primary
-  - from: splits
+  - from: model
     to: score
     type: primary
 modules: []

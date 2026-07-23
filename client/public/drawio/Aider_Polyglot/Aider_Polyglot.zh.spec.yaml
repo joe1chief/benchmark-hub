@@ -1,89 +1,177 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: Aider Polyglot 构建流程
-  description: 按Aider官方资料对齐的构建流程：用7个代码模型预试6种语言的697道Exercism练习，保留至多3个模型解出的225道难题，再在Docker中执行Aider编辑和单元测试。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  description: 对齐官方资料的 Exercism 筛选、测试文件不进入模型上下文的 Aider 编辑，以及默认两次尝试的隐藏测试修复协议。
+  legend: 上排从左向右筛选题目，下排从右向左评测。首次失败仅向模型反馈测试输出并允许一次修复；默认 --tries 2 即首次编辑加一次修复。
 nodes:
-  - id: n1
-    label: 697道练习
+  - id: exercism
+    label: |-
+      Exercism 题目池
+      共 697 道练习
+      覆盖六种热门语言
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 6种语言
+      'y': 100
+  - id: languages
+    label: |-
+      语言覆盖
+      C++ / Go / Java / JavaScript
+      Python / Rust
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 7模型预试
+      x: 320
+      'y': 100
+  - id: probe
+    label: |-
+      七模型难度预试
+      每个模型尝试全部 697 题
+      统计每题成功模型数
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 至多3个解出
-    type: decision
+      x: 600
+      'y': 100
+  - id: filter
+    label: |-
+      难度过滤
+      保留仅被 0-3 个模型解出的题
+      排除另外 472 道较简单练习
+    type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 225道难题
+      x: 880
+      'y': 100
+  - id: dataset
+    label: |-
+      Aider Polyglot
+      225 道困难练习
+      C++ 26 • Go 39 • Java 47
+      JavaScript 49 • Python 34
+      Rust 30
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: input
+    label: |-
+      基准任务
+      练习说明
+      仅提供可编辑的解答文件
+      测试 / 示例 / 元数据文件均不提供
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Aider编辑
+      x: 1440
+      'y': 100
+  - id: aider
+    label: |-
+      使用指定模型运行 Aider
+      选择编辑格式
+      练习按随机顺序执行
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Docker测试
+      x: 1440
+      'y': 440
+  - id: edit
+    label: |-
+      将需求转化为代码
+      格式化并应用文件编辑
+      保存到本地源文件
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 通过率
+      x: 1160
+      'y': 440
+  - id: hidden_tests
+    label: |-
+      在 Docker 中运行隐藏测试
+      测试文件不进入模型上下文
+      每次编辑后才复制测试文件
+      使用语言专用测试命令
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: retry_gate
+    label: |-
+      测试通过或尝试次数耗尽？
+      第二次测试后停止
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: repair
+    label: |-
+      根据测试输出重试
+      默认 --tries 2
+      首次编辑 + 一次修复尝试
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 720
+  - id: report
+    label: |-
+      基准报告
+      Pass@1 与 Pass@2
+      正确完成题目百分比
+      正确编辑格式 / 格式完好率
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: exercism
+    to: languages
     type: primary
-  - from: n2
-    to: n3
+  - from: languages
+    to: probe
     type: primary
-  - from: n3
-    to: n4
+  - from: probe
+    to: filter
     type: primary
-  - from: n4
-    to: n5
+  - from: filter
+    to: dataset
     type: primary
-  - from: n5
-    to: n6
+  - from: dataset
+    to: input
     type: primary
-  - from: n6
-    to: n7
+  - from: input
+    to: aider
     type: primary
-  - from: n7
-    to: n8
+  - from: aider
+    to: edit
     type: primary
+  - from: edit
+    to: hidden_tests
+    type: primary
+  - from: hidden_tests
+    to: retry_gate
+    type: primary
+  - from: retry_gate
+    to: report
+    type: primary
+    label: 通过或第二次尝试已结束
+  - from: retry_gate
+    to: repair
+    type: data
+    label: 首次失败
+    waypoints:
+      - x: 600
+        'y': 720
+  - from: repair
+    to: edit
+    type: data
 modules: []

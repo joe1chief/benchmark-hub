@@ -1,0 +1,539 @@
+meta:
+  profile: academic-paper
+  source: edited
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MuirBench 证据对齐的构建与评测流程
+  description: >-
+    依据 arXiv:2406.09411v2 及固定版本的官方代码和数据重建 MuirBench：按分类体系收集可答题， 创建语义差异最小且平衡配对的不可答题，执行元数据标注和两阶段质检，准确呈现发布字段、 VLMEvalKit
+    风格提示词、官方解析器回退行为，以及论文与代码在候选顺序上的差异。
+  legend: 实线箭头表示数据构建与已发布代码计分；带标签的分支保留来源和变换比例、淘汰路径、模型输入方式、 覆盖边界、解析结果与对错计分。虚线表示独立的人类评测协议。
+nodes:
+  - id: evidence
+    label: |-
+      固定一手证据
+      论文 2406.09411v2 · 代码 840b85fe
+      数据 4c393cff · 固定前后处理 SHA256
+      12 种任务 · 10 类关系
+      标签：任务 · 类型 · 位置 · 数量
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 296
+    style:
+      fontSize: 10
+  - id: source_route
+    label: |-
+      可答题数据来源？
+      现有数据集
+      派生数据集
+      新收集数据
+    type: decision
+    size: xl
+    position:
+      x: 728
+      'y': 296
+    style:
+      fontSize: 10
+  - id: existing_source
+    label: |-
+      现有数据 · 531 题 · 40.8%
+      GeneCIS · SeedBench · IconQA
+      每数据集最多 200 题 · 复用选择题
+    type: database
+    size: xl
+    position:
+      x: 1056
+      'y': 104
+    style:
+      fontSize: 10
+  - id: derived_source
+    label: |-
+      派生数据 · 282 题 · 21.7%
+      NLVR2 · HallusionBench
+      ISVQA · MMBench
+      改写二元、开放或单图问答
+    type: database
+    size: xl
+    position:
+      x: 1056
+      'y': 296
+    style:
+      fontSize: 10
+  - id: new_source
+    label: |-
+      新数据 · 487 题 · 37.5%
+      HistoricalMap · UnivBuilding
+      PubMedMQA · SciSlides
+      补齐缺失任务和图像类型
+    type: user
+    size: xl
+    position:
+      x: 1056
+      'y': 488
+    style:
+      fontSize: 10
+  - id: answerable_pool
+    label: |-
+      统一多项选择问答
+      复用 / 生成 / 改写 / 组合
+      人工补齐缺失覆盖
+      1,300 个可答题 · 2–9 张有序图像
+    type: database
+    size: xl
+    position:
+      x: 1376
+      'y': 296
+    style:
+      fontSize: 10
+  - id: transform_route
+    label: |-
+      最小改动策略？
+      修改图像
+      修改问题
+      修改选项
+    type: decision
+    size: xl
+    position:
+      x: 2032
+      'y': 296
+    style:
+      fontSize: 10
+  - id: image_transform
+    label: |-
+      替换或重排图像
+      315 个对应题 · 24.2%
+      破坏问题—图像关系或
+      图像—图像关系
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 104
+    style:
+      fontSize: 10
+  - id: question_transform
+    label: |-
+      修改问题
+      459 个对应题 · 35.3%
+      使问题与图像及选项
+      不再兼容
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 296
+    style:
+      fontSize: 10
+  - id: option_transform
+    label: |-
+      替换选项
+      526 个对应题 · 40.5%
+      移除所有正确答案
+      保持语义差异最小
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 488
+    style:
+      fontSize: 10
+  - id: paired_pool
+    label: |-
+      配对 + 元数据
+      counterpart_idx：1,300 + 1,300
+      每个对应题采用一种变换
+      关系人工标注 · 任务/类型对齐
+      数量/位置自动化 · 保留图像顺序
+    type: database
+    size: xl
+    position:
+      x: 2680
+      'y': 296
+    style:
+      fontSize: 10
+  - id: quality_gate
+    label: |-
+      两阶段质检通过吗？
+      规则：格式 · 答案 · 元数据
+      指代 · 冗余 · 可访问性
+      4 位专家：歧义 · 图像清晰度
+      保留率 · 86.3%
+    type: decision
+    size: xl
+    position:
+      x: 3328
+      'y': 296
+    style:
+      fontSize: 10
+  - id: quality_reject
+    label: |-
+      淘汰质检失败样本
+      格式 / 答案 / 指代 / 图像无效
+      问题有歧义或图像不清楚
+    type: terminal
+    size: xl
+    position:
+      x: 3496
+      'y': 584
+    style:
+      fontSize: 10
+  - id: release
+    label: |-
+      发布 MuirBench
+      2,600 题 · 11,264 张图
+      1,300 个配对 · 平均 4.3 · 范围 2–9
+      数据许可 · CC BY 4.0
+    type: database
+    size: xl
+    position:
+      x: 3976
+      'y': 296
+    style:
+      fontSize: 10
+  - id: schema
+    label: |-
+      固定版 HF 字段
+      idx · task · image_relation · image_type
+      question · options · answer · image_list
+      counterpart_idx · 3–5 个选项
+      论文 images → 发布 image_list
+    type: document
+    size: xl
+    position:
+      x: 3976
+      'y': 728
+    style:
+      fontSize: 10
+  - id: modality_gate
+    label: |-
+      配置输入方式？
+      VLMEvalKit · 温度 0 · 重试 10
+      未发布完整运行器
+      原生多图或拼接为单图
+      保留顺序与位置
+    type: decision
+    size: xl
+    position:
+      x: 3328
+      'y': 920
+    style:
+      fontSize: 10
+  - id: concatenate
+    label: |-
+      拼接有序图像
+      构成单个视觉输入
+      用于仅支持单图的模型
+    type: process
+    size: xl
+    position:
+      x: 3000
+      'y': 1112
+    style:
+      fontSize: 10
+  - id: prompt
+    label: |-
+      提示词 + 回答
+      问题 · 动态 A…E 选项
+      提示仅列 A–D · 末尾“Answer:”
+      保持图文位置连贯
+      温度 0 · 重试 10 · 保留原文
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 920
+    style:
+      fontSize: 10
+  - id: coverage_gate
+    label: |-
+      预测覆盖完整吗？
+      完整集合应为 2,600 题
+      每个发布样本一条预测
+    type: decision
+    size: xl
+    position:
+      x: 2032
+      'y': 920
+    style:
+      fontSize: 10
+  - id: candidate_gate
+    label: |-
+      解析器找到几个候选？
+      先搜索 (A)，再搜索裸字母 A
+      回答超过 5 词时匹配选项文本
+    type: decision
+    size: xl
+    position:
+      x: 1704
+      'y': 920
+    style:
+      fontSize: 10
+  - id: random_fallback
+    label: |-
+      固定种子的随机回退
+      没有找到候选
+      random.seed(42)
+      从可用标签中选择
+    type: process
+    size: xl
+    position:
+      x: 1376
+      'y': 680
+    style:
+      fontSize: 10
+  - id: drift_gate
+    label: |-
+      多候选采用哪条规则？
+      论文协议
+      已发布 postprocess.py
+    type: decision
+    size: xl
+    position:
+      x: 1376
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: paper_first
+    label: |-
+      论文规定取首次出现
+      附录 C.2 的协议
+      与已发布代码不一致
+      记录为规格漂移
+    type: terminal
+    size: xl
+    position:
+      x: 1056
+      'y': 1240
+    style:
+      fontSize: 10
+  - id: code_last
+    label: |-
+      已发布代码取末次出现
+      用 rfind 查找每个候选
+      argmax 选择最靠后的位置
+      这是实际可执行路径
+    type: process
+    size: xl
+    position:
+      x: 1056
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: score_gate
+    label: |-
+      解析标签等于标准答案吗？
+      比较提取出的选项索引
+      对每个发布样本计准确率
+    type: decision
+    size: xl
+    position:
+      x: 1056
+      'y': 920
+    style:
+      fontSize: 10
+  - id: correct
+    label: |-
+      单项正确 · 1
+      预测选项等于标准答案
+      纳入完整分母
+    type: process
+    size: xl
+    position:
+      x: 728
+      'y': 728
+    style:
+      fontSize: 10
+  - id: incorrect
+    label: |-
+      单项错误 · 0
+      预测选项不等于标准答案
+      纳入完整分母
+    type: process
+    size: xl
+    position:
+      x: 728
+      'y': 1016
+    style:
+      fontSize: 10
+  - id: aggregate
+    label: |-
+      汇总准确率
+      完整集合分母 · 2,600
+      比较可答题与不可答题
+      保留配对和子集标签
+    type: process
+    size: xl
+    position:
+      x: 408
+      'y': 920
+    style:
+      fontSize: 10
+  - id: human
+    label: |-
+      人类评测协议
+      两位领域专家
+      同一配对的两题分给不同专家
+      论文总体准确率 · 93.15%
+    type: user
+    size: xl
+    position:
+      x: 408
+      'y': 1240
+    style:
+      fontSize: 10
+  - id: report
+    label: |-
+      报告鲁棒性
+      总体 + 12 个任务准确率
+      关系 · 位置 · 可答性子集
+      变换类型错误率
+      样本缺失 → 不完整 · 不得称完整准确率
+    type: terminal
+    size: xl
+    position:
+      x: 80
+      'y': 920
+    style:
+      fontSize: 10
+edges:
+  - from: evidence
+    to: source_route
+    type: primary
+  - from: source_route
+    to: existing_source
+    type: primary
+    label: 现有数据 · 40.8%
+  - from: source_route
+    to: derived_source
+    type: primary
+    label: 派生数据 · 21.7%
+  - from: source_route
+    to: new_source
+    type: primary
+    label: 新收集数据 · 37.5%
+  - from: existing_source
+    to: answerable_pool
+    type: primary
+  - from: derived_source
+    to: answerable_pool
+    type: primary
+  - from: new_source
+    to: answerable_pool
+    type: primary
+  - from: answerable_pool
+    to: transform_route
+    type: primary
+  - from: transform_route
+    to: image_transform
+    type: primary
+    label: 修改图像 · 315 · 24.2%
+  - from: transform_route
+    to: question_transform
+    type: primary
+    label: 修改问题 · 459 · 35.3%
+  - from: transform_route
+    to: option_transform
+    type: primary
+    label: 修改选项 · 526 · 40.5%
+  - from: image_transform
+    to: paired_pool
+    type: primary
+  - from: question_transform
+    to: paired_pool
+    type: primary
+  - from: option_transform
+    to: paired_pool
+    type: primary
+  - from: paired_pool
+    to: quality_gate
+    type: primary
+  - from: quality_gate
+    to: release
+    type: primary
+    label: 两阶段均通过
+  - from: quality_gate
+    to: quality_reject
+    type: optional
+    label: 自动或专家审核失败
+  - from: release
+    to: schema
+    type: primary
+  - from: schema
+    to: human
+    type: optional
+    label: 人类评测协议
+  - from: schema
+    to: modality_gate
+    type: primary
+  - from: modality_gate
+    to: prompt
+    type: primary
+    label: 原生支持多图输入
+  - from: modality_gate
+    to: concatenate
+    type: primary
+    label: 仅支持单图
+  - from: concatenate
+    to: prompt
+    type: primary
+  - from: prompt
+    to: coverage_gate
+    type: primary
+  - from: coverage_gate
+    to: candidate_gate
+    type: primary
+    label: 完整覆盖 · 2,600 题
+  - from: coverage_gate
+    to: report
+    type: optional
+    label: 样本缺失 · 结果不完整
+  - from: candidate_gate
+    to: score_gate
+    type: primary
+    label: 恰好一个候选
+  - from: candidate_gate
+    to: random_fallback
+    type: optional
+    label: 没有候选
+  - from: candidate_gate
+    to: drift_gate
+    type: optional
+    label: 多个候选
+  - from: random_fallback
+    to: score_gate
+    type: primary
+  - from: drift_gate
+    to: paper_first
+    type: optional
+    label: 论文规则 · 首次出现
+  - from: drift_gate
+    to: code_last
+    type: primary
+    label: 代码规则 · 末次出现
+  - from: code_last
+    to: score_gate
+    type: primary
+  - from: score_gate
+    to: correct
+    type: primary
+    label: 与标准答案相同
+  - from: score_gate
+    to: incorrect
+    type: primary
+    label: 与标准答案不同
+  - from: correct
+    to: aggregate
+    type: primary
+  - from: incorrect
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+  - from: human
+    to: report
+    type: optional
+modules: []

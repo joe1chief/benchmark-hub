@@ -1,0 +1,244 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: EQ-Bench V1 构建流程
+  description: 固定版本地展示论文时期 60 题 V1 基准构建、批评与修订提示、归一化距离分数、论文重试协议，以及单独标明的当前运行器差异。
+  legend: 实线表示 arXiv:2312.06281 V1；虚线表示后续官方证据或当前运行器行为，包括更短的重试上限。V1 允许负分；0 是随机基线而非下界。
+nodes:
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv:2312.06281v2 · V1 协议
+      仓库分支 v2.4 @ 337df8a
+      V1 数据 SHA 9c52ae2
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: seeds
+    label: |-
+      采样多样化对话种子
+      随机地点 · 作者风格
+      广泛的正面 / 负面冲突情境
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 320
+  - id: dialogues
+    label: |-
+      GPT-4 生成高情绪张力对话
+      必须描写冲突或紧张场景
+      论文未说明候选池规模
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 320
+  - id: selection
+    label: |-
+      后续官方 README：共生成 200 段对话
+      为 V1 选择最连贯且最具挑战的 60 段
+      未披露逐条选择量表
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 320
+  - id: references
+    label: |-
+      作者制定每道问题与参考答案
+      选择四种差异化候选情绪
+      设定预期的 0–10 强度
+      参考值以总和 10 的归一化形式存储
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 320
+  - id: dataset
+    label: |-
+      EQ-Bench V1 测试制品
+      60 道英文情绪理解题
+      作者参考答案；不使用 GPT-4 评审
+      V1 JSON SHA 9c52ae2
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 320
+  - id: version_gate
+    label: |-
+      显式选择论文时期协议
+      当前仓库默认 V2 / 171 题
+      含修订的 V1：-v1 -revise
+      V1 与 V2 分数不可直接比较
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 320
+  - id: prompt
+    label: |-
+      使用完全一致的 V1 零样本提示
+      首轮为四种情绪打 0–10 分
+      逐步批评后再给出修订分数
+      固定标题支持自动解析
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 320
+  - id: runner
+    label: |-
+      论文 §3.10 重试协议
+      温度从 0.01 开始
+      每次解析失败后增加 0.15
+      直至成功解析或尝试次数超过 5
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 320
+  - id: repo_runner
+    label: |-
+      固定运行器差异
+      每题仅尝试 3 次
+      同样从 0.01 开始、每次增加 0.15
+      必须解析四个名称匹配的整数分数
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 40
+  - id: normalize
+    label: |-
+      将每个模型向量归一化到总和 10
+      总和为零或情绪名称不匹配则拒绝
+      与已归一化的 V1 参考答案比较
+      评估相对强度而非绝对强度
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 320
+  - id: question_score
+    label: |-
+      单题原始分数
+      q = 10 − Σ |模型情绪 − 参考情绪|
+      仅计入可解析的首轮 / 修订答案
+      不设下限；q 可以为负
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 320
+  - id: aggregate
+    label: |-
+      聚合协议边界
+      论文 V1 与固定的当前运行器
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 320
+  - id: paper_aggregate
+    label: |-
+      论文 V1 聚合
+      分别平均可解析的首轮 / 修订轮
+      选择更高的整轮，绝不逐题择优
+      原始均值乘 10 · 少于 50/60 题则失败
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 100
+  - id: repo_aggregate
+    label: |-
+      固定运行器增加可解析率门禁
+      修订轮得分必须不低于首轮
+      且可解析数不少于首轮的 95%
+      否则取首轮 · 通过阈值 83.33%
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 540
+  - id: report
+    label: |-
+      EQ-Bench V1 分数允许为负
+      随机基线为 0，而非下界
+      与参考答案完全一致的上限为 100
+      同时报告首轮 / 修订轮可解析数
+    type: terminal
+    size: xl
+    position:
+      x: 3160
+      'y': 320
+edges:
+  - from: evidence
+    to: seeds
+    type: data
+  - from: seeds
+    to: dialogues
+    type: primary
+  - from: dialogues
+    to: selection
+    type: primary
+  - from: selection
+    to: references
+    type: primary
+  - from: references
+    to: dataset
+    type: primary
+  - from: dataset
+    to: version_gate
+    type: primary
+  - from: version_gate
+    to: prompt
+    type: primary
+  - from: prompt
+    to: runner
+    type: primary
+  - from: prompt
+    to: repo_runner
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0
+      entryY: 0.5
+  - from: runner
+    to: normalize
+    type: primary
+  - from: repo_runner
+    to: normalize
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.5
+      entryY: 0
+  - from: normalize
+    to: question_score
+    type: primary
+  - from: question_score
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: paper_aggregate
+    type: primary
+  - from: aggregate
+    to: repo_aggregate
+    type: data
+  - from: paper_aggregate
+    to: report
+    type: primary
+  - from: repo_aggregate
+    to: report
+    type: data
+modules: []

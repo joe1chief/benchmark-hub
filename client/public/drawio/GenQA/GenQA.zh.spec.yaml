@@ -1,0 +1,156 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OlmoBaseEval GenQA 构建流程
+  description: 与来源对齐的聚类、九项套件组装、分任务评测和宏平均聚合流程。
+  legend: 虚线表示固定证据或论文披露的边界，实线对应 Olmo 3 报告与 OLMES 的 olmo3:base:gen 配置。 GenQA 是能力任务簇，不是独立数据集。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2512.13961v2
+      OLMES 仓库 5a51f502
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: pool
+    label: |-
+      汇集 2.3 万个基准分数
+      来自 70 个外部开放权重模型
+      比较各任务的模型排序
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 300
+  - id: cluster
+    label: |-
+      Ward 层次聚类
+      合并模型排序相似的评测
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 300
+  - id: align
+    label: |-
+      按任务格式校准任务簇
+      单词元选择题拆为 STEM/非 STEM
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 300
+  - id: rc_branch
+    label: |-
+      排序选择/续写分支
+      HellaSwag · WinoGrande
+      LAMBADA · BasicSkills
+      BasicSkills 内含六个子任务
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 80
+  - id: gen_branch
+    label: |-
+      生成式短答案分支
+      DROP · Jeopardy · NaturalQs
+      SQuAD · CoQA
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 520
+  - id: eval_rc
+    label: |-
+      运行排序选择/续写评测
+      5 样本；LAMBADA 以零样本贪心续写
+      按字符 · 原始 · 按词元准确率
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 80
+  - id: eval_gen
+    label: |-
+      生成短答案
+      5 样本；CoQA 使用零样本上下文
+      T 0 · top-p 1 · 最多 100/50 词元
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 520
+  - id: task_score
+    label: |-
+      计算九个套件项得分
+      排序/续写：各任务准确率变体
+      短答案：对答案库计算 F1
+      BasicSkills：六子任务宏平均
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 300
+  - id: macro
+    label: |-
+      对九个套件项做宏平均
+      报告 OlmoBaseEval GenQA
+      作为基础模型 Main 能力项
+    type: terminal
+    size: xl
+    position:
+      x: 1900
+      'y': 300
+  - id: limitation
+    label: |-
+      已披露边界
+      答案库不完整会漏判有效答案
+      Gen2MC 独立于 GenQA
+      没有独立 GenQA 数据集
+    type: document
+    size: xl
+    position:
+      x: 2160
+      'y': 300
+edges:
+  - from: evidence
+    to: pool
+    type: data
+  - from: pool
+    to: cluster
+    type: primary
+  - from: cluster
+    to: align
+    type: primary
+  - from: align
+    to: rc_branch
+    type: primary
+  - from: align
+    to: gen_branch
+    type: primary
+  - from: rc_branch
+    to: eval_rc
+    type: primary
+  - from: gen_branch
+    to: eval_gen
+    type: primary
+  - from: eval_rc
+    to: task_score
+    type: primary
+  - from: eval_gen
+    to: task_score
+    type: primary
+  - from: task_score
+    to: macro
+    type: primary
+  - from: macro
+    to: limitation
+    type: data
+modules: []

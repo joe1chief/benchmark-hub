@@ -1,81 +1,229 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CodeElo Build Process
+  title: CodeElo Build, Official Judging, and Rating Process
   description: >-
-    Paper-aligned CodeElo flow from CodeForces problem collection to official online judging and human-comparable Elo
-    ratings.
-  legend: Solid arrows show problem ingestion, official judging, and Elo scoring.
+    Paper-aligned CodeElo workflow that preserves the material difference between the 54-contest paper evaluation and
+    the larger pinned Hugging Face release before tracing official Codeforces judging and Elo estimation.
+  legend: Solid arrows show the paper evaluation path; dashed arrows preserve the public-release version boundary.
 nodes:
-  - id: cf
-    label: CodeForces
-    type: database
+  - id: evidence
+    label: |-
+      Evidence Boundary
+      arXiv:2501.01257v2
+      Repo 0bffc84 • HF 45a2cbb
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: parse
-    label: Parse HTML
+      'y': 240
+  - id: source
+    label: |-
+      Rated Codeforces Contests
+      May 4–November 4, 2024
+      Recent Window Limits Contamination
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 240
+  - id: collection
+    label: |-
+      Collect and Classify Problems
+      Division • Rating • 35 Tags
+      Tags Hidden from Models
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: tags
-    label: Tags + Ratings
+      x: 600
+      'y': 240
+  - id: paper_set
+    label: |-
+      Paper Evaluation Set
+      Exclude Div. 1 • 54 Contests
+      387 Problems • Original HTML
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: hf_release
+    label: |-
+      Pinned HF Public Release
+      57 Contests • 408 Records
+      Includes 21 Div. 1 • Markdown
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: paper_prompt
+    label: |-
+      Paper CoT Prompt
+      Complete C++ Program
+      Original HTML • Tags Hidden
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: recent
-    label: Recent Tests
+      x: 1160
+      'y': 80
+  - id: release_use
+    label: |-
+      Public-Release Boundary
+      Filtering 21 Div. 1 Leaves 387
+      Markdown ≠ Original HTML Prompt
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: inference_route
+    label: Inference Route?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: open_source
+    label: |-
+      Open-Source Decoding
+      Temperature 0.7 • top_p 0.8 • top_k 20
+      Repetition Penalty 1.1
+      4,096 Tokens; QwQ 32,768
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: code
-    label: Model Code
-    type: document
+      x: 1720
+      'y': 0
+  - id: proprietary
+    label: |-
+      Proprietary Models
+      Provider API Defaults
+      Same C++ CoT Prompt
+    type: process
     size: xl
     position:
-      x: 1080
+      x: 1720
       'y': 160
-  - id: judge
-    label: Official Judge
+  - id: runner_parse
+    label: |-
+      Pinned Runner Parse
+      First Fenced Code Block
+      Default Unlabeled Block to C++
+      Repo 0bffc84
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 80
+  - id: attempt_execution
+    label: |-
+      Pinned Attempt Execution
+      Up to 8 Attempts per Problem
+      Generate + Submit All Parsed Candidates
+      No Early Stop after an AC
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 80
+  - id: official_judge
+    label: |-
+      Direct Codeforces Judgment
+      Hidden Tests • Special / Interactive
+      Platform Time + Memory Limits
+      All Tests Must Pass
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 80
+  - id: contest_score
+    label: |-
+      Reconstruct Contest Score
+      Failed Attempts: Score / Penalty Cost
+      No Submission-Time Penalty
+      Score at First Acceptance
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 80
+  - id: elo
+    label: |-
+      Human-Comparable Elo
+      Insert Model among Human Ranks
+      Binary-Search Expected Rating
+      Average 54 Contest Ratings
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 80
+  - id: report
+    label: |-
+      CodeElo Report
+      Elo + Human Percentile
+      Pass@1 / 2 / 4 / 8
+      Disclose Artifact Variant
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: elo
-    label: Elo Rating
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 3400
+      'y': 240
 edges:
-  - from: cf
-    to: parse
+  - from: evidence
+    to: source
     type: primary
-  - from: parse
-    to: tags
+  - from: source
+    to: collection
     type: primary
-  - from: tags
-    to: recent
+  - from: collection
+    to: paper_set
     type: primary
-  - from: recent
-    to: code
+  - from: collection
+    to: hf_release
+    type: data
+  - from: paper_set
+    to: paper_prompt
     type: primary
-  - from: code
-    to: judge
+  - from: paper_prompt
+    to: inference_route
     type: primary
-  - from: judge
+  - from: inference_route
+    to: open_source
+    type: primary
+  - from: inference_route
+    to: proprietary
+    type: primary
+  - from: open_source
+    to: runner_parse
+    type: primary
+  - from: proprietary
+    to: runner_parse
+    type: primary
+  - from: runner_parse
+    to: attempt_execution
+    type: primary
+  - from: attempt_execution
+    to: official_judge
+    type: primary
+  - from: official_judge
+    to: contest_score
+    type: primary
+  - from: contest_score
     to: elo
     type: primary
+  - from: elo
+    to: report
+    type: primary
+  - from: hf_release
+    to: release_use
+    type: data
+  - from: release_use
+    to: report
+    type: data
 modules: []

@@ -1,0 +1,379 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VoiceBench — Spoken Data Construction, Robustness, and Metrics
+  description: >-
+    VoiceBench paper-v3 adapts seven capability datasets with 636/200/553/455/3,074/345/520 samples. Capability and
+    robustness are parallel benchmark components. CommonEval and SD-QA use real spoken instructions; the synthetic-only
+    capability path normalizes TTS text with GPT-4o, generates audio with Google TTS, manually checks correctness and
+    the 30-second limit, and rewrites text when needed. Robustness seeds are source-constrained: AlpacaEval supplies
+    speed, age, volume, pitch, environment, content-error, and synthetic-accent variants (with Google/Melo TTS), while
+    SD-QA supplies real-accent speech. Evaluation compares ground-truth text (T.) with speech (S.) and uses
+    task-specific metrics. The paper reports an Overall column, but neither the paper nor official evaluation code
+    publishes the aggregation formula.
+  legend: >-
+    Source: arXiv:2410.17196v3, Sections 3.1-3.2, Tables 2-3, and the official repository
+    https://github.com/MatthewCYM/VoiceBench. The paper defines capability and robustness as parallel benchmark
+    components. GPT-4o text normalization, Google TTS, manual correctness validation, rewriting when needed, and the
+    30-second cap apply to the synthetic path; CommonEval and SD-QA use real speech. Table 3 reports an Overall column,
+    but neither the paper nor the official evaluation code publishes its aggregation formula.. Solid arrows show the
+    main flow explicitly supported by the paper or official documentation.
+nodes:
+  - id: sources
+    label: Seven sources · AlpacaEval/CommonEval · SD-QA · OpenBookQA/MMSU · IFEval · AdvBench
+    type: input
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: filters
+    label: Task-specific Text Filters
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 360
+  - id: audioRoute
+    label: Speech source?
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: rewrite
+    label: GPT-4o TTS Text Normalization · synthetic only
+    type: service
+    size: xl
+    position:
+      x: 880
+      'y': 160
+  - id: tts
+    label: Google TTS
+    type: service
+    size: xl
+    position:
+      x: 1160
+      'y': 160
+  - id: listenGate
+    label: Synthetic speech correct and ≤30s?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 160
+  - id: reviseText
+    label: Rewrite TTS text if needed
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: realSpeech
+    label: Real Speech · CommonEval / SD-QA
+    type: input
+    size: xl
+    position:
+      x: 880
+      'y': 560
+  - id: componentRouter
+    label: Capability Benchmark Assembly
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: capability
+    label: Capability Component · Seven Datasets
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: robustRouter
+    label: |-
+      Robustness Family Router
+      Source-Constrained
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 560
+  - id: speaker
+    label: |-
+      Speaker Robustness
+      Google TTS: Speed · Volume · Pitch
+      CosyVoice-300M: Age
+      Accent: SD-QA Real · Google/Melo Synthetic
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 800
+  - id: environment
+    label: |-
+      Environment (AlpacaEval)
+      Far-field · Distortion · Reverb · Loss · Noise
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 800
+  - id: content
+    label: |-
+      Content (AlpacaEval)
+      Repair · Repeat · Pause · Disfluency · Errors
+    type: process
+    size: xl
+    position:
+      x: 2400
+      'y': 800
+  - id: textSet
+    label: Ground-truth Text Inputs (T.)
+    type: document
+    size: xl
+    position:
+      x: 2800
+      'y': 800
+  - id: evalSet
+    label: Speech Inputs (S.) · Capability + Robustness
+    type: output
+    size: xl
+    position:
+      x: 2800
+      'y': 1040
+  - id: metricRouter
+    label: Task-specific evaluation · T. vs S.?
+    type: decision
+    size: xl
+    position:
+      x: 2800
+      'y': 1280
+  - id: openJudge
+    label: 'Open QA: GPT-4o-mini · 1–5'
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 800
+  - id: sdQa
+    label: 'SD-QA: PANDA / GPT Accuracy'
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1040
+  - id: mcq
+    label: 'MCQ: Rule-extraction Accuracy'
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1280
+  - id: ifeval
+    label: 'IFEval: Loose / Strict · Prompt / Instruction'
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1520
+  - id: advbench
+    label: 'AdvBench: Refusal Rate'
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1760
+  - id: report
+    label: Task Metrics + Reported Overall · formula unpublished
+    type: output
+    size: xl
+    position:
+      x: 4200
+      'y': 1280
+  - id: alpaca_robust_seed
+    label: |-
+      AlpacaEval Robustness Seed
+      Speaker · Environment · Content
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 800
+  - id: sdqa_real_accent
+    label: |-
+      SD-QA Seed
+      Real Accent
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 1040
+edges:
+  - from: sources
+    to: filters
+    type: primary
+  - from: filters
+    to: audioRoute
+    type: primary
+  - from: filters
+    to: textSet
+    type: data
+    label: T.
+    labelPosition: center
+    waypoints:
+      - x: 440
+        'y': -120
+      - x: 2920
+        'y': -120
+      - x: 2920
+        'y': 800
+  - from: audioRoute
+    to: rewrite
+    type: primary
+    label: Synthetic
+    labelPosition: center
+  - from: audioRoute
+    to: realSpeech
+    type: primary
+    label: Real · CommonEval / SD-QA
+    labelPosition: center
+  - from: rewrite
+    to: tts
+    type: primary
+  - from: tts
+    to: listenGate
+    type: primary
+  - from: listenGate
+    to: reviseText
+    type: optional
+    label: 'No'
+    labelPosition: center
+  - from: reviseText
+    to: rewrite
+    type: optional
+  - from: listenGate
+    to: componentRouter
+    type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: realSpeech
+    to: componentRouter
+    type: primary
+  - from: componentRouter
+    to: capability
+    type: primary
+    label: Capability
+    labelPosition: center
+  - from: robustRouter
+    to: speaker
+    type: primary
+    label: Speaker
+    labelPosition: center
+  - from: robustRouter
+    to: environment
+    type: primary
+    label: Environment
+    labelPosition: center
+  - from: robustRouter
+    to: content
+    type: primary
+    label: Content
+    labelPosition: center
+  - from: capability
+    to: evalSet
+    type: data
+    waypoints:
+      - x: 2680
+        'y': 220
+      - x: 2680
+        'y': 1100
+  - from: speaker
+    to: evalSet
+    type: primary
+  - from: environment
+    to: evalSet
+    type: primary
+  - from: content
+    to: evalSet
+    type: primary
+  - from: textSet
+    to: metricRouter
+    type: data
+    label: Text (T.)
+    labelPosition: center
+    waypoints:
+      - x: 3160
+        'y': 860
+      - x: 3160
+        'y': 1340
+  - from: evalSet
+    to: metricRouter
+    type: primary
+    label: Speech (S.)
+    labelPosition: center
+  - from: metricRouter
+    to: openJudge
+    type: primary
+    label: Open QA
+    labelPosition: center
+  - from: metricRouter
+    to: sdQa
+    type: primary
+    label: SD-QA
+    labelPosition: center
+  - from: metricRouter
+    to: mcq
+    type: primary
+    label: MCQ
+    labelPosition: center
+  - from: metricRouter
+    to: ifeval
+    type: primary
+    label: IFEval
+    labelPosition: center
+  - from: metricRouter
+    to: advbench
+    type: primary
+    label: AdvBench
+    labelPosition: center
+  - from: openJudge
+    to: report
+    type: primary
+  - from: sdQa
+    to: report
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: ifeval
+    to: report
+    type: primary
+  - from: advbench
+    to: report
+    type: primary
+  - from: sdqa_real_accent
+    to: speaker
+    type: data
+    label: Real accent
+    waypoints:
+      - x: 1720
+        'y': 1040
+      - x: 1720
+        'y': 940
+      - x: 1840
+        'y': 940
+  - from: alpaca_robust_seed
+    to: robustRouter
+    type: data
+    label: AlpacaEval seeds
+    waypoints:
+      - x: 1720
+        'y': 680
+      - x: 1880
+        'y': 680
+      - x: 1880
+        'y': 560
+modules: []

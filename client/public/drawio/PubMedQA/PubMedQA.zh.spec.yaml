@@ -1,0 +1,281 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PubMedQA 构建与评测流程
+  description: >-
+    基于固定论文与官方仓库重建三个 PubMedQA 子集、PQA-L 非对称双标注协议、规则筛选 PQA-U、
+    启发式生成 PQA-A，以及 PQA-L 推理型评测流程。
+  legend: >-
+    实线表示论文披露的构建与评测流程；虚线表示固定证据、官方发布、评测器实现和许可边界。
+nodes:
+  - id: source_evidence
+    label: |-
+      固定官方证据
+      arXiv 1909.06146v1
+      PDF 190af87fa13a
+      官方代码 1cbae8e92f72
+    type: document
+    size: xl
+    position: { x: 20, y: 340 }
+    style: { fontSize: 9 }
+  - id: pubmed_pool
+    label: |-
+      PubMed 论文池
+      结构化摘要
+      标题 · 正文 · 结论
+    type: database
+    size: xl
+    position: { x: 260, y: 340 }
+  - id: natural_gate
+    label: |-
+      筛选自然问题
+      标题包含问号
+      结构化摘要包含
+      明确结论段
+    type: process
+    size: xl
+    position: { x: 500, y: 80 }
+    style: { fontSize: 9 }
+  - id: natural_instance
+    label: |-
+      构造 pre-PQA-U 样本
+      问题 = 原始标题
+      上下文 = 去除结论的摘要
+      长答案 = 结论
+    type: document
+    size: xl
+    position: { x: 740, y: 80 }
+    style: { fontSize: 9 }
+  - id: pqal_sample
+    label: |-
+      随机抽取候选样本
+      进入 PQA-L 专家标注
+    type: process
+    size: xl
+    position: { x: 980, y: -60 }
+  - id: answerability_gate
+    label: |-
+      能否用 是 · 否 · 可能 回答
+      专家标注前移除
+      不可回答样本
+    type: process
+    size: xl
+    position: { x: 1220, y: -60 }
+  - id: annotator_one
+    label: |-
+      标注者一 · 医学博士候选人
+      查看问题 + 上下文
+      + 长答案
+      无需推理标注
+    type: user
+    size: xl
+    position: { x: 1460, y: -200 }
+    style: { fontSize: 9 }
+  - id: annotator_two
+    label: |-
+      标注者二 · 医学博士候选人
+      仅查看问题 + 上下文
+      长答案不可见
+      需要推理标注
+    type: user
+    size: xl
+    position: { x: 1460, y: 80 }
+    style: { fontSize: 9 }
+  - id: agreement_gate
+    label: |-
+      比较两份标签
+      标签一致时直接作为
+      最终标准答案
+    type: process
+    size: xl
+    position: { x: 1700, y: -60 }
+  - id: discussion
+    label: |-
+      标签不一致时
+      两位标注者讨论
+      寻求统一标签
+    type: process
+    size: xl
+    position: { x: 1940, y: 180 }
+  - id: removed_item
+    label: |-
+      移除候选样本
+      不可回答或
+      讨论后仍无法一致
+    type: terminal
+    size: xl
+    position: { x: 2180, y: 380 }
+  - id: pqa_l
+    label: |-
+      PQA-L
+      1,000 条专家标注样本
+      是 55.2% · 否 33.8%
+      可能 11.0%
+    type: database
+    size: xl
+    position: { x: 2180, y: -60 }
+    style: { fontSize: 9 }
+  - id: pqa_l_split
+    label: |-
+      固定 PQA-L 划分
+      随机 500 条用于
+      十折交叉验证
+      其余 500 条作为测试集
+    type: database
+    size: xl
+    position: { x: 2420, y: -60 }
+    style: { fontSize: 9 }
+  - id: eval_input
+    label: |-
+      需要推理的测试
+      输入问题 + 上下文
+      推理时仍隐藏结论
+    type: process
+    size: xl
+    position: { x: 2660, y: -60 }
+  - id: predict
+    label: |-
+      为每个测试 PMID
+      预测一个标签
+      是 · 否 · 可能
+    type: process
+    size: xl
+    position: { x: 2900, y: -60 }
+  - id: metrics
+    label: |-
+      PQA-L 测试报告
+      准确率
+      三标签宏平均 F1
+    type: terminal
+    size: xl
+    position: { x: 3140, y: -60 }
+  - id: pqa_u_filter
+    label: |-
+      规则筛选 pre-PQA-U
+      移除特殊疑问词问题
+      与多实体选择问题
+      可回答性判定与标注员 1
+      一致率超过 93%
+    type: process
+    size: xl
+    position: { x: 980, y: 400 }
+    style: { fontSize: 9 }
+  - id: pqa_u
+    label: |-
+      PQA-U
+      61.2K 条未标注样本
+      保留可由 是 · 否 · 可能
+      回答的问题
+    type: database
+    size: xl
+    position: { x: 1220, y: 400 }
+    style: { fontSize: 9 }
+  - id: statement_gate
+    label: |-
+      筛选陈述式标题
+      NP-(VBP/VBZ) 词性结构
+      结构化摘要包含
+      明确结论段
+    type: process
+    size: xl
+    position: { x: 500, y: 760 }
+    style: { fontSize: 9 }
+  - id: artificial_convert
+    label: |-
+      启发式 PQA-A 转换
+      移动或补充系词/助动词
+      改写为问题
+      按动词否定状态定标签
+    type: process
+    size: xl
+    position: { x: 740, y: 760 }
+    style: { fontSize: 9 }
+  - id: pqa_a
+    label: |-
+      PQA-A
+      211.3K 条自动构造样本
+      是 92.8% · 否 7.2%
+      不包含 可能 标签
+    type: database
+    size: xl
+    position: { x: 980, y: 760 }
+    style: { fontSize: 9 }
+  - id: pqa_a_split
+    label: |-
+      PQA-A 划分
+      随机 200K 条训练
+      其余 11.3K 条验证
+    type: database
+    size: xl
+    position: { x: 1220, y: 760 }
+  - id: release_snapshot
+    label: |-
+      固定官方发布快照
+      提交 1cbae8e92f72
+      PQA-L 共 1,000 条
+      ori_pqal 8b3276be8942
+      测试标签 939fe566f090
+    type: document
+    size: xl
+    position: { x: 2180, y: 720 }
+    style: { fontSize: 9 }
+  - id: evaluator_boundary
+    label: |-
+      评测器实现边界
+      evaluation.py 2838af5bb0ac
+      预测 PMID 必须与测试集完全一致
+      sklearn 准确率 + 宏平均 F1
+    type: document
+    size: xl
+    position: { x: 3140, y: 480 }
+    style: { fontSize: 9 }
+  - id: license_boundary
+    label: |-
+      发布许可边界
+      仓库 LICENSE 为 MIT
+      许可 SHA 8e75abc6136b
+    type: document
+    size: xl
+    position: { x: 2420, y: 980 }
+    style: { fontSize: 9 }
+edges:
+  - { from: source_evidence, to: pubmed_pool, type: secondary, style: { dashed: true } }
+  - { from: pubmed_pool, to: natural_gate, type: primary }
+  - { from: pubmed_pool, to: statement_gate, type: primary }
+  - { from: natural_gate, to: natural_instance, type: primary }
+  - { from: natural_instance, to: pqal_sample, type: primary }
+  - { from: natural_instance, to: pqa_u_filter, type: primary }
+  - { from: pqal_sample, to: answerability_gate, type: primary }
+  - { from: answerability_gate, to: annotator_one, type: primary }
+  - { from: answerability_gate, to: annotator_two, type: primary }
+  - { from: answerability_gate, to: removed_item, type: primary }
+  - { from: annotator_one, to: agreement_gate, type: primary }
+  - { from: annotator_two, to: agreement_gate, type: primary }
+  - { from: agreement_gate, to: pqa_l, type: primary }
+  - { from: agreement_gate, to: discussion, type: primary }
+  - { from: discussion, to: pqa_l, type: primary }
+  - { from: discussion, to: removed_item, type: primary }
+  - { from: pqa_u_filter, to: pqa_u, type: primary }
+  - { from: statement_gate, to: artificial_convert, type: primary }
+  - { from: artificial_convert, to: pqa_a, type: primary }
+  - { from: pqa_a, to: pqa_a_split, type: primary }
+  - { from: pqa_l, to: pqa_l_split, type: primary }
+  - { from: pqa_l_split, to: eval_input, type: primary }
+  - { from: eval_input, to: predict, type: primary }
+  - { from: predict, to: metrics, type: primary }
+  - from: pqa_l
+    to: release_snapshot
+    type: secondary
+    style: { dashed: true }
+    waypoints:
+      - { x: 2280, y: 120 }
+      - { x: 2400, y: 120 }
+      - { x: 2400, y: 770 }
+  - { from: pqa_u, to: release_snapshot, type: secondary, style: { dashed: true } }
+  - { from: pqa_a, to: release_snapshot, type: secondary, style: { dashed: true } }
+  - { from: metrics, to: evaluator_boundary, type: secondary, style: { dashed: true } }
+  - { from: release_snapshot, to: license_boundary, type: secondary, style: { dashed: true } }
+modules: []

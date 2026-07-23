@@ -4,121 +4,205 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AA-Omniscience 构建流程
-  description: 基于 arXiv:2511.13029 论文整理的 AA-Omniscience 构建与评测流程。
-  legend: 实线表示基准构建与评测主流程；虚线表示用于保证可靠性和校准评估的审核/过滤回路。
+  title: AA-Omniscience 构建与评测流程
+  description: 按论文明确展示 GPT-5 生成、过滤与修订，人工验证，6,000 题全量评测集，以及另行按分布和模型性能对齐抽样的 600 题公开集。
+  legend: 全量集进入评测主线；公开 600 题仅为代表性发布分支。
 nodes:
-  - id: domains
+  - id: sources
     label: |-
-      领域与主题范围
-      6 个经济相关领域
-      42 个主题
+      选择权威信源
+      第一方 / 公认权威来源
+      当前 / 近期首次可答事实
     type: database
+    size: xl
+    position:
+      x: 280
+      'y': 100
+  - id: coverage
+    label: |-
+      定义经济相关覆盖
+      6 个领域 • 42 个主题
+      从商业到 STEM
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: sources
+      'y': 100
+  - id: generate
     label: |-
-      权威来源
-      一手、主要、二手来源
-      最新事实
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: generator
-    label: |-
-      问题生成 agent
-      从来源文本中抽取
-      事实型问题
+      GPT-5 生成问题
+      每题基于信源事实
+      要求精确短答案
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: filters
+      x: 520
+      'y': 100
+  - id: filter
     label: |-
-      筛选与修订
-      难度、歧义
-      来源依赖、精确性
-    type: decision
+      GPT-5 过滤
+      删除相似、歧义、过易
+      或依赖信源上下文的问题
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: dataset
+      x: 760
+      'y': 100
+  - id: revise
     label: |-
-      问题集
-      6,000 道总题量
-      公开 10% 子集
+      GPT-5 修订
+      提升精确度与格式约束
+      重新检查前沿模型难度
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 100
+  - id: manual_validation
+    label: |-
+      人工复核与验证
+      自动修订后的质量门控
+      具体流程 / 标注人数
+      论文未披露
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: full_release
+    label: |-
+      全量评测集 • 6,000 道问题
+      评测主线实际消费的数据集
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1480
+      'y': 100
+  - id: public_sampling
+    label: |-
+      代表性抽样
+      对齐领域 / 主题分布
+      对齐模型性能分布
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: public_release
+    label: |-
+      公开发布
+      600 题 • 10%
+      代表性公开子集
+    type: database
+    size: xl
+    position:
+      x: 1960
+      'y': 40
+  - id: prompt
+    label: |-
+      闭卷系统提示
+      {topic} 主题 + {category} 类别
+      仅输出答案 • 不作解释
+      无上下文 / 工具；不确定则弃答
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
   - id: answer
     label: |-
-      模型答题
-      无上下文、无工具
-      有把握才回答
+      被测模型回答
+      短答案或明确弃答
+      单次遍历全部 6,000 题
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: grading
+      x: 1960
+      'y': 400
+  - id: grade
     label: |-
-      Gemini 评分器
-      正确 / 部分正确
-      错误 / 未尝试
+      Gemini 2.5 Flash Preview
+      (09-2025) • 启用推理
+      与人工判分一致性最佳
+      优于受测的其他裁判
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 2200
+      'y': 400
+  - id: classes
+    label: |-
+      四分类判分
+      正确 • 部分正确
+      错误 • 未作答
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 400
   - id: metrics
     label: |-
-      可靠性指标
-      OI: \(100(c-i)/(c+p+i+a)\)
-      准确率 + 幻觉率
-    type: formula
+      可靠性指标 • N=c+p+i+a
+      OI = 100 × (c − i) / N
+      准确率 = c / N
+      幻觉率 = i / (p + i + a)
+      目标模型成本；不含裁判成本
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2680
+      'y': 400
+  - id: report
+    label: |-
+      AA-Omniscience 结果
+      总体 + 领域级可靠性
+      主题级估计须使用全量集
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 400
 edges:
-  - from: domains
+  - from: coverage
     to: sources
     type: primary
   - from: sources
-    to: generator
+    to: generate
     type: primary
-  - from: generator
-    to: filters
-    type: data
-    label: 候选问题
-  - from: filters
-    to: generator
-    type: optional
-    label: 修订或移除
-  - from: filters
-    to: dataset
+  - from: generate
+    to: filter
     type: primary
-    label: 通过题目
-  - from: dataset
+  - from: filter
+    to: revise
+    type: primary
+  - from: revise
+    to: manual_validation
+    type: primary
+  - from: manual_validation
+    to: full_release
+    type: primary
+  - from: full_release
+    to: public_sampling
+    type: secondary
+  - from: public_sampling
+    to: public_release
+    type: secondary
+  - from: full_release
+    to: prompt
+    type: primary
+  - from: prompt
     to: answer
     type: primary
-  - from: dataset
-    to: grading
-    type: data
-    label: 标准答案
   - from: answer
-    to: grading
+    to: grade
     type: primary
-    label: 模型答案
-  - from: grading
+  - from: grade
+    to: classes
+    type: primary
+  - from: classes
     to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

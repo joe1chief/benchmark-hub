@@ -4,99 +4,463 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Pare-Bench 构建流程
-  description: 基于论文的 Pare-Bench 构建流程：将移动应用建模为有状态有限状态机，场景定义应用初始化、事件流和验证 oracle，由 LLM 生成候选场景并经作者审核，最终在主动用户仿真中评估 proactive assistant。
-  legend: 实线箭头表示环境建模、场景生成、人工核验和主动代理评估流程。
+  title: Pare-Bench 构建与评测流程
+  description: 对齐论文v1的有状态应用建模、四阶段场景生成、Oracle重试、作者核验、主动用户评测与主动助手指标。
+  legend: 实线为论文披露的构建或评测阶段；虚线仅标识固定证据、生成器、应用计数、发布与指标命名边界，不是额外步骤。
 nodes:
-  - id: are
-    label: ARE底座
+  - id: source_evidence
+    label: |-
+      固定官方证据
+      arXiv 2604.00842v1 · PDF 259caaeaa7d3
+      Git 261149914a9e · tar c0c5aa90099a
+      full.txt SHA 50b6d79aae2f
+    type: document
+    size: xl
+    position:
+      x: 120
+      'y': 100
+  - id: extend_are
+    label: |-
+      扩展ARE平台
+      复用应用 · 场景 · 验证机制
+      加入主动用户仿真智能体
+      保留共享持久状态
+    type: document
+    size: xl
+    position:
+      x: 380
+      'y': 100
+  - id: app_scope
+    label: |-
+      定义论文v1应用范围
+      四类领域共9个FSM应用
+      System · Agent UI · FileSystem
+      核心应用列于表5
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: fsm
-    label: FSM应用
+      x: 640
+      'y': 100
+  - id: fsm_model
+    label: |-
+      将每个用户应用建模为FSM
+      屏幕作为状态
+      导航与表单作为转移
+      跟踪前台与后台应用
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: asym
-    label: 非对称API
+      x: 900
+      'y': 100
+  - id: asymmetry
+    label: |-
+      强制接口非对称
+      用户仅见状态依赖动作
+      助手获得扁平应用API
+      双方修改同一共享环境
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: scenario
-    label: 场景结构
+      x: 1160
+      'y': 100
+  - id: scenario_schema
+    label: |-
+      定义场景三部分
+      初始应用状态与种子数据
+      环境事件与Oracle事件流
+      最终状态验证条件
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: draft
-    label: LLM草稿
+      x: 1420
+      'y': 100
+  - id: generation_agent
+    label: |-
+      启动场景生成智能体
+      基于Claude Agent SDK
+      只读访问Pare代码库上下文
+      必须包含指定目标应用
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: verify
-    label: 作者核验
+      x: 1680
+      'y': 100
+  - id: description
+    label: |-
+      阶段1 · 生成故事
+      编写自然语言场景
+      扎根一个隐含用户目标
+      指定真实应用上下文
+    type: document
+    size: xl
+    position:
+      x: 1940
+      'y': 100
+  - id: uniqueness
+    label: |-
+      故事唯一？
+      大模型描述检查
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: noise
-    label: 噪声变体
+      x: 2200
+      'y': 100
+  - id: app_state
+    label: |-
+      阶段2 · 填充应用状态
+      生成init_and_populate_apps
+      写入联系人 · 邮件 · 日程数据
+      建立场景上下文
+    type: database
+    size: xl
+    position:
+      x: 2460
+      'y': 100
+  - id: event_flow
+    label: |-
+      阶段3 · 构建事件流
+      生成build_event_flow
+      调度环境事件
+      添加Oracle用户与助手动作
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 70
-  - id: bench
-    label: 143任务
+      x: 2460
+      'y': 360
+  - id: validation
+    label: |-
+      阶段4 · 生成验证逻辑
+      定义最终状态条件
+      检查完成任务所需动作
+      绑定任务成功Oracle
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 360
+  - id: oracle_run
+    label: Oracle检查是否通过？
+    type: decision
+    size: xl
+    position:
+      x: 1940
+      'y': 360
+  - id: human_review
+    label: |-
+      论文第5节：作者核验每个候选场景
+      检查故事连贯性
+      检查验证条件正确性
+      检查事件内容真实性
+    type: process
+    size: xl
+    position:
+      x: 1680
+      'y': 360
+  - id: retry_router
+    label: |-
+      路由Oracle检查失败
+      阶段2应用状态 · 阶段3事件流
+      阶段4验证逻辑
+      仅重试失败阶段
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 660
+  - id: release
+    label: |-
+      定稿Pare-Bench
+      四类领域共143个场景
+      上下文 · 目标 · 时机 · 编排
+      支持可选失败与噪声
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 360
+  - id: eval_config
+    label: |-
+      固定论文评测配置
+      四次运行 · GPT-5-mini用户
+      最多10轮 · 用户每轮1次迭代
+      观察5次 · 执行10次迭代
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: eval
-    label: 助手评估
+      x: 1420
+      'y': 600
+  - id: user_sim
+    label: |-
+      主动用户仿真器
+      每轮先行动
+      仅使用当前状态工具
+      接受 · 拒绝 · 或继续收集上下文
+    type: user
+    size: xl
+    position:
+      x: 900
+      'y': 600
+  - id: observe
+    label: |-
+      助手观察模式
+      接收用户动作与通知
+      只读工具
+      等待或提出帮助
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 600
+  - id: interaction_gate
+    label: |-
+      提议结果？
+      接受 · 拒绝 · 收集
+      或任务结束／轮次上限
+    type: decision
+    size: xl
+    position:
+      x: 380
+      'y': 600
+  - id: execute
+    label: |-
+      助手执行模式
+      完整跨应用扁平API
+      仅执行获批任务
+      随后进入下一用户轮次
+    type: process
+    size: xl
+    position:
+      x: 380
+      'y': 360
+  - id: final_oracle
+    label: |-
+      最终状态Oracle
+      检查用户目标是否完成
+      记录提议与接受次数
+      统计只读动作与轮次
+    type: process
+    size: xl
+    position:
+      x: 120
+      'y': 600
+  - id: robustness
+    label: |-
+      选择环境条件
+      基线：不注入失败或噪声
+      工具失败率0.1 · 0.2 · 0.4
+      泊松噪声每分钟2 · 4 · 6个事件
+      噪声穿插到场景事件中
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 600
+  - id: metrics
+    label: |-
+      报告四次运行指标
+      Success@4 · Success⁴
+      成功率 · 提议率
+      接受率 · 平均只读动作数
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 120
+      'y': 360
+  - id: generator_boundary
+    label: |-
+      生成器复现边界
+      论文只说明Claude Agent SDK
+      未披露相关检查点
+      论文：build_event_flow
+      代码：build_events_flow
+    type: document
+    size: xl
+    position:
+      x: 1940
+      'y': 900
+  - id: app_boundary
+    label: |-
+      应用计数文档边界
+      论文表5：9个FSM加3个核心应用
+      README：9个领域加2个核心应用
+      README计数未列FileSystem
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 900
+  - id: release_boundary
+    label: |-
+      固定发布边界
+      Git 261149914a9e · MIT
+      143个场景文件 · full共143条
+      full.txt SHA 50b6d79aae2f
+      未链接官方HF数据集
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 900
+  - id: metric_boundary
+    label: |-
+      固定指标口径边界
+      论文：Success@k · Successᵏ
+      代码：Pass@k · Passᵏ先过滤空值
+      Passᵏ可能少于k次有效运行
+      只读动作合计用户与助手调用
+    type: document
+    size: xl
+    position:
+      x: 120
+      'y': 900
 edges:
-  - from: are
-    to: fsm
+  - from: source_evidence
+    to: extend_are
+    type: secondary
+    style:
+      dashed: true
+  - from: extend_are
+    to: app_scope
     type: primary
-  - from: fsm
-    to: asym
+  - from: app_scope
+    to: fsm_model
     type: primary
-  - from: asym
-    to: scenario
+  - from: fsm_model
+    to: asymmetry
     type: primary
-  - from: scenario
-    to: draft
+  - from: asymmetry
+    to: scenario_schema
     type: primary
-  - from: draft
-    to: verify
+  - from: scenario_schema
+    to: generation_agent
     type: primary
-  - from: verify
-    to: noise
+  - from: generation_agent
+    to: description
     type: primary
-  - from: verify
-    to: bench
+  - from: description
+    to: uniqueness
     type: primary
-  - from: noise
-    to: bench
+  - from: uniqueness
+    to: description
     type: primary
-  - from: bench
-    to: eval
+    waypoints:
+      - x: 2300
+        'y': 16
+      - x: 2040
+        'y': 16
+  - from: uniqueness
+    to: app_state
     type: primary
+  - from: app_state
+    to: event_flow
+    type: primary
+  - from: event_flow
+    to: validation
+    type: primary
+  - from: validation
+    to: oracle_run
+    type: primary
+  - from: oracle_run
+    to: human_review
+    type: primary
+  - from: oracle_run
+    to: retry_router
+    type: primary
+  - from: retry_router
+    to: validation
+    type: primary
+  - from: retry_router
+    to: event_flow
+    type: primary
+  - from: retry_router
+    to: app_state
+    type: primary
+  - from: human_review
+    to: release
+    type: primary
+  - from: release
+    to: eval_config
+    type: primary
+  - from: user_sim
+    to: observe
+    type: primary
+  - from: observe
+    to: interaction_gate
+    type: primary
+  - from: interaction_gate
+    to: execute
+    type: primary
+  - from: interaction_gate
+    to: final_oracle
+    type: primary
+  - from: execute
+    to: user_sim
+    type: primary
+  - from: interaction_gate
+    to: user_sim
+    type: primary
+    waypoints:
+      - x: 480
+        'y': 760
+      - x: 1000
+        'y': 760
+  - from: final_oracle
+    to: metrics
+    type: primary
+  - from: eval_config
+    to: robustness
+    type: primary
+  - from: robustness
+    to: user_sim
+    type: primary
+  - from: generation_agent
+    to: generator_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1810
+        'y': 160
+      - x: 1810
+        'y': 820
+      - x: 1940
+        'y': 820
+  - from: app_scope
+    to: app_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 740
+        'y': 160
+      - x: 510
+        'y': 160
+      - x: 510
+        'y': 820
+      - x: 640
+        'y': 820
+  - from: release
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1550
+        'y': 410
+      - x: 1550
+        'y': 820
+      - x: 1420
+        'y': 820
+  - from: metrics
+    to: metric_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 8
+        'y': 410
+      - x: 8
+        'y': 820
+      - x: 120
+        'y': 820
 modules: []

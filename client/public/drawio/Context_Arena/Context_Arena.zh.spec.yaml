@@ -1,0 +1,166 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Context Arena GDM-MRCRv2 评测流程
+  description: 展示当前 Context Arena 的 GDM MRCRv2 Full 8-needle 流程；历史 OpenAI MRCR 仅作为版本漂移证据，不进入当前评测链。
+  legend: 实线表示当前独立评分路径；虚线分支只记录历史看板来源。
+nodes:
+  - id: evidence
+    label: |-
+      Michelangelo arXiv:2409.12640v2
+      eval_hub 提交 67b7fd2
+      contextarena.ai 核查于 2026-07-18
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: history
+    label: |-
+      历史 OpenAI MRCR @ f4c69fa
+      2 / 4 / 8 needles；2025-12-05 修错
+      旧看板来源，非当前流程
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: construct
+    label: |-
+      构造长用户—助手对话
+      键 = 格式 + 主题 + 风格
+      不同回答与干扰项随机交错
+      最终查询要求第 i 个匹配回答
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: current_release
+    label: |-
+      GDM MRCRv2 发布版
+      2 / 4 / 8 needles；文件扩至 8M tokens
+      要求唯一随机 12 字符前缀
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: arena_slice
+    label: |-
+      当前看板：仅 Full 8-needle
+      8K 至 1M 共 8 个桶
+      每桶运行数非固定 100
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: independent_run
+    label: |-
+      每个模型独立运行
+      无两两对战；无 LLM 裁判
+      必须报告工具权限以便比较
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: hash
+    label: |-
+      是否找到要求的
+      12 字符哈希最后一次出现？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: zero
+    label: |-
+      哈希缺失
+      单题记 0 分
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: compare
+    label: |-
+      保留最后一次哈希之后的内容
+      difflib.SequenceMatcher 对比目标
+      得分范围 [0, 1]
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 500
+  - id: bin_mean
+    label: |-
+      每桶单题比例取均值
+      得到 Pointwise 桶分数
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 300
+  - id: aggregate
+    label: |-
+      Pointwise + Cum AVG（桶间不加权）
+      AUC = 线性端点上的归一化梯形面积
+      缺失桶按 0 计
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+  - id: report
+    label: |-
+      Context Arena 看板
+      128K / 1M 的分数、Cum AVG 与 AUC
+      Token 效率与成本为辅助信息
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 300
+edges:
+  - from: evidence
+    to: history
+    type: data
+  - from: evidence
+    to: construct
+    type: primary
+  - from: construct
+    to: current_release
+    type: primary
+  - from: current_release
+    to: arena_slice
+    type: primary
+  - from: arena_slice
+    to: independent_run
+    type: primary
+  - from: independent_run
+    to: hash
+    type: primary
+  - from: hash
+    to: zero
+    type: primary
+  - from: hash
+    to: compare
+    type: primary
+  - from: zero
+    to: bin_mean
+    type: primary
+  - from: compare
+    to: bin_mean
+    type: primary
+  - from: bin_mean
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+modules: []

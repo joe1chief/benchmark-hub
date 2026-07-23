@@ -1,0 +1,217 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GSM8K-Platinum 构建流程
+  description: 区分论文 300 题实验与后续完整测试集发布，再展示固定公开 runner 的提示、解析器与指标。
+  legend: 上方分支对应 arXiv:2502.03461v1；下方分支是后续完整 1,319 题数据卡发布：精确零样本筛查提示已公开，仅前沿模型面板未披露。
+nodes:
+  - id: evidence
+    label: |-
+      证据边界
+      论文 2502.03461v1
+      仓库 8fd2f82e · 数据 e7624924
+      论文子集 ≠ 后续完整发布
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 320
+  - id: paper_source
+    label: |-
+      论文快照
+      随机抽取 300 道 GSM8K 题
+      对应表 2；并非完整 1,319 题测试集
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 80
+  - id: paper_screen
+    label: |-
+      论文多模型筛查
+      零样本 · temperature 0.5
+      除 o1/R1/Gemini Thinking 外使用 CoT
+      任一模型答错即人工检查
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 80
+  - id: paper_triage
+    label: |-
+      论文人工分流
+      删除 26 道劣质题
+      修正 1 个错误答案标签
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 80
+  - id: paper_release
+    label: |-
+      论文 GSM8K-Platinum 子集
+      274 题
+      论文评测报告错误数
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 80
+  - id: full_source
+    label: |-
+      后续完整测试集扩展
+      全部 1,319 道 GSM8K 测试题
+      数据卡公开精确筛查提示
+      前沿模型面板未披露
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 560
+  - id: full_prompt
+    label: |-
+      数据卡精确零样本提示
+      Solve the following math word
+      problem.
+      Think step-by-step. Then,
+      provide the final answer as a
+      single integer in the format
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: full_prompt_tail
+    label: |-
+      "Answer: XXX" with no extra
+      formatting.
+      推理模型删除 Think step-by-step
+    type: document
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: full_screen
+    label: |-
+      完整发布筛查
+      219 题被至少一个模型标记
+      1,100 题模型全同意；未人工检查
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 560
+  - id: full_triage
+    label: |-
+      人工检查 219 题
+      删除 110 · 核验 99 · 改标 10
+      从不改写问题文本
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 560
+  - id: full_release
+    label: |-
+      固定完整发布
+      1,209 条测试数据
+      共识 1,100 + 核验 99 + 修订 10
+      question · answer
+      cleaning_status
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 560
+  - id: runner_prompt
+    label: |-
+      固定 runner 提示实例化
+      platinum_prompt = 数据卡模板
+      platinum_prompt_no_cot 删除 CoT
+      o1 另将 Then, provide 改为 Provide
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 560
+  - id: runner_settings
+    label: |-
+      runner 模型边界
+      推理模型移除 CoT；o1 另改措辞
+      默认 temperature 0.5
+      o1/o3 用 1；思考 Claude 用 none
+    type: document
+    size: xl
+    position:
+      x: 2440
+      'y': 560
+  - id: parser
+    label: |-
+      固定数学解析器
+      优先 Answer:；否则取 boxed 或末行
+      删除 * · # · 逗号；不删除 /
+      取首个有符号数字子串
+      float(目标) == float(预测)
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 560
+  - id: metric
+    label: |-
+      官方 runner 输出
+      error_count = 答错数量
+      解析/API 失败均计错
+      当前 runner 不输出 accuracy 列
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 560
+edges:
+  - from: evidence
+    to: paper_source
+    type: primary
+  - from: paper_source
+    to: paper_screen
+    type: primary
+  - from: paper_screen
+    to: paper_triage
+    type: primary
+  - from: paper_triage
+    to: paper_release
+    type: primary
+  - from: evidence
+    to: full_source
+    type: primary
+  - from: full_source
+    to: full_prompt
+    type: primary
+  - from: full_prompt
+    to: full_prompt_tail
+    type: primary
+  - from: full_prompt_tail
+    to: full_screen
+    type: primary
+  - from: full_screen
+    to: full_triage
+    type: primary
+  - from: full_triage
+    to: full_release
+    type: primary
+  - from: full_release
+    to: runner_prompt
+    type: primary
+  - from: runner_prompt
+    to: runner_settings
+    type: primary
+  - from: runner_settings
+    to: parser
+    type: primary
+  - from: parser
+    to: metric
+    type: primary
+modules: []

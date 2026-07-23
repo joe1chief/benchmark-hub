@@ -4,86 +4,223 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC-AGI-2 构建流程
-  description: 按论文对齐的ARC-AGI-2构建流程：策划更高复杂度网格任务，保留人类可解候选题，校准公开与私有评测集，提供示例并生成输出网格，同时评估精确率与效率。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: ARC-AGI-2 构建与评测流程
+  description: 对齐论文的高复杂度网格题来源汇集与过量生成、测试子对级筛选、三类评测分区校准、评测题最终验证及 Pass@2 评分流程。
+  legend: 人类筛选门槛作用于测试子对，整题完整正确则要求所有测试输入通过。1,000 题公开训练集是独立的未校准分支，因为并非所有训练题都完成完整人测；三类评测集各 120 题，平均人类准确率差控制在 1 个百分点内。虚线分支表示移除候选题。
 nodes:
-  - id: n1
-    label: 核心先验
+  - id: sources
+    label: |-
+      ARC 任务来源
+      ARC-AGI-2 新题 + 历史未用题
+      ARC-AGI-1 + 新训练题
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 任务策划
+      'y': 100
+  - id: design
+    label: |-
+      过量生成评测候选
+      多规则 / 多步骤组合
+      情境规则 + 上下文内符号
     type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: 人类Pass@2
-    type: decision
+      'y': 100
+  - id: humans
+    label: |-
+      运行受控人类测试
+      407 人 • 515 个会话
+      1,848 个测试对 • 13,405 次尝试
+    type: user
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: 校准评测集
-    type: process
+      'y': 100
+  - id: gate
+    label: |-
+      ≥2 人各自在前两次尝试内
+      解出 ≥1 个测试对？
+    type: decision
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: 1000 + 3×120
-    type: document
+      'y': 100
+  - id: calibrate
+    label: |-
+      通过筛选门槛
+      估算经验难度
+      整题完整正确率
+    type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: 示例对
+      'y': 100
+  - id: dedupe
+    label: |-
+      冗余共识审查
+      两两可视化比较
+      标记可共享同一程序的任务对
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: partition
+    label: |-
+      保留非冗余任务
+      划分 3 类评测集
+      平均人类准确率差 ≤1 个百分点
+      新题优先→私有；曾公开题→公开
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 100
+  - id: public_training
+    label: |-
+      组装公开训练集 • 1,000 题
+      已验证任务库 • 难度范围广
+      不做校准；并非全部完成完整人测
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 340
+  - id: eval_sets
+    label: |-
+      公开 / 半私有 / 私有
+      各 120 道评测题
+    type: database
+    size: xl
+    position:
+      x: 1480
+      'y': 340
+  - id: remove
+    label: |-
+      排除候选题
+      未达纳入门槛或被判冗余
+    type: terminal
+    size: xl
+    position:
+      x: 760
+      'y': 340
+  - id: validate
+    label: |-
+      最终验证评测题
+      两位外部人员完成每道评测题
+      额外任务：由原作者之外人员审查
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 340
+  - id: format
+    label: |-
+      呈现静态网格任务
+      通常 2–5 个示例 + 1–2 个测试输入
+      1×1–30×30 • 10 种符号 / 颜色
     type: document
     size: xl
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: 输出网格
-    type: document
+      'y': 580
+  - id: competition
+    label: |-
+      在 Kaggle 安全沙箱运行
+      120 半私有 + 120 私有
+      离线 • 4×L4 • 12 小时 • 禁止联网
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 像素与成本
+      x: 1000
+      'y': 580
+  - id: predict
+    label: |-
+      每个测试输入给出两个候选网格
+      从示例中归纳规则
+      确定尺寸与每个输出单元
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 580
+  - id: score
+    label: |-
+      Pass@2 像素级精确整题规则
+      每个输入的两个候选任一可匹配
+      所有测试输入必须通过
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 580
+  - id: report
+    label: |-
+      排行榜结果
+      Kaggle：半私有实时得分
+      私有集最终名次
+      ARC：得分 × 每题成本
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 280
+      'y': 580
 edges:
-  - from: n1
-    to: n2
+  - from: sources
+    to: design
     type: primary
-  - from: n2
-    to: n3
+  - from: sources
+    to: public_training
     type: primary
-  - from: n3
-    to: n4
+  - from: design
+    to: humans
     type: primary
-  - from: n4
-    to: n5
+  - from: humans
+    to: gate
     type: primary
-  - from: n5
-    to: n6
+  - from: gate
+    to: calibrate
     type: primary
-  - from: n6
-    to: n7
+  - from: gate
+    to: remove
+    type: optional
+  - from: calibrate
+    to: dedupe
     type: primary
-  - from: n7
-    to: n8
+  - from: dedupe
+    to: partition
+    type: primary
+  - from: dedupe
+    to: remove
+    type: optional
+    waypoints:
+      - x: 1340
+        'y': 280
+      - x: 1000
+        'y': 280
+      - x: 1000
+        'y': 390
+  - from: partition
+    to: eval_sets
+    type: primary
+  - from: eval_sets
+    to: validate
+    type: primary
+  - from: validate
+    to: format
+    type: primary
+  - from: format
+    to: competition
+    type: primary
+  - from: competition
+    to: predict
+    type: primary
+  - from: predict
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

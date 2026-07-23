@@ -5,77 +5,150 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FOFO Build Process
-  description: Paper-aligned FOFO flow from AI-human domain selection to format-following evaluation.
+  description: Paper-aligned AI-human construction, pinned release audit, and complete format-accuracy evaluator path.
   legend: >-
-    Solid arrows show domain selection, domain-specific format collection, format-instruction generation, expert review,
-    task assembly, GPT-4 judging, and format accuracy reporting.
+    Solid arrows follow arXiv:2402.18667v1 from taxonomy construction to the released 494 instructions, model-family
+    prompting, GPT-4 format judging, JSON parsing, accuracy aggregation, and the paper's human validation.
 nodes:
-  - id: domains
-    label: Domains
-    type: database
+  - id: evidence
+    label: |-
+      Evidence boundary: arXiv:2402.18667v1
+      FoFo @ 140b1661 · test SHA 8f4cddcb
+      paper method + pinned public release audit
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: formats
-    label: Formats
-    type: process
+      'y': 120
+  - id: domain_taxonomy
+    label: |-
+      Experts seed useful agent subdomains
+      GPT-4 expands; humans iterate and regroup
+      10 domains × 5 subdomains = 50
+    type: database
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: instr
-    label: Format Instr
+      'y': 120
+  - id: format_candidates
+    label: |-
+      GPT-4 proposes 5 domain formats per subdomain
+      500 candidate triplets · 254 unique strings
+      human-readable; generic formats excluded first
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: review
-    label: Expert Review
-    type: decision
+      'y': 120
+  - id: format_review
+    label: |-
+      Experts assess, regenerate, or remove proposals
+      add JSON / XML / CSV / Markdown / YAML
+      then select the domain-format inventory
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: tasks
-    label: 494 Tasks
-    type: document
+      'y': 120
+  - id: instruction_authoring
+    label: |-
+      GPT-4 writes one FORMAT-INSTRU per triplet
+      exact configuration + real-world task
+      dummy context or permission to improvise
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: judge
-    label: GPT-4 Judge
+      'y': 120
+  - id: release
+    label: |-
+      Humans verify, edit, remove, or regenerate
+      release: 494 instructions · 248 formats
+      mean instruction length: 2,908 characters
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 120
+  - id: prompting
+    label: |-
+      Wrap each instruction for the model family
+      Alpaca · Vicuna · Mistral · Zephyr · OpenChat
+      otherwise pass the raw instruction
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Format Acc
+      'y': 390
+  - id: generation
+    label: |-
+      Generate one response for every instruction
+      temperature 0.7 · top-p 1 · max 5,120 tokens
+      decode; strip prompt (Zephyr special split)
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 390
+  - id: judge
+    label: |-
+      GPT-4 judge · max 1,024 · temperature 0
+      binary verdict plus reasons for each response
+      missing any format requirement means failure
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 390
+  - id: parser_metric
+    label: |-
+      json_parser extracts format_correctness
+      keep only binary 0/1 labels
+      accuracy = 100 × n_correct / n_total
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 390
+  - id: human_audit
+    label: |-
+      Human audit: 100 model responses
+      84/100 agree with GPT-4
+      all 16 disagreements are judge false positives
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 300
+      'y': 390
 edges:
-  - from: domains
-    to: formats
+  - from: evidence
+    to: domain_taxonomy
     type: primary
-  - from: formats
-    to: instr
+  - from: domain_taxonomy
+    to: format_candidates
     type: primary
-  - from: instr
-    to: review
+  - from: format_candidates
+    to: format_review
     type: primary
-  - from: review
-    to: tasks
+  - from: format_review
+    to: instruction_authoring
     type: primary
-  - from: tasks
+  - from: instruction_authoring
+    to: release
+    type: primary
+  - from: release
+    to: prompting
+    type: primary
+  - from: prompting
+    to: generation
+    type: primary
+  - from: generation
     to: judge
     type: primary
   - from: judge
-    to: score
+    to: parser_metric
+    type: primary
+  - from: parser_metric
+    to: human_audit
     type: primary
 modules: []

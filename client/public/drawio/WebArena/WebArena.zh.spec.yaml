@@ -1,0 +1,222 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WebArena 环境任务构建与评测流程
+  description: >-
+    WebArena从约200段浏览历史中识别四类主要网站领域，使用真实数据与开源框架实现可重置的自托管网站，并让先探索网站的标注者编写高层意图模板及变量实例。发布集含241个模板与812个任务，覆盖信息检索、导航、内容或配置变更，并包含故意不可完成的任务。只有信息检索题接受参考答案标注：答案由作者与一名外部标注者整理，每题标注两次，发生分歧时由第三名标注者裁决。其余样例的程序评测器由三名熟悉JavaScript的作者编写；困难样例由团队共同讨论，标注过程需要完整执行任务并检查中间状态。评测把信息题分流到精确、必须包含或GPT-4-0613语义模糊匹配；导航与状态变更题使用定位器及数据库、API或JavaScript状态检查；不可完成题接受N/A。每题得到二元奖励，主指标为端到端任务成功率。
+  legend: >-
+    来源：WebArena arXiv:2307.13854, Sections 2.1-2.4 and 3.1-3.2, especially Section 3.2 Table 1 and the Annotation
+    Process for the information-versus-remaining-example split; Appendices A.1, A.2, A.7, and A.8; official evaluator
+    implementation https://github.com/web-arena-x/webarena/blob/main/evaluation_harness/evaluators.py and repository
+    https://github.com/web-arena-x/webarena.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: browser_history
+    label: 约200段浏览历史
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: site_domains
+    label: 四类网站领域
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: self_hosted_sites
+    label: 可重置自托管网站
+    type: service
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: intent_templates
+    label: 高层意图模板
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: task_instances
+    label: 变量任务实例
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: info_reference_review
+    label: 答案双标注 + 第三人裁决
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: program_evaluator_review
+    label: 三名JS作者编写程序评测器（其余样例）
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: annotation_ready
+    label: 评测标注是否就绪？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: revise_task
+    label: 修订任务或评测器
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: webarena_release
+    label: 812任务 / 241模板
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: agent_trajectory
+    label: 智能体轨迹与状态
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: evaluator_router
+    label: 任务评测分支？
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: information_eval
+    label: 精确 / 包含 / 模糊匹配
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: state_eval
+    label: 定位器与DB/API/JS状态
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: unachievable_eval
+    label: 不可完成 / N/A核查
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 760
+  - id: binary_reward
+    label: 二元任务奖励
+    type: formula
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: success_rate
+    label: 端到端任务成功率
+    type: terminal
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: annotation_router
+    label: 是否为信息检索题？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+edges:
+  - from: browser_history
+    to: site_domains
+    type: data
+  - from: site_domains
+    to: self_hosted_sites
+    type: primary
+  - from: self_hosted_sites
+    to: intent_templates
+    type: primary
+  - from: intent_templates
+    to: task_instances
+    type: primary
+  - from: info_reference_review
+    to: annotation_ready
+    type: primary
+  - from: program_evaluator_review
+    to: annotation_ready
+    type: primary
+  - from: annotation_ready
+    to: webarena_release
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: annotation_ready
+    to: revise_task
+    type: optional
+    label: 未通过
+    labelPosition: end
+  - from: revise_task
+    to: intent_templates
+    type: optional
+    label: 重建
+    labelPosition: start
+  - from: webarena_release
+    to: agent_trajectory
+    type: primary
+  - from: agent_trajectory
+    to: evaluator_router
+    type: primary
+  - from: evaluator_router
+    to: information_eval
+    type: primary
+    label: 信息
+    labelPosition: end
+  - from: evaluator_router
+    to: state_eval
+    type: primary
+    label: 导航 / 变更
+    labelPosition: end
+  - from: evaluator_router
+    to: unachievable_eval
+    type: primary
+    label: 不可完成
+    labelPosition: end
+  - from: information_eval
+    to: binary_reward
+    type: primary
+  - from: state_eval
+    to: binary_reward
+    type: primary
+  - from: unachievable_eval
+    to: binary_reward
+    type: primary
+  - from: binary_reward
+    to: success_rate
+    type: primary
+  - from: task_instances
+    to: annotation_router
+    type: primary
+  - from: annotation_router
+    to: info_reference_review
+    type: primary
+    label: 信息题
+    labelPosition: end
+  - from: annotation_router
+    to: program_evaluator_review
+    type: primary
+    label: 其余样例
+    labelPosition: end
+modules: []

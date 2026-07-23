@@ -6,152 +6,146 @@ meta:
   routing: orthogonal
   title: ChartEditBench Dataset Build Process
   description: >-
-    Initial-chart generation, turn-by-turn validation, failure backoff/retry, automated QA, and human verification from
-    arXiv v1.
+    Initial-chart generation, validated five-edit chains, construction-time retries, separately disclosed QA assets, and
+    human verification from arXiv:2602.15758v1 Sections 3.2.1–3.5.
   legend: >-
-    Solid arrows are the build spine; dashed QA/assertion branches terminate independently; the data branch is a
-    human-verification sample derived from the final dataset. Neither branch denotes filtering or write-back.
+    The solid spine retains a chain after five valid edits. Five VQAs are generated for every rendered chart as a
+    separate future chart-understanding asset, not an inclusion gate. Thirty VQAs per chain is derived from six rendered
+    states; the paper does not disclose the released VQA total.
 nodes:
   - id: spec_queues
-    label: Chart/edit mix
+    label: Chart / edit mix
     type: queue
-    size: large
+    size: medium
     position:
-      x: 64
+      x: 32
       'y': 320
   - id: initial_chart
-    label: Initial chart
+    label: Generate initial chart
     type: process
-    size: large
+    size: medium
     position:
-      x: 288
+      x: 224
       'y': 320
   - id: validate_initial
     label: Initial valid?
     type: decision
-    size: large
+    size: medium
     position:
-      x: 512
+      x: 416
       'y': 320
   - id: initial_retry_gate
-    label: Retry initial?
+    label: Retry available?
     type: decision
-    size: large
+    size: medium
     position:
-      x: 512
-      'y': 176
+      x: 416
+      'y': 144
   - id: initial_backoff
-    label: Exp backoff ≤3
+    label: Backoff ≤3
     type: process
-    size: large
+    size: medium
     position:
-      x: 288
-      'y': 176
+      x: 224
+      'y': 144
   - id: validation_discard
-    label: 'Fail: discard'
+    label: Discard failed chain
     type: terminal
-    size: large
+    size: medium
     position:
-      x: 736
+      x: 608
       'y': 32
-  - id: next_edit
-    label: Next edit (<5)
-    type: process
-    size: large
+  - id: initial_rendered
+    label: Initial rendered state
+    type: document
+    size: medium
     position:
-      x: 736
+      x: 608
+      'y': 320
+  - id: next_edit
+    label: Generate next edit
+    type: process
+    size: medium
+    position:
+      x: 800
       'y': 320
   - id: validate_turn
-    label: Turn valid?
+    label: Edit valid?
     type: decision
-    size: large
+    size: medium
     position:
-      x: 960
+      x: 992
       'y': 320
   - id: turn_retry_gate
-    label: Retry turn?
+    label: Retry available?
     type: decision
-    size: large
+    size: medium
     position:
-      x: 960
-      'y': 176
+      x: 992
+      'y': 144
   - id: turn_backoff
-    label: Exp backoff ≤3
+    label: Backoff ≤3
     type: process
-    size: large
+    size: medium
     position:
-      x: 736
-      'y': 176
-  - id: five_done
-    label: 5 turns done?
-    type: decision
-    size: large
-    position:
-      x: 960
-      'y': 464
-  - id: vqa_generation
-    label: '5 done: 5 VQAs'
-    type: process
-    size: large
-    position:
-      x: 736
-      'y': 464
-  - id: edit_chains
-    label: Edit chains
+      x: 800
+      'y': 144
+  - id: edit_rendered
+    label: Edited rendered state
     type: document
-    size: large
+    size: medium
     position:
-      x: 512
-      'y': 464
-  - id: chart_r1
-    label: Chart-R1 QA
-    type: process
-    size: large
+      x: 1184
+      'y': 320
+  - id: five_done
+    label: Five edits complete?
+    type: decision
+    size: medium
     position:
-      x: 288
-      'y': 608
-  - id: assertion_sets
-    label: 2 assertions
-    type: process
-    size: large
+      x: 1376
+      'y': 320
+  - id: edit_chains
+    label: Retained edit chain
+    type: document
+    size: medium
     position:
-      x: 736
-      'y': 608
-  - id: verification_type
-    label: Verifier type
-    type: process
-    size: large
-    position:
-      x: 736
-      'y': 768
+      x: 1568
+      'y': 320
   - id: final_dataset
-    label: 4,142 · 20,710
+    label: 4,142 chains · 20,710 edits
     type: database
     size: large
     position:
-      x: 512
-      'y': 768
-  - id: type_sampling
-    label: Type sampling
+      x: 1760
+      'y': 320
+  - id: vqa_generation
+    label: 5 VQAs / chart
     type: process
-    size: large
+    size: medium
     position:
-      x: 288
-      'y': 928
-  - id: expert_review
-    label: Expert review
-    type: process
-    size: large
+      x: 896
+      'y': 528
+  - id: vqa_asset
+    label: Derived 30 / chain · total unknown
+    type: terminal
+    size: xl
     position:
-      x: 64
-      'y': 928
-  - id: human_subset
-    label: Human subset
+      x: 1088
+      'y': 528
+  - id: qa_assets
+    label: Chart-R1 + assertions
     type: terminal
     size: large
     position:
-      x: 64
-      'y': 1088
+      x: 1568
+      'y': 528
+  - id: human_subset
+    label: Expert subset · 400
+    type: terminal
+    size: large
+    position:
+      x: 1760
+      'y': 704
 edges:
   - from: spec_queues
     to: initial_chart
@@ -160,83 +154,86 @@ edges:
     to: validate_initial
     type: primary
   - from: validate_initial
-    to: next_edit
+    to: initial_rendered
     type: primary
+    label: valid
   - from: validate_initial
     to: initial_retry_gate
-    type: primary
+    type: optional
+    label: invalid
   - from: initial_retry_gate
     to: initial_backoff
     type: primary
+    label: retry
   - from: initial_retry_gate
     to: validation_discard
-    type: primary
+    type: optional
+    label: exhausted
   - from: initial_backoff
     to: initial_chart
+    type: primary
+  - from: initial_rendered
+    to: next_edit
     type: primary
   - from: next_edit
     to: validate_turn
     type: primary
   - from: validate_turn
-    to: five_done
+    to: edit_rendered
     type: primary
+    label: valid
   - from: validate_turn
     to: turn_retry_gate
-    type: primary
+    type: optional
+    label: invalid
   - from: turn_retry_gate
     to: turn_backoff
     type: primary
+    label: retry
   - from: turn_retry_gate
     to: validation_discard
-    type: primary
+    type: optional
+    label: exhausted
   - from: turn_backoff
     to: next_edit
     type: primary
+  - from: edit_rendered
+    to: five_done
+    type: primary
   - from: five_done
     to: next_edit
-    type: primary
+    type: optional
+    label: <5
     waypoints:
-      - x: 1080
-        'y': 536
-      - x: 1080
-        'y': 280
-      - x: 848
-        'y': 280
+      - x: 1456
+        'y': 272
+      - x: 880
+        'y': 272
   - from: five_done
-    to: vqa_generation
-    type: primary
-  - from: vqa_generation
     to: edit_chains
     type: primary
+    label: 5 complete
   - from: edit_chains
     to: final_dataset
     type: primary
+  - from: initial_rendered
+    to: vqa_generation
+    type: optional
+    waypoints:
+      - x: 704
+        'y': 440
+      - x: 900
+        'y': 440
+  - from: edit_rendered
+    to: vqa_generation
+    type: optional
+  - from: vqa_generation
+    to: vqa_asset
+    type: optional
+  - from: edit_chains
+    to: qa_assets
+    type: optional
   - from: final_dataset
-    to: type_sampling
-    type: data
-  - from: type_sampling
-    to: expert_review
-    type: primary
-  - from: expert_review
     to: human_subset
-    type: primary
-  - from: edit_chains
-    to: chart_r1
-    type: data
-    waypoints:
-      - x: 480
-        'y': 536
-      - x: 480
-        'y': 648
-  - from: edit_chains
-    to: assertion_sets
-    type: data
-    waypoints:
-      - x: 704
-        'y': 536
-      - x: 704
-        'y': 648
-  - from: assertion_sets
-    to: verification_type
     type: data
 modules: []

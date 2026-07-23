@@ -1,0 +1,369 @@
+{
+  "version": 1,
+  "title": "MedNLI 构建、发布与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 29,
+    "edges": 28,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "evidence",
+      "label": "固定证据快照\narXiv:1808.06752v2 · PDF SHA d328fab8b047\n代码 HEAD e1fe2531a9e9\nPhysioNet v1.0.0 · DOI 10.13026/C2RS98\n辅助 BigBIO 加载器 21f3313de37d",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "paper_source",
+      "label": "论文构建数据源\nMIMIC-III v1.3\n38,597 名去标识患者\n2,078,705 份英文临床病历",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "deceased_scope",
+      "label": "限定临床病历来源\nPhysioNet 方法说明进一步明确\n仅使用死亡患者对应病历\n降低患者隐私风险",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "section_parse",
+      "label": "按章节标题切分病历\n简单规则程序\n选择既往病史章节\n保留去标识化伪影",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "premise_pool",
+      "label": "创建候选前提句\n生物医学 LingPipe 分句器\n汇集既往病史句子\n随机抽取子集",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "只展示一个前提句\n仅依据该句\n可用医学知识与常识\n不提供病历其余上下文",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "hypotheses",
+      "label": "临床医生撰写三个假设\n肯定为真 → 蕴含\n可能为真 → 中立\n肯定为假 → 矛盾",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "pilot",
+      "label": "试点标注\n两名取得专科认证的放射科医生\n每人 100 个互异前提\n按临床标注指南执行",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "validity_gate",
+      "label": "该前提能否支持\n有用的临床推断？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "discard",
+      "label": "丢弃无效试点前提\n由临床医生判断\n常见原因为去标识化伪影\n共移除 16 个前提",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "cross_label",
+      "label": "对保留的试点句对交叉标注\n一名医生复核另一名医生的句对\n184 个前提 × 三个假设\n共 552 个句对",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agreement",
+      "label": "检查试点一致性\n肯定 / 可能 / 肯定为假\nCohen's Kappa = 0.78\n复盘“肯定”与“可能”分歧",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scale_up",
+      "label": "扩大专家标注\n再招募两名临床医生\n共四名临床医生 · 六周\n标注 4,683 个前提",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "single_annotation",
+      "label": "最终标注边界\n每个句对不做多人重复标注\n原因是时间与经费限制\n试点一致性不等于多数投票",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "形成 MedNLI\n4,683 个前提 × 三类标签\n14,049 个唯一句对\n蕴含 · 中立 · 矛盾",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "split",
+      "label": "按前提互斥划分数据集\n训练集 11,232\n开发集 1,395\n测试集 1,422",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "PhysioNet MedNLI v1.0.0\n训练 / 开发 / 测试 JSONL\nSNLI / MultiNLI 风格记录\n句对 + 解析树 + 金标字段",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "version_boundary",
+      "label": "数据源版本边界\n论文：MIMIC-III v1.3\nPhysioNet 父数据：MIMIC-III v1.4\n不可把二者视为同一固定版本",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "access_boundary",
+      "label": "受限数据访问边界\n需 CITI 培训并签署 DUA\nPhysioNet 健康数据许可 1.5.0\n代码仓库没有 LICENSE 文件",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "eval_input",
+      "label": "评测临床三分类 NLI\n前提 + 假设 → 一个标签\n测试前提不进入训练集\n基准指标为准确率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_models",
+      "label": "论文实验协议\n特征模型 · BOW · InferSent · ESIM\nAdam · 选择最低验证损失\n验证损失五轮不改善则停止\n运行六个不同随机种子",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "label_gate",
+      "label": "被评测划分是否\n提供金标？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "unavailable",
+      "label": "公开测试标签已隐藏\nPhysioNet 说明 gold_label 被遮蔽\n发布读取器丢弃标签为 '-' 的记录\n仅凭这些行无法计算测试准确率",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "official_code",
+      "label": "发布的复现实验代码\nread_nli_data 丢弃 gold_label '-'\n旧版 Python 3.4 / 3.6.3\nPyTorch 0.2.0 + MetaMap / UMLS",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "implementation_boundary",
+      "label": "实现边界\n无托管评测器或输出解析器\n未定义无效输出策略\n没有官方在线排行榜",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "argmax",
+      "label": "对带金标的记录计分\nDataLoader shuffle=False\n对三类模型 logit 取 argmax\n与金标做精确标签比较",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "accuracy",
+      "label": "计算分类准确率\n正确预测数 / 数据集长度\n不设部分得分\n每次评测得到一个分数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "汇总论文多次运行\n六个相同超参数随机种子\n按模型 / 设置取平均准确率\n开发与测试结果分别保留",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_results",
+      "label": "报告论文准确率（%）· 开发 / 测试\n特征 51.9 / 51.9 · BOW 71.9 / 70.2\nInferSent 76.0 / 73.5 · ESIM 74.4 / 73.1\n迁移与领域知识增益单独报告\n无综合分数或在线排行榜",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "evidence",
+      "to": "paper_source",
+      "type": "optional",
+      "label": "固定论文与发布证据"
+    },
+    {
+      "id": "edge-2",
+      "from": "paper_source",
+      "to": "deceased_scope",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "deceased_scope",
+      "to": "section_parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "section_parse",
+      "to": "premise_pool",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "premise_pool",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "prompt",
+      "to": "hypotheses",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "hypotheses",
+      "to": "pilot",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "pilot",
+      "to": "validity_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "validity_gate",
+      "to": "discard",
+      "type": "primary",
+      "label": "无效 · 16"
+    },
+    {
+      "id": "edge-10",
+      "from": "validity_gate",
+      "to": "cross_label",
+      "type": "primary",
+      "label": "保留 · 184"
+    },
+    {
+      "id": "edge-11",
+      "from": "cross_label",
+      "to": "agreement",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "agreement",
+      "to": "scale_up",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "scale_up",
+      "to": "single_annotation",
+      "type": "optional",
+      "label": "最终标注规则"
+    },
+    {
+      "id": "edge-14",
+      "from": "scale_up",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "dataset",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "split",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "release",
+      "to": "version_boundary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "release",
+      "to": "access_boundary",
+      "type": "optional",
+      "label": "访问与许可"
+    },
+    {
+      "id": "edge-19",
+      "from": "version_boundary",
+      "to": "eval_input",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "eval_input",
+      "to": "paper_models",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "paper_models",
+      "to": "label_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "label_gate",
+      "to": "unavailable",
+      "type": "primary",
+      "label": "标签已隐藏"
+    },
+    {
+      "id": "edge-23",
+      "from": "label_gate",
+      "to": "official_code",
+      "type": "primary",
+      "label": "金标可用"
+    },
+    {
+      "id": "edge-24",
+      "from": "official_code",
+      "to": "implementation_boundary",
+      "type": "optional",
+      "label": "复现限制"
+    },
+    {
+      "id": "edge-25",
+      "from": "official_code",
+      "to": "argmax",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "argmax",
+      "to": "accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "accuracy",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "aggregate",
+      "to": "paper_results",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

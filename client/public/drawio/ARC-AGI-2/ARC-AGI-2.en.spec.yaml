@@ -4,89 +4,229 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC-AGI-2 Build Process
+  title: ARC-AGI-2 Construction and Evaluation Workflow
   description: >-
-    Paper-aligned ARC-AGI-2 construction: curate higher-complexity grid tasks, retain human-solvable candidates,
-    calibrate public and private evaluation sets, present demonstrations, generate the output grid, and score both
-    exactness and efficiency.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned workflow for sourcing and over-generating higher-complexity grid tasks, screening candidates at the
+    test-pair level, calibrating three evaluation partitions, validating evaluation tasks, and scoring Pass@2 runs.
+  legend: >-
+    The human-screening gate is test-pair-level; final task success requires every test input. Public Training is a
+    separate, uncalibrated 1,000-task branch because not every training task was fully human-tested. The three 120-task
+    evaluation sets are calibrated within one percentage point of mean human accuracy. Dotted branches remove
+    candidates.
 nodes:
-  - id: n1
-    label: Core Priors
+  - id: sources
+    label: |-
+      ARC Task Sources
+      New ARC-AGI-2 + Unused Reserves
+      ARC-AGI-1 + New Tasks for Training
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Curate Tasks
+      'y': 100
+  - id: design
+    label: |-
+      Over-Generate Eval Candidates
+      Multi-Rule / Multi-Step Composition
+      Contextual Rules + In-Context Symbols
     type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: Human Pass@2
-    type: decision
+      'y': 100
+  - id: humans
+    label: |-
+      Run Controlled Human Testing
+      407 People • 515 Sessions
+      1,848 Test Pairs • 13,405 Attempts
+    type: user
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: Calibrate Sets
-    type: process
+      'y': 100
+  - id: gate
+    label: |-
+      ≥2 People Each Solve ≥1 Test Pair
+      in Their First Two Attempts?
+    type: decision
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: 1000 + 3x120
-    type: document
+      'y': 100
+  - id: calibrate
+    label: |-
+      Screening Gate Passed
+      Estimate Empirical Difficulty
+      Full-Task Correctness Rate
+    type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: Demo Pairs
+      'y': 100
+  - id: dedupe
+    label: |-
+      Consensus Redundancy Review
+      Pairwise Visual Comparison
+      Flag Shared-Program Task Pairs
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: partition
+    label: |-
+      Retain Non-Redundant Tasks
+      Partition 3 Evaluation Sets
+      Mean Human Accuracy within 1 pp
+      Prefer New→Private; Public→Public
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 100
+  - id: public_training
+    label: |-
+      Assemble Public Training • 1,000 Tasks
+      Validated Repository • Wide Difficulty
+      Not Calibrated; Not All Fully Human-Tested
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 340
+  - id: eval_sets
+    label: |-
+      Public / Semi-Private / Private
+      120 Evaluation Tasks Each
+    type: database
+    size: xl
+    position:
+      x: 1480
+      'y': 340
+  - id: remove
+    label: |-
+      Exclude Candidate
+      Fails Inclusion Gate or Is Redundant
+    type: terminal
+    size: xl
+    position:
+      x: 760
+      'y': 340
+  - id: validate
+    label: |-
+      Final-Validate Evaluation Tasks
+      2 External Solvers Complete Every Task
+      Extra Tasks: Review beyond Author
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 340
+  - id: format
+    label: |-
+      Present the Static Grid Task
+      Typically 2–5 Demos + 1–2 Test Inputs
+      1×1–30×30 • 10 Symbols / Colors
     type: document
     size: xl
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: Output Grid
-    type: document
+      'y': 580
+  - id: competition
+    label: |-
+      Run in Kaggle Secure Sandbox
+      120 Semi-Private + 120 Private
+      Offline • 4×L4 • 12 h • No Internet
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Pixel + Cost
+      x: 1000
+      'y': 580
+  - id: predict
+    label: |-
+      Two Candidate Grids per Test Input
+      Infer the Rule from Demonstrations
+      Choose Dimensions + Every Cell
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 580
+  - id: score
+    label: |-
+      Pass@2 Pixel-Exact Task Rule
+      Either Candidate May Match Each Input
+      All Test Inputs Must Pass
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 580
+  - id: report
+    label: |-
+      Leaderboard Reports
+      Kaggle: Semi-Private Live
+      Private Final Standing
+      ARC: Score × Cost/Task
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 280
+      'y': 580
 edges:
-  - from: n1
-    to: n2
+  - from: sources
+    to: design
     type: primary
-  - from: n2
-    to: n3
+  - from: sources
+    to: public_training
     type: primary
-  - from: n3
-    to: n4
+  - from: design
+    to: humans
     type: primary
-  - from: n4
-    to: n5
+  - from: humans
+    to: gate
     type: primary
-  - from: n5
-    to: n6
+  - from: gate
+    to: calibrate
     type: primary
-  - from: n6
-    to: n7
+  - from: gate
+    to: remove
+    type: optional
+  - from: calibrate
+    to: dedupe
     type: primary
-  - from: n7
-    to: n8
+  - from: dedupe
+    to: partition
+    type: primary
+  - from: dedupe
+    to: remove
+    type: optional
+    waypoints:
+      - x: 1340
+        'y': 280
+      - x: 1000
+        'y': 280
+      - x: 1000
+        'y': 390
+  - from: partition
+    to: eval_sets
+    type: primary
+  - from: eval_sets
+    to: validate
+    type: primary
+  - from: validate
+    to: format
+    type: primary
+  - from: format
+    to: competition
+    type: primary
+  - from: competition
+    to: predict
+    type: primary
+  - from: predict
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

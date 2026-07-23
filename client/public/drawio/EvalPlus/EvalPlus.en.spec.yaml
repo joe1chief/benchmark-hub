@@ -1,81 +1,300 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: EvalPlus Build Process
-  description: Paper-aligned EvalPlus flow from base code benchmarks to automated test generation and pass@k evaluation.
+  title: EvalPlus Build and Evaluation Process
+  description: >-
+    Paper-v3-aligned EvalPlus workflow. The main construction path shows the concrete HumanEval+ recipe; the detached
+    note marks MBPP+ as a post-paper official extension. Construction and downstream model evaluation are kept in
+    separate rows.
   legend: >-
-    Solid arrows show benchmark augmentation: base tasks, contracts, LLM seed inputs, type-aware mutation, differential
-    testing, optional minimization, and pass@k scoring.
+    Solid arrows show the paper's main construction and evaluation paths; dashed arrows show rejection or optional
+    reduction; the feedback loop adds only unique, contract-valid mutants to the seed pool. The detached MBPP+ note is
+    not part of the NeurIPS paper pipeline.
 nodes:
   - id: base
-    label: Base Bench
+    label: |-
+      HumanEval Base
+      164 Python Tasks
+      Ground Truth + 9.6 Tests Avg.
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: contracts
-    label: Contracts
+      'y': 60
+  - id: curate
+    label: |-
+      Paper HumanEval+ Curation
+      Reimplement + Test Every Ground Truth
+      83 / 164 Hand-written Contracts
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 60
+  - id: prompt
+    label: |-
+      3 Prompt Variants
+      Corrected GT + Sampled Base Inputs
+      Complex • Corner-case • Difficult
     type: document
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 600
+      'y': 60
   - id: seeds
-    label: LLM Seeds
+    label: |-
+      ChatGPT Seed Inputs
+      About 30 per Task
+      Parse + Deduplicate
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: mutate
-    label: Mutate In
+      x: 880
+      'y': 60
+  - id: seed_gate
+    label: |-
+      Seed Unique and
+      Contract-valid?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 60
+  - id: discard_seed
+    label: |-
+      Discard
+      Invalid / Duplicate Seed
+    type: terminal
+    size: large
+    position:
+      x: 1180
+      'y': 230
+  - id: seed_pool
+    label: |-
+      Valid Seed Pool
+      Contract-compliant Inputs
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 60
+  - id: budget_gate
+    label: |-
+      Stop Generation?
+      1,000 Additional Inputs
+      or 1 Hour
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 60
+  - id: mutation
+    label: |-
+      Type-aware Mutation
+      Random Seed + Recursive Edits
+      Reuse Ingredient Fragments
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: oracle
-    label: Diff Oracle
+      x: 1720
+      'y': 400
+  - id: mutant_gate
+    label: |-
+      Mutant Unique and
+      Contract-valid?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: full
+    label: |-
+      HumanEval+ Full (Paper v3)
+      164 Tasks • Avg. 764.1 Tests
+      About 80× Base Tests
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: reduction_requirements
+    label: |-
+      Optional Reduction Requirements
+      Branch Coverage • Mutant Kills
+      Other-model Sample Kills (LOO)
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: set_cover
+    label: |-
+      Greedy Set Cover
+      Preserve All Requirements
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: mini
+    label: |-
+      HumanEval+-Mini (Paper v3)
+      Avg. 16.1 Tests
+      About 47× Smaller
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: post_paper_mbpp
+    label: |-
+      Post-paper Official Extension
+      MBPP+ v0.2.0 • 378 Tasks
+      About 35× Tests • No Mini
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: sampling
+    label: |-
+      Paper Evaluation Sampling
+      200 Programs per Temperature
+      0.2 • 0.4 • 0.6 • 0.8 + Greedy
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 780
+  - id: execute
+    label: |-
+      Differential Execution
+      Corrected-GT Outputs
+      0.2 s Min • 4× GT Runtime
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 780
+  - id: correctness
+    label: |-
+      Functional Correctness
+      Base: All Base Tests Pass
+      Plus: Base AND Extra Pass
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 780
+  - id: score
+    label: |-
+      Paper Results
+      Greedy Pass@1★
+      Unbiased Pass@1 / 10 / 100
+      Base vs Plus
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: mini
-    label: Mini Suite
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass@k
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 780
 edges:
   - from: base
-    to: contracts
+    to: curate
     type: primary
-  - from: contracts
+  - from: curate
+    to: prompt
+    type: primary
+  - from: prompt
     to: seeds
     type: primary
   - from: seeds
-    to: mutate
+    to: seed_gate
     type: primary
-  - from: mutate
-    to: oracle
+  - from: seed_gate
+    to: seed_pool
     type: primary
-  - from: oracle
+    label: 'Yes: keep'
+    labelPosition: center
+  - from: seed_gate
+    to: discard_seed
+    type: optional
+    label: 'No: discard'
+    labelPosition: center
+  - from: seed_pool
+    to: budget_gate
+    type: primary
+  - from: budget_gate
+    to: mutation
+    type: primary
+    label: 'No: mutate'
+    labelPosition: center
+  - from: mutation
+    to: mutant_gate
+    type: primary
+  - from: mutant_gate
+    to: seed_pool
+    type: primary
+    label: 'Yes: add to pool'
+    labelPosition: center
+    waypoints:
+      - x: 1560
+        'y': 300
+      - x: 1560
+        'y': 210
+  - from: mutant_gate
+    to: mutation
+    type: optional
+    label: 'No: discard and retry'
+    labelPosition: center
+    waypoints:
+      - x: 1500
+        'y': 580
+      - x: 1840
+        'y': 580
+  - from: budget_gate
+    to: full
+    type: primary
+    label: 'Yes: build Full'
+    labelPosition: center
+    waypoints:
+      - x: 2000
+        'y': 640
+      - x: 1280
+        'y': 640
+  - from: full
+    to: reduction_requirements
+    type: data
+    label: Optional reduction
+    labelPosition: center
+  - from: reduction_requirements
+    to: set_cover
+    type: data
+  - from: set_cover
     to: mini
+    type: data
+  - from: full
+    to: sampling
     type: primary
   - from: mini
+    to: sampling
+    type: data
+    label: Optional Mini study
+    labelPosition: center
+    waypoints:
+      - x: 440
+        'y': 700
+      - x: 1280
+        'y': 700
+  - from: sampling
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
     to: score
     type: primary
 modules: []

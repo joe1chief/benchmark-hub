@@ -1,0 +1,325 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VisFactor — FRCT Selection, Digitization, and Scoring
+  description: >-
+    VisFactor starts from 72 FRCT subtests, removes four drawing and three speech tasks, then removes 45 text-only tasks
+    to retain 20 visual subtests spanning ten factors. GPT-4o and Gemini-2.5-Flash rewrite instructions independently,
+    humans reconcile them with the manual, 300-dpi scans are cropped, and answer keys are copied verbatim. The fixed set
+    has 808 questions and 3,046 queries. A separate algorithmic pipeline generates and validates difficulty-controlled
+    instances for 12 subtests. Appendix A.2 applies direct normalization, decomposed five-option queries, grouped
+    consistency, symmetry variants, and specialized SS3/VZ3 scoring before averaging the 20 subtest scores.
+  legend: >-
+    Source: arXiv:2502.16435v4, Section 2.2 (pp.4-5), Appendices A.1-A.2, and Appendix D. Counts are pinned to v4: 39
+    evaluated models. Only 12 of 20 subtests support parametric unlimited generation.. Solid arrows show the main flow
+    explicitly supported by the paper or official documentation.
+nodes:
+  - id: frct
+    label: FRCT · 72 subtests
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: modalityGate
+    label: Drawing or speech?
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: excludeModality
+    label: Exclude 7
+    type: terminal
+    size: xl
+    position:
+      x: 300
+      'y': 240
+  - id: visualGate
+    label: Text-only?
+    type: decision
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: excludeText
+    label: Exclude 45
+    type: terminal
+    size: xl
+    position:
+      x: 540
+      'y': 240
+  - id: retain
+    label: Retain 20 visual subtests · 10 factors
+    type: output
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: gptRewrite
+    label: GPT-4o instruction rewrite
+    type: service
+    size: xl
+    position:
+      x: 780
+      'y': 280
+  - id: geminiRewrite
+    label: Gemini-2.5-Flash instruction rewrite
+    type: service
+    size: xl
+    position:
+      x: 1020
+      'y': 280
+  - id: manual
+    label: FRCT Manual
+    type: document
+    size: xl
+    position:
+      x: 780
+      'y': 520
+  - id: reconcile
+    label: Human Reconciliation
+    type: user
+    size: xl
+    position:
+      x: 1020
+      'y': 520
+  - id: scan
+    label: 300-dpi Scan + Crop
+    type: process
+    size: xl
+    position:
+      x: 1260
+      'y': 280
+  - id: keys
+    label: Verbatim Answer Keys
+    type: document
+    size: xl
+    position:
+      x: 1500
+      'y': 280
+  - id: fixed
+    label: 'Fixed: 808 questions · 3,046 queries'
+    type: output
+    size: xl
+    position:
+      x: 1500
+      'y': 520
+  - id: paramGenerator
+    label: Algorithmic Instance Generation · 12 subtests
+    type: process
+    size: xl
+    position:
+      x: 540
+      'y': 880
+  - id: paramValidator
+    label: Algorithmic Answer Validation
+    type: process
+    size: xl
+    position:
+      x: 780
+      'y': 880
+  - id: difficultyControl
+    label: Controllable Difficulty Parameters
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 880
+  - id: parametric
+    label: Validated Parametric Set · 12 subtests
+    type: output
+    size: xl
+    position:
+      x: 1260
+      'y': 880
+  - id: formatRouter
+    label: Official scoring protocol?
+    type: decision
+    size: xl
+    position:
+      x: 1800
+      'y': 1160
+  - id: standard
+    label: T/F normalize · MC letter · numeric exact
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 680
+  - id: fiveChoice
+    label: 7 subtests · 5 yes/no · all correct
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 920
+  - id: grouped
+    label: CF2 / I3 / S1 · grouped all-correct
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1160
+  - id: symmetry
+    label: MV1 / MV3 / S2 · original + 3 variants · all correct
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1400
+  - id: specialized
+    label: SS3 both directions · VZ3 fill + 2 binary · all correct
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1640
+  - id: subscores
+    label: 20 Subtest Scores
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 1160
+  - id: mean
+    label: Total = arithmetic mean of 20 scores
+    type: formula
+    size: xl
+    position:
+      x: 3700
+      'y': 1160
+edges:
+  - from: frct
+    to: modalityGate
+    type: primary
+  - from: modalityGate
+    to: excludeModality
+    type: optional
+    label: 'Yes'
+    labelPosition: center
+  - from: modalityGate
+    to: visualGate
+    type: primary
+    label: 'No'
+    labelPosition: center
+  - from: visualGate
+    to: excludeText
+    type: optional
+    label: 'Yes'
+    labelPosition: center
+  - from: visualGate
+    to: retain
+    type: primary
+    label: 'No'
+    labelPosition: center
+  - from: retain
+    to: gptRewrite
+    type: primary
+    waypoints:
+      - x: 880
+        'y': 180
+      - x: 880
+        'y': 240
+  - from: retain
+    to: geminiRewrite
+    type: primary
+  - from: retain
+    to: scan
+    type: primary
+  - from: retain
+    to: keys
+    type: primary
+    waypoints:
+      - x: 1600
+        'y': 180
+      - x: 1600
+        'y': 240
+  - from: retain
+    to: paramGenerator
+    type: primary
+    waypoints:
+      - x: 420
+        'y': 180
+      - x: 420
+        'y': 820
+  - from: manual
+    to: reconcile
+    type: data
+  - from: gptRewrite
+    to: reconcile
+    type: primary
+  - from: geminiRewrite
+    to: reconcile
+    type: primary
+  - from: reconcile
+    to: fixed
+    type: primary
+  - from: scan
+    to: fixed
+    type: primary
+  - from: keys
+    to: fixed
+    type: primary
+  - from: paramGenerator
+    to: paramValidator
+    type: primary
+  - from: paramValidator
+    to: difficultyControl
+    type: primary
+  - from: difficultyControl
+    to: parametric
+    type: primary
+  - from: fixed
+    to: formatRouter
+    type: primary
+  - from: parametric
+    to: formatRouter
+    type: primary
+  - from: formatRouter
+    to: standard
+    type: primary
+    label: Direct
+    labelPosition: center
+  - from: formatRouter
+    to: fiveChoice
+    type: primary
+    label: 5-option ×7
+    labelPosition: center
+  - from: formatRouter
+    to: symmetry
+    type: primary
+    label: Symmetry
+    labelPosition: center
+  - from: formatRouter
+    to: specialized
+    type: primary
+    label: SS3 / VZ3
+    labelPosition: center
+  - from: formatRouter
+    to: grouped
+    type: primary
+    label: Grouped
+    labelPosition: center
+  - from: standard
+    to: subscores
+    type: primary
+  - from: fiveChoice
+    to: subscores
+    type: primary
+  - from: grouped
+    to: subscores
+    type: primary
+  - from: symmetry
+    to: subscores
+    type: primary
+  - from: specialized
+    to: subscores
+    type: primary
+  - from: subscores
+    to: mean
+    type: primary
+modules: []

@@ -1,0 +1,212 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WMDP 论文版数据构建与评测流程
+  description: >-
+    WMDP先由专家为生物安全、网络安全和化学安全建立威胁模型，再围绕危险能力的前置知识、邻近知识与组成部分编写四选一代理题，并主要保留进攻性知识。每道题至少由来自不同机构的两名专家核查。领域专家标记为敏感的题目会立即删除；WMDP-Bio与WMDP-Chem的每道题随后再接受两名专家交叉检查。在外部法律顾问支持下，接受ITAR与EAR合规评估的是WMDP整体公开发布，而不是逐题设置出口审查门槛。论文版共3668题：Bio
+    1273、Cyber 1987、Chem 408。评测使用lm-evaluation-harness
+    v0.4.2的零样本A-D最大logit选择与准确率，随机水平为25%。RMU遗忘实验仅覆盖WMDP-Bio与WMDP-Cyber；WMDP-Chem仍用于危险知识测量，因为作者不确定化学知识遗忘的收益是否高于其对通用能力的代价。Bio/Cyber遗忘通过降低对应WMDP准确率并保持MMLU与MT-Bench来评估。
+  legend: >-
+    来源：WMDP arXiv:2403.03218v7, Sections 3.1-3.5, especially Section 3.5 for per-question sensitive filtering, Bio/Chem
+    cross-checking, and publication-level export-control assessment; the opening of Section 4 and Sections 5.1-5.2 for
+    Bio/Cyber-only unlearning; Appendices A.1 and B.1 for paper dataset counts and zero-shot evaluation; official
+    project https://wmdp.ai and repository https://github.com/centerforaisafety/wmdp. Version pin: paper dataset counts
+    and protocol are used.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: expert_consortium
+    label: 学者与技术专家
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: threat_models
+    label: 领域威胁模型
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: bio_branch
+    label: 生物安全
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: cyber_branch
+    label: 网络安全
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: chem_branch
+    label: 化学安全
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: proxy_questions
+    label: 代理知识多选题
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: dual_review
+    label: 至少两名专家核查
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: sensitive_gate
+    label: 包含敏感信息？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: exclude_question
+    label: 排除题目
+    type: loss
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: domain_gate
+    label: 属于Bio或Chem？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: extra_crosscheck
+    label: 两名专家额外交叉检查
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: release_export_assessment
+    label: 发布级出口管制合规评估
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: wmdp_release
+    label: WMDP 3668道题
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: zero_shot
+    label: 零样本A-D提示
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: subset_accuracy
+    label: 子集准确率 / 25%随机
+    type: formula
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: unlearning_eval
+    label: Bio + Cyber RMU遗忘
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: retention_report
+    label: Bio/Cyber WMDP下降；保持MMLU与MT-Bench
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+edges:
+  - from: expert_consortium
+    to: threat_models
+    type: primary
+  - from: threat_models
+    to: bio_branch
+    type: data
+    label: 生物
+    labelPosition: end
+  - from: threat_models
+    to: cyber_branch
+    type: data
+    label: 网络
+    labelPosition: end
+  - from: threat_models
+    to: chem_branch
+    type: data
+    label: 化学
+    labelPosition: end
+  - from: bio_branch
+    to: proxy_questions
+    type: primary
+  - from: cyber_branch
+    to: proxy_questions
+    type: primary
+  - from: chem_branch
+    to: proxy_questions
+    type: primary
+  - from: proxy_questions
+    to: dual_review
+    type: primary
+  - from: dual_review
+    to: domain_gate
+    type: primary
+  - from: sensitive_gate
+    to: exclude_question
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: sensitive_gate
+    to: release_export_assessment
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: domain_gate
+    to: extra_crosscheck
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: domain_gate
+    to: sensitive_gate
+    type: primary
+    label: 网络
+    labelPosition: end
+  - from: extra_crosscheck
+    to: sensitive_gate
+    type: primary
+  - from: release_export_assessment
+    to: wmdp_release
+    type: primary
+  - from: wmdp_release
+    to: zero_shot
+    type: primary
+  - from: zero_shot
+    to: subset_accuracy
+    type: primary
+  - from: wmdp_release
+    to: unlearning_eval
+    type: optional
+    label: 仅Bio+Cyber
+    labelPosition: center
+  - from: unlearning_eval
+    to: retention_report
+    type: optional
+modules: []

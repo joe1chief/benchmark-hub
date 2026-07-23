@@ -4,88 +4,163 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AA-LCR Build Process
+  title: AA-LCR Build and Evaluation Process
   description: >-
-    Official-source-aligned construction of AA-LCR: curate long real-world document sets, write human-crafted
-    multi-document reasoning questions, validate answers with humans, then score long-context model accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Official-method-aligned construction and evaluation of AA-LCR, covering real multi-document sets, human question
+    writing, non-frontier-model difficulty checks, human validation, list-ordered long-context prompting, and Qwen-based
+    equality grading.
+  legend: >-
+    No standalone AA-LCR paper is available; the flow follows the official Artificial Analysis methodology and public
+    dataset card. The top row builds the benchmark and the bottom row evaluates a model response.
 nodes:
-  - id: n1
-    label: Doc Sets
+  - id: documents
+    label: |-
+      Curate Real-World Documents
+      7 public-source document types
+      Company • industry • government
+      Academic • legal • marketing • survey
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 100k Tokens
+      'y': 100
+  - id: sets
+    label: |-
+      Assemble 30 Document Sets
+      234 documents • 2,979,757 tokens
+      Mean completed prompt: 99,325 tokens
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Human Qs
+      x: 320
+      'y': 100
+  - id: author
+    label: |-
+      Human Question Authoring
+      Team + contracted undergraduates
+      General / mathematical reasoning
+      Across multiple documents
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: difficulty
+    label: |-
+      Non-Frontier Difficulty Dashboard
+      GPT-4o-mini • Llama 3.1 70B
+      Gemini 1.5 Flash
+      Retain items these models fail
+      Reasoning, not direct retrieval
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: validate
+    label: |-
+      Human Answer Validation
+      First attempt: typically 40–60%
+      High agreement when shown gold
+      Revise / discard; ≥1 human solves each
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      Release AA-LCR
+      100 questions • CSV answers
+      Ordered data_source_filenames
+      Extracted-text ZIP
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      Exact Long-Context Prompt
+      data_source_filenames list order
+      BEGIN DOCUMENT / END DOCUMENT
+      BEGIN INPUT DOCUMENTS wrapper
+      cl100k_base completed-prompt tokens
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Reasoning
+      x: 1440
+      'y': 440
+  - id: response
+    label: |-
+      Target Model Response
+      Reason over the full document set
+      Produce candidate answer
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Model Check
+      x: 1160
+      'y': 440
+  - id: judge
+    label: |-
+      Qwen3-235B-A22B-2507
+      Non-reasoning equality checker
+      Candidate must be consistent
+      with the official answer
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Human Valid
-    type: decision
+      x: 880
+      'y': 440
+  - id: verdict
+    label: |-
+      Binary Verdict
+      CORRECT or INCORRECT
+      Consistency with official answer
+    type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 100 Items
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      AA-LCR Accuracy
+      CORRECT verdicts / 100
+      Long-context multi-document performance
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: documents
+    to: sets
     type: primary
-  - from: n2
-    to: n3
+  - from: sets
+    to: author
     type: primary
-  - from: n3
-    to: n4
+  - from: author
+    to: difficulty
     type: primary
-  - from: n4
-    to: n5
+  - from: difficulty
+    to: validate
     type: primary
-  - from: n5
-    to: n6
+  - from: validate
+    to: release
     type: primary
-  - from: n6
-    to: n7
+  - from: release
+    to: prompt
     type: primary
-  - from: n7
-    to: n8
+  - from: prompt
+    to: response
+    type: primary
+  - from: response
+    to: judge
+    type: primary
+  - from: judge
+    to: verdict
+    type: primary
+  - from: verdict
+    to: report
     type: primary
 modules: []

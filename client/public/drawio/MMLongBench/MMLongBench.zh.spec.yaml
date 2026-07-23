@@ -1,89 +1,664 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLongBench 构建流程
-  description: 对齐论文的 MMLongBench 构建流程：组合多类长上下文视觉语言任务、图像来源与标准化 token 长度，评估 LCVLM 的综合多模态长上下文能力。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMLongBench v3 构建与评测流程
+  description: 按论文 v3 与固定发布快照复原 16 个来源数据集的 13,331 个样本，覆盖五类任务的独立构建、统一跨模态长度控制、 论文时期的提示词与解析器、失败处理，以及每档长度严格 4,050 个样例的评测分母。
+  legend: >-
+    实线表示论文/仓库执行路径，虚线表示来源或版本漂移；判断边结果采用中文标签。academic-color 主题默认节点字体为 11pt。 MMLongBench-Doc 在本图中是套件的一个来源数据集，不等于单独评测的
+    MMLongBench-Doc 基准流程。
 nodes:
-  - id: n1
-    label: 任务池
-    type: database
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv 2505.10610v3 · 2025-10-06
+      代码 69044ca · 数据 0c008eb
+      13,331 行 · 16 个来源数据集
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 五类任务
+      'y': 520
+  - id: category_route
+    label: |-
+      属于哪一类
+      长上下文任务？
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: vrag_build
+    label: |-
+      视觉 RAG · 2,272 行
+      InfoSeek 首段 + ViQuAE KILT 金标准
+      2019-08-01 维基 · 百词切块
+      BM25 → GTE-large 困难负例
+      3 种排列 / 6 个金标准深度
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 图文输入
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 长度控制
+      x: 600
+      'y': 40
+  - id: niah_build
+    label: |-
+      NIAH · 5,536 行
+      VH 单针/多针 + MM-NIAH
+      检索 · 计数 · 推理，文本 + 图像
+      网页文本切为百词块
+      加干扰项直至长度 L
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 标准输入
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: LCVLM评测
+      x: 600
+      'y': 260
+  - id: icl_build
+    label: |-
+      多样例 ICL · 1,958 行
+      汽车 · Food101 · SUN397 · iNat2021
+      各长度使用 5/10/20/40/50 类
+      随机映射 0…N−1 · 分轮平衡
+      仅截断最后一轮示例
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 任务得分
-    type: document
+      x: 600
+      'y': 480
+  - id: summ_build
+    label: |-
+      PDF 摘要 · 387 行
+      GovReport：仅 GAO；移除摘要页
+      Multi-LexSum：由 HTML 重建 PDF
+      移除答案 HTML；从末尾截断
+      丢弃 >128K+24K · 15,951 条事实
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 长上下文分析
-    type: terminal
+      x: 600
+      'y': 700
+  - id: doc_build
+    label: |-
+      长文档问答 · 3,178 行
+      MMLongBench-Doc · LongDocURL · SlideVQA
+      纠正答案格式；丢弃无法恢复项
+      丢弃超过 5 词的字符串答案
+      问题中保留原始文档 ID
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 920
+  - id: doc_length_gate
+    label: |-
+      文档是否长于
+      目标长度 L？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 920
+  - id: doc_truncate
+    label: |-
+      从两端均匀截断
+      保留所有答案所在页
+      截至目标长度 L
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 840
+  - id: doc_pad
+    label: |-
+      左右交替填充
+      随机采样负例文档
+      最后一份填充 PDF 可按页截断
+      前缀“Based on Document {ID}…”
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 1020
+  - id: token_count
+    label: |-
+      统一跨模态词元计数
+      文本 = Llama2 分词器
+      图像 = 14×14 图块
+      应用 2×2 像素重排
+      文本与视觉词元相加
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 520
+  - id: length_versions
+    label: |-
+      物化五档长度
+      8K · 16K · 32K · 64K · 128K
+      二进制 K = 2¹⁰
+      同一语义样本提供各档 L
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+  - id: release
+    label: |-
+      MMLongBench 论文发布版
+      13,331 个样本 · 五类任务
+      MMLongBench-Doc 子集 = 961 行
+      ≠ 独立发布的 1,082 行版本
+      数据卡 MIT；来源许可仍适用
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: denominator
+    label: |-
+      每档长度的评测分母
+      VRAG 900 · NIAH 2,250 · ICL 400
+      摘要 200 · DocVQA 300
+      每个 L 合计 4,050 个样例
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: inference
+    label: |-
+      评测 46 个 LCVLM
+      候选模型采用贪心解码
+      每模型运行五档输入长度
+      4,050 × 5 = 20,250 次运行
+      超容量不可测项记为 N/A
+    type: user
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: metric_route
+    label: |-
+      使用哪类任务专属
+      解析器与指标？
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: vrag_metric
+    label: |-
+      视觉 RAG 指标
+      解析“Answer:”后的首行
+      归一化大小写/标点/冠词
+      子串精确匹配
+      每档长度 900 个样例
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 40
+  - id: niah_metric
+    label: |-
+      NIAH 指标
+      VH = 二元准确率
+      MM 文本检索/推理 = SubEM
+      MM 图像检索/推理 = 选项准确率
+      计数 = 总和精确；模态分别平均
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 260
+  - id: icl_metric
+    label: |-
+      ICL 指标
+      要求“label: {整数}”
+      兜底取最后数字，再取首个数字
+      精确类别准确率
+      每档长度 400 个样例
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 480
+  - id: summ_judge
+    label: |-
+      GPT-4o 摘要评判
+      参考摘要 → 预生成原子事实
+      候选摘要 → 句子精确率
+      事实召回率 + 二元流畅度
+      T=0.1 · max_tokens=4096
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 700
+  - id: summ_parse_gate
+    label: |-
+      三次调用的最后一个
+      JSON 对象均可解析？
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 700
+  - id: summ_formula
+    label: |-
+      摘要得分
+      召回率 = 命中事实 / 参考事实
+      精确率 = 有支持句 / 总句数
+      F1 = 调和平均
+      流畅度 F1 = 流畅度 × F1
+    type: formula
+    size: xl
+    position:
+      x: 3960
+      'y': 620
+  - id: summ_skip
+    label: |-
+      摘要 Judge 失败处理
+      请求失败：重试 5 次后抛错
+      JSON 无效：跳过该样本
+      仅汇总含 gpt4-scores 的行
+      若得分行为零则抛错
+    type: terminal
+    size: xl
+    position:
+      x: 3960
+      'y': 800
+  - id: doc_parse
+    label: |-
+      DocVQA 直接解析
+      优先取“Answer:”之后文本
+      否则取输出首行
+      v3 不使用 GPT-4o 答案抽取器
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 1060
+  - id: doc_format
+    label: 参考答案格式？
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 1120
+  - id: doc_string
+    label: |-
+      字符串 / None
+      正则敏感值 → 子串精确匹配
+      其余使用词元 F1
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1000
+  - id: doc_integer
+    label: |-
+      整数
+      提取所有有限整数
+      任一精确匹配则记 1，否则 0
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1140
+  - id: doc_float
+    label: |-
+      浮点数
+      提取所有有限数值
+      接受 x/100、x 或 100x
+      相对容差为 1%
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1280
+  - id: doc_list
+    label: |-
+      列表
+      论文：贪心选择最佳元素匹配
+      对元素得分取平均
+      固定代码：每个标准元素均与
+      完整解析预测比较
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1420
+  - id: report
+    label: |-
+      按数据集、类别、长度报告
+      准确率 · SubEM · 流畅度 F1
+      DocVQA 规则得分
+      不把 N/A 误记为模型失败
+      v1.1 LLM Judge 不属于该固定版本
+    type: terminal
+    size: xl
+    position:
+      x: 4240
+      'y': 520
 edges:
-  - from: n1
-    to: n2
+  - from: evidence
+    to: category_route
     type: primary
-  - from: n2
-    to: n3
+  - from: category_route
+    to: vrag_build
     type: primary
-  - from: n3
-    to: n4
+    label: 视觉 RAG
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: niah_build
     type: primary
-  - from: n4
-    to: n5
+    label: 针藏草堆
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: icl_build
     type: primary
-  - from: n5
-    to: n6
+    label: 上下文学习
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: summ_build
     type: primary
-  - from: n6
-    to: n7
+    label: 摘要
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: doc_build
     type: primary
-  - from: n7
-    to: n8
+    label: 文档问答
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: vrag_build
+    to: token_count
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: niah_build
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: icl_build
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: summ_build
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: doc_build
+    to: doc_length_gate
+    type: primary
+  - from: doc_length_gate
+    to: doc_truncate
+    type: primary
+    label: 是
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: doc_length_gate
+    to: doc_pad
+    type: primary
+    label: 否
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: doc_truncate
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.82
+  - from: doc_pad
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.95
+  - from: token_count
+    to: length_versions
+    type: primary
+  - from: length_versions
+    to: release
+    type: primary
+  - from: release
+    to: denominator
+    type: primary
+  - from: denominator
+    to: inference
+    type: primary
+  - from: inference
+    to: metric_route
+    type: primary
+  - from: metric_route
+    to: vrag_metric
+    type: primary
+    label: 视觉 RAG
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: niah_metric
+    type: primary
+    label: 针藏草堆
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: icl_metric
+    type: primary
+    label: 上下文学习
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: summ_judge
+    type: primary
+    label: 摘要
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: doc_parse
+    type: primary
+    label: 文档问答
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: vrag_metric
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: niah_metric
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: icl_metric
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+  - from: summ_judge
+    to: summ_parse_gate
+    type: primary
+  - from: summ_parse_gate
+    to: summ_formula
+    type: primary
+    label: 有效
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: summ_parse_gate
+    to: summ_skip
+    type: primary
+    label: 无效
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: summ_formula
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.58
+  - from: doc_parse
+    to: doc_format
+    type: primary
+  - from: doc_format
+    to: doc_string
+    type: primary
+    label: 字符串
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.15
+      entryX: 0
+      entryY: 0.5
+  - from: doc_format
+    to: doc_integer
+    type: primary
+    label: 整数
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.38
+      entryX: 0
+      entryY: 0.5
+  - from: doc_format
+    to: doc_float
+    type: primary
+    label: 浮点
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.62
+      entryX: 0
+      entryY: 0.5
+  - from: doc_format
+    to: doc_list
+    type: primary
+    label: 列表
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.85
+      entryX: 0
+      entryY: 0.5
+  - from: doc_string
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.68
+  - from: doc_integer
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.76
+  - from: doc_float
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.84
+  - from: doc_list
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.94
 modules: []

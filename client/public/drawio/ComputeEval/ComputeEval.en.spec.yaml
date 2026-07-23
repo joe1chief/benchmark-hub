@@ -4,78 +4,232 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ComputeEval Build Process
-  description: Paper-aligned ComputeEval flow from CUDA task specifications to sandboxed correctness and performance evaluation.
+  title: ComputeEval Build and Evaluation Process
+  description: >-
+    ComputeEval has no standalone paper located in its official citation; the previous catalog arXiv link is the
+    unrelated OptiML method paper, which only cites ComputeEval. NVIDIA's official 2026.1 snapshot at 19ba74f has 566
+    problems across seven groups: 518 CUDA C++ and 48 CUDA Python, with performance workloads for 499 problems. NVIDIA
+    engineers author the tasks, sometimes with frontier-model assistance, and human engineers review every problem and
+    label; the assistance share and per-problem provenance are not disclosed. Each contract contains a prompt, visible
+    context, build/test commands, held-out tests, a reference solution, and optional performance workload. CI compiles
+    and runs known-good solutions and validates specifications. Models see no tests or references; isolated evaluation
+    compiles candidates, checks required APIs and held-out tests, and profiles only correct solutions for latency,
+    throughput, and baseline speedup alongside pass@k.
   legend: >-
-    Solid arrows show CUDA tasks, kernel generation, compile/test guardrails, profiling, optimization search, candidate
-    selection, and pass/speed metrics.
+    Source: official repository snapshot 19ba74f; README, DATASET_CARD.md, DOMAIN_MAP.md, and CHANGELOG.md for release
+    2026.1. Solid arrows show the main flow explicitly supported by the paper or official documentation.
 nodes:
-  - id: tasks
-    label: CUDA Tasks
-    type: document
+  - id: evidence
+    label: |-
+      Evidence Boundary
+      No Standalone Paper
+      Official 2026.1 Snapshot
+      @ 19ba74f
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: kernel
-    label: Kernel Gen
-    type: process
+      'y': 100
+  - id: author
+    label: |-
+      Hybrid Authoring
+      NVIDIA Engineers
+      + Frontier-Model Assistance
+      Every Problem and Label
+      Human-Reviewed
+    type: user
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: compile
-    label: Compile Test
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: profile
-    label: Profile Run
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: search
-    label: MCTS Search
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: select
-    label: Best Kernel
-    type: terminal
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Pass Speed
+      x: 320
+      'y': 100
+  - id: provenance_boundary
+    label: |-
+      Authoring Provenance
+      Assistance Share
+      Not Disclosed
+      Per-Problem Assistance
+      Not Disclosed
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 320
+      'y': 270
+  - id: domains
+    label: |-
+      7 CUDA Domain Groups
+      518 CUDA C++
+      48 CUDA Python
+      Runtime / Kernels
+      Libraries / cuTile
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: contract
+    label: |-
+      Self-Contained Contract
+      Prompt + Context
+      Build / Test Commands
+      Hidden Tests + Reference
+      Optional Performance Workload
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: ci
+    label: |-
+      CI Quality Gate
+      Reference Must Compile
+      and Pass Tests
+      Validate Harness / Spec
+      + Required APIs
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: release
+    label: |-
+      Release 2026.1
+      566 Problems / 7 Groups
+      499 Performance Workloads
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: generate
+    label: |-
+      Generation-Time View
+      Prompt / Context Visible
+      Build + Hardware Visible
+      Tests + References
+      Remain Hidden
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: workspace
+    label: |-
+      Isolated Workspace
+      Materialize Context
+      Candidate + Held-Out Tests
+      Docker or Explicit
+      Local Execution
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: compile
+    label: |-
+      Contract + Build
+      Checks Pass?
+      Check source_references
+      Run build_command
+      Then test_command
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: correctness
+    label: |-
+      Held-Out Tests
+      Pass?
+      Run test_command
+      after Build Success
+      Exit Code 0 = Pass
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: performance
+    label: |-
+      Correct Solutions Only
+      Optional benchmark_command
+      CUPTI / NCU Profiling
+      Timing / Throughput
+      Baseline Speedup
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: report
+    label: |-
+      ComputeEval Results
+      Overall / Group Pass@k
+      Latency / Speedup
+      SM / DRAM Throughput
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 440
 edges:
-  - from: tasks
-    to: kernel
+  - from: evidence
+    to: author
     type: primary
-  - from: kernel
+  - from: author
+    to: domains
+    type: primary
+  - from: author
+    to: provenance_boundary
+    type: secondary
+  - from: domains
+    to: contract
+    type: primary
+  - from: contract
+    to: ci
+    type: primary
+  - from: ci
+    to: release
+    type: primary
+  - from: release
+    to: generate
+    type: primary
+  - from: generate
+    to: workspace
+    type: primary
+  - from: workspace
     to: compile
     type: primary
   - from: compile
-    to: profile
+    to: correctness
     type: primary
-  - from: profile
-    to: search
+    label: Yes · run held-out tests
+    labelPosition: center
+  - from: correctness
+    to: performance
     type: primary
-  - from: search
-    to: select
+    label: Pass · optional profiling
+    labelPosition: center
+  - from: performance
+    to: report
     type: primary
-  - from: select
-    to: score
-    type: primary
+  - from: compile
+    to: report
+    type: optional
+    label: No · build / contract failure
+    labelPosition: center
+    waypoints:
+      - x: 860
+        'y': 780
+      - x: 40
+        'y': 780
+  - from: correctness
+    to: report
+    type: optional
+    label: Fail · skip performance
+    labelPosition: center
+    waypoints:
+      - x: 600
+        'y': 650
+      - x: 40
+        'y': 650
 modules: []

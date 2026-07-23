@@ -1,0 +1,398 @@
+meta:
+  profile: academic-paper
+  source: edited
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Mantis-Eval 证据对齐的构建与评测流程
+  description: 仅复原论文 v3 明确披露的留出多图测试集人工构建步骤，保留未披露的数据整理边界，并按独立版本固定的官方评测器追踪输入、题型、解析与计分分支。
+  legend: 实线箭头表示已披露的构建步骤与官方评测代码路径；判定分支标注明确结果。未连接卡片为证据或可复现性边界，不虚构审核、淘汰或选项生成阶段。
+nodes:
+  - id: evidence
+    label: |-
+      固定一手证据
+      论文 · arXiv 2405.01483v3
+      官方仓库 · f3a31920
+      HF 数据集 · a3d92f9e
+      审计精确修订版本
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 192
+  - id: scope
+    label: |-
+      定义留出的 Mantis-Eval
+      多图推理 + 共指
+      英文测试问题
+      Mantis 训练期间未见
+    type: process
+    size: xl
+    position:
+      x: 352
+      'y': 192
+  - id: acquire
+    label: |-
+      论文 · 标注者获取图像
+      使用 Google 搜索
+      组成多图组
+      覆盖多样主题
+    type: database
+    size: xl
+    position:
+      x: 624
+      'y': 192
+  - id: author
+    label: |-
+      人工编写适当问题
+      要求联合理解多张图像
+      覆盖大小 / 重量等关系
+      包含多选题 + 简答题
+    type: user
+    size: xl
+    position:
+      x: 896
+      'y': 192
+  - id: release
+    label: |-
+      发布论文版 Mantis-Eval
+      217 条测试样本
+      平均 2.5 张图 · 最多 5 张
+      推理 + 共指
+    type: database
+    size: xl
+    position:
+      x: 1168
+      'y': 192
+  - id: support_gate
+    label: model.support_multi_image 标志？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 192
+  - id: sequence_input
+    label: |-
+      True 路径 · 构建交错输入
+      保留图像 / 文本交错顺序
+      补齐缺失的图像占位符
+      保留发布图像顺序
+    type: process
+    size: xl
+    position:
+      x: 1712
+      'y': 32
+  - id: flat_input
+    label: |-
+      False 路径 · 构建图像在前的输入
+      从文本移除图像占位符
+      全部图像置于拼接后的文本之前
+      QwenVL 保留列表 · 其他封装器可拼图
+    type: process
+    size: xl
+    position:
+      x: 1712
+      'y': 352
+  - id: type_gate
+    label: 发布样本题型？
+    type: decision
+    size: xl
+    position:
+      x: 1984
+      'y': 192
+  - id: mc_prompt
+    label: |-
+      格式化多项选择提示
+      按需追加带字母的选项
+      直接要求输出选项字母
+      运行所选模型封装器
+    type: document
+    size: xl
+    position:
+      x: 2256
+      'y': 32
+  - id: short_prompt
+    label: |-
+      格式化简答提示
+      允许在最终回答前分析
+      要求使用 Final Answer: 标记
+      运行所选模型封装器
+    type: document
+    size: xl
+    position:
+      x: 2256
+      'y': 352
+  - id: mc_parse
+    label: |-
+      规范化多选回答
+      去除 Final Answer: / The Answer Is / Answer:
+      然后选择首个英文字母
+      将所选字符转为大写
+    type: process
+    size: xl
+    position:
+      x: 2528
+      'y': 32
+  - id: letter_gate
+    label: 选项字母有效且未越界？
+    type: decision
+    size: xl
+    position:
+      x: 2800
+      'y': 32
+  - id: letter_compare
+    label: |-
+      比较选项字母
+      所选大写字母
+      等于参考字母
+    type: process
+    size: xl
+    position:
+      x: 3072
+      'y': 0
+  - id: text_fallback
+    label: |-
+      选项文本精确回退
+      使用原始回答而非解析短语
+      从标准选项去除 A. / A: / (A)
+      区分大小写的精确相等
+    type: process
+    size: xl
+    position:
+      x: 3072
+      'y': 160
+  - id: short_parse
+    label: |-
+      解析简答回答
+      使用相同三类标记优先规则
+      有标记则去空白 · 否则保留原文
+      规范参考答案的括号 / 空白
+      不区分大小写的精确相等
+    type: process
+    size: xl
+    position:
+      x: 2800
+      'y': 352
+  - id: match_gate
+    label: 该行是否判为正确？
+    type: decision
+    size: xl
+    position:
+      x: 3344
+      'y': 192
+  - id: correct
+    label: 计该行正确
+    type: terminal
+    size: m
+    position:
+      x: 3616
+      'y': 80
+  - id: incorrect
+    label: 计该行错误
+    type: terminal
+    size: m
+    position:
+      x: 3616
+      'y': 304
+  - id: aggregate
+    label: |-
+      聚合全部已评测行
+      多选准确率 · 分母 200 行
+      简答准确率 · 分母 17 行
+      总体准确率 · 分母 217 行
+    type: process
+    size: xl
+    position:
+      x: 3888
+      'y': 192
+  - id: report
+    label: |-
+      报告 Mantis-Eval 结果
+      多项选择准确率
+      简答准确率
+      总体逐行准确率
+    type: terminal
+    size: xl
+    position:
+      x: 4160
+      'y': 192
+  - id: construction_boundary
+    label: |-
+      未披露的构建边界
+      候选数量 / 淘汰规则
+      质检复核 / 裁决
+      多选选项 + 干扰项生成
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 672
+  - id: release_snapshot
+    label: |-
+      固定的 HF 测试快照
+      217 行 · 200 多选 + 17 简答
+      图像数量 · 145 / 39 / 32 / 1
+      分别对应 2 / 3 / 4 / 5 张图
+    type: document
+    size: xl
+    position:
+      x: 352
+      'y': 672
+  - id: source_boundary
+    label: |-
+      论文到发布版的来源边界
+      论文说明使用 Google 搜索
+      HF 来源字段 · 人工 50 · ChatGPT 42
+      ImagenHub 28 + 混合网页 / 数据集
+    type: document
+    size: xl
+    position:
+      x: 624
+      'y': 672
+  - id: rights_boundary
+    label: |-
+      发布与权利边界
+      仓库 + HF 卡片 · Apache-2.0
+      内嵌第三方图像
+      未披露逐图许可证映射
+    type: document
+    size: xl
+    position:
+      x: 896
+      'y': 672
+  - id: code_boundary
+    label: |-
+      评测器版本边界
+      首次公开代码 · 44d20bf6
+      解析器更新 · 33561424
+      生成设置因模型封装器而异
+    type: document
+    size: xl
+    position:
+      x: 1168
+      'y': 672
+edges:
+  - from: evidence
+    to: scope
+    type: primary
+  - from: scope
+    to: acquire
+    type: primary
+  - from: acquire
+    to: author
+    type: primary
+  - from: author
+    to: release
+    type: primary
+  - from: release
+    to: support_gate
+    type: primary
+  - from: support_gate
+    to: sequence_input
+    type: primary
+    label: True · 交错序列
+    labelPosition: end
+  - from: support_gate
+    to: flat_input
+    type: primary
+    label: False · 图像在前
+    labelPosition: end
+  - from: sequence_input
+    to: type_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: flat_input
+    to: type_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: type_gate
+    to: mc_prompt
+    type: primary
+    label: 多项选择
+    labelPosition: end
+  - from: type_gate
+    to: short_prompt
+    type: primary
+    label: 简答
+    labelPosition: end
+  - from: mc_prompt
+    to: mc_parse
+    type: primary
+  - from: mc_parse
+    to: letter_gate
+    type: primary
+  - from: letter_gate
+    to: letter_compare
+    type: primary
+    label: 有效字母
+    labelPosition: end
+  - from: letter_gate
+    to: text_fallback
+    type: primary
+    label: 无效 / 缺失
+    labelPosition: end
+  - from: short_prompt
+    to: short_parse
+    type: primary
+  - from: letter_compare
+    to: match_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+  - from: text_fallback
+    to: match_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: short_parse
+    to: match_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
+  - from: match_gate
+    to: correct
+    type: primary
+    label: 正确
+    labelPosition: end
+  - from: match_gate
+    to: incorrect
+    type: primary
+    label: 错误
+    labelPosition: end
+  - from: correct
+    to: aggregate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: incorrect
+    to: aggregate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: aggregate
+    to: report
+    type: primary
+modules: []

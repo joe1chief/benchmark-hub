@@ -7,51 +7,93 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
       "id": "c4",
-      "label": "C4网页链接",
+      "label": "C4 验证集链接\n抓取真实世界网页\n内联全部 CSS\n每页一个 HTML 文件",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "scrape",
-      "label": "抓取内联",
+      "id": "raw",
+      "label": "初始真实网页池\n127.9k 个 CSS 已内联\n单 HTML 页面\n保留布局与复杂度",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "auto_filter",
+      "label": "自动过滤与去重\n移除 >100k GPT-2 Token\n移除仅图像 / 仅文本页\n去重 127.9k\n-> 14k 候选",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "自动过滤",
+      "id": "isolate",
+      "label": "可评测页面\n移除外部依赖\n多媒体内容\n替换为占位符",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "manual",
-      "label": "人工筛选",
+      "label": "两位作者人工筛选\n共同 200 页 -> 75%\n再拆分随机 7k\n自包含 / 安全\n格式 / 多样性",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "sets",
+      "label": "两套评测集\n主集：484 个 C4 页面\nHARD：80 个 GitHub 页面\n独立来源\n沿用同类过滤",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "reference",
-      "label": "参考截图",
+      "id": "hard_source",
+      "label": "HARD GitHub Pages\n80 个页面\n许可白名单仓库\n最终筛选至 80 页\n方法未披露",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "screenshot",
+      "label": "模型输入\n仅提供参考截图\n不暴露参考源码\n直接 / 文本增强\n自修订提示",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "code",
-      "label": "生成代码",
+      "label": "多模态生成\n生成 HTML + CSS\n参考源码\n不暴露",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "视觉评测",
+      "id": "render",
+      "label": "浏览器渲染\n执行生成代码\n捕获生成的\n网页截图",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "match",
+      "label": "页面元素匹配\n文本块与非文本块\n按文本相似度\n做匈牙利匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "自动指标\n块匹配 / 文本\n位置 / 颜色\n高层 CLIP",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Design2Code 结果\n块匹配 / 文本\n位置 / 颜色\n主集 + HARD CLIP",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "human",
+      "label": "独立人工验证\n100 样本 x 5 人\n多数票\n435 胜负对；50/50 拆分\n测试准确率 79.9%",
+      "type": "user",
       "size": "xl"
     }
   ],
@@ -59,38 +101,80 @@
     {
       "id": "edge-1",
       "from": "c4",
-      "to": "scrape",
+      "to": "raw",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "scrape",
-      "to": "filter",
+      "from": "raw",
+      "to": "auto_filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "filter",
-      "to": "manual",
+      "from": "auto_filter",
+      "to": "isolate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "manual",
-      "to": "reference",
+      "from": "isolate",
+      "to": "manual",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "reference",
-      "to": "code",
+      "from": "manual",
+      "to": "sets",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "code",
-      "to": "eval",
+      "from": "hard_source",
+      "to": "sets",
+      "type": "data"
+    },
+    {
+      "id": "edge-7",
+      "from": "sets",
+      "to": "screenshot",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "screenshot",
+      "to": "code",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "code",
+      "to": "render",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "render",
+      "to": "match",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "match",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "metrics",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "metrics",
+      "to": "human",
+      "type": "secondary"
     }
   ],
   "modules": []

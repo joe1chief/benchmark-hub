@@ -1,0 +1,314 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WildGuardTest 构建、三任务F1与OLMo 3下游评测
+  description: >-
+    WildGuardTest 是从合成 vanilla/adversarial 测试切分构建的分类器基准。三名独立标注员分别标注提示有害性、回答有害性和回答拒答；允许选择
+    Unsure，每个标签独立多数投票，仅将不足两票一致的单项标签置空/移除，因此同一行的其他任务标签仍可保留。随后由 GPT-4 全量复判并人工检查不一致项。官方数据包含1,725个 prompt-response
+    行，覆盖13个近似均衡的风险子类；论文另报5,299个三任务聚合标注项，两者不是同一单位。原始评测按三项任务分别报告 F1 并区分 adversarial/vanilla。OLMo 3 是独立的下游生成式安全评测：选择749条
+    adversarial prompts，让目标模型生成回答，用 WildGuard 判断安全/拒答，并报告拒答准确率（1-ASR，越高越好）。
+  legend: >-
+    来源：WildGuard arXiv:2406.18495v3 (2024-12-09), Section 3.2, Section 4.1 and Table 4, and Appendix A.6 Table 10;
+    official repository https://github.com/allenai/wildguard; official data
+    https://huggingface.co/datasets/allenai/wildguardmix, wildguardtest config. The separate OLMo 3 operational layer is
+    pinned to arXiv:2512.13961v2 (2026-04-14), safety-evaluation appendix; OLMo 3's broader subset wording must not
+    replace WildGuard v3's synthetic vanilla/adversarial construction provenance. Unit/source tension must remain
+    explicit: the reproducible dataset has 1,725 prompt-response rows, the WildGuard paper quotes 5,299 aggregate
+    human-annotated task-label items across three tasks, and OLMo 3 selects 749 adversarial prompts. Because 1,725 x 3
+    is 5,175 and per-label agreement filtering can leave null labels, 5,299 must not be derived from row count or
+    relabeled as unique prompts.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: synthetic_split
+    label: 合成Vanilla+Adversarial测试切分
+    type: input
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: row_count
+    label: 1,725个Prompt-Response行
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: three_annotators
+    label: 3名独立标注员 · 3项任务
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: annotation_task
+    label: 标注任务？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: prompt_harm_label
+    label: 提示有害性 · kappa 0.55
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: response_harm_label
+    label: 回答有害性 · kappa 0.50
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: response_refusal_label
+    label: 回答拒答 · kappa 0.72
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: majority_vote
+    label: 逐标签多数投票
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: agreement_gate
+    label: 至少2票一致？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: retain_label
+    label: 保留该项标签
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: null_label
+    label: 仅置空/移除该项标签
+    type: loss
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: gpt4_audit
+    label: GPT-4全量复判+人工审查不一致项
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: wgtest
+    label: WGTest · 1,725行 · 13个风险子类
+    type: output
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: unit_note
+    label: 论文：5,299个任务标注项 · 单位不同
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 40
+  - id: moderation_model
+    label: 待评估Moderation模型
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: classifier_task
+    label: 分类任务？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: prompt_harm_f1
+    label: 提示有害性F1
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 600
+  - id: response_harm_f1
+    label: 回答有害性F1
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 760
+  - id: response_refusal_f1
+    label: 回答拒答F1
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 920
+  - id: original_f1_report
+    label: 三任务F1+Adversarial/Vanilla分组
+    type: output
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: olmo_select
+    label: OLMo 3层 · 749条Adversarial Prompts
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 1240
+  - id: target_generation
+    label: 目标模型生成回答
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1240
+  - id: wildguard_judge
+    label: WildGuard安全/拒答分类器
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 1240
+  - id: refusal_accuracy
+    label: 拒答准确率=1-ASR · 越高越好
+    type: formula
+    size: xl
+    position:
+      x: 1720
+      'y': 1240
+  - id: olmo_report
+    label: OLMo 3下游安全结果
+    type: output
+    size: xl
+    position:
+      x: 1440
+      'y': 1240
+edges:
+  - from: synthetic_split
+    to: row_count
+    type: primary
+  - from: row_count
+    to: three_annotators
+    type: primary
+  - from: three_annotators
+    to: annotation_task
+    type: primary
+  - from: annotation_task
+    to: prompt_harm_label
+    type: primary
+    label: 提示有害
+    labelPosition: center
+  - from: annotation_task
+    to: response_harm_label
+    type: primary
+    label: 回答有害
+    labelPosition: center
+  - from: annotation_task
+    to: response_refusal_label
+    type: primary
+    label: 拒答
+    labelPosition: center
+  - from: prompt_harm_label
+    to: majority_vote
+    type: primary
+  - from: response_harm_label
+    to: majority_vote
+    type: primary
+  - from: response_refusal_label
+    to: majority_vote
+    type: primary
+  - from: majority_vote
+    to: agreement_gate
+    type: primary
+  - from: agreement_gate
+    to: retain_label
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: agreement_gate
+    to: null_label
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: retain_label
+    to: gpt4_audit
+    type: primary
+  - from: null_label
+    to: gpt4_audit
+    type: optional
+  - from: gpt4_audit
+    to: wgtest
+    type: primary
+  - from: wgtest
+    to: unit_note
+    type: data
+    label: 不可合并单位
+    labelPosition: center
+  - from: wgtest
+    to: moderation_model
+    type: primary
+  - from: moderation_model
+    to: classifier_task
+    type: primary
+  - from: classifier_task
+    to: prompt_harm_f1
+    type: primary
+    label: 提示有害
+    labelPosition: center
+  - from: classifier_task
+    to: response_harm_f1
+    type: primary
+    label: 回答有害
+    labelPosition: center
+  - from: classifier_task
+    to: response_refusal_f1
+    type: primary
+    label: 拒答
+    labelPosition: center
+  - from: prompt_harm_f1
+    to: original_f1_report
+    type: primary
+  - from: response_harm_f1
+    to: original_f1_report
+    type: primary
+  - from: response_refusal_f1
+    to: original_f1_report
+    type: primary
+  - from: wgtest
+    to: olmo_select
+    type: data
+    label: 独立下游层
+    labelPosition: center
+    waypoints:
+      - x: 3040
+        'y': 360
+      - x: 3040
+        'y': 1320
+      - x: 2720
+        'y': 1320
+  - from: olmo_select
+    to: target_generation
+    type: primary
+  - from: target_generation
+    to: wildguard_judge
+    type: primary
+  - from: wildguard_judge
+    to: refusal_accuracy
+    type: primary
+  - from: refusal_accuracy
+    to: olmo_report
+    type: primary
+modules: []

@@ -6,87 +6,205 @@ meta:
   routing: orthogonal
   title: CVBench Build Process
   description: >-
-    Paper-aligned construction flow for CVBench: task-driven YouTube video groups are curated, segmented, captioned,
-    summarized relationally, converted into multi-choice cross-video QA pairs, and checked by annotators before
-    zero-shot and CoT evaluation.
-  legend: Solid arrows show the dataset construction and evaluation pipeline.
+    Paper-aligned cross-video curation and four-stage QA synthesis, followed by model-assisted validation, two-stage
+    human quality control with corrective loops, and accuracy evaluation.
+  legend: Solid arrows show construction and accepted items; dashed arrows return rejected items for correction.
 nodes:
-  - id: youtube
-    label: YouTube
+  - id: candidates
+    label: |-
+      YouTube retrieval
+      1,500 candidate videos
     type: cloud
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: video_qc
-    label: Video QC
-    type: decision
+      'y': 210
+  - id: curate
+    label: |-
+      Task-driven curation
+      relations · duration · 720p · 24 fps
+    type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: captions
-    label: Captions
-    type: process
+      'y': 210
+  - id: videos
+    label: |-
+      Curated video groups
+      1,315 videos · 2–4 per QA group
+    type: database
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: relations
-    label: Relations
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: qa
-    label: QA Pairs
+      'y': 210
+  - id: segments
+    label: |-
+      Adaptive frame sampling
+      segment-level visual captions
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: human_qc
-    label: Human QC
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: bench
-    label: CVBench
+      x: 820
+      'y': 210
+  - id: descriptions
+    label: |-
+      Video-level descriptions
+      aggregate segment evidence
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 210
+  - id: relations
+    label: |-
+      Relational summary
+      state · causality · complement ·
+      contradiction
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 210
+  - id: synthesize
+    label: |-
+      GPT-4o synthesis
+      ≥2 MCQs/group · 1 answer + 3
+      distractors
+    type: process
+    size: xl
+    position:
       x: 1600
-      'y': 160
-  - id: eval
-    label: Eval
-    type: terminal
+      'y': 210
+  - id: model_gate
+    label: |-
+      Consensus + Difficulty Validation
+      Multi-Model Hallucination Detection
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 160
+      'y': 210
+  - id: human_gate
+    label: |-
+      Eight-Annotator First Review
+      15 Task-Specific Criteria
+      Compliant · Correct · Non-Trivial?
+    type: decision
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: repair
+    label: |-
+      Corrective Actions
+      Revise Low-Quality Questions or
+      Distractors
+      Recollect Videos When Needed
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 430
+  - id: independent_audit
+    label: |-
+      5 New Annotators
+      200 QA Pairs Each
+      Compliance · Correctness · No
+      Hallucination?
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 210
+  - id: benchmark
+    label: |-
+      CVBench
+      1,000 QA · 3 tiers · 15 subtasks
+    type: database
+    size: xl
+    position:
+      x: 2900
+      'y': 210
+  - id: input
+    label: |-
+      Multi-video input
+      indexed videos · 8 frames/video for
+      open models
+    type: process
+    size: xl
+    position:
+      x: 3160
+      'y': 210
+  - id: prompting
+    label: |-
+      Prompting settings
+      zero-shot or chain-of-thought
+    type: process
+    size: xl
+    position:
+      x: 3420
+      'y': 210
+  - id: accuracy
+    label: |-
+      Accuracy
+      overall · tier · subtask
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 210
 edges:
-  - from: youtube
-    to: video_qc
+  - from: candidates
+    to: curate
     type: primary
-  - from: video_qc
-    to: captions
+  - from: curate
+    to: videos
     type: primary
-  - from: captions
+  - from: videos
+    to: segments
+    type: primary
+  - from: segments
+    to: descriptions
+    type: primary
+  - from: descriptions
     to: relations
     type: primary
   - from: relations
-    to: qa
+    to: synthesize
     type: primary
-  - from: qa
-    to: human_qc
+  - from: synthesize
+    to: model_gate
     type: primary
-  - from: human_qc
-    to: bench
+  - from: model_gate
+    to: human_gate
     type: primary
-  - from: bench
-    to: eval
+  - from: human_gate
+    to: repair
+    type: optional
+    label: Revise
+  - from: repair
+    to: human_gate
+    type: optional
+    label: Recheck
+  - from: human_gate
+    to: independent_audit
+    type: primary
+    label: Pass
+  - from: independent_audit
+    to: repair
+    type: optional
+    label: Correct
+  - from: independent_audit
+    to: benchmark
+    type: primary
+    label: Pass
+  - from: benchmark
+    to: input
+    type: primary
+  - from: input
+    to: prompting
+    type: primary
+  - from: prompting
+    to: accuracy
     type: primary
 modules: []

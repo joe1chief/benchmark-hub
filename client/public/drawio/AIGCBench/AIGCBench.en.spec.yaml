@@ -4,89 +4,225 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIGCBench Build Process
+  title: AIGCBench Build and Evidence-Bounded Validation Process
   description: >-
-    Paper-aligned construction of AIGCBench: combine real video-text and image-text sources with generated prompts and
-    SDXL images, assemble 3,928 cases, evaluate I2V models with 11 metrics across four dimensions, and validate the
-    standard with human judgments.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Construction of 3,928 I2V cases followed by dataset-specific automatic metrics and a separate human vote, with
+    paper-versus-code keyframe divergence and method-specific coverage made explicit.
+  legend: Solid arrows show the construction/evaluation spine; dashed data arrows merge independent evidence reports only.
 nodes:
-  - id: n1
-    label: Real Pairs
+  - id: webvid
+    label: |-
+      WebVid Validation
+      Subtype Sample • 1,000
+      Video-Text Pairs
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Text Combiner
+      'y': 20
+  - id: laion
+    label: |-
+      LAION-Aesthetics
+      925 Image-Text Pairs
+      Paper: Random • README: Curated
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 180
+  - id: text_corpus
+    label: |-
+      Prompt Text Corpus
+      CivitAI High-Frequency Terms
+      Plus Additional Candidate Terms
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 420
+  - id: compose
+    label: |-
+      Randomly Compose 3,000
+      Subject • Behavior
+      Background • Style
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: GPT-4 Enrich
+      x: 300
+      'y': 420
+  - id: enrich
+    label: |-
+      GPT-4 Enrichment
+      “Make the Content
+      More Vivid and Rich”
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: SDXL + Filter
+      x: 560
+      'y': 420
+  - id: generate
+    label: |-
+      SDXL xl-base • 1280 × 720
+      T2I-CompBench Filter
+      Retain Top 2,003 Pairs
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 3,928 Cases
-    type: document
+      x: 820
+      'y': 420
+  - id: release
+    label: |-
+      Assemble AIGCBench
+      1,000 + 925 + 2,003
+      3,928 Cases
+    type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: I2V Models
+      x: 1080
+      'y': 200
+  - id: i2v
+    label: |-
+      Generate I2V Outputs
+      Five Evaluated Methods
+      Pika: 60 Cases Only
+      30 WebVid + 30 Generated
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 11 Metrics
+      x: 1340
+      'y': 200
+  - id: frame_policy
+    label: |-
+      Frame Policy by Metric
+      First 16 by Default
+      DOVER Uses All Frames
+      Frame Count Remains Untrimmed
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Human Check
+      x: 1600
+      'y': 200
+  - id: metric_route
+    label: Evaluation Dataset Type?
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 200
+  - id: image_metrics
+    label: |-
+      Image-Text Cases
+      Video-Free Metrics Only
+      No Reference Video
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 20
+  - id: video_metrics
+    label: |-
+      Video-Text Cases
+      Reference + Video-Free Metrics
+      Paper: 4 Keyframes
+      Code Default: 5 Keyframes
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 300
+  - id: automatic
+    label: |-
+      Automatic Metric Report
+      4 Dimensions • 11 Unique Metrics
+      Flow + DOVER Absent
+      from Fixed Repository Code
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2380
+      'y': 140
+  - id: human_sample
+    label: |-
+      Human-Study Sample
+      Random 30 per Method
+      Five Methods
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 560
+  - id: human_vote
+    label: |-
+      42 Participants
+      Vote for Best Method
+      Across Four Dimensions
+    type: user
+    size: xl
+    position:
+      x: 1860
+      'y': 560
+  - id: alignment
+    label: |-
+      Qualitative Alignment
+      Votes Relatively Consistent
+      No Correlation Statistic Reported
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 280
 edges:
-  - from: n1
-    to: n2
+  - from: webvid
+    to: release
     type: primary
-  - from: n2
-    to: n3
+  - from: laion
+    to: release
     type: primary
-  - from: n3
-    to: n4
+  - from: text_corpus
+    to: compose
     type: primary
-  - from: n4
-    to: n5
+  - from: compose
+    to: enrich
     type: primary
-  - from: n5
-    to: n6
+  - from: enrich
+    to: generate
     type: primary
-  - from: n6
-    to: n7
+  - from: generate
+    to: release
     type: primary
-  - from: n7
-    to: n8
+  - from: release
+    to: i2v
     type: primary
+  - from: i2v
+    to: frame_policy
+    type: primary
+  - from: frame_policy
+    to: metric_route
+    type: primary
+  - from: metric_route
+    to: image_metrics
+    type: primary
+    label: Image-text
+  - from: metric_route
+    to: video_metrics
+    type: primary
+    label: Video-text
+  - from: image_metrics
+    to: automatic
+    type: primary
+  - from: video_metrics
+    to: automatic
+    type: primary
+  - from: i2v
+    to: human_sample
+    type: primary
+  - from: human_sample
+    to: human_vote
+    type: primary
+  - from: automatic
+    to: alignment
+    type: data
+  - from: human_vote
+    to: alignment
+    type: data
 modules: []

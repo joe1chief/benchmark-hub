@@ -1,0 +1,221 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WMDP Paper Dataset Build and Evaluation
+  description: >-
+    WMDP begins with expert threat models for biosecurity, cybersecurity, and chemical security, then writes four-choice
+    proxy questions about precursors, neighbors, and components of hazardous capabilities, primarily emphasizing
+    offensive knowledge. Every question is checked by at least two experts from different organizations. Questions
+    flagged as sensitive by domain experts are immediately excluded; WMDP-Bio and WMDP-Chem then receive two additional
+    expert cross-checks per question. With external counsel, the publication of WMDP as a whole—not each individual
+    question—is assessed for ITAR and EAR compliance. The paper release contains 3,668 questions: 1,273 Bio, 1,987
+    Cyber, and 408 Chem. Evaluation is zero-shot top-logit selection over A-D with lm-evaluation-harness v0.4.2 and
+    accuracy, where chance is 25%. RMU experiments are conducted only on WMDP-Bio and WMDP-Cyber; WMDP-Chem remains a
+    hazard-measurement benchmark because the authors are uncertain that the benefits of chemical-knowledge unlearning
+    outweigh its general-capability costs. Bio/Cyber unlearning is evaluated by lowering their WMDP accuracy while
+    retaining MMLU and MT-Bench.
+  legend: >-
+    Source: WMDP arXiv:2403.03218v7, Sections 3.1-3.5, especially Section 3.5 for per-question sensitive filtering,
+    Bio/Chem cross-checking, and publication-level export-control assessment; the opening of Section 4 and Sections
+    5.1-5.2 for Bio/Cyber-only unlearning; Appendices A.1 and B.1 for paper dataset counts and zero-shot evaluation;
+    official project https://wmdp.ai and repository https://github.com/centerforaisafety/wmdp. Version pin: paper
+    dataset counts and protocol are used.. Solid arrows show the main flow explicitly supported by the paper or official
+    documentation.
+nodes:
+  - id: expert_consortium
+    label: Academic + Technical Experts
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: threat_models
+    label: Domain Threat Models
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: bio_branch
+    label: Biosecurity
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: cyber_branch
+    label: Cybersecurity
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: chem_branch
+    label: Chemical Security
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: proxy_questions
+    label: Proxy Knowledge MCQs
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: dual_review
+    label: At Least Two Expert Checks
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: sensitive_gate
+    label: Sensitive Information?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: exclude_question
+    label: Exclude Question
+    type: loss
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: domain_gate
+    label: Bio or Chem?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: extra_crosscheck
+    label: Two Extra Cross-Checks
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: release_export_assessment
+    label: Publication-Level Export-Control Assessment
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: wmdp_release
+    label: WMDP 3,668 Questions
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: zero_shot
+    label: Zero-Shot A-D Prompt
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: subset_accuracy
+    label: Subset Accuracy / 25% Chance
+    type: formula
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: unlearning_eval
+    label: Bio + Cyber RMU Unlearning
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: retention_report
+    label: Bio/Cyber WMDP Down; MMLU + MT-Bench Retained
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+edges:
+  - from: expert_consortium
+    to: threat_models
+    type: primary
+  - from: threat_models
+    to: bio_branch
+    type: data
+    label: Bio
+    labelPosition: end
+  - from: threat_models
+    to: cyber_branch
+    type: data
+    label: Cyber
+    labelPosition: end
+  - from: threat_models
+    to: chem_branch
+    type: data
+    label: Chem
+    labelPosition: end
+  - from: bio_branch
+    to: proxy_questions
+    type: primary
+  - from: cyber_branch
+    to: proxy_questions
+    type: primary
+  - from: chem_branch
+    to: proxy_questions
+    type: primary
+  - from: proxy_questions
+    to: dual_review
+    type: primary
+  - from: dual_review
+    to: domain_gate
+    type: primary
+  - from: sensitive_gate
+    to: exclude_question
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: sensitive_gate
+    to: release_export_assessment
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: domain_gate
+    to: extra_crosscheck
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: domain_gate
+    to: sensitive_gate
+    type: primary
+    label: Cyber
+    labelPosition: end
+  - from: extra_crosscheck
+    to: sensitive_gate
+    type: primary
+  - from: release_export_assessment
+    to: wmdp_release
+    type: primary
+  - from: wmdp_release
+    to: zero_shot
+    type: primary
+  - from: zero_shot
+    to: subset_accuracy
+    type: primary
+  - from: wmdp_release
+    to: unlearning_eval
+    type: optional
+    label: Bio + Cyber only
+    labelPosition: center
+  - from: unlearning_eval
+    to: retention_report
+    type: optional
+modules: []

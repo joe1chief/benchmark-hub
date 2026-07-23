@@ -1,0 +1,220 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ChemBench 构建流程
+  description: >-
+    对齐 Nature Chemistry 论文的 ChemBench 流程：1,039 道人工整理题和 1,749 道半程序化题进入带金丝雀字符串的扩展 BIG-bench Schema，经科学家与自动检查形成 2,788
+    题完整语料和 236 题 Mini 子集，再用模型适配提示、答案与置信度独立询问、稳健解析和 19 位化学专家基线完成评测。
+  legend: 实线表示语料构建与答案评测；虚线表示派生子集和辅助证据。
+nodes:
+  - id: manual
+    label: |-
+      人工整理：1,039 道问答
+      大学考试 • 习题讲义 • 教材
+      URL • IChO • 课程 • 全新问题
+    type: user
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: programmatic
+    label: |-
+      半程序化生成：1,749 道问答
+      整理后的化学数据 + 程序化变体
+      反应性 • 结构 • 安全 • 化学偏好
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: schema
+    label: |-
+      通过 GitHub Pull Request 提交
+      扩展 BIG-bench Schema
+      语义标记：分子 • 方程 • 单位
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: canary
+    label: |-
+      加入 BIG-bench 金丝雀字符串
+      要求开发者过滤训练数据
+      降低基准污染风险
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: review
+    label: |-
+      合并前质量门
+      原整理者之外至少两名科学家复核
+      自动检查 Schema / LaTeX / 格式
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: labels
+    label: |-
+      人工标注每道题
+      化学主题 • 所需技能 • 难度
+      知识 • 推理 • 计算 • 直觉
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: corpus
+    label: |-
+      完整 ChemBench 语料
+      共 2,788 道问答
+      2,544 道选择题 + 244 道开放题
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 220
+  - id: mini
+    label: |-
+      ChemBench-Mini：236 题
+      保留全部高级题
+      每个“知识/推理 × 主题”组合最多 3 题
+      排除直觉题
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 40
+  - id: system
+    label: |-
+      选择待评系统
+      任何返回文本的系统
+      模型或工具增强系统
+      使用完整语料或 Mini
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 400
+  - id: prompt
+    label: |-
+      模型适配提示
+      补全式与指令式格式
+      适配 SMILES • LaTeX • 方程 • 单位
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: inference
+    label: |-
+      贪心解码 • 温度 0
+      答案提示：结构化 [ANSWER] 输出
+      独立置信度提示：仅输出 1–5
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: parse
+    label: |-
+      多阶段答案解析
+      [ANSWER] 标签 • 选项字母 • 数值
+      科学计数法 + 单词转数字正则
+      规则失败时使用 LLM 回退
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: confidence
+    label: |-
+      口头置信度
+      独立给出 1–5 分
+      不返回问题答案
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 40
+  - id: human
+    label: |-
+      人类基线：19 位化学专家
+      作答全部 236 道 Mini 题 • 不可跳题
+      工具 / 无工具子集
+      禁止使用其他 LLM 或向他人求助
+    type: user
+    size: xl
+    position:
+      x: 3040
+      'y': 400
+  - id: report
+    label: |-
+      严格正确 / 错误准确率
+      口头置信度分析
+      模型 • 工具系统 • 化学专家
+      主题 / 技能分解 + 排行榜
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 160
+edges:
+  - from: manual
+    to: schema
+    type: primary
+  - from: programmatic
+    to: schema
+    type: primary
+  - from: schema
+    to: canary
+    type: primary
+  - from: canary
+    to: review
+    type: primary
+  - from: review
+    to: labels
+    type: primary
+  - from: labels
+    to: corpus
+    type: primary
+  - from: corpus
+    to: mini
+    type: data
+  - from: corpus
+    to: system
+    type: primary
+  - from: mini
+    to: system
+    type: data
+  - from: system
+    to: prompt
+    type: primary
+  - from: prompt
+    to: inference
+    type: primary
+  - from: inference
+    to: parse
+    type: primary
+  - from: inference
+    to: confidence
+    type: data
+  - from: parse
+    to: report
+    type: primary
+  - from: confidence
+    to: report
+    type: data
+  - from: mini
+    to: human
+    type: data
+  - from: human
+    to: report
+    type: data
+modules: []

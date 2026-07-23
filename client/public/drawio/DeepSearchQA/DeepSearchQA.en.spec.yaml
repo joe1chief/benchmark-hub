@@ -6,103 +6,111 @@ meta:
   routing: orthogonal
   title: DeepSearchQA Dataset Build Process
   description: >-
-    Paper Section 2's expert curation, objective-question filter, and conditional three-phase quality-verification
-    process.
+    Expert authoring, objective-question filtering, blind independent research, and the three explicitly disclosed
+    discrepancy outcomes from arXiv:2601.20975v1 Section 2.
   legend: >-
-    The unconnected card holds unordered causal-chain and time-anchor facts; reviewers receive only the question, while
-    curator ground truth enters only at cross-check; edges have no labels.
+    Reviewers receive the question without curator ground truth; the two branches meet only at comparison. No
+    discrepancy retains the curator truth. A discrepancy is classified as ground-truth update, reviewer error, or
+    ambiguity; ambiguous prompts alone are removed.
 nodes:
   - id: curation
-    label: Expert-curated
+    label: Expert-authored questions
     type: user
     size: large
     position:
-      x: 64
-      'y': 64
+      x: 32
+      'y': 96
   - id: design_facts
     label: Causal chain · time anchor
     type: document
     size: large
     position:
-      x: 64
-      'y': 208
+      x: 32
+      'y': 256
   - id: objective_filter
     label: Objective-question filter
     type: process
     size: large
     position:
-      x: 272
-      'y': 64
+      x: 256
+      'y': 96
   - id: question_prompt
     label: Question prompt
     type: document
-    size: large
+    size: medium
     position:
       x: 480
       'y': 64
+  - id: curator_answer
+    label: Curator ground truth
+    type: document
+    size: medium
+    position:
+      x: 480
+      'y': 240
   - id: blind_review
     label: 3 blind reviewers
     type: user
-    size: large
+    size: medium
     position:
       x: 688
       'y': 64
-  - id: curator_answer
-    label: Curator answer set
-    type: document
-    size: large
-    position:
-      x: 480
-      'y': 208
   - id: comparison
-    label: Reviewer vs curator agree?
+    label: Discrepancy?
     type: decision
-    size: large
+    size: medium
     position:
       x: 896
-      'y': 64
-  - id: agreement_retain
-    label: 'Agree: retain'
+      'y': 144
+  - id: retain_curator_gt
+    label: Retain curator GT
+    type: process
+    size: medium
+    position:
+      x: 1120
+      'y': 32
+  - id: resolution_class
+    label: Classify discrepancy
+    type: decision
+    size: medium
+    position:
+      x: 1120
+      'y': 240
+  - id: update_gt
+    label: Update ground truth
+    type: process
+    size: medium
+    position:
+      x: 1344
+      'y': 144
+  - id: keep_gt
+    label: Keep curator ground truth
     type: process
     size: large
     position:
-      x: 480
-      'y': 352
-  - id: conflict_resolution
-    label: Dispute ambiguous?
-    type: decision
-    size: large
-    position:
-      x: 896
-      'y': 208
-  - id: answer_repair
-    label: Update / keep
-    type: process
-    size: large
-    position:
-      x: 896
-      'y': 352
+      x: 1344
+      'y': 272
   - id: ambiguity_filter
-    label: Drop ambiguity
+    label: Drop ambiguous prompt
     type: terminal
-    size: large
+    size: medium
     position:
-      x: 1104
-      'y': 352
+      x: 1344
+      'y': 400
   - id: final_dataset
-    label: 900·17 domains
-    type: document
-    size: large
+    label: 900 · 17 · Set584 · Single316
+    type: database
+    size: xl
     position:
-      x: 480
-      'y': 496
+      x: 1584
+      'y': 144
   - id: hf_release
-    label: HF · 4 fields
+    label: HF eval · 4 fields
     type: terminal
-    size: large
+    size: medium
     position:
-      x: 480
-      'y': 640
+      x: 1824
+      'y': 144
 edges:
   - from: curation
     to: objective_filter
@@ -112,7 +120,7 @@ edges:
     type: primary
   - from: objective_filter
     to: curator_answer
-    type: primary
+    type: data
   - from: question_prompt
     to: blind_review
     type: primary
@@ -121,41 +129,34 @@ edges:
     type: primary
   - from: curator_answer
     to: comparison
-    type: primary
-    waypoints:
-      - x: 672
-        'y': 264
-      - x: 976
-        'y': 264
-      - x: 976
-        'y': 176
+    type: data
   - from: comparison
-    to: agreement_retain
+    to: retain_curator_gt
     type: primary
-    waypoints:
-      - x: 864
-        'y': 176
-      - x: 816
-        'y': 176
-      - x: 816
-        'y': 320
-      - x: 672
-        'y': 320
-      - x: 672
-        'y': 392
+    label: No discrepancy
   - from: comparison
-    to: conflict_resolution
+    to: resolution_class
+    type: optional
+    label: Discrepancy
+  - from: resolution_class
+    to: update_gt
     type: primary
-  - from: agreement_retain
+    label: GT update
+  - from: resolution_class
+    to: keep_gt
+    type: primary
+    label: Reviewer incorrect
+  - from: resolution_class
+    to: ambiguity_filter
+    type: optional
+    label: Ambiguous
+  - from: retain_curator_gt
     to: final_dataset
     type: primary
-  - from: conflict_resolution
-    to: answer_repair
+  - from: update_gt
+    to: final_dataset
     type: primary
-  - from: conflict_resolution
-    to: ambiguity_filter
-    type: primary
-  - from: answer_repair
+  - from: keep_gt
     to: final_dataset
     type: primary
   - from: final_dataset

@@ -1,56 +1,80 @@
 {
   "version": 1,
-  "title": "CountBench Build Process",
+  "title": "CountBench Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "laion",
-      "label": "LAION-400M",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "num",
-      "label": "Number Filter",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "detect",
-      "label": "Detector Check",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "balance",
-      "label": "Balance Counts",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "human",
-      "label": "Human Verify",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "bench",
-      "label": "540 Images",
+      "id": "evidence",
+      "label": "Paper + Release Boundary\narXiv:2302.12066v1 · §§4, 5.1\nOfficial JSON @ 2c573a8: 540 Rows",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "Zero-shot Eval",
+      "id": "laion",
+      "label": "Public LAION-400M\nImage–Caption Pairs",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "number_filter",
+      "label": "Keep Spelled Counts: Two through Ten\nNon-spelled or Higher than Ten Numbers\nUsually Indicate Dates, Time, or Addresses",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "detector",
+      "label": "Off-the-shelf Object Detector\nCount Detections per Object Class\nKeep Caption Count = Most Prevalent Class",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "candidate",
+      "label": "Automatically Filtered Candidates\nSevere Imbalance: 158K+ for “Two”\nversus about 100 for “Ten”",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "balance",
+      "label": "Pre-balance Each Number\nKeep 100–200 Candidates per Number",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "verify",
+      "label": "Manual Verification\nCaption Count Must Match\nClearly Visible Objects",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Final Rebalance: 60 × 9 = 540\nCountBench Test Set Only\nNo Overlap with Counting Training Set C",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "captions",
+      "label": "Create Nine Candidate Captions\nCounts “Two” through “Ten”\nOne Correct + Eight Counterfactuals",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "similarity",
+      "label": "CLIP-B/32 + BASIC-S Zero-shot\nImage–Text Similarity for Nine Captions\nHighest Score Predicts the Count",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "Counting Accuracy\nMean [Predicted Count = True Count]\nMean Absolute Deviation\nMean |Predicted Count − True Count|",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "laion",
-      "to": "num",
-      "type": "primary"
+      "from": "evidence",
+      "to": "laion",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "num",
-      "to": "detect",
+      "from": "laion",
+      "to": "number_filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "detect",
-      "to": "balance",
+      "from": "number_filter",
+      "to": "detector",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "balance",
-      "to": "human",
+      "from": "detector",
+      "to": "candidate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "human",
-      "to": "bench",
+      "from": "candidate",
+      "to": "balance",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "bench",
-      "to": "eval",
+      "from": "balance",
+      "to": "verify",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "verify",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dataset",
+      "to": "captions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "captions",
+      "to": "similarity",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "similarity",
+      "to": "metrics",
       "type": "primary"
     }
   ],

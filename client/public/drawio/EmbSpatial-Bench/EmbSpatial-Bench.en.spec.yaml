@@ -5,77 +5,172 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EmbSpatial-Bench Build Process
-  description: Paper-aligned EmbSpatial-Bench flow from annotated 3D embodied scenes to egocentric spatial QA evaluation.
+  description: >-
+    Revision-pinned construction from annotated embodied 3D scenes to human-verified egocentric spatial MCQs and
+    zero-shot LVLM accuracy.
   legend: >-
-    Solid arrows show 3D scene sourcing, RGB-D image selection, spatial triple extraction, QA template generation,
-    sample filtering, LVLM evaluation, and accuracy reporting.
+    Solid arrows follow the ACL 2024 benchmark pipeline; the dashed arrow pins paper, repository, and Hugging Face
+    release evidence. EmbSpatial-SFT is a separate training set and is not part of the 3,640-item evaluation set.
 nodes:
-  - id: scenes
-    label: 3D Scenes
+  - id: evidence
+    label: |-
+      Fixed evidence boundary
+      arXiv:2406.05756v1
+      repo @ 75792fc
+      HF dataset @ e2733ca
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: sources
+    label: |-
+      Annotated embodied 3D scenes
+      Matterport3D test split
+      ScanNet validation split
+      AI2-THOR: 7 ALFRED tasks
+      across 93 scenes
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: images
-    label: RGB-D Frames
+      'y': 320
+  - id: frames
+    label: |-
+      Capture target RGB-D
+      MP3D / ScanNet:
+      random viewpoints
+      AI2-THOR: key frame
+      after each PDDL subgoal
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: triples
-    label: Rel Triples
+      'y': 320
+  - id: project
+    label: |-
+      Project annotated 3D objects
+      camera parameters
+      + 3D coordinates
+      → 2D bounding boxes
+      + mean box depth
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: qa
-    label: QA Templates
-    type: document
+      'y': 320
+  - id: relations
+    label: |-
+      Non-overlapping boxes only
+      whole-box geometry:
+      above / below / left / right
+      mean depth: close / far
+      viewer's perspective
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: filter
-    label: Sample Filter
-    type: decision
+      'y': 320
+  - id: qa
+    label: |-
+      Generate multiple-choice QA
+      5 templates for four directions
+      unrelated relations
+      become false options
+      aggregate objects for
+      closest / farthest questions
+    type: document
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: eval
-    label: LVLM Eval
+      'y': 320
+  - id: filter
+    label: |-
+      Automatic box filter
+      reject width or height < 50 px
+      reject width or height > half
+      of its corresponding image axis
+      balance relation distribution
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
-    type: terminal
+      'y': 320
+  - id: verify
+    label: |-
+      Human-check every sample
+      objects unique and clear
+      target relation correct
+      negative options incorrect
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 320
+  - id: per_source
+    label: |-
+      QA / images / objects / scenes
+      MP3D: 1,201 / 928 / 133 / 26
+      AI2-THOR: 1,239 / 683 / 95 / 93
+      ScanNet: 1,200 / 570 / 35 / 175
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 320
+  - id: dataset
+    label: |-
+      EmbSpatial-Bench
+      3,640 QA · 2,181 images
+      277 scenes
+      294 object categories
+      6 balanced egocentric relations
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 320
+  - id: evaluation
+    label: |-
+      Zero-shot LVLM evaluation
+      generation: parse option
+      likelihood:
+      arg max Pθ(ci | v, q)
+      report strategy accuracy
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 320
 edges:
-  - from: scenes
-    to: images
+  - from: evidence
+    to: sources
+    type: data
+  - from: sources
+    to: frames
     type: primary
-  - from: images
-    to: triples
+  - from: frames
+    to: project
     type: primary
-  - from: triples
+  - from: project
+    to: relations
+    type: primary
+  - from: relations
     to: qa
     type: primary
   - from: qa
     to: filter
     type: primary
   - from: filter
-    to: eval
+    to: verify
     type: primary
-  - from: eval
-    to: score
+  - from: verify
+    to: per_source
+    type: primary
+  - from: per_source
+    to: dataset
+    type: primary
+  - from: dataset
+    to: evaluation
     type: primary
 modules: []

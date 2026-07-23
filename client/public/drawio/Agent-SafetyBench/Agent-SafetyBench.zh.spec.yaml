@@ -5,116 +5,271 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Agent-SafetyBench 构建流程
-  description: 基于 arXiv:2412.14470 对齐的 Agent-SafetyBench 基准构建与安全评分流程。
-  legend: 实线表示数据构建和 agent 评测主流程；虚线表示质量控制和 scorer 训练检查点。
+  description: 对齐 arXiv:2412.14470v2 第 3.2.2-3.3 节、第 4.1 节及附录 F-G 的基准构建、交互质检、评分器训练与轨迹级评测流程。
+  legend: 人工后检 4,000 条交互后先修订案例与环境，经交叉验证再发布；所得标签同时用于训练完整轨迹安全评分器。
 nodes:
   - id: taxonomy
     label: |-
-      安全分类体系
-      8 类风险
-      10 类失败模式
+      定义安全分类体系
+      8 类安全风险
+      10 种失败模式
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: format
+      'y': 180
+  - id: legacy_sources
     label: |-
-      测试用例 schema
-      风险、指令/对话
-      环境、失败模式
+      收集已有安全案例
+      六个 Agent 安全来源
+      统一风险覆盖
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: environments
+      x: 320
+      'y': 40
+  - id: environment_names
     label: |-
-      交互式环境
-      JSON 工具 schema
-      Python 环境类
+      生成环境候选
+      三个前沿大模型
+      300 个候选环境名
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 320
+      'y': 320
   - id: refine
     label: |-
       精炼已有数据
       明确失败模式
-      去重并标准化环境
+      去重并统一格式
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
+      x: 600
+      'y': 40
   - id: augment
     label: |-
-      数据增强
-      300 个新环境名
-      每类风险 250 个 case
+      生成缺失案例
+      风险受控指令
+      预期风险行为
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: quality
+      x: 600
+      'y': 320
+  - id: merge
     label: |-
-      质量控制
-      人工预检
-      脚本校验、后检、交叉验证
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: benchmark
-    label: |-
-      基准发布
-      349 个环境
-      2,000 个测试用例
+      平衡风险类别
+      876 个精炼 + 1,124 个新例
+      每类 250 个案例
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scorer
+      x: 880
+      'y': 180
+  - id: schema
     label: |-
-      Agent 评测
-      工具交互记录
-      finetuned scorer -> safety score
+      编码案例结构
+      风险 • 指令 • 环境
+      预期失败模式
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 180
+  - id: environments
+    label: |-
+      实现动态环境
+      JSON 工具结构
+      Python 环境类
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 180
+  - id: precheck
+    label: |-
+      作者预检查
+      检查生成案例
+      修复无效行为
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: automatic_checks
+    label: |-
+      运行自动检查
+      解析 JSON • 执行 Python
+      验证工具与状态
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 500
+  - id: cross_validation
+    label: |-
+      交叉验证质量
+      200 个案例 • 98% 合理
+      200 个标签 • 97.5% 一致
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 500
+  - id: benchmark
+    label: |-
+      发布 Agent-SafetyBench
+      349 个动态环境
+      2,000 个验证案例
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 500
+  - id: interaction_qc
+    label: |-
+      人工后检 4,000 条交互
+      标注完整交互轨迹
+      修订案例与环境
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 500
+  - id: scorer_train
+    label: |-
+      训练安全评分器
+      GPT-4o 生成标签解释
+      在 4,000 条交互上微调 Qwen2.5-7B
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 780
+  - id: trained_scorer
+    label: |-
+      验证并固化评分器
+      留出集准确率 91.5%
+      已训练轨迹分类器
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 780
+  - id: agent_eval
+    label: |-
+      评测 16 个 Agent
+      动态工具交互
+      使用同一验证基准
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 780
+  - id: trajectories
+    label: |-
+      记录完整轨迹
+      消息 • 动作 • 工具状态
+      保留全部交互
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 1080
+  - id: score_trajectories
+    label: |-
+      评分完整轨迹
+      应用已训练评分器
+      每条轨迹一个安全判断
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 1080
+  - id: safety_label
+    label: |-
+      分类为安全或不安全
+      保留风险类别
+      保留失败模式
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1080
+  - id: report
+    label: |-
+      报告分数与统计
+      安全轨迹比例
+      风险与失败模式分解
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2000
+      'y': 1080
 edges:
   - from: taxonomy
-    to: format
+    to: legacy_sources
     type: primary
   - from: taxonomy
-    to: environments
+    to: environment_names
     type: data
-  - from: format
+  - from: legacy_sources
     to: refine
     type: primary
-  - from: environments
+  - from: environment_names
     to: augment
     type: primary
   - from: refine
-    to: quality
+    to: merge
     type: primary
   - from: augment
-    to: quality
+    to: merge
     type: primary
-  - from: quality
-    to: refine
-    type: optional
-    label: 修订无效 case
-  - from: quality
+  - from: merge
+    to: schema
+    type: primary
+  - from: schema
+    to: environments
+    type: primary
+  - from: environments
+    to: precheck
+    type: primary
+  - from: precheck
+    to: automatic_checks
+    type: primary
+  - from: automatic_checks
+    to: interaction_qc
+    type: primary
+  - from: interaction_qc
+    to: cross_validation
+    type: primary
+  - from: cross_validation
     to: benchmark
     type: primary
+  - from: interaction_qc
+    to: scorer_train
+    type: data
+  - from: scorer_train
+    to: trained_scorer
+    type: primary
   - from: benchmark
-    to: scorer
+    to: agent_eval
+    type: primary
+  - from: agent_eval
+    to: trajectories
+    type: primary
+  - from: trajectories
+    to: score_trajectories
+    type: primary
+  - from: trained_scorer
+    to: score_trajectories
+    type: data
+  - from: score_trajectories
+    to: safety_label
+    type: primary
+  - from: safety_label
+    to: report
     type: primary
 modules: []

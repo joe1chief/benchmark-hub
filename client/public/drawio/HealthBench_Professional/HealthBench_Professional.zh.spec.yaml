@@ -1,0 +1,236 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HealthBench Professional 构建流程
+  description: 对齐论文、公开数据版与参考运行器的 HealthBench Professional 构建和评测流程。
+  legend: 实线表示论文披露的构建和评分主路径；虚线表示替代任务流、医生基线、固定版本证据与公开/内部资产边界。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2604.27470v1
+      数据 349962fd · 运行器 652c89d0
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: cohort
+    label: |-
+      医生贡献者队列
+      190 名医生 · 50 个国家
+      26 个专科 · 52 种语言
+    type: user
+    size: xl
+    position:
+      x: 304
+      'y': 360
+  - id: good_faith
+    label: |-
+      善意医生任务
+      日常临床 · 学术 · 行政 · 研究
+    type: database
+    size: xl
+    position:
+      x: 568
+      'y': 96
+  - id: red_team
+    label: |-
+      结构化对抗红队任务
+      主要使用 GPT-5.4
+      也使用 GPT-5.2 Instant
+    type: database
+    size: xl
+    position:
+      x: 568
+      'y': 624
+  - id: authorship
+    label: |-
+      阶段 1 · 医生创作
+      对话 · 量表 · Likert 1–7
+    type: process
+    size: xl
+    position:
+      x: 832
+      'y': 360
+  - id: review
+    label: |-
+      阶段 2 · 一名或多名医生复核
+      困难项由两名医生独立验证
+      确认有效缺陷 + 真实任务
+    type: process
+    size: xl
+    position:
+      x: 1096
+      'y': 360
+  - id: adjudication
+    label: |-
+      阶段 3 · 最终裁决
+      消除歧义 · 修订量表
+      删除主观项 · 轻量事实核查
+    type: process
+    size: xl
+    position:
+      x: 1360
+      'y': 360
+  - id: tag
+    label: |-
+      标签与分层
+      GPT-5.2 用例 · 专科
+      语言 · 轮次 · 难度
+    type: document
+    size: xl
+    position:
+      x: 1624
+      'y': 360
+  - id: sample
+    label: |-
+      分层困难样本
+      15,079 个候选 → 525 项公开
+      总体困难 3.5× · 善意困难 8×
+    type: process
+    size: xl
+    position:
+      x: 1888
+      'y': 360
+  - id: release
+    label: |-
+      公开任务构成
+      会诊 236 · 写作 142
+      研究 147
+    type: database
+    size: xl
+    position:
+      x: 2152
+      'y': 360
+  - id: physician_baseline
+    label: |-
+      医生基线 · 全部 525 项
+      专科匹配 · 允许联网
+      无 AI · 非本人出题
+    type: user
+    size: xl
+    position:
+      x: 2416
+      'y': 96
+  - id: model_response
+    label: |-
+      模型评测
+      最高推理 · 默认详略
+      每题 8 次采样
+    type: process
+    size: xl
+    position:
+      x: 2416
+      'y': 624
+  - id: grader
+    label: |-
+      量表评分
+      GPT-5.4 · 低推理
+      逐准则判断命中与否
+    type: process
+    size: xl
+    position:
+      x: 2680
+      'y': 360
+  - id: raw_score
+    label: |-
+      原始样例分
+      带符号命中和 / 正分上限
+      负分准则可降低分数
+    type: process
+    size: xl
+    position:
+      x: 2944
+      'y': 360
+  - id: length
+    label: |-
+      长度校正分
+      每字符惩罚 2.94 × 10−5
+      中心 2,000 · 0.0147 / 500 字符
+    type: process
+    size: xl
+    position:
+      x: 3208
+      'y': 360
+  - id: report
+    label: |-
+      报告分数
+      校正分均值 · 截断至 [0,1]
+      再乘 100
+    type: terminal
+    size: xl
+    position:
+      x: 3472
+      'y': 360
+  - id: artifact_boundary
+    label: |-
+      资产边界
+      525 项公开 · 保留私有留出集
+      内部评测器未发布
+      simple-evals 参考实现非官方
+      调用方提供中心值与惩罚参数
+    type: document
+    size: xl
+    position:
+      x: 3472
+      'y': 624
+edges:
+  - from: evidence
+    to: cohort
+    type: data
+  - from: cohort
+    to: good_faith
+    type: primary
+  - from: cohort
+    to: red_team
+    type: secondary
+  - from: good_faith
+    to: authorship
+    type: primary
+  - from: red_team
+    to: authorship
+    type: secondary
+  - from: authorship
+    to: review
+    type: primary
+  - from: review
+    to: adjudication
+    type: primary
+  - from: adjudication
+    to: tag
+    type: primary
+  - from: tag
+    to: sample
+    type: primary
+  - from: sample
+    to: release
+    type: primary
+  - from: release
+    to: physician_baseline
+    type: secondary
+  - from: release
+    to: model_response
+    type: primary
+  - from: physician_baseline
+    to: grader
+    type: secondary
+  - from: model_response
+    to: grader
+    type: primary
+  - from: grader
+    to: raw_score
+    type: primary
+  - from: raw_score
+    to: length
+    type: primary
+  - from: length
+    to: report
+    type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
+modules: []

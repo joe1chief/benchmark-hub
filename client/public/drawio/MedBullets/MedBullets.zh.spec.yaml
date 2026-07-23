@@ -1,0 +1,425 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedBullets 构建与评测流程
+  description: 依据一手来源并锁定 arXiv:2402.18060v6 与 ChallengeClinicalQA 官方数据快照，区分“移除图像”与“剔除病例”， 并分别展示答案、解释和人工评测。
+  legend: 实线表示构建及计分实验路线；带标签分支展示论文的三种提示策略；虚线表示伴随数据、鲁棒性、污染、补充配置、权利及可复现性边界， 这些分析既不筛除已发布的 308 题，也不组成统一总分。
+nodes:
+  - id: source
+    label: |-
+      定位 Medbullets Step 2/3 链接
+      来自 X 的公开帖子
+      时间为 2022-04 至 2023-12
+      模拟临床问题
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 340
+  - id: companion
+    label: |-
+      独立 JAMA 伴随轨道
+      1,524 题 · 13 个领域
+      仅提供 URL 与抓取器
+      须有 JAMA 全文访问许可
+      不发布原始数据且不并入 Medbullets
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 700
+  - id: crawl
+    label: |-
+      抓取开放访问题目页面
+      跟随从 X 收集的链接
+      保留源 URL 与文本内容
+      抓取器版本未发布
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 340
+  - id: strip_images
+    label: |-
+      移除图像并保留文本
+      论文未称剔除对应病例
+      锁定数据中 116 题仍写有“Figure”
+      图像依赖问题仍未解决
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 340
+  - id: construction_boundary
+    label: |-
+      未披露的构建边界
+      未发布 Medbullets 抓取代码
+      未给出去重或准入规则
+      未报告作者复审协议
+    type: document
+    size: xl
+    position:
+      x: 580
+      'y': 700
+  - id: structure
+    label: |-
+      保留每条来源记录
+      病例 + 问题 + 五个选项
+      标准答案 + 来源链接
+      专家解析覆盖每个选项
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 340
+  - id: release5
+    label: |-
+      形成 Medbullets-5
+      308 道英文 Step 2/3 题
+      解析由医生或其他
+      医疗专业人士撰写
+    type: database
+    size: xl
+    position:
+      x: 1140
+      'y': 340
+  - id: variant4
+    label: |-
+      派生 Medbullets-4
+      每题删去一个错误选项
+      保留题目、答案及解析
+      发布版有 244/308 题重排余下选项
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 340
+  - id: snapshot
+    label: |-
+      官方公开数据快照
+      仓库 HEAD 013b9447f2a2
+      数据提交 d20bfca3cff0
+      两种版本各 308 条完整记录
+    type: database
+    size: xl
+    position:
+      x: 1700
+      'y': 340
+  - id: rights_boundary
+    label: |-
+      发布与版本边界
+      仓库及数据均无许可证文件
+      论文 v6 晚于 2024 数据提交
+      未发布官方评分器代码
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 700
+  - id: robustness
+    label: |-
+      仅对 Medbullets-5 做事后选项顺序测试
+      随机打乱答案选项
+      比较原始数据与乱序数据准确率
+      仅诊断 · 不移除题目
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 80
+  - id: contamination
+    label: |-
+      仅对 Medbullets-5 做事后 TS-Guessing 测试
+      gpt-4-0613 · Llama-3-70b-chat
+      遮盖一个错误选项
+      成功率不超过 10% · 不移除题目
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 600
+  - id: models
+    label: |-
+      评测七个指定大模型
+      gpt-3.5-turbo-0613 · gpt-4-0613
+      chat-bison-001 · Llama-2-70b-chat
+      Llama-3-70b-chat · medalpaca-13b
+      meerkat-7b-v1.0
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 340
+  - id: api_config
+    label: |-
+      托管 API · 每组结果单次运行
+      GPT-3.5/4：T=1 · top-p=1
+      PaLM 2：T=.8 · 其余采用默认值
+    type: document
+    size: xl
+    position:
+      x: 2140
+      'y': 820
+  - id: llama_config
+    label: |-
+      Llama Chat 模型 · 单次运行
+      Llama 2：T=.8 · top-p=.95
+      rep=1.1 · 最长 1,024
+      Llama 3：T=.85 · top-p=.95
+    type: document
+    size: xl
+    position:
+      x: 2420
+      'y': 820
+  - id: medical_config
+    label: |-
+      医疗模型 · 单次运行
+      MedAlpaca：fp16 · 最长 512
+      rep=1.1 · beam=2
+      Meerkat：fp16 · greedy · 最长 1,024
+      T=.7 · rep=1.0
+    type: document
+    size: xl
+    position:
+      x: 2700
+      'y': 820
+  - id: strategy_gate
+    label: |-
+      采用论文中的哪种
+      提示策略进行评测？
+    type: decision
+    size: xl
+    position:
+      x: 2540
+      'y': 340
+  - id: direct
+    label: |-
+      直接回答 · X 到 Y
+      零样本、二样本或五样本
+      少样本随机采用留一法示例
+      使用模型专属答案模板
+    type: document
+    size: xl
+    position:
+      x: 2820
+      'y': 80
+  - id: cot
+    label: |-
+      两阶段思维链 · X 到 R 到 Y
+      零样本先生成推理
+      将完整依据输入第二阶段
+      再要求选择一个答案
+    type: document
+    size: xl
+    position:
+      x: 2820
+      'y': 340
+  - id: rationale
+    label: |-
+      标准答案条件解析 · XY* 到 R
+      提供正确答案
+      解释为何该答案最佳
+      以及其余各项为何错误
+    type: document
+    size: xl
+    position:
+      x: 2820
+      'y': 600
+  - id: answer_score
+    label: |-
+      评判答案预测
+      将所选字母与标准答案比较
+      报告准确率
+      官方解析器与无效规则未发布
+    type: process
+    size: xl
+    position:
+      x: 3100
+      'y': 200
+  - id: automatic_metrics
+    label: |-
+      自动评估生成解释
+      ROUGE-L · BERTScore · BLEURT
+      BARTScore+/++ · CTC 三个维度
+      GPT-4o G-Eval · T=1 · 5 Tokens/5 次
+    type: process
+    size: xl
+    position:
+      x: 3100
+      'y': 560
+  - id: evaluation_boundary
+    label: |-
+      未披露的评测边界
+      无官方评测代码仓库
+      解析器与无效输出规则未发布
+      失败样本分母与指标版本未锁定
+    type: document
+    size: xl
+    position:
+      x: 3380
+      'y': 900
+  - id: answer_report
+    label: |-
+      报告答案结果
+      四选项与五选项版本准确率
+      零样本直接回答 + 思维链
+      少样本直接回答曲线
+    type: terminal
+    size: xl
+    position:
+      x: 3660
+      'y': 160
+  - id: human_study
+    label: |-
+      人工评测 · 随机 30 道 Medbullets-5
+      GPT-4/PaLM 2 · 每份输出三人评分
+      美国医学/医疗领域硕博评审者
+      完整性：逐选项勾选
+      正确性/相关性：1–5 级量表
+    type: user
+    size: xl
+    position:
+      x: 3380
+      'y': 720
+  - id: explanation_report
+    label: |-
+      报告解释结果
+      全部输出的自动指标
+      人工均值
+      完整性 · 正确性 · 相关性
+      Bennett S：正确 .60 · 相关 .65
+    type: terminal
+    size: xl
+    position:
+      x: 3660
+      'y': 560
+  - id: report
+    label: |-
+      分别发布研究结果
+      答案准确率
+      自动与人工解释得分
+      不计算综合基准总分
+    type: terminal
+    size: xl
+    position:
+      x: 3940
+      'y': 340
+edges:
+  - from: source
+    to: crawl
+    type: primary
+  - from: source
+    to: companion
+    type: optional
+    label: 论文中的独立数据集
+    labelPosition: end
+  - from: crawl
+    to: strip_images
+    type: primary
+  - from: strip_images
+    to: construction_boundary
+    type: optional
+    label: 缺少构建细节
+    labelPosition: end
+  - from: strip_images
+    to: structure
+    type: primary
+  - from: structure
+    to: release5
+    type: primary
+  - from: release5
+    to: variant4
+    type: primary
+  - from: variant4
+    to: snapshot
+    type: primary
+  - from: snapshot
+    to: rights_boundary
+    type: optional
+    label: 发布边界
+    labelPosition: end
+  - from: release5
+    to: robustness
+    type: optional
+    label: 选项顺序分析
+    labelPosition: start
+  - from: release5
+    to: contamination
+    type: optional
+    label: 污染分析
+    labelPosition: end
+  - from: snapshot
+    to: models
+    type: primary
+  - from: models
+    to: strategy_gate
+    type: primary
+  - from: models
+    to: api_config
+    type: optional
+  - from: models
+    to: llama_config
+    type: optional
+    label: 附录 B.1 设置
+    labelPosition: end
+  - from: models
+    to: medical_config
+    type: optional
+  - from: strategy_gate
+    to: direct
+    type: primary
+    label: X 到 Y
+    labelPosition: end
+  - from: strategy_gate
+    to: cot
+    type: primary
+    label: X 到 R 到 Y
+    labelPosition: center
+  - from: strategy_gate
+    to: rationale
+    type: primary
+    label: XY* 到 R
+    labelPosition: end
+  - from: direct
+    to: answer_score
+    type: primary
+  - from: cot
+    to: answer_score
+    type: primary
+  - from: rationale
+    to: automatic_metrics
+    type: primary
+  - from: rationale
+    to: human_study
+    type: optional
+    label: 独立 30 题研究
+    labelPosition: end
+  - from: answer_score
+    to: evaluation_boundary
+    type: optional
+    label: 未发布解析器
+    labelPosition: start
+  - from: automatic_metrics
+    to: evaluation_boundary
+    type: optional
+    label: 未锁定指标代码
+    labelPosition: start
+  - from: answer_score
+    to: answer_report
+    type: primary
+  - from: automatic_metrics
+    to: explanation_report
+    type: primary
+  - from: human_study
+    to: explanation_report
+    type: primary
+  - from: answer_report
+    to: report
+    type: primary
+  - from: explanation_report
+    to: report
+    type: primary
+modules: []

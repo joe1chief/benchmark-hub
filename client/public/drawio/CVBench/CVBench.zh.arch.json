@@ -7,56 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "youtube",
-      "label": "YouTube",
+      "id": "candidates",
+      "label": "YouTube 检索\n1,500 个候选视频",
       "type": "cloud",
       "size": "xl"
     },
     {
-      "id": "video_qc",
-      "label": "视频筛选",
-      "type": "decision",
+      "id": "curate",
+      "label": "任务驱动筛选\n内在关系 · 时长 · 720p ·\n24 fps",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "captions",
-      "label": "字幕",
+      "id": "videos",
+      "label": "已筛选视频组\n1,315 个视频 · 每组\n2–4 个",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "segments",
+      "label": "自适应帧采样\n生成视频片段视觉描述",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "descriptions",
+      "label": "视频级描述\n聚合片段证据",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "relations",
-      "label": "关系摘要",
+      "label": "跨视频关系摘要\n状态 · 因果 · 互补 · 矛盾",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "问答",
+      "id": "synthesize",
+      "label": "GPT-4o 生成\n每组至少 2 题 · 1 正确 +\n3 干扰项",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human_qc",
-      "label": "人工质检",
+      "id": "model_gate",
+      "label": "多模型一致性 + 难度校验\n多模型幻觉检测",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_gate",
+      "label": "8 名标注员第一轮复核\n15 项任务专用标准\n合规 · 正确 · 非平凡？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "bench",
-      "label": "CVBench",
-      "type": "document",
+      "id": "repair",
+      "label": "修正处理\n修改低质量问题或干扰项\n必要时重新采集视频",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "评测",
+      "id": "independent_audit",
+      "label": "5 名新标注员\n每人复核 200 组问答\n合规 · 正确 · 无幻觉？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "CVBench\n1,000 题 · 3 个层级 ·\n15 个子任务",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "input",
+      "label": "多视频输入\n视频编号 · 开源模型每视频 8 帧",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prompting",
+      "label": "提示设置\n零样本或思维链",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "accuracy",
+      "label": "准确率\n总体 · 层级 · 子任务",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +106,103 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "youtube",
-      "to": "video_qc",
+      "from": "candidates",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "video_qc",
-      "to": "captions",
+      "from": "curate",
+      "to": "videos",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "captions",
-      "to": "relations",
+      "from": "videos",
+      "to": "segments",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "relations",
-      "to": "qa",
+      "from": "segments",
+      "to": "descriptions",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "qa",
-      "to": "human_qc",
+      "from": "descriptions",
+      "to": "relations",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "human_qc",
-      "to": "bench",
+      "from": "relations",
+      "to": "synthesize",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "bench",
-      "to": "eval",
+      "from": "synthesize",
+      "to": "model_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "model_gate",
+      "to": "human_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "human_gate",
+      "to": "repair",
+      "type": "optional",
+      "label": "修正"
+    },
+    {
+      "id": "edge-10",
+      "from": "repair",
+      "to": "human_gate",
+      "type": "optional",
+      "label": "复检"
+    },
+    {
+      "id": "edge-11",
+      "from": "human_gate",
+      "to": "independent_audit",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-12",
+      "from": "independent_audit",
+      "to": "repair",
+      "type": "optional",
+      "label": "修正"
+    },
+    {
+      "id": "edge-13",
+      "from": "independent_audit",
+      "to": "benchmark",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-14",
+      "from": "benchmark",
+      "to": "input",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "input",
+      "to": "prompting",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "prompting",
+      "to": "accuracy",
       "type": "primary"
     }
   ],

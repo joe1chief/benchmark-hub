@@ -5,121 +5,216 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AgentDAM Build Process
-  description: Paper-aligned construction and privacy evaluation workflow for AgentDAM, based on arXiv:2503.09780.
+  description: >-
+    Paper-aligned dataset construction, web-agent execution, and privacy-utility evaluation from arXiv:2503.09780v3
+    Sections 3.1-3.4 and Appendix B.2.
   legend: >-
-    Solid arrows show task construction and end-to-end web-agent evaluation; dashed arrows mark privacy-judge validation
-    and mitigation analysis loops.
+    The benchmark measures data minimization in action; irrelevant sensitive facts must not be disclosed even when they
+    appear naturally inside task-related user data. GPT-4o produces the full privacy metrics; the four-human run is a
+    judge audit.
 nodes:
-  - id: sensitive_taxonomy
+  - id: principle
     label: |-
-      Sensitive-data taxonomy
-      six private categories
-      relevance vs irrelevance
+      Operationalize Data Minimization
+      Use Private Data Only When
+      Relevant and Necessary for the Task
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: environments
+      'y': 170
+  - id: web_apps
     label: |-
-      WebArena environments
-      Reddit, GitLab, Shopping
-      isolated realistic replicas
+      Select VisualWebArena Apps
+      Reddit • Shopping • GitLab
+      Isolated Realistic Web Replicas
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: seeds
+      x: 320
+      'y': 40
+  - id: sensitive_taxonomy
     label: |-
-      Human seed writing
-      user_instruction
-      plot and sensitive facts
+      Define Sensitive-Data Taxonomy
+      Six Categories of Private Facts
+      Separate Relevant from Irrelevant Data
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: task_templates
+    label: |-
+      Design Eight Task Types
+      Shopping 3 • GitLab 3 • Reddit 2
+      Tasks Require Information
+      Entered into Web Apps
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: human_seeds
+    label: |-
+      Write 123 Human Data Seeds
+      user_instruction + PLOT
+      SENSITIVE_DATA Is Background
+      Irrelevant to the Task
     type: user
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: user_data
+      x: 600
+      'y': 300
+  - id: synthesize
     label: |-
-      Synthetic user_data
-      relevant private facts
-      irrelevant sensitive data
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: agent_loop
-    label: |-
-      Web-agent execution
-      observe instruction, data, page
-      act until task completion
+      Synthesize Long-Form user_data
+      Llama-3.3-70B Generates
+      Coherent Chats or Notes
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 880
+      'y': 170
+  - id: elbow_select
+    label: |-
+      Apply the Elbow Method
+      Select 2 Outputs per Seed
+      Preserve Coherent Samples
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 170
+  - id: dataset
+    label: |-
+      Package AgentDAM: 246 Tasks
+      2 Outputs × 123 Seeds
+      Instruction • user_data
+      Agent Metadata
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 170
+  - id: setup
+    label: |-
+      Reset the Self-Hosted Environment
+      Accessibility Tree or Multimodal View
+      SOM Markup or Plain Screenshot
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 170
+  - id: execute
+    label: |-
+      Run the Web Agent End to End
+      Observe Instruction, Data, and Page
+      Execute Actions Until Termination
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 500
   - id: utility
     label: |-
-      Utility reward
-      environment state checks
-      target task success
-    type: decision
+      Score Utility
+      Inspect Final Environment State
+      Binary Task-Success Reward
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
+      x: 1440
+      'y': 420
   - id: privacy
     label: |-
-      Privacy evaluator
-      LLM judge over actions
-      98% human agreement
-    type: decision
+      Score Privacy
+      GPT-4o CoT Judge
+      Reviews Every Action
+      Binary Unnecessary-Disclosure Label
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 1440
+      'y': 620
+  - id: judge_validation
+    label: |-
+      Validate Judge on One Run
+      Four Humans Review
+      GPT-4o + AXTree Trajectories
+      98% Agreement with GPT-4o
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 760
   - id: metrics
     label: |-
-      AgentDAM metrics
-      utility and privacy score
-      leakage-rate analysis
+      Report Privacy–Utility Trade-Off
+      Leakage Rate and Privacy Performance
+      Task-Success Rate by App and Modality
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 500
+  - id: mitigation
+    label: |-
+      Compare Privacy Mitigations
+      Pre-Filter • Post-Filter
+      Privacy-Aware Prompt + CoT Examples
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 500
 edges:
-  - from: sensitive_taxonomy
-    to: environments
+  - from: principle
+    to: web_apps
     type: primary
-  - from: sensitive_taxonomy
-    to: seeds
+  - from: principle
+    to: sensitive_taxonomy
     type: data
-  - from: environments
-    to: user_data
+  - from: web_apps
+    to: task_templates
     type: primary
-  - from: seeds
-    to: user_data
+  - from: sensitive_taxonomy
+    to: human_seeds
     type: primary
-  - from: user_data
-    to: agent_loop
+  - from: task_templates
+    to: human_seeds
+    type: data
+  - from: human_seeds
+    to: synthesize
     type: primary
-  - from: agent_loop
+  - from: synthesize
+    to: elbow_select
+    type: primary
+  - from: elbow_select
+    to: dataset
+    type: primary
+  - from: dataset
+    to: setup
+    type: primary
+  - from: setup
+    to: execute
+    type: primary
+  - from: execute
     to: utility
     type: primary
-  - from: agent_loop
+  - from: execute
     to: privacy
     type: primary
   - from: privacy
-    to: agent_loop
-    type: optional
-    label: mitigation prompts
-  - from: utility
     to: metrics
     type: primary
   - from: privacy
+    to: judge_validation
+    type: data
+  - from: utility
     to: metrics
+    type: primary
+  - from: metrics
+    to: mitigation
     type: primary
 modules: []

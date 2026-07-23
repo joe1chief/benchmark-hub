@@ -7,51 +7,105 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "c4",
-      "label": "C4网站",
+      "label": "真实世界网站池\n抽样 10,000 个 C4 页面\n后续排除低信息\n种子页面",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "sites",
-      "label": "100网站",
+      "id": "cluster",
+      "label": "网站摘要与聚类\nGPT-4o 生成内容\n+ 功能摘要\nBERTopic 聚类",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "tests",
-      "label": "意图/测试",
-      "type": "document",
+      "id": "sites",
+      "label": "人工选择网站\n主要主题簇各选\n一个有效网站\n共 100 个多样化种子",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "sim",
-      "label": "图文模拟",
+      "id": "intents",
+      "label": "十轮意图 + 测试\nGPT-4o 每轮随机选择\n功能类 / 设计类\n每个意图配可验证测试",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "refine",
-      "label": "人工精修",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "agent",
-      "label": "Web Agent",
+      "label": "人工精炼\n全部测试均复核\n删除 66 个（1.7%）\n编辑 2,783 个（73.4%）\n抽样 224 个：90.1% -> 94.7%",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "通过/体验",
+      "id": "curation_boundary",
+      "label": "人工精炼边界\n初始精炼人员\n数量与资质\n论文未披露",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "FronTalk 发布集\n100 个对话 / 1,000 轮\n3,676 个精炼测试",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "simulator",
+      "label": "GPT-4o 模拟器\n文本：当前代码\n+ 原始意图\n消解歧义 / 冗余\n视觉：绘图工具",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sim_validation",
+      "label": "模拟器验证\n114 条指令\n411 个测试\n文本：98% / 96%\n视觉：76% / 97%",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "generation",
+      "label": "对话式代码生成\n当前指令\n+ 完整历史\n更新前端代码\n每一轮",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "render",
+      "label": "对话输出\n保留各轮网站\n第 10 轮代码\n= 最终网站",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "instruction",
+      "label": "最终轮评分\n全部意图 + 测试\n均在最终输出评估\n知情网页智能体\n+ 图像工具",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "forgetting",
+      "label": "补充遗忘率（式 2）\n聚合前 T-1 轮（t < T）\nFR = 1 - Σ(t<T) PC(o_T|i_t)\n/ Σ(t<T) PC(o_t|i_t)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "usability",
+      "label": "首次用户可用性\n朴素智能体轨迹\nvs 精选参考网站\n成对 UX 胜率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "FronTalk 结果\n通过率 + UX 胜率\n补充遗忘率",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "eval_validation",
+      "label": "人工评估验证\n218 个通过判例\n82.0%；Kappa 62.7\n50 个 UX 对\n84.0%；Kappa 66.7",
+      "type": "user",
       "size": "xl"
     }
   ],
@@ -59,38 +113,104 @@
     {
       "id": "edge-1",
       "from": "c4",
-      "to": "sites",
+      "to": "cluster",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "sites",
-      "to": "tests",
+      "from": "cluster",
+      "to": "sites",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "tests",
-      "to": "sim",
+      "from": "sites",
+      "to": "intents",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "sim",
+      "from": "intents",
       "to": "refine",
       "type": "primary"
     },
     {
       "id": "edge-5",
       "from": "refine",
-      "to": "agent",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "agent",
-      "to": "score",
+      "from": "refine",
+      "to": "curation_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-7",
+      "from": "dataset",
+      "to": "simulator",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "simulator",
+      "to": "generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "simulator",
+      "to": "sim_validation",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-10",
+      "from": "generation",
+      "to": "render",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "render",
+      "to": "instruction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "render",
+      "to": "usability",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "instruction",
+      "to": "forgetting",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-14",
+      "from": "forgetting",
+      "to": "report",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-15",
+      "from": "instruction",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "usability",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "report",
+      "to": "eval_validation",
+      "type": "secondary"
     }
   ],
   "modules": []

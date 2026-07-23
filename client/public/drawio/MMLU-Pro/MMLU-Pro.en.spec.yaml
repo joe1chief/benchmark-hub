@@ -6,86 +6,139 @@ meta:
   routing: orthogonal
   title: MMLU-Pro Build Process
   description: >-
-    Paper-aligned construction of MMLU-Pro: MMLU is extended with harder reasoning-focused questions, trivial/noisy
-    items are removed, answer choices expand to ten, and models are scored by accuracy with prompt-stability analysis.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MMLU-Pro pipeline: merge MMLU's 57 subjects into 14 domains and remove questions solved by more than
+    four of eight filtering models; add STEM Website, TheoremQA, and SciBench questions; use GPT-4-Turbo to extract
+    short answers and create distractors with manual solution checks; augment choices toward ten; run a first expert
+    pass for correctness and MCQ suitability; use Gemini-1.5-Pro to flag false-negative distractors for targeted human
+    review; retain 12,032 questions; and evaluate with five-shot CoT, regex answer extraction, and accuracy.
+  legend: Two source branches merge before option augmentation and two-stage expert review.
 nodes:
-  - id: n1
-    label: MMLU Base
+  - id: mmlu
+    label: Original MMLU
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: New Sources
+      'y': 100
+  - id: filter
+    label: 8-Model Filter
     type: process
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Filter Noise
+      x: 240
+      'y': 100
+  - id: new_sources
+    label: 3 New Sources
+    type: database
+    size: large
+    position:
+      x: 40
+      'y': 340
+  - id: extract
+    label: GPT-4 Extract
+    type: process
+    size: large
+    position:
+      x: 240
+      'y': 340
+  - id: integrate
+    label: Integrate 14
+    type: process
+    size: large
+    position:
+      x: 460
+      'y': 220
+  - id: augment
+    label: Up to 10 Opts
+    type: process
+    size: large
+    position:
+      x: 680
+      'y': 220
+  - id: phase1
+    label: Expert Phase 1
+    type: process
+    size: large
+    position:
+      x: 900
+      'y': 220
+  - id: gemini
+    label: Gemini Scan
+    type: process
+    size: large
+    position:
+      x: 1120
+      'y': 220
+  - id: phase2
+    label: Human Phase 2
+    type: process
+    size: large
+    position:
+      x: 1340
+      'y': 220
+  - id: final_set
+    label: 12,032 Qs
     type: document
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 14 Domains
+      x: 1560
+      'y': 220
+  - id: cot
+    label: 5-Shot CoT
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 10 Options
+      x: 1780
+      'y': 220
+  - id: parse
+    label: Regex A–J
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: CoT Eval
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Prompt Tests
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
+      x: 2000
+      'y': 220
+  - id: score
     label: Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2220
+      'y': 220
 edges:
-  - from: n1
-    to: n2
+  - from: mmlu
+    to: filter
     type: primary
-  - from: n2
-    to: n3
+  - from: new_sources
+    to: extract
     type: primary
-  - from: n3
-    to: n4
+  - from: filter
+    to: integrate
     type: primary
-  - from: n4
-    to: n5
+  - from: extract
+    to: integrate
     type: primary
-  - from: n5
-    to: n6
+  - from: integrate
+    to: augment
     type: primary
-  - from: n6
-    to: n7
+  - from: augment
+    to: phase1
     type: primary
-  - from: n7
-    to: n8
+  - from: phase1
+    to: gemini
+    type: primary
+  - from: gemini
+    to: phase2
+    type: primary
+  - from: phase2
+    to: final_set
+    type: primary
+  - from: final_set
+    to: cot
+    type: primary
+  - from: cot
+    to: parse
+    type: primary
+  - from: parse
+    to: score
     type: primary
 modules: []

@@ -1,0 +1,356 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MLogiQA 构建与评测流程
+  description: 对齐论文与发布工件，展示含 80 道题、十种语言的 MLogiQA 测试集构建过程，以及论文提示设定、准确率、CACR 分析和发布代码的可复现边界。
+  legend: 实线表示论文披露的构建或评测主流程，虚线连接证据或可复现边界。论文称覆盖七个语言家族，Hugging Face 卡片却称八个；发布测试文件需先规范化 ID 类型再按 ID 与标准答案对齐，不能按行序直接配对。
+nodes:
+  - id: source
+    label: |-
+      LogiQA 原始测试题对
+      英文 651 题 · 中文 651 题
+      篇章 · 问题 · 四个选项
+      标准选项索引
+    type: database
+    size: xl
+    position:
+      x: 128
+      'y': 48
+  - id: candidate_order
+    label: |-
+      按源数据顺序取前 N 题
+      单任务数据集抽样规则
+      发布 ID 为 0–103 且有空缺
+      最终目标为 80 道题
+    type: process
+    size: xl
+    position:
+      x: 368
+      'y': 48
+  - id: languages
+    label: |-
+      固定十种语言
+      英 · 中 · 阿 · 西 · 日
+      韩 · 泰 · 法 · 葡 · 越
+      覆盖七个语言家族
+    type: document
+    size: xl
+    position:
+      x: 608
+      'y': 48
+  - id: translate
+    label: |-
+      翻译另外八种语言
+      GPT-4o-2024-05-13
+      保留原始英文与中文
+      翻译完整四选一记录
+    type: process
+    size: xl
+    position:
+      x: 848
+      'y': 48
+  - id: professional_review
+    label: |-
+      专业翻译团队复核
+      穷尽式审核每条机器译文
+      检查含义与术语
+      检查文化适配性
+    type: process
+    size: xl
+    position:
+      x: 1088
+      'y': 48
+  - id: review_gate
+    label: 译文忠实、自然且可翻译？
+    type: decision
+    size: xl
+    position:
+      x: 1328
+      'y': 48
+  - id: localize
+    label: |-
+      保留题：纠错并本地化
+      修正翻译错误
+      本地化词汇
+      统一不一致术语
+    type: process
+    size: xl
+    position:
+      x: 1568
+      'y': 48
+  - id: remove
+    label: |-
+      淘汰题：删除不可翻译题目
+      排除不合格候选
+      不发布该条记录
+    type: terminal
+    size: xl
+    position:
+      x: 1328
+      'y': 256
+  - id: edit_rates
+    label: |-
+      人工修改率 · Table 2
+      阿 22.50 · 西 30.00 · 日 51.25 · 韩 33.75
+      泰 46.25 · 法 3.75 · 葡 46.25 · 越 18.75
+    type: document
+    size: xl
+    position:
+      x: 1088
+      'y': 256
+  - id: selection_boundary
+    label: |-
+      选择边界
+      删除后如何补充题目
+      论文未披露规则
+      以发布 ID 确定最终集合
+    type: document
+    size: xl
+    position:
+      x: 1808
+      'y': 256
+  - id: align
+    label: |-
+      按 ID 对齐平行记录
+      连接前规范化 ID 类型
+      禁止按文件行序直接配对
+      各语言 ID 集与标准答案一致
+    type: process
+    size: xl
+    position:
+      x: 1568
+      'y': 464
+  - id: release
+    label: |-
+      发布 MLogiQA 测试集
+      每种语言 80 道测试题
+      十个语言文件
+      共 800 条测试实例
+    type: database
+    size: xl
+    position:
+      x: 1328
+      'y': 464
+  - id: prompt_settings
+    label: |-
+      比较三种提示设定
+      EN · 英文指令
+      Native · 目标语言指令
+      EN-Few-shot · 目标语言示例
+    type: process
+    size: xl
+    position:
+      x: 1088
+      'y': 464
+  - id: fewshot
+    label: |-
+      发布的验证记录
+      每种语言八条验证题
+      主要用于提供示例
+      论文未说明每次提示使用的 k
+    type: database
+    size: xl
+    position:
+      x: 1088
+      'y': 720
+  - id: direct
+    label: |-
+      生成直接答案
+      MLogiQA 不使用 CoT
+      篇章 · 问题 · A–D
+      要求固定 JSON 答案
+    type: process
+    size: xl
+    position:
+      x: 848
+      'y': 464
+  - id: generation_boundary
+    label: |-
+      推理边界
+      解码参数未披露
+      论文未给出 MLogiQA 专用
+      温度或 Token 上限
+    type: document
+    size: xl
+    position:
+      x: 848
+      'y': 720
+  - id: released_code_boundary
+    label: |-
+      OpenCompass 0.3.7 边界
+      HF 行使用 options 数组
+      配置却要求四个编号选项字段
+      仅 EN 零样本 · ZeroRetriever
+    type: document
+    size: xl
+    position:
+      x: 1328
+      'y': 720
+  - id: parse
+    label: |-
+      解析最后一个 JSON 或母语短语匹配
+      JSON 正则仅接受大写 A–D
+      母语短语可能产出小写 a–d
+      比较时忽略大小写；否则 None
+    type: process
+    size: xl
+    position:
+      x: 608
+      'y': 464
+  - id: parse_gate
+    label: |-
+      成功抽取选项？
+      A · B · C · D
+    type: decision
+    size: xl
+    position:
+      x: 368
+      'y': 464
+  - id: parser_abort
+    label: |-
+      无法解析：发布代码失败路径
+      代码把 None 交给模糊扫描
+      不可解析输出触发 TypeError
+      未修补代码则没有分数
+    type: terminal
+    size: xl
+    position:
+      x: 368
+      'y': 720
+  - id: accuracy
+    label: |-
+      已抽取：计算各语言准确率
+      正确选项数 ÷ 全部 80 题
+      错误选项计 0 分
+      百分比保留两位小数
+    type: process
+    size: xl
+    position:
+      x: 128
+      'y': 464
+  - id: cacr
+    label: |-
+      计算 CACR 英→目标语言
+      英文答对题中两语均答对的比例
+      使用平行对齐后的 ID
+      报告迁移一致性
+    type: terminal
+    size: xl
+    position:
+      x: 128
+      'y': 720
+  - id: cacr_boundary
+    label: |-
+      分析代码边界
+      论文 Formula 1 定义 CACR
+      OpenCompass 0.3.7
+      未发布 CACR 实现
+    type: document
+    size: xl
+    position:
+      x: 128
+      'y': 960
+  - id: rights_boundary
+    label: |-
+      访问与权利边界
+      P-MMEval 卡片：Apache-2.0
+      LogiQA 仓库无 LICENSE 文件
+      无专用排行榜
+    type: document
+    size: xl
+    position:
+      x: 1568
+      'y': 720
+edges:
+  - from: source
+    to: candidate_order
+    type: primary
+  - from: candidate_order
+    to: languages
+    type: primary
+  - from: languages
+    to: translate
+    type: primary
+  - from: translate
+    to: professional_review
+    type: primary
+  - from: professional_review
+    to: review_gate
+    type: primary
+  - from: review_gate
+    to: localize
+    type: primary
+  - from: review_gate
+    to: remove
+    type: primary
+  - from: professional_review
+    to: edit_rates
+    type: secondary
+    style:
+      dashed: true
+  - from: remove
+    to: selection_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: localize
+    to: align
+    type: primary
+  - from: align
+    to: release
+    type: primary
+  - from: release
+    to: prompt_settings
+    type: primary
+  - from: release
+    to: fewshot
+    type: secondary
+    style:
+      dashed: true
+  - from: fewshot
+    to: prompt_settings
+    type: secondary
+    style:
+      dashed: true
+  - from: prompt_settings
+    to: direct
+    type: primary
+  - from: direct
+    to: parse
+    type: primary
+  - from: direct
+    to: generation_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: release
+    to: released_code_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: parse
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: accuracy
+    type: primary
+  - from: parse_gate
+    to: parser_abort
+    type: primary
+  - from: accuracy
+    to: cacr
+    type: primary
+  - from: cacr
+    to: cacr_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: release
+    to: rights_boundary
+    type: secondary
+    style:
+      dashed: true
+modules: []

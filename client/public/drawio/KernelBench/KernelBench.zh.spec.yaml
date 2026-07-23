@@ -1,0 +1,250 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: KernelBench 构建与评测流程
+  description: >-
+    对齐论文的 KernelBench 构建与评测流程：将 250 个仅用于评测的 PyTorch 任务打包为三个并行难度分区， 生成 ModelNew 内核，以五组随机输入验证正确性，并在论文固定的 L40S 软硬件环境上计算精确
+    fast_p 得分。
+  legend: 三条彩色任务通道是并行分区，而非串行变换；虚线表示主要证据、固定执行环境以及论文与当前制品的边界。
+nodes:
+  - id: evidence
+    label: |-
+      主要证据与论文协议
+      arXiv:2502.10517v1
+      ICML 2025
+      OpenReview yeoN1iQT1x
+      论文定义 250 个评测任务
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 360
+  - id: workloads
+    label: |-
+      整理真实 PyTorch 工作负载
+      现代深度学习算子
+      算子序列与完整模型
+      Level 3 使用热门代码仓库
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 360
+  - id: format
+    label: |-
+      打包标准任务制品
+      torch.nn.Module Model
+      get_inputs + get_init_inputs
+      固定形状 · dtype · 初始化参数
+    type: document
+    size: xl
+    position:
+      x: 580
+      'y': 360
+  - id: level1
+    label: |-
+      Level 1 · 100 题
+      单个原始操作
+      卷积 · 矩阵乘 · 损失
+      激活 · 归一化
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: level2
+    label: |-
+      Level 2 · 100 题
+      多算子序列
+      保留参考实现语义
+      提供内核融合优化机会
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: level3
+    label: |-
+      Level 3 · 50 题
+      完整机器学习架构
+      端到端 PyTorch 模型
+      来自热门代码仓库
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 680
+  - id: release
+    label: |-
+      论文合同 · 250 题
+      L1 / L2 / L3 是并行分区
+      仅提供用于评测的 PyTorch 参考实现
+      不提供金标准 / 优化内核
+    type: database
+    size: xl
+    position:
+      x: 1180
+      'y': 360
+  - id: scope_boundary
+    label: |-
+      论文范围边界
+      论文前仓库历史中已存在 L4
+      L4 不属于论文的 250 题合同
+      未报告划分 / 去重 / 污染检查
+    type: document
+    size: xl
+    position:
+      x: 1180
+      'y': 680
+  - id: artifact_boundary
+    label: |-
+      制品 / 版本边界
+      候选 Git 1f7b25b：无作者版本标签
+      当前 Git 423217d：任务内容明显漂移
+      HF v0.1 ca1464e：包含 20 个 L4 任务
+      当前加载器仅接受 L1 / L2 / L3
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 680
+  - id: prompt
+    label: |-
+      单样例优化提示
+      一个加法 Model / ModelNew 示例
+      当前任务的参考 Model
+      精确输入生成器
+    type: document
+    size: xl
+    position:
+      x: 1480
+      'y': 360
+  - id: generate
+    label: |-
+      贪心解码 ModelNew
+      用自定义 GPU 代码替换 PyTorch 算子
+      CUDA · PTX · CUTLASS · Triton
+      或其他适用程序库
+    type: process
+    size: xl
+    position:
+      x: 1760
+      'y': 360
+  - id: environment
+    label: |-
+      论文评测环境
+      裸机 NVIDIA L40S · Ada
+      48 GB · 300 W
+      Python 3.10
+      PyTorch 2.5.0+cu124
+      CUDA 12.4
+    type: document
+    size: xl
+    position:
+      x: 2040
+      'y': 40
+  - id: compile
+    label: |-
+      在目标 GPU 编译 + 执行
+      编译返回的 ModelNew 代码
+      拒绝编译 / 运行失败
+      拒绝形状 / 数值错误
+    type: process
+    size: xl
+    position:
+      x: 2040
+      'y': 360
+  - id: correctness
+    label: |-
+      随机正确性门控
+      生成 5 组随机输入
+      比较 Model 与 ModelNew 输出
+      5 组全部匹配 → correct_i = 1
+    type: process
+    size: xl
+    position:
+      x: 2320
+      'y': 360
+  - id: timing
+    label: |-
+      测量目标 GPU 延迟
+      预热 3 次 + 100 次 CUDA Event 试验
+      s_i = mean(T_Eager)
+      / mean(T_New)
+      两者均在同一块 L40S 上计时
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 360
+  - id: report
+    label: |-
+      在 N = 250 上汇报 fast_p
+      fast_p = (1/N) Σ
+      1[correct_i 且 s_i > p]
+      fast_0 = 正确任务比例
+      fast_1 = 正确且快于 Eager
+    type: terminal
+    size: xl
+    position:
+      x: 2880
+      'y': 360
+edges:
+  - from: evidence
+    to: workloads
+    type: data
+  - from: workloads
+    to: format
+    type: primary
+  - from: format
+    to: level1
+    type: primary
+  - from: format
+    to: level2
+    type: primary
+  - from: format
+    to: level3
+    type: primary
+  - from: level1
+    to: release
+    type: primary
+  - from: level2
+    to: release
+    type: primary
+  - from: level3
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: release
+    to: scope_boundary
+    type: data
+  - from: scope_boundary
+    to: artifact_boundary
+    type: data
+  - from: prompt
+    to: generate
+    type: primary
+  - from: generate
+    to: compile
+    type: primary
+  - from: environment
+    to: compile
+    type: data
+  - from: environment
+    to: timing
+    type: data
+  - from: compile
+    to: correctness
+    type: primary
+  - from: correctness
+    to: timing
+    type: primary
+  - from: timing
+    to: report
+    type: primary
+modules: []

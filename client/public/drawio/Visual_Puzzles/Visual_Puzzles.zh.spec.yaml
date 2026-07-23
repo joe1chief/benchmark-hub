@@ -1,0 +1,243 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Visual Puzzles — 多来源筛选与评测流程
+  description: >-
+    Visual Puzzles
+    汇集在线/教材谜题、人工翻译的中国公务员考试逻辑题、大规模视觉数据合成及改造后的多模态基准。所有题目统一为四选一，过滤掉依赖高等数学或领域知识以及无法纯视觉求解的题目，再由人工多轮检查清晰度、可解性、推理类型和难度。最终 1,168
+    题分属五类，数量为 262/211/200/209/286；难度占比 46/39/15%，视觉/文本选项占比 57/43%。评测比较直接提示与思维链，按模型报告较优结果，以准确率计分并给出70名学生的人类基线。
+  legend: >-
+    来源：arXiv:2504.10342, Sections 2.2-2.3 (pp.3-4) and Section 3.1 (p.5); official project:
+    https://neulab.github.io/VisualPuzzles/; official dataset:
+    https://huggingface.co/datasets/neulab/VisualPuzzles.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: online
+    label: 在线+教材谜题
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: synthesis
+    label: 大规模视觉数据合成
+    type: service
+    size: xl
+    position:
+      x: 60
+      'y': 200
+  - id: civilService
+    label: 人工翻译的中国公务员考试逻辑题
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 520
+  - id: repurposed
+    label: 改造后的多模态基准
+    type: database
+    size: xl
+    position:
+      x: 60
+      'y': 360
+  - id: normalize
+    label: 统一为四选一
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 200
+  - id: knowledgeGate
+    label: 需要高等/领域知识？
+    type: decision
+    size: xl
+    position:
+      x: 620
+      'y': 200
+  - id: rejectKnowledge
+    label: 剔除
+    type: terminal
+    size: xl
+    position:
+      x: 620
+      'y': 40
+  - id: visualGate
+    label: 可仅凭视觉求解？
+    type: decision
+    size: xl
+    position:
+      x: 900
+      'y': 200
+  - id: rejectVisual
+    label: 剔除
+    type: terminal
+    size: xl
+    position:
+      x: 900
+      'y': 40
+  - id: humanGate
+    label: 人工审核通过？
+    type: decision
+    size: xl
+    position:
+      x: 1180
+      'y': 200
+  - id: revise
+    label: 修订清晰度/可解性
+    type: process
+    size: xl
+    position:
+      x: 1180
+      'y': 520
+  - id: labels
+    label: 推理类别+难度
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 200
+  - id: release
+    label: 发布 · 1,168道四选题
+    type: output
+    size: xl
+    position:
+      x: 1460
+      'y': 360
+  - id: promptMode
+    label: 提示模式？
+    type: decision
+    size: xl
+    position:
+      x: 1180
+      'y': 360
+  - id: direct
+    label: 直接回答
+    type: service
+    size: xl
+    position:
+      x: 900
+      'y': 360
+  - id: cot
+    label: 思维链
+    type: service
+    size: xl
+    position:
+      x: 900
+      'y': 520
+  - id: better
+    label: 每个模型取较优结果
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 360
+  - id: human
+    label: 70名学生人类基线
+    type: user
+    size: xl
+    position:
+      x: 60
+      'y': 680
+  - id: accuracy
+    label: 准确率
+    type: formula
+    size: xl
+    position:
+      x: 340
+      'y': 360
+edges:
+  - from: online
+    to: normalize
+    type: primary
+  - from: synthesis
+    to: normalize
+    type: primary
+  - from: civilService
+    to: normalize
+    type: primary
+    waypoints:
+      - x: -80
+        'y': 580
+      - x: -80
+        'y': 260
+      - x: 340
+        'y': 260
+  - from: repurposed
+    to: normalize
+    type: primary
+  - from: normalize
+    to: knowledgeGate
+    type: primary
+  - from: knowledgeGate
+    to: rejectKnowledge
+    type: optional
+    label: 是
+    labelPosition: center
+  - from: knowledgeGate
+    to: visualGate
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: visualGate
+    to: rejectVisual
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: visualGate
+    to: humanGate
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: humanGate
+    to: revise
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: humanGate
+    to: labels
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: revise
+    to: humanGate
+    type: optional
+    label: 再次审核
+    labelPosition: center
+  - from: labels
+    to: release
+    type: primary
+  - from: release
+    to: promptMode
+    type: primary
+  - from: promptMode
+    to: direct
+    type: primary
+    label: 直接
+    labelPosition: center
+  - from: promptMode
+    to: cot
+    type: primary
+    label: 思维链
+    labelPosition: center
+  - from: direct
+    to: better
+    type: primary
+  - from: cot
+    to: better
+    type: primary
+  - from: better
+    to: accuracy
+    type: primary
+  - from: human
+    to: accuracy
+    type: data
+    waypoints:
+      - x: 180
+        'y': 840
+      - x: 460
+        'y': 840
+      - x: 460
+        'y': 420
+modules: []

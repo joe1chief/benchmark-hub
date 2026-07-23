@@ -1,89 +1,467 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMMLU 构建流程
-  description: 对齐来源的 MMMLU 构建流程：用专业人工翻译将原始 MMLU 测试集扩展到 14 个 locale，保留学科结构，并运行多语言精确匹配准确率评测。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMMLU 构建与评测流程
+  description: 按固定版本的一手来源呈现 OpenAI MMMLU：14 个专业人工翻译的 MMLU 测试 locale、发布数据审计及文档缺口，以及官方生成与解析评测协议。
+  legend: 实线表示有文档依据的数据或评测路径，虚线表示证据、审计或版本漂移边界。MMMLU 没有独立论文：arXiv:2009.03300v3 描述源 MMLU，翻译过程来自 OpenAI 数据卡。
 nodes:
-  - id: n1
-    label: MMLU测试集
-    type: database
+  - id: evidence
+    label: |-
+      证据与版本锚点
+      MMLU 论文 2009.03300v3
+      HF 数据 325a01dc
+      simple-evals 初版 01c488b
+      当前代码 652c89d
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 57个学科
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 人工翻译
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 14个语种
+      'y': 280
+  - id: paper_scope
+    label: |-
+      源 MMLU 论文，并非 MMMLU 论文
+      57 个多项选择任务
+      共收集 15,908 道题
+      论文测试集计数 = 14,079
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 语种文件
+      x: 320
+      'y': 280
+  - id: public_test
+    label: |-
+      OpenAI 公开测试版本
+      14,042 条 · 57 个学科
+      题目 · A–D · 答案 · 学科
+      比论文测试计数少 37 条
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: translate
+    label: |-
+      专业人工翻译
+      翻译整个公开测试集
+      以译文准确性为先
+      纳入低资源约鲁巴语
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: translation_boundary
+    label: |-
+      翻译质检边界
+      译者人数与招募方式
+      回译 · 仲裁
+      验收规则均未公开
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Simple Evals
+      x: 880
+      'y': 40
+  - id: locale_release
+    label: |-
+      发布 14 个 Locale CSV
+      AR · BN · DE · ES · FR · HI · ID
+      IT · JA · KO · PT · SW · YO · ZH
+      公开、无需申请 · MIT 标记
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: release_audit
+    label: |-
+      固定版本发布审计
+      14 × 14,042 = 196,588 条
+      57 学科 · 共 5 个空选项单元格
+      DE：2 个 D · JA：1 个 A · ZH：2 个 D
+      6 个 Locale 答案有差异 · SW/YO 学科漂移 445 条
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: access_gate
+    label: |-
+      加载哪一种 Hugging Face
+      配置？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 560
+  - id: named_config
+    label: |-
+      指定 Locale 配置
+      恰有 14,042 条测试数据
+      Locale 身份来自配置名
+      可作为单语种评分单元
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: default_config
+    label: |-
+      默认配置拼接
+      共 196,588 条测试数据
+      Schema 没有 Locale 字段
+      不能只凭单条数据推断语种
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 680
+  - id: eval_pin
+    label: |-
+      官方 simple-evals 运行器
+      共 15 次：EN-US + 14 个翻译版
+      加载未固定版本的 OpenAI Blob URL
+      本次审计确认其字节与 HF 锚点一致
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 精确匹配
-    type: document
+      x: 1160
+      'y': 920
+  - id: debug_gate
+    label: |-
+      是否已关闭 debug
+      以执行全量评测？
+    type: decision
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 多语准确率
-    type: terminal
+      x: 1440
+      'y': 920
+  - id: debug_sample
+    label: |-
+      公开入口默认设置
+      debug = True
+      seed = 0 · 每 Locale 仅 10 题
+      不是 14,042 条全量运行
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 1160
+  - id: language_gate
+    label: |-
+      请求的是 EN-US
+      还是翻译 Locale？
+    type: decision
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 920
+  - id: translated_blob
+    label: |-
+      加载 mmlu_LOCALE.csv
+      一个翻译测试文件
+      共 14,042 条
+      以该 Locale 自带答案为准
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 800
+  - id: english_blob
+    label: |-
+      加载 mmlu.csv
+      原始 EN-US 基线
+      不计入 14 Locale 平均值
+      源文件仍有 10 个空选项
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 1040
+  - id: prompt
+    label: |-
+      格式化官方用户提示
+      零样本 · 要求逐步思考
+      展示题目与 A–D 选项
+      末行须为“Answer: 字母”
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 920
+  - id: sample
+    label: |-
+      调用配置好的采样器
+      生成自由文本回答
+      模型 / System Message 可变
+      保存实际请求的对话
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 920
+  - id: response_gate
+    label: |-
+      采样器是否成功
+      返回回答？
+    type: decision
+    size: xl
+    position:
+      x: 2840
+      'y': 920
+  - id: request_abort
+    label: |-
+      请求异常
+      Eval 没有逐题重试
+      异常会终止整个运行
+      不会产出最终分母
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 1160
+  - id: normalize
+    label: |-
+      规范化回答文本
+      移除 Markdown 与数学外壳
+      保留答案内容
+      再按顺序扫描正则
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 920
+  - id: parse_gate
+    label: |-
+      首个匹配的本地化标记
+      是否能给出 A–D？
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 920
+  - id: parsed
+    label: |-
+      规范化抽取字符
+      阿拉伯 · 孟加拉 · 全角字母
+      映射为规范 A–D
+      首个正则匹配后即停止
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 800
+  - id: parse_fail
+    label: |-
+      解析失败
+      extracted_answer = None
+      本题记 0 分
+      本题仍保留在分母中
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 1040
+  - id: exact_score
+    label: |-
+      答案字母精确比较
+      抽取 A–D == Locale 标准答案
+      相同 → 1 · 不同 → 0
+      不设部分分
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 800
+  - id: metric
+    label: |-
+      聚合准确率
+      每 Locale = 逐题得分和 / n
+      默认 debug = True 时 n = 10
+      仅 debug = False 时 n = 14,042
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 920
+  - id: report
+    label: |-
+      发布多语言结果
+      分别报告 14 个翻译 Locale
+      Average = 14 个 Locale 分数均值
+      EN-US 单列 · 全量须设 debug = False
+    type: terminal
+    size: xl
+    position:
+      x: 4520
+      'y': 920
+  - id: implementation_drift
+    label: |-
+      版本与类别漂移
+      解析正则于 2025-01 扩展
+      simple-evals 于 2025-07 停止更新
+      SW/YO 后缀学科会落入“other”
+    type: document
+    size: xl
+    position:
+      x: 4240
+      'y': 1200
 edges:
-  - from: n1
-    to: n2
+  - from: evidence
+    to: paper_scope
+    type: data
+  - from: paper_scope
+    to: public_test
     type: primary
-  - from: n2
-    to: n3
+  - from: public_test
+    to: translate
     type: primary
-  - from: n3
-    to: n4
+  - from: translate
+    to: locale_release
     type: primary
-  - from: n4
-    to: n5
+  - from: translate
+    to: translation_boundary
+    type: optional
+  - from: locale_release
+    to: release_audit
+    type: optional
+  - from: locale_release
+    to: access_gate
+    type: optional
+  - from: access_gate
+    to: named_config
+    type: data
+    label: 指定 Locale
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: access_gate
+    to: default_config
+    type: data
+    label: 默认配置
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: locale_release
+    to: eval_pin
     type: primary
-  - from: n5
-    to: n6
+  - from: eval_pin
+    to: debug_gate
     type: primary
-  - from: n6
-    to: n7
+  - from: debug_gate
+    to: language_gate
     type: primary
-  - from: n7
-    to: n8
+    label: 全量运行
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: debug_gate
+    to: debug_sample
+    type: optional
+    label: 默认调试
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: debug_sample
+    to: language_gate
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0.5
+      entryY: 1
+  - from: language_gate
+    to: translated_blob
+    type: primary
+    label: 翻译 Locale
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: language_gate
+    to: english_blob
+    type: primary
+    label: EN-US 基线
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: translated_blob
+    to: prompt
+    type: primary
+  - from: english_blob
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: response_gate
+    type: primary
+  - from: response_gate
+    to: normalize
+    type: primary
+    label: 是
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: response_gate
+    to: request_abort
+    type: optional
+    label: 否
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: normalize
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: parsed
+    type: primary
+    label: 解析成功
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: parse_gate
+    to: parse_fail
+    type: primary
+    label: 无匹配
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: parsed
+    to: exact_score
+    type: primary
+  - from: exact_score
+    to: metric
+    type: primary
+  - from: parse_fail
+    to: metric
+    type: primary
+  - from: metric
+    to: report
+    type: primary
+  - from: metric
+    to: implementation_drift
+    type: optional
 modules: []

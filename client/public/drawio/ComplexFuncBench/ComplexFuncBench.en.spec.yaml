@@ -4,78 +4,236 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ComplexFuncBench Build Process
+  title: ComplexFuncBench Build and ComplexEval Process
   description: >-
-    Paper-aligned construction flow for complex function-calling tasks across Booking.com API domains and ComplexEval
-    scoring.
-  legend: Solid arrows show API curation, annotation, generalization, and automatic evaluation.
+    Revision-pinned three-stage construction of 1,000 travel function-calling cases and the official iterative
+    ComplexEval feedback, matching, and scoring procedure.
+  legend: >-
+    Solid arrows trace construction and evaluation; the dotted return arrow carries scorer feedback into the next model
+    turn.
 nodes:
-  - id: apis
-    label: Real APIs
-    type: database
+  - id: evidence
+    label: |-
+      arXiv:2501.10132v1
+      Repo c37b284 / HF 5dc7739
+      JSONL SHA256 be1e0f5…
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: schema
-    label: Fix Schemas
+      'y': 100
+  - id: apis
+    label: |-
+      Booking.com via RapidAPI
+      43 Real-Time APIs across 5 Domains
+      Manually Correct Wrong Descriptions
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: coarse
+    label: |-
+      Stage 1: GPT-4o Coarse Generation
+      Sample Functions; Generate 1,000 Queries
+      Preliminary Paths via Function-Calling Interface
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: draft
-    label: GPT Drafts
+      x: 600
+      'y': 100
+  - id: select
+    label: |-
+      Select 100 Relatively Complete Samples
+      Cover Diverse Step Counts and Call Paths
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: human
-    label: Human Paths
+      x: 880
+      'y': 100
+  - id: correct
+    label: |-
+      Stage 2: Senior Correction
+      Rewrite; Add / Remove / Reorder Calls
+      Shortest Complete Path; Fix Type / Value Errors
+      Fix Hallucinated or Missing Parameters
     type: user
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: clean
-    label: Disambiguate
+      x: 1160
+      'y': 100
+  - id: disambiguate
+    label: |-
+      Disambiguate Each Path
+      Remove Overlapping Functions
+      Delete Ambiguous API Responses
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: expand
-    label: Generalize 1k
+      x: 1440
+      'y': 100
+  - id: quality
+    label: |-
+      Quality Check All 100 Templates
+      Repeat Review until No Errors
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: ComplexEval
+      x: 1720
+      'y': 100
+  - id: generalize
+    label: |-
+      Stage 3: Ten Samples per Template
+      GPT-4o Makes 9 New Variants + Original
+      Junior Annotators Fill and Disambiguate
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 100
+  - id: dataset
+    label: |-
+      1,000 Samples: 600 Single + 400 Cross Domain
+      150 Each: Hotel / Flight / Car / Attraction
+      Taxi Appears Only in Cross-Domain Cases
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 100
+  - id: model
+    label: |-
+      Model Generates the Next Output
+      Use Query, Functions, and Dialogue History
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 440
+  - id: output_kind
+    label: Call List or Final Response?
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 440
+  - id: format
+    label: |-
+      Format Check
+      Function / Required Parameters / Types
+      Specific Error Enables Self-Correction
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 300
+  - id: mapping
+    label: |-
+      Map Predicted to Gold Calls
+      bge-large-en-v1.5 Cosine Similarity
+      Hungarian Assignment
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: matching
+    label: |-
+      Multi-Dimensional Equivalence
+      Exact Rule / Same API Response
+      GPT-4o Semantic Parameter Match
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: feedback
+    label: |-
+      Matched → Annotated Gold API Response
+      Remove Match; Add Next-Step Gold Calls
+      Unmatched → Fixed Error Response
+      Feed History Back to the Model
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 580
+  - id: call_metrics
+    label: |-
+      Success Rate = Successful Samples / 1,000
+      Call Acc = Σ Correct Calls / Σ Total Calls
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 880
+      'y': 580
+  - id: response_judge
+    label: |-
+      GPT-4o Final-Response Judge
+      Completeness and Correctness ∈ {0, 1, 2}
+      Mean Valid Score across Samples
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 580
 edges:
+  - from: evidence
+    to: apis
+    type: primary
   - from: apis
-    to: schema
+    to: coarse
     type: primary
-  - from: schema
-    to: draft
+  - from: coarse
+    to: select
     type: primary
-  - from: draft
-    to: human
+  - from: select
+    to: correct
     type: primary
-  - from: human
-    to: clean
+  - from: correct
+    to: disambiguate
     type: primary
-  - from: clean
-    to: expand
+  - from: disambiguate
+    to: quality
     type: primary
-  - from: expand
-    to: eval
+  - from: quality
+    to: generalize
+    type: primary
+  - from: generalize
+    to: dataset
+    type: primary
+  - from: dataset
+    to: model
+    type: primary
+  - from: model
+    to: output_kind
+    type: primary
+  - from: output_kind
+    to: format
+    type: primary
+  - from: format
+    to: mapping
+    type: primary
+  - from: mapping
+    to: matching
+    type: primary
+  - from: matching
+    to: feedback
+    type: primary
+  - from: feedback
+    to: model
+    type: data
+    waypoints:
+      - x: 1260
+        'y': 760
+      - x: 2520
+        'y': 760
+      - x: 2520
+        'y': 490
+  - from: feedback
+    to: call_metrics
+    type: data
+  - from: output_kind
+    to: response_judge
     type: primary
 modules: []

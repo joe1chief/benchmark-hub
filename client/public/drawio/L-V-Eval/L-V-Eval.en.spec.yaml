@@ -4,88 +4,336 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: L-V-Eval Build Process
+  title: LV-Eval Build Process and Evaluation Contract
   description: >-
-    Paper-aligned LV-Eval pipeline from public QA pairs through length-controlled context mixing, confusing facts, KPR,
-    and keyword-aware scoring.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-v3-aligned construction of 11 bilingual long-context QA datasets, with subset-specific CFI, KPR, and
+    answer-keyword branches, followed by the paper's three-route metric contract and explicit released-artifact
+    boundaries.
+  legend: >-
+    The main solid path follows arXiv:2402.05136v3. There are 1,331 unique QA pairs, but FactRecall repeats one QA per
+    language at 200 evidence positions, so each length has 1,729 instances and all five lengths total 8,645. English
+    lengths count words and Chinese lengths count characters; the paper reports mean 102,380 and range 11,896–387,406.
+    Five on-site full-time master's annotators support CFI, KPR, and AK work. Dashed edges mark evidence, evaluator
+    drift, blacklist support, and public-artifact boundaries rather than primary data flow.
 nodes:
-  - id: public_qa
-    label: Public QA
+  - id: sources
+    label: |-
+      Public QA and Text Sources
+      LIC · HotpotQA + 2Wiki · DuReader
+      LooGLE · CMRC · MFQA in LongBench
+      FactRecall: PG-19 + Journey to the West
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 80
+  - id: evidence
+    label: |-
+      Evidence Boundary
+      Paper: arXiv:2402.05136v3
+      Git 63e7ae9 · HF 86a3b0e
+      Paper v3 Governs the Main Flow
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: qa_pairs
-    label: QA Pairs
+      x: 20
+      'y': 320
+  - id: qa
+    label: |-
+      Assemble 11 Bilingual QA Sets
+      7 Single-hop · 4 Multi-hop · 6 EN / 5 ZH
+      1,329 Adapted + 2 Written Fact QAs
+      = 1,331 Unique QA Pairs
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: length_levels
-    label: Length Levels
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: context_mix
-    label: Context Mix
+      x: 300
+      'y': 80
+  - id: mix
+    label: |-
+      Mix Supporting + Distractor Documents
+      Regular: Unselected Same-source Contexts
+      Hotpot / DuReader: Disperse Supports
+      Sample → Shuffle → Prefix Passage i
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: confusing_facts
-    label: Confuse Facts
+      x: 580
+      'y': 80
+  - id: lengths
+    label: |-
+      Materialize Five Length Levels
+      16K · 32K · 64K · 128K · 256K
+      Regular: 1 Context per QA and Level
+      FactRecall: 200 Even Positions per Level
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: keyword_replace
-    label: KPR Rules
+      x: 860
+      'y': 80
+  - id: cfi_route
+    label: |-
+      CFI Set?
+      Six Named Datasets
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 80
+  - id: cfi
+    label: |-
+      CFI · 6 Sets · 557 Instances
+      Hotpot · LIC · MFQA EN/ZH · FactRecall EN/ZH
+      GPT-4 Makes 2 Similar, Different Facts
+      Linguists Remove Conflicts; Random Insert
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: answer_keywords
-    label: Answer Keys
+      x: 1140
+      'y': 320
+  - id: kpr_route
+    label: |-
+      KPR Set?
+      Six Named Datasets
+    type: decision
+    size: xl
+    position:
+      x: 1420
+      'y': 80
+  - id: kpr
+    label: |-
+      KPR · 6 Sets · 1,924 Rules
+      Hotpot · CMRC · MFQA EN/ZH
+      FactRecall EN/ZH
+      Counts: 232 + 786 + 476 + 424 + 3 + 3
+      Replace Context + QA; Review Consistency
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 320
+  - id: ak_route
+    label: |-
+      AK Set?
+      All Except Two
+    type: decision
+    size: xl
+    position:
+      x: 1700
+      'y': 80
+  - id: ak
+    label: |-
+      AK · 9 Sets · 955 Instances
+      All Except CMRC and DuReader
+      Annotate Critical Answer Content
+      Two Annotators · One Working Day
     type: user
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: lv_eval
-    label: LV-Eval
+      x: 1700
+      'y': 320
+  - id: dataset
+    label: |-
+      Release LV-Eval Test Artifact
+      1,729 Instances per Level × 5 = 8,645
+      Context · Question · Answers
+      Length · Language
+      Conditional AK and Confusing-fact Fields
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 560
+  - id: inference
+    label: |-
+      Run Dataset-specific Zero-shot Prompts
+      Direct Answer · No Universal Parser
+      Greedy: 64 Tokens; FactRecall 16
+      Over Window: Keep Head + Tail
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 560
+  - id: metric_route
+    label: |-
+      Paper v3
+      Metric Route?
+    type: decision
+    size: xl
+    position:
+      x: 860
+      'y': 560
+  - id: ak_metric
+    label: |-
+      Nine AK Datasets
+      R_AK = overlap(pred, AK) / |AK|
+      Thresholds: ZH 0.2 · EN 0.4
+      Fail → 0; Pass → Blacklist Token F1
+      Normalize English / Chinese Separately
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 400
+  - id: cmrc_metric
+    label: |-
+      CMRC Only
+      No Answer-keyword Gate
+      Blacklist-aware Chinese Token F1
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 560
+  - id: dureader_metric
+    label: |-
+      DuReader Only
+      No Answer-keyword Gate
+      Blacklist-aware ROUGE-L
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 720
+  - id: report
+    label: |-
+      Report Paper Results
+      11 Datasets × 5 Length Levels
+      Score = 100 × Mean Sample Score
+      Length and Single / Multi-hop Analyses
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 300
+      'y': 560
+  - id: blacklist
+    label: |-
+      Build Shared Word Blacklist
+      Llama2-7B + ChatGLM3 Generations
+      Top 100 Words Overlapping Ground Truth
+      Humans Retain Non-informative Words
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 820
+  - id: evaluator_drift
+    label: |-
+      Released Evaluator Drift
+      Repo Gate EN 0.2 / ZH 0.4; v3 Reverses
+      Final AK F1 Omits Full Blacklist Filtering
+      FactRecall: gold_ans Null · Plain F1
+      Paper loogle-MR → Artifact loogle_MIR
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 820
+  - id: artifact_boundary
+    label: |-
+      Public Artifact + License Boundary
+      Test-only Data · All Labels Public
+      Code + 9 Sets MIT
+      CMRC + LIC: CC BY-SA 4.0
+      Static README Board · Overfit Risk
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 820
 edges:
-  - from: public_qa
-    to: qa_pairs
+  - from: evidence
+    to: sources
+    type: dependency
+  - from: sources
+    to: qa
     type: primary
-  - from: qa_pairs
-    to: length_levels
+  - from: qa
+    to: mix
     type: primary
-  - from: length_levels
-    to: context_mix
+  - from: mix
+    to: lengths
     type: primary
-  - from: context_mix
-    to: confusing_facts
+  - from: lengths
+    to: cfi_route
     type: primary
-  - from: confusing_facts
-    to: keyword_replace
+  - from: cfi_route
+    to: cfi
     type: primary
-  - from: keyword_replace
-    to: answer_keywords
+    label: 'Yes'
+    labelPosition: end
+  - from: cfi_route
+    to: kpr_route
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: cfi
+    to: kpr_route
     type: primary
-  - from: answer_keywords
-    to: lv_eval
+  - from: kpr_route
+    to: kpr
     type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: kpr_route
+    to: ak_route
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: kpr
+    to: ak_route
+    type: primary
+  - from: ak_route
+    to: ak
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: ak_route
+    to: dataset
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: ak
+    to: dataset
+    type: primary
+  - from: dataset
+    to: inference
+    type: primary
+  - from: inference
+    to: metric_route
+    type: primary
+  - from: metric_route
+    to: ak_metric
+    type: primary
+    label: Nine AK sets
+    labelPosition: end
+  - from: metric_route
+    to: cmrc_metric
+    type: primary
+    label: CMRC
+    labelPosition: end
+  - from: metric_route
+    to: dureader_metric
+    type: primary
+    label: DuReader
+    labelPosition: end
+  - from: ak_metric
+    to: report
+    type: primary
+  - from: cmrc_metric
+    to: report
+    type: primary
+  - from: dureader_metric
+    to: report
+    type: primary
+  - from: blacklist
+    to: metric_route
+    type: dependency
+  - from: inference
+    to: evaluator_drift
+    type: dependency
+  - from: dataset
+    to: artifact_boundary
+    type: dependency
 modules: []

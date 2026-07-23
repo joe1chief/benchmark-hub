@@ -4,118 +4,279 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ARC 构建流程
-  description: 基于 arXiv:1803.05457 重绘的 AI2 Reasoning Challenge 题目收集、Challenge/Easy 过滤、语料构建与基线评测流程。
-  legend: 实线表示题集构建和公开发布主流程；虚线表示可选 ARC Corpus 支撑与基线失败分析。
+  title: AI2 推理挑战集构建与评测流程
+  description: 按论文重建题目筛选、独立可选语料、语料检查、数据划分和选择题比例计分协议。
+  legend: IR 与 PMI 在 Waterloo 语料上并行运行；只有两者均答错的问题进入 Challenge。ARC Corpus 是独立构建的可选检索资源，不由问题集派生。
 nodes:
-  - id: sources
+  - id: question_sources
     label: |-
-      公开科学考试
-      自然小学科学题
-      人类编写测验
+      标准化科学考试题源
+      3–9 年级 • 无图选择题
+      可发布考试机构与内容伙伴
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: question_set
+      'y': 100
+  - id: assemble
     label: |-
-      ARC 题目集
-      7787 道非图形选择题
-      覆盖 3 到 9 年级
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: simple_solvers
-    label: |-
-      难度过滤器
-      IR 与 PMI 求解器
-      尝试回答每题
+      汇集自然考试问题
+      共 7,787 题
+      通常四个答案选项
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: split
+      x: 320
+      'y': 100
+  - id: ir
     label: |-
-      Challenge/Easy 划分
-      2590 难题，5197 易题
-      train/dev/test 分区
+      Waterloo IR 筛选器
+      5×10¹⁰ 词元网页语料
+      问题与每个候选答案联合检索
+      取最高句子检索分
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 0
+  - id: pmi
+    label: |-
+      Waterloo PMI 筛选器
+      一元 • 二元 • 三元 • 跳元词组
+      计算平均关联分
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: challenge_gate
+    label: 两个筛选器都答错？
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: corpus
+      x: 880
+      'y': 110
+  - id: challenge
     label: |-
-      ARC Corpus
-      1400 万科学句子
-      搜索模板与 AristoMini
+      ARC Challenge
+      2,590 题
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: analysis
+      x: 1160
+      'y': 0
+  - id: easy
     label: |-
-      推理类型分析
-      知识类型分类
-      抽样约 95% 覆盖
+      ARC Easy
+      5,197 题
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: splits
+    label: |-
+      训练 / 开发 / 测试划分
+      Challenge
+      1,119 / 299 / 1,172
+      Easy
+      2,251 / 570 / 2,376
     type: document
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: baselines
+      x: 1440
+      'y': 110
+  - id: question_release
     label: |-
-      基线系统
-      IR、PMI、BiDAF
-      DecompAttn 与 DGEM
+      发布 ARC 问题集
+      Easy + Challenge = 7,787
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 110
+  - id: predict
+    label: |-
+      预测答案选项
+      语料库为可选资源
+      系统也可使用其他资源
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: release
+      x: 2000
+      'y': 110
+  - id: score
     label: |-
-      ARC 公开发布
-      数据、语料、模型
-      排行榜挑战
+      选择题比例计分
+      正确选择得 1 分
+      含正确项的 k 路并列得 1/k
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 110
+  - id: report
+    label: |-
+      报告平均百分比
+      分别报告 Challenge 与 Easy
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2560
+      'y': 110
+  - id: corpus_queries
+    label: |-
+      设计语料检索
+      约 100 个手写模板
+      覆盖 80 个科学主题
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 650
+  - id: web_documents
+    label: |-
+      检索排名靠前的网页
+      实例化主题模板
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 650
+  - id: corpus_filter
+    label: |-
+      文档去重
+      删除重复网页
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 650
+  - id: text_extract
+    label: |-
+      提取文档正文
+      保留文本内容
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 650
+  - id: sentence_split
+    label: |-
+      切分为句子
+      构建句子级单元
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 650
+  - id: aristomini
+    label: |-
+      AristoMini 语料
+      维基词典 • 简单维基
+      补充科学句子
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 870
+  - id: corpus_merge
+    label: |-
+      加入 AristoMini
+      合并句子来源
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 690
+  - id: corpus_qc
+    label: |-
+      非正式语料检查
+      805 篇文档约 75% 科学相关
+      覆盖 99.8% 问题词汇
+      约 95% 抽样知识覆盖
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 690
+  - id: corpus
+    label: |-
+      可选 ARC Corpus
+      1400 万科学句子
+      1.4GB 文本
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 690
 edges:
-  - from: sources
-    to: question_set
+  - from: question_sources
+    to: assemble
     type: primary
-  - from: question_set
-    to: simple_solvers
+  - from: assemble
+    to: ir
     type: primary
-  - from: simple_solvers
-    to: split
+  - from: assemble
+    to: pmi
     type: primary
-  - from: split
+  - from: ir
+    to: challenge_gate
+    type: primary
+  - from: pmi
+    to: challenge_gate
+    type: primary
+  - from: challenge_gate
+    to: challenge
+    type: primary
+    label: 两者均答错
+  - from: challenge_gate
+    to: easy
+    type: primary
+    label: 其他情况
+  - from: challenge
+    to: splits
+    type: primary
+  - from: easy
+    to: splits
+    type: primary
+  - from: splits
+    to: question_release
+    type: primary
+  - from: question_release
+    to: predict
+    type: primary
+  - from: predict
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
+  - from: corpus_queries
+    to: web_documents
+    type: primary
+  - from: web_documents
+    to: corpus_filter
+    type: primary
+  - from: corpus_filter
+    to: text_extract
+    type: primary
+  - from: text_extract
+    to: sentence_split
+    type: primary
+  - from: sentence_split
+    to: corpus_merge
+    type: primary
+  - from: aristomini
+    to: corpus_merge
+    type: data
+  - from: corpus_merge
+    to: corpus_qc
+    type: primary
+  - from: corpus_qc
     to: corpus
-    type: data
-    label: 可选支撑语料
+    type: primary
   - from: corpus
-    to: analysis
-    type: data
-  - from: split
-    to: baselines
-    type: primary
-  - from: analysis
-    to: baselines
+    to: predict
     type: optional
-  - from: baselines
-    to: release
-    type: primary
-  - from: release
-    to: question_set
-    type: optional
-    label: 排行榜提交
 modules: []

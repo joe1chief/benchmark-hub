@@ -1,122 +1,204 @@
 {
   "version": 1,
-  "title": "ART Build Process",
+  "title": "ART Construction and Evaluation Workflow",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "ehr_source",
-      "label": "Real EHR observations\n50k records / 695 patients\nlab codes and timestamps",
+      "id": "failures",
+      "label": "Analyze MedAgentBench Failures\nRetrieval • Aggregation\nThreshold / Conditional Logic",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ehr",
+      "label": "Mine Single-Institution EHR\nFHIR R5-Formatted Records\n50,000 Records • 695 Patients",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "scenario_agent",
-      "label": "Scenario identification\nretrieval, aggregation\nthreshold failure modes",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "synthesis",
-      "label": "Task generation agent\nGPT-4o-mini variants\nauthentic clinical data retained",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "task_schema",
-      "label": "Structured ART tasks\ninstruction, context\nground truth and MRN",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "quality",
-      "label": "Quality audit\nsource alignment checks\nHITL clinical expert review",
+      "id": "mode",
+      "label": "Choose Failure Mode",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "benchmark",
-      "label": "Balanced benchmark\n600 tasks\n200 per failure mode",
+      "id": "retrieval",
+      "label": "Retrieval Scenarios\n≤3 Readings • Clusters within 2 h\n23–25 h Boundaries\n11 Laboratory Codes",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregation",
+      "label": "24 h Aggregation Scenarios\nValid Windows with ≥3 Readings\nGlucose • Potassium • Sodium",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "conditional",
+      "label": "Conditional Scenarios\n7 Value Bands • HGB / HCT / CR\nAge- and Sex-Specific Thresholds\nRetrieve → Judge → Intervene",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "LLM Rephrasing Only\nPatient Values and Times Unchanged\n200 Tasks per Failure Mode",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "automatic_audit",
+      "label": "Validate against Source EHR\nCheck Values • Windows • Thresholds\nComplete Before Inclusion",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "clinical_audit",
+      "label": "Clinical HITL Review\nRepresentative Subset\nFacts • Logic • Clinical Context",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Balanced ART Evaluation Set\nRetrieval 200 • Aggregation 200\nConditional 200 • Total 600",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "medagentbench",
-      "label": "AgentBench evaluation\nFHIR live EHR API\nstateless temperature 0",
+      "id": "environment",
+      "label": "Live FHIR-Compliant EHR Run\nMedAgentBench Framework\nStateless • Temperature 0 • No History",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agents",
+      "label": "Evaluate Two Medical Agents\nGPT-4o-mini\nClaude 3.5 Sonnet",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Exact-Match Success Rate\nCompare with EHR Ground Truth\nReport by Failure Mode",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Reported Success Rate\nGPT-4o-mini / Claude 3.5\nRetrieval 100 / 100\nAggregation 28 / 64\nConditional 32 / 38",
       "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "results",
-      "label": "Success-rate report\nexact match by category\nretrieval, aggregation, threshold",
-      "type": "database",
+      "id": "limitation",
+      "label": "Metric Limitation\nExact Match Does Not Verify\nthe Reasoning Path",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "ehr_source",
-      "to": "scenario_agent",
+      "from": "failures",
+      "to": "ehr",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "scenario_agent",
-      "to": "synthesis",
+      "from": "ehr",
+      "to": "mode",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "synthesis",
-      "to": "task_schema",
+      "from": "mode",
+      "to": "retrieval",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "task_schema",
-      "to": "quality",
+      "from": "mode",
+      "to": "aggregation",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "quality",
-      "to": "benchmark",
+      "from": "mode",
+      "to": "conditional",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "quality",
-      "to": "synthesis",
-      "type": "optional",
-      "label": "revise low-confidence tasks"
+      "from": "retrieval",
+      "to": "generate",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "benchmark",
-      "to": "medagentbench",
+      "from": "aggregation",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "medagentbench",
-      "to": "results",
+      "from": "conditional",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "results",
-      "to": "quality",
-      "type": "optional",
-      "label": "future QA-agent routing"
+      "from": "generate",
+      "to": "automatic_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "automatic_audit",
+      "to": "clinical_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "clinical_audit",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "dataset",
+      "to": "environment",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "environment",
+      "to": "agents",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "agents",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "score",
+      "to": "limitation",
+      "type": "secondary"
     }
   ],
   "modules": []

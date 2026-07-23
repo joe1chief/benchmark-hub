@@ -6,103 +6,167 @@ meta:
   routing: orthogonal
   title: LiveCodeBench Dataset Construction
   description: >-
-    Shared contest collection plus three scenario-specific data branches; inference, repair turns, time-window
-    selection, and scoring stay outside the figure.
+    ICLR 2025 / arXiv:2403.07974v2 construction: continuously collect contest problems, retain platform tests, add
+    platform-specific generated and failing-test enrichment, cap the merged suite, then derive three task datasets.
   legend: >-
-    Solid arrows show paper-disclosed construction; every live release repeats the shared chain, and undisclosed details
-    are not inferred.
+    Platform tests are retained rather than chosen instead of generated tests. AtCoder uses public and hidden tests;
+    LeetCode and CodeForces receive optional generated/failing-test enrichment. Code execution and test-output
+    prediction select LeetCode-only assets. Downstream self-repair is evaluation, not dataset construction.
 nodes:
   - id: platforms
-    label: 3 platforms
+    label: 3 contest platforms
     type: database
     size: large
     position:
-      x: 64
-      'y': 240
+      x: 32
+      'y': 320
   - id: scrape
     label: HTML scrape
     type: process
     size: large
     position:
-      x: 256
-      'y': 240
+      x: 224
+      'y': 320
   - id: filters
     label: Parse + filter
     type: process
     size: large
     position:
-      x: 448
-      'y': 240
+      x: 416
+      'y': 320
   - id: platform_rules
     label: Rating rules
     type: process
     size: large
     position:
-      x: 640
-      'y': 240
-  - id: tests
-    label: Complete tests
+      x: 608
+      'y': 320
+  - id: platform_tests
+    label: Retained platform tests
+    type: document
+    size: large
+    position:
+      x: 832
+      'y': 320
+  - id: failing_tests
+    label: Platform failing tests
+    type: document
+    size: large
+    position:
+      x: 1056
+      'y': 160
+  - id: gpt_generators
+    label: GPT-4T · 2 rand. + 4 adv.
     type: process
     size: large
     position:
       x: 832
-      'y': 240
+      'y': 480
+  - id: candidate_cap
+    label: At most 100 inputs
+    type: process
+    size: large
+    position:
+      x: 1056
+      'y': 480
+  - id: correct_programs
+    label: Collected correct programs
+    type: database
+    size: large
+    position:
+      x: 1056
+      'y': 640
+  - id: execute_inputs
+    label: Execute candidate inputs
+    type: process
+    size: large
+    position:
+      x: 1280
+      'y': 480
+  - id: verified_tests
+    label: Verified generated tests
+    type: document
+    size: large
+    position:
+      x: 1504
+      'y': 480
+  - id: test_bundle
+    label: Retain + supplement tests
+    type: process
+    size: large
+    position:
+      x: 1728
+      'y': 320
+  - id: eval_cap
+    label: Keep fewer than 25 tests
+    type: process
+    size: large
+    position:
+      x: 1952
+      'y': 320
   - id: canonical_tuple
     label: P / T / S / D
     type: document
     size: large
     position:
-      x: 1024
-      'y': 240
-  - id: generation_repair
-    label: Gen/repair
+      x: 2176
+      'y': 320
+  - id: codegen_source
+    label: Code-generation source
     type: document
     size: large
     position:
-      x: 1216
-      'y': 72
+      x: 2400
+      'y': 80
   - id: codegen_releases
-    label: Codegen v1–v6
+    label: Codegen v1-v6
     type: terminal
     size: large
     position:
-      x: 1408
-      'y': 72
-  - id: human_solutions
-    label: ~2K solutions
-    type: database
-    size: large
-    position:
-      x: 1216
-      'y': 240
-  - id: execution_filter
-    label: Exec filter
+      x: 2624
+      'y': 80
+  - id: leetcode_only
+    label: Select LeetCode only
     type: process
     size: large
     position:
-      x: 1408
-      'y': 240
+      x: 2400
+      'y': 400
+  - id: human_solutions
+    label: About 2K solutions
+    type: database
+    size: large
+    position:
+      x: 2624
+      'y': 288
+  - id: execution_filter
+    label: Compile / run + inspect
+    type: process
+    size: large
+    position:
+      x: 2848
+      'y': 288
   - id: execution_release
-    label: Exec · 479
+    label: Execution · 479
     type: terminal
     size: large
     position:
-      x: 1600
-      'y': 240
+      x: 3072
+      'y': 288
   - id: lc_examples
-    label: LC examples
+    label: Statements + examples
     type: document
     size: large
     position:
-      x: 1216
-      'y': 408
+      x: 2624
+      'y': 512
   - id: top_release
-    label: TOP · 442
+    label: Test output · 442
     type: terminal
     size: large
     position:
-      x: 1408
-      'y': 408
+      x: 2848
+      'y': 512
 edges:
   - from: platforms
     to: scrape
@@ -114,18 +178,105 @@ edges:
     to: platform_rules
     type: primary
   - from: platform_rules
-    to: tests
+    to: platform_tests
     type: primary
-  - from: tests
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: platform_rules
+    to: gpt_generators
+    type: optional
+    style:
+      exitX: 0.75
+      exitY: 1
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: platform_rules
+    to: failing_tests
+    type: optional
+    style:
+      exitX: 0.75
+      exitY: 0
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: gpt_generators
+    to: candidate_cap
+    type: primary
+  - from: candidate_cap
+    to: execute_inputs
+    type: primary
+  - from: correct_programs
+    to: execute_inputs
+    type: data
+  - from: execute_inputs
+    to: verified_tests
+    type: primary
+  - from: platform_tests
+    to: test_bundle
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: failing_tests
+    to: test_bundle
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.25
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: verified_tests
+    to: test_bundle
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.75
+      entryY: 1
+      entryDx: 0
+      entryDy: 0
+  - from: test_bundle
+    to: eval_cap
+    type: primary
+  - from: eval_cap
     to: canonical_tuple
     type: primary
   - from: canonical_tuple
-    to: generation_repair
+    to: codegen_source
     type: primary
-  - from: generation_repair
+  - from: codegen_source
     to: codegen_releases
     type: primary
   - from: canonical_tuple
+    to: leetcode_only
+    type: primary
+  - from: leetcode_only
     to: human_solutions
     type: primary
   - from: human_solutions
@@ -134,7 +285,7 @@ edges:
   - from: execution_filter
     to: execution_release
     type: primary
-  - from: canonical_tuple
+  - from: leetcode_only
     to: lc_examples
     type: primary
   - from: lc_examples

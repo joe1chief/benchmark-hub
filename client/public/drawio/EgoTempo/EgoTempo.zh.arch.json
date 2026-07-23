@@ -7,89 +7,221 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 17,
+    "edges": 18,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "videos",
-      "label": "第一视角视频",
+      "id": "evidence",
+      "label": "固定证据边界\narXiv:2503.13646v1\n仓库 @ 7022ba7\n数据集 v1.0 · JSON SHA adc9e7d",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source",
+      "label": "Ego4D 源视频\n多样真实场景\n带时间戳的第一人称叙述 (Nj, tj)",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "types",
-      "label": "十类任务",
+      "id": "windows",
+      "label": "为每条叙述推导时间窗口\nTj = tj ± βi / (2α)\nβi：局部平均时间戳间隔\nα：这些间隔的全局平均值",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "问答构造",
+      "id": "clips",
+      "label": "合并连续叙述片段\n达到 120 条叙述或 120 秒即停止\n源短片段平均约 5 秒",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "caption",
+      "label": "Gemini 1.5 Pro 零样本视频描述\n输入：片段 + Ego4D 叙述\n补充叙述中缺失的背景上下文",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "taxonomy",
+      "label": "用 Gemini 1.5 Pro 生成 10 类开放式问答\n动作：顺序 · 计数 · 事件次序 · 未来预测\n特定物体动作 · 物体顺序 · 物体计数\n空间关系 · 物体定位 · 特定动作物体",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "捷径检查",
+      "id": "review",
+      "label": "人工对照视频复核\n必须依赖多帧信息\n问题与答案必须逻辑一致\n剔除无关或缺少时序复杂度的样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "shortcut",
+      "label": "Gemini 单帧捷径门禁\n剔除单帧即可回答的问答\n策展门禁所用帧未披露\n评测单帧设置使用中心帧",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "论文：EgoTempo 开放式问答基准\n500 个问答 · 10 类各 50 个\n221 段视频的 365 个片段 · 40 个场景\n3–140 秒 · 平均 45 秒",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_audit",
+      "label": "固定 v1.0 JSON 审计\n500 行 · 367 个唯一 clip_id\n222 个唯一 video_uid\n发布数量与论文不一致",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inputs",
+      "label": "受控证据设置\n使用相同问题与参考答案",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "run",
-      "label": "视频作答",
+      "id": "text",
+      "label": "纯文本\n诊断语言或常识捷径",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "single",
+      "label": "单个中心帧\n诊断静态视觉捷径",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "video",
+      "label": "均匀采样的多帧\n采样率 S = 0.1、0.5、1 FPS\n固定帧数与顺序消融另行开展",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "prediction",
+      "label": "多模态大模型开放式预测\n覆盖闭源与开源视频模型\nGemini 实验使用 1.5 Flash\n不使用生成数据的 Pro",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "match",
-      "label": "答案匹配",
-      "type": "terminal",
+      "id": "judge",
+      "label": "论文协议：Gemini 1.5 Pro 评审\n预测 + 参考答案 → 正确或错误\n同时返回判定理由\n固定仓库 notebook 则默认 Flash",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "准确率",
-      "type": "document",
+      "id": "report",
+      "label": "报告各能力与总体准确率\n报告各证据设置的绝对分数\n视频增益 = Accuracy(S) / 单帧准确率",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "videos",
-      "to": "types",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "types",
-      "to": "qa",
+      "from": "source",
+      "to": "windows",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "qa",
-      "to": "filter",
+      "from": "windows",
+      "to": "clips",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "filter",
-      "to": "run",
+      "from": "clips",
+      "to": "caption",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "run",
-      "to": "match",
+      "from": "caption",
+      "to": "taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "match",
-      "to": "score",
+      "from": "taxonomy",
+      "to": "review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "review",
+      "to": "shortcut",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "shortcut",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "benchmark",
+      "to": "release_audit",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "benchmark",
+      "to": "inputs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "inputs",
+      "to": "text",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "inputs",
+      "to": "single",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "inputs",
+      "to": "video",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "text",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "single",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "video",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "prediction",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "judge",
+      "to": "report",
       "type": "primary"
     }
   ],

@@ -7,89 +7,149 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "固定证据边界\narXiv:2512.24867v2\n仓库 @ 5549c73\nHF 数据集 @ 0f81da9",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "books",
-      "label": "权威教材",
+      "label": "选择 62 本大学 / 研究生教材\n11 个学科 · 43 个来源子领域（§3.1.1）\n权威知识来源",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "facts",
-      "label": "正确陈述",
+      "id": "screenshots",
+      "label": "人工截取教材页面\n用马赛克遮盖无关内容\n保留可回溯到页面的来源上下文",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "false_stmts",
-      "label": "错误陈述",
+      "id": "extract",
+      "label": "提取独立正确语句及标题\ndoubao-1.5-vision-pro-32k\n要求独立 / 完整\n语义清晰 / 信息简洁",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "sample",
-      "label": "动态采样",
-      "type": "decision",
+      "id": "correct_filter",
+      "label": "顺序过滤正确语句\n含图语句：剔除 3,269 条\n章节引用 / 公式编号 / 化学方程式：642 条\n语义歧义：127 条 → 保留 21,525 条",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "opts",
-      "label": "选项组装",
-      "type": "document",
+      "id": "correct_review",
+      "label": "3 名标注员复核全部 21,525 条\n未发现重大问题\n只需核验格式规范\n无需领域专家编写问题",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "答案抽取",
+      "id": "false_generate",
+      "label": "DeepSeek-R1 生成欺骗性错误对应语句\n概念替换 · 因果倒置 · 细节篡改\n时间错置 · 逻辑悖论\n范围修改 · 同时生成错误理由",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "false_review",
+      "label": "过滤过短样本 → 21,494 条错误语句\n随机抽取 200 条人工复核\n5 条理由不匹配，但语句仍为错误\n作者未再做额外处理",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "pool",
+      "label": "语句候选集合\n21,525 条正确 + 21,494 条错误 = 43,019\n英文 28,045 条 + 中文 14,974 条\n11 个学科 · 44 个领域 · 62 个最终子领域",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "assemble",
+      "label": "程序化抽样并组装问题\n8–10 条语句 · 4–8 个字母选项\n每个选项组合 2–4 条语句\n发布仓库未提供构建代码与标准随机种子",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Encyclo-K 标准配置\n5,038 题：英文 3,286 + 中文 1,752\n按学科语句占比分配\n语句编号 i、ii、…；选项编号 A、B、…",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evaluate",
+      "label": "用三组正则解析答案字母\n先搜最后一行，再搜完整响应\n失败后精确匹配选项正文\n未解析 = 错误 · 报告准确率",
       "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "score",
-      "label": "准确率",
-      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "books",
-      "to": "facts",
-      "type": "primary"
+      "from": "evidence",
+      "to": "books",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "facts",
-      "to": "false_stmts",
+      "from": "books",
+      "to": "screenshots",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "false_stmts",
-      "to": "sample",
+      "from": "screenshots",
+      "to": "extract",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "sample",
-      "to": "opts",
+      "from": "extract",
+      "to": "correct_filter",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "opts",
-      "to": "parse",
+      "from": "correct_filter",
+      "to": "correct_review",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "parse",
-      "to": "score",
+      "from": "correct_review",
+      "to": "false_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "false_generate",
+      "to": "false_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "false_review",
+      "to": "pool",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "pool",
+      "to": "assemble",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "assemble",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "dataset",
+      "to": "evaluate",
       "type": "primary"
     }
   ],

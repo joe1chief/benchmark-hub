@@ -1,89 +1,641 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LifelongAgentBench 构建流程
-  description: 根据论文整理的 LifelongAgentBench 流程：技能化环境、任务生成、自动/人工校验和经验回放评估。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 对齐论文与官方资产，构建数据库、操作系统和知识图谱三个环境共 1,396 条技能驱动任务， 再以严格固定顺序评测智能体的终身学习能力。
+  legend: 上方模块为数据构建，淘汰节点表示构建期排除；下方模块为评测流程，只有正确完成的轨迹进入回放记忆， 分组自一致性是可选推理策略而不是指标。
 nodes:
-  - id: env_set
-    label: 环境集
+  - id: sources
+    label: |-
+      固定官方来源
+      论文 v3 · 2025-05-30
+      代码 d6f19b42 · 数据 75054b60
     type: document
+    module: construction
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: skill_map
-    label: 技能图
+      x: 32
+      'y': 400
+  - id: skills
+    label: |-
+      定义原子技能
+      DB 22 · OS 29 · KG 7
+      分析关系 · 非采样门禁
+      as⁽ᵐ,ⁿ⁾[E⁽ⁱ⁾] = 2aₘaₙ
+      ÷ (aₘ + aₙ)
+      aₖ = as⁽ᵏ⁾[E⁽ⁱ⁾]
     type: process
+    module: construction
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: task_sample
-    label: 任务采样
+      x: 304
+      'y': 400
+  - id: db_sample
+    label: |-
+      采样 SQL 技能
+      优先低频技能
+      权重 ∝ 1 / (次数 + 1)
+      生成单表任务
     type: process
+    module: construction
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: llm_tasks
-    label: LLM造题
+      x: 576
+      'y': 80
+  - id: db_generate
+    label: |-
+      生成数据库候选
+      DeepSeek-R1 / deepseek-reasoner
+      SQL · 表结构 · 指令 · 数据行
+      判断指令一致性
     type: process
+    module: construction
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: auto_verify
-    label: 自动校验
-    type: process
+      x: 848
+      'y': 80
+  - id: db_gate
+    label: |-
+      数据库候选有效？
+      SQL 可解析且覆盖目标技能
+      查询执行结果一致
+      结果或状态哈希可定义
+    type: decision
+    module: construction
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: human_check
-    label: 人工复核
-    type: user
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: agent_api
-    label: Agent接口
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: replay_score
-    label: 回放分数
+      x: 1120
+      'y': 80
+  - id: db_reject
+    label: |-
+      淘汰数据库候选
+      无效或不一致
     type: terminal
+    module: construction
+    size: large
+    position:
+      x: 1120
+      'y': 208
+  - id: db_release
+    label: |-
+      筛选 500 条数据库任务
+      来自 1,306 条候选
+      分层保证技能覆盖
+      每项技能至少出现 20 次
+    type: database
+    module: construction
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1392
+      'y': 80
+  - id: os_sample
+    label: |-
+      采样 OS 目标技能
+      29 个允许的 Bash 命令
+      论文目标：9–12 个命令
+      生成器未强制校验命令数
+    type: process
+    module: construction
+    size: xl
+    position:
+      x: 576
+      'y': 400
+  - id: os_generate
+    label: |-
+      生成 OS 候选
+      DeepSeek-R1 / deepseek-reasoner
+      指令 · 初始化 · 标准解
+      任务评价器 · 指令润色
+    type: process
+    module: construction
+    size: xl
+    position:
+      x: 848
+      'y': 400
+  - id: os_gate
+    label: |-
+      OS 候选有效？
+      解题前评价器返回非零
+      标准解后评价器返回 0
+      含目标技能且通过超时检查
+    type: decision
+    module: construction
+    size: xl
+    position:
+      x: 1120
+      'y': 400
+  - id: os_reject
+    label: |-
+      淘汰 OS 候选
+      未通过脚本门禁
+    type: terminal
+    module: construction
+    size: large
+    position:
+      x: 1120
+      'y': 528
+  - id: os_release
+    label: |-
+      固定 HF 发布：500 条 OS 任务
+      实际命令数范围：4–26
+      339 条在 9–12 · 161 条在区间外
+      论文目标不是硬筛选
+    type: database
+    module: construction
+    size: xl
+    position:
+      x: 1392
+      'y': 400
+  - id: kg_source
+    label: |-
+      来源为 GrailQA
+      S-expression · 实体 · 答案
+      不是 LLM 生成的任务计划
+      保留问题函数分布
+    type: database
+    module: construction
+    size: xl
+    position:
+      x: 576
+      'y': 720
+  - id: kg_convert
+    label: |-
+      转换为约束动作
+      关系 · 邻居 · 交集
+      属性 · 最大 · 最小 · 计数
+      经 SPARQL 执行
+    type: process
+    module: construction
+    size: xl
+    position:
+      x: 848
+      'y': 720
+  - id: kg_gate
+    label: |-
+      KG 候选有效？
+      动作转换无错误
+      S-expression 执行正确
+      实体名称通过发布过滤
+    type: decision
+    module: construction
+    size: xl
+    position:
+      x: 1120
+      'y': 720
+  - id: kg_reject
+    label: |-
+      淘汰 KG 候选
+      转换或执行错误
+    type: terminal
+    module: construction
+    size: large
+    position:
+      x: 1120
+      'y': 848
+  - id: kg_release
+    label: |-
+      筛选 396 条 KG 任务
+      长度 2–8 各 50 条
+      长度 9 为 46 条
+      长度 7–9 额外复核
+    type: database
+    module: construction
+    size: xl
+    position:
+      x: 1392
+      'y': 720
+  - id: manual_review
+    label: |-
+      逐环境人工复核
+      各随机抽取 10% 任务
+      检查语法 · 逻辑 · 实用性
+      采用试运行后的配置
+    type: user
+    module: construction
+    size: xl
+    position:
+      x: 1664
+      'y': 400
+  - id: dataset_release
+    label: |-
+      发布 1,396 条任务
+      DB 500 · OS 500 · KG 396
+      三份公开 Parquet 文件
+      HF 展示为 default / train
+    type: database
+    module: construction
+    size: xl
+    position:
+      x: 1936
+      'y': 400
+  - id: framework
+    label: |-
+      配置六个组件
+      模型池 · 智能体 · 环境
+      历史工厂 · 控制器 · 回调
+      本地或透明 RPC 部署
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 32
+      'y': 1360
+  - id: sequence
+    label: |-
+      按固定顺序执行任务
+      控制器支持断点恢复
+      禁止并行任务序列
+      随时间累积经验
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 304
+      'y': 1360
+  - id: db_eval
+    label: |-
+      数据库运行与评分
+      每次实验一个 MySQL 容器 · 每任务建删库
+      Action: Operation / Answer · 最多 3 轮
+      SELECT 比结果 · 写操作比状态 MD5
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1392
+      'y': 1120
+  - id: os_eval
+    label: |-
+      OS 运行与评分
+      每任务使用全新 Ubuntu 容器
+      Act: bash / Act: finish · 最多 5 轮
+      评价器退出码 0 才成功
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1392
+      'y': 1360
+  - id: kg_eval
+    label: |-
+      KG 运行与评分
+      7 种动作 API · 最多 15 轮
+      Final Answer: 变量 #n
+      精确匹配 · F1 · 可执行率
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1392
+      'y': 1600
+  - id: success_gate
+    label: |-
+      是否正确完成？
+      二元任务奖励
+    type: decision
+    module: evaluation
+    size: large
+    position:
+      x: 1664
+      'y': 1360
+  - id: replay_memory
+    label: |-
+      保存成功轨迹
+      近期 FIFO 经验记忆
+      失败任务不保存
+    type: database
+    module: evaluation
+    size: xl
+    position:
+      x: 1936
+      'y': 1240
+  - id: replay
+    label: |-
+      比较经验回放
+      基线 N = 0
+      测试 N：1 · 2 · 4 · 8 · 16 · 32 · 64
+      注入近期成功轨迹
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 576
+      'y': 1360
+  - id: gsc
+    label: |-
+      原始推理后的可选 GSC
+      公开回调仅支持 DB + OS
+      原始响应 + 分组候选
+      多数投票可替换当前动作
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1120
+      'y': 1240
+  - id: agent_infer
+    label: |-
+      生成原始智能体响应
+      固定提示 + 当前环境观察
+      使用环境专属解析格式
+      回调接收这份原始响应
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 848
+      'y': 1360
+  - id: report
+    label: |-
+      汇报任务成功率
+      按 DB · OS · KG 拆分
+      技能 · 难度 · 回放深度
+      分组 · 输入 Token · OOM
+    type: terminal
+    module: evaluation
+    size: xl
+    position:
+      x: 2208
+      'y': 1360
 edges:
-  - from: env_set
-    to: skill_map
+  - from: sources
+    to: skills
     type: primary
-  - from: skill_map
-    to: task_sample
+  - from: skills
+    to: db_sample
     type: primary
-  - from: task_sample
-    to: llm_tasks
+    label: DB 技能表
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: skills
+    to: os_sample
     type: primary
-  - from: llm_tasks
-    to: auto_verify
+    label: OS 技能表
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: skills
+    to: kg_source
     type: primary
-  - from: auto_verify
-    to: human_check
+    label: KG 动作表
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: db_sample
+    to: db_generate
     type: primary
-  - from: human_check
-    to: agent_api
+  - from: db_generate
+    to: db_gate
     type: primary
-  - from: agent_api
-    to: replay_score
+  - from: db_gate
+    to: db_release
     type: primary
-modules: []
+    label: 通过
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: db_gate
+    to: db_reject
+    type: optional
+    label: 淘汰
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: os_sample
+    to: os_generate
+    type: primary
+  - from: os_generate
+    to: os_gate
+    type: primary
+  - from: os_gate
+    to: os_release
+    type: primary
+    label: 通过
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: os_gate
+    to: os_reject
+    type: optional
+    label: 淘汰
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: kg_source
+    to: kg_convert
+    type: primary
+  - from: kg_convert
+    to: kg_gate
+    type: primary
+  - from: kg_gate
+    to: kg_release
+    type: primary
+    label: 通过
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: kg_gate
+    to: kg_reject
+    type: optional
+    label: 淘汰
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: db_release
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: os_release
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: kg_release
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: manual_review
+    to: dataset_release
+    type: primary
+  - from: dataset_release
+    to: framework
+    type: primary
+    label: 进入评测
+    waypoints:
+      - x: 2064
+        'y': 1000
+      - x: 144
+        'y': 1000
+      - x: 144
+        'y': 1360
+  - from: framework
+    to: sequence
+    type: primary
+  - from: sequence
+    to: replay
+    type: primary
+  - from: replay
+    to: agent_infer
+    type: primary
+    label: 原始推理
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: agent_infer
+    to: gsc
+    type: optional
+    label: 仅 DB / OS
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0
+      entryY: 0.5
+  - from: agent_infer
+    to: db_eval
+    type: primary
+    label: DB · 不分组
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: agent_infer
+    to: os_eval
+    type: primary
+    label: OS · 不分组
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: agent_infer
+    to: kg_eval
+    type: primary
+    label: KG · 无公开 GSC
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: gsc
+    to: db_eval
+    type: primary
+    label: 投票后的 DB 动作
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.25
+  - from: gsc
+    to: os_eval
+    type: primary
+    label: 投票后的 OS 动作
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+  - from: db_eval
+    to: success_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: os_eval
+    to: success_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: kg_eval
+    to: success_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: success_gate
+    to: replay_memory
+    type: primary
+    label: 是
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: success_gate
+    to: report
+    type: optional
+    label: 否 · 不保存
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.75
+  - from: replay_memory
+    to: report
+    type: primary
+    label: 已记录
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: replay_memory
+    to: replay
+    type: data
+    label: 供后续任务使用
+    waypoints:
+      - x: 2064
+        'y': 1040
+      - x: 688
+        'y': 1040
+      - x: 688
+        'y': 1360
+modules:
+  - id: construction
+    label: 构建
+    color: $primaryLight
+  - id: evaluation
+    label: 评测
+    color: $secondaryLight

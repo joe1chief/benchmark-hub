@@ -6,76 +6,230 @@ meta:
   routing: orthogonal
   title: ClinicalBench Build Process
   description: >-
-    Paper-aligned construction flow for ClinicalBench: MIMIC-III/MIMIC-IV cohorts are filtered, split, converted to
-    text, and used to compare traditional ML with general and medical LLMs on clinical prediction tasks.
-  legend: Solid arrows show cohort processing, model evaluation, and metric aggregation.
+    Paper-v2-aligned ClinicalBench flow: fixed MIMIC versions, first-visit cohort filtering, stratified splits and
+    training-only balancing feed matched traditional-ML and open-source-LLM comparisons across three prediction tasks.
+  legend: Solid arrows follow the paper experiment; the dashed branch records the current README's MIMIC-IV version drift.
 nodes:
-  - id: mimic
-    label: MIMIC Data
-    type: database
+  - id: evidence_boundary
+    label: |-
+      Paper + Fixed Repo Boundary
+      arXiv 2411.06469v2 • §2
+      §§3–5 • Appendices A–D
+      Official Repo e7828b1
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: Filter Cohort
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: split
-    label: Split Sets
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: balance
-    label: Rebalance
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: text
-    label: Code-to-Text
+      'y': 220
+  - id: release_drift
+    label: |-
+      Current Repo README Drift
+      MIMIC-IV 3.0 Download
+      Paper Contract Remains v2.2
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: models
-    label: ML + LLMs
+      x: 340
+      'y': 440
+  - id: data
+    label: |-
+      Paper Data Versions
+      MIMIC-III v1.4
+      MIMIC-IV v2.2
+      Credentialed Databases
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: tasks
+    label: |-
+      Define Three Prediction Tasks
+      Length of Stay: 3 Classes
+      Mortality: Current-visit Binary
+      Readmission: 2-week Binary
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: cohort
+    label: |-
+      Filter Cohorts
+      Keep Each Patient's First Visit
+      Age ≥18 • No Missing Values
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: split
+    label: |-
+      Stratified Train / Validation / Test
+      Same Test Set for Prompting
+      Same Splits for ML + Fine-tuning
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: balance
+    label: |-
+      Rebalance Labels by Under-sampling
+      Training Set Only
+      Validation + Test Unchanged
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 220
+  - id: structured
+    label: |-
+      Prepare Structured ML Features
+      Demographics • Diagnoses
+      Procedures • Medications / Drugs
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 40
+  - id: text
+    label: |-
+      Convert Codes to Text
+      ICD-9/10 Diagnosis + Procedure
+      ATC Medication / Drug Names
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 400
+  - id: ml
+    label: |-
+      Train 11 Traditional ML Models
+      LR • SVM • Trees • XGBoost
+      KNN • MLP
+      Transformer • RNN
+      Standard Supervised Training
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: F1 / AUROC
-    type: document
+      x: 2140
+      'y': 40
+  - id: llms
+    label: |-
+      Evaluate 22 Open-source LLMs
+      14 General + 8 Medical
+      Closed Models Excluded
+      MIMIC Data-use Policy
+    type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2140
+      'y': 400
+  - id: prompt
+    label: |-
+      Compare Prompting Strategies
+      Direct + Chain-of-Thought
+      Self-reflection • Role-playing
+      In-context Learning
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
+  - id: finetune
+    label: |-
+      Task-specific Fine-tuning
+      LoRA Full + LoRA Last Layer
+      20 Epochs
+      Select Checkpoint on Validation
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 500
+  - id: predictions
+    label: |-
+      Collect Held-out Predictions
+      Head-to-head ML vs LLM
+      Same Evaluation Cases
+      Compare Scale + Temperature Too
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: metrics
+    label: |-
+      Apply Task-specific Metrics
+      Length of Stay: Macro F1 + AUROC
+      Mortality / Readmission: F1 + AUROC
+    type: terminal
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: report
+    label: |-
+      Report Five Runs + 95% CIs
+      Confusion Matrices
+      Fine-tuning Loss Curves
+      Cross-strategy Findings
+    type: terminal
+    size: xl
+    position:
+      x: 3340
+      'y': 220
 edges:
-  - from: mimic
-    to: filter
+  - from: evidence_boundary
+    to: data
     type: primary
-  - from: filter
+  - from: evidence_boundary
+    to: release_drift
+    type: data
+  - from: data
+    to: tasks
+    type: primary
+  - from: tasks
+    to: cohort
+    type: primary
+  - from: cohort
     to: split
     type: primary
   - from: split
     to: balance
     type: primary
   - from: balance
+    to: structured
+    type: primary
+  - from: balance
     to: text
     type: primary
-  - from: text
-    to: models
+  - from: structured
+    to: ml
     type: primary
-  - from: models
+  - from: text
+    to: llms
+    type: primary
+  - from: llms
+    to: prompt
+    type: primary
+  - from: llms
+    to: finetune
+    type: primary
+  - from: ml
+    to: predictions
+    type: primary
+  - from: prompt
+    to: predictions
+    type: primary
+  - from: finetune
+    to: predictions
+    type: primary
+  - from: predictions
     to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

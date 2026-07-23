@@ -1,62 +1,116 @@
 {
   "version": 1,
-  "title": "ActivityNet-QA Build Process",
+  "title": "ActivityNet-QA Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 17,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "ActivityNet",
+      "id": "videos",
+      "label": "Class-Balanced Video Sampling\n5,800 ActivityNet v1.3 videos\nTrain/val balanced • test random",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "Web Videos",
+      "id": "author",
+      "label": "Crowdsourced QA Authoring\n10 Chinese QA pairs per video",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "Crowd QA",
+      "id": "types",
+      "label": "Control Question Coverage\nCover motion + spatial + temporal\nRemaining questions unrestricted",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "length_gate",
+      "label": "Enforce QA Length Limits\nQuestion ≤20 • answer ≤5 words",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "yes_no_balance",
+      "label": "Balance Yes/No Answers\nKeep ratio close to 1:1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality",
+      "label": "Double-Check Every Answer\nIndependent worker review\nRegenerate unanswerable items",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "random_audit",
+      "label": "Audit a Sampled Portion\nMultiple annotators • vote\nSample/count not disclosed",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "QA Pairs",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n5",
-      "label": "Quality Clean",
+      "id": "translate",
+      "label": "Chinese-to-English QA\nProduce four engine translations",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "Stats",
-      "type": "document",
+      "id": "translation_gate",
+      "label": "CIDEr Consensus Gate\nMean similarity above threshold?",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "VideoQA Eval",
+      "id": "baidu_translation",
+      "label": "Keep Baidu Translation\nConsensus passes threshold",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "Accuracy",
+      "id": "manual_translation",
+      "label": "Human Translation\nResolve low-consensus QA",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "ActivityNet-QA\nQA: 32,000 / 18,000 / 8,000\nVideos: 3,200 / 1,800 / 800",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prediction",
+      "label": "VideoQA Prediction\nVideo + question → answer",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "exact",
+      "label": "Exact-Match Accuracy\nPrediction equals reference",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "wups",
+      "label": "WUPS Similarity\nThresholds 0.9 and 0.0\nOverall score only",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "Aggregate Exact Match by Type\nMotion • spatial\nTemporal • free",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Report Results\nExact: overall + per type\nWUPS: overall only",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +118,119 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "videos",
+      "to": "author",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "author",
+      "to": "types",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "types",
+      "to": "length_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "length_gate",
+      "to": "yes_no_balance",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "yes_no_balance",
+      "to": "quality",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "quality",
+      "to": "translate",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "quality",
+      "to": "random_audit",
+      "type": "optional",
+      "label": "Sampled portion"
+    },
+    {
+      "id": "edge-8",
+      "from": "random_audit",
+      "to": "translate",
+      "type": "optional"
+    },
+    {
+      "id": "edge-9",
+      "from": "translate",
+      "to": "translation_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "translation_gate",
+      "to": "baidu_translation",
+      "type": "primary",
+      "label": "Above threshold"
+    },
+    {
+      "id": "edge-11",
+      "from": "translation_gate",
+      "to": "manual_translation",
+      "type": "optional",
+      "label": "Below threshold"
+    },
+    {
+      "id": "edge-12",
+      "from": "baidu_translation",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "manual_translation",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "release",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "prediction",
+      "to": "exact",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "prediction",
+      "to": "wups",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "exact",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "wups",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "aggregate",
+      "to": "report",
       "type": "primary"
     }
   ],

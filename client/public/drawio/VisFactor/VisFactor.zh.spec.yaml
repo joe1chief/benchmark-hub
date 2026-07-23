@@ -1,0 +1,321 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VisFactor — FRCT 筛选、数字化与计分流程
+  description: >-
+    VisFactor 从 FRCT 的 72 个子测验出发，先去除 4 个绘图和 3 个语音任务，再去除 45 个纯文本任务，保留覆盖十种因素的 20 个视觉子测验。GPT-4o 与 Gemini-2.5-Flash
+    独立改写说明，人工依据手册调和；图像以 300 dpi 扫描裁剪，答案键逐字复制。固定集含 808 题、3,046 个查询。另一条独立算法产线为 12 个子测验生成、校验并控制难度。附录 A.2
+    依次规定直接归一化、五选项拆解、组合一致性、对称变体与 SS3/VZ3 特殊计分，最后对 20 个子测验分数取平均。
+  legend: >-
+    来源：arXiv:2502.16435v4, Section 2.2 (pp.4-5), Appendices A.1-A.2, and Appendix D. Counts are pinned to v4: 39
+    evaluated models. Only 12 of 20 subtests support parametric unlimited generation.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: frct
+    label: FRCT · 72 个子测验
+    type: input
+    size: xl
+    position:
+      x: 60
+      'y': 40
+  - id: modalityGate
+    label: 绘图或语音任务？
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: excludeModality
+    label: 排除 7 项
+    type: terminal
+    size: xl
+    position:
+      x: 300
+      'y': 240
+  - id: visualGate
+    label: 纯文本任务？
+    type: decision
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: excludeText
+    label: 排除 45 项
+    type: terminal
+    size: xl
+    position:
+      x: 540
+      'y': 240
+  - id: retain
+    label: 保留20个视觉子测验 · 10因素
+    type: output
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: gptRewrite
+    label: GPT-4o 改写说明
+    type: service
+    size: xl
+    position:
+      x: 780
+      'y': 280
+  - id: geminiRewrite
+    label: Gemini-2.5-Flash 改写说明
+    type: service
+    size: xl
+    position:
+      x: 1020
+      'y': 280
+  - id: manual
+    label: FRCT 手册
+    type: document
+    size: xl
+    position:
+      x: 780
+      'y': 520
+  - id: reconcile
+    label: 人工调和
+    type: user
+    size: xl
+    position:
+      x: 1020
+      'y': 520
+  - id: scan
+    label: 300-dpi 扫描与裁剪
+    type: process
+    size: xl
+    position:
+      x: 1260
+      'y': 280
+  - id: keys
+    label: 逐字答案键
+    type: document
+    size: xl
+    position:
+      x: 1500
+      'y': 280
+  - id: fixed
+    label: 固定集：808题 · 3,046查询
+    type: output
+    size: xl
+    position:
+      x: 1500
+      'y': 520
+  - id: paramGenerator
+    label: 算法生成实例 · 12个子测验
+    type: process
+    size: xl
+    position:
+      x: 540
+      'y': 880
+  - id: paramValidator
+    label: 算法校验答案
+    type: process
+    size: xl
+    position:
+      x: 780
+      'y': 880
+  - id: difficultyControl
+    label: 可控难度参数
+    type: process
+    size: xl
+    position:
+      x: 1020
+      'y': 880
+  - id: parametric
+    label: 已校验参数集 · 12个子测验
+    type: output
+    size: xl
+    position:
+      x: 1260
+      'y': 880
+  - id: formatRouter
+    label: 官方计分协议？
+    type: decision
+    size: xl
+    position:
+      x: 1800
+      'y': 1160
+  - id: standard
+    label: 真假归一化 · 选项字母 · 数值精确匹配
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 680
+  - id: fiveChoice
+    label: 7项 · 5个是/否 · 必须全对
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 920
+  - id: grouped
+    label: CF2 / I3 / S1 · 组合全对
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1160
+  - id: symmetry
+    label: MV1 / MV3 / S2 · 原题+3种变体 · 全对
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1400
+  - id: specialized
+    label: SS3双向 · VZ3填空+2个判断 · 全对
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1640
+  - id: subscores
+    label: 20个子测验分数
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 1160
+  - id: mean
+    label: 总分 = 20项分数算术平均
+    type: formula
+    size: xl
+    position:
+      x: 3700
+      'y': 1160
+edges:
+  - from: frct
+    to: modalityGate
+    type: primary
+  - from: modalityGate
+    to: excludeModality
+    type: optional
+    label: 是
+    labelPosition: center
+  - from: modalityGate
+    to: visualGate
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: visualGate
+    to: excludeText
+    type: optional
+    label: 是
+    labelPosition: center
+  - from: visualGate
+    to: retain
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: retain
+    to: gptRewrite
+    type: primary
+    waypoints:
+      - x: 880
+        'y': 180
+      - x: 880
+        'y': 240
+  - from: retain
+    to: geminiRewrite
+    type: primary
+  - from: retain
+    to: scan
+    type: primary
+  - from: retain
+    to: keys
+    type: primary
+    waypoints:
+      - x: 1600
+        'y': 180
+      - x: 1600
+        'y': 240
+  - from: retain
+    to: paramGenerator
+    type: primary
+    waypoints:
+      - x: 420
+        'y': 180
+      - x: 420
+        'y': 820
+  - from: manual
+    to: reconcile
+    type: data
+  - from: gptRewrite
+    to: reconcile
+    type: primary
+  - from: geminiRewrite
+    to: reconcile
+    type: primary
+  - from: reconcile
+    to: fixed
+    type: primary
+  - from: scan
+    to: fixed
+    type: primary
+  - from: keys
+    to: fixed
+    type: primary
+  - from: paramGenerator
+    to: paramValidator
+    type: primary
+  - from: paramValidator
+    to: difficultyControl
+    type: primary
+  - from: difficultyControl
+    to: parametric
+    type: primary
+  - from: fixed
+    to: formatRouter
+    type: primary
+  - from: parametric
+    to: formatRouter
+    type: primary
+  - from: formatRouter
+    to: standard
+    type: primary
+    label: 直接匹配
+    labelPosition: center
+  - from: formatRouter
+    to: fiveChoice
+    type: primary
+    label: 7项五选
+    labelPosition: center
+  - from: formatRouter
+    to: symmetry
+    type: primary
+    label: 对称变体
+    labelPosition: center
+  - from: formatRouter
+    to: specialized
+    type: primary
+    label: SS3 / VZ3 分支
+    labelPosition: center
+  - from: formatRouter
+    to: grouped
+    type: primary
+    label: 组合
+    labelPosition: center
+  - from: standard
+    to: subscores
+    type: primary
+  - from: fiveChoice
+    to: subscores
+    type: primary
+  - from: grouped
+    to: subscores
+    type: primary
+  - from: symmetry
+    to: subscores
+    type: primary
+  - from: specialized
+    to: subscores
+    type: primary
+  - from: subscores
+    to: mean
+    type: primary
+modules: []

@@ -5,100 +5,107 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DeepSearchQA 数据集构建流程
-  description: 依据论文第 2 节整理的专家策题、客观题严格过滤与有条件的三阶段质量验证。
-  legend: 无连线卡片是因果链与时间锚定事实；评审只接收问题，curator 参考答案仅在交叉核对时汇入；边无标签。
+  description: 对齐 arXiv:2601.20975v1 §2，展示专家出题、客观问题筛选、独立盲审研究，以及论文明确披露的三种差异处理结果。
+  legend: 复核者只接收问题，不看到策题人真值；两条输入仅在对照阶段汇合。无差异时保留策题人真值；有差异时分类为更新真值、复核者错误或问题有歧义， 仅有歧义的问题被删除。
 nodes:
   - id: curation
-    label: 专家多来源策题
+    label: 专家编写问题
     type: user
     size: large
     position:
-      x: 64
-      'y': 64
+      x: 32
+      'y': 96
   - id: design_facts
-    label: 因果链 · 时间锚定
+    label: 因果链 · 时间锚点
     type: document
     size: large
     position:
-      x: 64
-      'y': 208
+      x: 32
+      'y': 256
   - id: objective_filter
-    label: 客观题严格过滤
+    label: 客观问题筛选
     type: process
     size: large
     position:
-      x: 272
-      'y': 64
+      x: 256
+      'y': 96
   - id: question_prompt
-    label: 问题 prompt
+    label: 问题提示
     type: document
-    size: large
+    size: medium
     position:
       x: 480
       'y': 64
+  - id: curator_answer
+    label: 策题人真值
+    type: document
+    size: medium
+    position:
+      x: 480
+      'y': 240
   - id: blind_review
-    label: 3 名盲审员独立研究
+    label: 3 名独立盲审者
     type: user
-    size: large
+    size: medium
     position:
       x: 688
       'y': 64
-  - id: curator_answer
-    label: Curator 参考答案集
-    type: document
-    size: large
-    position:
-      x: 480
-      'y': 208
   - id: comparison
-    label: 评审与 curator 答案一致？
+    label: 是否有差异？
     type: decision
-    size: large
+    size: medium
     position:
       x: 896
-      'y': 64
-  - id: agreement_retain
-    label: 一致：保留
+      'y': 144
+  - id: retain_curator_gt
+    label: 保留策题人真值
+    type: process
+    size: medium
+    position:
+      x: 1120
+      'y': 32
+  - id: resolution_class
+    label: 分类差异原因
+    type: decision
+    size: medium
+    position:
+      x: 1120
+      'y': 240
+  - id: update_gt
+    label: 更新真值
+    type: process
+    size: medium
+    position:
+      x: 1344
+      'y': 144
+  - id: keep_gt
+    label: 保留策题人真值
     type: process
     size: large
     position:
-      x: 480
-      'y': 352
-  - id: conflict_resolution
-    label: 分歧是否有歧义？
-    type: decision
-    size: large
-    position:
-      x: 896
-      'y': 208
-  - id: answer_repair
-    label: 更新答案或保留
-    type: process
-    size: large
-    position:
-      x: 896
-      'y': 352
+      x: 1344
+      'y': 272
   - id: ambiguity_filter
-    label: 歧义：剔除
+    label: 删除有歧义的问题
     type: terminal
-    size: large
+    size: medium
     position:
-      x: 1104
-      'y': 352
+      x: 1344
+      'y': 400
   - id: final_dataset
-    label: 900 题 · 17 领域
-    type: document
-    size: large
+    label: 900 · 17 · 集合584 · 单316
+    type: database
+    size: xl
     position:
-      x: 480
-      'y': 496
+      x: 1584
+      'y': 144
   - id: hf_release
-    label: HF eval · 4 字段
+    label: HF eval · 4 个字段
     type: terminal
-    size: large
+    size: medium
     position:
-      x: 480
-      'y': 640
+      x: 1824
+      'y': 144
 edges:
   - from: curation
     to: objective_filter
@@ -108,7 +115,7 @@ edges:
     type: primary
   - from: objective_filter
     to: curator_answer
-    type: primary
+    type: data
   - from: question_prompt
     to: blind_review
     type: primary
@@ -117,41 +124,34 @@ edges:
     type: primary
   - from: curator_answer
     to: comparison
-    type: primary
-    waypoints:
-      - x: 672
-        'y': 264
-      - x: 976
-        'y': 264
-      - x: 976
-        'y': 176
+    type: data
   - from: comparison
-    to: agreement_retain
+    to: retain_curator_gt
     type: primary
-    waypoints:
-      - x: 864
-        'y': 176
-      - x: 816
-        'y': 176
-      - x: 816
-        'y': 320
-      - x: 672
-        'y': 320
-      - x: 672
-        'y': 392
+    label: 无差异
   - from: comparison
-    to: conflict_resolution
+    to: resolution_class
+    type: optional
+    label: 有差异
+  - from: resolution_class
+    to: update_gt
     type: primary
-  - from: agreement_retain
+    label: 更新真值
+  - from: resolution_class
+    to: keep_gt
+    type: primary
+    label: 复核者错误
+  - from: resolution_class
+    to: ambiguity_filter
+    type: optional
+    label: 有歧义
+  - from: retain_curator_gt
     to: final_dataset
     type: primary
-  - from: conflict_resolution
-    to: answer_repair
+  - from: update_gt
+    to: final_dataset
     type: primary
-  - from: conflict_resolution
-    to: ambiguity_filter
-    type: primary
-  - from: answer_repair
+  - from: keep_gt
     to: final_dataset
     type: primary
   - from: final_dataset

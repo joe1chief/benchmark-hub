@@ -1,107 +1,352 @@
 {
   "version": 1,
-  "title": "MMLU-CF 构建流程",
+  "title": "MMLU-CF 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 30,
+    "edges": 25,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "广域来源",
+      "id": "web_corpus",
+      "label": "公共开放网页语料\n超过 2,000 亿份文档\n超过 3,000 个网站域名\n覆盖 14 个学科领域",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "多选题池",
+      "id": "extract",
+      "label": "基于规则抽取多选题\n恢复题干与选项\n恢复答案及可选解析\n得到 270 万道原始题",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "三条规则",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n4",
-      "label": "干净集合",
+      "id": "clean",
+      "label": "规则清洗与去重\n恰有 4 个非空 A–D 选项\n题干不少于 10 个字符 · 英文\n格式归一 · 去重\n270 万 → 166 万题",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "验证/测试",
+      "id": "difficulty",
+      "label": "GPT-4o 难度标注\n五样本 MMLU 参照示例\n对每题给出 0–9 难度\n输入全部 166 万题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "sample_50k",
+      "label": "难度感知抽样\n以难度 6 为中心的正态分布\n平衡领域 · 最大化域名多样性\n优先带解析题 → 5 万题",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "闭源测试",
+      "id": "llm_check",
+      "label": "三模型质量与安全检查\nGPT-4o · Gemini · Claude\n5 项质量 + 4 项安全标准\n均分 >4 → 图 3 中 2 万题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "semantic_dedup",
+      "label": "语义冗余检测\nGPT-4o 检查语义相同题\n移除语义相同题目\n最终来源仍覆盖 >1,000 个域名",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rephrase",
+      "label": "规则 1 · 改写题干\n重写每一道问题\n保持语义与标准答案\n降低逐字记忆影响",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "shuffle",
+      "label": "规则 2 · 打乱选项\n重算答案位置\n若末项为以上皆无 / 皆是\n则只打乱前三项",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "replace",
+      "label": "规则 3 · 50% 随机替换\n一项改为“其他选项均非”\n特殊末项题跳过本规则\n替换正确项时仍保持答案有效",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "split",
+      "label": "匹配式最终划分\n保持难度分布相近\n保持类别分布相近\n合计 20,000 题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "public_val",
+      "label": "公开验证集\n10,000 道题\n支持独立评测\n后续发布于 Hugging Face",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "closed_test",
+      "label": "封闭测试集\n10,000 道题\n隐藏题目以限制恶意泄漏\n由维护方代为评测",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "paper_eval",
+      "label": "论文评测协议\n通过 OpenCompass 测试 40+ 模型\n零样本 + 五样本\n除附加解析外不使用 CoT",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_report",
+      "label": "论文报告分数\n测试集 + 验证集准确率\n总分 = 14 个领域的算术平均\n表中 Δ = 测试 − 验证",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "hf_snapshot",
+      "label": "固定公开数据快照\nHF c25b89a · 验证集 10,000 题\n每领域 5 道开发示例\nQuestion · A–D · Answer",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "oc_loader",
+      "label": "公开 OpenCompass 支持\n提交 e039f3e · 2025-01-09\n各 *_val 划分映射为 test\n加载器未锁定 HF revision",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "shot_route",
+      "label": "选择哪种样本设置？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "提示评测",
+      "id": "five_demos",
+      "label": "五样本演示\n固定索引 0、1、2、3、4\n每领域 5 道开发题\n相同题模版 + 标准选项字母",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "准确率",
+      "id": "public_prompt",
+      "label": "OC e039f3e 五/零样本配置\n原文：There is a single choice question (with answers).\nAnswer the question by replying A, B, C or D.\n然后接题干 + 四个带标签选项",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "模型生成\nGenInferencer 产出文本\n解码参数来自外部模型配置\n失败任务/分区返回非零状态\n其他任务继续；Runner 汇总失败",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "first_option_postprocess\n先匹配答案短语\n再匹配“X:”与裸 A–D\n无匹配 → 空字符串",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "field_accuracy",
+      "label": "领域精确准确率\n预测字母 = 标准字母\n正确数 / 全部题数 × 100\n空解析仍计入分母并判错",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "public_macro",
+      "label": "公开实现分组总分\n14 个领域准确率等权平均\n仅验证集 · 测试集仍封闭\n结果依赖外部模型配置",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "paper_version",
+      "label": "版本边界\narXiv 2412.15194v1 · 2024-12-19\n论文未锁定仓库修订\n本次审核使用 GitHub fd89eefd",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "rights_boundary",
+      "label": "访问与许可边界\n公开验证集：CDLA-Permissive-2.0\nGitHub 文档 / 代码：MIT\n封闭测试集：不可下载",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "schema_boundary",
+      "label": "发布行级边界\n无类别 / URL / 来源 / 题目 ID\n领域身份只存在于划分名\n未发布逐题来源证据",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "reproducibility_gap",
+      "label": "复现边界\n抓取与三项变换代码未发布\n隐藏数据 / 评测器不可得\n论文未锁 OC 与解码版本\n构建所用 LLM revision 未锁定",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "metric_boundary",
+      "label": "Δ 报告口径矛盾\n论文文字称 Δ 为“绝对差”\n表格却包含负值\n实际条目为测试 − 验证",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_boundary",
+      "label": "提示配置边界\n推荐五/零样本配置含\n“含答案选项”该提示语\n默认生成配置省略该短语\n论文未锁定两种 OC 配置",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "web_corpus",
+      "to": "extract",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "extract",
+      "to": "clean",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "clean",
+      "to": "difficulty",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "difficulty",
+      "to": "sample_50k",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "sample_50k",
+      "to": "llm_check",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "llm_check",
+      "to": "semantic_dedup",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "semantic_dedup",
+      "to": "rephrase",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "rephrase",
+      "to": "shuffle",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "shuffle",
+      "to": "replace",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "replace",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "split",
+      "to": "public_val",
+      "type": "primary",
+      "label": "公开"
+    },
+    {
+      "id": "edge-12",
+      "from": "split",
+      "to": "closed_test",
+      "type": "primary",
+      "label": "封闭"
+    },
+    {
+      "id": "edge-13",
+      "from": "public_val",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "closed_test",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "paper_eval",
+      "to": "paper_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "public_val",
+      "to": "hf_snapshot",
+      "type": "secondary",
+      "label": "后续公开发布"
+    },
+    {
+      "id": "edge-17",
+      "from": "hf_snapshot",
+      "to": "oc_loader",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "oc_loader",
+      "to": "shot_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "shot_route",
+      "to": "public_prompt",
+      "type": "primary",
+      "label": "零样本"
+    },
+    {
+      "id": "edge-20",
+      "from": "shot_route",
+      "to": "five_demos",
+      "type": "primary",
+      "label": "五样本"
+    },
+    {
+      "id": "edge-21",
+      "from": "five_demos",
+      "to": "public_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "public_prompt",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "generate",
+      "to": "parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "parse",
+      "to": "field_accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "field_accuracy",
+      "to": "public_macro",
       "type": "primary"
     }
   ],

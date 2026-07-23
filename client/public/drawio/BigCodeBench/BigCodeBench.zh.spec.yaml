@@ -5,79 +5,107 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BigCodeBench 构建流程
-  description: 依据 arXiv v4 第 2.1-2.3 节整理的人机协作合成、重构、测试与三重人工质控流程。
-  legend: 实线箭头表示 BigCodeBench-Complete 主构建链；数字为各阶段论文报告的样本数。
+  description: 依据 arXiv v4 第 2.1-2.3 节展示 ODEX 增强、13×100 标注分配、重构、测试、程序分析、7 人交叉复核与 GHCR 校验。
+  legend: 实线箭头表示 BigCodeBench-Complete 构建主链；13×100 表示标注员任务分配数，不代表去重后的任务数。
 nodes:
   - id: seeds
     label: ODEX 种子
     type: document
     size: large
     position:
-      x: 80
-      'y': 80
+      x: 64
+      'y': 64
   - id: synth
-    label: GPT-4 合成
+    label: GPT-4 增强
     type: process
     size: large
     position:
-      x: 288
-      'y': 80
+      x: 272
+      'y': 64
   - id: perturb
-    label: 扰动与 AST 验证
+    label: 混淆 + 回译 + AST
     type: process
     size: large
     position:
-      x: 496
-      'y': 80
+      x: 480
+      'y': 64
   - id: pool
-    label: 4,718 条样本
+    label: 4,718 条草稿池
+    type: database
+    size: large
+    position:
+      x: 688
+      'y': 64
+  - id: assignments
+    label: 13 × 100 任务分配
     type: document
     size: large
     position:
-      x: 704
-      'y': 80
+      x: 688
+      'y': 208
   - id: refactor
-    label: 13 人重构与测试
+    label: 人工 + GPT-4 重构
     type: process
     size: large
     position:
-      x: 704
-      'y': 220
+      x: 480
+      'y': 208
+  - id: tests
+    label: 每题 ≥5 个测试
+    type: process
+    size: large
+    position:
+      x: 272
+      'y': 208
+  - id: analysis
+    label: 程序分析
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 208
   - id: valid
-    label: 1,223 条有效任务
-    type: document
+    label: 1,223 个有效任务-测试对
+    type: database
     size: large
     position:
-      x: 496
-      'y': 220
+      x: 64
+      'y': 352
   - id: examination
-    label: 人工检查
+    label: Examination 人工检查
     type: process
     size: large
     position:
-      x: 288
-      'y': 220
+      x: 272
+      'y': 352
   - id: preeval
-    label: GPT-3.5 预评估
+    label: GPT-3.5 预评测
     type: process
     size: large
     position:
-      x: 80
-      'y': 220
+      x: 480
+      'y': 352
   - id: crosscheck
-    label: 交叉复核与沙箱验证
+    label: 7 人交叉复核
     type: process
     size: large
     position:
-      x: 80
-      'y': 360
+      x: 688
+      'y': 352
+  - id: ghcr_validation
+    label: GHCR 校验
+    type: process
+    size: large
+    position:
+      x: 688
+      'y': 496
   - id: final
     label: 1,140 项任务
     type: terminal
     size: large
     position:
-      x: 288
-      'y': 360
+      x: 480
+      'y': 496
 edges:
   - from: seeds
     to: synth
@@ -89,9 +117,18 @@ edges:
     to: pool
     type: primary
   - from: pool
+    to: assignments
+    type: primary
+  - from: assignments
     to: refactor
     type: primary
   - from: refactor
+    to: tests
+    type: primary
+  - from: tests
+    to: analysis
+    type: primary
+  - from: analysis
     to: valid
     type: primary
   - from: valid
@@ -104,6 +141,9 @@ edges:
     to: crosscheck
     type: primary
   - from: crosscheck
+    to: ghcr_validation
+    type: primary
+  - from: ghcr_validation
     to: final
     type: primary
 modules: []

@@ -5,75 +5,147 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GEdit-Bench 构建流程
-  description: 对齐论文的 GEdit-Bench 流程：从真实用户编辑案例到脱敏测试集和 VIEScore 评测。
-  legend: 实线箭头表示真实用户收集、任务分类、相似指令过滤、脱敏、模型编辑和 VIEScore 评判。
+  description: 按论文、数据集与评测代码对齐的收集、隐私处理、双语发布和 VIEScore 流程。
+  legend: >-
+    证据固定到 arXiv:2504.17761v5、仓库 4cca05df 和数据集 50766778。论文 v5 内部不一致：图 7 与一处正文写 GPT-4o，第 4.2.1 节和表 2–3 写 GPT-4.1；固定评测器使用
+    GPT-4.1。
 nodes:
-  - id: users
-    label: 真实用户
-    type: database
+  - id: evidence
+    label: |-
+      证据快照 · 论文 2504.17761v5
+      仓库 4cca05df · 数据 50766778
+      论文 GPT-4o/GPT-4.1 冲突
+      固定评测器 GPT-4.1
+    type: document
     size: xl
     position:
       x: 40
       'y': 160
   - id: collect
-    label: 千余编辑
-    type: process
+    label: |-
+      收集 >1,000 个真实编辑实例
+      来源为公开互联网
+      包括 Reddit 类用户请求
+      保留真实编辑意图
+    type: database
     size: xl
     position:
-      x: 300
+      x: 296
       'y': 160
   - id: taxonomy
-    label: 11类任务
+    label: |-
+      人工划分 11 类任务
+      过滤相同目的的指令
+      保持任务多样性
+      留下 606 组图像与请求
     type: process
     size: xl
     position:
-      x: 560
+      x: 552
       'y': 160
-  - id: filter
-    label: 多样性筛选
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: bench
-    label: 606测试
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: models
-    label: 编辑模型
+  - id: deidentify
+    label: |-
+      对用户图像去标识化
+      在公开引擎中反向搜图
+      替换为匹配的公开图像
+      无替代图时改指令但保留意图
     type: process
     size: xl
     position:
-      x: 1340
+      x: 808
       'y': 160
-  - id: score
-    label: VIEScore
+  - id: release
+    label: |-
+      每组配一条英文和中文指令
+      606 组发布为 1,212 行
+      图像/原图/任务/语言字段
+      包含 Intersection_exist 标记
+    type: database
+    size: xl
+    position:
+      x: 1064
+      'y': 160
+  - id: generation
+    label: |-
+      生成编辑后图像
+      输入原图 + 英文或中文请求
+      覆盖开源与闭源编辑器
+      缺失输出文件会被跳过
+    type: process
+    size: xl
+    position:
+      x: 1064
+      'y': 400
+  - id: views
+    label: |-
+      形成两类报告视图
+      完整集：每种语言最多 606 例
+      失败或缺失输出不计入
+      共同交集：英文 434 · 中文 422
+    type: process
+    size: xl
+    position:
+      x: 808
+      'y': 400
+  - id: viescore
+    label: |-
+      评判原图 + 编辑图 + 请求
+      GPT-4.1 与 Qwen2.5-VL-72B
+      输出 0–10 的 SC 与 PQ 数组
+      任务模式：tie
+    type: process
+    size: xl
+    position:
+      x: 552
+      'y': 400
+  - id: parser
+    label: |-
+      解析分数数组
+      重试一次，随后回退或猜测
+      SC=列表最小值 · PQ=列表最小值
+      O=sqrt(SC × PQ)
+    type: process
+    size: xl
+    position:
+      x: 296
+      'y': 400
+  - id: aggregate
+    label: |-
+      先计算每类均值
+      总体为 11 个类别均值
+      的非加权平均
+      共同交集采用相同规则
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 400
 edges:
-  - from: users
+  - from: evidence
     to: collect
     type: primary
   - from: collect
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: filter
+    to: deidentify
     type: primary
-  - from: filter
-    to: bench
+  - from: deidentify
+    to: release
     type: primary
-  - from: bench
-    to: models
+  - from: release
+    to: generation
     type: primary
-  - from: models
-    to: score
+  - from: generation
+    to: views
+    type: primary
+  - from: views
+    to: viescore
+    type: primary
+  - from: viescore
+    to: parser
+    type: primary
+  - from: parser
+    to: aggregate
     type: primary
 modules: []

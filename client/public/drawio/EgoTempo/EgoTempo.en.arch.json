@@ -7,89 +7,221 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 17,
+    "edges": 18,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "videos",
-      "label": "Ego Videos",
+      "id": "evidence",
+      "label": "Fixed evidence boundary\narXiv:2503.13646v1\nrepo @ 7022ba7\ndataset v1.0 · JSON SHA adc9e7d",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source",
+      "label": "Ego4D source videos\ndiverse real-world scenarios\ntimestamped first-person\nnarrations (Nj, tj)",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "types",
-      "label": "10 Tasks",
+      "id": "windows",
+      "label": "Derive each narration window\nTj = tj ± βi / (2α)\nβi: local mean timestamp gap\nα: global mean of those gaps",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "QA Curation",
+      "id": "clips",
+      "label": "Group consecutive segments\nstop at 120 narrations\nor at 120 seconds\nsource segments average 5 seconds",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "caption",
+      "label": "Gemini 1.5 Pro zero-shot\ncaption clip + Ego4D narrations\nadd background context\nmissing from narrations",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "taxonomy",
+      "label": "Gemini 1.5 Pro: OpenQA\n10 capabilities\naction sequence · counting\nevent order · future prediction\nobject-specific action\nobject sequence · object counting\nspatial · locating\naction-specific object",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "Shortcut Test",
+      "id": "review",
+      "label": "Manual video-grounded review\nrequire multiframe evidence\nrequire QA logical consistency\ncheck against the actual clip\ndiscard irrelevant pairs\ndiscard non-temporal pairs",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "shortcut",
+      "label": "Gemini single-frame gate\ndiscard pairs answerable\nfrom one frame\ncuration frame choice\nis not disclosed\nevaluation uses central frame",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "Paper: EgoTempo OpenQA benchmark\n500 QA · 10 × 50\n365 clips · 221 videos\n40 scenarios\n3–140 seconds · mean 45 seconds",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_audit",
+      "label": "Pinned v1.0 JSON audit\n500 rows · 367 unique clip_id\n222 unique video_uid\nrelease counts differ from paper",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inputs",
+      "label": "Controlled evidence settings\nsame questions and references",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "run",
-      "label": "Video Run",
+      "id": "text",
+      "label": "Text only\ndiagnose language / commonsense shortcuts",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "single",
+      "label": "Single central frame\ndiagnose static visual shortcuts",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "video",
+      "label": "Uniform multiframe input\nrates S = 0.1, 0.5, 1 FPS\nfixed-frame / ordering\nablations are separate",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "prediction",
+      "label": "MLLM open-ended predictions\nclosed and open video models\nGemini experiments use 1.5 Flash\nnot Pro (data generation)",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "match",
-      "label": "Answer Match",
-      "type": "terminal",
+      "id": "judge",
+      "label": "Paper: Gemini 1.5 Pro judge\nprediction + reference\n→ correct / incorrect\nreturn a decision reason\npinned notebook defaults to Flash",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Accuracy",
-      "type": "document",
+      "id": "report",
+      "label": "Accuracy by capability\nand overall\nabsolute evidence-setting scores\nvideo gain = Accuracy(S)\n/ single-frame accuracy",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "videos",
-      "to": "types",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "types",
-      "to": "qa",
+      "from": "source",
+      "to": "windows",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "qa",
-      "to": "filter",
+      "from": "windows",
+      "to": "clips",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "filter",
-      "to": "run",
+      "from": "clips",
+      "to": "caption",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "run",
-      "to": "match",
+      "from": "caption",
+      "to": "taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "match",
-      "to": "score",
+      "from": "taxonomy",
+      "to": "review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "review",
+      "to": "shortcut",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "shortcut",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "benchmark",
+      "to": "release_audit",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "benchmark",
+      "to": "inputs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "inputs",
+      "to": "text",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "inputs",
+      "to": "single",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "inputs",
+      "to": "video",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "text",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "single",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "video",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "prediction",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "judge",
+      "to": "report",
       "type": "primary"
     }
   ],

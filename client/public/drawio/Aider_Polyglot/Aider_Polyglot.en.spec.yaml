@@ -1,92 +1,181 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: Aider Polyglot Build Process
   description: >-
-    Official-source-aligned construction of Aider Polyglot: probe 697 Exercism exercises in six languages with seven
-    coding models, retain the 225 tasks solved by at most three models, then evaluate Aider edits in Docker with unit
-    tests.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Official-source-aligned Exercism selection, Aider editing with tests withheld from model context, and the default
+    two-try hidden-test repair protocol.
+  legend: >-
+    Read the selection row left-to-right, then the execution row right-to-left. Failed try 1 exposes only test output
+    for one repair; default --tries 2 means an initial edit plus one repair attempt.
 nodes:
-  - id: n1
-    label: 697 Exercises
+  - id: exercism
+    label: |-
+      Exercism Problem Pool
+      697 Exercises
+      Six Popular Languages
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 6 Languages
+      'y': 100
+  - id: languages
+    label: |-
+      Language Coverage
+      C++ / Go / Java / JavaScript
+      Python / Rust
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 7-Model Probe
+      x: 320
+      'y': 100
+  - id: probe
+    label: |-
+      Seven-Model Difficulty Probe
+      Every Model Attempts All 697
+      Count Successful Solvers per Exercise
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: <=3 Solvers
-    type: decision
+      x: 600
+      'y': 100
+  - id: filter
+    label: |-
+      Difficulty Filter
+      Retain Exercises Solved by 0-3 Models
+      Exclude 472 Easier Exercises
+    type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 225 Hard Tasks
+      x: 880
+      'y': 100
+  - id: dataset
+    label: |-
+      Aider Polyglot
+      225 Hard Exercises
+      C++ 26 • Go 39 • Java 47
+      JavaScript 49 • Python 34
+      Rust 30
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: input
+    label: |-
+      Benchmark Task
+      Exercise Instructions
+      Editable Solution Files Only
+      Test / Example / Metadata Files Withheld
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Aider Edits
+      x: 1440
+      'y': 100
+  - id: aider
+    label: |-
+      Run Aider with Model
+      Select Edit Format
+      Exercises Execute in Random Order
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Docker Tests
+      x: 1440
+      'y': 440
+  - id: edit
+    label: |-
+      Translate Request into Code
+      Format and Apply File Edits
+      Save Edits to Local Source Files
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Pass Rate
+      x: 1160
+      'y': 440
+  - id: hidden_tests
+    label: |-
+      Run Withheld Tests in Docker
+      Test Files Excluded from Model Context
+      Copied In Only After Each Edit
+      Use the Language-Specific Test Command
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: retry_gate
+    label: |-
+      Tests Pass or Tries Exhausted?
+      Stop After the Second Test Run
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: repair
+    label: |-
+      Retry from Test Output
+      Default --tries 2
+      Initial Edit + One Repair Attempt
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 720
+  - id: report
+    label: |-
+      Benchmark Report
+      Pass@1 and Pass@2
+      Percent Completed Correctly
+      Correct Edit Format / Well-Formed Rate
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: exercism
+    to: languages
     type: primary
-  - from: n2
-    to: n3
+  - from: languages
+    to: probe
     type: primary
-  - from: n3
-    to: n4
+  - from: probe
+    to: filter
     type: primary
-  - from: n4
-    to: n5
+  - from: filter
+    to: dataset
     type: primary
-  - from: n5
-    to: n6
+  - from: dataset
+    to: input
     type: primary
-  - from: n6
-    to: n7
+  - from: input
+    to: aider
     type: primary
-  - from: n7
-    to: n8
+  - from: aider
+    to: edit
     type: primary
+  - from: edit
+    to: hidden_tests
+    type: primary
+  - from: hidden_tests
+    to: retry_gate
+    type: primary
+  - from: retry_gate
+    to: report
+    type: primary
+    label: pass or try 2 exhausted
+  - from: retry_gate
+    to: repair
+    type: data
+    label: try 1 failed
+    waypoints:
+      - x: 600
+        'y': 720
+  - from: repair
+    to: edit
+    type: data
 modules: []

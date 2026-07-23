@@ -1,0 +1,296 @@
+{
+  "version": 1,
+  "title": "LitQA2 构建流程",
+  "type": "academic-diagram",
+  "source": "edited",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 20,
+    "edges": 19,
+    "modules": 3
+  },
+  "nodes": [
+    {
+      "id": "source_lock",
+      "label": "固定可复现实证\n论文 2409.13740v2\npaper-qa d7675d7b · Aviary 1c061dbc\n公开/门控数据 5c77cec6/e9ee5486",
+      "type": "document",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "recent_papers",
+      "label": "选择近期来源论文\n发表时间在过去36个月内\n优先选择冷门的中间发现\n记录预期来源 DOI",
+      "type": "database",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "draft_question",
+      "label": "专家人工编写多项选择题\n答案必须依赖论文正文\n不能仅凭标题或摘要回答\n需要推理且不能直接照抄原句",
+      "type": "user",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "distractors",
+      "label": "构造可信干扰项\n使用论文其他事实或领域知识\n保存标准答案或 null\n允许有意设计不可回答题",
+      "type": "process",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "challenge",
+      "label": "挑战测试题目草稿\n定期测试 ChatGPT 3.5/4 · 关闭日志\n经常在 Google Scholar 搜索题目措辞\n检查能否由替代来源回答",
+      "type": "process",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "reject_item",
+      "label": "从候选中剔除\n未通过作者质量审核\n不得合入正式题库",
+      "type": "terminal",
+      "module": "construction",
+      "size": "large"
+    },
+    {
+      "id": "calibration",
+      "label": "出题者校准与持续作者审核\n细审新作者最初约10题\n接收 · 返工 · 剔除？",
+      "type": "decision",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "release_248",
+      "label": "汇总 LitQA2 · 248题\n原始 LitQA 47题\n首次发布 +100 → 147题\n后续新增未见101题 → 248题\n问题 · 答案/null · 干扰项 · DOI",
+      "type": "database",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "current_manifest",
+      "label": "paper-qa 复现清单\n二次 ID 划分 · 不是 HF 物理 split\n从199行选训练159 + 验证40\n从门控语料选测试49",
+      "type": "document",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "public_199",
+      "label": "固定 HF LAB-Bench 语料\n仅一个物理 train split · 199行\n不存在物理 eval 或 test split\nHF 5c77cec6 · CC BY-SA 4.0",
+      "type": "database",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "gated_49",
+      "label": "自动门控测试题库 · 49题\naviary-paper-data 测试划分\nHF e9ee5486 · 共享联系信息门槛",
+      "type": "database",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "部分公开发布\n199题无门槛 · 49题自动门控\n数据集许可证 · CC BY-SA 4.0\n无官方实时排行榜",
+      "type": "document",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "missing_contracts",
+      "label": "未披露的构建细节\n精确采样框与候选题总量\n挑战提示词与生成参数\n接收率与复核者一致性\n完整剔除与修订记录",
+      "type": "document",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "eval_prep",
+      "label": "准备每次论文 v2 调用\n问题 + 全部答案选项\n加入“信息不足，无法回答”\n每次调用均随机排列选项",
+      "type": "process",
+      "module": "measurement",
+      "size": "xl"
+    },
+    {
+      "id": "paper_run",
+      "label": "运行一项 PaperQA 配置\n每题调用一次 paperqa\n对全部248题完整运行3次\n温度0 · 系统配置可变",
+      "type": "process",
+      "module": "measurement",
+      "size": "xl"
+    },
+    {
+      "id": "extract_letter",
+      "label": "GPT-4-0613 字母抽取器\n论文原始提示词（保留英文）\nExtract the single letter answer\nfrom the following question and answer\n{prompt_output('QA')}\nSingle Letter Answer:",
+      "type": "process",
+      "module": "measurement",
+      "size": "xl"
+    },
+    {
+      "id": "grade_choice",
+      "label": "判定解析后的选项\n命中标准答案 → 正确\n选择信息不足 → 不确定\n标答为 null 且选信息不足 → 正确",
+      "type": "process",
+      "module": "measurement",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "计算 LitQA2 指标\n准确率 = 正确数 / 全部题数\n精确率 = 正确数 / 已作答数\nDOI召回率 = 正确来源归因数 / 全部题数",
+      "type": "formula",
+      "module": "measurement",
+      "size": "xl"
+    },
+    {
+      "id": "paper_report",
+      "label": "报告论文 v2 评测\n按配置汇总三次运行\n比较旧147题与未见新101题\n单独报告人工工具使用基线",
+      "type": "terminal",
+      "module": "measurement",
+      "size": "xl"
+    },
+    {
+      "id": "implementation_drift",
+      "label": "当前默认实现 ≠ 论文 v2 协议\npaper-qa d767 · 提示词常量已不同\nAviary 1c061 · gpt-4o-mini + 选项文本\n选项需显式提供随机种子才会打乱\n不可与论文报告结果混用",
+      "type": "document",
+      "module": "measurement",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "source_lock",
+      "to": "recent_papers",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "recent_papers",
+      "to": "draft_question",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "draft_question",
+      "to": "distractors",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "distractors",
+      "to": "challenge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "challenge",
+      "to": "calibration",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "calibration",
+      "to": "release_248",
+      "type": "primary",
+      "label": "接收"
+    },
+    {
+      "id": "edge-7",
+      "from": "calibration",
+      "to": "challenge",
+      "type": "optional",
+      "label": "返工"
+    },
+    {
+      "id": "edge-8",
+      "from": "calibration",
+      "to": "reject_item",
+      "type": "optional",
+      "label": "剔除"
+    },
+    {
+      "id": "edge-9",
+      "from": "release_248",
+      "to": "current_manifest",
+      "type": "data",
+      "label": "当前划分清单"
+    },
+    {
+      "id": "edge-10",
+      "from": "current_manifest",
+      "to": "public_199",
+      "type": "primary",
+      "label": "来源语料 · 199行"
+    },
+    {
+      "id": "edge-11",
+      "from": "current_manifest",
+      "to": "gated_49",
+      "type": "optional",
+      "label": "测试来源语料"
+    },
+    {
+      "id": "edge-12",
+      "from": "public_199",
+      "to": "release_boundary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "gated_49",
+      "to": "release_boundary",
+      "type": "optional"
+    },
+    {
+      "id": "edge-14",
+      "from": "release_248",
+      "to": "eval_prep",
+      "type": "primary",
+      "label": "论文 v2 测量"
+    },
+    {
+      "id": "edge-15",
+      "from": "eval_prep",
+      "to": "paper_run",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "paper_run",
+      "to": "extract_letter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "extract_letter",
+      "to": "grade_choice",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "grade_choice",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "metrics",
+      "to": "paper_report",
+      "type": "primary"
+    }
+  ],
+  "modules": [
+    {
+      "id": "construction",
+      "label": "构建",
+      "color": "$primaryLight"
+    },
+    {
+      "id": "release",
+      "label": "发布",
+      "color": "$warningLight"
+    },
+    {
+      "id": "measurement",
+      "label": "评测",
+      "color": "$secondaryLight"
+    }
+  ]
+}

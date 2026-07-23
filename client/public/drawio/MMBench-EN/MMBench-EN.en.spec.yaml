@@ -4,88 +4,245 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMBench-EN Build Process
+  title: MMBench-EN v1.0 Build Process
   description: >-
-    Source-aligned construction of MMBench-EN: English image multiple-choice questions are curated across MMBench
-    ability dimensions, split into dev/test sets, evaluated with CircularEval, and scored by extracted choices.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    The original English release is bounded to the October-2023 v1.0 files: the early paper reports 2,974 items, while
+    the revised official DEV/TEST downloads contain 1,164 + 1,784 = 2,948 logical questions. MMBench v1.1 is a separate
+    dataset identity.
+  legend: >-
+    Solid arrows show the v1.0 English construction, release, and evaluation lifecycle. Dashed arrows attach count,
+    schema, label-visibility, or released-code audit facts and are excluded from the scoring denominator.
 nodes:
-  - id: n1
-    label: Source Pool
-    type: database
+  - id: taxonomy
+    label: |-
+      Three-level taxonomy
+      2 L1 / 6 L2
+      20 L3 abilities
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 20 Abilities
+      'y': 280
+  - id: seeds
+    label: |-
+      Author seed set
+      10–20 MCQs
+      per L3 ability
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: EN Dev/Test
-    type: document
+      x: 320
+      'y': 280
+  - id: collection
+    label: |-
+      Student volunteers
+      >80% Internet
+      ~20% public validation images
+    type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Image MCQ
+      x: 600
+      'y': 280
+  - id: raw
+    label: |-
+      English image MCQs
+      question + optional hint
+      2–4 choices + answer
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: text_qc
+    label: |-
+      Text-only filter
+      LLM consensus
+      then human review
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: CircularEval
+      x: 1160
+      'y': 80
+  - id: wrong_qc
+    label: |-
+      Wrong-item filter
+      all screening VLMs fail
+      then human review
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Extract
-    type: decision
+      x: 1160
+      'y': 480
+  - id: paper_pool
+    label: |-
+      Paper v1–v3 pool
+      2,974 questions
+      20 L3 abilities
+    type: database
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Submit
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: EN Acc
-    type: terminal
+      x: 1440
+      'y': 280
+  - id: revision
+    label: |-
+      October-2023 revision
+      remove ~20+ noisy items
+      2,948 logical questions
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 280
+  - id: split
+    label: |-
+      MMBench-EN v1.0
+      DEV 1,164 labels open
+      TEST 1,784 labels hidden
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: prompt
+    label: |-
+      Zero-shot open generation
+      image + optional hint
+      English question + choices
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: heuristic
+    label: |-
+      Choice parsed
+      by heuristic?
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 120
+  - id: gpt
+    label: |-
+      Paper fallback
+      gpt-4-0125
+      match option or Z
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 480
+  - id: circular
+    label: |-
+      CircularEval
+      N circular rotations
+      all passes must be correct
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: score
+    label: |-
+      Logical-item accuracy
+      micro overall + L2/L3
+      official test submission
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 280
+  - id: count_audit
+    label: |-
+      Count boundary
+      2,974 prose ≠ 2,948 files
+      v1.1 is not this ID
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: schema_audit
+    label: |-
+      v1.0 TSV audit
+      source/comment retained
+      rotations share a base id
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 760
+  - id: code_audit
+    label: |-
+      Released-code caveat
+      3 failed judge retries
+      random valid choice or Z
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 760
 edges:
-  - from: n1
-    to: n2
+  - from: taxonomy
+    to: seeds
     type: primary
-  - from: n2
-    to: n3
+  - from: seeds
+    to: collection
     type: primary
-  - from: n3
-    to: n4
+  - from: collection
+    to: raw
     type: primary
-  - from: n4
-    to: n5
+  - from: raw
+    to: text_qc
     type: primary
-  - from: n5
-    to: n6
+  - from: raw
+    to: wrong_qc
     type: primary
-  - from: n6
-    to: n7
+  - from: text_qc
+    to: paper_pool
     type: primary
-  - from: n7
-    to: n8
+  - from: wrong_qc
+    to: paper_pool
     type: primary
+  - from: paper_pool
+    to: revision
+    type: primary
+  - from: revision
+    to: split
+    type: primary
+  - from: split
+    to: prompt
+    type: primary
+  - from: prompt
+    to: heuristic
+    type: primary
+  - from: heuristic
+    to: circular
+    type: primary
+    label: 'Yes'
+  - from: heuristic
+    to: gpt
+    type: primary
+    label: 'No'
+  - from: gpt
+    to: circular
+    type: primary
+  - from: circular
+    to: score
+    type: primary
+  - from: revision
+    to: count_audit
+    type: secondary
+    style:
+      dashed: true
+  - from: split
+    to: schema_audit
+    type: secondary
+    style:
+      dashed: true
+  - from: score
+    to: code_audit
+    type: secondary
+    style:
+      dashed: true
 modules: []

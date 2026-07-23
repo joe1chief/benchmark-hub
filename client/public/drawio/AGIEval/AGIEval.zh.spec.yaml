@@ -4,118 +4,279 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AGIEval 构建流程
-  description: 基于 arXiv:2304.06364 对齐的 AGIEval 基准构建与评估流程。
-  legend: 实线表示考试题到基准构建和模型评估主流程；虚线表示题型过滤和人类表现参考路径。
+  title: AGIEval 论文 v1 构建与评测流程
+  description: 以论文 v1 为主流程；修订后的仓库 v1.1 与填空指标来源冲突作为明确证据边界，不混入论文报告的 8,062 题快照。
+  legend: 实线沿论文 v1 主流程；虚线数据边表示示例、人类参考或后续版本来源。
 nodes:
-  - id: exam_pool
+  - id: direct_sources
     label: |-
-      官方考试池
-      高考、SAT、LSAT
-      GMAT、GRE、AMC、AIME
+      公开网络高考 + SAT
+      题目 + 解答
+      来源站点未说明
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: exam_selection
+      'y': 60
+  - id: reused_sources
     label: |-
-      考试选择
-      标准化高质量考试
-      强调人类推理和真实场景
+      复用考试数据集
+      LSAT • LogiQA • MATH
+      AQuA-RAT • JEC-QA
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 460
+  - id: reused_downsample
+    label: |-
+      按来源下采样
+      MATH → 1,000
+      两个 JEC 任务各 1,000
     type: process
     size: xl
     position:
       x: 300
-      'y': 70
+      'y': 460
   - id: objective_filter
     label: |-
       客观题过滤
-      移除主观题
-      保留选择题和填空题
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: data_collection
-    label: |-
-      数据来源收集
-      公开考试题源
-      LSAT、LogiQA、MATH、JEC-QA
-    type: document
+      删除主观题
+      保留选择题 + 填空题
+    type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: dataset
+      'y': 260
+  - id: paper_snapshot
     label: |-
-      AGIEval 数据集
-      8,062 道题
-      中英双语覆盖
+      20 个任务 • 报告 8,062 题
+      论文 v1 快照
+      中文 + 英文
     type: database
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: human_baselines
+      'y': 260
+  - id: repo_v11
     label: |-
-      人类表现基线
-      平均和顶尖考生
-      缩放到任务分数
-    type: user
+      官方仓库 v1.1
+      18 个选择任务 + 2 个填空任务
+      JSONL 实计 7,066 条
+      更新并修正的版本
+    type: document
+    size: xl
+    position:
+      x: 820
+      'y': 600
+  - id: five_shot_route
+    label: 按来源选择 5-Shot 规则
+    type: decision
     size: xl
     position:
       x: 1080
-      'y': 70
-  - id: model_eval
+      'y': 580
+  - id: pool_examples
     label: |-
-      模型评估
-      零样本、少样本
-      chain-of-thought 提示
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: metrics_release
-    label: |-
-      结果与发布
-      accuracy、EM、F1
-      公开输出和代码
-    type: terminal
+      AQuA / LogiQA / LSAT
+      从训练集随机取 5 个
+      选择中等句长
+    type: document
     size: xl
     position:
       x: 1340
-      'y': 160
+      'y': 380
+  - id: exam_original_pool
+    label: |-
+      高考 / SAT
+      选 5 个中等长度题目
+      并从测试集删除
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 500
+  - id: jec_remainder
+    label: |-
+      JEC 论文 v1 规则
+      前 1,000 个训练样本 → 测试
+      从剩余样本选 5 个
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 620
+  - id: math_appendix
+    label: |-
+      MATH
+      复用 Lewkowycz 附录
+      不做采样
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 740
+  - id: five_shot_bundle
+    label: |-
+      按来源构建 5-Shot 示例
+      保留来源格式
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 560
+  - id: cot_rationales
+    label: |-
+      CoT 理由来源
+      AQuA + MATH：已有理由
+      Gaokao 高考 + SAT：专家标注
+      LogiQA/JEC/LSAT：ChatGPT
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 760
+  - id: prompts
+    label: |-
+      提示设置
+      Zero-Shot / 5-Shot
+      使用 / 不使用 CoT
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 260
+  - id: generation
+    label: |-
+      模型生成
+      Temperature 0 • Top-p 1
+      最多 2,048 tokens
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 260
+  - id: format
+    label: 题型？
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 260
+  - id: mcq
+    label: |-
+      选择题
+      分类准确率
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 80
+  - id: cloze
+    label: |-
+      填空评分来源冲突
+      论文 §3.3.2：EM + F1
+      实验 / 代码：EM 或等价判断
+      未发现 F1 实现
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 420
+  - id: humans
+    label: |-
+      人类表现参考边界
+      MATH/LogiQA/JEC：原论文
+      其余：考试分数缩放估计
+    type: user
+    size: xl
+    position:
+      x: 2900
+      'y': 0
+  - id: report
+    label: |-
+      AGIEval 结果
+      模型与人类参考对比
+      发布数据 + 输出
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 260
 edges:
-  - from: exam_pool
-    to: exam_selection
-    type: primary
-  - from: exam_selection
+  - from: direct_sources
     to: objective_filter
-    type: data
-    label: 选定考试
+    type: primary
+  - from: reused_sources
+    to: reused_downsample
+    type: primary
+  - from: reused_downsample
+    to: objective_filter
+    type: primary
   - from: objective_filter
-    to: exam_selection
-    type: optional
-    label: 移除主观题
-  - from: objective_filter
-    to: data_collection
+    to: paper_snapshot
     type: primary
-  - from: data_collection
-    to: dataset
-    type: primary
-  - from: dataset
-    to: human_baselines
+  - from: paper_snapshot
+    to: repo_v11
     type: data
-  - from: dataset
-    to: model_eval
-    type: primary
-  - from: human_baselines
-    to: metrics_release
+    label: 后续修订版本
+  - from: paper_snapshot
+    to: five_shot_route
     type: data
-  - from: model_eval
-    to: metrics_release
+  - from: paper_snapshot
+    to: prompts
+    type: primary
+  - from: five_shot_route
+    to: pool_examples
+    type: data
+  - from: five_shot_route
+    to: exam_original_pool
+    type: data
+  - from: five_shot_route
+    to: jec_remainder
+    type: data
+  - from: five_shot_route
+    to: math_appendix
+    type: data
+  - from: pool_examples
+    to: five_shot_bundle
+    type: data
+  - from: exam_original_pool
+    to: five_shot_bundle
+    type: data
+  - from: jec_remainder
+    to: five_shot_bundle
+    type: data
+  - from: math_appendix
+    to: five_shot_bundle
+    type: data
+  - from: five_shot_bundle
+    to: prompts
+    type: data
+  - from: cot_rationales
+    to: prompts
+    type: data
+  - from: prompts
+    to: generation
+    type: primary
+  - from: generation
+    to: format
+    type: primary
+  - from: format
+    to: mcq
+    type: primary
+    label: 选择题
+  - from: format
+    to: cloze
+    type: primary
+    label: 填空题
+  - from: humans
+    to: report
+    type: data
+  - from: mcq
+    to: report
+    type: primary
+  - from: cloze
+    to: report
     type: primary
 modules: []

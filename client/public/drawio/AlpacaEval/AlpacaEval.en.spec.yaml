@@ -1,91 +1,179 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval Build Process
+  title: Original AlpacaEval Build Process
   description: >-
-    Paper-aligned AlpacaEval pipeline: curate 805 Alpaca instructions, generate evaluated-model and baseline responses,
-    randomize response order, obtain GPT-4 pairwise preferences, and fit the length-control GLM for LC win rate.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    The original AlpacaEval simplifies the fixed AlpacaFarm evaluation set, regenerates text-davinci-003 references, and
+    measures model win rate with randomized temperature-zero alpaca_eval_gpt4 pairwise judgments.
+  legend: >-
+    The top row constructs the fixed 805-example evaluation set; the lower rows compare candidate and fixed reference
+    responses and aggregate preferences without the later AlpacaEval-LC regression.
 nodes:
-  - id: n1
-    label: Alpaca Demo
+  - id: alpaca_farm
+    label: |-
+      AlpacaFarm Evaluation Set
+      Fixed 805 Examples
+      Source Evaluation Distribution
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 805 Prompts
+      'y': 80
+  - id: merge_fields
+    label: |-
+      Simplify Prompt Fields
+      1/4 Self-Instruct Examples Affected
+      Merge Instruction + Input
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: reference_regeneration
+    label: |-
+      Regenerate text-davinci-003 References
+      Without the AlpacaFarm Length Limit
+      Preserve One Reference per Instruction
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: dataset
+    label: |-
+      Fixed AlpacaEval Set
+      805 Instructions + References
+      Original Evaluation Contract
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: candidate
+    label: |-
+      Evaluated Model
+      Answer Every Instruction
+      Candidate Responses
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: reference
+    label: |-
+      Fixed Reference Responses
+      text-davinci-003
+      Same 805 Instructions
     type: document
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Model Replies
+      x: 880
+      'y': 360
+  - id: randomize
+    label: |-
+      Randomize Response Order
+      Candidate / Reference
+      Control Position Bias
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Base Replies
+      x: 600
+      'y': 640
+  - id: judge
+    label: |-
+      alpaca_eval_gpt4 Judge
+      GPT-4 • Temperature = 0
+      Pairwise Preference Prompt
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Order Shuffle
+      x: 320
+      'y': 640
+  - id: preference
+    label: |-
+      Parse Preference
+      Candidate Win / Reference Win
+      Tie = 0.5 for Each Side
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 640
+  - id: score
+    label: |-
+      Aggregate 805 Judgments
+      Mean Win Rate + Standard Error
+      Candidate versus text-davinci-003
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: GPT-4 Judge
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Length GLM
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: LC Win Rate
+      x: 40
+      'y': 920
+  - id: report
+    label: |-
+      Original AlpacaEval Report
+      Win Rate and Standard Error
+      Automatic Evaluation Result
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 920
 edges:
-  - from: n1
-    to: n2
+  - from: alpaca_farm
+    to: merge_fields
     type: primary
-  - from: n2
-    to: n3
+  - from: merge_fields
+    to: reference_regeneration
     type: primary
-  - from: n3
-    to: n4
+  - from: reference_regeneration
+    to: dataset
     type: primary
-  - from: n4
-    to: n5
+  - from: dataset
+    to: candidate
     type: primary
-  - from: n5
-    to: n6
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: dataset
+    to: reference
+    type: data
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: candidate
+    to: randomize
     type: primary
-  - from: n6
-    to: n7
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: reference
+    to: randomize
     type: primary
-  - from: n7
-    to: n8
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: randomize
+    to: judge
+    type: primary
+  - from: judge
+    to: preference
+    type: primary
+  - from: preference
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

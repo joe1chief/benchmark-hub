@@ -6,87 +6,205 @@ meta:
   routing: orthogonal
   title: MLE-Bench Build Process
   description: >-
-    Paper-aligned construction of MLE-Bench: Kaggle machine-learning competitions are selected, repackaged into offline
-    train/test tasks with grading scripts, run through agent scaffolds, and scored against public human leaderboard
-    baselines.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    The paper specifies the 5,673-completed-competition Meta Kaggle pool, Community Competition removal and manual
+    screening of 586 candidates, selection and complexity criteria, 75 test plus seven development competitions,
+    original or usually 10% reconstructed test splits with distribution checks, offline descriptions/data/local graders,
+    Private leaderboard snapshots, a format-only validation server, 24-hour Docker runs with three seeds, GPT-4o rule
+    checks, Dolos comparison against top-50 notebooks with 60% review threshold, and human-relative medal metrics.
+  legend: >-
+    Source: Sections 2-3 and Appendices A.1-A.5. Solid arrows show the main flow explicitly supported by the paper or
+    official documentation.
 nodes:
-  - id: n1
-    label: Kaggle Pool
+  - id: pool
+    label: |-
+      Meta Kaggle Pool
+      5,673 Completed Competitions
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Select 75
+      'y': 180
+  - id: screen
+    label: |-
+      Exclude Community Events
+      Manually Screen 586
     type: process
-    size: xl
+    size: large
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: Prepare Splits
-    type: document
+      'y': 180
+  - id: criteria
+    label: |-
+      Selection Gates
+      Modern ML + Clear Task
+      Local Metric + Legal Data
+    type: process
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: Add Graders
-    type: process
+      'y': 180
+  - id: selection
+    label: |-
+      Benchmark Selection
+      75 Test + 7 Dev
+      Low / Med / High: 22 / 38 / 15
+    type: database
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Agent Runs
+      'y': 180
+  - id: split
+    label: |-
+      Dataset Reconstruction
+      Use Public Test or Re-split Train
+      Usually 10% Test + Distribution Check
     type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: Rule Checks
-    type: decision
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Human Base
+      'y': 180
+  - id: package
+    label: |-
+      Offline Competition Package
+      Description + Data
+      Private Leaderboard Snapshot
     type: document
     size: xl
     position:
+      x: 1240
+      'y': 180
+  - id: grading
+    label: |-
+      Local Grading Contract
+      Competition Metric
+      Validity Server: Format Only
+    type: process
+    size: xl
+    position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: Medal Rate
-    type: terminal
+      'y': 180
+  - id: environment
+    label: |-
+      Controlled Docker Run
+      24 h / A10 / 36 vCPU
+      Three Seeds
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 180
+  - id: agent
+    label: |-
+      Model + Agent Scaffold
+      Train / Debug / Predict
+      Produce submission.csv
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 180
+  - id: validation
+    label: |-
+      Submission Validation
+      Correct CSV Format?
+    type: process
+    size: large
+    position:
+      x: 2200
+      'y': 180
+  - id: audit
+    label: |-
+      Disqualifying Integrity Violation?
+      Dolos >60% → Disqualify + Human Review
+      GPT-4o Flag → Human Review; Confirmed Violation → Disqualify
+    type: decision
+    size: xl
+    position:
+      x: 2680
+      'y': 180
+  - id: compare
+    label: |-
+      Medal-Winning Submission?
+      Grade Locally
+      Compare Private Leaderboard
+    type: decision
+    size: large
+    position:
+      x: 2440
+      'y': 180
+  - id: metrics
+    label: |-
+      Bronze / Silver / Gold
+      Any-medal Rate + Raw Score
+      Optional pass@k
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 180
+  - id: disqualified
+    label: |-
+      Disqualify Attempt
+      Exclude from Reported Results
+    type: terminal
+    size: xl
+    position:
+      x: 2680
+      'y': 500
 edges:
-  - from: n1
-    to: n2
+  - from: pool
+    to: screen
     type: primary
-  - from: n2
-    to: n3
+  - from: screen
+    to: criteria
     type: primary
-  - from: n3
-    to: n4
+  - from: criteria
+    to: selection
     type: primary
-  - from: n4
-    to: n5
+  - from: selection
+    to: split
     type: primary
-  - from: n5
-    to: n6
+  - from: split
+    to: package
     type: primary
-  - from: n6
-    to: n7
+  - from: package
+    to: grading
     type: primary
-  - from: n7
-    to: n8
+  - from: grading
+    to: environment
     type: primary
+  - from: environment
+    to: agent
+    type: primary
+  - from: agent
+    to: validation
+    type: primary
+  - from: validation
+    to: compare
+    type: primary
+  - from: compare
+    to: audit
+    type: primary
+    label: Yes · medal candidate
+    labelPosition: center
+  - from: audit
+    to: metrics
+    type: primary
+    label: No · no violation / false-positive flag
+    labelPosition: center
+  - from: compare
+    to: metrics
+    type: primary
+    label: No · raw score only
+    labelPosition: center
+    waypoints:
+      - x: 2440
+        'y': 390
+      - x: 2920
+        'y': 390
+  - from: audit
+    to: disqualified
+    type: optional
+    label: Yes · >60% or confirmed rule violation
+    labelPosition: center
 modules: []

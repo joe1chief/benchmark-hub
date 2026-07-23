@@ -5,75 +5,216 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FEA-Bench 构建流程
-  description: 按论文对齐的 FEA-Bench 构建流程：从 GitHub PR 到可执行的新功能实现任务。
-  legend: 实线箭头表示仓库选择、PR过滤、功能意图过滤、测试补丁抽取、任务环境、模型补丁以及单测评估。
+  description: 依据论文呈现从 Top PyPI 对应 GitHub 已合并拉取请求构建仓库级功能实现任务的过程，包含可复现仓库检查、组件/意图/长度门禁、补丁前后测试、Lite 规则筛选边界与官方部分发布限制。
+  legend: 上行从左到右阅读仓库与拉取请求过滤，下行从右到左阅读可执行基准评测；虚线分支表示发布边界，不是评分步骤。
 nodes:
-  - id: prs
-    label: GitHub PR
+  - id: pypi
+    label: |-
+      Top PyPI 全集
+      8,000 个 Python 包
+      解析 GitHub 仓库
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: rules
-    label: 规则过滤
+      'y': 100
+  - id: scope
+    label: |-
+      仓库过滤
+      要求许可证
+      PR >1,000 个
+      约 600 个仓库
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: intent
-    label: 意图过滤
-    type: decision
+      x: 320
+      'y': 100
+  - id: fast
+    label: |-
+      快速安装 / 测试门禁
+      每仓前 20 个测试变更 PR
+      18 个 SWE-bench + 101 个其他仓
+      = 119 个仓库
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: tests
-    label: 测试补丁
+      x: 600
+      'y': 100
+  - id: pr
+    label: |-
+      已合并 PR 候选
+      测试文件变更
+      基线提交 + 环境
+      测试补丁 + 金标准补丁
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: component
+    label: |-
+      新组件门禁
+      新增 Python 函数
+      或类 + 文档
+      >=1；编辑行占比 >25%
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: intent
+    label: |-
+      意图门禁
+      GPT-4o 分类 PR
+      仅保留主要意图
+      = 新增功能
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: size_gate
+    label: |-
+      补丁长度门禁
+      金标准补丁 <=8,192 Token
+      符合上下文预算
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: verify
+    label: |-
+      可执行测试门禁
+      基线 + 测试补丁
+      可通过或失败
+      允许 ImportError
+      允许 AttributeError
+      金标准补丁：无 FAILED
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: dataset
+    label: |-
+      FEA-Bench 发布集
+      完整版：1,401 / 83 仓
+      Lite：200 / 48 仓
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: prompt
+    label: |-
+      模型可见合同
+      功能请求
+      + 新组件定义
+      隐藏金标准补丁
+      + 测试补丁
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: setup
-    label: 任务环境
+      x: 1160
+      'y': 440
+  - id: context
+    label: |-
+      仓库上下文
+      Oracle / BM25
+      Agentless 检索
+      详细 / 精简
+      新组件定义
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: patch
-    label: 智能体补丁
+      x: 880
+      'y': 440
+  - id: edit
+    label: |-
+      单次生成
+      应用候选补丁
+      运行隐藏单元测试
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: unit
-    label: 单测验证
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      FEA-Bench 结果
+      全部单元测试通过
+      才算解决
+      解决率 / 应用成功率
+      检索 P/R + 复杂度切片
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
+  - id: lite_gate
+    label: |-
+      Lite 边界
+      规则筛选
+      非专业人工验证
+      未来构建验证子集
+    type: document
+    size: xl
+    position:
+      x: 1300
+      'y': 680
+  - id: release_boundary
+    label: |-
+      发布边界
+      完整数据集不发布
+      HF 仅含核心字段
+      其余从 GitHub 重建
+    type: document
+    size: xl
+    position:
+      x: 1580
+      'y': 680
 edges:
-  - from: prs
-    to: rules
+  - from: pypi
+    to: scope
     type: primary
-  - from: rules
+  - from: scope
+    to: fast
+    type: primary
+  - from: fast
+    to: pr
+    type: primary
+  - from: pr
+    to: component
+    type: primary
+  - from: component
     to: intent
     type: primary
   - from: intent
-    to: tests
+    to: size_gate
     type: primary
-  - from: tests
-    to: setup
+  - from: size_gate
+    to: verify
     type: primary
-  - from: setup
-    to: patch
+  - from: verify
+    to: dataset
     type: primary
-  - from: patch
-    to: unit
+  - from: dataset
+    to: prompt
     type: primary
+  - from: prompt
+    to: context
+    type: primary
+  - from: context
+    to: edit
+    type: primary
+  - from: edit
+    to: report
+    type: primary
+  - from: dataset
+    to: lite_gate
+    type: optional
+  - from: dataset
+    to: release_boundary
+    type: data
 modules: []

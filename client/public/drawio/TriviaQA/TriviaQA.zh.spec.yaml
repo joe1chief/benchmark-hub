@@ -1,0 +1,144 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: TriviaQA 构建流程
+  description: >-
+    论文对齐的 TriviaQA 流程：从 14 个知识问答网站收集问答，事后匹配 Web 和 Wikipedia 证据，为远程监督删除不含答案 字符串的文档，并为 95,956 组问答和 662,659
+    份文档补充人工验证子集，最终以精确匹配和 token F1 评分。
+  legend: 实线箭头表示问答收集、Web/Wikipedia 证据支路、远程监督过滤、人工验证和评测。
+nodes:
+  - id: trivia
+    label: |-
+      14 个知识问答 / 联赛网站
+      收集问答对
+      删除少于 4 个 Token 的问题
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: qa_pool
+    label: |-
+      知识问答池
+      问题 + 已知答案
+    type: document
+    size: large
+    position:
+      x: 300
+      'y': 240
+  - id: web_search
+    label: |-
+      Web 证据
+      不带答案查询 Bing
+      前 50 个 URL；抓取前 10
+      排除问答站和坏文档
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 60
+  - id: wiki_search
+    label: |-
+      Wikipedia 证据
+      TAGME 链接问题实体
+      添加对应页面
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 420
+  - id: distant_filter
+    label: |-
+      远程监督过滤
+      仅保留含正确答案字符串的文档
+    type: process
+    size: xl
+    position:
+      x: 840
+      'y': 240
+  - id: corpus
+    label: |-
+      TriviaQA 语料
+      95,956 组问答
+      662,659 份证据文档
+      650K Web / 78K Wiki 样本
+    type: database
+    size: xl
+    position:
+      x: 1100
+      'y': 240
+  - id: split
+    label: |-
+      随机划分问答
+      训练 80% / 开发 10% / 测试 10%
+      Web + Wikipedia 两域
+    type: database
+    size: xl
+    position:
+      x: 1360
+      'y': 240
+  - id: verify
+    label: |-
+      人工验证开发 / 测试集
+      标注员作答或拒答
+      发布干净子集
+    type: user
+    size: xl
+    position:
+      x: 1620
+      'y': 240
+  - id: reader
+    label: |-
+      阅读理解模型
+      从证据中预测答案
+    type: process
+    size: large
+    position:
+      x: 1880
+      'y': 240
+  - id: metrics
+    label: |-
+      精确匹配 + Token F1
+      接受 Wikipedia 别名
+      Wiki：问题级
+      Web：文档级
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 240
+edges:
+  - from: trivia
+    to: qa_pool
+    type: primary
+  - from: qa_pool
+    to: web_search
+    type: primary
+  - from: qa_pool
+    to: wiki_search
+    type: primary
+  - from: web_search
+    to: distant_filter
+    type: primary
+  - from: wiki_search
+    to: distant_filter
+    type: primary
+  - from: distant_filter
+    to: corpus
+    type: primary
+  - from: corpus
+    to: split
+    type: primary
+  - from: split
+    to: verify
+    type: primary
+  - from: verify
+    to: reader
+    type: primary
+  - from: reader
+    to: metrics
+    type: primary
+modules: []

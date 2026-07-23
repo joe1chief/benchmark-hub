@@ -4,76 +4,236 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DARE-bench 构建流程
-  description: 对齐论文的 DARE-bench 流程：从 Kaggle 数据源到沙盒验证的数据科学任务。
-  legend: 实线箭头对应论文四阶段：数据来源、任务设计、后处理和最终化。
+  title: DARE-bench 构建与评测流程
+  description: 按论文版本还原分变体后处理和可验证真值，并明确区分论文全集与官方公开子集。
+  legend: 实线表示论文主流程；虚线分支记录固定提交下规模更小的许可筛选公开版。
 nodes:
-  - id: source
-    label: Kaggle数据
+  - id: evidence
+    label: |-
+      DARE-bench · ICLR 2026
+      arXiv:2602.24288v1
+      官方仓库 @ 0144714
+      区分论文全集与公开版
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: sources
+    label: |-
+      Kaggle 数据集采集
+      官方 API · 表格格式
+      有效开放许可
+      抓取网页描述
+      列预览与元数据
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: 元数据过滤
+      'y': 360
+  - id: feasibility
+    label: |-
+      LLM 可行性分析
+      目标 · 特征 · 数据类型
+      时间戳 · 频率 · 外生特征
+      仅保留定义可行的预测任务
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: design
-    label: LLM任务设计
+      x: 320
+      'y': 360
+  - id: families
+    label: |-
+      六种任务变体
+      分类 IF / MM
+      回归 IF / MM
+      时间序列 XF / CF
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: post
-    label: 后处理
+      x: 600
+      'y': 360
+  - id: route
+    label: 按变体选择后处理
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: if_post
+    label: |-
+      分类 / 回归 IF
+      随机训练-测试划分
+      约 20% 训练数据注入噪声
+      测试数据保持干净
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: sandbox
-    label: 沙盒验证
+      x: 1160
+      'y': 80
+  - id: mm_post
+    label: |-
+      分类 / 回归 MM
+      随机训练-测试划分
+      训练集保留标签
+      测试时遮蔽目标列
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: ts_post
+    label: |-
+      时间序列 XF / CF
+      按时间划分 · 检查实体泄漏
+      必要时重采样不规则序列
+      XF 测试保留外生特征
+      CF 仅保留时间戳 / 实体
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 640
+  - id: if_ground_truth
+    label: |-
+      IF 可验证参考输出
+      执行加载 / 预处理 / 训练 / 预测
+      沙箱参考代码 + 固定随机种子
+      验证可解性与可复现性
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: label_ground_truth
+    label: |-
+      结果型真值
+      MM / XF / CF 使用原始遮蔽标签
+      标准化元数据与文件
+      无需运行参考代码沙箱
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 500
+  - id: paper_release
+    label: |-
+      论文基准 · 6,300 题
+      5,948 训练 + 352 评测
+      最近更新留作评测
+      分类 2,468 · 回归 1,888
+      时序 1,944
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: public_release
+    label: |-
+      许可筛选公开版 @ 0144714
+      4,274 训练 + 324 评测任务
+      2,137 训练 + 162 评测源集
+      公开子集小于论文全集
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 80
+  - id: task_input
+    label: |-
+      标准化智能体任务
+      自然语言问题 + 元数据
+      训练 / 遮蔽测试文件
+      代码执行工具
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 360
+  - id: agent
+    label: |-
+      标准评测循环
+      5 轮 · 代码执行超时 200 秒
+      加载 · 清洗 · 训练 · 预测
+      输出按行对齐的 prediction.csv
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 360
+  - id: verifier
+    label: |-
+      确定性分变体评分器
+      IF 精确匹配
+      分类-MM Macro-F1
+      回归-MM / XF / CF
+      截断 R² 至 [0, 1]
+      多目标取平均 · 无裁判模型
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: report
+    label: |-
+      DARE-bench 报告
+      六种变体得分
+      客观且可复现
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: artifacts
-    label: 基准制品
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 可验证评测
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 2840
+      'y': 360
 edges:
-  - from: source
-    to: filter
+  - from: evidence
+    to: sources
+    type: data
+  - from: sources
+    to: feasibility
     type: primary
-  - from: filter
-    to: design
+  - from: feasibility
+    to: families
     type: primary
-  - from: design
-    to: post
+  - from: families
+    to: route
     type: primary
-  - from: post
-    to: sandbox
+  - from: route
+    to: if_post
     type: primary
-  - from: sandbox
-    to: artifacts
+  - from: route
+    to: mm_post
     type: primary
-  - from: artifacts
-    to: eval
+  - from: route
+    to: ts_post
+    type: primary
+  - from: if_post
+    to: if_ground_truth
+    type: primary
+  - from: mm_post
+    to: label_ground_truth
+    type: primary
+  - from: ts_post
+    to: label_ground_truth
+    type: primary
+  - from: if_ground_truth
+    to: paper_release
+    type: primary
+  - from: label_ground_truth
+    to: paper_release
+    type: primary
+  - from: paper_release
+    to: public_release
+    type: data
+  - from: paper_release
+    to: task_input
+    type: primary
+  - from: task_input
+    to: agent
+    type: primary
+  - from: agent
+    to: verifier
+    type: primary
+  - from: verifier
+    to: report
     type: primary
 modules: []

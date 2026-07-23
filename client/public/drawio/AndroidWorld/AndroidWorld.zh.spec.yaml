@@ -4,118 +4,136 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AndroidWorld 构建流程
-  description: 基于 arXiv:2405.14573 重绘的 AndroidWorld 动态移动端 Agent 基准构建与在线 reward 评测流程。
-  legend: 实线表示任务生成、Agent-环境交互和 reward 评测主流程；虚线表示受控随机种子和 teardown 复现机制。
+  title: AndroidWorld 论文对齐构建流程
+  description: 依据 AndroidWorld v5 第 3.2-3.5、4-5 节、附录 D 与官方仓库，展示构建和独立按种子评测流程。
+  legend: 116 项 TaskEval 是基于固定应用与设备版本的动态模板；评测独立实例化带种子的任务，并检查持久状态。
 nodes:
-  - id: apps
+  - id: fixed_environment
     label: |-
-      真实 Android 应用
-      Pixel 6 上 20 个应用
-      固定 Android 13 环境
+      固定 20 个 Android 应用
+      Pixel 6 • Android 13
+      固定每个应用版本
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: taskeval
+      'y': 100
+  - id: templates
     label: |-
-      TaskEval 模板
-      116 个程序化任务
-      应用专属逻辑
+      实现 116 个 TaskEval 模板
+      参数化目标与状态
+      初始化 • 成功检查 • 清理
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: params
+      x: 320
+      'y': 100
+  - id: execution_annotation
     label: |-
-      随机任务参数
-      生成自然语言目标
-      支持海量变体
-    type: process
+      6 名标注员执行任务
+      标注步骤与难度
+      发现并修复 30+ 个缺陷
+    type: user
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: initialize
+      x: 600
+      'y': 100
+  - id: dynamic_release
     label: |-
-      初始化任务状态
-      应用数据与系统时间
-      随机种子受控
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: observations
-    label: |-
-      Android 观测
-      截图与无障碍树
-      AndroidEnv 加 ADB
+      发布动态 AndroidWorld
+      20 个应用中的 116 个模板
+      可生成数百万目标实例
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: agent
+      x: 880
+      'y': 100
+  - id: seed_instance
     label: |-
-      Agent 动作循环
-      JSON 点击/输入/滚动
-      M3A 与 SeeAct 基线
+      实例化独立随机种子
+      采样参数与初始状态
+      渲染一个具体目标
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: observation_action
+    label: |-
+      提供观察与动作
+      截图 • 无障碍树
+      手势 • 文本 • 导航
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 430
+  - id: agent_loop
+    label: |-
+      运行 Agent 循环
+      观察 • 推理 • 动作
+      成功或到达上限时停止
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 430
+  - id: durable_reward
+    label: |-
+      计算持久状态奖励
+      文件 • 数据库 • 系统设置
+      必要时使用界面回退
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 430
+  - id: robustness
+    label: |-
+      测量鲁棒性
+      同参数与异参数试验
+      随机种子 • 跨设备检查
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 430
+  - id: report
+    label: |-
+      报告任务成功率
+      人类与 Agent 基线
+      Wilson 置信区间
     type: terminal
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: reward
-    label: |-
-      持久 reward 判定
-      文件、数据库、设置
-      必要时检查 UI
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: report
-    label: |-
-      成功率分析
-      基线与人类 SR
-      随机种子鲁棒性
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 40
+      'y': 430
 edges:
-  - from: apps
-    to: taskeval
+  - from: fixed_environment
+    to: templates
     type: primary
-  - from: taskeval
-    to: params
+  - from: templates
+    to: execution_annotation
     type: primary
-  - from: params
-    to: initialize
+  - from: execution_annotation
+    to: dynamic_release
     type: primary
-  - from: initialize
-    to: observations
-    type: data
-  - from: observations
-    to: agent
+  - from: dynamic_release
+    to: seed_instance
     type: primary
-  - from: agent
-    to: reward
+  - from: seed_instance
+    to: observation_action
     type: primary
-  - from: reward
-    to: observations
-    type: optional
-    label: 继续直到完成
-  - from: reward
+  - from: observation_action
+    to: agent_loop
+    type: primary
+  - from: agent_loop
+    to: durable_reward
+    type: primary
+  - from: durable_reward
+    to: robustness
+    type: primary
+  - from: robustness
     to: report
     type: primary
-  - from: report
-    to: initialize
-    type: optional
-    label: 清理并换种子
 modules: []

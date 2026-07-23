@@ -4,86 +4,190 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ClemBench 构建流程
-  description: 对齐论文的 clembench2024 构建流程：用游戏模板、解析规则和游戏流程定义对话游戏， 由 GameMaster 实例化新题目并运行 LLM 自我对弈，按形式完成率和游戏质量评分， 再与人类专家和多语言案例比较。
-  legend: 实线箭头表示游戏定义、实例生成、自我对弈评测和基线分析流程。
+  title: clembench-2024 构建流程
+  description: 与论文时代对齐的 clembench 流程：复用游戏规格生成新实例并离线自博弈；形式完成率与归一化游戏质量组成 clemscore，再以专家基线和翻译后的指称游戏研究验证设计。
+  legend: 实线遵循 2024 年 5 月论文；虚线分支记录后续 v3.0 仓库漂移。
 nodes:
-  - id: templates
-    label: 游戏模板
+  - id: evidence_boundary
+    label: |-
+      论文时代证据边界
+      arXiv 2405.20859v1
+      官方仓库 ba687db
+      评测批次：2024 年 5 月
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: parsers
-    label: 解析规则
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: master
-    label: GameMaster
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: instances
-    label: 新实例
+      'y': 220
+  - id: release_drift
+    label: |-
+      当前仓库 adff278
+      v3.0 游戏与 CLI
+      属后续发布；不等同 2024 论文
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 340
+      'y': 440
+  - id: game_spec
+    label: |-
+      定义每个对话游戏
+      提示模板
+      回应解析规则
+      游戏流程 + 终止状态
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: instances
+    label: |-
+      为所有游戏创建新实例
+      从现有池采样
+      轻量人工选择目标
+      降低固定实例污染
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: gamemaster
+    label: |-
+      实例化程序化 GameMaster
+      用实例填充模板
+      控制轮次与游戏规则
+      检测终止状态
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
   - id: selfplay
-    label: LLM自我对弈
+    label: |-
+      运行 LLM 对 LLM 自博弈
+      逐轮提示双方角色
+      记录完整离线对局
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: 游戏评分
-    type: document
+      x: 1240
+      'y': 220
+  - id: formal
+    label: |-
+      检查形式完成情况
+      违反解析规则 = 未完成
+      统计完成游戏占比
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1540
+      'y': 40
+  - id: quality
+    label: |-
+      评分游戏专属质量
+      每个游戏主指标 0–100
+      仅评分格式正确对局
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: clemscore
+    label: |-
+      计算 clemscore
+      先逐游戏汇总主指标
+      再跨游戏平均
+      完成率 × 质量分的乘积
+    type: terminal
+    size: xl
+    position:
+      x: 1840
+      'y': 220
   - id: human
-    label: 人类基线
+    label: |-
+      建立人类专家基线
+      作者每游戏玩 10–15 局
+      排除自己创建的实例
+      略去两个 Wordle 变体
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: multi
-    label: 多语言案例
+      x: 2140
+      'y': 40
+  - id: multilingual
+    label: |-
+      指称游戏多语言研究
+      母语者翻译提示
+      目标表达 + 解析规则
+      保持同一游戏逻辑
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 400
+  - id: validation
+    label: |-
+      验证基准特性
+      跨批次排名相关 0.71
+      人类质量 86.93 • 完成率 100%
+      CA τ=0.65 • HELM τ=0.39
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: report
+    label: |-
+      发布 2024 年 5 月结果
+      clemscore • 完成率 • 质量分
+      53 个模型 + 人类基线
+      多语言指称游戏分析
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2740
+      'y': 220
 edges:
-  - from: templates
-    to: parsers
+  - from: evidence_boundary
+    to: game_spec
     type: primary
-  - from: parsers
-    to: master
-    type: primary
-  - from: master
+  - from: evidence_boundary
+    to: release_drift
+    type: data
+  - from: game_spec
     to: instances
     type: primary
   - from: instances
+    to: gamemaster
+    type: primary
+  - from: gamemaster
     to: selfplay
     type: primary
   - from: selfplay
-    to: scores
+    to: formal
     type: primary
-  - from: scores
+  - from: selfplay
+    to: quality
+    type: primary
+  - from: formal
+    to: clemscore
+    type: primary
+  - from: quality
+    to: clemscore
+    type: primary
+  - from: clemscore
     to: human
     type: primary
+  - from: clemscore
+    to: multilingual
+    type: primary
   - from: human
-    to: multi
+    to: validation
+    type: primary
+  - from: multilingual
+    to: validation
+    type: primary
+  - from: validation
+    to: report
     type: primary
 modules: []

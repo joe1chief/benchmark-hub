@@ -7,56 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 8,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
       "id": "source",
-      "label": "执医原题\n96,161 道",
+      "label": "96,161 道真实历年执医考试题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "clean",
-      "label": "文本清洗\n去图表",
+      "id": "text_filter",
+      "label": "剔除非文本题",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dedup",
+      "label": "题目去重",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "retained",
+      "label": "68,119 题：65,950\n单选、2,169 多选",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "split",
-      "label": "选择题集\n68,119 道",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "solutions",
-      "label": "题目解析\n85.24%",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "gpt",
-      "label": "GPT 预标\n标签草稿",
+      "label": "随机按 8:1:1 划分训练、\n开发与测试集",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "experts",
-      "label": "专家复核\n协商一致",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "facets",
-      "label": "五类标注\nICD、科室、能力",
+      "id": "solutions",
+      "label": "85.24% 的题目含简短题解",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "模型评测\nAcc、F1、解析",
+      "id": "gpt_annotation",
+      "label": "GPT-4 仅对测试题预标注",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "expert_review",
+      "label": "医师与医学博士生复核，分歧协商一致",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "five_facets",
+      "label": "ICD-11 疾病组、科室、学科、\n能力与难度",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "CMExam 题目、答案、\n题解与测试元数据",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prediction",
+      "label": "答案预测：零样本或微调模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reasoning",
+      "label": "开放式题解生成",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prediction_metrics",
+      "label": "准确率与加权 F1；人类准确率\n71.6%",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "reasoning_metrics",
+      "label": "题解生成指标\nBLEU-1、BLEU-4、\nROUGE-1、ROUGE-2、\nROUGE-L",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "医学问答、推理与标注维度分析",
       "type": "terminal",
       "size": "xl"
     }
@@ -65,52 +107,97 @@
     {
       "id": "edge-1",
       "from": "source",
-      "to": "clean",
+      "to": "text_filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "clean",
-      "to": "split",
+      "from": "text_filter",
+      "to": "dedup",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "split",
-      "to": "solutions",
-      "type": "data",
-      "label": "解析"
+      "from": "dedup",
+      "to": "retained",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "split",
-      "to": "gpt",
-      "type": "data",
-      "label": "测试集标注"
+      "from": "retained",
+      "to": "split",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "gpt",
-      "to": "experts",
-      "type": "optional",
-      "label": "标签草稿"
+      "from": "retained",
+      "to": "solutions",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "solutions",
-      "to": "experts",
-      "type": "data"
+      "from": "split",
+      "to": "gpt_annotation",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "experts",
-      "to": "facets",
+      "from": "gpt_annotation",
+      "to": "expert_review",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "facets",
-      "to": "eval",
+      "from": "expert_review",
+      "to": "five_facets",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "five_facets",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "solutions",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "benchmark",
+      "to": "prediction",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "benchmark",
+      "to": "reasoning",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "prediction",
+      "to": "prediction_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "reasoning",
+      "to": "reasoning_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "prediction_metrics",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "reasoning_metrics",
+      "to": "report",
       "type": "primary"
     }
   ],

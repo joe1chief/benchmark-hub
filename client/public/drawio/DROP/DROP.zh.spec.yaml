@@ -1,0 +1,193 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: DROP 构建与评测流程
+  description: 对 DROP 数据构建和评分版本进行钉住，并明确区分 2019 论文中的贪心多片段对齐描述与发布版 AllenNLP 评分器的匈牙利最优匹配实现。
+  legend: 实线串联数据构建和评分；末端分支保留论文描述与发布评分器的版本边界。
+nodes:
+  - id: evidence
+    label: |-
+      论文 arXiv:1903.00161v2
+      发布包 SHA256 39d2278…
+      AllenNLP v0.9.0 @ 052353e
+      论文描述 ≠ 发布评分器
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: passages
+    label: |-
+      Wikipedia 段落检索
+      叙事与数字密集文本
+      NFL / 历史 / 至少 20 个数字
+      约 7,000 个候选段落
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 240
+  - id: hit
+    label: |-
+      AMT 任务 · 随机 5 个段落
+      至少编写 12 组问答
+      加减 · 最大最小
+      计数 · 选择 · 比较
+    type: user
+    size: xl
+    position:
+      x: 560
+      'y': 240
+  - id: adversarial
+    label: |-
+      实时 BiDAF 门槛
+      仅基线答错时
+      才能提交问题
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 240
+  - id: answer_types
+    label: |-
+      标注员提供答案
+      段落 / 问题文本片段
+      日期或数字
+      数字题必须写明单位
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 240
+  - id: split
+    label: |-
+      将已收集问答按段落划分
+      80/10/10
+      问题数
+      77,409 / 9,536 / 9,622
+      段落数 · 5,565 / 582 / 588
+    type: database
+    size: xl
+    position:
+      x: 1340
+      'y': 240
+  - id: validate
+    label: |-
+      开发 / 测试集复标
+      至少 2 个附加答案
+      移除 0.7% 无效题
+      κ = 0.74 · 数字 0.81
+      片段 0.62 · 日期 0.65
+    type: user
+    size: xl
+    position:
+      x: 1600
+      'y': 240
+  - id: dataset
+    label: |-
+      DROP 最终发布集
+      96,567 道英文问题
+      共 6,735 个段落
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 240
+  - id: predict
+    label: |-
+      阅读器生成预测
+      片段、日期或数字
+      与全部标准答案比较
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 240
+  - id: metric_boundary
+    label: |-
+      评分版本边界
+      2019 论文描述
+      与发布评分器
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 240
+  - id: paper_metric
+    label: |-
+      论文 v2 描述
+      归一化 EM + 宏平均 F1
+      多片段贪心一对一对齐
+      数字不匹配 → F1 为 0
+      多个标准答案取最大
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 70
+  - id: release_metric
+    label: |-
+      AllenNLP v0.9.0 评分器
+      匈牙利最优匹配
+      数字匹配门槛
+      对齐片段 F1 取均值
+      多个标准答案取最大
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 410
+  - id: report
+    label: |-
+      DROP 评测报告
+      精确匹配 · 宏平均 F1
+      必须注明评分器版本
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 240
+edges:
+  - from: evidence
+    to: passages
+    type: primary
+  - from: passages
+    to: hit
+    type: primary
+  - from: hit
+    to: adversarial
+    type: primary
+  - from: adversarial
+    to: answer_types
+    type: primary
+  - from: answer_types
+    to: split
+    type: primary
+  - from: split
+    to: validate
+    type: primary
+  - from: validate
+    to: dataset
+    type: primary
+  - from: dataset
+    to: predict
+    type: primary
+  - from: predict
+    to: metric_boundary
+    type: primary
+  - from: metric_boundary
+    to: paper_metric
+    type: primary
+  - from: metric_boundary
+    to: release_metric
+    type: primary
+  - from: paper_metric
+    to: report
+    type: primary
+  - from: release_metric
+    to: report
+    type: primary
+modules: []

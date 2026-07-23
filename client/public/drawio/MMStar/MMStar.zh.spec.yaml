@@ -4,88 +4,141 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMStar Build Process
+  title: MMStar 构建流程
   description: >-
-    Paper-aligned construction of MMStar: filter existing multimodal samples for visual necessity, verify them by human
-    review, balance capability axes, and report accuracy plus multimodal gain/leakage.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    论文对齐的 MMStar 流程：六个多模态基准的 22,401 个样本先由八个纯文本 LLM 筛选，再由 16 个 LVLM 分层， 三位专家按视觉依赖、低泄漏等标准审核；最终 1,500
+    个平衡样本以准确率、多模态增益和多模态泄漏评测。
+  legend: 实线箭头表示来源筛选、难度分层、专家精选、平衡抽样与评测。
 nodes:
-  - id: n1
-    label: 样本池
+  - id: sources
+    label: |-
+      六个来源基准
+      MMBench / SEED / MMMU
+      ScienceQA / AI2D / MathVista
+      22,401 个样本
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: LLM筛选
+      'y': 220
+  - id: text_probe
+    label: |-
+      纯文本粗筛
+      8 个强 LLM；不输入图像
+    type: process
+    size: large
+    position:
+      x: 300
+      'y': 220
+  - id: text_gate
+    label: |-
+      LLM 命中数 ≤2 才保留
+      22,401 → 11,607
+    type: process
+    size: large
+    position:
+      x: 560
+      'y': 220
+  - id: lvlm_probe
+    label: |-
+      16 个 LVLM 探测
+      易 12–16 / 中 8–11
+      难 4–7 / 极难 0–3 次命中
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 人工审核
+      x: 820
+      'y': 220
+  - id: experts
+    label: |-
+      三位专家审核
+      视觉依赖
+      最小泄漏 + 高级能力
+      能力覆盖
     type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 视觉依赖
-    type: decision
+      x: 1080
+      'y': 220
+  - id: dataset
+    label: |-
+      MMStar：1,500 个样本
+      6 项能力 × 250
+      18 个维度相对均衡
+    type: database
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 1500样本
-    type: document
-    size: xl
+      x: 1340
+      'y': 220
+  - id: image_run
+    label: |-
+      LVLM + 图像
+      得分 S_v
+    type: process
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 6项能力
+      x: 1600
+      'y': 40
+  - id: text_run
+    label: |-
+      同一 LVLM 不输入图像
+      得分 S_wv
+    type: process
+    size: large
+    position:
+      x: 1600
+      'y': 220
+  - id: base_run
+    label: |-
+      多模态训练前的 LLM 基座
+      得分 S_t
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: MG/ML指标
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: LVLM评测
+      x: 1600
+      'y': 400
+  - id: metrics
+    label: |-
+      准确率 + MG / ML
+      MG = S_v − S_wv
+      ML = max(0, S_wv − S_t)
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1880
+      'y': 220
 edges:
-  - from: n1
-    to: n2
+  - from: sources
+    to: text_probe
     type: primary
-  - from: n2
-    to: n3
+  - from: text_probe
+    to: text_gate
     type: primary
-  - from: n3
-    to: n4
+  - from: text_gate
+    to: lvlm_probe
     type: primary
-  - from: n4
-    to: n5
+  - from: lvlm_probe
+    to: experts
     type: primary
-  - from: n5
-    to: n6
+  - from: experts
+    to: dataset
     type: primary
-  - from: n6
-    to: n7
+  - from: dataset
+    to: image_run
     type: primary
-  - from: n7
-    to: n8
+  - from: dataset
+    to: text_run
     type: primary
+  - from: dataset
+    to: base_run
+    type: data
+  - from: image_run
+    to: metrics
+    type: primary
+  - from: text_run
+    to: metrics
+    type: primary
+  - from: base_run
+    to: metrics
+    type: data
 modules: []

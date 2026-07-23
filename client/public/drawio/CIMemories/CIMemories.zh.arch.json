@@ -7,62 +7,92 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 14,
+    "edges": 15,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "identity",
-      "label": "合成身份",
+      "id": "identities",
+      "label": "创建合成成年身份\nFaker 画像 • 21–70 岁\n主评测使用 10 个画像",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "attributes",
-      "label": "事件属性",
+      "id": "events",
+      "label": "采样个人事件\n3 个事件 × 9 个领域\n每事件最多 7 个属性",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "memory",
-      "label": "记忆语句",
+      "id": "memories",
+      "label": "生成个人记忆\nGPT-OSS-120B 生成陈述\n主评测画像平均 147 个属性",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "contexts",
-      "label": "49个任务场景",
+      "label": "策划 49 个情境种子\n指定目标 • 接收者 • 情况\n将情境与候选属性配对",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "personas",
-      "label": "人格标注",
+      "label": "应用三种 Westin 隐私人格\n保守型 • 实用型 • 不关心型\nGPT-5 为每种人格采样 10 次标签",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "labels",
+      "label": "标注属性–情境对\n完成任务是否必要？\n向该接收者披露是否不恰当？",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "agreement",
-      "label": "共识过滤",
-      "type": "decision",
+      "id": "consensus",
+      "label": "结合人格分布与 Westin 先验\n仅保留零熵的必要 / 不恰当属性对\n排除模糊标签",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "instances",
-      "label": "画像任务对",
-      "type": "document",
+      "id": "balance",
+      "label": "筛选评测情境\n必须同时含必要与不恰当样本\n缺少任一标签类型即删除",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_eval",
+      "label": "论文的筛选后标注评测集\n金标情境完整性属性对\n最终保留行数未披露",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "hf_raw",
+      "label": "固定版本的 Hugging Face 原始资产\ntest.csv：71,883 行提示\nlabel 为空白 / null；不是金标评测集",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "runs",
-      "label": "记忆模型运行",
+      "label": "运行记忆增强模型\n在任务前拼接已存用户记忆\n每个实例采样 5 个响应",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "泄露裁判",
+      "label": "检测被披露的属性\nDeepSeek-R1 REVEAL Judge\n将响应与金标属性匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "计算隐私与效用\nViolation@5 衡量不恰当披露\nCompleteness 衡量必要信息",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "stress",
+      "label": "持久记忆压力测试\n每用户扩展到 1–40 个任务\n每任务重复 1–5 次生成",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,50 +100,92 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "identity",
-      "to": "attributes",
+      "from": "identities",
+      "to": "events",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "attributes",
-      "to": "memory",
+      "from": "events",
+      "to": "memories",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "memory",
+      "from": "memories",
       "to": "contexts",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "contexts",
-      "to": "personas",
+      "from": "memories",
+      "to": "labels",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "personas",
-      "to": "agreement",
+      "from": "contexts",
+      "to": "labels",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "agreement",
-      "to": "instances",
+      "from": "personas",
+      "to": "labels",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "instances",
-      "to": "runs",
+      "from": "labels",
+      "to": "consensus",
       "type": "primary"
     },
     {
       "id": "edge-8",
+      "from": "consensus",
+      "to": "balance",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "balance",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "memories",
+      "to": "hf_raw",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "contexts",
+      "to": "hf_raw",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "paper_eval",
+      "to": "runs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
       "from": "runs",
       "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "judge",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "metrics",
+      "to": "stress",
       "type": "primary"
     }
   ],

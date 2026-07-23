@@ -5,75 +5,171 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Encyclo-K 构建流程
-  description: 按论文对齐的 Encyclo-K 构建流程：从教材知识陈述到动态多陈述评测。
-  legend: 实线箭头表示教材来源、正确陈述抽取、错误陈述生成、动态采样、选项组装、答案抽取和准确率统计。
+  description: 固定版本地展示教材语句策展、欺骗性错误语句合成、动态组题与精确选项解析。
+  legend: 实线表示论文的三个构建阶段；虚线用于固定论文、仓库与数据集。第 3.1.1 节有 43 个来源子领域， 最终语句集合则覆盖 44 个领域 / 62 个子领域。
 nodes:
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv:2512.24867v2
+      仓库 @ 5549c73
+      HF 数据集 @ 0f81da9
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: books
-    label: 权威教材
+    label: |-
+      选择 62 本大学 / 研究生教材
+      11 个学科 · 43 个来源子领域（§3.1.1）
+      权威知识来源
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: facts
-    label: 正确陈述
+      'y': 320
+  - id: screenshots
+    label: |-
+      人工截取教材页面
+      用马赛克遮盖无关内容
+      保留可回溯到页面的来源上下文
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: false_stmts
-    label: 错误陈述
+      'y': 320
+  - id: extract
+    label: |-
+      提取独立正确语句及标题
+      doubao-1.5-vision-pro-32k
+      要求独立 / 完整
+      语义清晰 / 信息简洁
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: sample
-    label: 动态采样
-    type: decision
+      'y': 320
+  - id: correct_filter
+    label: |-
+      顺序过滤正确语句
+      含图语句：剔除 3,269 条
+      章节引用 / 公式编号 / 化学方程式：642 条
+      语义歧义：127 条 → 保留 21,525 条
+    type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: opts
-    label: 选项组装
-    type: document
+      'y': 320
+  - id: correct_review
+    label: |-
+      3 名标注员复核全部 21,525 条
+      未发现重大问题
+      只需核验格式规范
+      无需领域专家编写问题
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: parse
-    label: 答案抽取
-    type: terminal
+      'y': 320
+  - id: false_generate
+    label: |-
+      DeepSeek-R1 生成欺骗性错误对应语句
+      概念替换 · 因果倒置 · 细节篡改
+      时间错置 · 逻辑悖论
+      范围修改 · 同时生成错误理由
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 准确率
-    type: document
+      'y': 320
+  - id: false_review
+    label: |-
+      过滤过短样本 → 21,494 条错误语句
+      随机抽取 200 条人工复核
+      5 条理由不匹配，但语句仍为错误
+      作者未再做额外处理
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 320
+  - id: pool
+    label: |-
+      语句候选集合
+      21,525 条正确 + 21,494 条错误 = 43,019
+      英文 28,045 条 + 中文 14,974 条
+      11 个学科 · 44 个领域 · 62 个最终子领域
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 320
+  - id: assemble
+    label: |-
+      程序化抽样并组装问题
+      8–10 条语句 · 4–8 个字母选项
+      每个选项组合 2–4 条语句
+      发布仓库未提供构建代码与标准随机种子
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 320
+  - id: dataset
+    label: |-
+      Encyclo-K 标准配置
+      5,038 题：英文 3,286 + 中文 1,752
+      按学科语句占比分配
+      语句编号 i、ii、…；选项编号 A、B、…
+    type: database
+    size: xl
+    position:
+      x: 2380
+      'y': 320
+  - id: evaluate
+    label: |-
+      用三组正则解析答案字母
+      先搜最后一行，再搜完整响应
+      失败后精确匹配选项正文
+      未解析 = 错误 · 报告准确率
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 320
 edges:
+  - from: evidence
+    to: books
+    type: data
   - from: books
-    to: facts
+    to: screenshots
     type: primary
-  - from: facts
-    to: false_stmts
+  - from: screenshots
+    to: extract
     type: primary
-  - from: false_stmts
-    to: sample
+  - from: extract
+    to: correct_filter
     type: primary
-  - from: sample
-    to: opts
+  - from: correct_filter
+    to: correct_review
     type: primary
-  - from: opts
-    to: parse
+  - from: correct_review
+    to: false_generate
     type: primary
-  - from: parse
-    to: score
+  - from: false_generate
+    to: false_review
+    type: primary
+  - from: false_review
+    to: pool
+    type: primary
+  - from: pool
+    to: assemble
+    type: primary
+  - from: assemble
+    to: dataset
+    type: primary
+  - from: dataset
+    to: evaluate
     type: primary
 modules: []

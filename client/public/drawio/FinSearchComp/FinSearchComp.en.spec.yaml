@@ -5,77 +5,176 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FinSearchComp Build Process
-  description: Paper-aligned FinSearchComp flow from analyst-style financial tasks to agent search and rubric-guided scoring.
+  description: Paper-aligned expert construction and scoring, with a separate pinned audit of the post-paper public harness.
   legend: >-
-    Solid arrows show task-family design, expert annotation, source and answer verification, QA, agent search, rubric
-    judging, and accuracy reporting.
+    Solid arrows are the arXiv:2509.13160v1 benchmark protocol. Dashed arrows audit the pinned post-paper GitHub
+    release; the two public-code defects are disclosures, not substituted paper metrics.
 nodes:
-  - id: tasks
-    label: Analyst Tasks
+  - id: evidence
+    label: |-
+      Evidence boundary: arXiv:2509.13160v1
+      FinSearchComp @ 55b6393f · data SHA 6437a6da
+      paper protocol + pinned post-paper code audit
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: experts
-    label: Expert Draft
+      'y': 180
+  - id: task_design
+    label: |-
+      Define three objective task families
+      T1 time-sensitive · T2 simple historical
+      T3 complex historical · external tool required
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: sources
-    label: Source QA
-    type: decision
+      'y': 180
+  - id: task_sources
+    label: |-
+      T1 questions + executable public-API answers
+      T2 official direct facts; no calculation
+      T3 verified tables + multi-source calculation
+    type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: answers
-    label: Answer QA
+      'y': 180
+  - id: experts
+    label: |-
+      50 annotators + 20 senior reviewers = 70
+      minimum Master's; active finance roles
+      about 180 + 60 expert-hours
     type: process
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: agent
-    label: Agent Search
+      'y': 180
+  - id: quality
+    label: |-
+      Cross-check filings, authorities, databases
+      state definitions/dates; avoid unstable metrics
+      set answer ranges or explicit tolerances
     type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: judge
-    label: Rubric Judge
-    type: terminal
+      'y': 180
+  - id: blind_review
+    label: |-
+      1-2 other experts solve blind to the answer key
+      senior panel edits or arbitrates differences
+      ambiguous items are revised or discarded
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Accuracy
-    type: document
+      'y': 180
+  - id: dataset
+    label: |-
+      Release: 635 bilingual questions
+      Global 337 → T1/T2/T3 134/119/84
+      Greater China 298 → 110/100/88
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 180
+  - id: paper_protocol
+    label: |-
+      Agents may use any search tool or source
+      T1: execute dynamic API after market close
+      T2/T3: static references + annotated rubrics
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 180
+  - id: judge_prompt
+    label: |-
+      Rubric distribution: 21.4% exact match
+      78.6% in-range / tolerance checks
+      LLM judge returns one binary score per answer
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 180
+  - id: paper_metric
+    label: |-
+      Paper metric: 0-1 mean accuracy
+      score J(answer, rubric) is either 0 or 1
+      human audit reports at least 95% agreement
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 180
+  - id: repo_release
+    label: |-
+      Pinned repo: full 635 · AkShare subset 594
+      bundled snapshots dated 2025-10-17
+      post-paper release; not the paper-time state
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 470
+  - id: parser_audit
+    label: |-
+      Prompt asks scalar answer_score: 0 or 1
+      parser requires fenced JSON + answer_score[0][0]
+      valid scalar output falls to error -100000
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 470
+  - id: metric_audit
+    label: |-
+      non_ts counters are never updated
+      public script therefore writes accuracy = 0
+      original_accuracy is the mean parsed score
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 470
 edges:
-  - from: tasks
+  - from: evidence
+    to: task_design
+    type: primary
+  - from: task_design
+    to: task_sources
+    type: primary
+  - from: task_sources
     to: experts
     type: primary
   - from: experts
-    to: sources
+    to: quality
     type: primary
-  - from: sources
-    to: answers
+  - from: quality
+    to: blind_review
     type: primary
-  - from: answers
-    to: agent
+  - from: blind_review
+    to: dataset
     type: primary
-  - from: agent
-    to: judge
+  - from: dataset
+    to: paper_protocol
     type: primary
-  - from: judge
-    to: score
+  - from: paper_protocol
+    to: judge_prompt
     type: primary
+  - from: judge_prompt
+    to: paper_metric
+    type: primary
+  - from: dataset
+    to: repo_release
+    type: secondary
+  - from: repo_release
+    to: parser_audit
+    type: secondary
+  - from: parser_audit
+    to: metric_audit
+    type: secondary
 modules: []

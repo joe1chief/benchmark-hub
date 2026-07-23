@@ -1,62 +1,128 @@
 {
   "version": 1,
-  "title": "2WikiMultihopQA 构建流程",
+  "title": "2WikiMultihopQA 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 19,
+    "edges": 22,
     "modules": 0
   },
   "nodes": [
     {
       "id": "source",
-      "label": "Wiki 摘要 + Wikidata\n5.95M 实体 / 23,763 组",
+      "label": "Wikipedia / Wikidata 数据转储\n英文 Wikipedia：2020-01-01\n英文 Wikidata：2019-12-31\n5,950,475 个实体 • 23,763 个分组",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "templates",
-      "label": "问题模板\nHotpotQA NER + 人工模板\n4 类问题",
+      "label": "创建问题模板\n17,456 道 HotpotQA 比较题\nspaCy NER + 人工模板\n前 50 类热门实体\n删除单跳 / 依赖上下文的形式",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "rules",
-      "label": "逻辑规则校验\nAMIE 候选 -> 28 条 Wikidata 规则",
+      "id": "logical_rules",
+      "label": "挖掘逻辑规则\nAMIE 候选规则\n人工验证 28 条规则",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "compare",
-      "label": "comparison 生成\n抽取实体对\n共同关系 + 摘要",
+      "id": "comparison",
+      "label": "比较类问题\n比较配对实体",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "bridge",
-      "label": "bridge 生成\n构造二跳链路\ninference + compositional",
+      "id": "bridge_comparison",
+      "label": "桥接比较类问题\n桥接实体 + 比较",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "sample",
-      "label": "QA 样本字段\nQ、A、C、句级 SF\n证据三元组",
+      "id": "inference",
+      "label": "推断类问题\n应用已验证关系链",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "compositional",
+      "label": "组合类问题\n组合两条关系",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "comparison_gate",
+      "label": "比较有效性门控\n两个答案跨度均须出现",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "bridge_gate",
+      "label": "桥接比较门控\n满足提及 / 不提及约束",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "two_hop_gate",
+      "label": "两跳跨度门控\np 提及桥接实体；p1 含答案\np 不得含答案；p1 不得含起始实体",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "qa_records",
+      "label": "构建问答与证据记录\n问题 • 答案 • 支持事实\nWikidata 证据三元组",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "quality",
-      "label": "质量门\n移除歧义、相等比较\n检查 Wiki-Wikidata 不匹配",
-      "type": "decision",
+      "id": "postprocess",
+      "label": "后处理与错配审计\n平衡 yes / no；删除歧义\n启发式规则 + 人工检查\n训练抽查仍有 8 / 100 语义错配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "distractors",
+      "label": "检索 TF-IDF 干扰段\n检索前 50，保留 8 或 6 段\n打乱组成 10 个段落",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "发布与评估\ntrain / dev / test\nanswer、SF、evidence EM/F1",
+      "label": "2WikiMultihopQA\n192,606 道问题\n四类问题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "split_model",
+      "label": "按难度划分\n单跳 BERT • 五折分析\n交叉验证平均 F1：86.7%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "splits",
+      "label": "发布划分\n训练中等 154,878\n训练困难 12,576\n开发 12,576 • 测试 12,576",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evaluation",
+      "label": "官方评测输入\n问题 + 10 个段落\nv1.1 支持别名 / 居民称谓",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "three_tasks",
+      "label": "三项预测任务\n答案跨度 • 句级支持事实\n证据三元组",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "joint_metrics",
+      "label": "官方指标\n各任务 EM / F1\n联合 EM • 联合 F1",
       "type": "terminal",
       "size": "xl"
     }
@@ -71,52 +137,127 @@
     {
       "id": "edge-2",
       "from": "source",
-      "to": "rules",
+      "to": "logical_rules",
       "type": "primary"
     },
     {
       "id": "edge-3",
       "from": "templates",
-      "to": "compare",
-      "type": "data",
-      "label": "comparison / bridge-comparison"
+      "to": "comparison",
+      "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "templates",
-      "to": "bridge",
-      "type": "data",
-      "label": "bridge 模板"
+      "to": "bridge_comparison",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "rules",
-      "to": "bridge",
-      "type": "primary",
-      "label": "inference 规则"
+      "from": "templates",
+      "to": "inference",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "compare",
-      "to": "sample",
+      "from": "templates",
+      "to": "compositional",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "bridge",
-      "to": "sample",
+      "from": "logical_rules",
+      "to": "inference",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "sample",
-      "to": "quality",
+      "from": "comparison",
+      "to": "comparison_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "quality",
+      "from": "bridge_comparison",
+      "to": "bridge_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "inference",
+      "to": "two_hop_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "compositional",
+      "to": "two_hop_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "comparison_gate",
+      "to": "qa_records",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "bridge_gate",
+      "to": "qa_records",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "two_hop_gate",
+      "to": "qa_records",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "qa_records",
+      "to": "postprocess",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "postprocess",
+      "to": "distractors",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "distractors",
       "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "dataset",
+      "to": "split_model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "split_model",
+      "to": "splits",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "splits",
+      "to": "evaluation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "evaluation",
+      "to": "three_tasks",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "three_tasks",
+      "to": "joint_metrics",
       "type": "primary"
     }
   ],

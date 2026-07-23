@@ -1,0 +1,232 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Wiki-to-RCQA 数据构建与验证流程
+  description: >-
+    Wiki-to-RCQA是OLMo
+    3的中训练数据源，不是独立评测基准。官方recipe清洗已准备的Wikipedia，排除列表页、消歧页及无效短页面，抽取摘要与章节；少于300词的章节整体保留，较长章节按段落切分，少于20词的段落淘汰。每个段落按DEFAULT
+    0.10、SPAN 0.25、PPHRASE 0.25、DROP
+    0.40的概率抽取一种提示，并根据段落长度选择1至8个问题，再由Qwen2.5-32B-Instruct合成问答。数据池含42.2亿token和2230万文档。把该42亿token数据源纳入100亿token微退火后，相对100亿纯网页基线在GenQA任务簇提升近2分，主要集中在DROP、SQuAD和CoQA；最终选择30亿token，占100B中训练混合的3%。官方没有独立Accuracy或F1协议。
+  legend: >-
+    来源：OLMo 3 arXiv:2512.13961v2, Sections 3.5.1-3.5.2 and Table 5; official recipe README, prompt templates, and
+    wikiclean script under https://github.com/allenai/dolma3/tree/main/datasets/dolma3_dolmino_mix/wiki_to_rcqa;
+    official data-pool card https://huggingface.co/datasets/allenai/dolma3_dolmino_pool. Scope pin: Wiki-to-RCQA is a
+    synthetic midtraining dataset validated by microannealing, not an independent evaluation
+    benchmark.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: wiki_documents
+    label: 已准备Wikipedia文档
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: wikiclean
+    label: wikiclean预处理
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: page_gate
+    label: 有效内容页面？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: discard_page
+    label: 淘汰页面或段落
+    type: loss
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: section_split
+    label: 章节 / 段落切分
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: passage_gate
+    label: 段落至少20词？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: prompt_router
+    label: 抽样提示类型
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 40
+  - id: default_prompt
+    label: DEFAULT 提示 · 0.10
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: span_prompt
+    label: SPAN 提示 · 0.25
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: paraphrase_prompt
+    label: PPHRASE 提示 · 0.25
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: drop_prompt
+    label: DROP 提示 · 0.40
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 400
+  - id: qwen_generate
+    label: Qwen2.5-32B生成1至8组问答
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 760
+  - id: rcqa_pool
+    label: 42.2亿token / 2230万文档
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 760
+  - id: microanneal
+    label: 100亿微退火对照纯网页
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 760
+  - id: gain_gate
+    label: GenQA提升有效？
+    type: decision
+    size: xl
+    position:
+      x: 2700
+      'y': 760
+  - id: reject_source
+    label: 不选择该数据源
+    type: loss
+    size: xl
+    position:
+      x: 2700
+      'y': 400
+  - id: integration_tests
+    label: 候选混合集成测试
+    type: process
+    size: xl
+    position:
+      x: 2980
+      'y': 760
+  - id: final_mix
+    label: 30亿token / 100B混合的3%
+    type: terminal
+    size: xl
+    position:
+      x: 3260
+      'y': 760
+edges:
+  - from: wiki_documents
+    to: wikiclean
+    type: data
+  - from: wikiclean
+    to: page_gate
+    type: primary
+  - from: page_gate
+    to: section_split
+    type: primary
+    label: 有效
+    labelPosition: end
+  - from: page_gate
+    to: discard_page
+    type: optional
+    label: 无效
+    labelPosition: end
+  - from: section_split
+    to: passage_gate
+    type: primary
+  - from: passage_gate
+    to: prompt_router
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: passage_gate
+    to: discard_page
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: prompt_router
+    to: default_prompt
+    type: data
+    label: '0.10'
+    labelPosition: end
+  - from: prompt_router
+    to: span_prompt
+    type: data
+    label: '0.25'
+    labelPosition: end
+  - from: prompt_router
+    to: paraphrase_prompt
+    type: data
+    label: '0.25'
+    labelPosition: end
+  - from: prompt_router
+    to: drop_prompt
+    type: data
+    label: '0.40'
+    labelPosition: end
+  - from: default_prompt
+    to: qwen_generate
+    type: primary
+  - from: span_prompt
+    to: qwen_generate
+    type: primary
+  - from: paraphrase_prompt
+    to: qwen_generate
+    type: primary
+  - from: drop_prompt
+    to: qwen_generate
+    type: primary
+  - from: qwen_generate
+    to: rcqa_pool
+    type: primary
+  - from: rcqa_pool
+    to: microanneal
+    type: primary
+  - from: microanneal
+    to: gain_gate
+    type: primary
+    label: GenQA近+2
+    labelPosition: end
+  - from: gain_gate
+    to: integration_tests
+    type: primary
+    label: 有效
+    labelPosition: end
+  - from: gain_gate
+    to: reject_source
+    type: optional
+    label: 无效
+    labelPosition: end
+  - from: integration_tests
+    to: final_mix
+    type: primary
+modules: []

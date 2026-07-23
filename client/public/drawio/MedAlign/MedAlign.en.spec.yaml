@@ -1,0 +1,434 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedAlign Construction and Evaluation
+  description: >-
+    Paper-v2-aligned workflow from clinician instruction collection and OMOP-to-XML EHR preparation through BM25
+    matching, 303 clinician references, six-configuration generation, human review, and automated-metric correlation.
+  legend: >-
+    Solid arrows show retained curation and evaluation flow. Labeled decisions distinguish deduplication, the
+    407-instruction matching subset, relevant top-five EHRs, context handling, and API outcomes. Dashed branches expose
+    non-matched records, access/version drift, and the absence of a released evaluation harness.
+nodes:
+  - id: recruit
+    label: |-
+      Recruit Clinician Authors by Email
+      Fifteen Practicing Clinicians
+      Seven Medical Specialties
+      Submit through an Online Form
+    type: user
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: collect
+    label: |-
+      Stage 1 · Collect Instructions
+      Imagine Routine EHR Workflows
+      Submit 1,314 Questions or Commands
+      Add Patient Traits + Clinical Context
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 40
+  - id: dedup_gate
+    label: |-
+      Does an Instruction Have
+      ROUGE-L Similarity above 0.7?
+    type: decision
+    size: xl
+    position:
+      x: 660
+      'y': 40
+  - id: near_duplicate
+    label: |-
+      Remove Near-identical Instruction
+      Excluded from the 983-item Catalog
+    type: terminal
+    size: xl
+    position:
+      x: 660
+      'y': 200
+  - id: catalog
+    label: |-
+      Retain MedAlign Instruction Catalog
+      983 Deduplicated Instructions
+      407 Marked Applicable Generally
+      Six Categories · Twenty Subcategories
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: general_gate
+    label: |-
+      Is the Instruction Marked
+      Applicable to Patients Generally?
+    type: decision
+    size: xl
+    position:
+      x: 1300
+      'y': 40
+  - id: catalog_only
+    label: |-
+      Keep as Instruction-only Record
+      No EHR Matching or Reference Response
+      Still Included among All 983 Instructions
+    type: terminal
+    size: xl
+    position:
+      x: 1300
+      'y': 200
+  - id: query
+    label: |-
+      Stage 2 · Build Search Query
+      Instruction + Patient Characteristics
+      + Intended Clinical Context
+      Compare BM25Okapi with Random Sampling
+    type: process
+    size: xl
+    position:
+      x: 1620
+      'y': 40
+  - id: ehr_pool
+    label: |-
+      Prepare Longitudinal EHR Index
+      Timestamped Structured + Text Events
+      OMOP CDM → One XML per Record
+      Random 77,200-patient Subsample
+    type: database
+    size: xl
+    position:
+      x: 1940
+      'y': 40
+  - id: retrieve
+    label: |-
+      Retrieve and Review Candidate EHRs
+      BM25 Returns Top Five per Query
+      Review in Rank Order · Stop at First Relevant
+      Same Patient Pool for Random Baseline
+    type: process
+    size: xl
+    position:
+      x: 1940
+      'y': 380
+  - id: relevance_gate
+    label: |-
+      Is at Least One of the Top Five
+      EHRs Manually Judged Relevant?
+    type: decision
+    size: xl
+    position:
+      x: 1620
+      'y': 380
+  - id: unmatched
+    label: |-
+      Exclude from Grounded-response Subset
+      No Relevant EHR among Top Five
+      Instruction Remains in the 983 Catalog
+    type: terminal
+    size: xl
+    position:
+      x: 1620
+      'y': 680
+  - id: response
+    label: |-
+      Stage 3 · Write Expert Response
+      Prefer Same-specialty Non-author
+      Check Feasibility + EHR Sufficiency
+      Answer at the Latest EHR Timestamp
+    type: user
+    size: xl
+    position:
+      x: 1300
+      'y': 380
+  - id: release
+    label: |-
+      Release the Paper MedAlign Contract
+      983 Instructions · 303 References
+      303 Relevant Pairs · 276 Distinct EHRs
+      BM25 Top-five 74% · Random 38%
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 380
+  - id: release_boundary
+    label: |-
+      Access and Version Boundary
+      Full Data Requires Redivis + CITI + DUA
+      Paper v2 Says 276 EHRs; Repo Says 275
+      Response-stage Rejections Are Not Quantified
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 680
+  - id: evaluation
+    label: |-
+      Evaluate Six LLM Configurations
+      GPT-4 Variants · Vicuna-7B/13B · MPT-7B
+      Same Instruction + Matched EHR Prompt
+      Reserve 256 Tokens for Generation
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 380
+  - id: context_gate
+    label: |-
+      Use the GPT-4 32k
+      Multi-step-refinement Configuration?
+    type: decision
+    size: xl
+    position:
+      x: 340
+      'y': 380
+  - id: direct_context
+    label: |-
+      Build a Single-context Prompt
+      Subtract Prompt + Instruction + 256 Tokens
+      Truncate from the Record Beginning
+      Retain the Most Recent EHR Content
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 680
+  - id: mr_context
+    label: |-
+      Run Multi-step Refinement
+      Split Full EHR into 30k-token Chunks
+      Process Earliest to Latest
+      Update or Keep the Previous Response
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 680
+  - id: output_gate
+    label: |-
+      Did the Model API Return
+      a Clinical-text Response?
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 980
+  - id: filter_error
+    label: |-
+      Preserve Content-filter Error Outcome
+      44 Questions Affect ≥1 GPT-4 Variant
+      Main Correctness · Failure = Incorrect
+      Supplemental Set · Exclude → 259
+      Main 303 Rank Handling Undisclosed
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 1260
+  - id: clinician_review
+    label: |-
+      Blind Nine Clinician Evaluators
+      Show the Full Untruncated EHR
+      Exclude Own Instructions or Responses
+      Shuffle Models · Permit Tied Ranks
+      Fifty Pairs Receive Three Reviews
+    type: user
+    size: xl
+    position:
+      x: 340
+      'y': 980
+  - id: correctness
+    label: |-
+      Record Binary Clinical Correctness
+      Inappropriate, Meaning-changing Error,
+      or Unanswered Instruction → Incorrect
+      Main Denominator: 303 Pairs per Configuration
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 980
+  - id: ranking
+    label: |-
+      Aggregate Human Preferences
+      Rank Relevance + Appropriateness
+      Report Mean Rank and Strict Win Rate
+      Filter-error Rank Handling Undisclosed
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 980
+  - id: automated
+    label: |-
+      Compute Automated NLG Metrics
+      Source-free Metrics Use Gold Reference
+      COMET + UniEval Also Use BM25 EHR Snippets
+      Convert Metric Scores to Model Ranks
+    type: process
+    size: xl
+    position:
+      x: 1300
+      'y': 980
+  - id: report
+    label: |-
+      Publish MedAlign Evaluation Results
+      Correctness · Mean Rank · Pairwise Wins
+      Mean Kendall Tau: Metric vs Human Ranks
+      Analyze Model and Context-length Effects
+    type: terminal
+    size: xl
+    position:
+      x: 1620
+      'y': 980
+  - id: no_harness
+    label: |-
+      Reproducibility Boundary
+      Pinned Public Repo Has Samples, Not Evaluator
+      Free-text Outputs Have No Answer Parser
+      Metric Code Versions Are Not Released There
+    type: document
+    size: xl
+    position:
+      x: 1620
+      'y': 1260
+edges:
+  - from: recruit
+    to: collect
+    type: primary
+  - from: collect
+    to: dedup_gate
+    type: primary
+  - from: dedup_gate
+    to: catalog
+    type: primary
+    label: No · retain 983 total
+    labelPosition: end
+  - from: dedup_gate
+    to: near_duplicate
+    type: optional
+    label: Yes · remove
+    labelPosition: end
+  - from: catalog
+    to: general_gate
+    type: primary
+  - from: general_gate
+    to: query
+    type: primary
+    label: Yes · 407 instructions
+    labelPosition: end
+  - from: general_gate
+    to: catalog_only
+    type: optional
+    label: No · catalog only
+    labelPosition: end
+  - from: query
+    to: retrieve
+    type: primary
+  - from: ehr_pool
+    to: retrieve
+    type: primary
+  - from: retrieve
+    to: relevance_gate
+    type: primary
+  - from: relevance_gate
+    to: response
+    type: primary
+    label: Yes · 303 instructions
+    labelPosition: end
+  - from: relevance_gate
+    to: unmatched
+    type: optional
+    label: No · no grounded response
+    labelPosition: end
+  - from: response
+    to: release
+    type: primary
+  - from: catalog
+    to: release
+    type: optional
+    label: All 983 instruction records
+    labelPosition: end
+    waypoints:
+      - x: 1100
+        'y': 250
+      - x: 1100
+        'y': 300
+  - from: release
+    to: release_boundary
+    type: optional
+    label: Restricted and drifted release
+    labelPosition: end
+  - from: release
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: context_gate
+    type: primary
+  - from: context_gate
+    to: mr_context
+    type: primary
+    label: Yes · GPT-4 32k + MR
+    labelPosition: end
+  - from: context_gate
+    to: direct_context
+    type: primary
+    label: No · single context
+    labelPosition: end
+  - from: mr_context
+    to: output_gate
+    type: primary
+  - from: direct_context
+    to: output_gate
+    type: primary
+    waypoints:
+      - x: 440
+        'y': 870
+      - x: 120
+        'y': 870
+  - from: output_gate
+    to: clinician_review
+    type: primary
+    label: Yes · evaluate response
+    labelPosition: end
+  - from: output_gate
+    to: filter_error
+    type: optional
+    label: No · API content filter
+    labelPosition: end
+  - from: filter_error
+    to: correctness
+    type: optional
+    label: Main correctness only · force incorrect
+    labelPosition: end
+    waypoints:
+      - x: 120
+        'y': 1480
+      - x: 760
+        'y': 1480
+      - x: 760
+        'y': 1180
+  - from: clinician_review
+    to: correctness
+    type: primary
+  - from: correctness
+    to: ranking
+    type: primary
+  - from: ranking
+    to: automated
+    type: primary
+  - from: automated
+    to: report
+    type: primary
+  - from: report
+    to: no_harness
+    type: optional
+    label: Public code boundary
+    labelPosition: end
+modules: []

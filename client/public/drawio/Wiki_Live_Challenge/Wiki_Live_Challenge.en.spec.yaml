@@ -1,0 +1,330 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Wiki Live Challenge Construction and Two-Branch Wiki Evaluation
+  description: >-
+    Wiki Live Challenge filters newly created Wikipedia pages through expert-reviewed Good Article status, ranks the
+    resulting 304 candidates by citation richness and structural depth, rejects list pages, and curates 100 articles
+    across 15 domains. Evaluation keeps Wiki Writing and Wiki Fact separate: Gemini-2.5-Pro compares generated and
+    original articles on 39 criteria, while Gemini-2.5-Flash measures reference-fact coverage from top-10 statement
+    retrieval and a separate Jina-backed branch measures citation support.
+  legend: >-
+    Source: Wiki Live Challenge arXiv:2602.01590v2 (2026-02-03), Sections 3.1-3.2 and Figures 2-3; official repository
+    https://github.com/WangShao2000/Wiki_Live_Challenge, release v1.0 snapshot 2025_Mar_Nov. The reproducible paper
+    window is 2025-03-01 through 2025-12-01 and reference pages were frozen 2025-12-15; the README's generic six-month
+    rolling-window language is a refresh-policy note, not this historical build window.. Solid arrows show the main flow
+    explicitly supported by the paper or official documentation.
+nodes:
+  - id: new_articles
+    label: |-
+      New Wikipedia Articles
+      2025-03-01 to 2025-12-01
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: good_article_gate
+    label: Expert-Reviewed Good Article?
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: non_good_article
+    label: Not a Good Article
+    type: loss
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: candidates_304
+    label: 304 Good-Article Candidates
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: complexity_rank
+    label: Rank by Reference URLs + Structural Depth
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: simple_list_gate
+    label: Simple List-Based Article?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: list_reject
+    label: Exclude List Pages
+    type: loss
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: domain_curation
+    label: Human Domain-Coverage Curation
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: frozen_100
+    label: 'Frozen Set: 100 Articles / 15 Domains'
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: snapshot_note
+    label: |-
+      v1.0 2025_Mar_Nov
+      Paper Window, Not Generic 6 Months
+      References Frozen 2025-12-15
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: model_article
+    label: Model Writes Complete Cited Wiki Article
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 680
+  - id: evaluation_branch
+    label: 'Fan Out: Wiki Writing + Wiki Fact'
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 680
+  - id: paired_articles
+    label: Pair Generated + Original Articles
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: criteria_39
+    label: 39 Criteria = 21 Writing + 8 Coverage + 10 NPOV
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 360
+  - id: writing_judge
+    label: |-
+      Gemini-2.5-Pro
+      Winner per Criterion
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: writing_score
+    label: |-
+      Aggregate Criterion Outcomes
+      Wiki Writing Score
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: wiki_fact_branch
+    label: Wiki Fact Inputs
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 840
+  - id: reference_facts
+    label: Extract Reference Facts
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 760
+  - id: top10_statements
+    label: Retrieve Top-10 Generated Statements per Fact
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 760
+  - id: fact_consistency
+    label: |-
+      Gemini-2.5-Flash
+      Fact Consistency
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 760
+  - id: fact_coverage
+    label: Fact Coverage = Mean over Reference Facts
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 760
+  - id: statement_url_pairs
+    label: Extract Generated Statement-URL Pairs
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 1000
+  - id: jina_reader
+    label: Jina Reader Fetches Each Cited URL
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1000
+  - id: citation_judge
+    label: Does Cited Page Support Statement?
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 1000
+  - id: citation_rate
+    label: |-
+      Citation Support Rate
+      Supported Pairs / All Pairs
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 1000
+  - id: wiki_report
+    label: Wiki Writing + Fact Coverage + Citation Support
+    type: terminal
+    size: xl
+    position:
+      x: 3960
+      'y': 760
+edges:
+  - from: new_articles
+    to: good_article_gate
+    type: primary
+  - from: good_article_gate
+    to: candidates_304
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: good_article_gate
+    to: non_good_article
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: candidates_304
+    to: complexity_rank
+    type: primary
+  - from: complexity_rank
+    to: simple_list_gate
+    type: primary
+  - from: simple_list_gate
+    to: list_reject
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: simple_list_gate
+    to: domain_curation
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: domain_curation
+    to: frozen_100
+    type: primary
+  - from: frozen_100
+    to: snapshot_note
+    type: data
+  - from: frozen_100
+    to: model_article
+    type: primary
+    label: Task
+    labelPosition: end
+  - from: model_article
+    to: evaluation_branch
+    type: primary
+  - from: evaluation_branch
+    to: paired_articles
+    type: primary
+    label: Wiki Writing
+    labelPosition: end
+  - from: evaluation_branch
+    to: wiki_fact_branch
+    type: primary
+    label: Wiki Fact
+    labelPosition: end
+  - from: snapshot_note
+    to: paired_articles
+    type: data
+    label: Original Page
+    labelPosition: center
+  - from: paired_articles
+    to: writing_judge
+    type: primary
+  - from: criteria_39
+    to: writing_judge
+    type: data
+  - from: writing_judge
+    to: writing_score
+    type: primary
+  - from: wiki_fact_branch
+    to: reference_facts
+    type: primary
+  - from: snapshot_note
+    to: reference_facts
+    type: data
+    label: Frozen Reference
+    labelPosition: center
+  - from: reference_facts
+    to: top10_statements
+    type: primary
+  - from: top10_statements
+    to: fact_consistency
+    type: primary
+  - from: fact_consistency
+    to: fact_coverage
+    type: primary
+  - from: wiki_fact_branch
+    to: statement_url_pairs
+    type: primary
+  - from: model_article
+    to: statement_url_pairs
+    type: data
+  - from: statement_url_pairs
+    to: jina_reader
+    type: primary
+  - from: jina_reader
+    to: citation_judge
+    type: primary
+  - from: statement_url_pairs
+    to: citation_judge
+    type: data
+    label: Statement
+    labelPosition: center
+  - from: citation_judge
+    to: citation_rate
+    type: primary
+  - from: writing_score
+    to: wiki_report
+    type: primary
+  - from: fact_coverage
+    to: wiki_report
+    type: primary
+  - from: citation_rate
+    to: wiki_report
+    type: primary
+modules: []

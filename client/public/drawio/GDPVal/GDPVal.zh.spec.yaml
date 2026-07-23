@@ -5,75 +5,143 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GDPVal 构建流程
-  description: 按论文对齐的 GDPVal 构建流程：从 GDP/BLS 职业采样到专家成对评审。
-  legend: 实线箭头表示行业和职业选择、专家任务创建、复核循环、gold 子集发布、模型交付物、专家成对评审和胜率统计。
+  description: 与论文一致的行业筛选、专家出题、质检、发布和专家对比评测流程。
+  legend: 证据固定到 arXiv:2510.04374v1 和公开数据集 11e7900c。1,320 题完整集不公开，220 题黄金集公开。 论文中的自动评分器仅属实验，且未公开实现。
 nodes:
-  - id: sectors
-    label: GDP行业
-    type: database
+  - id: evidence
+    label: |-
+      证据快照
+      论文 2510.04374v1
+      公开数据 11e7900c
+      评分器代码：未公开
+    type: document
     size: xl
     position:
       x: 40
       'y': 160
-  - id: jobs
-    label: BLS职业
+  - id: sectors
+    label: |-
+      筛选 2024 Q2 美国行业
+      每个行业贡献 >5% GDP
+      保留 9 个行业
+    type: database
+    size: xl
+    position:
+      x: 296
+      'y': 160
+  - id: occupations
+    label: |-
+      筛选数字化职业
+      GPT-4o 分类 O*NET 任务
+      加权数字化占比 ≥60%
+      按薪酬选取得到 44 个职业
     type: process
     size: xl
     position:
-      x: 300
+      x: 552
       'y': 160
-  - id: tasks
-    label: 专家任务
-    type: document
+  - id: experts
+    label: |-
+      认证职业专家
+      面试 · 核验 · 培训 · 测验
+      录取率 <10% · 经验 ≥4 年
+      平均经验 14 年
+    type: process
     size: xl
     position:
-      x: 560
+      x: 808
       'y': 160
-  - id: review
-    label: 多轮复核
-    type: decision
+  - id: authoring
+    label: |-
+      编写真实工作任务
+      请求 + 参考文件 + 交付物
+      映射 O*NET 工作活动
+      价值 = 工时 × 职业时薪中位数
+    type: process
     size: xl
     position:
-      x: 820
+      x: 1064
       'y': 160
-  - id: gold
-    label: Gold子集
-    type: document
+  - id: qc
+    label: |-
+      筛查、评审并迭代修订
+      模型标记只作建议
+      至少 3 次人工评审
+      平均 5 次人工评审
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: grade
-    label: 成对评审
+      x: 1064
+      'y': 400
+  - id: release
+    label: |-
+      私有完整集：1,320 题
+      每职业 30 题 · 每题约 7 小时
+      公开黄金集：220 题 · 每职业 5 题
+      请求/参考/交付物/量规字段
+    type: database
+    size: xl
+    position:
+      x: 808
+      'y': 400
+  - id: model_runs
+    label: |-
+      生成完整工作交付物
+      输入任务请求与参考文件
+      每题独立采样 3 次
+    type: process
+    size: xl
+    position:
+      x: 552
+      'y': 400
+  - id: human_grade
+    label: |-
+      对专家隐藏产物来源
+      模型交付物对比人类交付物
+      3 位评分者 × 3 个样本
+      每题 9 次比较
+    type: process
+    size: xl
+    position:
+      x: 296
+      'y': 400
+  - id: metric
+    label: |-
+      胜 1 · 平 0.5 · 负 0
+      主文：更好或持平占比
+      附录：仅胜出率
+      按职业及总体报告
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 胜率
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 400
 edges:
+  - from: evidence
+    to: sectors
+    type: primary
   - from: sectors
-    to: jobs
+    to: occupations
     type: primary
-  - from: jobs
-    to: tasks
+  - from: occupations
+    to: experts
     type: primary
-  - from: tasks
-    to: review
+  - from: experts
+    to: authoring
     type: primary
-  - from: review
-    to: gold
+  - from: authoring
+    to: qc
     type: primary
-  - from: gold
-    to: grade
+  - from: qc
+    to: release
     type: primary
-  - from: grade
-    to: score
+  - from: release
+    to: model_runs
+    type: primary
+  - from: model_runs
+    to: human_grade
+    type: primary
+  - from: human_grade
+    to: metric
     type: primary
 modules: []

@@ -7,56 +7,104 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "arxiv",
-      "label": "arXiv图表",
-      "type": "cloud",
+      "label": "抓取 CC BY 4.0\narXiv 源文件\n发表于 2024 年 2 月后\n提取 PDF 图形",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "视觉筛选",
-      "type": "decision",
+      "id": "general_filter",
+      "label": "筛选约 174,100 张图\n仅保留 Matplotlib\n生成的 PDF\n留下约 15,800 个候选",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "experts",
-      "label": "专家投票",
+      "label": "五领域专家复核\n15,800 → 1,295\n经 7 天多样性初筛\n全票或 ≥3/5 → 279 张",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "supplemental",
+      "label": "补充独特公开样例\nMatplotlib\nStack Overflow\nTwitter • Reddit\n填补 arXiv 池缺失风格",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "prototypes",
-      "label": "原型池",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "triplets",
-      "label": "人工三元组",
+      "label": "人工选择与补齐\n替换补充样例的数据/配色\n组装 600 张原型图表",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "augment",
-      "label": "增强集合",
-      "type": "process",
+      "id": "annotators",
+      "label": "Python 标注员\n计算机硕士生 • 6 年以上\nPython 3.9.0\nmatplotlib 3.8.4",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "测试划分",
+      "id": "direct",
+      "label": "Direct Mimic\n600 个种子三元组\n用 Python 复现图表\n编写匹配指令",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "多层评测",
+      "id": "customized",
+      "label": "Customized Mimic\n600 个种子三元组\n插入新领域数据\n修改代码/指令",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "augmentation",
+      "label": "人工数据增强\n每个种子额外生成 3 个变体\n修改数据/配色/标记\n合计 4,800",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "Direct 2,400\nCustomized 2,400 • 201 子类\n22 种图型 • 发布 4,800\n测试 3,600 • Testmini 1,200",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "model",
+      "label": "输入图形 + 任务指令\n生成 Python 图表代码\n执行代码并渲染输出",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "high_level",
+      "label": "高层相似度 • 0–100\nGPT-4o 比较\n参考图与输出图\n判断整体视觉保真度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "low_level",
+      "label": "低层代码追踪 F1\n文本 • 布局\n类型 • 颜色\n对四项元素得分取平均",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "overall",
+      "label": "总分 = 高层与低层平均\n执行失败则两项均为零\n执行率另报且不加权",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validation",
+      "label": "指标与人工判断验证\n300 个 Direct 测试样本\nGPT-4o × 4 种提示方法\n1,200 张输出 • 每图 3 人\n计算 Pearson 相关系数",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "分别报告 Direct/Customized\n高层 • 低层 • 总分\n执行率\n分析复杂度与失败类型",
       "type": "terminal",
       "size": "xl"
     }
@@ -65,12 +113,12 @@
     {
       "id": "edge-1",
       "from": "arxiv",
-      "to": "filter",
+      "to": "general_filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "filter",
+      "from": "general_filter",
       "to": "experts",
       "type": "primary"
     },
@@ -82,26 +130,86 @@
     },
     {
       "id": "edge-4",
-      "from": "prototypes",
-      "to": "triplets",
-      "type": "primary"
+      "from": "supplemental",
+      "to": "prototypes",
+      "type": "data"
     },
     {
       "id": "edge-5",
-      "from": "triplets",
-      "to": "augment",
+      "from": "prototypes",
+      "to": "annotators",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "augment",
-      "to": "splits",
+      "from": "annotators",
+      "to": "direct",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "splits",
-      "to": "eval",
+      "from": "annotators",
+      "to": "customized",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "direct",
+      "to": "augmentation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "customized",
+      "to": "augmentation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "augmentation",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "release",
+      "to": "model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "model",
+      "to": "high_level",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "model",
+      "to": "low_level",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "high_level",
+      "to": "overall",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "low_level",
+      "to": "overall",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "overall",
+      "to": "validation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "validation",
+      "to": "report",
       "type": "primary"
     }
   ],

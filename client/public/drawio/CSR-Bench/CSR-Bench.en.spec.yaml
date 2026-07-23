@@ -5,107 +5,179 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CSR-Bench Build Process
-  description: Paper-aligned construction and evaluation workflow for CSR-Bench, based on arXiv:2502.06111.
-  legend: Solid arrows show repository curation and deployment evaluation flow; dashed arrows show runtime feedback.
+  description: Paper-aligned repository curation and CSR-Agents deployment evaluation workflow.
+  legend: Solid arrows show curation and execution; dashed arrows show staged failure recovery and retry.
 nodes:
-  - id: github
+  - id: candidates
     label: |-
-      GitHub
-      1.5k
+      GitHub tags
+      >1,500 repositories
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 210
   - id: areas
-    label: 5 areas
+    label: |-
+      Five areas
+      NLP · CV · LLM · ML ·
+      Interdisciplinary
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: rank
-    label: Star rank
+      'y': 210
+  - id: screen
+    label: |-
+      Rank + manual screen
+      README sufficient · code deployable
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: screen
-    label: Manual QC
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: repos
-    label: 100 repos
+      'y': 210
+  - id: benchmark
+    label: |-
+      CSR-Bench
+      100 permissively licensed
+      repositories
     type: database
     size: xl
     position:
+      x: 820
+      'y': 210
+  - id: evidence
+    label: |-
+      Deployment evidence
+      README primary · repository
+      supplementary
+    type: document
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: prompt
-    label: Script
+      'y': 210
+  - id: drafter
+    label: |-
+      Command Drafter
+      setup · download · train · infer ·
+      evaluate
     type: process
     size: xl
     position:
       x: 1340
-      'y': 70
-  - id: docker
-    label: Docker
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: logs
-    label: Logs
+      'y': 210
+  - id: executor
+    label: |-
+      Script Executor
+      standardized Docker + BashExecutor
     type: process
     size: xl
     position:
       x: 1600
-      'y': 160
-  - id: metrics
-    label: Complete
-    type: terminal
+      'y': 210
+  - id: state
+    label: |-
+      LLM parses stdout / stderr
+      execution return state
+    type: decision
     size: xl
     position:
       x: 1860
-      'y': 160
+      'y': 210
+  - id: analyzer
+    label: |-
+      Log Analyzer
+      internal-knowledge correction
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 60
+  - id: issues
+    label: |-
+      Issue Retriever
+      BM25 over repository issues
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 60
+  - id: web
+    label: |-
+      Web Searcher
+      Perplexity · limited attempts
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: result
+    label: |-
+      Completion rate
+      successful / executed commands
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 210
 edges:
-  - from: github
+  - from: candidates
     to: areas
     type: primary
   - from: areas
-    to: rank
-    type: primary
-  - from: rank
     to: screen
     type: primary
   - from: screen
-    to: repos
+    to: benchmark
     type: primary
-    label: accepted repos
-  - from: repos
-    to: prompt
+  - from: benchmark
+    to: evidence
     type: primary
-  - from: repos
-    to: docker
+  - from: evidence
+    to: drafter
+    type: primary
+  - from: drafter
+    to: executor
+    type: primary
+  - from: executor
+    to: state
     type: data
-    label: repository code
-  - from: prompt
-    to: docker
+  - from: state
+    to: result
     type: primary
-    label: commands
-  - from: docker
-    to: logs
-    type: data
-  - from: logs
-    to: prompt
+    label: Success
+  - from: state
+    to: analyzer
     type: optional
-    label: failed logs
-  - from: logs
-    to: metrics
-    type: primary
+    label: Failure
+  - from: analyzer
+    to: executor
+    type: optional
+    waypoints:
+      - x: 2180
+        'y': 400
+      - x: 1660
+        'y': 400
+  - from: analyzer
+    to: issues
+    type: optional
+  - from: issues
+    to: executor
+    type: optional
+    waypoints:
+      - x: 2440
+        'y': 440
+      - x: 1660
+        'y': 440
+  - from: issues
+    to: web
+    type: optional
+  - from: web
+    to: executor
+    type: optional
+    waypoints:
+      - x: 2700
+        'y': 480
+      - x: 1660
+        'y': 480
 modules: []

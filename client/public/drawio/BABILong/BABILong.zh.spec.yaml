@@ -5,117 +5,248 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BABILong 构建流程
-  description: 基于 arXiv:2406.10149，对齐论文的 BABILong 长上下文样本构造、基线评测和记忆模型评测流程。
-  legend: 实线表示 BABILong 样本生成和评测主流程；虚线表示论文报告中的 RAG 与循环记忆模型评测分支。
+  description: 基于 arXiv:2406.10149v2，展示 BABILong 的论文对齐生成与长上下文评测流程。
+  legend: 实线表示数据生成和各方法评分；虚线选择检索或循环记忆基线，直接、RAG 与循环记忆评测分别保留论文规定的独立样本协议。
 nodes:
-  - id: babi_tasks
+  - id: babi_simulation
     label: |-
-      bAbI 任务生成器
-      QA1 到 QA20
-      模拟事实与问题
+      生成 bAbI 模拟
+      人物、物体、地点与事件
+      合成事实和标准答案
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: pg19_background
+      'y': 220
+  - id: task_suite
     label: |-
-      PG19 背景书籍
-      自然长文本上下文
-      无关干扰内容
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: fact_insertion
-    label: |-
-      事实隐藏流水线
-      插入任务句子
-      保留背景文本顺序
+      选择 QA1 至 QA20
+      事实链 • 归纳 • 演绎
+      计数 • 列表/集合 • 时空推理
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: length_splits
+      x: 320
+      'y': 220
+  - id: pg19
     label: |-
-      控长样本集合
-      预定义切分最高 10M
-      每题事实数可变
+      采样 PG19 图书
+      自然长篇叙事
+      按原顺序抽取背景句子
     type: database
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: llm_eval
+      x: 320
+      'y': 40
+  - id: interleave
     label: |-
-      长上下文 LLM 评测
-      识别相关事实
-      回答推理问题
+      把任务事实隐藏到背景文本
+      交错相关句与干扰句
+      保持自然顺序和逻辑顺序
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: length_control
+    label: |-
+      添加背景直至目标长度
+      用 GPT-2 tokenizer 计量
+      算法化调整事实位置
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: release
+    label: |-
+      预生成可复现长度分区
+      0K • 4K • 8K • 16K • 32K • 64K
+      128K • 512K • 1M • 10M token
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: direct_eval
+    label: |-
+      直接运行长上下文 LLM
+      定位支撑事实
+      记忆并推理得到答案
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: rag_chunks
+    label: |-
+      运行 RAG-C 基线
+      检索 512-token 文本块
+      把证据交给 LLM
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: rag_sentences
+    label: |-
+      运行 RAG-S 基线
+      检索单句
+      测试多跳与时序失败
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: recurrent_train
+    label: |-
+      课程式微调记忆模型
+      RMT • ARMT • Mamba
+      逐步增加循环片段数
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 620
+  - id: recurrent_eval
+    label: |-
+      评测循环记忆
+      外推到训练长度之外
+      部分实验测试到 50M token
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 620
+  - id: score
+    label: |-
+      直接评测 QA1–QA5 准确率
+      每任务、每长度 1,000 例
+      覆盖至 32K
+      32K 以上 100 例
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: rag_score
+    label: |-
+      RAG 精确准确率
+      每任务、每长度 50 例
+      RAG-C / RAG-S 分别报告
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 310
+  - id: recurrent_score
+    label: |-
+      循环记忆准确率
+      至 1M 使用完整测试集
+      10M 使用 100 例
+      部分实验外推至 50M
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 620
+  - id: effective_context
+    label: |-
+      诊断上下文利用
+      一、二、三事实任务
+      跟踪准确率随长度衰减
+      分析检索顺序与遗漏事实
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 550
+  - id: method_compare
+    label: |-
+      比较独立评测协议
+      直接 • RAG-C • RAG-S
+      RMT • ARMT • Mamba
+      不合并不同样本数
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 310
+  - id: report
+    label: |-
+      发布 BABILong 结果
+      按任务、长度、方法报告准确率
+      保留各自样本协议
+      报告部分 50M 外推结果
     type: terminal
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: rag_eval
-    label: |-
-      RAG 基线
-      512 token 块或句子
-      检索支撑事实
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: memory_models
-    label: |-
-      循环记忆训练
-      RMT 和 ARMT 课程学习
-      1 万训练 / 1 千评测
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: report
-    label: |-
-      BABILong 报告
-      按任务和长度统计准确率
-      外推到 50M token
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 2560
+      'y': 430
 edges:
-  - from: babi_tasks
-    to: fact_insertion
+  - from: babi_simulation
+    to: task_suite
     type: primary
-  - from: pg19_background
-    to: fact_insertion
+  - from: task_suite
+    to: interleave
+    type: primary
+  - from: pg19
+    to: interleave
     type: data
-  - from: fact_insertion
-    to: length_splits
+  - from: interleave
+    to: length_control
     type: primary
-  - from: length_splits
-    to: llm_eval
+  - from: length_control
+    to: release
     type: primary
-  - from: length_splits
-    to: rag_eval
+  - from: release
+    to: direct_eval
+    type: primary
+  - from: release
+    to: rag_chunks
     type: optional
-    label: 块级与句级检索
-  - from: length_splits
-    to: memory_models
+  - from: release
+    to: rag_sentences
     type: optional
-    label: 课程学习片段
-  - from: llm_eval
+  - from: release
+    to: recurrent_train
+    type: optional
+    waypoints:
+      - x: 1330
+        'y': 350
+      - x: 1330
+        'y': 670
+  - from: recurrent_train
+    to: recurrent_eval
+    type: primary
+  - from: direct_eval
+    to: score
+    type: primary
+  - from: rag_chunks
+    to: rag_score
+    type: data
+  - from: rag_sentences
+    to: rag_score
+    type: data
+  - from: recurrent_eval
+    to: recurrent_score
+    type: data
+  - from: score
+    to: method_compare
+    type: primary
+  - from: rag_score
+    to: method_compare
+    type: data
+  - from: recurrent_score
+    to: method_compare
+    type: data
+  - from: method_compare
+    to: effective_context
+    type: primary
+  - from: method_compare
+    to: report
+    type: data
+  - from: effective_context
     to: report
     type: primary
-  - from: rag_eval
-    to: report
-    type: data
-  - from: memory_models
-    to: report
-    type: data
 modules: []

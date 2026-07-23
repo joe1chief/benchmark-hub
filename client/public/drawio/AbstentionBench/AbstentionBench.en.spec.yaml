@@ -4,89 +4,227 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AbstentionBench Build Process
+  title: AbstentionBench Build and Evaluation Process
   description: >-
-    Paper-aligned construction of AbstentionBench: systematically collect abstention datasets, group them into
-    uncertainty scenarios, add reasoning abstention variants, and evaluate abstention and correctness with validated
-    judges.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned candidate screening, fixed-size normalization, six-scenario construction, and conditional abstention
+    judging.
+  legend: >-
+    The suite combines 16 selected datasets, three copied-and-context-removed variants, and UMWP. Correctness is judged
+    only for a non-abstaining response with an available reference answer; the judge audit used 300 responses.
 nodes:
-  - id: n1
-    label: Dataset Review
-    type: database
+  - id: candidate_search
+    label: |-
+      Search Candidate Datasets
+      183 candidates • review 82 resources
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 20 Datasets
+      'y': 40
+  - id: selection
+    label: |-
+      Dataset Selection Gate
+      Publicly available data
+      License permits redistribution
     type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: 6 Scenarios
-    type: process
+      'y': 40
+  - id: general_datasets
+    label: |-
+      General-Domain Suite
+      Retain 16 datasets
+    type: database
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: Reasoning Sets
-    type: document
+      'y': 40
+  - id: reasoning_sources
+    label: |-
+      Reasoning Sources
+      GPQA • GSM8K • MMLU-Math
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: abstain_variants
+    label: |-
+      Build 3 -Abstain Variants
+      Copy answerable source items
+      Remove answer-enabling context
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 240
+  - id: umwp
+    label: |-
+      UMWP
+      Unanswerable math problems
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 440
+  - id: normalize
+    label: |-
+      Fixed Uniform Sampling
+      Normalize each component
+      to at most 3,500 questions
+    type: process
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Frontier LLMs
+      'y': 240
+  - id: scenarios
+    label: |-
+      Assign 6 Scenarios
+      Answerable / unanswerable
+      Reference availability varies
     type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: LLM Judge
-    type: decision
+      'y': 240
+  - id: release
+    label: |-
+      AbstentionBench
+      16 + 3 + 1 = 20 datasets
+      >35,000 unanswerable questions
+    type: database
     size: xl
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: Abstention
+      'y': 240
+  - id: inference
+    label: |-
+      Target-Model Response
+      Question + generated answer
     type: process
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: Score
-    type: terminal
+      'y': 240
+  - id: judge_validation
+    label: |-
+      Abstention-Judge Audit
+      300 human-annotated responses
+      Cohen's kappa = 0.88
+    type: user
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 20
+  - id: abstention_judge
+    label: |-
+      Llama 3.1 8B Judge
+      Did the model abstain?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 240
+  - id: reference_gate
+    label: |-
+      Non-Abstaining Response
+      Is a reference available?
+    type: decision
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+  - id: correctness_judge
+    label: |-
+      Correctness Judge
+      Compare answer with reference
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 80
+  - id: metrics
+    label: |-
+      Compute Metrics
+      Recall • precision
+      F1 • accuracy
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 240
+  - id: report
+    label: |-
+      Report Results
+      Aggregate by dataset
+      and scenario
+    type: terminal
+    size: xl
+    position:
+      x: 2680
+      'y': 240
 edges:
-  - from: n1
-    to: n2
+  - from: candidate_search
+    to: selection
     type: primary
-  - from: n2
-    to: n3
+  - from: selection
+    to: general_datasets
     type: primary
-  - from: n3
-    to: n4
+  - from: reasoning_sources
+    to: abstain_variants
     type: primary
-  - from: n4
-    to: n5
+  - from: general_datasets
+    to: normalize
     type: primary
-  - from: n5
-    to: n6
+  - from: abstain_variants
+    to: normalize
     type: primary
-  - from: n6
-    to: n7
+  - from: umwp
+    to: normalize
     type: primary
-  - from: n7
-    to: n8
+  - from: normalize
+    to: scenarios
+    type: primary
+  - from: scenarios
+    to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
+    to: abstention_judge
+    type: primary
+  - from: judge_validation
+    to: abstention_judge
+    type: data
+  - from: abstention_judge
+    to: metrics
+    type: optional
+    label: Abstained
+    waypoints:
+      - x: 1840
+        'y': 600
+      - x: 2440
+        'y': 600
+      - x: 2440
+        'y': 320
+  - from: abstention_judge
+    to: reference_gate
+    type: primary
+    label: Did not abstain
+  - from: reference_gate
+    to: correctness_judge
+    type: primary
+    label: Reference available
+  - from: reference_gate
+    to: metrics
+    type: optional
+    label: No reference
+  - from: correctness_judge
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

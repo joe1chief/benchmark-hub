@@ -5,85 +5,266 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CharacterEval 构建流程
-  description: 与论文对齐的 CharacterEval 构建流程：从中文小说和剧本分段，使用 GPT-4 抽取角色扮演对话， 过滤短对话和问题样本，人工质检，从百度百科补全角色档案，并用 CharacterRM 支持评测。
-  legend: 实线箭头表示对话抽取、质检、角色档案补全、奖励模型训练和评测流程。
+  description: 对齐 ACL 论文的中文角色扮演对话构建与评测：GPT-4 剧情切分和抽取、结构过滤、人工质检、角色档案与 MBTI 补全、 论文版本数据划分、由 CharacterRM 判断的十二项主观指标，以及独立的 MBTI 人格回测。
+  legend: 实线表示构建与评测；虚线表示角色档案和人类标签的数据输入。
 nodes:
   - id: sources
-    label: 来源
+    label: |-
+      收集中文小说与剧本
+      选择 77 个主要角色
+      覆盖多体裁与多场景
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: gpt4
-    label: GPT-4
+      'y': 220
+  - id: principles
+    label: |-
+      遵循四项采集原则
+      原作忠实 • 分布多样
+      多轮特征 • 人工在环
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: plot_division
+    label: |-
+      GPT-4 识别剧情转折
+      在连续剧情终点切分
+      保持叙事片段完整
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: preprocess
-    label: 预处理
+      x: 640
+      'y': 220
+  - id: extract
+    label: |-
+      GPT-4 抽取
+      角色扮演对话
+      保留台词 • 行为 • 场景
+      回复 = 行为 + 台词
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: qc
-    label: 人工质检
-    type: decision
+      x: 940
+      'y': 220
+  - id: filter
+    label: |-
+      保留 ABAB
+      直到第三人加入
+      仅保留超过 5 轮的对话
+      过滤短/破损结构
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1240
+      'y': 220
+  - id: human_qc
+    label: |-
+      人工审查连贯性与质量
+      移除有问题的样本
+      保留真实多轮互动
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 220
   - id: profiles
-    label: 角色档案
-    type: document
+    label: |-
+      补全角色档案
+      档案来自百度百科
+      知识 • 行为
+      说话风格
+    type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: data
-    label: 11376样本
-    type: document
+      x: 1840
+      'y': 220
+  - id: release
+    label: |-
+      论文版 CharacterEval
+      77 角色 • 1,785 对话
+      标题总数 11,376
+      训练 6,811 • 测试 4,564
+    type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: reward
-    label: CharacterRM
+      x: 2140
+      'y': 220
+  - id: model
+    label: |-
+      角色档案 + 上下文
+      运行 RPCA
+      生成行为 + 台词
+      收集待评模型回复
     type: process
     size: xl
     position:
-      x: 1600
+      x: 2440
+      'y': 220
+  - id: human_labels
+    label: |-
+      12 位标注员
+      稀疏指标矩阵
+      所选指标五分制评分
+      供 CharacterRM 使用
+    type: user
+    size: xl
+    position:
+      x: 2740
+      'y': 0
+  - id: rm
+    label: |-
+      训练 CharacterRM
+      Baichuan2-13B-base
+      判断 12 项主观指标
+    type: process
+    size: xl
+    position:
+      x: 3040
       'y': 160
-  - id: eval
-    label: 13指标
+  - id: conversation
+    label: |-
+      对话能力
+      流畅性 • 连贯性 • 一致性
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 0
+  - id: character
+    label: |-
+      角色一致性
+      知识暴露 • 准确 • 幻觉
+      人设行为 • 人设台词
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 160
+  - id: attractiveness
+    label: |-
+      角色扮演吸引力
+      类人性 • 沟通技巧
+      表达多样性 • 共情
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 320
+  - id: personality
+    label: |-
+      MBTI 回测
+      覆盖 54 个角色
+      以角色身份回答人格问卷
+      对比预测与真值 MBTI
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 480
+  - id: mbti_labels
+    label: |-
+      Personality Database
+      54 个 MBTI 真值标签
+      仅用于人格回测
+    type: database
+    size: xl
+    position:
+      x: 2740
+      'y': 600
+  - id: report
+    label: |-
+      12 项主观 + 1 项 MBTI
+      共 13 项指标 • 四个维度
+      CharacterRM 相关性
+      高于 GPT-4
     type: terminal
     size: xl
     position:
-      x: 1860
+      x: 3640
       'y': 160
 edges:
   - from: sources
-    to: gpt4
+    to: principles
     type: primary
-  - from: gpt4
-    to: preprocess
+  - from: principles
+    to: plot_division
     type: primary
-  - from: preprocess
-    to: qc
+  - from: plot_division
+    to: extract
     type: primary
-  - from: qc
+  - from: extract
+    to: filter
+    type: primary
+  - from: filter
+    to: human_qc
+    type: primary
+  - from: human_qc
     to: profiles
     type: primary
   - from: profiles
-    to: data
+    to: release
     type: primary
-  - from: data
-    to: reward
+  - from: release
+    to: model
     type: primary
-  - from: reward
-    to: eval
+  - from: profiles
+    to: model
+    type: data
+    waypoints:
+      - x: 1992
+        'y': 218
+      - x: 1992
+        'y': 120
+      - x: 2288
+        'y': 120
+      - x: 2288
+        'y': 218
+  - from: model
+    to: human_labels
     type: primary
+    waypoints:
+      - x: 2840
+        'y': 270
+      - x: 2840
+        'y': 150
+  - from: human_labels
+    to: rm
+    type: data
+  - from: rm
+    to: conversation
+    type: primary
+  - from: rm
+    to: character
+    type: primary
+  - from: rm
+    to: attractiveness
+    type: primary
+  - from: model
+    to: personality
+    type: primary
+  - from: mbti_labels
+    to: personality
+    type: data
+  - from: conversation
+    to: report
+    type: primary
+  - from: character
+    to: report
+    type: primary
+  - from: attractiveness
+    to: report
+    type: primary
+  - from: personality
+    to: report
+    type: primary
+    waypoints:
+      - x: 3580
+        'y': 530
+      - x: 3740
+        'y': 530
+      - x: 3740
+        'y': 300
 modules: []

@@ -1,89 +1,422 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLU-CF 构建流程
-  description: 对齐论文的 MMLU-CF 构建流程：从更广领域收集多选题，按去污染规则处理，划分难度匹配的公开验证集和闭源测试集，并用零/少样本准确率评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMLU-CF 构建与评测流程
+  description: 对齐论文 v1：从超过 2,000 亿份公共网页文档构建数据，并将论文评测协议与论文之后发布且单独定版的公开验证集实现分开呈现。
+  legend: 箭头表示论文或固定源码披露的流程 / 数据流；论文协议与后续公开 OpenCompass 路径相互独立；底部无连线卡片记录版本、许可和复现边界，并非流程步骤。
 nodes:
-  - id: n1
-    label: 广域来源
+  - id: web_corpus
+    label: |-
+      公共开放网页语料
+      超过 2,000 亿份文档
+      超过 3,000 个网站域名
+      覆盖 14 个学科领域
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 多选题池
+      'y': 80
+  - id: extract
+    label: |-
+      基于规则抽取多选题
+      恢复题干与选项
+      恢复答案及可选解析
+      得到 270 万道原始题
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 三条规则
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 干净集合
+      x: 320
+      'y': 80
+  - id: clean
+    label: |-
+      规则清洗与去重
+      恰有 4 个非空 A–D 选项
+      题干不少于 10 个字符 · 英文
+      格式归一 · 去重
+      270 万 → 166 万题
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 验证/测试
+      x: 600
+      'y': 80
+  - id: difficulty
+    label: |-
+      GPT-4o 难度标注
+      五样本 MMLU 参照示例
+      对每题给出 0–9 难度
+      输入全部 166 万题
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: sample_50k
+    label: |-
+      难度感知抽样
+      以难度 6 为中心的正态分布
+      平衡领域 · 最大化域名多样性
+      优先带解析题 → 5 万题
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 闭源测试
-    type: decision
+      x: 1160
+      'y': 80
+  - id: llm_check
+    label: |-
+      三模型质量与安全检查
+      GPT-4o · Gemini · Claude
+      5 项质量 + 4 项安全标准
+      均分 >4 → 图 3 中 2 万题
+    type: user
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 提示评测
-    type: document
+      x: 1440
+      'y': 80
+  - id: semantic_dedup
+    label: |-
+      语义冗余检测
+      GPT-4o 检查语义相同题
+      移除语义相同题目
+      最终来源仍覆盖 >1,000 个域名
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 准确率
+      x: 1440
+      'y': 400
+  - id: rephrase
+    label: |-
+      规则 1 · 改写题干
+      重写每一道问题
+      保持语义与标准答案
+      降低逐字记忆影响
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: shuffle
+    label: |-
+      规则 2 · 打乱选项
+      重算答案位置
+      若末项为以上皆无 / 皆是
+      则只打乱前三项
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: replace
+    label: |-
+      规则 3 · 50% 随机替换
+      一项改为“其他选项均非”
+      特殊末项题跳过本规则
+      替换正确项时仍保持答案有效
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: split
+    label: |-
+      匹配式最终划分
+      保持难度分布相近
+      保持类别分布相近
+      合计 20,000 题
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: public_val
+    label: |-
+      公开验证集
+      10,000 道题
+      支持独立评测
+      后续发布于 Hugging Face
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: closed_test
+    label: |-
+      封闭测试集
+      10,000 道题
+      隐藏题目以限制恶意泄漏
+      由维护方代为评测
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 540
+  - id: paper_eval
+    label: |-
+      论文评测协议
+      通过 OpenCompass 测试 40+ 模型
+      零样本 + 五样本
+      除附加解析外不使用 CoT
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 700
+  - id: paper_report
+    label: |-
+      论文报告分数
+      测试集 + 验证集准确率
+      总分 = 14 个领域的算术平均
+      表中 Δ = 测试 − 验证
     type: terminal
     size: xl
     position:
+      x: 600
+      'y': 700
+  - id: hf_snapshot
+    label: |-
+      固定公开数据快照
+      HF c25b89a · 验证集 10,000 题
+      每领域 5 道开发示例
+      Question · A–D · Answer
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 980
+  - id: oc_loader
+    label: |-
+      公开 OpenCompass 支持
+      提交 e039f3e · 2025-01-09
+      各 *_val 划分映射为 test
+      加载器未锁定 HF revision
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 980
+  - id: shot_route
+    label: 选择哪种样本设置？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 980
+  - id: five_demos
+    label: |-
+      五样本演示
+      固定索引 0、1、2、3、4
+      每领域 5 道开发题
+      相同题模版 + 标准选项字母
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 1160
+  - id: public_prompt
+    label: |-
+      OC e039f3e 五/零样本配置
+      原文：There is a single choice question (with answers).
+      Answer the question by replying A, B, C or D.
+      然后接题干 + 四个带标签选项
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 980
+  - id: generate
+    label: |-
+      模型生成
+      GenInferencer 产出文本
+      解码参数来自外部模型配置
+      失败任务/分区返回非零状态
+      其他任务继续；Runner 汇总失败
+    type: process
+    size: xl
+    position:
       x: 1720
-      'y': 160
+      'y': 980
+  - id: parse
+    label: |-
+      first_option_postprocess
+      先匹配答案短语
+      再匹配“X:”与裸 A–D
+      无匹配 → 空字符串
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 980
+  - id: field_accuracy
+    label: |-
+      领域精确准确率
+      预测字母 = 标准字母
+      正确数 / 全部题数 × 100
+      空解析仍计入分母并判错
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 980
+  - id: public_macro
+    label: |-
+      公开实现分组总分
+      14 个领域准确率等权平均
+      仅验证集 · 测试集仍封闭
+      结果依赖外部模型配置
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 980
+  - id: paper_version
+    label: |-
+      版本边界
+      arXiv 2412.15194v1 · 2024-12-19
+      论文未锁定仓库修订
+      本次审核使用 GitHub fd89eefd
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 1400
+  - id: rights_boundary
+    label: |-
+      访问与许可边界
+      公开验证集：CDLA-Permissive-2.0
+      GitHub 文档 / 代码：MIT
+      封闭测试集：不可下载
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 1400
+  - id: schema_boundary
+    label: |-
+      发布行级边界
+      无类别 / URL / 来源 / 题目 ID
+      领域身份只存在于划分名
+      未发布逐题来源证据
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 1400
+  - id: reproducibility_gap
+    label: |-
+      复现边界
+      抓取与三项变换代码未发布
+      隐藏数据 / 评测器不可得
+      论文未锁 OC 与解码版本
+      构建所用 LLM revision 未锁定
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 1400
+  - id: metric_boundary
+    label: |-
+      Δ 报告口径矛盾
+      论文文字称 Δ 为“绝对差”
+      表格却包含负值
+      实际条目为测试 − 验证
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 1400
+  - id: prompt_boundary
+    label: |-
+      提示配置边界
+      推荐五/零样本配置含
+      “含答案选项”该提示语
+      默认生成配置省略该短语
+      论文未锁定两种 OC 配置
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 1400
 edges:
-  - from: n1
-    to: n2
+  - from: web_corpus
+    to: extract
     type: primary
-  - from: n2
-    to: n3
+  - from: extract
+    to: clean
     type: primary
-  - from: n3
-    to: n4
+  - from: clean
+    to: difficulty
     type: primary
-  - from: n4
-    to: n5
+  - from: difficulty
+    to: sample_50k
     type: primary
-  - from: n5
-    to: n6
+  - from: sample_50k
+    to: llm_check
     type: primary
-  - from: n6
-    to: n7
+  - from: llm_check
+    to: semantic_dedup
     type: primary
-  - from: n7
-    to: n8
+  - from: semantic_dedup
+    to: rephrase
+    type: primary
+  - from: rephrase
+    to: shuffle
+    type: primary
+  - from: shuffle
+    to: replace
+    type: primary
+  - from: replace
+    to: split
+    type: primary
+  - from: split
+    to: public_val
+    type: primary
+    label: 公开
+  - from: split
+    to: closed_test
+    type: primary
+    label: 封闭
+  - from: public_val
+    to: paper_eval
+    type: primary
+  - from: closed_test
+    to: paper_eval
+    type: primary
+  - from: paper_eval
+    to: paper_report
+    type: primary
+  - from: public_val
+    to: hf_snapshot
+    type: secondary
+    label: 后续公开发布
+  - from: hf_snapshot
+    to: oc_loader
+    type: primary
+  - from: oc_loader
+    to: shot_route
+    type: primary
+  - from: shot_route
+    to: public_prompt
+    type: primary
+    label: 零样本
+  - from: shot_route
+    to: five_demos
+    type: primary
+    label: 五样本
+  - from: five_demos
+    to: public_prompt
+    type: primary
+  - from: public_prompt
+    to: generate
+    type: primary
+  - from: generate
+    to: parse
+    type: primary
+  - from: parse
+    to: field_accuracy
+    type: primary
+  - from: field_accuracy
+    to: public_macro
     type: primary
 modules: []

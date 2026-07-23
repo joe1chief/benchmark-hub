@@ -5,8 +5,10 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HalluLens 动态测试集构建流程
-  description: 依据 arXiv v1 整理三项外在幻觉任务的动态构建分支；LongWiki 可答性与最短长度失败项均丢弃，推理与评分留在图外说明。
-  legend: PWQA 指 PreciseWikiQA；实线表示论文披露的构建顺序，虚线通向丢弃；任务终点是独立产物，不表示数据划分。
+  description: 依据 arXiv:2504.17550v1 整理三项外在幻觉任务的动态构建分支；PreciseWikiQA 主论文流程会重新生成不可回答的问题，推理与评分留在图外。
+  legend: >-
+    论文 §3.1.2 对不可回答的 PreciseWikiQA 问题重新生成，但官方批处理代码以 continue 直接过滤；图中明确保留这项论文—代码差异。超过 10 词的答案被过滤；LongWiki 仅保留可回答且模拟答案不少于
+    4 句的题。
 nodes:
   - id: scope
     label: 动态测试集
@@ -36,104 +38,139 @@ nodes:
     position:
       x: 624
       'y': 64
-  - id: precise_qa
-    label: 先问后答
+  - id: precise_question
+    label: 生成客观问题
     type: process
     size: large
     position:
       x: 816
       'y': 64
-  - id: precise_final
-    label: PWQA · 5,000
-    type: terminal
+  - id: precise_answerability
+    label: 可回答？
+    type: decision
     size: large
     position:
       x: 1008
       'y': 64
+  - id: precise_answer
+    label: 生成短答案
+    type: process
+    size: large
+    position:
+      x: 1200
+      'y': 64
+  - id: precise_length
+    label: 不超过 10 词？
+    type: decision
+    size: large
+    position:
+      x: 1392
+      'y': 64
+  - id: precise_final
+    label: 精确百科问答 PWQA · 5,000
+    type: terminal
+    size: large
+    position:
+      x: 1584
+      'y': 64
+  - id: precise_discard
+    label: 过滤样本
+    type: terminal
+    size: large
+    position:
+      x: 1584
+      'y': 176
+  - id: precise_retry
+    label: 重新生成问题
+    type: process
+    size: large
+    position:
+      x: 1008
+      'y': 176
   - id: long_source
     label: 难度 5–9
     type: database
     size: large
     position:
       x: 432
-      'y': 224
+      'y': 320
   - id: long_prompt
     label: 生成段落问题
     type: process
     size: large
     position:
       x: 624
-      'y': 224
+      'y': 320
   - id: long_answerability
     label: 可回答？
     type: decision
     size: large
     position:
       x: 816
-      'y': 224
+      'y': 320
   - id: long_mock
     label: 生成模拟回答
     type: process
     size: large
     position:
       x: 1008
-      'y': 224
+      'y': 320
   - id: long_filter
     label: 不少于 4 句？
     type: decision
     size: large
     position:
       x: 1200
-      'y': 224
+      'y': 320
   - id: long_final
-    label: LongWiki · 250
+    label: 长文本百科 LongWiki · 250
     type: terminal
     size: large
     position:
       x: 1392
-      'y': 224
+      'y': 320
   - id: long_discard
     label: 丢弃样本
     type: terminal
     size: large
     position:
       x: 1008
-      'y': 368
+      'y': 464
   - id: nonexist_sources
     label: 固定库 + 名称种子
     type: database
     size: large
     position:
       x: 432
-      'y': 560
+      'y': 672
   - id: subtask_split
     label: 两种造名方法
     type: process
     size: large
     position:
       x: 624
-      'y': 560
+      'y': 672
   - id: mixed
     label: 混排 + 查库
     type: process
     size: large
     position:
       x: 816
-      'y': 496
+      'y': 608
   - id: generated
     label: 模型轮转 + 搜索
     type: process
     size: large
     position:
       x: 816
-      'y': 624
+      'y': 736
   - id: nonexist_final
     label: 不存在实体拒答
     type: terminal
     size: large
     position:
       x: 1008
-      'y': 560
+      'y': 672
 edges:
   - from: scope
     to: task_split
@@ -151,11 +188,32 @@ edges:
     to: precise_bins
     type: primary
   - from: precise_bins
-    to: precise_qa
+    to: precise_question
     type: primary
-  - from: precise_qa
+  - from: precise_question
+    to: precise_answerability
+    type: primary
+  - from: precise_answerability
+    to: precise_answer
+    type: primary
+  - from: precise_answerability
+    to: precise_retry
+    type: optional
+  - from: precise_retry
+    to: precise_question
+    type: optional
+    waypoints:
+      - x: 896
+        'y': 216
+  - from: precise_answer
+    to: precise_length
+    type: primary
+  - from: precise_length
     to: precise_final
     type: primary
+  - from: precise_length
+    to: precise_discard
+    type: optional
   - from: long_source
     to: long_prompt
     type: primary
@@ -176,13 +234,13 @@ edges:
     type: optional
     waypoints:
       - x: 816
-        'y': 368
+        'y': 464
   - from: long_filter
     to: long_discard
     type: optional
     waypoints:
       - x: 1200
-        'y': 368
+        'y': 464
   - from: nonexist_sources
     to: subtask_split
     type: primary

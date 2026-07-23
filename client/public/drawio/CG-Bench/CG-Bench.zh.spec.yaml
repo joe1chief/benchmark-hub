@@ -5,95 +5,251 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CG-Bench 构建流程
-  description: 基于论文的 CG-Bench 构建流程：从定义域手动收集长视频，标注问答线索三元组，经迭代质检后发布，并用多选题、白盒线索定位、黑盒线索恢复和线索辅助开放问答评估。
-  legend: 实线箭头表示视频收集、标注、质检、发布和评测流程。
+  description: 与论文一致的长视频与 QAC 构建流程，并明确设置四项 AND 门：人工合理性、GPT-4 纯文本可答性、MLLM 视觉难度 与线索分布检查必须全部通过；任一失败都返回修订，之后才能发布并进行线索落地评测。
+  legend: 实线表示构建与评测；点线表示拒绝并返修的循环。
 nodes:
-  - id: videos
-    label: 长视频
+  - id: collect
+    label: |-
+      人工收集互联网视频
+      时长超过 10 分钟
+      保留音频与字幕
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: domains
-    label: 14个根域
+      'y': 420
+  - id: taxonomy_video
+    label: |-
+      标注并平衡视频内容
+      14 个根类 • 171 个二级类 • 638 个三级类
+      覆盖多样的 10–80 分钟视频
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: 7轮筛选
-    type: decision
+      x: 290
+      'y': 420
+  - id: review_video
+    label: |-
+      七轮人工视频审核
+      检查相关性、质量与多样性
+      保留 1,219 个长视频
+    type: user
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: taxonomy
-    label: 问题分类
-    type: process
+      x: 540
+      'y': 420
+  - id: question_taxonomy
+    label: |-
+      定义问题分类体系
+      感知 • 推理 • 幻觉
+      包含细粒度子类
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 790
+      'y': 420
   - id: qac
-    label: 问答线索
-    type: document
+    label: |-
+      每个视频标注 6–15 个 QAC
+      观看完整视频 • 使用母语
+      先写问答，再标一个或多个线索区间
+    type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1040
+      'y': 420
   - id: options
-    label: 多选选项
+    label: |-
+      创建多项选择选项
+      增加 4–7 个负选项
+      在线索区间中保留完整事件
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: review
-    label: 迭代质检
+      x: 1290
+      'y': 420
+  - id: manual_qc
+    label: |-
+      人工合理性检查
+      审核问题、选项与答案
+      拒绝不合理或薄弱条目
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 420
+  - id: text_qc
+    label: |-
+      GPT-4 纯文本检查
+      拒绝无需视频即可回答的问题
+      强制依赖视频内容
+    type: process
+    size: xl
+    position:
+      x: 1790
+      'y': 420
+  - id: visual_qc
+    label: |-
+      MLLM 视觉难度检查
+      拒绝稀疏帧即可回答的条目
+      拒绝小模型容易完成的条目
+    type: process
+    size: xl
+    position:
+      x: 2040
+      'y': 420
+  - id: distribution_qc
+    label: |-
+      线索分布检查
+      监控线索时长与时间位置
+      保持数据集级多样性
+    type: process
+    size: xl
+    position:
+      x: 2290
+      'y': 420
+  - id: all_gate
+    label: |-
+      四项检查全部通过？
+      人工 AND GPT-4 AND MLLM AND 分布
+      任一失败均必须修订
     type: decision
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: dataset
-    label: 12,129组QAC
-    type: document
+      x: 2540
+      'y': 420
+  - id: revise
+    label: |-
+      返回标注员
+      修订问答、选项或线索区间
+      重新进入完整质量门
+    type: process
     size: xl
     position:
-      x: 1860
-      'y': 160
-  - id: eval
-    label: 线索评测
+      x: 2040
+      'y': 800
+  - id: release
+    label: |-
+      发布 CG-Bench
+      1,219 个视频 • 12,129 个 QAC
+      14,362 个线索区间
+    type: database
+    size: xl
+    position:
+      x: 2790
+      'y': 420
+  - id: mcq
+    label: |-
+      完整视频 / 线索片段 MCQ
+      对比长视频与合并线索输入
+      报告 long-acc. + clue-acc.
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 20
+  - id: white_box
+    label: |-
+      白盒线索定位
+      预测一个或多个时间区间
+      mIoU • rec.@IoU • acc.@IoU
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 280
+  - id: black_box
+    label: |-
+      黑盒可信度
+      对比完整视频与仅线索准确率
+      CRR = min(long-acc., clue-acc.) / clue-acc.
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 560
+  - id: open_ended
+    label: |-
+      线索辅助开放问答
+      GPT-4o 先评文本，再请求视觉线索
+      仅从标注区间采样帧
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 820
+  - id: report
+    label: |-
+      报告准确率、定位与可信度
+      按问题类别拆分
+      诊断长上下文稀释
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 160
+      x: 3290
+      'y': 420
 edges:
-  - from: videos
-    to: domains
+  - from: collect
+    to: taxonomy_video
     type: primary
-  - from: domains
-    to: filter
+  - from: taxonomy_video
+    to: review_video
     type: primary
-  - from: filter
-    to: taxonomy
+  - from: review_video
+    to: question_taxonomy
     type: primary
-  - from: taxonomy
+  - from: question_taxonomy
     to: qac
     type: primary
   - from: qac
     to: options
     type: primary
   - from: options
-    to: review
+    to: manual_qc
     type: primary
-  - from: review
-    to: dataset
+  - from: manual_qc
+    to: text_qc
     type: primary
-  - from: dataset
-    to: eval
+  - from: text_qc
+    to: visual_qc
+    type: primary
+  - from: visual_qc
+    to: distribution_qc
+    type: primary
+  - from: distribution_qc
+    to: all_gate
+    type: primary
+  - from: all_gate
+    to: release
+    type: primary
+  - from: all_gate
+    to: revise
+    type: optional
+  - from: revise
+    to: qac
+    type: optional
+  - from: release
+    to: mcq
+    type: primary
+  - from: release
+    to: white_box
+    type: primary
+  - from: release
+    to: black_box
+    type: primary
+  - from: release
+    to: open_ended
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: white_box
+    to: report
+    type: primary
+  - from: black_box
+    to: report
+    type: primary
+  - from: open_ended
+    to: report
     type: primary
 modules: []

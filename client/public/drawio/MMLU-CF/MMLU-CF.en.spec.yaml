@@ -1,91 +1,426 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLU-CF Build Process
+  title: MMLU-CF Build and Evaluation Process
   description: >-
-    Paper-aligned construction of MMLU-CF: broader-domain MCQs are collected under decontamination rules, split into
-    public validation and closed test sets with matched difficulty, and scored by zero/few-shot accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-v1 construction from more than 200 billion public-web documents, followed by the paper evaluation and the
+    separately versioned public-validation implementation released after the paper.
+  legend: >-
+    Arrows trace disclosed process/data flow. The paper protocol and the later public OpenCompass path are kept
+    separate; unconnected bottom cards record version, licensing, and reproducibility boundaries rather than steps.
 nodes:
-  - id: n1
-    label: Broad Sources
+  - id: web_corpus
+    label: |-
+      Public-Open Web Corpus
+      More Than 200 Billion Documents
+      Over 3,000 Website Domains
+      14 Subject Fields
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: MCQ Pool
+      'y': 80
+  - id: extract
+    label: |-
+      Rule-Based MCQ Extraction
+      Recover Questions + Choices
+      Recover Answer + Optional Explanation
+      2.7 Million Raw MCQs
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 3 Rules
-    type: document
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: Clean Set
+      x: 320
+      'y': 80
+  - id: clean
+    label: |-
+      Rule Cleaning + Deduplication
+      Exactly 4 Nonempty A–D Choices
+      Question ≥10 Characters · English
+      Normalize Formats · Deduplicate
+      2.7M → 1.66M Questions
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Val/Test
+      x: 600
+      'y': 80
+  - id: difficulty
+    label: |-
+      GPT-4o Difficulty Labeling
+      Five-Shot MMLU Reference
+      Rate Every Item from 0 to 9
+      1.66 Million Inputs
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: sample_50k
+    label: |-
+      Difficulty-Aware Sampling
+      Normal Distribution Centered at 6
+      Balance Fields · Maximize Domains
+      Prefer Explanations → 50K
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Closed Test
-    type: decision
+      x: 1160
+      'y': 80
+  - id: llm_check
+    label: |-
+      Three-Model Quality + Safety Check
+      GPT-4o · Gemini · Claude
+      Five Quality + Four Safety Criteria
+      Mean Rating >4 → 20K in Fig. 3
+    type: user
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Prompt Eval
-    type: document
+      x: 1440
+      'y': 80
+  - id: semantic_dedup
+    label: |-
+      Semantic Redundancy Detection
+      GPT-4o Checks Identical Meaning
+      Remove Semantically Identical Items
+      Final Sources Span >1,000 Domains
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
+      x: 1440
+      'y': 400
+  - id: rephrase
+    label: |-
+      Rule 1 · Rephrase Stem
+      Rewrite Every Question
+      Preserve Meaning + Gold Answer
+      Reduce Verbatim Memorization
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: shuffle
+    label: |-
+      Rule 2 · Shuffle Choices
+      Recompute the Answer Position
+      If Last Is None/All Above
+      Shuffle Only the First Three
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: replace
+    label: |-
+      Rule 3 · 50% Random Replacement
+      Replace One Choice with None Other
+      Skip Special Last-Choice Items
+      Replaced Gold Remains Valid
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: split
+    label: |-
+      Matched Final Split
+      Preserve Difficulty Distribution
+      Preserve Category Distribution
+      20,000 Questions Total
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: public_val
+    label: |-
+      Public Validation Split
+      10,000 Questions
+      Independent Evaluation Access
+      Later Released on Hugging Face
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: closed_test
+    label: |-
+      Closed Test Split
+      10,000 Questions
+      Hidden to Limit Malicious Leakage
+      Evaluation by Maintainers
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 540
+  - id: paper_eval
+    label: |-
+      Paper Evaluation Protocol
+      40+ Models via OpenCompass
+      Zero-Shot + Five-Shot
+      No CoT except Added Explanations
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 700
+  - id: paper_report
+    label: |-
+      Paper-Reported Scores
+      Accuracy on Test + Validation
+      Overall = Mean of 14 Fields
+      Table Δ = Test − Validation
     type: terminal
     size: xl
     position:
+      x: 600
+      'y': 700
+  - id: hf_snapshot
+    label: |-
+      Fixed Public Data Snapshot
+      HF c25b89a · 10,000 Validation
+      5 Dev Examples per Field
+      Question · A–D · Answer
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 980
+  - id: oc_loader
+    label: |-
+      Public OpenCompass Support
+      Commit e039f3e · 2025-01-09
+      Map Each *_val Split to Test
+      Loader Does Not Pin HF Revision
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 980
+  - id: shot_route
+    label: Evaluation Shot Setting?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 980
+  - id: five_demos
+    label: |-
+      Five-Shot Demonstrations
+      Fixed IDs 0, 1, 2, 3, 4
+      Five Dev Items per Field
+      Same MCQ Template + Gold Letter
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 1160
+  - id: public_prompt
+    label: |-
+      OC e039f3e Few/Zero Configs
+      There is a single choice question (with answers).
+      Answer the question by replying A, B, C or D.
+      Then Question + Four Labeled Options
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 980
+  - id: generate
+    label: |-
+      Model Generation
+      GenInferencer Produces Text
+      Decoding Comes from Model Config
+      Failed Task/Partition Returns Nonzero
+      Other Tasks Continue; Runner Reports Failure
+    type: process
+    size: xl
+    position:
       x: 1720
-      'y': 160
+      'y': 980
+  - id: parse
+    label: |-
+      first_option_postprocess
+      Answer-Phrase Regexes First
+      Then “X:” · Then Bare A–D
+      No Match → Empty String
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 980
+  - id: field_accuracy
+    label: |-
+      Exact Field Accuracy
+      Prediction Letter = Gold Letter
+      Correct / All Items × 100
+      Empty Parse Is Included as Wrong
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 980
+  - id: public_macro
+    label: |-
+      Public Group Score
+      Unweighted Mean of 14 Fields
+      Validation Only · Test Stays Hidden
+      Result Depends on Model Config
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 980
+  - id: paper_version
+    label: |-
+      Version Boundary
+      arXiv 2412.15194v1 · 2024-12-19
+      Paper Pins No Repository Revision
+      Review Uses GitHub fd89eefd
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 1400
+  - id: rights_boundary
+    label: |-
+      Access + License Boundary
+      Public Validation: CDLA-Permissive-2.0
+      GitHub Documentation/Code: MIT
+      Closed Test: Not Downloadable
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 1400
+  - id: schema_boundary
+    label: |-
+      Released-Row Boundary
+      No Category/URL/Source/Item ID
+      Field Identity Lives in Split Names
+      Row-Level Provenance Is Unreleased
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 1400
+  - id: reproducibility_gap
+    label: |-
+      Reproducibility Boundary
+      Crawl + Transform Code Unreleased
+      Hidden Data/Evaluator Unavailable
+      Paper Pins No OC/Decoder Revision
+      Construction LLM Revisions Unpinned
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 1400
+  - id: metric_boundary
+    label: |-
+      Δ Reporting Contradiction
+      Paper Text Calls Δ “Absolute”
+      Table Contains Negative Values
+      Entries Equal Test − Validation
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 1400
+  - id: prompt_boundary
+    label: |-
+      Prompt-Config Boundary
+      Recommended Few/Zero Include
+      the Words “with Answers”
+      Default Generation Config Omits Them
+      Paper Pins Neither OC Config
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 1400
 edges:
-  - from: n1
-    to: n2
+  - from: web_corpus
+    to: extract
     type: primary
-  - from: n2
-    to: n3
+  - from: extract
+    to: clean
     type: primary
-  - from: n3
-    to: n4
+  - from: clean
+    to: difficulty
     type: primary
-  - from: n4
-    to: n5
+  - from: difficulty
+    to: sample_50k
     type: primary
-  - from: n5
-    to: n6
+  - from: sample_50k
+    to: llm_check
     type: primary
-  - from: n6
-    to: n7
+  - from: llm_check
+    to: semantic_dedup
     type: primary
-  - from: n7
-    to: n8
+  - from: semantic_dedup
+    to: rephrase
+    type: primary
+  - from: rephrase
+    to: shuffle
+    type: primary
+  - from: shuffle
+    to: replace
+    type: primary
+  - from: replace
+    to: split
+    type: primary
+  - from: split
+    to: public_val
+    type: primary
+    label: Public
+  - from: split
+    to: closed_test
+    type: primary
+    label: Closed
+  - from: public_val
+    to: paper_eval
+    type: primary
+  - from: closed_test
+    to: paper_eval
+    type: primary
+  - from: paper_eval
+    to: paper_report
+    type: primary
+  - from: public_val
+    to: hf_snapshot
+    type: secondary
+    label: Later public release
+  - from: hf_snapshot
+    to: oc_loader
+    type: primary
+  - from: oc_loader
+    to: shot_route
+    type: primary
+  - from: shot_route
+    to: public_prompt
+    type: primary
+    label: Zero-shot
+  - from: shot_route
+    to: five_demos
+    type: primary
+    label: Five-shot
+  - from: five_demos
+    to: public_prompt
+    type: primary
+  - from: public_prompt
+    to: generate
+    type: primary
+  - from: generate
+    to: parse
+    type: primary
+  - from: parse
+    to: field_accuracy
+    type: primary
+  - from: field_accuracy
+    to: public_macro
     type: primary
 modules: []

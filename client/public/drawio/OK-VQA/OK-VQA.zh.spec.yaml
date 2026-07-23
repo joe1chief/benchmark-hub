@@ -1,0 +1,298 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OK-VQA 构建与评测流程
+  description: 固定来源版本的 OK-VQA 构建、发布与评测路径，并明确区分 CVPR 论文协议、可下载的 v1.1 标注和固定通用 VQA 评分器。
+  legend: 实线表示论文披露的采集、淘汰、发布与评测路径；虚线表示固定实现与开放性边界。五位工人独立给出的答案在 v1.1 中各存两次，形成十条 VQA 格式答案记录。
+nodes:
+  - id: coco
+    label: |-
+      随机抽取 COCO 图像
+      原始约 8 万训练集
+      原始约 4 万验证集
+      对应 OK-VQA 训练与测试集
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 80
+  - id: question_round
+    label: |-
+      MTurk 第一轮：编写问题
+      目标是难住智能机器人
+      问题必须关联图像
+      必须需要外部知识
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: answer_round
+    label: |-
+      MTurk 第二轮：收集开放答案
+      每个图文对由五人独立作答
+      逐个图像问题对标注
+      保留独立回答
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: candidate_pool
+    label: |-
+      原始众包候选池
+      86,700 道问题
+      混有知识题与低质量项
+      最终过滤前已经收集答案
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: manual_review
+    label: |-
+      人工审核知识依赖性
+      删除计数与无图可答问题
+      删除无意义问题
+      审核人数和协议未披露
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 80
+  - id: knowledge_gate
+    label: |-
+      是否需要外部知识？
+      保留 34,921 道问题
+      必须与图像内容相关
+      必须超出视觉识别
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: reject_quality
+    label: |-
+      淘汰低质量候选
+      计数或检测题
+      无需图像即可回答
+      无意义或不依赖知识
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: bias_filter
+    label: |-
+      控制答案频率偏差
+      训练集与测试集分别处理
+      统计每个众数答案
+      标记出现超过五次者
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: bias_gate
+    label: |-
+      众数答案次数
+      是否不超过五次？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: reject_bias
+    label: |-
+      删除频率偏置项
+      众数答案出现
+      超过五次
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: agreement_gate
+    label: |-
+      标注员答案是否有一致？
+      比较五位工人的回答
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: reject_disagreement
+    label: |-
+      删除零一致项
+      工人之间没有共享答案
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 680
+  - id: final_split
+    label: |-
+      最终 COCO 来源划分
+      训练 9,009 · 测试 5,046
+      共 14,055 题 · 14,031 张图
+      训练图 8,998 · 测试图 5,033
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: category_annotation
+    label: |-
+      标注知识类别
+      每题由五位 MTurk 工人分类
+      十个预定义类别
+      取相对多数否则归为其他
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: release
+    label: |-
+      公开 OK-VQA v1.1 · 2020-07-29
+      训练 9,009 · 测试 5,046
+      五份答案各存两次：共十条
+      问题和图像相对 v1.0 未变化
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 440
+  - id: model_answer
+    label: |-
+      预测一个开放答案
+      输入图像与问题
+      不提供多选项
+      可检索外部知识
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 840
+  - id: paper_normalization
+    label: |-
+      论文协议：规范化答案
+      论文要求 Porter 词干化
+      v1.1 的 gold answer 已预词干化
+      固定通用评分器不词干化预测
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 840
+  - id: vqa_score
+    label: |-
+      留一法计算人工一致度
+      每次比较：min(1, 命中数 / 3)
+      对十条答案记录求平均
+      再对所有问题求平均
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 840
+  - id: report
+    label: |-
+      报告 OK-VQA 表现
+      总体 VQA 分数
+      十个知识类别
+      加其他类别
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 840
+  - id: source_boundary
+    label: |-
+      固定公开边界
+      v1.1 JSON：CC BY 4.0 · COCO 另计
+      a013f004… 通用 VQA 评分器
+      未随评分器打包知识类别划分
+    type: document
+    size: xl
+    position:
+      x: 1400
+      'y': 840
+edges:
+  - from: coco
+    to: question_round
+    type: primary
+  - from: question_round
+    to: answer_round
+    type: primary
+  - from: answer_round
+    to: candidate_pool
+    type: primary
+  - from: candidate_pool
+    to: manual_review
+    type: primary
+  - from: manual_review
+    to: knowledge_gate
+    type: primary
+  - from: knowledge_gate
+    to: bias_filter
+    type: primary
+    label: 保留 34,921 题
+    labelPosition: center
+  - from: knowledge_gate
+    to: reject_quality
+    type: primary
+    label: 不符合要求
+    labelPosition: center
+  - from: bias_filter
+    to: bias_gate
+    type: primary
+  - from: bias_gate
+    to: agreement_gate
+    type: primary
+    label: 不超过五次
+    labelPosition: center
+  - from: bias_gate
+    to: reject_bias
+    type: primary
+    label: 超过五次
+    labelPosition: center
+  - from: agreement_gate
+    to: final_split
+    type: primary
+    label: 存在一致答案
+    labelPosition: center
+  - from: agreement_gate
+    to: reject_disagreement
+    type: primary
+    label: 零一致
+    labelPosition: center
+  - from: final_split
+    to: category_annotation
+    type: primary
+  - from: category_annotation
+    to: release
+    type: primary
+  - from: release
+    to: model_answer
+    type: primary
+  - from: model_answer
+    to: paper_normalization
+    type: primary
+  - from: paper_normalization
+    to: vqa_score
+    type: primary
+  - from: vqa_score
+    to: report
+    type: primary
+  - from: report
+    to: source_boundary
+    type: secondary
+    label: 固定实现边界
+    labelPosition: center
+    style:
+      dashed: true
+modules: []

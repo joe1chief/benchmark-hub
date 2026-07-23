@@ -5,73 +5,160 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CheXGenBench 构建流程
-  description: >-
-    对齐论文的 CheXGenBench 构建流程：选择 11 个 T2I 模型，用 MIMIC-CXR 和 LLaVA-Rad 增强标注 标准化训练，生成合成胸片后评估保真度、模式覆盖、隐私风险、下游实用性，并发布
-    SynthCheX-75K。
-  legend: 实线箭头表示标准化训练、合成图像生成、三类评测轴和数据发布流程。
+  description: 对齐当前 TMLR/arXiv v4 的 CheXGenBench 流程：11 个 T2I 系统按模型类型走不同准备路径，在固定留出的 MIMIC-CXR 划分上生成图像，并按当前论文契约接受保真、隐私、分类、分割和报告生成评测。
+  legend: 实线表示模型准备与评测；虚线表示固定数据划分流向生成阶段。
 nodes:
   - id: models
-    label: 模型集合
+    label: |-
+      选择 11 个 T2I 架构
+      既有 + 新型扩散/Transformer 模型
+      包含领域模型与通用基础模型
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: captions
-    label: MIMIC标注
+      'y': 120
+  - id: model_route
+    label: |-
+      模型准备路径
+      既有领域模型还是通用基础模型？
+    type: decision
+    size: xl
+    position:
+      x: 340
+      'y': 120
+  - id: domain_models
+    label: |-
+      领域专用基线
+      RadEdit + LLM-CXR
+      不做修改，直接开箱评测
+      跳过统一微调路径
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: training
+    label: |-
+      微调 9 个通用基础架构
+      同一 237,388 样本训练 20 轮
+      <1B：全量微调
+      >1B：QKV 上 LoRA 秩 32
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 280
+  - id: data
+    label: |-
+      MIMIC-CXR 标准划分
+      训练划分：237,388
+      留出测试提示：5,034
+      增强 LLaVA-Rad 图注
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: training
-    label: 标准训练
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
+      x: 340
+      'y': 520
   - id: generate
-    label: 合成CXR
+    label: |-
+      在固定测试提示上生成
+      保存提示与合成图像元数据
+      统一使用 5,034 图像测试划分
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 280
   - id: fidelity
-    label: 保真度指标
-    type: terminal
+    label: |-
+      保真度 + 模式覆盖
+      RadDino FID/KID + PRDC
+      BioViL-T 图文对齐
+      整体 + 分病理条件分析
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1240
+      'y': 0
   - id: privacy
-    label: 隐私指标
+    label: |-
+      隐私 + 患者重识别
+      最近训练图像：像素距离
+      RadDino 潜空间距离
+      Siamese 重识别：均值 • 最大值 • 计数
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 160
+  - id: classification
+    label: |-
+      分类效用
+      20K 真实 + 20K 合成；ResNet-50
+      训练 20 轮；在 5,034 个真实样本测试
+      Accuracy • F1 • AUROC
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 320
+  - id: segmentation
+    label: |-
+      分割效用
+      3,000 真实 + 3,000 合成样本对
+      用 159 区域模型生成锁骨掩码
+      训练 U-Net；报告留出集 DICE
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 480
+  - id: rrg
+    label: |-
+      放射学报告生成效用
+      50K 真实 + 20K 合成
+      从头训练 LLaVA-Rad
+      BLEU • ROUGE-L • F1-RadGraph
+      GREENScore • RaTEScore
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 640
+  - id: scorecard
+    label: |-
+      CheXGenBench 20+ 指标评分卡
+      比较保真 • 隐私 • 效用
+      呈现指标分歧与模型权衡
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: utility
-    label: 实用性指标
-    type: terminal
-    size: xl
-    position:
-      x: 1600
-      'y': 160
-  - id: release
-    label: SynthCheX-75K
-    type: document
-    size: xl
-    position:
-      x: 1860
-      'y': 160
+      x: 1840
+      'y': 320
 edges:
   - from: models
-    to: captions
+    to: model_route
     type: primary
-  - from: captions
+  - from: model_route
+    to: domain_models
+    type: primary
+  - from: model_route
     to: training
+    type: primary
+  - from: data
+    to: training
+    type: primary
+  - from: data
+    to: generate
+    type: data
+    waypoints:
+      - x: 800
+        'y': 560
+      - x: 800
+        'y': 300
+  - from: domain_models
+    to: generate
     type: primary
   - from: training
     to: generate
@@ -79,13 +166,36 @@ edges:
   - from: generate
     to: fidelity
     type: primary
-  - from: fidelity
+  - from: generate
     to: privacy
     type: primary
-  - from: privacy
-    to: utility
+  - from: generate
+    to: classification
     type: primary
-  - from: utility
-    to: release
+  - from: generate
+    to: segmentation
+    type: primary
+  - from: generate
+    to: rrg
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0
+      entryY: 0.5
+  - from: fidelity
+    to: scorecard
+    type: primary
+  - from: privacy
+    to: scorecard
+    type: primary
+  - from: classification
+    to: scorecard
+    type: primary
+  - from: segmentation
+    to: scorecard
+    type: primary
+  - from: rrg
+    to: scorecard
     type: primary
 modules: []

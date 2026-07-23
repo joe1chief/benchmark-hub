@@ -6,75 +6,156 @@ meta:
   routing: orthogonal
   title: Chinese SimpleQA Build Process
   description: >-
-    Paper-aligned construction flow for Chinese SimpleQA: knowledge-rich Chinese text is filtered, converted into short
-    factual QA pairs, checked by LLM and RAG verification, filtered for difficulty, and reviewed by human annotators
-    before final retention.
-  legend: Solid arrows show automated construction, retrieval validation, human verification, and final dataset filtering.
+    Paper-aligned Chinese SimpleQA flow: knowledge-rich Chinese content spanning 6 topics and 99 subtopics is filtered,
+    GPT-4o-0806 generates and checks static single-answer QA pairs, RAG and four-model difficulty gates reduce 10,000
+    candidates, and independent evidence-backed human review yields 3,000 questions for three-way grading.
+  legend: Solid arrows show the disclosed automated construction, human adjudication, and evaluation sequence.
 nodes:
   - id: knowledge
-    label: Knowledge Text
-    type: cloud
+    label: |-
+      Knowledge-rich Chinese Content
+      6 Primary Topics • 99 Subtopics
+      Wikipedia + Other
+      Knowledge Fields
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: quality
-    label: Quality Filter
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: qa
-    label: LLM QA
+      'y': 40
+  - id: quality_filter
+    label: |-
+      Extract + Filter Source Text
+      Quality-assessment Model
+      Remove Low-quality Content
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 320
+      'y': 40
+  - id: generate
+    label: |-
+      GPT-4o-0806 Generation
+      Short Factual Question
+      + Generated Reference Answer
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
   - id: criteria
-    label: Criteria Check
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: rag
-    label: RAG Verify
+    label: |-
+      GPT-4o-0806 Criteria Check
+      Objective • Unique • Timeless
+      Challenging
+      Answerable by 2023-12-31
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: difficulty
-    label: Hard Filter
-    type: decision
+      x: 880
+      'y': 40
+  - id: rag
+    label: |-
+      RAG Factual Verification
+      LlamaIndex + Google + Bing
+      Reject Contradictory Evidence
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: human
-    label: Human Review
+      x: 1160
+      'y': 40
+  - id: difficulty
+    label: |-
+      Four-model Difficulty Gate
+      GPT-4o • Llama-3-70B
+      Qwen2.5-72B • GLM-4-Plus
+      Discard if All Four Are Correct
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: attrition
+    label: |-
+      Reported Attrition Accounting
+      10,000 → ~6,310 after Difficulty
+      Rule + RAG Remove 2,840
+      ~3,470 Enter Human Review
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: dual_human
+    label: |-
+      Two Independent Annotators
+      Either Rejects Criteria
+      → Discard
+      Each Searches the Answer
+      at Least 2 Authoritative URLs
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: final
-    label: Final QA
-    type: document
+      x: 40
+      'y': 300
+  - id: adjudicate
+    label: |-
+      Answer Adjudication
+      Annotators Search Independently
+      Disagreement → Third Annotator
+    type: process
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 320
+      'y': 300
+  - id: agreement
+    label: |-
+      Final Consistency Gate
+      Human Answer Must Fully Match
+      the Generated Reference Answer
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: dataset
+    label: |-
+      Chinese SimpleQA
+      3,000 Chinese Questions
+      Human-verified Final Set
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: grader
+    label: |-
+      Three-way Grader
+      Correct • Not Attempted • Incorrect
+      CO • NA • IN
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: metrics
+    label: |-
+      Accuracy = CO / (CO + NA + IN)
+      CGA = CO / (CO + IN)
+      F = 2 × CO × CGA
+      / (CO + CGA)
+    type: terminal
+    size: xl
+    position:
+      x: 1440
+      'y': 300
 edges:
   - from: knowledge
-    to: quality
+    to: quality_filter
     type: primary
-  - from: quality
-    to: qa
+  - from: quality_filter
+    to: generate
     type: primary
-  - from: qa
+  - from: generate
     to: criteria
     type: primary
   - from: criteria
@@ -84,9 +165,31 @@ edges:
     to: difficulty
     type: primary
   - from: difficulty
-    to: human
+    to: attrition
     type: primary
-  - from: human
-    to: final
+  - from: attrition
+    to: dual_human
+    type: primary
+    waypoints:
+      - x: 1960
+        'y': 190
+      - x: 20
+        'y': 190
+      - x: 20
+        'y': 350
+  - from: dual_human
+    to: adjudicate
+    type: primary
+  - from: adjudicate
+    to: agreement
+    type: primary
+  - from: agreement
+    to: dataset
+    type: primary
+  - from: dataset
+    to: grader
+    type: primary
+  - from: grader
+    to: metrics
     type: primary
 modules: []

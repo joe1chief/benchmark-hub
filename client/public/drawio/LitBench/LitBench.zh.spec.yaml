@@ -1,89 +1,346 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LitBench 构建流程
-  description: 根据论文整理的 LitBench 流程：Reddit 写作样本、偏好对过滤、长度去偏、验证器训练和人类验证。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  description: 按 EACL 2026 论文复原独立的 2023 年起留出测试集与 2023 年前训练偏好集，并展示零样本裁判、 Bradley-Terry、生成式奖励模型及在线人工验证。
+  legend: 实线表示论文构建、训练或验证；数据箭头注入留出基准；依赖箭头把训练后的 BT 模型送入在线实验。 未连接的文档卡片专门保留固定版本的公开边界，以及论文与发布工件之间尚未对齐的漂移。
 nodes:
-  - id: reddit_stories
-    label: Reddit故事
+  - id: evidence
+    label: |-
+      证据 · EACL 2026 正式版
+      2026.eacl-long.362 · Git c1017dbe
+      A.9 · 有效 batch128 · LR1e-5
+      warmup10% · bfloat16 · AdamW
+      Git GenRM · 2e-5 · 3 epochs · max8192
+      Git 脚本 ≠ 论文配置
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: story_filter
-    label: 故事过滤
+      x: 24
+      'y': 24
+    style:
+      fontSize: 9
+  - id: reddit
+    label: |-
+      r/WritingPrompts 语料源
+      共享提示下的人类故事
+      赞数 · 评论 · 时间戳
+      赞数只是有噪声的偏好代理
+    type: database
+    size: xl
+    position:
+      x: 24
+      'y': 312
+  - id: test_source
+    label: |-
+      留出测试候选
+      用 PRAW 搜索 Fan 等来源帖
+      每个来源帖取前 100 项结果
+      得到 5,000+ 个提示帖 ID
+      剔除 2023 年前故事
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: pair_filter
-    label: 偏好配对
+      x: 344
+      'y': 56
+    style:
+      fontSize: 9
+  - id: train_source
+    label: |-
+      训练候选
+      euclaise/WritingPrompts_preferences
+      来源 HF 6f0b721 · MIT
+      故事严格早于 2023 年
+    type: database
+    size: xl
+    position:
+      x: 344
+      'y': 384
+    style:
+      fontSize: 9
+  - id: test_story_qc
+    label: |-
+      故事级质检 · 测试
+      赞数至少为 10
+      删除非故事评论
+      不少于 50 词 · 至多 2,048 token
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: length_debias
-    label: 长度去偏
+      x: 664
+      'y': 56
+  - id: train_story_qc
+    label: |-
+      故事级质检 · 训练
+      赞数至少为 10
+      删除非故事评论
+      不少于 50 词 · 至多 2,048 token
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: train_test
-    label: 训练/测试
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: reward_models
-    label: 奖励模型
+      x: 664
+      'y': 384
+  - id: test_pairs
+    label: |-
+      同提示测试配对
+      赞数更高者作为 chosen
+      赞数差至少为 chosen 的 25%
+      chosen 必须发布时间更晚
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: llm_judges
-    label: LLM裁判
+      x: 984
+      'y': 56
+  - id: train_pairs
+    label: |-
+      同提示训练配对
+      赞数更高者作为 chosen
+      赞数差至少为 chosen 的 25%
+      chosen 必须发布时间更晚
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: human_study
-    label: 人类研究
+      x: 984
+      'y': 384
+  - id: test_length
+    label: |-
+      测试配对长度去偏
+      按 chosen−rejected 建 100 桶直方图
+      剪枝至对称分布
+      平衡 chosen 更长 / 更短
+    type: process
+    size: xl
+    position:
+      x: 1304
+      'y': 56
+    style:
+      fontSize: 9
+  - id: train_length
+    label: |-
+      训练配对长度去偏
+      按 chosen−rejected 建 100 桶直方图
+      剪枝至对称分布
+      平衡 chosen 更长 / 更短
+    type: process
+    size: xl
+    position:
+      x: 1304
+      'y': 384
+    style:
+      fontSize: 9
+  - id: test_set
+    label: |-
+      论文测试基准
+      2,480 个成对比较
+      3,543 篇唯一故事
+      平均每篇 550 词
+    type: database
+    size: xl
+    position:
+      x: 1624
+      'y': 56
+  - id: train_set
+    label: |-
+      论文训练语料
+      43,827 个偏好对
+      50,309 篇唯一故事
+      与测试集独立整理
+    type: database
+    size: xl
+    position:
+      x: 1624
+      'y': 384
+  - id: zero_shot
+    label: |-
+      零样本 LLM 裁判
+      输入无标签故事 A / B
+      先解释再输出 A/B
+      两种故事顺序都评测
+      对成对准确率取平均
+    type: process
+    size: xl
+    position:
+      x: 1944
+      'y': 56
+    style:
+      fontSize: 9
+  - id: bt_model
+    label: |-
+      Bradley-Terry 奖励模型
+      用 43,827 对训练
+      分别给两篇故事打分
+      最小化 chosen−rejected 奖励
+      的负对数 sigmoid
+    type: process
+    size: xl
+    position:
+      x: 1944
+      'y': 384
+    style:
+      fontSize: 9
+  - id: gen_model
+    label: |-
+      生成式奖励模型
+      SFT 直接 A/B 或 GPT-4.1 理由 + 结论
+      测试时随机交换 A/B
+      温度 0 · 单次采样
+      使用交叉熵训练
+    type: process
+    size: xl
+    position:
+      x: 1944
+      'y': 712
+    style:
+      fontSize: 9
+  - id: report
+    label: |-
+      成对准确率 + 论文结论
+      正确偏好数 ÷ 有效样本数
+      零样本结果平均两种故事顺序
+      Claude 3.7 Sonnet · 73%
+      最佳 BT / GenRM · 约 78%
+      GenRM-CoT · 72%
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2264
+      'y': 384
+    style:
+      fontSize: 9
+  - id: rm_ranking
+    label: |-
+      新故事奖励模型排序
+      64 篇故事 · 40 个 LitBench 提示
+      由 GPT-4.1 + GPT-4o 生成
+      Llama-8B BT 排序新故事
+      每个提示选 RM 最佳 / 最差故事
+    type: process
+    size: xl
+    position:
+      x: 1624
+      'y': 1040
+  - id: human_study
+    label: |-
+      在线人工实验
+      46 名英美 Prolific 工作者
+      每对 10–13 名评分者
+      选择 RM 偏好者 · 56.4% vs 43.6%
+    type: user
+    size: xl
+    position:
+      x: 1944
+      'y': 1040
+  - id: release_boundary
+    label: |-
+      固定公开工件
+      Train 079a36d · 43,827 对
+      Test 21e2739 · 2,381 个完整 ID
+      Rationales 7c5e045 · 43,736 条
+      比论文训练对少 91 条
+      Git c1017dbe · 无许可证 · PRAW 复水
+    type: document
+    size: xl
+    position:
+      x: 344
+      'y': 712
+    style:
+      fontSize: 9
+  - id: disclosure_gaps
+    label: |-
+      工件缺口
+      Test 2,480 · 干净 ID 2,381 · 99 对不完整
+      Train 43,827 · Rationales 43,736 · 差 91
+      Reddit 文本未重新许可
+      §4.3：5/precision · A.3：6/accuracy
+      无固定模型或官方排行榜
+    type: document
+    size: xl
+    position:
+      x: 664
+      'y': 1040
+    style:
+      fontSize: 9
 edges:
-  - from: reddit_stories
-    to: story_filter
+  - from: reddit
+    to: test_source
     type: primary
-  - from: story_filter
-    to: pair_filter
+  - from: reddit
+    to: train_source
     type: primary
-  - from: pair_filter
-    to: length_debias
+  - from: test_source
+    to: test_story_qc
     type: primary
-  - from: length_debias
-    to: train_test
+  - from: test_story_qc
+    to: test_pairs
     type: primary
-  - from: train_test
-    to: reward_models
+  - from: test_pairs
+    to: test_length
     type: primary
-  - from: reward_models
-    to: llm_judges
+  - from: test_length
+    to: test_set
     type: primary
-  - from: llm_judges
+  - from: train_source
+    to: train_story_qc
+    type: primary
+  - from: train_story_qc
+    to: train_pairs
+    type: primary
+  - from: train_pairs
+    to: train_length
+    type: primary
+  - from: train_length
+    to: train_set
+    type: primary
+  - from: test_set
+    to: zero_shot
+    type: data
+  - from: test_set
+    to: bt_model
+    type: data
+  - from: test_set
+    to: gen_model
+    type: data
+    waypoints:
+      - x: 1744
+        'y': 16
+      - x: 2864
+        'y': 16
+      - x: 2864
+        'y': 772
+  - from: train_set
+    to: bt_model
+    type: primary
+  - from: train_set
+    to: gen_model
+    type: primary
+    waypoints:
+      - x: 1808
+        'y': 410
+      - x: 1808
+        'y': 714
+  - from: zero_shot
+    to: report
+    type: data
+  - from: bt_model
+    to: report
+    type: data
+  - from: gen_model
+    to: report
+    type: data
+  - from: bt_model
+    to: rm_ranking
+    type: dependency
+    waypoints:
+      - x: 1776
+        'y': 480
+      - x: 1776
+        'y': 944
+      - x: 1628
+        'y': 944
+  - from: rm_ranking
     to: human_study
     type: primary
 modules: []

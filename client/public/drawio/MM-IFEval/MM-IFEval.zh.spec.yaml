@@ -1,89 +1,359 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MM-IFEval 构建流程
-  description: 对齐论文的 MM-IFEval 构建流程：MM-IFEngine 筛选图像、生成富约束多模态指令，经人工标注和冲突检查后，用规则与 judge 模型评估组合级和感知级问题。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  canvas: auto
+  grid:
+    size: 8
+    snap: true
+  title: MM-IFEval 构建、发布、评测与证据边界
+  description: >-
+    依据 arXiv:2504.07957v2（PDF SHA-256 e927327ac2e67bb0e51de125dd67efc77097d01fead107296f49affcd37d1ec5）、 官方仓库
+    bb844a7f145934da4ed82077735736d02bfafca4、可下载 TSV MD5 973bb839961a449565073a5ee70ae7a6 与 VLMEvalKit
+    7055d3010c38ccb5dcae1bc9535ca19c7fe5d79f 重建；区分论文构建、公开发布、精确混合评分、版本漂移与证据边界。
+  legend: 实线表示构建、发布数据消费与分数汇总；虚线表示发布边界以及 C/P 或 C-Level 约束的评测分支；底部未连接卡片是证据审计， 不属于处理步骤。
 nodes:
-  - id: n1
-    label: 图像来源
+  - id: evidence
+    label: |-
+      证据固化
+      arXiv 2504.07957v2
+      2025-04-27 · PDF e927327a…
+      仓库 bb844a7 · 内置评测 d4900dd
+      VLMEvalKit 7055d30 · 修复 a039b67
+    type: document
+    size: xl
+    position:
+      x: 128
+      'y': 96
+    style:
+      fontSize: 10
+  - id: sources
+    label: |-
+      五类图像领域
+      CC3M + ALLaVA · 自然场景
+      RICO 移动 · MultiUI 网页
+      ChartQA · Geo170k
+      各来源题数未说明
     type: database
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: n2
-    label: 图像筛选
+      x: 408
+      'y': 96
+    style:
+      fontSize: 10
+  - id: image_qc
+    label: |-
+      图像质量筛选
+      剔除低分辨率
+      剔除低语义丰富度
+      信号：IC9600 + RAM
+      阈值/淘汰数未说明
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 任务生成
+      x: 688
+      'y': 96
+    style:
+      fontSize: 10
+  - id: task_generation
+    label: |-
+      任务生成 / 筛选
+      无 QA：采样 16 类任务池
+      GPT-4o 选择图像匹配任务
+      有 QA：去少样本 / 选项
+      正则 + 长度限制
+    type: process
+    size: xl
+    position:
+      x: 968
+      'y': 96
+    style:
+      fontSize: 10
+  - id: taxonomy
+    label: |-
+      约束分类体系
+      6 大类 · 32 个子类别
+      长度 · 数学 · 语言/格式
+      修辞/逻辑 · 动作
+      关键词 · LLM 填充内容
     type: document
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 32类约束
+      x: 1248
+      'y': 96
+    style:
+      fontSize: 10
+  - id: integrate
+    label: |-
+      约束整合
+      无 QA：为多样性采样
+      有 QA：选择兼容类型
+      LLM 重选/生成内容
+      剔除完全矛盾组合
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 人工标注
+      x: 1248
+      'y': 336
+    style:
+      fontSize: 10
+  - id: human_review
+    label: |-
+      人工标注
+      C：开放回答 + 多项约束
+      P：图像问题 + 标准答案列表
+      论文的关键复核环节
+      协议/一致性未说明
+    type: user
+    size: xl
+    position:
+      x: 968
+      'y': 336
+    style:
+      fontSize: 10
+  - id: conflict_qc
+    label: |-
+      冲突后处理
+      额外 LLM 复查问题
+      缓解问题/约束冲突
+      保留人工复核题目
+      无 Prompt/种子/泄漏审计
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 冲突检查
+      x: 688
+      'y': 336
+    style:
+      fontSize: 10
+  - id: paper_release
+    label: |-
+      论文基准
+      400 道主问题
+      300 C · 平均 5.1 项约束
+      100 P · 标准答案列表
+      P 覆盖 13 类图像
+    type: database
+    size: xl
+    position:
+      x: 408
+      'y': 560
+    style:
+      fontSize: 10
+  - id: released_tsv
+    label: |-
+      发布 TSV 审计
+      687 = 400 主问题 + 287 辅助
+      300 C · 1,524 项约束
+      489 规则 · 748 直接 · 287 对比
+      MD5 973bb839…70ae7a6
+    type: database
+    size: xl
+    position:
+      x: 128
+      'y': 560
+    style:
+      fontSize: 10
+  - id: inference
+    label: |-
+      候选模型推理
+      C：图像 + 完整约束 Prompt
+      P：图像 + 原始问题
+      辅助：移除一项约束
+      解码参数未固定
+    type: process
+    size: xl
+    position:
+      x: 128
+      'y': 976
+    style:
+      fontSize: 10
+  - id: eval_route
+    label: |-
+      评测 / 失败路由
+      TSV 标签 → 规则 · 直接 · 对比 · P
+      API：直接 ×4 · 对比/P ×3
+      ans 未赋值可中止
+      解析策略因路径而异
     type: decision
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 400道评测题
-    type: document
+      x: 408
+      'y': 976
+    style:
+      fontSize: 10
+  - id: rule_verify
+    label: |-
+      规则验证
+      10 个算法子类
+      函数/参数经人工复核
+      字符串化 · 逐约束布尔分
+      异常传播；无兜底
+    type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 混合评分
+      x: 688
+      'y': 736
+    style:
+      fontSize: 10
+  - id: direct_judge
+    label: |-
+      直接 Judge / 正则
+      图像 + 回答 + 直接约束
+      清理空白/* · 解析 x/y
+      解析错：外层最多 3 轮
+      API 耗尽可中止
+    type: process
+    size: xl
+    position:
+      x: 688
+      'y': 896
+    style:
+      fontSize: 10
+  - id: compare_judge
+    label: |-
+      对比 Judge / 解析
+      无图 · 每项一条辅助请求
+      有/无约束 → Summary 布尔
+      解析错：跳过且不外层重试
+      漏项会缩小分母
+    type: process
+    size: xl
+    position:
+      x: 688
+      'y': 1056
+    style:
+      fontSize: 10
+  - id: c_item_score
+    label: |-
+      C 单题 / 失败计分
+      规则/对比二值 · 直接 x/y
+      正常：已记录约束分数均值
+      对比解析错会缩小分母
+      缺 total_score：C 汇总加 0
+    type: formula
+    size: xl
+    position:
+      x: 968
+      'y': 896
+    style:
+      fontSize: 10
+  - id: p_judge
+    label: |-
+      P Judge / 解析
+      无图 · 回答 + JSON 标准答案
+      标准子串；先 right 后 wrong
+      解析错：外层最多 3 轮
+      缺 total_score：汇总中止
+    type: process
+    size: xl
+    position:
+      x: 688
+      'y': 1216
+    style:
+      fontSize: 10
+  - id: aggregate
+    label: |-
+      400 题汇总
+      C = 300 道 C 题均值
+      P = 100 道 P 题均值
+      Overall = (300C + 100P)/400
+      当前 0-1 · 论文用百分比
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 968
+      'y': 1216
+    style:
+      fontSize: 10
+  - id: openness_boundary
+    label: |-
+      发布 / 开放性审计
+      部分公开；TSV 许可未知
+      无逐行来源/图像权利
+      MMIF-23k 仅为训练数据
+      无固定发布 · 正文 16 vs 附录 18
+    type: document
+    size: xl
+    position:
+      x: 408
+      'y': 1496
+    style:
+      fontSize: 10
+  - id: evaluator_drift
+    label: |-
+      评测器版本边界
+      论文未固定 Judge 快照
+      内置 C：GPT-4o-2024-11-20
+      内置 P：GPT-4o-mini
+      README 05-13 vs 可变别名
+    type: document
+    size: xl
+    position:
+      x: 968
+      'y': 1496
+    style:
+      fontSize: 10
 edges:
-  - from: n1
-    to: n2
+  - from: evidence
+    to: sources
     type: primary
-  - from: n2
-    to: n3
+  - from: sources
+    to: image_qc
     type: primary
-  - from: n3
-    to: n4
+  - from: image_qc
+    to: task_generation
     type: primary
-  - from: n4
-    to: n5
+  - from: task_generation
+    to: taxonomy
     type: primary
-  - from: n5
-    to: n6
+  - from: taxonomy
+    to: integrate
     type: primary
-  - from: n6
-    to: n7
+  - from: integrate
+    to: human_review
     type: primary
-  - from: n7
-    to: n8
+  - from: human_review
+    to: conflict_qc
+    type: primary
+  - from: conflict_qc
+    to: paper_release
+    type: primary
+  - from: paper_release
+    to: released_tsv
+    type: data
+  - from: released_tsv
+    to: inference
+    type: primary
+  - from: inference
+    to: eval_route
+    type: primary
+  - from: eval_route
+    to: rule_verify
+    type: data
+  - from: eval_route
+    to: direct_judge
+    type: data
+  - from: eval_route
+    to: compare_judge
+    type: data
+  - from: eval_route
+    to: p_judge
+    type: data
+  - from: rule_verify
+    to: c_item_score
+    type: primary
+  - from: direct_judge
+    to: c_item_score
+    type: primary
+  - from: compare_judge
+    to: c_item_score
+    type: primary
+  - from: c_item_score
+    to: aggregate
+    type: primary
+  - from: p_judge
+    to: aggregate
     type: primary
 modules: []

@@ -1,0 +1,391 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PopQA 构建、发布与评测流程
+  description: 依据论文 v4 重建 Wikidata 三元组加权抽样、关系模板、答案闭包、页面访问量、固定 14,267 行发布、官方 runner 语义与自适应检索。
+  legend: 实线表示论文构建或固定实现流程；虚线表示固定证据、发布、提示词、评分器和结果复现边界，这些说明卡不是额外阶段。
+nodes:
+  - id: source_evidence
+    label: |-
+      固定官方证据
+      arXiv 2212.10511v4 · PDF 6de64bcf9b19
+      Git 8172ab04794a · HF 098765c79ea1
+      同一 TSV · SHA 9a5227f41bff
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 80
+  - id: factual_scope
+    label: |-
+      定义开放域事实问答
+      事实表示为主语 · 关系 · 宾语
+      提出实体中心问题
+      不提供标准证据段落
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 80
+  - id: relations
+    label: |-
+      选择 16 种 Wikidata 关系
+      职业 · 出生地 · 类型 · 父亲
+      国家 · 制片人 · 导演 · 作为首都
+      编剧 · 作曲家 · 颜色 · 宗教
+      运动 · 作者 · 母亲 · 首都
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: weighted_sampling
+    label: |-
+      向高流行度加权抽样
+      仅当 \(f > \exp(8R - 6)\) 时保留
+      R 在 (0,1) 上均匀分布
+      f 为精确匹配词频
+      来自 800 MB C4 样本中的主语别名
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 80
+  - id: relation_cap
+    label: |-
+      限制每种关系规模
+      每种关系达到 2,000 条即停止
+      提高关系类型多样性
+    type: process
+    size: xl
+    position:
+      x: 1120
+      'y': 80
+  - id: template_authoring
+    label: |-
+      作者人工标注模板
+      每种关系一个最终自然语言模板
+      附录表 2 列出全部 16 个模板
+    type: document
+    size: xl
+    position:
+      x: 1380
+      'y': 80
+  - id: question_instantiation
+    label: |-
+      实例化每个问题
+      将主语 S 代入占位符
+      使用关系 R 对应模板
+      生成自然语言问题
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 80
+  - id: answer_closure
+    label: |-
+      构造可接受答案闭包
+      纳入每个实体 E
+      满足 Wikidata 中存在 (S, R, E)
+      将所有这类实体作为金标答案
+    type: process
+    size: xl
+    position:
+      x: 1900
+      'y': 80
+  - id: pageviews
+    label: |-
+      附加流行度
+      查询维基百科月度访问量
+      以主语流行度作为代理量
+      按主语流行度分析记忆表现
+    type: process
+    size: xl
+    position:
+      x: 1900
+      'y': 380
+  - id: fixed_release
+    label: |-
+      封装固定发布
+      14,267 行 · 17 列
+      Git TSV 与 HF test.tsv 相同
+      ID · 别名 · URI · 维基标题
+      问题 · 流行度 · 可接受答案
+    type: database
+    size: xl
+    position:
+      x: 1640
+      'y': 520
+  - id: prompt_config
+    label: |-
+      使用论文提示词
+      原文：Q: &lt;question&gt; A:
+      GPT-3 使用零样本
+      GPT-Neo 与 OPT 使用 15 样本
+      从其余 15 种关系各取一例
+    type: document
+    size: xl
+    position:
+      x: 1380
+      'y': 380
+  - id: memory_gate
+    label: |-
+      选择记忆模式
+      原始参数记忆
+      BM25 · Contriever · GenRead
+      使用相同问题做对比
+    type: process
+    size: xl
+    position:
+      x: 1120
+      'y': 380
+  - id: vanilla
+    label: |-
+      使用参数记忆
+      使用已配置的零样本或 15 样本提示
+      不加入检索或生成上下文
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 240
+  - id: retrieval
+    label: |-
+      使用增强上下文
+      BM25：保留完整首段检索文本
+      Contriever：按“. ”切分并丢弃末段
+      GenRead：维基百科背景 · 最多 150 token
+      随后追加问答提示
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 520
+  - id: generate
+    label: |-
+      生成自由文本答案
+      runner 最多生成 15 个新 token
+      GPT-3 温度 0 · top-p 1
+      本地模型使用贪心解码
+      仅保留输出首行
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 380
+  - id: code_scorer
+    label: |-
+      应用固定 runner 评分器
+      读取 possible_answers
+      检查原样 · 小写 · 首字母大写金标
+      在预测子串中查找金标
+      不做通用归一化
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 380
+  - id: report
+    label: |-
+      报告 PopQA 结果
+      平均准确率 · 各关系准确率
+      关联二元正确性
+      与主语流行度对数
+    type: terminal
+    size: xl
+    position:
+      x: 80
+      'y': 380
+  - id: adaptive_split
+    label: |-
+      运行自适应检索协议
+      75% 用于阈值开发
+      25% 用于评测
+      重复 100 次随机划分
+    type: process
+    size: xl
+    position:
+      x: 80
+      'y': 700
+  - id: threshold
+    label: |-
+      学习各关系阈值
+      穷举流行度阈值
+      最大化自适应准确率
+      仅使用开发集预测
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 700
+  - id: adaptive_gate
+    label: |-
+      应用各关系阈值策略
+      低于阈值时使用检索增强预测
+      否则使用参数记忆预测
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 700
+  - id: adaptive_report
+    label: |-
+      报告自适应准确率
+      对 100 次划分取平均
+      比较准确率与检索占比
+      保留各关系独立阈值
+    type: terminal
+    size: xl
+    position:
+      x: 1120
+      'y': 700
+  - id: release_boundary
+    label: |-
+      发布与运行数量边界
+      固定 TSV 与图 4：14,267
+      附录 B 称 GPT-3 运行 14,282 题
+      15 题差异尚未解释
+      不得把运行快照等同于固定 TSV
+    type: document
+    size: xl
+    position:
+      x: 1640
+      'y': 820
+  - id: prompt_boundary
+    label: |-
+      调用漂移
+      论文 GPT-3：零样本 · runner：15 样本
+      README 遗漏 --n_examples 0
+      Contriever README：--ret_file
+      runner：--ret_path
+    type: document
+    size: xl
+    position:
+      x: 1380
+      'y': 700
+  - id: scorer_boundary
+    label: |-
+      论文与 runner 评分边界
+      论文：金标精确子串
+      runner 检查三种金标大小写
+      不将整段预测转为小写
+      无 token 或别名归一化器
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 560
+  - id: adaptive_boundary
+    label: |-
+      自适应结果边界
+      notebook 输入路径为空
+      未提供固定结果文件
+      阈值逻辑可复现
+      此处不重算论文数值
+    type: document
+    size: xl
+    position:
+      x: 1120
+      'y': 980
+edges:
+  - from: source_evidence
+    to: factual_scope
+    type: secondary
+    style:
+      dashed: true
+  - from: factual_scope
+    to: relations
+    type: primary
+  - from: relations
+    to: weighted_sampling
+    type: primary
+  - from: weighted_sampling
+    to: relation_cap
+    type: primary
+  - from: relation_cap
+    to: template_authoring
+    type: primary
+  - from: template_authoring
+    to: question_instantiation
+    type: primary
+  - from: question_instantiation
+    to: answer_closure
+    type: primary
+  - from: answer_closure
+    to: pageviews
+    type: primary
+  - from: pageviews
+    to: prompt_config
+    type: primary
+  - from: pageviews
+    to: fixed_release
+    type: secondary
+    style:
+      dashed: true
+  - from: prompt_config
+    to: memory_gate
+    type: primary
+  - from: memory_gate
+    to: vanilla
+    type: primary
+  - from: memory_gate
+    to: retrieval
+    type: primary
+  - from: vanilla
+    to: generate
+    type: primary
+  - from: retrieval
+    to: generate
+    type: primary
+  - from: generate
+    to: code_scorer
+    type: primary
+  - from: code_scorer
+    to: report
+    type: primary
+  - from: code_scorer
+    to: adaptive_split
+    type: primary
+    waypoints:
+      - x: 210
+        'y': 472
+      - x: 210
+        'y': 620
+      - x: 84
+        'y': 620
+  - from: adaptive_split
+    to: threshold
+    type: primary
+  - from: threshold
+    to: adaptive_gate
+    type: primary
+  - from: adaptive_gate
+    to: adaptive_report
+    type: primary
+  - from: fixed_release
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: prompt_config
+    to: prompt_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1520
+        'y': 700
+  - from: code_scorer
+    to: scorer_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: adaptive_report
+    to: adaptive_boundary
+    type: secondary
+    style:
+      dashed: true
+modules: []

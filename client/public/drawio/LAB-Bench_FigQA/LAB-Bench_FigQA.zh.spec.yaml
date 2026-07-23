@@ -1,0 +1,243 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LAB-Bench FigQA 构建流程
+  description: 依据固定论文与官方资产版本重建 FigQA 的双来源图像出题流程、人工质量门槛、226 题发布边界， 并区分论文基线协议与当前公开评测接口。
+  legend: 实线表示作者与签约出题者的主要构建路径及论文基线评测路径；虚线表示可选 GPT-4 Turbo 头脑风暴或 发布后的版本说明。论文 v3 行为与当前公开评测接口合同明确分开。
+nodes:
+  - id: evidence
+    label: |-
+      证据版本锁定
+      arXiv 2407.10362v3 · 2024-07-17
+      Git 998a8e0 · HF 5c77cec
+    type: document
+    size: xl
+    position:
+      x: 32
+      'y': 168
+  - id: author_route
+    label: |-
+      作者路径
+      选择生物学论文与图像
+      截图提取论文图
+      提出以图像为依据的问题
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 48
+  - id: contractor_pool
+    label: |-
+      签约出题路径
+      自动汇集候选论文池
+      选择候选图像
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 288
+  - id: labelbox
+    label: |-
+      LabelBox 资产标注
+      匿名标注员
+      图像 · 图注 · 框关系 · DOI
+    type: process
+    size: xl
+    position:
+      x: 608
+      'y': 288
+  - id: airtable
+    label: |-
+      Airtable 出题界面
+      呈现图像与元数据
+      签约研究人员草拟问题和答案
+    type: process
+    size: xl
+    position:
+      x: 896
+      'y': 288
+  - id: expert_draft
+    label: |-
+      人类专家出题
+      论文作者 + 签约研究人员
+      问题 · 标准答案 · 干扰项
+    type: user
+    size: xl
+    position:
+      x: 1184
+      'y': 168
+  - id: gpt_seed
+    label: |-
+      可选 GPT-4 Turbo 灵感
+      仅作头脑风暴种子
+      修订不准确或过易建议
+    type: process
+    size: xl
+    position:
+      x: 1184
+      'y': 400
+  - id: constraints
+    label: |-
+      FigQA 有效性门槛
+      不能仅靠读取图中文字作答
+      不需要图注或论文上下文
+      多数题需整合多个图中元素
+    type: document
+    size: xl
+    position:
+      x: 1472
+      'y': 168
+  - id: review
+    label: |-
+      人工质检
+      首批题目校准
+      持续作者审核
+      修订 · 通过 · 拒绝
+    type: user
+    size: xl
+    position:
+      x: 1760
+      'y': 168
+  - id: dataset
+    label: |-
+      完整 FigQA · 226 道选择题
+      图像 · 问题 · 标准答案
+      干扰项 · DOI · 金丝雀
+    type: database
+    size: xl
+    position:
+      x: 1760
+      'y': 560
+  - id: split
+    label: |-
+      发布边界
+      181 题公开 · 45 题私有
+      FigQA 内约 80/20
+      私有集监测训练污染
+    type: process
+    size: xl
+    position:
+      x: 1472
+      'y': 560
+  - id: prompt
+    label: |-
+      论文基线输入
+      打乱选项 + 加入信息不足
+      零样本思维链 · 图像置于文本后
+      不提供工具
+    type: process
+    size: xl
+    position:
+      x: 1184
+      'y': 560
+  - id: parser
+    label: |-
+      论文答案解析
+      正则：[ANSWER]字母[/ANSWER]
+      Claude 2 兜底解析
+      当前评测接口：返回单字母
+    type: process
+    size: xl
+    position:
+      x: 896
+      'y': 560
+  - id: metrics
+    label: |-
+      选择性评测指标
+      Acc=C/N
+      Prec=C/A
+      Cov=A/N
+      A：未选择信息不足
+      论文基线：三次均值 · 标准差
+    type: terminal
+    size: xl
+    position:
+      x: 608
+      'y': 560
+  - id: artifact_boundary
+    label: |-
+      公开资产边界
+      HF “train” = 181 道评测题
+      45 道私有题未发布
+      CC BY-SA 4.0 · 污染检测金丝雀
+      无官方榜单或带标签版本
+    type: terminal
+    size: xl
+    position:
+      x: 608
+      'y': 832
+  - id: version_drift
+    label: |-
+      版本漂移 · 2024-08-19
+      约 1% 题目为采用开源图像而替换
+      公开与私有题互换
+      预印本指标不变
+    type: document
+    size: xl
+    position:
+      x: 896
+      'y': 832
+edges:
+  - from: evidence
+    to: author_route
+    type: primary
+  - from: evidence
+    to: contractor_pool
+    type: primary
+  - from: author_route
+    to: expert_draft
+    type: primary
+  - from: contractor_pool
+    to: labelbox
+    type: primary
+  - from: labelbox
+    to: airtable
+    type: primary
+  - from: airtable
+    to: expert_draft
+    type: primary
+  - from: airtable
+    to: gpt_seed
+    type: optional
+  - from: gpt_seed
+    to: expert_draft
+    type: optional
+  - from: expert_draft
+    to: constraints
+    type: primary
+  - from: constraints
+    to: review
+    type: primary
+  - from: review
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split
+    type: primary
+  - from: split
+    to: prompt
+    type: primary
+  - from: prompt
+    to: parser
+    type: primary
+  - from: parser
+    to: metrics
+    type: primary
+  - from: metrics
+    to: artifact_boundary
+    type: primary
+  - from: split
+    to: version_drift
+    type: optional
+    waypoints:
+      - x: 1616
+        'y': 1040
+      - x: 1040
+        'y': 1040
+  - from: version_drift
+    to: artifact_boundary
+    type: optional
+modules: []

@@ -1,56 +1,116 @@
 {
   "version": 1,
-  "title": "ComplexFuncBench 构建流程",
+  "title": "ComplexFuncBench 构建与 ComplexEval 流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 17,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "arXiv:2501.10132v1\n代码 c37b284 / 数据 5dc7739\nJSONL SHA256 be1e0f5…",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "apis",
-      "label": "真实API",
+      "label": "Booking.com 经 RapidAPI\n5 个领域的 43 个实时 API\n人工修正错误函数描述",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "schema",
-      "label": "修正描述",
+      "id": "coarse",
+      "label": "阶段 1：GPT-4o 粗生成\n抽样函数并生成 1,000 条查询\n通过函数调用接口生成初步路径",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "draft",
-      "label": "GPT草稿",
+      "id": "select",
+      "label": "选出 100 条相对完整样本\n覆盖多样步骤数和调用路径",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "人工路径",
+      "id": "correct",
+      "label": "阶段 2：资深标注员修正\n重写查询；补充 / 删除 / 重排调用\n构建最短完整路径；修正类型 / 取值\n修正参数幻觉与缺失",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "clean",
-      "label": "消除歧义",
+      "id": "disambiguate",
+      "label": "消除每条路径歧义\n移除重叠函数\n删除歧义 API 响应",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "expand",
-      "label": "泛化1000",
+      "id": "quality",
+      "label": "质检全部 100 条模板\n反复复核直至无错误",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "ComplexEval",
+      "id": "generalize",
+      "label": "阶段 3：每模板扩为 10 条\nGPT-4o 生成 9 条新变体 + 原始样本\n初级标注员填参并消歧",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "1,000 条：600 单域 + 400 跨域\n酒店 / 航班 / 租车 / 景点各 150 条\n出租车仅用于跨域样本",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "model",
+      "label": "模型生成下一步输出\n输入查询、函数与对话历史",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "output_kind",
+      "label": "调用列表还是最终回答？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "format",
+      "label": "格式检查\n函数 / 必需参数 / 类型\n具体错误支持自我纠正",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "mapping",
+      "label": "预测调用与标准调用映射\nbge-large-en-v1.5 余弦相似度\n匈牙利匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "matching",
+      "label": "多维等价判断\n精确规则 / 相同 API 响应\nGPT-4o 语义参数匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "feedback",
+      "label": "匹配 → 返回标准标注响应\n移除匹配项；加入下一步标准调用\n未匹配 → 返回固定错误\n将历史反馈给模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "call_metrics",
+      "label": "成功率 = 成功样本数 / 1,000\n调用准确率 = 正确调用总数 / 调用总数",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "response_judge",
+      "label": "GPT-4o 最终回答裁判\n完整性与正确性取 {0, 1, 2}\n对有效样本得分取均值",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +118,104 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "apis",
-      "to": "schema",
+      "from": "evidence",
+      "to": "apis",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "schema",
-      "to": "draft",
+      "from": "apis",
+      "to": "coarse",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "draft",
-      "to": "human",
+      "from": "coarse",
+      "to": "select",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "human",
-      "to": "clean",
+      "from": "select",
+      "to": "correct",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "clean",
-      "to": "expand",
+      "from": "correct",
+      "to": "disambiguate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "expand",
-      "to": "eval",
+      "from": "disambiguate",
+      "to": "quality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "quality",
+      "to": "generalize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "generalize",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "dataset",
+      "to": "model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "model",
+      "to": "output_kind",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "output_kind",
+      "to": "format",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "format",
+      "to": "mapping",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "mapping",
+      "to": "matching",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "matching",
+      "to": "feedback",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "feedback",
+      "to": "model",
+      "type": "data"
+    },
+    {
+      "id": "edge-16",
+      "from": "feedback",
+      "to": "call_metrics",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "output_kind",
+      "to": "response_judge",
       "type": "primary"
     }
   ],

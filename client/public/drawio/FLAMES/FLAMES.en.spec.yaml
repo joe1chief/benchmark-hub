@@ -5,77 +5,245 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FLAMES Build Process
-  description: Paper-aligned FLAMES flow from Chinese value framework to adversarial prompt evaluation and scorer training.
+  description: >-
+    Version-pinned construction of adversarial Chinese prompts, dual-plus-expert annotation, public evaluation sampling,
+    human metrics, and the separately trained specified scorer.
   legend: >-
-    Solid arrows show value taxonomy design, adversarial prompt creation, attack filtering, LLM response collection,
-    human annotation, scorer training, and harmlessness reporting.
+    Solid arrows follow arXiv:2311.06899v6. The public 1K prompt release branches from the prompt set; human metrics and
+    scorer construction consume the annotated response corpus in parallel.
 nodes:
-  - id: frame
-    label: Value Frame
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: prompts
-    label: Adv Prompts
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: Attack Filter
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: responses
-    label: 17 LLMs
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: labels
-    label: Human Label
+  - id: evidence
+    label: |-
+      Fixed evidence boundary
+      arXiv:2311.06899v6
+      Flames repo @ 234bcb7
+      HF CaasiHUANG/flames-scorer
+      revision @ cdb1528
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scorer
-    label: Scorer Train
+      x: 40
+      'y': 20
+  - id: framework
+    label: |-
+      Define the five-dimensional framework
+      fairness 590 · safety 779
+      morality 522 · legality 118
+      data protection 242
+      Chinese values fall under morality
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: authoring
+    label: |-
+      Crowdworkers write Chinese prompts
+      concrete scenario per subcomponent
+      disguise · reverse induction
+      unsafe inquiry
+      successful examples guide free writing
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Harmless
+      x: 320
+      'y': 360
+  - id: filtering
+    label: |-
+      Apply two review rounds
+      1: target value + explicit scenario
+      + attack method
+      2: attack at least one tested LLM
+      inspectors modify or discard failures
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: prompt_set
+    label: |-
+      FLAMES-prompts
+      2,251 adversarial prompts
+      average prompt length: 85.92 tokens
+      successful-attack rate: 53.09%
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: responses
+    label: |-
+      Collect responses from 17
+      Chinese-capable LLMs
+      experts refine scoring rules
+      harmful purpose relevance
+      evaluation responses
+      and scorer training data
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: annotation
+    label: |-
+      Label each response with
+      two graduate annotators
+      fairness/safety/morality: 3 / 2 / 1
+      legality / data protection: 3 / 1
+      field expert adjudicates
+      disagreement
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: corpus
+    label: |-
+      Annotated response corpus
+      ~22.9K prompt-response-label
+      items
+      supports human evaluation
+      and multitask scorer training
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: release
+    label: |-
+      Public prompt-only sample: 1,000
+      random by dimension / component
+      fairness 249 · safety 429
+      morality 201 · legality 46
+      data protection 75 · rest held back
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 80
+  - id: human_metrics
+    label: |-
+      Paper human metrics
+      harmless rate
+      = share labeled 3
+      harmless score
+      = mean label / 3 × 100
+      macro-average five dimensions
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 80
+  - id: scorer_split
+    label: |-
+      Build scorer samples
+      Input prompt + Output response
+      labels come from human annotation
+      validation: MOSS + GPT-4 responses
+      test: InternLM-Chat-7B
+      + InternLM-Chat-20B responses
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 640
+  - id: scorer
+    label: |-
+      Train FLAMES-scorer
+      separate classifier per dimension
+      multitask training
+      RoBERTa-Large backbone
+      InternLM-Chat-7B backbone
+      best accuracy: 79.5%
+    type: process
+    size: xl
+    position:
+      x: 2320
+      'y': 640
+  - id: report
+    label: |-
+      Publish the FLAMES evaluation
+      human harmless rate
+      + harmless score are paper results
+      pinned Flames-1k-Chinese
+      scorer enables automation
+      OOD reliability undisclosed
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2640
+      'y': 360
 edges:
-  - from: frame
-    to: prompts
+  - from: evidence
+    to: framework
+    type: data
+  - from: framework
+    to: authoring
     type: primary
-  - from: prompts
-    to: filter
+  - from: authoring
+    to: filtering
     type: primary
-  - from: filter
+  - from: filtering
+    to: prompt_set
+    type: primary
+  - from: prompt_set
     to: responses
     type: primary
   - from: responses
-    to: labels
+    to: annotation
     type: primary
-  - from: labels
+  - from: annotation
+    to: corpus
+    type: primary
+  - from: prompt_set
+    to: release
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: corpus
+    to: human_metrics
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: corpus
+    to: scorer_split
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: scorer_split
     to: scorer
     type: primary
-  - from: scorer
-    to: score
+  - from: human_metrics
+    to: report
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: scorer
+    to: report
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: release
+    to: report
+    type: data
+    waypoints:
+      - x: 1260
+        'y': 20
+      - x: 2690
+        'y': 20
 modules: []

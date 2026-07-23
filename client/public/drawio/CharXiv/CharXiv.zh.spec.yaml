@@ -5,85 +5,205 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CharXiv 构建流程
-  description: 与论文对齐的 CharXiv 构建流程：从 arXiv 论文中渲染并筛选多样图表， 由研究生标注描述性和推理问题，保证答案明确，再将模型表现与人类基线比较。
-  legend: 实线箭头表示图表筛选、问题构造、验证和评测流程。
+  description: >-
+    对齐 CharXiv v1 论文的构建与评测流程：从八个 arXiv 学科筛选 2,323 张自然科学图表，分别以人工流程构建描述题和推理题， 发布答案公开的验证集并隐藏测试集答案，最后用官方固定版本 GPT-4o
+    二元裁判评分零样本多模态模型回答。
+  legend: 实线箭头表示图表筛选、并行问答构建、专家核验、发布与评测。
 nodes:
-  - id: arxiv
-    label: arXiv图表
+  - id: papers
+    label: |-
+      下载 arXiv 预印本
+      8 个学科
+      2020年1月–2023年9月
+      提取源文件图形
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: select
-    label: 图表筛选
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: desc
-    label: 描述题
+      'y': 220
+  - id: render
+    label: |-
+      重新渲染高分辨率 JPEG
+      长边缩放至 1024 px
+      保留自然科学图表
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: reason
-    label: 推理题
+      x: 340
+      'y': 220
+  - id: siglip
+    label: |-
+      SigLIP 候选预筛
+      余弦相似度 ≥ 0.65
+      参照 MathVista 均值
+      找出可能的图表
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: expert
-    label: 专家核验
-    type: decision
+      x: 640
+      'y': 220
+  - id: manual
+    label: |-
+      研究生执行多样性筛选
+      每学科每年份 750 个
+      每 10 张选择 1 张
+    type: user
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: CharXiv
+      x: 940
+      'y': 220
+  - id: quality
+    label: |-
+      成对相似度 ≥ 0.95
+      去重近似图表
+      删除模糊/标签不清
+      保留 2,323 张图表
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 220
+  - id: descriptive
+    label: |-
+      描述题
+      19 个模板 • 每图 4 题
+      信息提取 • 枚举
+      模式识别 • 计数
+      组合
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 模型评测
+      x: 1540
+      'y': 40
+  - id: answerability
+    label: |-
+      每图 3 道可答
+      + 1 道不可答
+      共 9,292 道开放词表题
+      使用模板对应真值答案
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: human
-    label: 人类基线
+      x: 1840
+      'y': 40
+  - id: reasoning
+    label: |-
+      推理题 • 每图 1 题
+      查看 10 个 GPT-4V
+      候选问答
+      选择/修改/自写问答
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: reasoning_set
+    label: |-
+      要求答案明确且无歧义
+      图内文本 / 通用文本
+      图内数值 / 通用数值
+      无需高级领域知识
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 400
+  - id: verify
+    label: |-
+      人类专家核验
+      策划图表与问题
+      检查真值答案
+      确认准确性与可回答性
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: release
+    label: |-
+      发布 2,323 张图表
+      11,615 道问题
+      验证 1,000：答案公开
+      测试 1,323：真值私有
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: inference
+    label: |-
+      多模态模型零样本评测
+      图表 + 问题
+      + 答案格式指令
+      分别评分描述/推理
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 220
+  - id: judge
+    label: |-
+      gpt-4o-2024-05-13
+      裁判
+      抽取答案 • 二元正确性
+      真值答案 + 类型专用规则
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: report
+    label: |-
+      按类别报告准确率
+      人类推理：80.5%
+      人类描述：92.1%
+      比较开源与闭源多模态模型
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3340
+      'y': 220
 edges:
-  - from: arxiv
-    to: select
+  - from: papers
+    to: render
     type: primary
-  - from: select
-    to: desc
+  - from: render
+    to: siglip
     type: primary
-  - from: desc
-    to: reason
+  - from: siglip
+    to: manual
     type: primary
-  - from: reason
-    to: expert
+  - from: manual
+    to: quality
     type: primary
-  - from: expert
-    to: bench
+  - from: quality
+    to: descriptive
     type: primary
-  - from: bench
-    to: eval
+  - from: quality
+    to: reasoning
     type: primary
-  - from: eval
-    to: human
+  - from: descriptive
+    to: answerability
+    type: primary
+  - from: reasoning
+    to: reasoning_set
+    type: primary
+  - from: answerability
+    to: verify
+    type: primary
+  - from: reasoning_set
+    to: verify
+    type: primary
+  - from: verify
+    to: release
+    type: primary
+  - from: release
+    to: inference
+    type: primary
+  - from: inference
+    to: judge
+    type: primary
+  - from: judge
+    to: report
     type: primary
 modules: []

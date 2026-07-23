@@ -7,50 +7,80 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "docs",
-      "label": "长文档",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "prompts",
-      "label": "人工提示",
+      "id": "evidence",
+      "label": "固定证据边界\narXiv:2501.03200v1\nHF 数据集 @ 11b6961\nFACTS Grounding 1.0 公开产物",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "人工核验",
+      "id": "documents",
+      "label": "收集网页文档或评论集合\n医疗 · 法律 · 互联网/技术\n金融 · 零售/产品\n平均 2.5k tokens · 最长 32k",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "authoring",
+      "label": "第三方标注员编写长输入/长输出任务\n问答 · 摘要 · 文档改写\n请求非平凡且可仅由上下文回答\n系统指令禁止使用外部知识",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality",
+      "label": "人工核验每一个样本\n移除创意写作和专家知识任务\n移除数学 / 逻辑 / 元分析任务\n移除 OCR 不可读的 PDF 上下文",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "splits",
-      "label": "公开盲测",
+      "label": "平衡随机采样划分\nOpen 公开集：860\nBlind 私有集：859\n合计：1,719 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "response",
-      "label": "模型回答",
+      "id": "responses",
+      "label": "生成模型回答\n系统指令 + 用户请求 + 上下文\n以长篇形式完成请求\n只能以给定上下文为依据",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "eligible",
-      "label": "资格过滤",
-      "type": "decision",
+      "id": "eligibility_setup",
+      "label": "校准资格判定提示\n独立金标集 N=450\n仅请求 vs 请求 + 上下文\n每个评委选择 Macro-F1 最优模板",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "多评委评分",
+      "id": "eligibility",
+      "label": "三评委资格判定\nGemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet\n是否充分回应用户请求\n仅三者一致时判为不合格",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "factuality_setup",
+      "label": "校准事实性判定提示\n独立金标集 N=402 · 类别比例 87:13\n测试 7 种提示模板\n每个评委选择 Macro-F1 最优模板",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "factuality",
+      "label": "三评委事实性判定\n仅当每个信息性断言有依据\n或无需依据时才准确\n一个无依据断言即判不准确",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "combine",
+      "label": "合并两个阶段\n淘汰不合格回答\n将每条不合格回答计为不准确\n分别计算每个事实性评委的准确率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "FACTS Grounding 事实性分数\n平均准确回答率\n来自三个评委\n报告 Open 与 Blind 榜单\n跨提供方评委\n缓解自偏好",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +88,74 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "docs",
-      "to": "prompts",
-      "type": "primary"
+      "from": "evidence",
+      "to": "documents",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "prompts",
-      "to": "verify",
+      "from": "documents",
+      "to": "authoring",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "verify",
-      "to": "splits",
+      "from": "authoring",
+      "to": "quality",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "splits",
-      "to": "response",
+      "from": "quality",
+      "to": "splits",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "response",
-      "to": "eligible",
+      "from": "splits",
+      "to": "responses",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "eligible",
-      "to": "judge",
+      "from": "responses",
+      "to": "eligibility",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "eligibility_setup",
+      "to": "eligibility",
+      "type": "data"
+    },
+    {
+      "id": "edge-8",
+      "from": "responses",
+      "to": "factuality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "factuality_setup",
+      "to": "factuality",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "eligibility",
+      "to": "combine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "factuality",
+      "to": "combine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "combine",
+      "to": "score",
       "type": "primary"
     }
   ],

@@ -5,77 +5,222 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FEA-Bench Build Process
-  description: Paper-aligned FEA-Bench flow from GitHub pull requests to executable feature-implementation tasks.
+  description: >-
+    Paper-aligned construction of repository-level feature-implementation tasks from merged Top PyPI GitHub pull
+    requests, including reproducible repository checks, component/intent/size gates, executable before/after tests, the
+    rule-filtered Lite boundary, and the official partial-release constraint.
   legend: >-
-    Solid arrows show repository selection, pull-request filtering, feature-intent filtering, test-patch extraction,
-    task setup, model patching, and unit-test evaluation.
+    Read the repository and pull-request filtering row left-to-right, then the executable benchmark row right-to-left;
+    dotted branches are release boundaries, not scoring steps.
 nodes:
-  - id: prs
-    label: GitHub PRs
+  - id: pypi
+    label: |-
+      Top PyPI Universe
+      8,000 Python Packages
+      Resolve GitHub Repos
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: rules
-    label: Rule Filter
+      'y': 100
+  - id: scope
+    label: |-
+      Repository Filter
+      License Required
+      >1,000 PRs
+      ~600 Repositories
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: intent
-    label: Intent Filter
-    type: decision
+      x: 320
+      'y': 100
+  - id: fast
+    label: |-
+      Fast Install/Test Gate
+      First 20 Test-Changing PRs
+      18 SWE-bench + 101 Other
+      = 119 Repositories
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: tests
-    label: Test Patch
+      x: 600
+      'y': 100
+  - id: pr
+    label: |-
+      Merged PR Candidates
+      Test-File Changes
+      Base Commit + Environment
+      Test Patch + Gold Patch
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: component
+    label: |-
+      New-Component Gate
+      Added Python Functions
+      or Classes + Docs
+      >=1; >25% Edited Lines
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: intent
+    label: |-
+      Intent Gate
+      GPT-4o Classifies PR
+      Keep Primary Intent
+      = New Feature
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: size_gate
+    label: |-
+      Patch-Size Gate
+      Gold Patch <=8,192 Tokens
+      Within Context Budget
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: verify
+    label: |-
+      Executable Test Gate
+      Base + Test Patch
+      May Pass or Fail
+      ImportError Allowed
+      AttributeError Allowed
+      Gold Patch: No FAILED
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: dataset
+    label: |-
+      FEA-Bench Releases
+      Full: 1,401 / 83 Repos
+      Lite: 200 / 48 Repos
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: prompt
+    label: |-
+      Model-Visible Contract
+      Feature Request
+      + New-Component Definitions
+      Hide Gold Patch
+      + Test Patch
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: setup
-    label: Task Setup
+      x: 1160
+      'y': 440
+  - id: context
+    label: |-
+      Repository Context
+      Oracle / BM25
+      Agentless Retrieval
+      Detailed / Brief
+      Component Definitions
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: patch
-    label: Agent Patch
+      x: 880
+      'y': 440
+  - id: edit
+    label: |-
+      Single Generation
+      Apply Candidate Patch
+      Run Hidden Unit Tests
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: unit
-    label: Unit Tests
+      x: 600
+      'y': 440
+  - id: report
+    label: |-
+      FEA-Bench Results
+      Resolved Only If
+      All Unit Tests Pass
+      Resolved / Apply Rates
+      Retrieval P/R + Slices
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 440
+  - id: lite_gate
+    label: |-
+      Lite Boundary
+      Rule-Filtered
+      Not Professionally
+      Human-Verified
+      Future Verified Subset
+    type: document
+    size: xl
+    position:
+      x: 1300
+      'y': 680
+  - id: release_boundary
+    label: |-
+      Release Boundary
+      Full Dataset Not Released
+      HF: Essential Attributes
+      Only; Rest from GitHub
+    type: document
+    size: xl
+    position:
+      x: 1580
+      'y': 680
 edges:
-  - from: prs
-    to: rules
+  - from: pypi
+    to: scope
     type: primary
-  - from: rules
+  - from: scope
+    to: fast
+    type: primary
+  - from: fast
+    to: pr
+    type: primary
+  - from: pr
+    to: component
+    type: primary
+  - from: component
     to: intent
     type: primary
   - from: intent
-    to: tests
+    to: size_gate
     type: primary
-  - from: tests
-    to: setup
+  - from: size_gate
+    to: verify
     type: primary
-  - from: setup
-    to: patch
+  - from: verify
+    to: dataset
     type: primary
-  - from: patch
-    to: unit
+  - from: dataset
+    to: prompt
     type: primary
+  - from: prompt
+    to: context
+    type: primary
+  - from: context
+    to: edit
+    type: primary
+  - from: edit
+    to: report
+    type: primary
+  - from: dataset
+    to: lite_gate
+    type: optional
+  - from: dataset
+    to: release_boundary
+    type: data
 modules: []

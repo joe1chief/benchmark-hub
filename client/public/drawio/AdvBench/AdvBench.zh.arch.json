@@ -1,62 +1,122 @@
 {
   "version": 1,
-  "title": "AdvBench Build Process",
+  "title": "AdvBench 构建与 GCG 攻击流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 18,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "有害任务",
+      "id": "seed_strings",
+      "label": "有害字符串种子\n人工编写 100 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "500提示",
+      "id": "seed_behaviors",
+      "label": "有害行为种子\n人工编写 50 条",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "string_prompt",
+      "label": "有害字符串 5 个示例提示\n仅抽取字符串种子",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "攻击后缀",
+      "id": "behavior_prompt",
+      "label": "有害行为 5 个示例提示\n仅抽取行为种子",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generator",
+      "label": "Wizard-Vicuna-30B-Uncensored\n每轮生成 10 条",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "模型查询",
+      "id": "filter_unknown",
+      "label": "论文未披露\n生成后过滤链\n仅作注释 • 无连线",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "发布 AdvBench\n论文：500 字符串 + 500 行为",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "protocol",
+      "label": "选择攻击协议\n单题 • 通用 • 迁移",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "是否服从",
+      "id": "individual",
+      "label": "单题协议\n100 次运行 • 1 个行为 • 1 个模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "universal",
+      "label": "通用协议\n在 25 个行为上优化\n评测 100 个行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "transfer",
+      "label": "迁移协议\n在 25 个行为上优化\n评测 388 个未见行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gcg",
+      "label": "运行 GCG 搜索\n20 token 后缀 • 500 步\n梯度 Top-k 256 • 批量 512",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "run",
+      "label": "运行被测模型\n保留最佳对抗后缀",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "success_gate",
+      "label": "采用哪条成功判定？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "安全判定",
+      "id": "string_score",
+      "label": "有害字符串评分\n仅使用目标交叉熵\n检查精确目标诱导",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "成功率",
+      "id": "behavior_score",
+      "label": "有害行为评分\n人工判断是否遵从",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "拒答表现",
+      "id": "asr",
+      "label": "攻击成功率\n单题 • 通用 • 迁移",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告鲁棒性\nASR + 目标损失",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +124,121 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "seed_strings",
+      "to": "string_prompt",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "seed_behaviors",
+      "to": "behavior_prompt",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "string_prompt",
+      "to": "generator",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "behavior_prompt",
+      "to": "generator",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
+      "from": "generator",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "release",
+      "to": "protocol",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "protocol",
+      "to": "individual",
+      "type": "primary",
+      "label": "单题"
+    },
+    {
+      "id": "edge-8",
+      "from": "protocol",
+      "to": "universal",
+      "type": "primary",
+      "label": "通用"
+    },
+    {
+      "id": "edge-9",
+      "from": "protocol",
+      "to": "transfer",
+      "type": "primary",
+      "label": "迁移"
+    },
+    {
+      "id": "edge-10",
+      "from": "individual",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "universal",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "transfer",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "gcg",
+      "to": "run",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "run",
+      "to": "success_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "success_gate",
+      "to": "string_score",
+      "type": "primary",
+      "label": "字符串"
+    },
+    {
+      "id": "edge-16",
+      "from": "success_gate",
+      "to": "behavior_score",
+      "type": "primary",
+      "label": "行为"
+    },
+    {
+      "id": "edge-17",
+      "from": "string_score",
+      "to": "asr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "behavior_score",
+      "to": "asr",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "asr",
+      "to": "report",
       "type": "primary"
     }
   ],

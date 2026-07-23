@@ -5,75 +5,291 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HR-Bench 构建流程
-  description: 对齐论文的 HR-Bench 构建流程：8K 图像来源、人工设计 FSP/FCP 任务、标注目标坐标、 生成 4K 裁剪、多选项提示、循环置换评测和准确率/不确定性统计。
-  legend: 实线箭头表示基准构建和评测流程；不把 DC2 推理方法混入数据集构建。
+  description: 与论文一致的 HR-Bench 构建流程，并明确对照论文协议与固定发布评测器。
+  legend: 论文规定对完整选项序列做循环位移。固定 Hugging Face 发布中，每个四行组仅让标准答案遍历 A-D，干扰项完整序列并非循环位移；虚线分支记录该发布差异与仓库 5ad1177 实际评测器。
 nodes:
+  - id: evidence
+    label: |-
+      证据与固定版本
+      arXiv 2408.15556v1 · 仓库 5ad1177
+      Hugging Face 数据集 83b9013
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: images
-    label: 8K图像
+    label: |-
+      收集 200 张 8K 图像
+      开放 DIV8K 与互联网来源
+      保留完整分辨率原图
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: tasks
-    label: FSP+FCP
+      'y': 300
+  - id: boxes
+    label: |-
+      人工标注相关目标的边界框
+      标出与问题对应的对象
+      保留目标在 8K 图像中的坐标
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: annotate
-    label: 人工问答
+      x: 340
+      'y': 300
+  - id: generate
+    label: |-
+      在边界框内裁剪图像
+      GPT-4o 生成问答对
+      聚焦需视觉落地的细节
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: coords
-    label: 目标坐标
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: crops
-    label: 4K裁剪
+      x: 640
+      'y': 300
+  - id: review
+    label: |-
+      人工专家逐对复核
+      删除错误或有歧义的问题
+      保留难以靠猜测回答的样本
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 940
+      'y': 300
+  - id: route
+    label: |-
+      分配感知任务
+      单实例细粒度信息
+      或跨实例关系
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: fsp
+    label: |-
+      FSP · 100 个样本
+      属性识别 · OCR
+      视觉提示
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 80
+  - id: fcp
+    label: |-
+      FCP · 100 个样本
+      地图分析 · 图表分析
+      空间关系
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 520
+  - id: versions
+    label: |-
+      构建两个分辨率视图
+      8K 保留原图
+      4K 围绕相关目标裁剪并保持宽高比
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 300
   - id: options
-    label: 多选项
+    label: |-
+      构造 4 个 A-D 选项
+      两个视图绑定同一标准答案
+      保持问题与目标的对应关系
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: 准确+不确定
+      x: 2140
+      'y': 300
+  - id: paper_protocol
+    label: |-
+      论文协议
+      循环位移完整 A-D 序列
+      每个选项移到下一位置
+      运行 4 次并报告平均 ACC
+    type: document
+    size: xl
+    position:
+      x: 2440
+      'y': 80
+  - id: release_rows
+    label: |-
+      固定 HF 发布差异 · 83b9013
+      四行组：标准答案 A → B → C → D
+      完整选项顺序不是循环位移
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 520
+  - id: eval_prompt
+    label: |-
+      候选 MLLM 提示与输出
+      Question + Options A-D + 选择指令
+      将候选回答交给评测器
+    type: document
+    size: xl
+    position:
+      x: 2740
+      'y': 520
+  - id: aux_judge
+    label: |-
+      仓库辅助 Yes/No 评判器
+      要求 llm_path；具体模型未固定
+      标准答案 + 候选回答
+      top_p 0.8 · top_k 40 · 温度 0.2
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 520
+  - id: yn_parser
+    label: |-
+      转为小写并匹配 yes/no 前缀
+      yes → 1
+      no 或其他任何前缀 → 0
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 520
+  - id: repo_score
+    label: |-
+      仓库聚合
+      按 cycle_category 分组
+      对类别与 all 计算 gpt_score 均值
+      再平均各组；分别报告 4K 与 8K
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3640
+      'y': 520
+  - id: pilot
+    label: |-
+      试验性分辨率研究
+      准确率 + 分辨率相关的
+      下一 token 不确定度
+      不属于基准主评测
+    type: document
+    size: xl
+    position:
+      x: 2140
+      'y': 780
+  - id: artifact_boundary
+    label: |-
+      5ad1177 官方产物边界
+      4K 800 行 + 8K 800 行
+      每视图 200 道题 × 4 行
+      论文/发布置换差异已明确标出
+      DC² 是推理方法，不是基准构建步骤
+    type: document
+    size: xl
+    position:
+      x: 3640
+      'y': 80
 edges:
+  - from: evidence
+    to: images
+    type: data
   - from: images
-    to: tasks
+    to: boxes
     type: primary
-  - from: tasks
-    to: annotate
+  - from: boxes
+    to: generate
     type: primary
-  - from: annotate
-    to: coords
+  - from: generate
+    to: review
     type: primary
-  - from: coords
-    to: crops
+  - from: review
+    to: route
     type: primary
-  - from: crops
+  - from: route
+    to: fsp
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: fcp
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: fsp
+    to: versions
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 0
+  - from: fcp
+    to: versions
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 1
+  - from: versions
     to: options
     type: primary
   - from: options
-    to: metrics
+    to: paper_protocol
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: options
+    to: release_rows
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: release_rows
+    to: eval_prompt
+    type: secondary
+  - from: eval_prompt
+    to: aux_judge
+    type: secondary
+  - from: aux_judge
+    to: yn_parser
+    type: secondary
+  - from: yn_parser
+    to: repo_score
+    type: secondary
+  - from: versions
+    to: pilot
+    type: secondary
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0
+      entryY: 0.5
+  - from: paper_protocol
+    to: artifact_boundary
+    type: data
+  - from: repo_score
+    to: artifact_boundary
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
 modules: []

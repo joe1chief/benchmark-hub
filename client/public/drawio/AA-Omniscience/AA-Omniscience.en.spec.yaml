@@ -4,123 +4,207 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AA-Omniscience Build Process
-  description: Paper-aligned construction and evaluation workflow for AA-Omniscience, based on arXiv:2511.13029.
-  legend: >-
-    Solid arrows show the benchmark construction and evaluation flow; dashed arrows mark review/filtering checkpoints
-    that enforce reliability and calibration-focused scoring.
+  title: AA-Omniscience Build and Evaluation Process
+  description: >-
+    Paper-aligned construction with explicit GPT-5 generation, filtering, and revision, manual validation, a 6,000-item
+    full evaluation set, and a separate distribution- and performance-aligned 600-item public sample.
+  legend: The full set feeds evaluation; the public 600-item release is a representative publication branch only.
 nodes:
-  - id: domains
+  - id: sources
     label: |-
-      Domain and topic scope
-      6 economic domains
-      42 topics
+      Select Authoritative Sources
+      First-party / recognized sources
+      Current / recently answerable facts
     type: database
+    size: xl
+    position:
+      x: 280
+      'y': 100
+  - id: coverage
+    label: |-
+      Define Economic Coverage
+      6 domains • 42 topics
+      Business to STEM
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: sources
+      'y': 100
+  - id: generate
     label: |-
-      Authoritative sources
-      first-party, primary, secondary
-      up-to-date facts
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: generator
-    label: |-
-      Question generation agent
-      derive factual questions
-      from source passages
+      GPT-5 Question Generation
+      Ground each item in source facts
+      Require precise short answers
     type: process
     size: xl
     position:
-      x: 560
-      'y': 70
-  - id: filters
+      x: 520
+      'y': 100
+  - id: filter
     label: |-
-      Filter and revise
-      difficulty, ambiguity
-      source reliance, precision
-    type: decision
+      GPT-5 Filtering
+      Remove similar, ambiguous,
+      easy, or source-reliant items
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: dataset
+      x: 760
+      'y': 100
+  - id: revise
     label: |-
-      Question set
-      6,000 total questions
-      public 10% subset
+      GPT-5 Revision
+      Improve precision and format
+      Retest frontier-model difficulty
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 100
+  - id: manual_validation
+    label: |-
+      Manual Review + Validation
+      Quality gate after agent revisions
+      Procedure / annotator counts
+      Not disclosed in the paper
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: full_release
+    label: |-
+      Full Evaluation Set • 6,000 Questions
+      Main benchmark consumed by evaluation
     type: database
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 1480
+      'y': 100
+  - id: public_sampling
+    label: |-
+      Representative Sampling
+      Align domain/topic distribution
+      Align model-performance profile
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: public_release
+    label: |-
+      Public Release
+      600 questions • 10%
+      Representative publication subset
+    type: database
+    size: xl
+    position:
+      x: 1960
+      'y': 40
+  - id: prompt
+    label: |-
+      Closed-Book System Prompt
+      {topic} + {category}
+      JUST the answer • no explanation
+      No context / tools; abstain if unsure
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
   - id: answer
     label: |-
-      Model answering
-      no context or tools
-      answer only if confident
+      Target-Model Response
+      Short answer or explicit abstention
+      One pass over all 6,000 items
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: grading
+      x: 1960
+      'y': 400
+  - id: grade
     label: |-
-      Gemini grader
-      correct / partial
-      incorrect / not attempted
+      Gemini 2.5 Flash Preview
+      (09-2025) • reasoning enabled
+      Best manual-grading alignment
+      versus tested alternative graders
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 2200
+      'y': 400
+  - id: classes
+    label: |-
+      Four-Way Grade
+      Correct • partially correct
+      Incorrect • not attempted
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 400
   - id: metrics
     label: |-
-      Reliability metrics
-      OI: \(100(c-i)/(c+p+i+a)\)
-      accuracy + hallucination rate
-    type: formula
+      Reliability Metrics • N=c+p+i+a
+      OI = 100 × (c − i) / N
+      Accuracy = c / N
+      Hallucination = i / (p + i + a)
+      Target-model cost; grader excluded
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2680
+      'y': 400
+  - id: report
+    label: |-
+      AA-Omniscience Results
+      Overall + domain reliability
+      Topic estimates require the full set
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 400
 edges:
-  - from: domains
+  - from: coverage
     to: sources
     type: primary
   - from: sources
-    to: generator
+    to: generate
     type: primary
-  - from: generator
-    to: filters
-    type: data
-    label: candidate questions
-  - from: filters
-    to: generator
-    type: optional
-    label: revise or remove
-  - from: filters
-    to: dataset
+  - from: generate
+    to: filter
     type: primary
-    label: accepted items
-  - from: dataset
+  - from: filter
+    to: revise
+    type: primary
+  - from: revise
+    to: manual_validation
+    type: primary
+  - from: manual_validation
+    to: full_release
+    type: primary
+  - from: full_release
+    to: public_sampling
+    type: secondary
+  - from: public_sampling
+    to: public_release
+    type: secondary
+  - from: full_release
+    to: prompt
+    type: primary
+  - from: prompt
     to: answer
     type: primary
-  - from: dataset
-    to: grading
-    type: data
-    label: gold targets
   - from: answer
-    to: grading
+    to: grade
     type: primary
-    label: model answers
-  - from: grading
+  - from: grade
+    to: classes
+    type: primary
+  - from: classes
     to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
 modules: []

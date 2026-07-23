@@ -1,0 +1,163 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Where2Place 基准构建与点预测评测流程
+  description: >-
+    Where2Place包含100张来自家庭与办公室的真实图像。为减少标注偏差，一组标注者编写相对场景实体描述空闲区域的指令，另一组独立依据指令标注目标掩码，两路标注形成完整的100组图像、指令与掩码三元组。Where2Place(h)是这100题内部重叠的30题子集，其关系类型未出现在RoboPoint合成训练数据中，并非与完整集互斥的划分。评测时模型直接预测一个或多个点，输出边界框的基线则通过均匀采样转换为点。准确率为落入目标掩码的预测点比例，Table
+    2分别报告完整100题与重叠Hard 30题三次运行的均值和标准差。
+  legend: >-
+    来源：RoboPoint arXiv:2406.10721, Section 5.1 'Spatial Affordance Prediction,' especially the Benchmarks paragraph and
+    Table 2; official project https://robo-point.github.io/, repository https://github.com/wentaoyuan/RoboPoint, and
+    dataset https://huggingface.co/datasets/wentao-yuan/where2place. The paper explicitly states that 'a subset of 30
+    examples (Where2Place(h))' contains relation types absent from the synthetic data, so Hard 30 overlaps the full
+    100-example benchmark. Scope pin: this entry covers Where2Place, not RoboPoint's 660K-example synthetic
+    training-data pipeline.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: real_images
+    label: 100张家庭 / 办公图像
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: group_a
+    label: A组：空闲区域指令
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: group_b
+    label: |-
+      B组：依据A组指令
+      标注目标掩码
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 680
+  - id: annotation_merge
+    label: 图像-指令-掩码三元组
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: full_set
+    label: 完整Where2Place：100题
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: hard_subset
+    label: 重叠Hard子集：30题
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: prediction_route
+    label: 预测输出格式？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: direct_points
+    label: 直接预测点
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: box_points
+    label: 边界框均匀采样为点
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: mask_check
+    label: 掩码内点检查
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 360
+  - id: point_accuracy
+    label: 掩码内点数 / 全部点数
+    type: formula
+    size: xl
+    position:
+      x: 2280
+      'y': 360
+  - id: three_run_report
+    label: 完整100题与重叠Hard 30题，三次均值±标准差
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+edges:
+  - from: real_images
+    to: group_a
+    type: data
+  - from: real_images
+    to: group_b
+    type: data
+    label: 图像
+  - from: group_a
+    to: annotation_merge
+    type: primary
+  - from: group_b
+    to: annotation_merge
+    type: primary
+  - from: annotation_merge
+    to: full_set
+    type: primary
+  - from: full_set
+    to: hard_subset
+    type: data
+    label: 其中重叠30例
+    labelPosition: end
+  - from: full_set
+    to: prediction_route
+    type: primary
+    label: 完整100题
+    labelPosition: end
+  - from: hard_subset
+    to: prediction_route
+    type: primary
+    label: Hard 30题
+    labelPosition: end
+  - from: prediction_route
+    to: direct_points
+    type: primary
+    label: 点
+    labelPosition: end
+  - from: prediction_route
+    to: box_points
+    type: optional
+    label: 框基线
+    labelPosition: end
+  - from: direct_points
+    to: mask_check
+    type: primary
+  - from: box_points
+    to: mask_check
+    type: primary
+  - from: mask_check
+    to: point_accuracy
+    type: primary
+  - from: point_accuracy
+    to: three_run_report
+    type: primary
+  - from: group_a
+    to: group_b
+    type: dependency
+    label: 指令
+modules: []

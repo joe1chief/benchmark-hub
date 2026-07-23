@@ -5,108 +5,177 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMB 构建流程
-  description: 基于论文的 CMB 构建流程：CMB-Exam 来自中文医学资格考试题，经去重、清洗、OCR 校准和专家解释；CMB-Clin 来自筛选后的真实病历问诊，并用专家对齐的自动评分评估。
-  legend: 实线箭头表示医学分类、CMB-Exam 分支、CMB-Clin 分支和最终评测。
+  description: >-
+    对齐论文的 CMB 构建与评测流程：CMB-Exam 分支清洗并按分类划分 280,839 道中文医学考试题；CMB-Clin 将官方教材病例筛成 74 个多轮问诊病例、208
+    个问题；两条分支分别采用准确率和专家对齐的四维临床评分。
+  legend: 实线箭头表示 CMB-Exam、CMB-Clin 两条独立构建分支及各自评测协议。
 nodes:
   - id: taxonomy
-    label: 医学分类
+    label: |-
+      医学职业调研：6 大类别、28
+      个子类
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: exam_sources
-    label: 考试题源
+      'y': 170
+  - id: exam_source
+    label: 医题库资格考试与课程考试题
     type: document
     size: xl
     position:
       x: 300
-      'y': 60
+      'y': 40
   - id: exam_clean
-    label: 清洗OCR
+    label: |-
+      去重清洗、人工修正 OCR、
+      删除评论标记错题
     type: process
     size: xl
     position:
       x: 560
-      'y': 60
-  - id: exam_split
-    label: 400/10划分
-    type: process
+      'y': 40
+  - id: exam_pool
+    label: |-
+      CMB-Exam：280,839
+      道选择题
+    type: database
     size: xl
     position:
       x: 820
-      'y': 60
-  - id: explain
-    label: 专家解释
-    type: document
+      'y': 40
+  - id: exam_split
+    label: |-
+      每子类 400 测试、10 开发，
+      其余训练
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 60
-  - id: clin_sources
-    label: 真实病历
+      'y': 40
+  - id: explanations
+    label: 3 位医学专家仅为开发集题目编写解释
+    type: user
+    size: xl
+    position:
+      x: 1340
+      'y': 40
+  - id: clin_source
+    label: 官方医学教材的 108 个病例及问答
     type: document
     size: xl
     position:
       x: 300
-      'y': 260
+      'y': 300
   - id: clin_screen
-    label: 病例筛选
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 260
-  - id: dialogue
-    label: 多轮问诊
+    label: 临床病例质量筛查
     type: process
     size: xl
     position:
+      x: 560
+      'y': 300
+  - id: clin_set
+    label: |-
+      CMB-Clin：74 个病例、
+      208 个问题
+    type: database
+    size: xl
+    position:
       x: 820
-      'y': 260
+      'y': 300
+  - id: dialogue
+    label: 考官与考生的多轮诊疗问诊
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 300
   - id: benchmark
-    label: CMB基准
+    label: CMB：医学知识与临床应用
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 准确率人工评估
+      x: 1600
+      'y': 170
+  - id: exam_eval
+    label: |-
+      CMB-Exam：贪心解码与选择题准
+      确率
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 60
+  - id: clin_eval
+    label: |-
+      CMB-Clin：GPT-4
+      自动评分与专家对齐
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 280
+  - id: dimensions
+    label: 流畅性、相关性、完整性与医学专业度
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 280
+  - id: report
+    label: 中文医学知识与临床问诊报告
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2380
+      'y': 170
 edges:
   - from: taxonomy
-    to: exam_sources
+    to: exam_source
     type: primary
-  - from: exam_sources
+  - from: exam_source
     to: exam_clean
     type: primary
   - from: exam_clean
+    to: exam_pool
+    type: primary
+  - from: exam_pool
     to: exam_split
     type: primary
   - from: exam_split
-    to: explain
-    type: primary
-  - from: explain
-    to: benchmark
+    to: explanations
     type: primary
   - from: taxonomy
-    to: clin_sources
+    to: clin_source
     type: primary
-  - from: clin_sources
+  - from: clin_source
     to: clin_screen
     type: primary
   - from: clin_screen
+    to: clin_set
+    type: primary
+  - from: clin_set
     to: dialogue
+    type: primary
+  - from: explanations
+    to: benchmark
     type: primary
   - from: dialogue
     to: benchmark
     type: primary
   - from: benchmark
-    to: eval
+    to: exam_eval
+    type: primary
+  - from: benchmark
+    to: clin_eval
+    type: primary
+  - from: clin_eval
+    to: dimensions
+    type: primary
+  - from: exam_eval
+    to: report
+    type: primary
+  - from: dimensions
+    to: report
     type: primary
 modules: []

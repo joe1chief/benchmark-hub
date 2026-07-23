@@ -4,76 +4,163 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: FrontierMath 构建流程
-  description: 按论文对齐的 FrontierMath 构建流程：从专家原创命题到数学答案自动验证。
-  legend: 实线箭头表示专家命题、解答和验证脚本提交、同行盲审、原创性检查、模型代码提交、自动评分和成功率统计。
+  title: FrontierMath v2 构建流程
+  description: 按论文对齐的专家构建流程与当前 v2 工具评测，并明确隔离历史提交协议。
+  legend: 构建阶段对应 arXiv:2411.04872v7 第 2–4 节；当前评测对应 Epoch AI 2026-06-12 v2 页面及实现 gist 修订 39d23771，私有验证器全集未发布。
 nodes:
-  - id: experts
-    label: 数学专家
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: drafts
-    label: 原创命题
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: scripts
-    label: 解答脚本
+  - id: evidence
+    label: |-
+      证据：arXiv:2411.04872v7
+      官方 gist @ 39d23771 + 当前 v2 页面
+      私有基准；无公开完整数据集仓库
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: review
-    label: 同行盲审
-    type: decision
+      x: 40
+      'y': 120
+  - id: experts
+    label: |-
+      与 60+ 位数学家合作
+      来自十多个国家的高校
+      专长覆盖现代数学主要领域
+    type: database
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: orig
-    label: 原创检查
+      x: 300
+      'y': 120
+  - id: authoring
+    label: |-
+      创作全新、未发表的问题
+      覆盖约 70% 的 MSC2020 顶级学科
+      专家解题耗时数小时至数天
     type: process
     size: xl
     position:
+      x: 560
+      'y': 120
+  - id: requirements
+    label: |-
+      执行四项命题要求
+      原创 · 可自动核验
+      不可猜中 · 计算上可处理
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 120
+  - id: problem_package
+    label: |-
+      提交题面 + 详细解答 + 验证器
+      学科与技巧分类
+      背景 · 创造 · 执行三维难度
+    type: document
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: submit
-    label: 代码提交
+      'y': 120
+  - id: blind_review
+    label: |-
+      至少一次领域专家盲审
+      检查正确性、歧义、不可猜性
+      审核验证器/元数据/难度；失败则修订
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: 自动评分
-    type: terminal
+      'y': 120
+  - id: contamination
+    label: |-
+      控制原创性与污染风险
+      安全处理 + 专家检索公开来源
+      Quetext/Copyscape 仅检查题面
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 120
+  - id: current_release
+    label: |-
+      v2 2026-06-12：共 338 题
+      Tiers 1–3 295 题 + Tier 4 43 题
+      公开 12 题：前三级 10 + 第四级 2，均已包含
+      修正 123+12；移除 5+7
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 420
+  - id: version_boundary
+    label: |-
+      版本边界：不可混合两套协议
+      论文：10,000 token + 标记/pickle；非当前
+      v2 已替换该历史提交循环
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 420
+  - id: current_prompt
+    label: |-
+      当前 v2：python + submit_answer
+      硬上限 1,000,000；660,000 时强制提交
+      Python 无状态；每次工具调用最多 30 秒
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 420
+  - id: submission
+    label: |-
+      提交 answer()；无参数
+      返回指定类型对象；不输出且无注释
+      answer 最多运行 30 秒；未提交即错误
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 420
+  - id: verification
+    label: |-
+      在沙箱运行私有 verify(answer())
+      True → 1；False/错误/超时/无答案 → 0
+      报告准确率；完整验证器集仍为私有
+    type: terminal
+    size: xl
+    position:
+      x: 560
+      'y': 420
 edges:
+  - from: evidence
+    to: experts
+    type: primary
   - from: experts
-    to: drafts
+    to: authoring
     type: primary
-  - from: drafts
-    to: scripts
+  - from: authoring
+    to: requirements
     type: primary
-  - from: scripts
-    to: review
+  - from: requirements
+    to: problem_package
     type: primary
-  - from: review
-    to: orig
+  - from: problem_package
+    to: blind_review
     type: primary
-  - from: orig
-    to: submit
+  - from: blind_review
+    to: contamination
     type: primary
-  - from: submit
-    to: score
+  - from: contamination
+    to: current_release
+    type: primary
+  - from: current_release
+    to: version_boundary
+    type: primary
+  - from: version_boundary
+    to: current_prompt
+    type: primary
+  - from: current_prompt
+    to: submission
+    type: primary
+  - from: submission
+    to: verification
     type: primary
 modules: []

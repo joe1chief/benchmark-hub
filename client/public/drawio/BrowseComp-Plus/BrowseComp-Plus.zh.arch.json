@@ -7,62 +7,116 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 9,
+    "nodes": 18,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "browsecomp",
-      "label": "BrowseComp",
+      "id": "original",
+      "label": "原始 BrowseComp\n1,266 个问题答案对\n开始证据收集",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "mine",
-      "label": "挖掘",
+      "id": "o3_gate",
+      "label": "使用 o3 联网搜索\n124 个因格式错误或拒答失败\n排除失败响应",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "验证",
-      "type": "decision",
+      "id": "after_o3",
+      "label": "保留 1,142 个查询\n结构化线索 • URL • 片段\n继续收集页面",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "negatives",
-      "label": "负样本",
+      "id": "scrape",
+      "label": "抓取每个引用 URL\nSelenium + Trafilatura\n提取候选证据文本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scrape_gate",
+      "label": "验证已抓取页面\n137 个幻觉 URL 或抓取失败\n排除不可用查询",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "after_scrape",
+      "label": "保留 1,005 个查询\n候选证据可成功抓取\n每个查询均进入人工验证",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "human_verify",
+      "label": "人工验证线索与可回答性\n14 名标注员 • 400+ 小时 • 一致率 >80%\n必要时修订或搜索至少 20 分钟",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "verified",
+      "label": "最终 830 个验证查询\nEvidence 文档支撑推理\nGold 文档还包含最终答案",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "decompose",
+      "label": "GPT-4o 查询分解\n每个查询约 7 个子查询\n仅作用于最终 830 个查询",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hard_negatives",
+      "label": "挖掘困难负样本\nSerpAPI：每个子查询最多 100 个结果\n保留相关但不提供支持的文档",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "corpus",
-      "label": "语料库",
+      "label": "固定去重语料库\n830 个查询对应 100,195 篇文档\nEvidence + Gold qrels + 困难负样本",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "retriever",
-      "label": "检索器",
+      "id": "retrievers",
+      "label": "配置检索器\nBM25 • Qwen3 Embedding • ReasonIR\n以 Oracle Evidence 上下文作对照",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "topk",
+      "label": "Agent 搜索接口\nTop 5 • 每条结果 512 Token\n可选全文文档工具",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "agent",
-      "label": "Agent",
+      "label": "深度研究 Agent\n迭代搜索与交叉核验\n输出带文档引用的最终答案",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "评判",
-      "type": "decision",
+      "id": "end_to_end",
+      "label": "端到端回答评测\nGPT-4.1 Judge：准确率 + 召回率\n搜索调用次数 + 校准误差",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "指标",
+      "id": "citation_score",
+      "label": "端到端引用评测\n覆盖率 + 数量\n引用精确率 + 召回率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "retrieval_score",
+      "label": "独立检索评测\nEvidence / Gold Recall@5、100、1000\n基于已发布 qrels 的 nDCG@10",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告可控实验结果\n分离检索、回答与引用能力\n对比检索器、Oracle 与消融实验",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,56 +124,122 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "browsecomp",
-      "to": "mine",
+      "from": "original",
+      "to": "o3_gate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "mine",
-      "to": "verify",
+      "from": "o3_gate",
+      "to": "after_o3",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "verify",
-      "to": "negatives",
+      "from": "after_o3",
+      "to": "scrape",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "verify",
-      "to": "corpus",
+      "from": "scrape",
+      "to": "scrape_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "negatives",
-      "to": "corpus",
+      "from": "scrape_gate",
+      "to": "after_scrape",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "corpus",
-      "to": "retriever",
+      "from": "after_scrape",
+      "to": "human_verify",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "retriever",
-      "to": "agent",
+      "from": "human_verify",
+      "to": "verified",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "agent",
-      "to": "judge",
+      "from": "verified",
+      "to": "decompose",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "judge",
-      "to": "metrics",
+      "from": "decompose",
+      "to": "hard_negatives",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "verified",
+      "to": "corpus",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "hard_negatives",
+      "to": "corpus",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "corpus",
+      "to": "retrievers",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "retrievers",
+      "to": "topk",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "topk",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "agent",
+      "to": "end_to_end",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "agent",
+      "to": "citation_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "retrievers",
+      "to": "retrieval_score",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
+      "from": "end_to_end",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "citation_score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "retrieval_score",
+      "to": "report",
       "type": "primary"
     }
   ],

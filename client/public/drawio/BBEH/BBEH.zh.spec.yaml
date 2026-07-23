@@ -1,0 +1,228 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: BIG-Bench Extra Hard 构建流程
+  description: 基于 arXiv:2502.19187v2，展示 BBEH 能力映射、半对抗难度校准、完整版与 Mini 打包、确定性解析及聚合。
+  legend: 实线表示通过后的构建和评测；虚线循环表示持续修订，直至两个参考模型均低于 70%。
+nodes:
+  - id: bbh_audit
+    label: |-
+      审计已饱和的 BBH
+      识别有捷径或接近解满的任务
+      保留广泛通用推理覆盖
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 180
+  - id: skill_map
+    label: |-
+      映射 BBH 推理能力
+      保留全部 23 个任务领域
+      为每个领域定义更难目标
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 180
+  - id: harder_tasks
+    label: |-
+      构建 23 个更难对应任务
+      半对抗式修订或替换
+      增加组合推理且不复用 BBH 题目
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 180
+  - id: candidates
+    label: |-
+      生成候选问题
+      检查可回答性与确定答案
+      对齐目标推理能力
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 180
+  - id: ref_models
+    label: |-
+      两个参考模型
+      Gemini 1.5 Flash
+      Gemini Thinking Experimental
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 20
+  - id: difficulty_gate
+    label: |-
+      两个参考模型均低于 70%？
+      对每个任务分别要求
+      通过则冻结 • 未通过则继续加难
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 180
+  - id: harden
+    label: |-
+      修订或替换任务
+      移除捷径 • 增加必要推理
+      返回候选生成阶段
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: full_set
+    label: |-
+      完整版 BBEH：4,520 题
+      23 个任务 • 通常每任务 200 题
+      Disambiguation QA = 120 题
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 180
+  - id: mini
+    label: |-
+      BBEH Mini
+      每任务 20 题
+      23 × 20 = 460 题
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 460
+  - id: prompt
+    label: |-
+      固定评测后缀
+      逐步推理指令
+      固定最终答案前缀与格式
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 740
+  - id: extract
+    label: |-
+      确定性解析与清洗
+      抽取最终答案 • 最小归一化
+      应用任务专属精确匹配规则
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 740
+  - id: task_accuracy
+    label: |-
+      逐任务准确率
+      评分完整版或 Mini 的每个样本
+      保留逐任务表现向量
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 740
+  - id: harmonic
+    label: |-
+      完整版 BBEH 聚合
+      调整后的调和平均
+      惩罚跨任务表现不均衡
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 620
+  - id: micro
+    label: |-
+      BBEH Mini 聚合
+      微平均
+      适用于每任务仅 20 题
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 860
+  - id: report
+    label: |-
+      发布 BBEH 结果
+      完整版调整调和平均
+      Mini 微平均与逐任务准确率
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 740
+edges:
+  - from: bbh_audit
+    to: skill_map
+    type: primary
+  - from: skill_map
+    to: harder_tasks
+    type: primary
+  - from: harder_tasks
+    to: candidates
+    type: primary
+  - from: candidates
+    to: difficulty_gate
+    type: primary
+  - from: ref_models
+    to: difficulty_gate
+    type: primary
+  - from: difficulty_gate
+    to: harden
+    type: optional
+  - from: harden
+    to: candidates
+    type: optional
+  - from: difficulty_gate
+    to: full_set
+    type: primary
+  - from: full_set
+    to: mini
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: full_set
+    to: prompt
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: mini
+    to: prompt
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: prompt
+    to: extract
+    type: primary
+  - from: extract
+    to: task_accuracy
+    type: primary
+  - from: task_accuracy
+    to: harmonic
+    type: primary
+  - from: task_accuracy
+    to: micro
+    type: primary
+  - from: harmonic
+    to: report
+    type: primary
+  - from: micro
+    to: report
+    type: primary
+modules: []
