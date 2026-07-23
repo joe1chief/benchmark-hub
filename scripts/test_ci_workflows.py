@@ -103,6 +103,7 @@ class CiWorkflowContractTests(unittest.TestCase):
         installer = (
             ROOT / "scripts" / "ci" / "install_drawio_toolchain_macos.sh"
         ).read_text(encoding="utf-8")
+        package = (ROOT / "package.json").read_text(encoding="utf-8")
         self.assertIn("DRAWIO_DESKTOP_VERSION=30.0.2", installer)
         self.assertIn(
             "cabbb29b250468d906c2cdd3a3920d96783d3af70871f17b8eed0cd3fa8d2cbf",
@@ -120,6 +121,12 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("scripts/ci/install_drawio_toolchain_macos.sh", self.ci)
         self.assertIn("scripts/ci/diagnose_drawio_png_macos.sh", self.ci)
         self.assertIn("pnpm test:drawio-fidelity", self.ci)
+        self.assertIn(
+            '"test:drawio-fidelity": '
+            '"node --test --test-concurrency=2 '
+            'scripts/benchmark_build_process/paper_review_site_a*.scoped.test.mjs"',
+            package,
+        )
 
     def test_active_suite_does_not_register_superseded_test_cases(self):
         test_sources = "\n".join(
