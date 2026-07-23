@@ -99,6 +99,35 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("xvfb-run", wrapper)
         self.assertIn("/usr/bin/drawio", wrapper)
 
+    def test_macos_drawio_fidelity_job_runs_desktop_tests(self):
+        installer = (
+            ROOT / "scripts" / "ci" / "install_drawio_toolchain_macos.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("DRAWIO_DESKTOP_VERSION=30.0.2", installer)
+        self.assertIn(
+            "cabbb29b250468d906c2cdd3a3920d96783d3af70871f17b8eed0cd3fa8d2cbf",
+            installer,
+        )
+        self.assertIn("IMPORTER_DRAWIO_E2E_CLI=", installer)
+        self.assertIn("DRAWIO_DESKTOP_CLI=", installer)
+        self.assertIn("drawio-fidelity:", self.ci)
+        self.assertIn("name: Draw.io Export Fidelity (macOS)", self.ci)
+        self.assertIn("runs-on: macos-15", self.ci)
+        self.assertIn("scripts/ci/install_drawio_toolchain_macos.sh", self.ci)
+        self.assertIn("pnpm test:drawio-fidelity", self.ci)
+
+    def test_active_suite_does_not_register_superseded_test_cases(self):
+        test_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (ROOT / "scripts" / "benchmark_build_process").glob("*.test.mjs")
+            )
+        )
+        self.assertNotIn(
+            "Superseded by the later A8/A9 paper-review contract",
+            test_sources,
+        )
+
     def test_a10h_accepts_the_ci_drawio_desktop_path(self):
         test_source = (
             ROOT

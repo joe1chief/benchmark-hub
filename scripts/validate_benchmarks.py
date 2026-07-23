@@ -40,7 +40,8 @@ VALID_L1 = {
     "空间与3D理解",
 }
 
-# Data uses lowercase openness values
+# Canonical categories used by filters and badges. Rich source evidence remains
+# in the data and is classified into one of these categories at read time.
 VALID_OPENNESS = {"public", "partly public", "in-house", ""}
 
 REQUIRED_FIELDS = ["l1", "year"]
@@ -71,6 +72,36 @@ def err(msg: str):
 def warn(msg: str):
     warnings.append(msg)
     print(f"  ⚠️  WARN:  {msg}")
+
+
+def canonicalize_openness(value) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+
+    normalized = value.strip().lower()
+    if normalized in {"", "未披露", "not disclosed", "unknown"}:
+        return ""
+    if (
+        "partly" in normalized
+        or "部分公开" in normalized
+        or normalized in {"public subset", "mixed"}
+        or "自动门控" in normalized
+        or ("完整快照" in normalized and "未披露" in normalized)
+    ):
+        return "partly public"
+    if (
+        normalized == "private"
+        or normalized.startswith("in-house")
+        or "内部数据集" in normalized
+    ):
+        return "in-house"
+    if (
+        normalized.startswith("public")
+        or normalized.startswith("公开")
+        or normalized.startswith("数据公开")
+    ):
+        return "public"
+    return None
 
 
 def resolve_public_asset_path(value: str) -> Optional[Path]:
@@ -230,8 +261,11 @@ def main():
 
         # openness
         openness = entry.get("openness", "")
-        if not isinstance(openness, str) or openness not in VALID_OPENNESS:
-            warn(f"{prefix} unexpected openness value: '{openness}'")
+        if canonicalize_openness(openness) is None:
+            err(
+                f"{prefix} invalid openness value: '{openness}'. "
+                f"Must resolve to one of: {sorted(VALID_OPENNESS)}"
+            )
 
         # mermaid_flowchart
         flowchart = entry.get("mermaid_flowchart")

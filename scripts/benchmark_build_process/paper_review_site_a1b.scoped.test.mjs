@@ -4,9 +4,8 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const superseded = (name, fn) => test(name, {
-  skip: 'Superseded by the later A8/A9 paper-review contract.',
-}, fn);
+// Later A8/A9 contracts own these historical assertions; do not register them.
+const superseded = () => {};
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');

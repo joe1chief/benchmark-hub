@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Benchmark } from '@/types/benchmark';
+import { canonicalizeOpenness } from '@/lib/openness';
 
 interface Filters {
   search: string;
@@ -84,7 +85,9 @@ export function useFilteredBenchmarks(data: Benchmark[], filters: Filters) {
 
     // 公开性筛选
     if (filters.openness) {
-      result = result.filter(b => b.openness === filters.openness);
+      result = result.filter(
+        b => canonicalizeOpenness(b.openness) === filters.openness,
+      );
     }
 
     // 广泛采用筛选

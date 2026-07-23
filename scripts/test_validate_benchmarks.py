@@ -1,10 +1,59 @@
 import unittest
+import json
+from pathlib import Path
 
 from scripts.validate_benchmarks import (
     build_related_reference_index,
+    canonicalize_openness,
     related_reference_resolves,
     validate_identity_record,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class OpennessValidationTest(unittest.TestCase):
+    def test_canonicalizes_supported_openness_variants(self):
+        cases = {
+            "public": "public",
+            "公开": "public",
+            "公开平台": "public",
+            "数据公开；仓库及数据无许可证文件": "public",
+            "public, noncommercial license": "public",
+            "partly": "partly public",
+            "部分公开": "partly public",
+            "public subset": "partly public",
+            "mixed": "partly public",
+            "公开密码归档；当前镜像自动门控": "partly public",
+            "公开评测平台；完整快照与数据许可证未披露": "partly public",
+            "private": "in-house",
+            "内部数据集": "in-house",
+            "未披露": "",
+            "": "",
+        }
+        for value, expected in cases.items():
+            with self.subTest(value=value):
+                self.assertEqual(canonicalize_openness(value), expected)
+
+    def test_rejects_unrecognized_or_non_string_openness(self):
+        for value in ("restricted pending review", None, [], 17):
+            with self.subTest(value=value):
+                self.assertIsNone(canonicalize_openness(value))
+
+    def test_all_catalog_openness_values_have_a_canonical_category(self):
+        catalog = json.loads(
+            (ROOT / "client" / "public" / "benchmarks.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        unresolved = [
+            (entry.get("id"), entry.get("openness"))
+            for entry in catalog
+            if canonicalize_openness(entry.get("openness", "")) is None
+        ]
+
+        self.assertEqual(unresolved, [])
 
 
 class RelatedBenchmarkReferenceTest(unittest.TestCase):
