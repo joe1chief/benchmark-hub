@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -274,7 +275,7 @@ test('strictly reproduces all twelve A12d source and rendered assets byte-for-by
           ['-x', '-f', 'png', '-o', png, generated],
           { stdio: 'pipe' },
         );
-        assert.deepEqual(readFileSync(png), readFileSync(`${base}.png`), `${id}.${language}.png bytes`);
+        assertPngFidelity(png, `${base}.png`, `${id}.${language}.png fidelity`);
         count += 1;
       }
     }

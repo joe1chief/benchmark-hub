@@ -5,10 +5,11 @@ set -euo pipefail
 : "${RUNNER_TEMP:?RUNNER_TEMP must point to the GitHub Actions temporary directory}"
 : "${DRAWIO_DESKTOP_CLI:?DRAWIO_DESKTOP_CLI must point to the Draw.io executable}"
 : "${IMAGEMAGICK_COMPARE:?IMAGEMAGICK_COMPARE must point to ImageMagick compare}"
+: "${IMAGEMAGICK_COMPARE_REAL:?IMAGEMAGICK_COMPARE_REAL must point to ImageMagick compare}"
+: "${IMAGEMAGICK_IDENTIFY:?IMAGEMAGICK_IDENTIFY must point to ImageMagick identify}"
 
 source_base="client/public/drawio/LAB-Bench/LAB-Bench.en"
 generated_png="${RUNNER_TEMP}/LAB-Bench.en.generated.png"
-identify_cli="$(dirname "${IMAGEMAGICK_COMPARE}")/identify"
 
 "${DRAWIO_DESKTOP_CLI}" \
   -x \
@@ -18,23 +19,26 @@ identify_cli="$(dirname "${IMAGEMAGICK_COMPARE}")/identify"
   "${source_base}.drawio"
 
 printf 'Draw.io PNG diagnostic\n'
-"${identify_cli}" \
+"${IMAGEMAGICK_IDENTIFY}" \
   -format 'generated: %wx%h %[colorspace] %[type]\n' \
   "${generated_png}"
-"${identify_cli}" \
+"${IMAGEMAGICK_IDENTIFY}" \
   -format 'checked-in: %wx%h %[colorspace] %[type]\n' \
   "${source_base}.png"
 
-status=0
 for metric in AE RMSE SSIM; do
   metric_output="$(
-    "${IMAGEMAGICK_COMPARE}" \
+    "${IMAGEMAGICK_COMPARE_REAL}" \
       -metric "${metric}" \
       "${generated_png}" \
       "${source_base}.png" \
       null: 2>&1
-  )" || status=$?
+  )" || true
   printf '%s: %s\n' "${metric}" "${metric_output}"
 done
 
-exit "${status}"
+"${IMAGEMAGICK_COMPARE}" \
+  -metric AE \
+  "${generated_png}" \
+  "${source_base}.png" \
+  null:

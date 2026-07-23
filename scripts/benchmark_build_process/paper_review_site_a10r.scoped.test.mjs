@@ -34,6 +34,7 @@ const imageMagick = [
   '/opt/homebrew/bin/magick',
   '/usr/local/bin/magick',
 ].find(path => path && existsSync(path));
+const imageMagickFont = process.env.IMAGEMAGICK_FONT || 'Arial';
 const nativeTextWidthLimit = 196;
 
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
@@ -94,7 +95,7 @@ test('keeps bilingual node text within reviewed native-text boxes', () => {
           );
           if (language === 'en' && imageMagick) {
             const renderedWidth = Number(execFileSync(imageMagick, [
-              '-font', 'Arial',
+              '-font', imageMagickFont,
               '-pointsize', '11',
               `label:${line}`,
               '-format', '%w',

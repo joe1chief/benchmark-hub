@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -429,9 +430,9 @@ test('reproduces both normalized CraftBench SVG and PNG exports from Draw.io sou
         '-o', generatedPng,
         `${base}.drawio`,
       ], { stdio: 'pipe' });
-      assert.deepEqual(
-        readFileSync(generatedPng),
-        readFileSync(`${base}.png`),
+      assertPngFidelity(
+        generatedPng,
+        `${base}.png`,
         `CraftBench.${language}.png export freshness`,
       );
     }

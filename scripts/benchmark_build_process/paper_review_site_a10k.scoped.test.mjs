@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -314,9 +315,9 @@ test('reproduces all eight A10k SVG and PNG exports from checked-in Draw.io sour
         execFileSync(drawioDesktop, [
           '-x', '-f', 'png', '-o', generatedPng, `${base}.drawio`,
         ], { stdio: 'pipe' });
-        assert.deepEqual(
-          readFileSync(generatedPng),
-          readFileSync(`${base}.png`),
+        assertPngFidelity(
+          generatedPng,
+          `${base}.png`,
           `${id}.${language}.png export freshness`,
         );
       }

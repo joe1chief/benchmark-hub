@@ -113,6 +113,7 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("brew install imagemagick", installer)
         self.assertIn('test -x "${image_compare}"', installer)
         self.assertIn("IMAGEMAGICK_COMPARE=", installer)
+        self.assertIn("IMAGEMAGICK_FONT=", installer)
         self.assertIn("drawio-fidelity:", self.ci)
         self.assertIn("name: Draw.io Export Fidelity (macOS)", self.ci)
         self.assertIn("runs-on: macos-15", self.ci)
@@ -132,6 +133,20 @@ class CiWorkflowContractTests(unittest.TestCase):
             test_sources,
         )
 
+    def test_active_suite_does_not_compare_png_container_bytes(self):
+        test_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (ROOT / "scripts" / "benchmark_build_process").glob(
+                    "paper_review_site_a*.scoped.test.mjs"
+                )
+            )
+        )
+        self.assertNotRegex(
+            test_sources,
+            r"assert\.deepEqual\(\s*readFileSync\((?:generatedPng|png)\)",
+        )
+
     def test_a10h_accepts_the_ci_drawio_desktop_path(self):
         test_source = (
             ROOT
@@ -140,6 +155,15 @@ class CiWorkflowContractTests(unittest.TestCase):
             / "paper_review_site_a10h.scoped.test.mjs"
         ).read_text(encoding="utf-8")
         self.assertIn("process.env.DRAWIO_DESKTOP_CLI", test_source)
+
+    def test_a10r_accepts_the_ci_image_magick_font(self):
+        test_source = (
+            ROOT
+            / "scripts"
+            / "benchmark_build_process"
+            / "paper_review_site_a10r.scoped.test.mjs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("process.env.IMAGEMAGICK_FONT", test_source)
 
     def test_google_font_import_precedes_tailwind_imports(self):
         stylesheet = (ROOT / "client" / "src" / "index.css").read_text(
