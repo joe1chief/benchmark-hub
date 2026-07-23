@@ -117,6 +117,7 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("name: Draw.io Export Fidelity (macOS)", self.ci)
         self.assertIn("runs-on: macos-15", self.ci)
         self.assertIn("scripts/ci/install_drawio_toolchain_macos.sh", self.ci)
+        self.assertIn("scripts/ci/diagnose_drawio_png_macos.sh", self.ci)
         self.assertIn("pnpm test:drawio-fidelity", self.ci)
 
     def test_active_suite_does_not_register_superseded_test_cases(self):
