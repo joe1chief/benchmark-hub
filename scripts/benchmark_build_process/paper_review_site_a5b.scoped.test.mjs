@@ -271,7 +271,7 @@ test('pins primary-source versions and publishes native fixed-light SVG/PNG pair
   for (const [id, [paperUrl, note]] of Object.entries(sources)) {
     const detail = readDetail(id);
     assert.equal(detail.paper_url, paperUrl, `${id} primary source`);
-    assert.equal(detail.arxiv_pdf_url, paperUrl.includes('arxiv.org') ? paperUrl.replace('/abs/', '/pdf/') : '');
+    assert.equal(detail.arxiv_pdf_url, paperUrl.startsWith('https://arxiv.org/') ? paperUrl.replace('/abs/', '/pdf/') : '');
     assert.match(detail.drawio_review_note, note, `${id} source locator`);
     for (const language of ['en', 'zh']) {
       const base = join(publicDir, 'drawio', id, `${id}.${language}`);

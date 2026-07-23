@@ -11,6 +11,7 @@ import {
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
 import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
+import { escapeCitationText, isArxivUrl } from '@/lib/benchmarkText';
 import { canonicalizeOpenness } from '@/lib/openness';
 
 interface Props {
@@ -70,7 +71,7 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
       url: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`,
       label: 'PDF.js Viewer',
     });
-    if (!pdfUrl.includes('arxiv.org')) {
+    if (!isArxivUrl(pdfUrl)) {
       strategies.push({ strategy: 'direct', url: pdfUrl, label: 'Direct' });
     }
   }
@@ -364,7 +365,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
 
   const [citationCopied, setCitationCopied] = useState(false);
   const intro = b ? (isEn ? (b.intro_en || b.intro) : b.intro || '') : '';
-  const cleanIntro = intro.replace(/\s+/g, ' ').replace(/"/g, '\\"').trim();
+  const cleanIntro = escapeCitationText(intro.replace(/\s+/g, ' ').trim());
   
   const bibtexCode = b ? `@article{${b.id},\n  title={${b.name}: ${cleanIntro}},\n  author={${b.org || 'Unknown'}},\n  journal={arXiv preprint},\n  year={${b.year || new Date().getFullYear()}}\n}` : '';
   const apaCitation = b ? `${b.org || 'Unknown'}. (${b.year || new Date().getFullYear()}). ${b.name}: ${cleanIntro}. arXiv preprint.` : '';

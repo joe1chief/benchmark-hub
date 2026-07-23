@@ -288,7 +288,7 @@ superseded('pins every A2a primary source version, repository state, and locator
   for (const [id, [paperUrl, notePattern]] of Object.entries(expected)) {
     const detail = readDetail(id);
     assert.equal(detail.paper_url, paperUrl, `${id} paper version`);
-    if (paperUrl.includes('arxiv.org')) {
+    if (paperUrl.startsWith('https://arxiv.org/')) {
       assert.equal(detail.arxiv_pdf_url, paperUrl.replace('/abs/', '/pdf/'));
     }
     assert.match(detail.drawio_review_note, notePattern, `${id} source and locator`);
