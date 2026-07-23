@@ -4,10 +4,10 @@
 [![Forks](https://img.shields.io/github/forks/joe1chief/llm-benchmark-costco?style=flat-square&logo=github&color=blue)](https://github.com/joe1chief/llm-benchmark-costco/network/members)
 [![License](https://img.shields.io/github/license/joe1chief/llm-benchmark-costco?style=flat-square&color=green)](LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/joe1chief/llm-benchmark-costco?style=flat-square&color=orange)](https://github.com/joe1chief/llm-benchmark-costco/commits/main)
-[![Benchmarks](https://img.shields.io/badge/Benchmarks-614-purple?style=flat-square)](https://joe1chief.github.io/llm-benchmark-costco/)
+[![Benchmarks](https://img.shields.io/badge/Benchmarks-610-purple?style=flat-square)](https://joe1chief.github.io/llm-benchmark-costco/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://joe1chief.github.io/llm-benchmark-costco/)
 
-> A curated, searchable database of **614 LLM evaluation benchmarks** across 12 capability dimensions — with inline PDF reading, bilingual Draw.io build-process review baselines, bilingual UI, dark mode, **neon glow effects**, and **automated CI/CD**.
+> A curated, searchable database of **610 LLM evaluation benchmarks** across 16 capability dimensions — with inline PDF reading, bilingual Draw.io build-process review baselines, bilingual UI, dark mode, **neon glow effects**, and **automated CI/CD**.
 
 **[🌐 Live Demo](https://joe1chief.github.io/llm-benchmark-costco/)** · **[📊 Browse Benchmarks](https://joe1chief.github.io/llm-benchmark-costco/)** · **[🤝 Contribute](CONTRIBUTING.md)**
 
@@ -32,7 +32,7 @@
 
 ## Features
 
-- **614 Benchmarks** across 12 capability dimensions — Agent Capability (98), General Language (120), Multimodal (112), Code (64), Science & Reasoning (41), Safety & Alignment (43), Medical & Health (44), and more.
+- **610 Benchmarks** across 16 capability dimensions — Agent Capability (96), General Language (76), Multimodal (132), Code (63), Science & Reasoning (39), Safety & Alignment (44), Medical & Health (85), and more.
 - **Neon Glow & Shimmer Effects** — Interactive neon glow effect on card hover and a subtle shimmer animation on the logo in dark mode.
 - **Inline PDF Reading** — Click any card to open the details drawer and read the full paper without leaving the page. Most entries embed the original arXiv PDF directly.
 - **Build Process Flowcharts** — All 614 catalog entries include bilingual Draw.io review-baseline diagrams and editable sources, with formal paper-alignment status tracked separately in the manifest and **fullscreen mode** for complex flows.
@@ -102,7 +102,7 @@ llm-benchmark-costco/
 │   └── sync-and-deploy.yml         # Daily sync
 ├── client/
 │   ├── public/
-│   │   └── benchmarks.json          # 614 benchmark entries
+│   │   └── benchmarks.json          # 610 benchmark entries
 │   └── src/
 │       ├── components/
 │       │   ├── BenchmarkCard.tsx     # Card component with neon glow
