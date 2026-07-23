@@ -1,10 +1,5 @@
 name: CI — Validate & Build Check
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 触发条件：
-#   1. 所有 PR（确保合并前通过验证）
-#   2. push 到 main（双重保险）
-# ─────────────────────────────────────────────────────────────────────────────
 on:
   pull_request:
     branches:
@@ -12,81 +7,87 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'client/public/**'
-      - 'benchmarks.json'
-      - 'client/src/**'
-      - 'client/index.html'
-      - 'scripts/**'
-      - '.github/workflows/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'vite.ghpages.config.ts'
-      - 'vite.config.ts'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # ───────────────────────────────────────────────────────────────────────────
-  # Job 1: 数据验证
-  # ───────────────────────────────────────────────────────────────────────────
   validate-data:
     name: Validate benchmarks.json
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Run validation script
-        id: validate
+      - name: Validate benchmark data
+        run: python3 scripts/validate_benchmarks.py
+
+      - name: Verify README statistics
         run: |
-          python3 scripts/validate_benchmarks.py 2>&1 | tee /tmp/validate_output.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          python3 scripts/update_readme_stats.py /tmp/benchmark-stats.env
+          if ! git diff --exit-code -- README.md; then
+            echo "::error file=README.md::Benchmark statistics are stale. Run scripts/update_readme_stats.py and commit README.md."
+            exit 1
+          fi
 
       - name: Count benchmark entries
         run: |
           COUNT=$(python3 -c "import json; data=json.load(open('client/public/benchmarks.json')); print(len(data))")
-          echo "📊 Total benchmarks: **$COUNT**" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Total benchmarks: **$COUNT**" >> "$GITHUB_STEP_SUMMARY"
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # Job 2: TypeScript 类型检查
-  # ───────────────────────────────────────────────────────────────────────────
   typecheck:
     name: TypeScript Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Resolve pnpm store
+        id: pnpm-cache
+        shell: bash
+        run: echo "store_path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          path: ${{ steps.pnpm-cache.outputs.store_path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Install pinned Draw.io toolchain
+        run: bash scripts/ci/install_drawio_toolchain.sh
+
+      - name: Smoke test Draw.io Desktop
+        run: node scripts/ci/smoke_drawio_desktop.mjs
 
       - name: TypeScript check
         run: pnpm exec tsc --noEmit
@@ -94,31 +95,35 @@ jobs:
       - name: Build Process regression tests
         run: pnpm test:build-process
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # Job 3: 构建验证（确保 GitHub Pages 构建成功）
-  # ───────────────────────────────────────────────────────────────────────────
   build-check:
     name: Build Check (GitHub Pages)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [validate-data, typecheck]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Resolve pnpm store
+        id: pnpm-cache
+        shell: bash
+        run: echo "store_path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          path: ${{ steps.pnpm-cache.outputs.store_path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -130,13 +135,6 @@ jobs:
 
       - name: Check build output
         run: |
-          echo "## 📦 Build Output" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          ls -lh dist-ghpages/ >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          
-          # 确认关键文件存在
-          test -f dist-ghpages/index.html && echo "✅ index.html exists" || (echo "❌ index.html missing" && exit 1)
-          test -f dist-ghpages/benchmarks.json && echo "✅ benchmarks.json exists" || (echo "❌ benchmarks.json missing" && exit 1)
-          echo "✅ Build check passed" >> $GITHUB_STEP_SUMMARY
+          test -f dist-ghpages/index.html
+          test -f dist-ghpages/benchmarks.json
+          echo "✅ GitHub Pages build output is complete" >> "$GITHUB_STEP_SUMMARY"

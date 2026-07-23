@@ -16,7 +16,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = ['CountBench', 'CounterFactQA', 'CraftBench', 'CraneMath'];
 const craftBenchRecordId = 'manufacturing_execution_system_1';
-const drawioDesktop = '/Applications/draw.io.app/Contents/MacOS/draw.io';
+const drawioDesktop = process.env.DRAWIO_DESKTOP_CLI
+  || '/Applications/draw.io.app/Contents/MacOS/draw.io';
 const drawioCli = process.env.IMPORTER_DRAWIO_E2E_CLI
   || join(homedir(), '.agents/skills/drawio/scripts/cli.js');
 const normalizer = join(
