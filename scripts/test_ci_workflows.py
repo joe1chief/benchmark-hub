@@ -35,6 +35,7 @@ class CiWorkflowContractTests(unittest.TestCase):
     def test_deploy_runs_only_after_successful_main_push_ci(self):
         self.assertIn("workflow_run:", self.deploy)
         self.assertIn('workflows: ["CI — Validate & Build Check"]', self.deploy)
+        self.assertIn("branches:\n      - main", self.deploy)
         self.assertIn("github.event.workflow_run.conclusion == 'success'", self.deploy)
         self.assertIn("github.event.workflow_run.event == 'push'", self.deploy)
         self.assertIn("github.event.workflow_run.head_branch == 'main'", self.deploy)
