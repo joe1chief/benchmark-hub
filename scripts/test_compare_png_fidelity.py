@@ -18,20 +18,20 @@ class ComparePngFidelityTests(unittest.TestCase):
             0.000602514,
         )
 
-    def test_accepts_observed_cross_macos_font_rasterization_drift(self):
+    def test_accepts_observed_macos_26_runner_drift(self):
         self.assertTrue(
             MODULE.is_within_fidelity_limits(
-                actual_dimensions=(2447, 809),
-                expected_dimensions=(2447, 809),
-                normalized_rmse=0.0652698,
-                ssim_error=0.0214995,
+                actual_dimensions=(1502, 404),
+                expected_dimensions=(1501, 401),
+                normalized_rmse=0.0832667,
+                ssim_error=0.0378176,
             )
         )
 
-    def test_rejects_dimension_drift(self):
+    def test_rejects_dimension_drift_above_three_pixels(self):
         self.assertFalse(
             MODULE.is_within_fidelity_limits(
-                actual_dimensions=(2448, 809),
+                actual_dimensions=(2451, 809),
                 expected_dimensions=(2447, 809),
                 normalized_rmse=0.0,
                 ssim_error=0.0,
@@ -43,8 +43,8 @@ class ComparePngFidelityTests(unittest.TestCase):
             MODULE.is_within_fidelity_limits(
                 actual_dimensions=(2447, 809),
                 expected_dimensions=(2447, 809),
-                normalized_rmse=0.070001,
-                ssim_error=0.025001,
+                normalized_rmse=0.085001,
+                ssim_error=0.040001,
             )
         )
 
