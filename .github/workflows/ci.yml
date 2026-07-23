@@ -95,10 +95,14 @@ jobs:
       - name: Build Process regression tests
         run: pnpm test:build-process
 
-  drawio-fidelity:
-    name: Draw.io Export Fidelity (macOS)
+  drawio-fidelity-shards:
+    name: Draw.io Export Fidelity (macOS) / shard ${{ matrix.shard }}
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -123,10 +127,28 @@ jobs:
         run: bash scripts/ci/install_drawio_toolchain_macos.sh
 
       - name: Diagnose representative PNG fidelity
+        if: matrix.shard == 1
         run: bash scripts/ci/diagnose_drawio_png_macos.sh
 
       - name: Run Draw.io fidelity regression tests
-        run: pnpm test:drawio-fidelity
+        run: >-
+          node --test --test-concurrency=2
+          --test-shard=${{ matrix.shard }}/2
+          scripts/benchmark_build_process/paper_review_site_a*.scoped.test.mjs
+
+  drawio-fidelity:
+    name: Draw.io Export Fidelity (macOS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: drawio-fidelity-shards
+    if: ${{ always() }}
+    steps:
+      - name: Verify all macOS shards passed
+        env:
+          SHARD_RESULT: ${{ needs.drawio-fidelity-shards.result }}
+        run: |
+          test "$SHARD_RESULT" = "success"
+          echo "✅ All macOS Draw.io fidelity shards passed" >> "$GITHUB_STEP_SUMMARY"
 
   build-check:
     name: Build Check (GitHub Pages)

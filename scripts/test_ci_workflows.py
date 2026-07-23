@@ -115,12 +115,21 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn('test -x "${image_compare}"', installer)
         self.assertIn("IMAGEMAGICK_COMPARE=", installer)
         self.assertIn("IMAGEMAGICK_FONT=", installer)
+        self.assertIn("drawio-fidelity-shards:", self.ci)
         self.assertIn("drawio-fidelity:", self.ci)
         self.assertIn("name: Draw.io Export Fidelity (macOS)", self.ci)
         self.assertIn("runs-on: macos-26", self.ci)
+        self.assertIn("shard: [1, 2]", self.ci)
+        self.assertIn("--test-shard=${{ matrix.shard }}/2", self.ci)
+        self.assertIn("needs: drawio-fidelity-shards", self.ci)
+        self.assertIn("SHARD_RESULT:", self.ci)
         self.assertIn("scripts/ci/install_drawio_toolchain_macos.sh", self.ci)
         self.assertIn("scripts/ci/diagnose_drawio_png_macos.sh", self.ci)
-        self.assertIn("pnpm test:drawio-fidelity", self.ci)
+        self.assertIn(
+            "node --test --test-concurrency=2\n"
+            "          --test-shard=${{ matrix.shard }}/2",
+            self.ci,
+        )
         self.assertIn(
             '"test:drawio-fidelity": '
             '"node --test --test-concurrency=2 '
