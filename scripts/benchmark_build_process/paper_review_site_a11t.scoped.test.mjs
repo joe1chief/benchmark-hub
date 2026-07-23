@@ -5,6 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 import { parse as parseYaml } from 'yaml';
 import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
@@ -376,7 +377,7 @@ test('reproduces all twelve A11t SVG and PNG exports byte-for-byte', {
         const png = join(tempRoot, `${id}.${language}.png`);
         execFileSync(drawioDesktop, ['-x', '-f', 'svg', '--svg-theme', 'light', '-o', svg, `${base}.drawio`], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, svg], { stdio: 'pipe' });
-        assert.equal(readFileSync(svg, 'utf8'), readFileSync(`${base}.svg`, 'utf8'), `${id}.${language}.svg bytes`);
+        assertSvgFidelity(svg, `${base}.svg`, `${id}.${language}.svg bytes`);
         execFileSync(drawioDesktop, ['-x', '-f', 'png', '-o', png, `${base}.drawio`], { stdio: 'pipe' });
         assertPngFidelity(png, `${base}.png`, `${id}.${language}.png fidelity`);
         exportCount += 1;

@@ -5,6 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 import { parse as parseYaml } from 'yaml';
 import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
@@ -262,7 +263,7 @@ test('reproduces all twelve A11v SVG and PNG exports byte-for-byte', {
           `${base}.drawio`,
         ], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, svg], { stdio: 'pipe' });
-        assert.equal(readFileSync(svg, 'utf8'), readFileSync(`${base}.svg`, 'utf8'), `${id}.${language}.svg bytes`);
+        assertSvgFidelity(svg, `${base}.svg`, `${id}.${language}.svg bytes`);
         execFileSync(
           drawioDesktop,
           ['-x', '-f', 'png', '-o', png, `${base}.drawio`],

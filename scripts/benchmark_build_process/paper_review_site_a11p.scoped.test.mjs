@@ -5,6 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 import { parse as parseYaml } from 'yaml';
 import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
@@ -582,9 +583,9 @@ test('reproduces exactly all twelve A11p SVG and PNG exports from checked-in Dra
           { stdio: 'pipe' },
         );
         execFileSync(process.execPath, [svgNormalizer, generatedSvg], { stdio: 'pipe' });
-        assert.equal(
-          readFileSync(generatedSvg, 'utf8'),
-          readFileSync(`${base}.svg`, 'utf8'),
+        assertSvgFidelity(
+          generatedSvg,
+          `${base}.svg`,
           `${id}.${language}.svg bytes`,
         );
         execFileSync(

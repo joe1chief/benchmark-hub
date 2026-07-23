@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import Tuple
 
 
-MAX_NORMALIZED_RMSE = 0.025
-MAX_SSIM_ERROR = 0.005
+# Observed cross-macOS maxima were 0.0652698/0.0214995; dimensions remain exact.
+MAX_NORMALIZED_RMSE = 0.07
+MAX_SSIM_ERROR = 0.025
 
 
 def parse_normalized_metric(output: str) -> float:

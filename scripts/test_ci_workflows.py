@@ -147,6 +147,21 @@ class CiWorkflowContractTests(unittest.TestCase):
             r"assert\.deepEqual\(\s*readFileSync\((?:generatedPng|png)\)",
         )
 
+    def test_active_suite_uses_portable_svg_fidelity(self):
+        test_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (ROOT / "scripts" / "benchmark_build_process").glob(
+                    "paper_review_site_a*.scoped.test.mjs"
+                )
+            )
+        )
+        self.assertIn("assertSvgFidelity(", test_sources)
+        self.assertNotRegex(
+            test_sources,
+            r"assert\.equal\(\s*readFileSync\((?:generatedSvg|svg),\s*'utf8'\)",
+        )
+
     def test_a10h_accepts_the_ci_drawio_desktop_path(self):
         test_source = (
             ROOT

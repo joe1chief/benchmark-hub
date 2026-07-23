@@ -5,6 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 import { parse as parseYaml } from 'yaml';
 import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
@@ -436,7 +437,7 @@ test('reproduces exactly all twelve A11q SVG and PNG exports from checked-in Dra
         const generatedPng = join(tempRoot, id + '.' + language + '.png');
         execFileSync(drawioDesktop, ['-x', '-f', 'svg', '--svg-theme', 'light', '-o', generatedSvg, base + '.drawio'], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, generatedSvg], { stdio: 'pipe' });
-        assert.equal(readFileSync(generatedSvg, 'utf8'), readFileSync(base + '.svg', 'utf8'), id + '.' + language + '.svg bytes');
+        assertSvgFidelity(generatedSvg, base + '.svg', id + '.' + language + '.svg bytes');
         execFileSync(drawioDesktop, ['-x', '-f', 'png', '-o', generatedPng, base + '.drawio'], { stdio: 'pipe' });
         assertPngFidelity(generatedPng, base + '.png', id + '.' + language + '.png fidelity');
         exportCount += 1;

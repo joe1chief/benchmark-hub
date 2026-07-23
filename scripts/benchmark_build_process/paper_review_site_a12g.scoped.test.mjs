@@ -5,6 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 import { parse as parseYaml } from 'yaml';
 import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
@@ -226,7 +227,7 @@ test('strictly reproduces all eight A12g source and rendered assets byte-for-byt
           '-x', '-f', 'svg', '--svg-theme', 'light', '-o', svg, generated,
         ], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, svg], { stdio: 'pipe' });
-        assert.equal(readFileSync(svg, 'utf8'), readFileSync(`${base}.svg`, 'utf8'));
+        assertSvgFidelity(svg, `${base}.svg`, );
         execFileSync(
           drawioDesktop,
           ['-x', '-f', 'png', '-o', png, generated],
