@@ -16,6 +16,10 @@ desktop_url="https://github.com/jgraph/drawio-desktop/releases/download/v${DRAWI
 mount_point="${RUNNER_TEMP}/drawio-mount"
 installed_app="${RUNNER_TEMP}/draw.io.app"
 
+HOMEBREW_NO_AUTO_UPDATE=1 brew install imagemagick
+image_compare="$(command -v compare)"
+test -x "${image_compare}"
+
 git clone \
   --filter=blob:none \
   --no-checkout \
@@ -49,7 +53,5 @@ test -x "${desktop_cli}"
   printf 'IMPORTER_DRAWIO_E2E_CLI=%s\n' \
     "${skill_checkout}/skills/drawio/scripts/cli.js"
   printf 'DRAWIO_DESKTOP_CLI=%s\n' "${desktop_cli}"
-  if command -v compare >/dev/null 2>&1; then
-    printf 'IMAGEMAGICK_COMPARE=%s\n' "$(command -v compare)"
-  fi
+  printf 'IMAGEMAGICK_COMPARE=%s\n' "${image_compare}"
 } >> "${GITHUB_ENV}"
