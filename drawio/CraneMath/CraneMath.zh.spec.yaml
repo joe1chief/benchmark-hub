@@ -1,0 +1,166 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: CraneMath 重写语料与效用验证
+  description: 按固定版本还原仅训练用 CraneMath 语料的构建与消融，并区分源池、最终混合、归一化变化和评测身份。
+  legend: 虚线表示来源、披露边界或派生统计；实线表示主要数据流。
+nodes:
+  - id: evidence
+    label: |-
+      证据冻结
+      arXiv:2512.13961v2
+      GitHub @1a9daced · 源池 @091589c
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: source
+    label: |-
+      FineMath4+ 训练源 @e92b25a
+      6,699,493 个训练样本
+      仅 train 划分
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: rewrite
+    label: |-
+      SwallowMath 公开提示
+      Qwen3-32B：每例一次重写
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: corpus
+    label: |-
+      移除生成失败项
+      CraneMath：6,553,181 个文档
+      5.625B tokens · 仅训练
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: construction_boundary
+    label: |-
+      构建披露边界
+      无专属人工检查或去重
+      无评测划分、自纠错或验证器
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: pool
+    label: |-
+      论文表 5：源池
+      5.62B tokens · 6.55M 文档
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: mix
+    label: |-
+      Olmo 3 的 100B 中期训练混合
+      5.62B tokens = 5.63%
+      7.24M 文档
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: anneal
+    label: |-
+      CraneMath Microanneal
+      从已见 6T 预训练 tokens 的模型开始
+      50% 预训练网页 · 50% 候选源
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: compare
+    label: |-
+      对比六种运行
+      退火前基线 · FineMath4+
+      SwallowMath · CraneMath
+      2× CraneMath
+      CraneMath + 原始文档
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: raw_lift
+    label: |-
+      主文相对退火前的原始提升
+      MATH +18.5 · GSM8K +27.4 分
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 300
+  - id: normalized
+    label: |-
+      表 41：归一化 Δ
+      （退火分数 − 退火前分数）/
+      目标 tokens 数（B）
+      Crane 4.34B → MATH 4.26
+      GSM8K 6.32
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 300
+  - id: boundary
+    label: |-
+      身份 / 评测边界
+      这是训练数据，不是评测基准
+      不报告 CraneMath 逐题准确率或模型排名
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+edges:
+  - from: evidence
+    to: rewrite
+    type: data
+  - from: source
+    to: rewrite
+    type: primary
+  - from: rewrite
+    to: corpus
+    type: primary
+  - from: corpus
+    to: construction_boundary
+    type: data
+  - from: corpus
+    to: pool
+    type: primary
+  - from: pool
+    to: mix
+    type: primary
+  - from: pool
+    to: anneal
+    type: primary
+  - from: anneal
+    to: compare
+    type: primary
+  - from: compare
+    to: raw_lift
+    type: primary
+  - from: raw_lift
+    to: normalized
+    type: data
+  - from: normalized
+    to: boundary
+    type: primary
+modules: []

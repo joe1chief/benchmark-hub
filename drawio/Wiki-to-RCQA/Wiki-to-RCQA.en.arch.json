@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "title": "Wiki-to-RCQA Data Build and Validation",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 18,
+    "edges": 21,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "wiki_documents",
+      "label": "Prepared Wikipedia Documents",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "wikiclean",
+      "label": "wikiclean Preprocessing",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "page_gate",
+      "label": "Valid Content Page?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "discard_page",
+      "label": "Discard Page or Passage",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "section_split",
+      "label": "Section / Paragraph Segmentation",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "passage_gate",
+      "label": "Passage at Least 20 Words?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_router",
+      "label": "Sample Prompt Type",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "default_prompt",
+      "label": "DEFAULT 0.10",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "span_prompt",
+      "label": "SPAN 0.25",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "paraphrase_prompt",
+      "label": "PPHRASE 0.25",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "drop_prompt",
+      "label": "DROP 0.40",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "qwen_generate",
+      "label": "Qwen2.5-32B: Generate 1-8 QAs",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rcqa_pool",
+      "label": "4.22B Tokens / 22.3M Docs",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "microanneal",
+      "label": "10B Microanneal vs Web-Only",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gain_gate",
+      "label": "Promising GenQA Gain?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "reject_source",
+      "label": "Do Not Select Source",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "integration_tests",
+      "label": "Candidate-Mix Integration Tests",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "final_mix",
+      "label": "3.0B Tokens / 3% of 100B Mix",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "wiki_documents",
+      "to": "wikiclean",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "wikiclean",
+      "to": "page_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "page_gate",
+      "to": "section_split",
+      "type": "primary",
+      "label": "Valid"
+    },
+    {
+      "id": "edge-4",
+      "from": "page_gate",
+      "to": "discard_page",
+      "type": "optional",
+      "label": "Invalid"
+    },
+    {
+      "id": "edge-5",
+      "from": "section_split",
+      "to": "passage_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "passage_gate",
+      "to": "prompt_router",
+      "type": "primary",
+      "label": "Yes"
+    },
+    {
+      "id": "edge-7",
+      "from": "passage_gate",
+      "to": "discard_page",
+      "type": "optional",
+      "label": "No"
+    },
+    {
+      "id": "edge-8",
+      "from": "prompt_router",
+      "to": "default_prompt",
+      "type": "data",
+      "label": "0.10"
+    },
+    {
+      "id": "edge-9",
+      "from": "prompt_router",
+      "to": "span_prompt",
+      "type": "data",
+      "label": "0.25"
+    },
+    {
+      "id": "edge-10",
+      "from": "prompt_router",
+      "to": "paraphrase_prompt",
+      "type": "data",
+      "label": "0.25"
+    },
+    {
+      "id": "edge-11",
+      "from": "prompt_router",
+      "to": "drop_prompt",
+      "type": "data",
+      "label": "0.40"
+    },
+    {
+      "id": "edge-12",
+      "from": "default_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "span_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "paraphrase_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "drop_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "qwen_generate",
+      "to": "rcqa_pool",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "rcqa_pool",
+      "to": "microanneal",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "microanneal",
+      "to": "gain_gate",
+      "type": "primary",
+      "label": "GenQA nearly +2"
+    },
+    {
+      "id": "edge-19",
+      "from": "gain_gate",
+      "to": "integration_tests",
+      "type": "primary",
+      "label": "Promising"
+    },
+    {
+      "id": "edge-20",
+      "from": "gain_gate",
+      "to": "reject_source",
+      "type": "optional",
+      "label": "Not promising"
+    },
+    {
+      "id": "edge-21",
+      "from": "integration_tests",
+      "to": "final_mix",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

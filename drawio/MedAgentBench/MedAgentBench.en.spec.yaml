@@ -1,0 +1,503 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedAgentBench Build Process
+  description: >-
+    Paper-v2 and pinned-code reconstruction of physician task curation, STARR record filtering, FHIR environment
+    release, eight-round agent interaction, external reference grading, and pass-at-1 success-rate accounting.
+  legend: >-
+    Solid arrows carry retained tasks, records, or successful control flow. Dashed arrows show record removal, invalid
+    output, fallback feedback, or failed scoring. Sources: arXiv:2501.14654v2 and Git 99260117.
+nodes:
+  - id: task_authors
+    label: |-
+      Two Internal-medicine Physicians
+      Author 300 Clinical Tasks
+      Inpatient and Outpatient Scope
+    type: user
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: taxonomy
+    label: |-
+      Curate Tasks
+      Complexity and Clinical Relevance
+      10 Specific · 7 Broad Categories
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: task_pool
+    label: |-
+      Freeze Task Pool
+      Patient-specific Instructions
+      MRN · Timing · Codes · Context
+      300 Tasks
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: source_assets
+    label: |-
+      Pin Current Release Assets
+      test_data_v2: 300 · funcs_v1: 9
+      Legacy test_data_v1: 100
+      Box Grader and Docker latest Unpinned
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: cohort
+    label: |-
+      Sample STARR Cohort
+      Deidentified and Patient-jittered
+      100 Inpatients with Morning Sodium
+      Anchor: 2023-11-13
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 300
+  - id: extract
+    label: |-
+      Extract Five-year EHR Window
+      Labs · Six Vitals · Procedures
+      Diagnoses · Medication Orders
+      Cutoff: 2018-11-13
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 300
+  - id: record_rule
+    label: |-
+      Record QC Rule?
+      Procedure · Diagnosis · Medication
+    type: decision
+    size: xl
+    position:
+      x: 580
+      'y': 300
+  - id: impute_quantity
+    label: |-
+      Impute Procedure Quantity
+      Missing Quantity → 1
+    type: process
+    size: lg
+    position:
+      x: 580
+      'y': 520
+  - id: discard_record
+    label: |-
+      Remove Record
+      Missing CPT or Description
+      Incomplete Diagnosis · PRN Medication
+    type: loss
+    size: xl
+    position:
+      x: 860
+      'y': 520
+  - id: retained_records
+    label: |-
+      Retain Clean Clinical Records
+      Preserve Patient-level Time Jitter
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 300
+  - id: synthetic_identity
+    label: |-
+      Add Synthetic Identity
+      Deduplicated S + Seven-digit MRN
+      Faker US Names · Phones · Addresses
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 300
+  - id: fhir_resources
+    label: |-
+      Map to FHIR Resources
+      Observation · Procedure · Condition
+      MedicationRequest
+      785,207 Total Records
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 300
+  - id: environment
+    label: |-
+      Easy-Setup Interactive EHR
+      HAPI FHIR JPA · Persistent H2
+      Parallel Profile Upload
+      README Pulls Unpinned latest; No Dockerfile or Digest
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 300
+  - id: benchmark_release
+    label: |-
+      Release MedAgentBench
+      300 Tasks · 100 Patient Profiles
+      Nine FHIR Functions
+      AgentBench-compatible Harness
+    type: database
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: prompt
+    label: |-
+      Build Agent Prompt
+      Instruction · Context · Nine Schemas
+      One GET, POST, or FINISH per Round
+      Maximum Eight Rounds
+    type: document
+    size: xl
+    position:
+      x: 1980
+      'y': 760
+  - id: output_type
+    label: Response Prefix?
+    type: decision
+    size: xl
+    position:
+      x: 1420
+      'y': 760
+  - id: get_request
+    label: |-
+      Execute GET
+      Append _format=json
+      Return Raw Data or Error
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 580
+  - id: post_json
+    label: POST Payload JSON-loadable?
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 780
+  - id: post_accept
+    label: |-
+      Accept Payload Syntax
+      Do Not Mutate FHIR Server
+      Return Success Message
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 720
+  - id: post_reject
+    label: |-
+      Reject Payload Syntax
+      Return Invalid POST Message
+    type: loss
+    size: xl
+    position:
+      x: 860
+      'y': 900
+  - id: finish_record
+    label: |-
+      Detect FINISH by startswith
+      Strip the FINISH(...) Wrapper
+      Save Raw Inner Text as result
+      Save Full Interaction History
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 1020
+  - id: runtime_failure
+    label: |-
+      Runtime Failure
+      Invalid Action · Context or Task Error
+      Eight-round Limit Reached
+    type: loss
+    size: xl
+    position:
+      x: 1420
+      'y': 1020
+  - id: grader_type
+    label: |-
+      Task Grader Type?
+      External refsol.py by Task Prefix
+    type: decision
+    size: xl
+    position:
+      x: 860
+      'y': 1080
+  - id: query_grade
+    label: |-
+      Grade Query Task
+      Compare FINISH Response
+      Manually Curated Reference Answer
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 980
+  - id: action_grade
+    label: |-
+      Grade Action Task
+      Rule-based POST-payload Checks
+      Grader Exception → False
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 1160
+  - id: correctness
+    label: Grader Returns True?
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 1080
+  - id: pass_task
+    label: Count Correct
+    type: process
+    size: lg
+    position:
+      x: 20
+      'y': 980
+  - id: fail_task
+    label: |-
+      Count Failure
+      Null Result Also Fails
+    type: loss
+    size: lg
+    position:
+      x: 20
+      'y': 1160
+  - id: report
+    label: |-
+      Report pass@1 Success Rate
+      Pinned Code: Correct / All 300 Results
+      Paper: Overall · Query · Action SR
+      Current overall.json Emits Overall Only
+    type: terminal
+    size: xl
+    position:
+      x: 300
+      'y': 1360
+edges:
+  - from: task_authors
+    to: taxonomy
+    type: primary
+    label: 300 submitted tasks
+    labelPosition: center
+  - from: taxonomy
+    to: task_pool
+    type: primary
+    label: Curated taxonomy
+    labelPosition: center
+  - from: task_pool
+    to: source_assets
+    type: primary
+    label: Released task JSON
+    labelPosition: center
+  - from: source_assets
+    to: benchmark_release
+    type: primary
+    label: Pinned Git assets
+    labelPosition: center
+  - from: cohort
+    to: extract
+    type: primary
+    label: 100 patient profiles
+    labelPosition: center
+  - from: extract
+    to: record_rule
+    type: primary
+    label: Raw clinical rows
+    labelPosition: center
+  - from: record_rule
+    to: retained_records
+    type: primary
+    label: Complete or allowed
+    labelPosition: center
+  - from: record_rule
+    to: impute_quantity
+    type: optional
+    label: Missing quantity only
+    labelPosition: center
+  - from: impute_quantity
+    to: retained_records
+    type: primary
+    label: Quantity = 1
+    labelPosition: center
+  - from: record_rule
+    to: discard_record
+    type: optional
+    label: Invalid or PRN
+    labelPosition: center
+  - from: retained_records
+    to: synthetic_identity
+    type: primary
+    label: Filtered records
+    labelPosition: center
+  - from: synthetic_identity
+    to: fhir_resources
+    type: primary
+    label: Synthetic demographics
+    labelPosition: center
+  - from: fhir_resources
+    to: environment
+    type: primary
+    label: 785,207 resources
+    labelPosition: center
+  - from: environment
+    to: benchmark_release
+    type: primary
+    label: Unpinned latest FHIR image
+    labelPosition: center
+  - from: benchmark_release
+    to: prompt
+    type: primary
+    label: Start one benchmark task
+    labelPosition: center
+    waypoints:
+      - x: 2100
+        'y': 180
+      - x: 2100
+        'y': 700
+  - from: prompt
+    to: output_type
+    type: primary
+    label: One model response
+    labelPosition: center
+  - from: output_type
+    to: get_request
+    type: primary
+    label: GET
+    labelPosition: center
+  - from: output_type
+    to: post_json
+    type: primary
+    label: POST
+    labelPosition: center
+  - from: output_type
+    to: finish_record
+    type: primary
+    label: FINISH
+    labelPosition: center
+  - from: output_type
+    to: runtime_failure
+    type: optional
+    label: Other · error · limit
+    labelPosition: center
+  - from: get_request
+    to: output_type
+    type: primary
+    label: Raw or error feedback · next round
+    labelPosition: center
+    waypoints:
+      - x: 1260
+        'y': 500
+      - x: 1540
+        'y': 500
+  - from: post_json
+    to: post_accept
+    type: primary
+    label: Yes · valid JSON
+    labelPosition: center
+  - from: post_json
+    to: post_reject
+    type: optional
+    label: No · invalid JSON
+    labelPosition: center
+  - from: post_accept
+    to: output_type
+    type: primary
+    label: Accepted feedback · next round
+    labelPosition: center
+    waypoints:
+      - x: 980
+        'y': 680
+      - x: 1540
+        'y': 680
+  - from: post_reject
+    to: output_type
+    type: optional
+    label: Invalid feedback · next round
+    labelPosition: center
+    waypoints:
+      - x: 980
+        'y': 960
+      - x: 1540
+        'y': 960
+  - from: finish_record
+    to: grader_type
+    type: primary
+    label: Result plus trajectory
+    labelPosition: center
+  - from: grader_type
+    to: query_grade
+    type: primary
+    label: Query · GET only
+    labelPosition: center
+  - from: grader_type
+    to: action_grade
+    type: primary
+    label: Action · POST required
+    labelPosition: center
+  - from: query_grade
+    to: correctness
+    type: primary
+    label: Reference comparison
+    labelPosition: center
+  - from: action_grade
+    to: correctness
+    type: primary
+    label: Payload rules
+    labelPosition: center
+  - from: correctness
+    to: pass_task
+    type: primary
+    label: Yes · true
+    labelPosition: center
+  - from: correctness
+    to: fail_task
+    type: optional
+    label: No · false
+    labelPosition: center
+  - from: runtime_failure
+    to: fail_task
+    type: optional
+    label: No scorable result
+    labelPosition: center
+    waypoints:
+      - x: 1540
+        'y': 1280
+      - x: 140
+        'y': 1280
+  - from: pass_task
+    to: report
+    type: primary
+    label: Add numerator and denominator
+    labelPosition: center
+    waypoints:
+      - x: 140
+        'y': 1320
+      - x: 420
+        'y': 1320
+  - from: fail_task
+    to: report
+    type: optional
+    label: Add denominator only
+    labelPosition: center
+modules: []

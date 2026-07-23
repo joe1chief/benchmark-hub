@@ -4,133 +4,214 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AudioMC Build Process
-  description: >-
-    Paper-aligned Audio MultiChallenge construction pipeline covering axis design, agentic failure blueprinting,
-    human-in-the-loop audio collection, rubric quality control, and fixed-context evaluation, based on arXiv:2512.14865.
-  legend: Solid arrows show data construction and evaluation; dashed arrows mark quality-control and blueprint revision loops.
+  title: AudioMC Paper-Aligned Build Process
+  description: Synthetic failure discovery, human recording, final-failure rubrics, and three-stage QC aligned with AudioMC v1.
+  legend: >-
+    About 65 percent of human attempts use a successful synthetic blueprint; direct human seeds form a second lane, and
+    both lanes require an observed final-turn failure.
 nodes:
   - id: axes
     label: |-
-      Audio-native axes
-      IM, IR and SC
-      plus Voice Editing
-    type: document
+      Define Four Audio Axes
+      Memory • Instruction Retention
+      Coherence • Voice Editing
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: taxonomy
+      'y': 220
+  - id: seeds
     label: |-
-      Axis-topic-persona
-      curated taxonomies
-      targeted failure modes
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: agentic_loop
-    label: |-
-      Agentic blueprint loop
-      Planner, Tester, TTS
-      Target Audio LM failure
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: blueprint
-    label: |-
-      Human-friendly blueprint
-      core trick extracted
-      axis-specific guide
+      Sample Synthetic Seeds
+      Axis • Topic • Persona
+      Set a Maximum Turn Count
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: human_audio
+      x: 320
+      'y': 220
+  - id: planner
     label: |-
-      Human recordings
-      3 to 8 turns
-      unscripted speech
-    type: terminal
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: rubrics
-    label: |-
-      Atomic rubrics
-      final-turn binary criteria
-      axis-only requirements
+      Planner Proposes a Challenge
+      Tester Produces Audio Turns
+      Increase Difficulty after Success
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: qc
+      x: 600
+      'y': 220
+  - id: synthetic_gate
     label: |-
-      Three-stage QC
-      trained reviewers
-      independent audit
+      Failure before Max Turn?
+      Loop While Target Succeeds
+      Stop at Failure or Turn Limit
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
+      x: 880
+      'y': 220
+  - id: discard
     label: |-
-      AudioMC dataset
-      452 conversations
-      47 speakers / 1,712 rubrics
+      Discard Non-Failure Attempts
+      No Rubrics without Failure
+      Record the Exclusion
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 20
+  - id: blueprint
+    label: |-
+      Keep the Failure Blueprint
+      Strategy Rather Than Script
+      Guide Human Attempts
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: direct_human_seed
+    label: |-
+      Add Direct Human Seeds
+      No Synthetic Blueprint
+      Independent Creative Attempts
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 70
-  - id: evaluation
+      x: 1160
+      'y': 500
+  - id: human_recording
     label: |-
-      Fixed-context eval
-      base64 audio history
-      o4 Mini judge, APR/ARS
+      Record Human Conversations
+      About 65% Use a Blueprint
+      Others Use Direct Seeds
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: human_gate
+    label: |-
+      Final Human Turn Fails?
+      Judge the Recorded Dialogue
+      Keep Only Observed Failures
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 300
+  - id: rubrics
+    label: |-
+      Write Final Failure Turn Rubrics
+      Atomic • Accurate • Standalone
+      Score Only the Last Turn
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 650
+  - id: qc
+    label: |-
+      Run Three-Stage QC
+      Trained Review • Independent QC
+      Internal Research Audit
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 650
+  - id: release
+    label: |-
+      Release 452 Conversations
+      47 Speakers • 14.99 Hours
+      1,712 Atomic Rubrics
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 650
+  - id: fixed_context
+    label: |-
+      Seed Fixed Conversation Context
+      Generate the Final Reply Only
+      Keep History Identical
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 250
+      x: 880
+      'y': 650
+  - id: score
+    label: |-
+      Judge Every Atomic Rubric
+      Compute APR and ARS
+      Require All Rubrics for APR
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 650
+  - id: report
+    label: |-
+      Report AudioMC Results
+      Overall + Four Axes
+      Analyze Dialogue Failures
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 650
 edges:
   - from: axes
-    to: taxonomy
+    to: seeds
     type: primary
-  - from: taxonomy
-    to: agentic_loop
+  - from: seeds
+    to: planner
     type: primary
-  - from: agentic_loop
+  - from: planner
+    to: synthetic_gate
+    type: primary
+  - from: synthetic_gate
+    to: planner
+    type: optional
+    label: Target succeeds
+  - from: synthetic_gate
+    to: discard
+    type: optional
+    label: No failure at limit
+  - from: synthetic_gate
     to: blueprint
     type: primary
+    label: Failure found
   - from: blueprint
-    to: human_audio
+    to: human_recording
     type: primary
-  - from: human_audio
+  - from: direct_human_seed
+    to: human_recording
+    type: data
+  - from: human_recording
+    to: human_gate
+    type: primary
+  - from: human_gate
     to: rubrics
     type: primary
+    label: Failure
+  - from: human_gate
+    to: discard
+    type: optional
+    label: No failure
   - from: rubrics
     to: qc
     type: primary
   - from: qc
-    to: dataset
+    to: release
     type: primary
-  - from: dataset
-    to: evaluation
+  - from: release
+    to: fixed_context
     type: primary
-  - from: qc
-    to: human_audio
-    type: optional
-    label: revise task
-  - from: evaluation
-    to: rubrics
-    type: optional
-    label: judge agreement audit
+  - from: fixed_context
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
 modules: []

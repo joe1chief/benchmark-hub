@@ -1,0 +1,361 @@
+{
+  "version": 1,
+  "title": "LongBench 构建流程",
+  "type": "academic-diagram",
+  "source": "edited",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 26,
+    "edges": 31,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "evidence",
+      "label": "固定原版LongBench证据\narXiv 2308.14508v2 · ACL 2024\nTHUDM/LongBench @ 2e00731f\nHF数据集 @ 5e628be4",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source_splits",
+      "label": "固定公开任务来源划分\n论文：公开任务使用测试集\nVCSUM为论文所述例外\n仓库说明写验证集或测试集",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "分流至六类任务",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "single_doc",
+      "label": "单文档问答 · 750条\nNarrativeQA 200 · Qasper 200\nMultiField英文150 · 中文200\n将公开数据重排为纯文本\n3名博士生构建MultiField",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "multi_doc",
+      "label": "多文档问答 · 800条\nHotpot · 2Wiki · MuSiQue各200条\n2–4篇证据 + 完整篇章 + 干扰文档\n随机排列篇章\nDuReader 200条 · 相关加任意文档至20篇",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "summarization",
+      "label": "摘要 · 800条\nGovReport · QMSum · MultiNews · VCSUM\n每个数据集200条\n前三项使用ZeroSCROLLS模板\nVCSUM用专用模板与长片段",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fewshot",
+      "label": "少样本学习 · 800条\nTREC · TriviaQA · SAMSum · LSHT\n每个数据集200个目标查询\n从训练集抽取示例\n范围100–600 · 2–24 · 10–100 · 10–40",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "synthetic",
+      "label": "合成任务 · 600条\n中英文检索 · PassageCount\n每个数据集200条\n30个段落 + GPT-3.5摘要\n计数：M为17–50 · N为2–M · 打乱",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "code",
+      "label": "代码补全 · 1,000条\nLCC 500 · RepoBench-P 500\n抽样LCC下一行任务\nXF-F · Oracle-Filled RepoBench-P\n打乱标准片段与跨文件片段",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "schema",
+      "label": "标准化候选记录\ninput · context · answers · length\ndataset · language · all_classes · _id\n英文/代码计词 · 中文计字符\nlength统计前三个字段",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "standard_release",
+      "label": "随机抽样标准LongBench\n21个数据集 · 4,750条测试样本\n14个英文 · 5个中文 · 2个代码\n六类任务 · 自然长度分布\n论文均值：英文6,711词 · 中文13,386字",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_drift",
+      "label": "保留版本漂移\n论文/HF英文均值6,711/6,666.63词\n论文/HF中文均值13,386/13,338.71字\n仓库根目录为v2 · 原版移至LongBench/\nTHUDM数据URL重定向到zai-org",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "publication",
+      "label": "公开发布边界\n仓库代码带MIT许可证\nHF数据卡未声明许可证元数据\nREADME含官方静态榜单\n无提交入口或版本化排行榜",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "e_select",
+      "label": "选取13个英文/代码数据集\nQasper · MultiField英文 · Hotpot · 2Wiki\nGovReport · MultiNews · TREC · TriviaQA\nSAMSum · 计数 · 英文检索\nLCC · RepoBench-P",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "e_bins",
+      "label": "按词数均匀采样\n0–4k · 4–8k · 8k+\n每数据集每档最多100条\nQasper 100/100/24 · MultiField 67/70/13\nMultiNews 100/100/94",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "e_release",
+      "label": "发布均匀长度LongBench-E\n13个数据集共3,668条\n其余10个数据集每档100条\n沿用记录结构与任务指标",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "eval_set",
+      "label": "选择评测集\n标准LongBench或LongBench-E\n按数据集分别运行",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prompts",
+      "label": "应用数据集专用提示\n填入input与context字段\n多个模板在上下文前后重复指令\n输出上限为32 · 64 · 128 · 512词元",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "truncate",
+      "label": "用候选模型分词器编码\n提示长度超过模型上限M时\n保留前M/2与后M/2词元\n加聊天模板前删除中间部分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "wrappers",
+      "label": "加入模型专用聊天模板\nTREC · TriviaQA · SAMSum · LSHT除外\nLCC · RepoBench-P也除外\n这六项保持补全式提示",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "decode",
+      "label": "生成至数据集输出上限\n贪心解码 · 不采样\n每条测试记录生成一个预测\nSAMSum额外遇换行停止",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "postprocess",
+      "label": "执行官方后处理\nXGen去Assistant · InternLM截至eoa\n四个少样本任务取首行\n代码任务取首个非注释行\n与每个参考答案比较",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "分派数据集指标\n问答F1 · ROUGE-L\n论文称CLS · 评测器按标签命中数给1/n\n论文称EM · 评测器按匹配数字计分\n代码编辑相似度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset_score",
+      "label": "计算数据集得分（%）\n对多个参考答案取最大指标值\n数据集求均值后乘100\nLongBench-E再按长度档分组",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "聚合论文结果\n类内先平均各数据集\n总分为六类均值的平均\n中英文视图均计入代码任务",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "leaderboard",
+      "label": "报告21个数据集得分\n六类均值 · 英文 · 中文 · 总分\nLongBench-E三档长度结果\n在官方README发布结果表",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "evidence",
+      "to": "source_splits",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "source_splits",
+      "to": "route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "route",
+      "to": "single_doc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "route",
+      "to": "multi_doc",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "route",
+      "to": "summarization",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "route",
+      "to": "fewshot",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "route",
+      "to": "synthetic",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "route",
+      "to": "code",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "single_doc",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "multi_doc",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "summarization",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "fewshot",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "synthetic",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "code",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "schema",
+      "to": "standard_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "standard_release",
+      "to": "release_drift",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "release_drift",
+      "to": "publication",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
+      "from": "schema",
+      "to": "e_select",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "e_select",
+      "to": "e_bins",
+      "type": "data"
+    },
+    {
+      "id": "edge-20",
+      "from": "e_bins",
+      "to": "e_release",
+      "type": "data"
+    },
+    {
+      "id": "edge-21",
+      "from": "standard_release",
+      "to": "eval_set",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "e_release",
+      "to": "eval_set",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "eval_set",
+      "to": "prompts",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "prompts",
+      "to": "truncate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "truncate",
+      "to": "wrappers",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "wrappers",
+      "to": "decode",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "decode",
+      "to": "postprocess",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "postprocess",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "metrics",
+      "to": "dataset_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-30",
+      "from": "dataset_score",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-31",
+      "from": "aggregate",
+      "to": "leaderboard",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

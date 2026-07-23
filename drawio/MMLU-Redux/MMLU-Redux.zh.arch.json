@@ -1,108 +1,448 @@
 {
   "version": 1,
-  "title": "MMLU-Redux 构建流程",
+  "title": "MMLU-Redux 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 29,
+    "edges": 39,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "MMLU题目",
+      "id": "source",
+      "label": "原始 MMLU 测试集\n多项选择题\n保留题目、选项\n与原始 0–3 答案索引",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "57学科",
+      "id": "sample",
+      "label": "按学科随机抽样\n30 学科 × 每科 100 道测试题\n初版共 3,000 条",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "抽样集合",
-      "type": "document",
+      "id": "experts",
+      "label": "分配 14 名人类专家\n匹配对应学科专长\n检查题目、选项\n与原始标准答案",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "错误协议",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n5",
-      "label": "人工审校",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n6",
-      "label": "修正标签",
+      "id": "source_route",
+      "label": "是否能按题目 + 选项\n精确找到原始来源？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "Redux集合",
+      "id": "original_source",
+      "label": "检查匹配到的来源\n核对其答案与上下文\n同时仍需运用学科专长",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "trusted_source",
+      "label": "检索可信证据\n政府资料 • 教材 • WHO\n或其他权威来源",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "confidence",
+      "label": "证据与专业知识\n是否足以完成分类？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "question_clear",
+      "label": "题目是否清晰、\n无歧义且信息完整？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "options_clear",
+      "label": "选项是否清晰、\n互异且形式完整？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "valid_answers",
+      "label": "实际有多少个\n正确选项？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "gt_match",
+      "label": "恰有一个正确选项\n原始 MMLU 标准答案\n是否与其一致？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "label_merge",
+      "label": "输出错误 / Expert 标签\nExpert • BQC • BOC\nNCA • MCA • WGT",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "record",
+      "label": "写入七字段记录\nquestion • choices • answer\nerror_type • source\ncorrect_answer • potential_reason",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "准确率",
+      "id": "release",
+      "label": "MMLU-Redux 初版\n30 学科 × 每科 100 条\n共 3,000 条专家标注\n公开 • CC BY 4.0",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evidence_card",
+      "label": "范围与版本锚点\narXiv v2 • 2024-06-07\nHF 快照 f237669 • 30 学科\n代码快照 71062db\n57 学科信息属于 2.0 / v3",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "experiment_route",
+      "label": "论文实验路线\nHELM 重评还是\n自动错误检测？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "helm_archive",
+      "label": "已归档 HELM 预测\n排行榜 v1.3.0\n不重新提示候选模型",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "align",
+      "label": "对齐并计算精确匹配\n优先精确匹配题目 + 选项\n重复项 → 首条；模糊 90 起每次减 5\nHELM 答案 vs 原始 A–D 标签\n不替换为建议答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score_groups",
+      "label": "按标注结果分组\n全部 • OK • 错误题\n分母 = 各报告分组\n实际包含的题目数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score_report",
+      "label": "报告平均精确匹配率\n全部题 vs OK / 错误题\n比较各学科分数\n与模型排名变化",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_route",
+      "label": "错误检测方法路线\n零/少样本、CoT / RAG\n还是指令微调？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "plain_prompt",
+      "label": "直接式零/少样本 + 解析器\n题目 + 选项 + 标准答案\n只能输出“ok”或“not ok”\n少样本：每类错误 2 个示例\ntemp 0 • top_p 1 • max_tokens 600\n对整段 trim + lowercase",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "cot_rag_prompt",
+      "label": "CoT / RAG 提示词 + 解析器\n依次检查清晰度 → 答案数 → 标签\nRAG：BM25 前 5 段 Wiki / MS MARCO\n生成参数与直接式相同\n最后一行 JSON；须有 Classification",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "tune_protocol",
+      "label": "指令微调路线\n在 LabelChaos 上微调 Llama3-8B\n分类输出“ok” / “not ok”\n使用同一二值标签检查",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse_gate",
+      "label": "是否得到规范标签\n“ok”或“not ok”？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "coerce_non_ok",
+      "label": "仓库中的失败映射\n冗长 / 无效预测\n二值转换时均落为非 OK",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "api_abort",
+      "label": "请求 / 文件失败\n公开脚本没有重试路径\n异常会终止运行",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "detection_metrics",
+      "label": "论文错误检测指标\n正类 =“not ok”\nRecall • F1 • F2\n分母 = 实际评测条目",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "implementation_drift",
+      "label": "论文 / 仓库漂移\n非 RAG 指标代码将 OK 设为 1，\n与论文正类相反；模糊匹配\n也可能降低题目对齐强度",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "source",
+      "to": "sample",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "sample",
+      "to": "experts",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "experts",
+      "to": "source_route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
-      "type": "primary"
+      "from": "source_route",
+      "to": "original_source",
+      "type": "primary",
+      "label": "找到"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
-      "type": "primary"
+      "from": "source_route",
+      "to": "trusted_source",
+      "type": "primary",
+      "label": "未找到"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "original_source",
+      "to": "confidence",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "trusted_source",
+      "to": "confidence",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "confidence",
+      "to": "question_clear",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-9",
+      "from": "confidence",
+      "to": "label_merge",
+      "type": "primary",
+      "label": "否 → Expert"
+    },
+    {
+      "id": "edge-10",
+      "from": "question_clear",
+      "to": "label_merge",
+      "type": "primary",
+      "label": "否 → BQC"
+    },
+    {
+      "id": "edge-11",
+      "from": "question_clear",
+      "to": "options_clear",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-12",
+      "from": "options_clear",
+      "to": "label_merge",
+      "type": "primary",
+      "label": "否 → BOC"
+    },
+    {
+      "id": "edge-13",
+      "from": "options_clear",
+      "to": "valid_answers",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-14",
+      "from": "valid_answers",
+      "to": "label_merge",
+      "type": "primary",
+      "label": "0 个 → NCA"
+    },
+    {
+      "id": "edge-15",
+      "from": "valid_answers",
+      "to": "label_merge",
+      "type": "primary",
+      "label": "多个 → MCA"
+    },
+    {
+      "id": "edge-16",
+      "from": "valid_answers",
+      "to": "gt_match",
+      "type": "primary",
+      "label": "1 个"
+    },
+    {
+      "id": "edge-17",
+      "from": "gt_match",
+      "to": "label_merge",
+      "type": "primary",
+      "label": "否 → WGT"
+    },
+    {
+      "id": "edge-18",
+      "from": "gt_match",
+      "to": "record",
+      "type": "primary",
+      "label": "是 → OK"
+    },
+    {
+      "id": "edge-19",
+      "from": "label_merge",
+      "to": "record",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "record",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "release",
+      "to": "evidence_card",
+      "type": "dependency"
+    },
+    {
+      "id": "edge-22",
+      "from": "release",
+      "to": "experiment_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "experiment_route",
+      "to": "helm_archive",
+      "type": "primary",
+      "label": "HELM 配置"
+    },
+    {
+      "id": "edge-24",
+      "from": "helm_archive",
+      "to": "align",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "align",
+      "to": "score_groups",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "score_groups",
+      "to": "score_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "experiment_route",
+      "to": "prompt_route",
+      "type": "primary",
+      "label": "错误检测"
+    },
+    {
+      "id": "edge-28",
+      "from": "prompt_route",
+      "to": "plain_prompt",
+      "type": "primary",
+      "label": "零/少样本"
+    },
+    {
+      "id": "edge-29",
+      "from": "prompt_route",
+      "to": "cot_rag_prompt",
+      "type": "primary",
+      "label": "CoT / RAG 提示"
+    },
+    {
+      "id": "edge-30",
+      "from": "prompt_route",
+      "to": "tune_protocol",
+      "type": "primary",
+      "label": "微调"
+    },
+    {
+      "id": "edge-31",
+      "from": "plain_prompt",
+      "to": "parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-32",
+      "from": "cot_rag_prompt",
+      "to": "parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-33",
+      "from": "tune_protocol",
+      "to": "parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-34",
+      "from": "parse_gate",
+      "to": "detection_metrics",
+      "type": "primary",
+      "label": "有效"
+    },
+    {
+      "id": "edge-35",
+      "from": "parse_gate",
+      "to": "coerce_non_ok",
+      "type": "primary",
+      "label": "无效 / 冗长"
+    },
+    {
+      "id": "edge-36",
+      "from": "coerce_non_ok",
+      "to": "detection_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-37",
+      "from": "plain_prompt",
+      "to": "api_abort",
+      "type": "optional",
+      "label": "异常"
+    },
+    {
+      "id": "edge-38",
+      "from": "cot_rag_prompt",
+      "to": "api_abort",
+      "type": "optional",
+      "label": "异常"
+    },
+    {
+      "id": "edge-39",
+      "from": "detection_metrics",
+      "to": "implementation_drift",
+      "type": "dependency"
     }
   ],
   "modules": []

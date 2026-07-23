@@ -5,100 +5,248 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BrowseComp-Plus 构建流程
-  description: >-
-    基于论文对齐 BrowseComp-Plus：从原 BrowseComp 问题出发，挖掘证据，人工验证支持文档，加入 hard negatives， 形成固定 10 万级文档语料，用检索器工具评测
-    Agent，并报告准确率、召回、搜索次数、校准和检索质量。
-  legend: 实线箭头表示语料构建与可控 Agent/检索器评测流程。
+  description: 与论文一致的 1,266 → 1,142 → 1,005 → 830 筛选漏斗；仅从人工验证后的最终集合挖掘困难负样本； 在固定语料上分别进行 GPT-4.1 判分的端到端回答评测、引用评测与独立检索评测。
+  legend: 实线表示构建或端到端评测；虚线数据箭头输入独立诊断。
 nodes:
-  - id: browsecomp
-    label: BrowseComp
+  - id: original
+    label: |-
+      原始 BrowseComp
+      1,266 个问题答案对
+      开始证据收集
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: mine
-    label: 挖掘
+      'y': 420
+  - id: o3_gate
+    label: |-
+      使用 o3 联网搜索
+      124 个因格式错误或拒答失败
+      排除失败响应
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: verify
-    label: 验证
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: negatives
-    label: 负样本
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: corpus
-    label: 语料库
+      x: 290
+      'y': 420
+  - id: after_o3
+    label: |-
+      保留 1,142 个查询
+      结构化线索 • URL • 片段
+      继续收集页面
     type: database
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: retriever
-    label: 检索器
+      x: 540
+      'y': 420
+  - id: scrape
+    label: |-
+      抓取每个引用 URL
+      Selenium + Trafilatura
+      提取候选证据文本
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 790
+      'y': 420
+  - id: scrape_gate
+    label: |-
+      验证已抓取页面
+      137 个幻觉 URL 或抓取失败
+      排除不可用查询
+    type: process
+    size: xl
+    position:
+      x: 1040
+      'y': 420
+  - id: after_scrape
+    label: |-
+      保留 1,005 个查询
+      候选证据可成功抓取
+      每个查询均进入人工验证
+    type: database
+    size: xl
+    position:
+      x: 1290
+      'y': 420
+  - id: human_verify
+    label: |-
+      人工验证线索与可回答性
+      14 名标注员 • 400+ 小时 • 一致率 >80%
+      必要时修订或搜索至少 20 分钟
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 420
+  - id: verified
+    label: |-
+      最终 830 个验证查询
+      Evidence 文档支撑推理
+      Gold 文档还包含最终答案
+    type: database
+    size: xl
+    position:
+      x: 1790
+      'y': 420
+  - id: decompose
+    label: |-
+      GPT-4o 查询分解
+      每个查询约 7 个子查询
+      仅作用于最终 830 个查询
+    type: process
+    size: xl
+    position:
+      x: 2040
+      'y': 820
+  - id: hard_negatives
+    label: |-
+      挖掘困难负样本
+      SerpAPI：每个子查询最多 100 个结果
+      保留相关但不提供支持的文档
+    type: process
+    size: xl
+    position:
+      x: 2290
+      'y': 820
+  - id: corpus
+    label: |-
+      固定去重语料库
+      830 个查询对应 100,195 篇文档
+      Evidence + Gold qrels + 困难负样本
+    type: database
+    size: xl
+    position:
+      x: 2540
+      'y': 420
+  - id: retrievers
+    label: |-
+      配置检索器
+      BM25 • Qwen3 Embedding • ReasonIR
+      以 Oracle Evidence 上下文作对照
+    type: process
+    size: xl
+    position:
+      x: 2790
+      'y': 420
+  - id: topk
+    label: |-
+      Agent 搜索接口
+      Top 5 • 每条结果 512 Token
+      可选全文文档工具
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 420
   - id: agent
-    label: Agent
+    label: |-
+      深度研究 Agent
+      迭代搜索与交叉核验
+      输出带文档引用的最终答案
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: judge
-    label: 评判
-    type: decision
+      x: 3290
+      'y': 420
+  - id: end_to_end
+    label: |-
+      端到端回答评测
+      GPT-4.1 Judge：准确率 + 召回率
+      搜索调用次数 + 校准误差
+    type: process
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: metrics
-    label: 指标
+      x: 3540
+      'y': 20
+  - id: citation_score
+    label: |-
+      端到端引用评测
+      覆盖率 + 数量
+      引用精确率 + 召回率
+    type: process
+    size: xl
+    position:
+      x: 3540
+      'y': 420
+  - id: retrieval_score
+    label: |-
+      独立检索评测
+      Evidence / Gold Recall@5、100、1000
+      基于已发布 qrels 的 nDCG@10
+    type: process
+    size: xl
+    position:
+      x: 3540
+      'y': 820
+  - id: report
+    label: |-
+      报告可控实验结果
+      分离检索、回答与引用能力
+      对比检索器、Oracle 与消融实验
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3790
+      'y': 420
 edges:
-  - from: browsecomp
-    to: mine
+  - from: original
+    to: o3_gate
     type: primary
-  - from: mine
-    to: verify
+  - from: o3_gate
+    to: after_o3
     type: primary
-  - from: verify
-    to: negatives
+  - from: after_o3
+    to: scrape
     type: primary
-  - from: verify
+  - from: scrape
+    to: scrape_gate
+    type: primary
+  - from: scrape_gate
+    to: after_scrape
+    type: primary
+  - from: after_scrape
+    to: human_verify
+    type: primary
+  - from: human_verify
+    to: verified
+    type: primary
+  - from: verified
+    to: decompose
+    type: primary
+  - from: decompose
+    to: hard_negatives
+    type: primary
+  - from: verified
     to: corpus
     type: primary
-  - from: negatives
+  - from: hard_negatives
     to: corpus
     type: primary
   - from: corpus
-    to: retriever
+    to: retrievers
     type: primary
-  - from: retriever
+  - from: retrievers
+    to: topk
+    type: primary
+  - from: topk
     to: agent
     type: primary
   - from: agent
-    to: judge
+    to: end_to_end
     type: primary
-  - from: judge
-    to: metrics
+  - from: agent
+    to: citation_score
+    type: primary
+  - from: retrievers
+    to: retrieval_score
+    type: data
+  - from: end_to_end
+    to: report
+    type: primary
+  - from: citation_score
+    to: report
+    type: primary
+  - from: retrieval_score
+    to: report
     type: primary
 modules: []

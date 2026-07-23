@@ -1,0 +1,202 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OJBench 构建与评测流程
+  description: 对齐论文的 NOI 与 ICPC 题目构建流程：完整验证主办方测试并移除全部特殊判题任务；仅 NOI 题经 GPT-4o 翻译与人工核验，ICPC 明确绕过翻译，再按来源标注难度并以完整判题器计算 Pass@1 与 Pass@8。
+  legend: >-
+    上方从左向右构建数据集：仅 NOI 分支执行 GPT-4o 翻译，ICPC 分支绕过翻译；两类题分别应用难度规则后汇合为 232 题。下方评测 8 个 Python 与 C++ 候选程序，并使用论文给出的 10 秒与 1 GiB
+    判题限制。
+nodes:
+  - id: sources
+    label: |-
+      竞赛题目来源
+      159 道洛谷 NOI 题
+      73 道 ICPC 官方题
+      含主办方测试
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: test_gate
+    label: |-
+      验证主办方测试
+      运行选手正确提交
+      移除不完整或错误测试集
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 100
+  - id: judge_gate
+    label: |-
+      标准判题门控
+      要求直接比较输出
+      移除全部特殊判题任务
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: translation
+    label: |-
+      翻译 NOI 题面
+      GPT-4o 生成英文
+      人工检查语义与格式
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: difficulty_route
+    label: |-
+      选择题目来源
+      NOI 还是 ICPC？
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: noi_difficulty
+    label: |-
+      NOI 解题者投票等级
+      简单 2–3 • 中等 4–5
+      困难 6–7
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: icpc_difficulty
+    label: |-
+      ICPC 真实排名统计
+      通过提交 / 全部提交
+      × 尝试队伍 / 全部队伍
+      简单 ≥0.4 • 困难 ≤0.1
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 200
+  - id: release
+    label: |-
+      OJBench 发布集
+      共 232 题
+      简单 36 • 中等 79 • 困难 117
+      支持 Python + C++ 评测
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: prompt
+    label: |-
+      竞赛题目输入
+      题面 • 约束 • 样例
+      请求目标语言程序
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: sample
+    label: |-
+      每题生成 8 个候选
+      使用模型官方超参数
+      推理模型 max_tokens = 64k
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: extract
+    label: |-
+      响应解析器
+      提取围栏内目标语言代码
+      仅窄缺口场景追加 main()
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: execute
+    label: |-
+      完整官方判题
+      运行全部主办方测试
+      Python + C++
+      10 秒 • 1 GiB
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: correctness
+    label: |-
+      精确正确性门控
+      必须通过每个测试
+      任一失败即拒绝候选
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 520
+  - id: report
+    label: |-
+      OJBench 结果
+      Pass@1 + Pass@8
+      Python + C++
+      按来源与难度汇总
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 520
+edges:
+  - from: sources
+    to: test_gate
+    type: primary
+  - from: test_gate
+    to: judge_gate
+    type: primary
+  - from: judge_gate
+    to: difficulty_route
+    type: primary
+  - from: difficulty_route
+    to: translation
+    type: primary
+    label: NOI 赛题
+  - from: translation
+    to: noi_difficulty
+    type: primary
+  - from: difficulty_route
+    to: icpc_difficulty
+    type: primary
+    label: ICPC（绕过翻译）
+  - from: noi_difficulty
+    to: release
+    type: primary
+  - from: icpc_difficulty
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: extract
+    type: primary
+  - from: extract
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
+    to: report
+    type: primary
+modules: []

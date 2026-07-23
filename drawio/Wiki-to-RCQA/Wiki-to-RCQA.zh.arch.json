@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "title": "Wiki-to-RCQA 数据构建与验证流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 18,
+    "edges": 21,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "wiki_documents",
+      "label": "已准备Wikipedia文档",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "wikiclean",
+      "label": "wikiclean预处理",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "page_gate",
+      "label": "有效内容页面？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "discard_page",
+      "label": "淘汰页面或段落",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "section_split",
+      "label": "章节 / 段落切分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "passage_gate",
+      "label": "段落至少20词？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_router",
+      "label": "抽样提示类型",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "default_prompt",
+      "label": "DEFAULT 提示 · 0.10",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "span_prompt",
+      "label": "SPAN 提示 · 0.25",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "paraphrase_prompt",
+      "label": "PPHRASE 提示 · 0.25",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "drop_prompt",
+      "label": "DROP 提示 · 0.40",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "qwen_generate",
+      "label": "Qwen2.5-32B生成1至8组问答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rcqa_pool",
+      "label": "42.2亿token / 2230万文档",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "microanneal",
+      "label": "100亿微退火对照纯网页",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gain_gate",
+      "label": "GenQA提升有效？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "reject_source",
+      "label": "不选择该数据源",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "integration_tests",
+      "label": "候选混合集成测试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "final_mix",
+      "label": "30亿token / 100B混合的3%",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "wiki_documents",
+      "to": "wikiclean",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "wikiclean",
+      "to": "page_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "page_gate",
+      "to": "section_split",
+      "type": "primary",
+      "label": "有效"
+    },
+    {
+      "id": "edge-4",
+      "from": "page_gate",
+      "to": "discard_page",
+      "type": "optional",
+      "label": "无效"
+    },
+    {
+      "id": "edge-5",
+      "from": "section_split",
+      "to": "passage_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "passage_gate",
+      "to": "prompt_router",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-7",
+      "from": "passage_gate",
+      "to": "discard_page",
+      "type": "optional",
+      "label": "否"
+    },
+    {
+      "id": "edge-8",
+      "from": "prompt_router",
+      "to": "default_prompt",
+      "type": "data",
+      "label": "0.10"
+    },
+    {
+      "id": "edge-9",
+      "from": "prompt_router",
+      "to": "span_prompt",
+      "type": "data",
+      "label": "0.25"
+    },
+    {
+      "id": "edge-10",
+      "from": "prompt_router",
+      "to": "paraphrase_prompt",
+      "type": "data",
+      "label": "0.25"
+    },
+    {
+      "id": "edge-11",
+      "from": "prompt_router",
+      "to": "drop_prompt",
+      "type": "data",
+      "label": "0.40"
+    },
+    {
+      "id": "edge-12",
+      "from": "default_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "span_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "paraphrase_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "drop_prompt",
+      "to": "qwen_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "qwen_generate",
+      "to": "rcqa_pool",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "rcqa_pool",
+      "to": "microanneal",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "microanneal",
+      "to": "gain_gate",
+      "type": "primary",
+      "label": "GenQA近+2"
+    },
+    {
+      "id": "edge-19",
+      "from": "gain_gate",
+      "to": "integration_tests",
+      "type": "primary",
+      "label": "有效"
+    },
+    {
+      "id": "edge-20",
+      "from": "gain_gate",
+      "to": "reject_source",
+      "type": "optional",
+      "label": "无效"
+    },
+    {
+      "id": "edge-21",
+      "from": "integration_tests",
+      "to": "final_mix",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

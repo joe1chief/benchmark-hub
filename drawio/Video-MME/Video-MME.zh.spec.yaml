@@ -1,0 +1,193 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Video-MME 数据构建、复核回路与评测流程
+  description: >-
+    Video-MME建立6个YouTube领域和30个类别，平衡短于2分钟、4至15分钟和30至60分钟的视频，筛选900个视频并收集744份字幕和900条音轨。专家完整观看每个视频，编写3道四选一题，覆盖12类任务。另一位标注者复核语言、可答性、选项一致性和正确答案；随后Gemini
+    1.5 Pro测试纯文本可答性，把可仅凭题干回答的样例退回修订。最终2700组问答在纯帧、帧加字幕、帧加音频三种设置下用真值直接计算准确率，并报告时长/领域准确率与模态增益。
+  legend: 来源：Video-MME arXiv:2405.21075 and official MME-Benchmarks/Video-MME repository。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: taxonomy
+    label: |-
+      6领域·30类别
+      3档时长
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 240
+  - id: videos
+    label: |-
+      900个YouTube视频
+      短中长三档
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 240
+  - id: metadata
+    label: |-
+      744份字幕
+      900条音轨
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 80
+  - id: annotate
+    label: |-
+      专家完整观看视频
+      每片3道四选一·12任务
+    type: user
+    size: xl
+    position:
+      x: 640
+      'y': 240
+  - id: review
+    label: |-
+      独立人工复核
+      语言·答案·选项
+    type: user
+    size: xl
+    position:
+      x: 940
+      'y': 240
+  - id: filter
+    label: |-
+      Gemini 1.5 Pro判断
+      纯文本可答？
+    type: decision
+    size: xl
+    position:
+      x: 1240
+      'y': 240
+  - id: revise
+    label: |-
+      退回原标注者
+      修订
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 440
+  - id: release
+    label: 2700组问答
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 240
+  - id: settings
+    label: 纯帧／加字幕／加音频
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 660
+  - id: choice
+    label: 解析四选一答案
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 660
+  - id: direct
+    label: |-
+      直接对照真值
+      准确率
+    type: formula
+    size: xl
+    position:
+      x: 940
+      'y': 660
+  - id: duration
+    label: |-
+      短·中·长
+      领域准确率
+    type: terminal
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: gain
+    label: |-
+      字幕与音频
+      模态增益
+    type: terminal
+    size: xl
+    position:
+      x: 640
+      'y': 760
+  - id: report
+    label: Video-MME评测结果
+    type: terminal
+    size: xl
+    position:
+      x: 340
+      'y': 660
+edges:
+  - from: taxonomy
+    to: videos
+    type: primary
+  - from: videos
+    to: metadata
+    type: primary
+  - from: videos
+    to: annotate
+    type: primary
+  - from: annotate
+    to: review
+    type: primary
+  - from: review
+    to: filter
+    type: primary
+  - from: filter
+    to: revise
+    type: optional
+    label: 是：修订
+    labelPosition: end
+  - from: revise
+    to: review
+    type: optional
+    label: 复核
+    labelPosition: center
+  - from: filter
+    to: release
+    type: primary
+    label: 否：保留
+    labelPosition: end
+  - from: release
+    to: settings
+    type: primary
+  - from: metadata
+    to: settings
+    type: dependency
+    waypoints:
+      - x: 740
+        'y': 40
+      - x: 1780
+        'y': 40
+      - x: 1780
+        'y': 710
+  - from: settings
+    to: choice
+    type: primary
+  - from: choice
+    to: direct
+    type: primary
+  - from: direct
+    to: duration
+    type: primary
+  - from: direct
+    to: gain
+    type: primary
+  - from: duration
+    to: report
+    type: primary
+  - from: gain
+    to: report
+    type: primary
+modules: []

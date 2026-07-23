@@ -1,0 +1,240 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ZeroEval 仓库执行与任务专属评分流程
+  description: >-
+    ZeroEval是评测框架而非固定数据集。在官方仓库提交8c1485edf12c6efb5f69135a562927c5ad484059中，zero_eval_local.sh与zero_eval_api.sh把仓库任务/模型配置接入统一推理、任务模板、分片、缓存/续跑、结果合并和任务专属评测器。本地vLLM/Hugging
+    Face后端直接生成，仅已配置API提供商调用使用上限为10次的重试处理器。不同评分器分别处理MMLU-Redux、GSM8K/MATH、CRUX、ZebraLogic和G-PlanET。期望结果数是完整性门禁，不是构建总数；不存在可绘制的论文标注/QC流水线。
+  legend: >-
+    来源：No independent ZeroEval benchmark paper was found. Primary source is the official WildEval/ZeroEval repository
+    pinned at commit 8c1485edf12c6efb5f69135a562927c5ad484059: README.md; CITATION.cff; zero_eval_local.sh;
+    zero_eval_api.sh; src/unified_infer.py; src/unified_utils.py; src/task_configs.py; src/_TEMPLATES.py;
+    src/templates/{MCQA,OEQA,ZEBRA_GRID}.py; src/merge_results.py; and
+    src/evaluation/{eval_utils,mcqa_eval,math_eval,crux_eval,zebra_grid_eval,summarize}.py. CITATION.cff dates the
+    software release to 2024-07-18. DeepSeek-V3 arXiv:2412.19437 Appendix/Table 19 is supporting evidence only: it
+    borrows the Zero-Eval prompt format for MMLU-Redux rather than defining ZeroEval or running this repository end to
+    end.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: repo_config
+    label: 官方仓库配置
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: task_loader
+    label: 任务与模板加载器
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: model_loader
+    label: 模型后端配置
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: backend_router
+    label: 本地或API后端？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 160
+  - id: local_backend
+    label: 本地vLLM / Hugging Face后端
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: api_backend
+    label: 已配置API提供商
+    type: cloud
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: prompt_shards
+    label: 渲染提示并分片
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 160
+  - id: cache_resume
+    label: 缓存 / 续跑
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: batch_retry
+    label: 批量推理（仅API最多重试10次）
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: merge_outputs
+    label: 合并分片输出
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 160
+  - id: scorer_router
+    label: 任务专属评分路由
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: mmlu_parser
+    label: MMLU：JSON/正则/boxed转字母
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 40
+  - id: math_parser
+    label: GSM/MATH：清洗后浮点相等
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 200
+  - id: crux_parser
+    label: CRUX：字符串精确匹配
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: zebra_parser
+    label: Zebra：JSON/解/单元格
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: gplanet_parser
+    label: G-PlanET任务评分器
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 680
+  - id: completeness_gate
+    label: 逐任务完整性门禁
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 360
+  - id: zeroeval_report
+    label: 任务结果（无固定总规模）
+    type: terminal
+    size: xl
+    position:
+      x: 3400
+      'y': 360
+  - id: incomplete_flag
+    label: 标记运行不完整
+    type: loss
+    size: xl
+    position:
+      x: 3400
+      'y': 600
+edges:
+  - from: repo_config
+    to: task_loader
+    type: data
+  - from: repo_config
+    to: model_loader
+    type: data
+  - from: task_loader
+    to: backend_router
+    type: primary
+  - from: model_loader
+    to: backend_router
+    type: primary
+  - from: backend_router
+    to: local_backend
+    type: primary
+    label: 本地
+    labelPosition: end
+  - from: backend_router
+    to: api_backend
+    type: primary
+    label: API提供商
+    labelPosition: end
+  - from: local_backend
+    to: prompt_shards
+    type: primary
+  - from: api_backend
+    to: prompt_shards
+    type: primary
+  - from: prompt_shards
+    to: cache_resume
+    type: data
+  - from: prompt_shards
+    to: batch_retry
+    type: primary
+  - from: cache_resume
+    to: batch_retry
+    type: data
+    label: 复用
+    labelPosition: center
+  - from: batch_retry
+    to: merge_outputs
+    type: primary
+  - from: merge_outputs
+    to: scorer_router
+    type: primary
+  - from: scorer_router
+    to: mmlu_parser
+    type: primary
+  - from: scorer_router
+    to: math_parser
+    type: primary
+  - from: scorer_router
+    to: crux_parser
+    type: primary
+  - from: scorer_router
+    to: zebra_parser
+    type: primary
+  - from: scorer_router
+    to: gplanet_parser
+    type: primary
+  - from: mmlu_parser
+    to: completeness_gate
+    type: primary
+  - from: math_parser
+    to: completeness_gate
+    type: primary
+  - from: crux_parser
+    to: completeness_gate
+    type: primary
+  - from: zebra_parser
+    to: completeness_gate
+    type: primary
+  - from: gplanet_parser
+    to: completeness_gate
+    type: primary
+  - from: completeness_gate
+    to: zeroeval_report
+    type: primary
+    label: 完整
+    labelPosition: end
+  - from: completeness_gate
+    to: incomplete_flag
+    type: optional
+    label: 不完整
+    labelPosition: end
+modules: []

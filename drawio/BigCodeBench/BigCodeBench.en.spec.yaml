@@ -5,79 +5,111 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BigCodeBench Build Process
-  description: Human-LLM synthesis, refactoring, testing, and three-fold human curation from arXiv v4 Sections 2.1-2.3.
-  legend: Solid arrows show the BigCodeBench-Complete build chain; numbers are stage counts reported by the paper.
+  description: >-
+    ODEX enrichment, 13-by-100 annotation assignments, refactoring, tests, program analysis, seven-person cross-check,
+    and GHCR validation from arXiv v4 Sections 2.1-2.3.
+  legend: >-
+    Solid arrows show the BigCodeBench-Complete build chain; 13 by 100 denotes annotator assignments, not a unique-task
+    count.
 nodes:
   - id: seeds
     label: ODEX seeds
     type: document
     size: large
     position:
-      x: 80
-      'y': 80
+      x: 64
+      'y': 64
   - id: synth
-    label: GPT-4 synth
+    label: GPT-4 enrichment
     type: process
     size: large
     position:
-      x: 288
-      'y': 80
+      x: 272
+      'y': 64
   - id: perturb
-    label: Perturb + AST
+    label: Name edit + docstring BT
     type: process
     size: large
     position:
-      x: 496
-      'y': 80
+      x: 480
+      'y': 64
   - id: pool
-    label: 4,718 samples
+    label: 4,718 AST-valid drafts
+    type: database
+    size: large
+    position:
+      x: 688
+      'y': 64
+  - id: assignments
+    label: 13 × 100 task assignments
     type: document
     size: large
     position:
-      x: 704
-      'y': 80
+      x: 688
+      'y': 208
   - id: refactor
-    label: 13-person refactor + QA
+    label: Human + GPT-4 refactor
     type: process
     size: large
     position:
-      x: 704
-      'y': 220
+      x: 480
+      'y': 208
+  - id: tests
+    label: ≥5 tests per task
+    type: process
+    size: large
+    position:
+      x: 272
+      'y': 208
+  - id: analysis
+    label: Program analysis
+    type: process
+    size: large
+    position:
+      x: 64
+      'y': 208
   - id: valid
-    label: 1,223 valid
-    type: document
+    label: 1,223 valid pairs
+    type: database
     size: large
     position:
-      x: 496
-      'y': 220
+      x: 64
+      'y': 352
   - id: examination
-    label: Manual examination
+    label: Examination
     type: process
     size: large
     position:
-      x: 288
-      'y': 220
+      x: 272
+      'y': 352
   - id: preeval
     label: GPT-3.5 pre-evaluation
     type: process
     size: large
     position:
-      x: 80
-      'y': 220
+      x: 480
+      'y': 352
   - id: crosscheck
-    label: Cross-check + sandbox
+    label: 7-person cross-check
     type: process
     size: large
     position:
-      x: 80
-      'y': 360
+      x: 688
+      'y': 352
+  - id: ghcr_validation
+    label: GHCR validation
+    type: process
+    size: large
+    position:
+      x: 688
+      'y': 496
   - id: final
     label: 1,140 tasks
     type: terminal
     size: large
     position:
-      x: 288
-      'y': 360
+      x: 480
+      'y': 496
 edges:
   - from: seeds
     to: synth
@@ -89,9 +121,18 @@ edges:
     to: pool
     type: primary
   - from: pool
+    to: assignments
+    type: primary
+  - from: assignments
     to: refactor
     type: primary
   - from: refactor
+    to: tests
+    type: primary
+  - from: tests
+    to: analysis
+    type: primary
+  - from: analysis
     to: valid
     type: primary
   - from: valid
@@ -104,6 +145,9 @@ edges:
     to: crosscheck
     type: primary
   - from: crosscheck
+    to: ghcr_validation
+    type: primary
+  - from: ghcr_validation
     to: final
     type: primary
 modules: []

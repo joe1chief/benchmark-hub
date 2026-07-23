@@ -1,0 +1,381 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Math-VR 构建与评测流程
+  description: 按论文复原双语数学视觉推理语料与基准，并接续已发布的 GPT-4.1 裁判实现。人工样本筛选与评分元信息验证属于同一复核环节；流程明确呈现代码中的重试、遗漏、覆盖率和分母行为。
+  legend: >-
+    论文边界为 arXiv:2510.11718v1；代码边界为 HKU-MMLab/Math-VR-CodePlot-CoT 快照 45b8c88；公开英文基准 为 gogoduan/Math-VR-bench 快照
+    b15f5bb（实际 2,500 行），其 README 中另有相互矛盾的 3,000 行表格。
+nodes:
+  - id: collect
+    label: |-
+      收集约 90 万道数学题
+      中学水平 · 来源为公开网站
+      每道题的解答至少包含一张图
+      论文未披露源网址与抓取日期
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: image_gate
+    label: |-
+      Qwen2.5-VL-72B 图像门控
+      解答是否包含与推理相关的
+      数学图形？
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: retain
+    label: |-
+      保留依赖图形的问题
+      题目必须需要该图形
+      才能完成数学推理
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 0
+  - id: drop_image
+    label: |-
+      图像门控拒绝
+      图片无关或仅含文字
+      不保留该样本
+    type: terminal
+    size: xl
+    position:
+      x: 580
+      'y': 200
+  - id: standardize
+    label: |-
+      使用 GPT-4.1 标准化
+      转写剩余的纯文字图片
+      分离问题与解答
+      将两者改写为 Markdown
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 0
+  - id: quality_gate
+    label: |-
+      GPT-4.1 质量门控
+      标准化后的问题和解答
+      是否完整且连贯？
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 0
+  - id: translate
+    label: |-
+      创建英文版本
+      翻译标准化样本
+      配对中文与英文记录
+      保留问题、解答与答案
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 0
+  - id: drop_qc
+    label: |-
+      质量门控拒绝
+      记录不完整或不连贯
+      不保留该样本
+    type: terminal
+    size: xl
+    position:
+      x: 1420
+      'y': 200
+  - id: corpus
+    label: |-
+      组成双语总语料
+      共 89,075 道独立问题
+      178,150 条中英文记录
+      此时尚未确定最终划分
+    type: database
+    size: xl
+    position:
+      x: 1700
+      'y': 0
+  - id: taxonomy
+    label: |-
+      应用 GPT-4.1 学科层次体系
+      纯文本 29% · 多模态 71%
+      v1 PDF 的几何占比存在三种口径
+      正文 p.4 + 附录 A.2 p.14：81%
+      图 3 p.5：77% · 图 6 p.14：76%
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 0
+  - id: candidates
+    label: |-
+      形成 3,000 道候选题
+      排除证明题
+      排除大多数选择题
+      论文未报告随机种子
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 0
+  - id: auto_rubric
+    label: |-
+      生成评测元信息
+      GPT-4.1 总结最终答案
+      抽取关键评分点
+      每个评分点赋值 1 或 2
+    type: document
+    size: xl
+    position:
+      x: 2540
+      'y': 0
+  - id: manual_gate
+    label: |-
+      人工复核 · 15 名高年级
+      STEM 学生
+      视觉推理是否非平凡？
+      答案与评分元信息是否有效？
+    type: decision
+    size: xl
+    position:
+      x: 2820
+      'y': 0
+  - id: benchmark
+    label: |-
+      确定论文语料划分与基准
+      训练 86,575 + 测试 2,500
+      测试：纯文本 1,000 + 多模态 1,500
+      中英文共 5,000 条测试样本
+    type: database
+    size: xl
+    position:
+      x: 3100
+      'y': 0
+  - id: drop_review
+    label: |-
+      人工复核拒绝
+      视觉推理过于简单或极少
+      或评测元信息不合格
+    type: terminal
+    size: xl
+    position:
+      x: 3380
+      'y': 200
+  - id: response
+    label: |-
+      读取候选回答 JSON
+      问题 ID → 完整解答
+      仅评测已提供的 ID
+      不检查是否覆盖全部 2,500 题
+    type: process
+    size: xl
+    position:
+      x: 2820
+      'y': 520
+  - id: judge
+    label: |-
+      用 GPT-4.1 裁判每个已提供回答
+      输入题目文本、答案摘要与评分规则
+      加入候选推理和最终答案
+      裁判不接收题目图像
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 520
+  - id: json_gate
+    label: |-
+      裁判输出能解码为 JSON？
+      截取首个“{”至末个“}”
+      仅执行 json.loads
+      不验证 schema 或字段类型
+    type: decision
+    size: xl
+    position:
+      x: 2260
+      'y': 520
+  - id: retry_gate
+    label: |-
+      仍有尝试次数？
+      每个 ID 最多调用裁判五次
+    type: decision
+    size: xl
+    position:
+      x: 2260
+      'y': 760
+  - id: omit
+    label: |-
+      省略多次无效的 JSON
+      该 ID 不写入 result.json
+      也不进入均值分母
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 760
+  - id: correct_gate
+    label: |-
+      is_fully_correct 是真值？
+      这是 PS 满分门控
+      按 Python truthiness，非布尔类型检查
+    type: decision
+    size: xl
+    position:
+      x: 1980
+      'y': 520
+  - id: full_score
+    label: |-
+      真值分支
+      PS = 100
+      AC 仅在 Python “is True”时为 100
+      “False”或 1 → PS 100 · AC 0
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 440
+  - id: partial_score
+    label: |-
+      假值分支
+      AC = 0
+      PS = 0.7 × final_score / max_score × 100
+      不验证类型或数值范围
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 620
+  - id: report
+    label: |-
+      对 result.json 已存条目取平均
+      分纯文本、多模态与总体
+      缺失 ID 不进入分母
+      已存条目缺字段时按零计
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 520
+  - id: validate
+    label: |-
+      人机相关性研究
+      1,000 道题 · 每题 3 个模型回答
+      15 名学生 · 每人评 200 个回答
+      AC κ/MCC .75 · PS Pearson .72/Spearman .70
+    type: terminal
+    size: xl
+    position:
+      x: 1140
+      'y': 520
+edges:
+  - from: collect
+    to: image_gate
+    type: primary
+  - from: image_gate
+    to: retain
+    type: primary
+    label: 是 · 数学图形与推理相关
+  - from: image_gate
+    to: drop_image
+    type: primary
+    label: 否 · 图片无关或仅含文字
+  - from: retain
+    to: standardize
+    type: primary
+  - from: standardize
+    to: quality_gate
+    type: primary
+  - from: quality_gate
+    to: translate
+    type: primary
+    label: 是 · 完整且连贯
+  - from: quality_gate
+    to: drop_qc
+    type: primary
+    label: 否 · 拒绝
+  - from: translate
+    to: corpus
+    type: primary
+  - from: corpus
+    to: taxonomy
+    type: primary
+  - from: taxonomy
+    to: candidates
+    type: primary
+  - from: candidates
+    to: auto_rubric
+    type: primary
+  - from: auto_rubric
+    to: manual_gate
+    type: primary
+  - from: manual_gate
+    to: benchmark
+    type: primary
+    label: 是 · 保留并验证
+  - from: manual_gate
+    to: drop_review
+    type: primary
+    label: 否 · 标记不合格
+    waypoints:
+      - x: 2920
+        'y': 200
+      - x: 3280
+        'y': 200
+  - from: benchmark
+    to: response
+    type: primary
+    waypoints:
+      - x: 3200
+        'y': 400
+      - x: 2920
+        'y': 400
+  - from: response
+    to: judge
+    type: primary
+  - from: judge
+    to: json_gate
+    type: primary
+  - from: json_gate
+    to: correct_gate
+    type: primary
+    label: 是 · json.loads 成功
+  - from: json_gate
+    to: retry_gate
+    type: primary
+    label: 否 · JSON 解码失败
+  - from: retry_gate
+    to: judge
+    type: secondary
+    label: 是 · 重试
+  - from: retry_gate
+    to: omit
+    type: primary
+    label: 否 · 五次尝试耗尽
+  - from: correct_gate
+    to: full_score
+    type: primary
+    label: 是 · 真值
+  - from: correct_gate
+    to: partial_score
+    type: primary
+    label: 否 · 假值
+  - from: full_score
+    to: report
+    type: primary
+  - from: partial_score
+    to: report
+    type: primary
+  - from: report
+    to: validate
+    type: secondary
+    label: 论文公开的可靠性研究
+modules: []

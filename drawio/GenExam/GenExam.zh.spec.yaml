@@ -1,0 +1,166 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GenExam 构建流程
+  description: 与论文及发布版本对齐的分类体系、图像筛选、标注、Mini 抽样、生成、裁判和计分流程。
+  legend: 虚线表示固定证据，实线表示 arXiv:2509.14232v5 与官方发布中的主流程。 Mini 的 250 条规模由论文图 8 和发布的 mini_sample_ids.txt 共同固定。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2509.14232v5
+      仓库 6f324dd1 · 数据 0782259d
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: taxonomy
+    label: |-
+      构建 ISCED-F 对齐分类体系
+      10 个学科 · 四级
+      各级 10/40/132/236 类
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 100
+  - id: collect
+    label: |-
+      收集 4 万张候选图
+      考试/教材网页检索
+      七个学科数据集及原始描述
+    type: database
+    size: xl
+    position:
+      x: 560
+      'y': 100
+  - id: heuristic_filter
+    label: |-
+      启发式过滤
+      去重 · 低分辨率 · 水印
+      非英文文本
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 100
+  - id: gpt_filter
+    label: |-
+      GPT-5 评定四项属性
+      文本密度 · 领域 · 复杂度
+      学科知识密度 → 保留 6,500 张
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 100
+  - id: draft
+    label: |-
+      GPT-5 起草考试式提示
+      原子化是/否评分问题
+      各项权重之和为 1
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 100
+  - id: review
+    label: |-
+      三名博士标注员交叉复核
+      图像 · 提示 · 评分点
+      删除或修正不精确样本
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 400
+  - id: release
+    label: |-
+      发布 GenExam-Full：1,000 条
+      10 学科 · 真值参考图
+      平均 74.8 词 · 6.9 个评分点
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 400
+  - id: mini
+    label: |-
+      派生 GenExam-Mini：250 条
+      按三级分类分层抽样
+      匹配完整集学科分布
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 400
+  - id: generate
+    label: |-
+      每个提示生成一张图
+      使用各模型默认 T2I 配置
+      运行完整集或 Mini
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 400
+  - id: judge
+    label: |-
+      GPT-5-2025-08-07 · 低推理
+      提示 + 生成图 + 参考图
+      是/否评分点；三项 0–2 全局评分
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 400
+  - id: score
+    label: |-
+      报告严格分与宽松分
+      严格：评分点全对且全局项均为 2
+      宽松：语义 × .7
+      + 每项全局评分 × .1 / 2
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 400
+edges:
+  - from: evidence
+    to: taxonomy
+    type: data
+  - from: taxonomy
+    to: collect
+    type: primary
+  - from: collect
+    to: heuristic_filter
+    type: primary
+  - from: heuristic_filter
+    to: gpt_filter
+    type: primary
+  - from: gpt_filter
+    to: draft
+    type: primary
+  - from: draft
+    to: review
+    type: primary
+  - from: review
+    to: release
+    type: primary
+  - from: release
+    to: mini
+    type: primary
+  - from: mini
+    to: generate
+    type: primary
+  - from: generate
+    to: judge
+    type: primary
+  - from: judge
+    to: score
+    type: primary
+modules: []

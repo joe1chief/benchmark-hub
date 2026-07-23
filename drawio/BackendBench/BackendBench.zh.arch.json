@@ -1,0 +1,313 @@
+{
+  "version": 1,
+  "title": "BackendBench 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 22,
+    "edges": 27,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "pytorch_surface",
+      "label": "PyTorch 算子范围\n271 个 OpInfo 算子\n过滤随机、内存分配\n与不支持算子",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "hf_traces",
+      "label": "真实 Hugging Face trace\n124 个性能算子\n高频、大型\n真实 tensor shape",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "directories",
+      "label": "每算子一个可审计目录\n空实现 stub\n版本化尝试\n评测框架置于\n生成代码之外",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "variants",
+      "label": "映射算子变体\n函数式 • 原地\n预分配 Out\n一个 kernel 覆盖所有形式",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "编写自定义 kernel\n人工或 LLM\nTriton • PyTorch\nCuTeDSL • Helion\n遵守签名与语义",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "refine",
+      "label": "迭代 kernel 尝试\nLLM 默认五次\n修复编译与正确性\n再优化速度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "register",
+      "label": "编译并注册 backend\ntorch.library CUDA dispatch\n运行现有模型\n无需改模型代码",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "suite_selector",
+      "label": "每次仅一个 --suite\nSmoke • OpInfo\nFACTO • TorchBench",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "smoke",
+      "label": "Smoke 套件\n加载所选实现\n编译 + dispatch + 基本运行",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "opinfo",
+      "label": "OpInfo 正确性套件\n每算子平均 13 个测试\n空 tensor • NaN/Inf • dtype\n广播 • 极值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "facto",
+      "label": "FACTO 正确性套件\n生成式边界用例\n参考实现对 backend\n使用同一正确性合同",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "torchbench",
+      "label": "TorchBench trace 套件\n每算子平均 110 个测试\n真实模型 tensor shape\n对比 PyTorch eager",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "smoke_report",
+      "label": "Smoke 运行报告\n仅报告所选套件\n编译 / dispatch / 执行",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "opinfo_report",
+      "label": "OpInfo 正确性报告\n算子必须通过全部测试\nequal_nan • atol/rtol 1e-2\n不做跨套件聚合",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "facto_report",
+      "label": "FACTO 正确性报告\n每算子的生成用例\n使用相同数值容差\n不做跨套件聚合",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correctness",
+      "label": "TorchBench correctness[]\n按测试索引配对\n嵌套结构 • equal_nan\natol/rtol 1e-2",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "performance",
+      "label": "TorchBench performance[]\ntriton.do_bench\n同步与 warmup\n相对 eager 加速比",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paired_arrays",
+      "label": "配对套件内数组\ncorrectness[i] + performance[i]\n使用同一 TorchBench 测试索引\n在本次运行内计算指标",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "correctness_rate",
+      "label": "正确性指标\n全测试通过的算子平均率\n每项测试都必须通过",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "perf_p",
+      "label": "Perf@p\n正确且加速比 > p\n使用配对数组",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "geomean",
+      "label": "性能几何平均\n失败实现按 1× 计\n不设正确性门槛",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "发布分套件运行产物\n所选 --suite 结果\n算子级 CSV + 失败项\n不合并跨套件分数",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "pytorch_surface",
+      "to": "directories",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "directories",
+      "to": "variants",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "variants",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "generate",
+      "to": "refine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "refine",
+      "to": "register",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "register",
+      "to": "suite_selector",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "suite_selector",
+      "to": "smoke",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "suite_selector",
+      "to": "opinfo",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "suite_selector",
+      "to": "facto",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "suite_selector",
+      "to": "torchbench",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "hf_traces",
+      "to": "torchbench",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "smoke",
+      "to": "smoke_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "opinfo",
+      "to": "opinfo_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "facto",
+      "to": "facto_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "torchbench",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "torchbench",
+      "to": "performance",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "correctness",
+      "to": "paired_arrays",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "performance",
+      "to": "paired_arrays",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "paired_arrays",
+      "to": "correctness_rate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "paired_arrays",
+      "to": "perf_p",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "paired_arrays",
+      "to": "geomean",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "smoke_report",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "opinfo_report",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "facto_report",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "correctness_rate",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "perf_p",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "geomean",
+      "to": "report",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

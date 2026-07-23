@@ -7,50 +7,80 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 12,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "exams",
-      "label": "Gaokao Exams",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "convert",
-      "label": "Parse+Annotate",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "types",
-      "label": "Obj/Subj Qs",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "prompt",
-      "label": "Zero-shot",
+      "id": "evidence",
+      "label": "Primary evidence\narXiv:2305.12474v3\nofficial repo 6dbb24f8",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "match",
-      "label": "Obj Match",
-      "type": "decision",
+      "id": "source_pdfs",
+      "label": "Source national Gaokao exams\nall papers from 2010–2022\n9 science/humanities subjects",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "grade",
-      "label": "Human Grade",
+      "id": "digitize",
+      "label": "Digitize with scripts + manual work\nPDF → structured JSON\nmathematical formulas → LaTeX",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Total Score",
+      "id": "release",
+      "label": "Release 2,811 questions\nobjective 1,781: 1,418/273/64/26\nsubjective 1,030: 786/218/26",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "Type/subject-specific zero-shot\nmany: reasoning field → eoe\nsome answer-only: five-of-seven,\ncorrection, several Chinese readings\nall: answer field → eoa",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "route",
+      "label": "Route by question type\nobjective parser or\nsubjective grading path",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "objective_parser",
+      "label": "Parse objective outputs\nsingle: last A–D\nmulti-Q: markers else first letters\nmulti-select: tag index >0\notherwise scan last 10 chars\nfive-of-seven: first 5 A–G",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "objective_score",
+      "label": "Score-weighted exact matching\nPhysics multi-select: full 6\ncorrect subset 3 · extraneous 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_grade",
+      "label": "Paper primary subjective grade\ntwo teachers per answer\naverage their scores",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "repo_judge",
+      "label": "Pinned repo alternative judge\nGPT-4-1106-preview · T 0\ncaller max_tokens=4,096\nrequest omits max_tokens\ndefault: no marking criteria\nparse total-score; mean non-null",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "Aggregate scoring rates\ncorrect score / total score\nobjective + subjective by subject\nscience/humanities totals / 750",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "agreement",
+      "label": "Compare judge with humans\nSpearman ρ + Kendall τ\npaper judge includes marking criteria",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +88,86 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "exams",
-      "to": "convert",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source_pdfs",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "convert",
-      "to": "types",
+      "from": "source_pdfs",
+      "to": "digitize",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "types",
-      "to": "prompt",
+      "from": "digitize",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "prompt",
-      "to": "match",
+      "from": "release",
+      "to": "prompt",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "match",
-      "to": "grade",
+      "from": "prompt",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "grade",
-      "to": "score",
+      "from": "route",
+      "to": "objective_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "objective_parser",
+      "to": "objective_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "objective_score",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "route",
+      "to": "human_grade",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "human_grade",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "route",
+      "to": "repo_judge",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "repo_judge",
+      "to": "aggregate",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "human_grade",
+      "to": "agreement",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "repo_judge",
+      "to": "agreement",
       "type": "primary"
     }
   ],

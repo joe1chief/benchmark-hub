@@ -5,77 +5,293 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HalluQA Build Process
-  description: >-
-    Paper-aligned HalluQA construction pipeline for Chinese hallucination QA, covering misleading-pattern design, model
-    probes, answer sets, expert quality control, and GPT-4 judging.
-  legend: Solid arrows show adversarial question creation, sample filtering, annotation, quality control, and evaluation.
+  description: Paper-aligned three-stream curation of 450 adversarial Chinese questions and five-vote GPT-4 evaluation.
+  legend: >-
+    HalluQA contains 175 misleading, 69 misleading-hard, and 206 knowledge questions across 30 domains. Paper criteria
+    and the pinned evaluation script are distinguished where their enumeration differs.
 nodes:
-  - id: patterns
-    label: CN Patterns
+  - id: evidence
+    label: |-
+      Evidence & fixed revision
+      arXiv 2310.03368v4 · repo c025c0d
+      HalluQA.json e2f8ac3 · 450 rows
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: probes
-    label: Model Probes
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: select
-    label: Adversarial
+      'y': 300
+  - id: route
+    label: |-
+      Design Chinese adversarial questions
+      history · culture · customs · society
+      route by hallucination cause
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: answers
-    label: Answer Sets
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: qc
-    label: Expert QC
+      x: 340
+      'y': 300
+  - id: misleading_design
+    label: |-
+      Write misleading questions
+      20 TruthfulQA-inspired patterns
+      adapt to Chinese cultural contexts
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
-    label: 450 Qs
+      x: 640
+      'y': 40
+  - id: glm_probe
+    label: |-
+      Probe GLM-130B five times
+      six manual Chinese QA demonstrations
+      retain when falsehood occurs ≥3/5
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 40
+  - id: misleading_set
+    label: |-
+      Final misleading set
+      175 author-written questions
+      22 represented domains
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1240
+      'y': 40
+  - id: hard_design
+    label: |-
+      Start with recent Chinese Internet confusions
+      use ChatGPT 3.5 to create adversarial questions
+      require inherently misleading information
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: hard_set
+    label: |-
+      Final misleading-hard set
+      69 author-reviewed questions
+      15 represented domains
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: knowledge_design
+    label: |-
+      Ten Chinese-native graduate interns
+      write factual knowledge questions
+      across broad domains
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: dual_probe
+    label: |-
+      ChatGPT + Puyu · five runs each
+      both must be wrong ≥3/5
+      collect about 1,000 candidates
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: knowledge_set
+    label: |-
+      NLP expert selects high-quality items
+      verify answers and retain 206
+      14 represented domains
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 560
+  - id: annotate
+    label: |-
+      Add answers and support evidence
+      misleading: four correct + four wrong
+      knowledge: at least one of each
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: quality
+    label: |-
+      Knowledge: validate via external links
+      Misleading: independent authors review
+      rewrite or discard defective questions
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: dataset
+    label: |-
+      Release HalluQA · 450 questions
+      30 domains
+      175 misleading + 69 hard + 206 knowledge
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: inference
+    label: |-
+      Require one answer for every question
+      refusal counts as hallucination
+      except when the reference is unanswerable
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
   - id: judge
-    label: GPT-4 Judge
+    label: |-
+      GPT-4-0613 + paper's five criteria
+      five votes · temperature 0 · top-p 0.5
+      correct-answer examples as evidence
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: score
+    label: |-
+      Report non-hallucination rate
+      percentage of all 450 outputs
+      judged clean of hallucination
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3040
+      'y': 300
+  - id: consistency
+    label: |-
+      Independent judge validation
+      100 questions × six models = 600 outputs
+      five-vote human consistency: 93.50%
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 40
+  - id: artifact_boundary
+    label: |-
+      Paper/script boundary
+      paper text: five criteria
+      pinned script prompt: six numbered bullets
+      same judge settings and decision rule
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 560
 edges:
-  - from: patterns
-    to: probes
+  - from: evidence
+    to: route
+    type: data
+  - from: route
+    to: misleading_design
     type: primary
-  - from: probes
-    to: select
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+  - from: misleading_design
+    to: glm_probe
     type: primary
-  - from: select
-    to: answers
+  - from: glm_probe
+    to: misleading_set
     type: primary
-  - from: answers
-    to: qc
+  - from: route
+    to: hard_design
     type: primary
-  - from: qc
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: hard_design
+    to: hard_set
+    type: primary
+  - from: route
+    to: knowledge_design
+    type: secondary
+    style:
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+  - from: knowledge_design
+    to: dual_probe
+    type: secondary
+  - from: dual_probe
+    to: knowledge_set
+    type: secondary
+  - from: misleading_set
+    to: annotate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+  - from: hard_set
+    to: annotate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: knowledge_set
+    to: annotate
+    type: secondary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
+  - from: annotate
+    to: quality
+    type: primary
+  - from: quality
     to: dataset
     type: primary
   - from: dataset
+    to: inference
+    type: primary
+  - from: inference
     to: judge
     type: primary
+  - from: judge
+    to: score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: judge
+    to: consistency
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: judge
+    to: artifact_boundary
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
 modules: []

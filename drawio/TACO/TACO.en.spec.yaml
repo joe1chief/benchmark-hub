@@ -1,0 +1,318 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: TACO Build and Evaluation Process
+  description: >-
+    Paper- and repository-aligned collection, source-scoped cleaning, code deduplication, test-only augmentation,
+    algorithm labeling, evaluator-specific generation, repository EOF truncation, full-test execution, and Pass@k.
+  legend: >-
+    The upper lane makes source scope explicit: new crawls alone use platform parsing and unit-test validation,
+    Description2code alone uses 2to3, and APPS/CodeContest bypass both. All branches merge before global deduplication.
+    Only the test split is augmented; the retained training split and augmented test split then merge into the final
+    release. Detailed text and tables use 25,443 training problems; the abstract says 25,433.
+nodes:
+  - id: sources
+    label: |-
+      Direct: CodeChef • CodeForces
+      HackerRank • GeeksforGeeks
+      Imports: APPS • CodeContest
+      + Description2code
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: parsers
+    label: |-
+      New Direct Crawls Only
+      Platform Parsers + Manual Sampling
+      HackerRank SVG → OCR
+      Manual Verify + Correct • Crawl Tags
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 20
+  - id: source_route
+    label: |-
+      Source-Specific Cleaning
+      New Crawl, Description2code,
+      or Imported Corpus?
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 140
+  - id: solution_gate
+    label: |-
+      Unit-Test Validation
+      New Crawls Only
+      Execute Submitted Solutions
+      Drop Failures
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 20
+  - id: py2_conversion
+    label: |-
+      Python 2 → Python 3
+      Description2code Only
+      Run 2to3
+      Drop Conversion Failures
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 140
+  - id: imports
+    label: |-
+      Imported Corpora
+      APPS + CodeContest
+      Bypass Crawl Parsing + Validation
+      Bypass Description2code 2to3
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 260
+  - id: dedupe
+    label: |-
+      2,045,502 Code Examples
+      Global MinHash + Jaccard 0.85
+      AST Decomment + Format
+      Retain 1,539,152 Solutions
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 140
+  - id: tests
+    label: |-
+      Test Split Only: Add Tests
+      GPT-4 Proposes Inputs
+      30 Verified Solutions Vote
+      Repeat to At Least 200 Tests
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 260
+  - id: labels
+    label: |-
+      Generalize Problem Labels
+      968 Original Labels
+      → 36 Algorithm Categories
+      8 Skills within the 36
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 140
+  - id: release
+    label: |-
+      TACO Release
+      25,443 Train + 1,000 Test Problems
+      Abstract Says 25,433 Train
+      Detailed Text + Tables Use 25,443
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 140
+  - id: split_route
+    label: |-
+      Released Data Split
+      Train or Test?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 140
+  - id: train_split
+    label: |-
+      Training Split Artifact
+      25,443 Problems
+      No Test Augmentation
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 20
+  - id: test_release
+    label: |-
+      Augmented Test Split
+      1,000 Problems
+      At Least 200 Tests per Problem
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 260
+  - id: prompt
+    label: |-
+      Test Problem Input
+      Statement • Constraints • Examples
+      Standard Input or Call-Based
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 680
+  - id: evaluator_route
+    label: |-
+      Evaluator Variant
+      Code Model or GPT-4?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 680
+  - id: code_models
+    label: |-
+      Code-Model Protocol
+      200 Seeds per Problem
+      top_p 0.95
+      Temperature 0.2 / 0.6 / 0.8
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 600
+  - id: gpt4
+    label: |-
+      GPT-4 Protocol
+      One Sample • Temperature 0.7
+      Append Python Instruction
+      Extract Python Block • Pass@1
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 760
+  - id: postprocess
+    label: |-
+      Repository Post-Processing
+      EOF Truncation Only
+      Cut at Four Published Markers
+      Do Not Infer Missing Code
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: execute
+    label: |-
+      Execute All Unit Tests
+      Standard Input or Call-Based
+      Capture Runtime + Output Failures
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 680
+  - id: correctness
+    label: |-
+      Exact Correctness Gate
+      Every Test Must Pass
+      Any Failure Rejects Candidate
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: metric
+    label: |-
+      Unbiased Pass@k
+      Code Models: k = 1, 10, 100
+      GPT-4: Pass@1
+      By Difficulty + Skill
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 680
+edges:
+  - from: sources
+    to: source_route
+    type: primary
+  - from: source_route
+    to: parsers
+    type: primary
+    label: New crawls only
+  - from: parsers
+    to: solution_gate
+    type: primary
+  - from: solution_gate
+    to: dedupe
+    type: primary
+  - from: source_route
+    to: py2_conversion
+    type: primary
+    label: Description2code only
+  - from: py2_conversion
+    to: dedupe
+    type: primary
+  - from: source_route
+    to: imports
+    type: primary
+    label: APPS + CodeContest • bypass
+  - from: imports
+    to: dedupe
+    type: primary
+  - from: dedupe
+    to: labels
+    type: primary
+  - from: labels
+    to: split_route
+    type: primary
+  - from: split_route
+    to: train_split
+    type: primary
+    label: Train • no augmentation
+  - from: split_route
+    to: tests
+    type: primary
+    label: Test only
+  - from: tests
+    to: test_release
+    type: primary
+  - from: train_split
+    to: release
+    type: primary
+  - from: test_release
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: evaluator_route
+    type: primary
+  - from: evaluator_route
+    to: code_models
+    type: primary
+    label: Code models
+  - from: evaluator_route
+    to: gpt4
+    type: primary
+    label: GPT-4
+  - from: code_models
+    to: postprocess
+    type: primary
+  - from: gpt4
+    to: postprocess
+    type: primary
+  - from: postprocess
+    to: execute
+    type: primary
+  - from: execute
+    to: correctness
+    type: primary
+  - from: correctness
+    to: metric
+    type: primary
+modules: []

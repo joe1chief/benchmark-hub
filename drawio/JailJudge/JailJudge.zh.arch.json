@@ -1,108 +1,210 @@
 {
   "version": 1,
-  "title": "JailJudge Build Process (ZH)",
+  "title": "JailJudge 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 16,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "scenes",
-      "label": "风险场景",
+      "id": "evidence",
+      "label": "主要证据与固定版本\narXiv:2410.12855v2\n官方 Git 8743c13\n数据集 HF edcd9ae\nGuard HF cf624b8",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "labels",
-      "label": "人工标签",
+      "id": "prompts",
+      "label": "六类有害提示来源\n原始 · 合成原始 · 合成对抗\n多语言 · 真实世界 · 欺骗性\n细化为 14 个 MLCommons 危害类别",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "responses",
+      "label": "收集多样目标回答\n闭源与开源大模型家族\n系统级与模型级防御\n随机分配提示；同时覆盖安全与不安全输出",
+      "type": "cloud",
+      "size": "xl"
+    },
+    {
+      "id": "pool",
+      "label": "形成候选提示-回答对\n覆盖度 · 多样性 · 平衡性\n先分叉测试与训练路径\n尚不是最终 35K+ 训练集",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "test_split",
+      "label": "选择留出的 JAILJUDGETEST 配对\nID：4,500 条非多语言测试切分\nOOD：6,300 条 · 10 种语言\nOOD 样本全部不进训练集",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "annotation",
+      "label": "构建人工二元金标准\n按九项 MLCommons 政策培训\n人工标签与 GPT-4 交叉检查\n重标分歧项并执行多数投票",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "test",
-      "label": "测试集",
-      "type": "document",
+      "id": "testsets",
+      "label": "发布人工标注测试集\nID 4,500 · OOD 6,300\n金标准：越狱 True / False",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "judging",
+      "label": "GPT-4 MultiAgent 初判\n3 个 Judging Agent\n各输出理由与 1–10 分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "bpa",
+      "label": "不确定性感知证据聚合\n每个分数转 BPA；α = 0.1 表示不确定性\nDempster 规则合并三个 BPA\n还原聚合分数与最接近理由\nα 不是二元越狱阈值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "voting",
+      "label": "3 个 Voting Agent\n审查聚合分数与理由\n接受 / 拒绝并解释",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "1 个 Inference Agent\n读取聚合初判与全部投票\n最终判断 · 理由 · 解释\n最终越狱分数 1–10",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "train",
-      "label": "训练数据",
+      "label": "构建 JAILJUDGETRAIN 真值\n35K+ 条指令微调数据\n输入：提示 + 回答\n输出：推理解释 + 1–10 分",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "multi",
-      "label": "多Agent",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "score",
-      "label": "细粒度分",
-      "type": "process",
-      "size": "xl"
-    },
-    {
       "id": "guard",
-      "label": "Guard模型",
+      "label": "LoRA 监督微调\nLlama-2-7B 基座\n输入：用户提示 + 模型回答\n输出：解释 + 1–10 分\n二元判定阈值：score > 2",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "evaluate",
+      "label": "评测越狱裁判\nJAILJUDGE ID / OOD\nJBB Behaviors / WILDTEST\nMultiAgent · Guard · 基线",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "裁判指标",
+      "label": "汇报裁判质量\n准确率 · 精确率 · 召回率 · F1\nGPT-4 EQ 1–5 · 人工 H-score\n按场景与语言细分",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "部分公开资产边界\nGit 代码公开 · 数据集需门控\nHF 数据 edcd9ae · auto/custom\nGuard HF cf624b8 单独固定\n不能宣称整包无门槛公开",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "scenes",
-      "to": "labels",
-      "type": "primary"
+      "from": "evidence",
+      "to": "prompts",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "labels",
-      "to": "test",
+      "from": "prompts",
+      "to": "responses",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "test",
-      "to": "train",
+      "from": "responses",
+      "to": "pool",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "train",
-      "to": "multi",
+      "from": "pool",
+      "to": "test_split",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "multi",
-      "to": "score",
+      "from": "test_split",
+      "to": "annotation",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "score",
-      "to": "guard",
+      "from": "annotation",
+      "to": "testsets",
       "type": "primary"
     },
     {
       "id": "edge-7",
+      "from": "pool",
+      "to": "judging",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "judging",
+      "to": "bpa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "bpa",
+      "to": "voting",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "voting",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "inference",
+      "to": "train",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "train",
+      "to": "guard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "testsets",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
       "from": "guard",
+      "to": "evaluate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "evaluate",
       "to": "metrics",
       "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "metrics",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

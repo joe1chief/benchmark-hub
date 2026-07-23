@@ -1,96 +1,186 @@
 {
   "version": 1,
-  "title": "HarmBench Build Process",
+  "title": "HarmBench Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "policies",
-      "label": "Policy Seeds",
+      "id": "evidence",
+      "label": "Primary Evidence\narXiv 2402.04249v2 · §4 / App. B.5\nRepo 8e1604d\ndata/behavior_datasets",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "510 Behaviors",
+      "id": "policies",
+      "label": "Acceptable-use Policies\nOpenAI · Anthropic\nMeta · Inflection",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "distill",
+      "label": "GPT-4 Distillation\nCreate combined policy summary\nUse as curation guide",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "manual",
+      "label": "Authors Manually Curate\nViolations of laws / norms\nFilter dual-intent cases\nCheck differential searchability",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "functional",
+      "label": "510 Behaviors\n200 standard · 100 copyright\n100 contextual · 110 multimodal",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "semantic",
+      "label": "7 Semantic Categories\nCyber · chemical / biological\nCopyright · misinformation\nHarassment · illegal · general harm",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "split",
-      "label": "Val/Test Split",
+      "label": "Official Behavior Split\n100 validation · 410 test\nNo tuning on test behaviors",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "attack",
+      "label": "Generate Test Cases\nRed-team method receives behavior\nN = 512 test cases per behavior",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "attacks",
-      "label": "Attack Gen",
+      "id": "target",
+      "label": "Target Model + Defense\nGreedy decoding",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "targets",
-      "label": "Target Runs",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "judge",
-      "label": "Classifier",
+      "id": "route",
+      "label": "Functional Route\nCopyright behavior?",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "ASR Report",
+      "id": "llm_classifier",
+      "label": "Non-copyright Classifier\nOpen Llama 2 13B classifier\nBehavior + completion → yes/no",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hash_classifier",
+      "label": "Copyright Classifier\nMinHash over overlapping chunks\nJaccard threshold > 0.6\nActual copied text required",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "Attack Success Rate (ASR)\nFraction of successful test cases\nper behavior; averaged for reports",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "Current Release Boundary\nText CSV split: 80/320\nMultimodal all: 110\nNo separate 20/90 CSV",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "policies",
-      "to": "behaviors",
+      "from": "evidence",
+      "to": "policies",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "behaviors",
-      "to": "split",
+      "from": "policies",
+      "to": "distill",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "split",
-      "to": "attacks",
+      "from": "distill",
+      "to": "manual",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attacks",
-      "to": "targets",
+      "from": "manual",
+      "to": "functional",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "targets",
-      "to": "judge",
-      "type": "primary"
+      "from": "manual",
+      "to": "semantic",
+      "type": "secondary"
     },
     {
       "id": "edge-6",
-      "from": "judge",
-      "to": "metrics",
+      "from": "functional",
+      "to": "split",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "split",
+      "to": "attack",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "attack",
+      "to": "target",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "target",
+      "to": "route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "route",
+      "to": "llm_classifier",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "route",
+      "to": "hash_classifier",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-12",
+      "from": "llm_classifier",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "hash_classifier",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "split",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

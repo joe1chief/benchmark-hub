@@ -5,75 +5,337 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EMMA 构建流程
-  description: 对齐论文的 EMMA 流程：从多模态推理来源到过滤和标注后的 STEM/编程题。
-  legend: 实线箭头表示来源收集、纯文本过滤、分类扩展、标注和多模态评测。
+  description: 固定版本还原 Enhanced MultiModal reAsoning，并分开既有题、RAVEN、专家新建和编程题轨道。
+  legend: RAVEN 在过滤后补充数学题；编程题从零独立构建；论文与发布代码评测保持分离。
 nodes:
-  - id: source
-    label: 来源题目
+  - id: evidence
+    label: |-
+      Enhanced MultiModal reAsoning（EMMA）
+      arXiv:2501.05444v1
+      仓库 @ 4725995
+      HF @ 6c87aec
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: sources
+    label: |-
+      既有 STEM 候选题
+      MathVista · Math-Vision
+      OlympiadBench · EXAMS-V · MMMU
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: caption
-    label: 图像描述
+      'y': 360
+  - id: filter
+    label: |-
+      用 GPT-4o 为每张图生成描述
+      Llama-3-70B · GPT-4o · Qwen2-72B
+      每个模型进行 10 次文本加描述试答
+      任一模型答对 ≥5 次即剔除
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: filter
-    label: 文本过滤
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
+      'y': 360
   - id: taxonomy
-    label: 技能分类
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: new
-    label: 新增题目
+    label: |-
+      建立分学科能力分类体系
+      检查真正依赖多模态的保留题
+      GPT-4o 分类
+      人工专家复核
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 560
+      'y': 360
+  - id: raven
+    label: |-
+      RAVEN 图案推理题
+      在共同筛选后补充
+      天然要求多跳视觉推理
+      不经过三模型筛选
+    type: database
+    size: xl
+    position:
+      x: 560
+      'y': 80
+  - id: retained
+    label: |-
+      保留题 + RAVEN · 共 992 题
+      数学 892 · 物理 80 · 化学 20
+      数学总数包含 RAVEN 补充题
+    type: database
+    size: xl
+    position:
+      x: 840
+      'y': 80
+  - id: physics_new
+    label: |-
+      新建物理 · 76 题
+      Learn AP Physics + Khan Academy
+      应用同一图像描述筛选
+      人工标注主题
+    type: process
+    size: xl
+    position:
+      x: 840
+      'y': 300
+  - id: chemistry_new
+    label: |-
+      新建化学 · 1,156 题
+      RDKit + SMiCRM 分子图像
+      746 道结构题
+      210 道博士标注反应题 + 200 道 Pro
+    type: process
+    size: xl
+    position:
+      x: 840
+      'y': 520
+  - id: coding_sources
+    label: |-
+      独立编程题来源
+      CharXiv · Matplotlib 示例库
+      作者既往可视化经验
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 820
+  - id: coding_seeds
+    label: |-
+      确定 47 个可视化种子
+      覆盖高级可视化技术
+      编程轨道完全从零构建
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 820
+  - id: coding_variants
+    label: |-
+      每个种子生成四种设计变化
+      人工或 MLLM 辅助生成
+      事后人工复核
+      188 张可视化 · 47 组
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 820
+  - id: coding_questions
+    label: |-
+      构建 564 道编程选择题
+      Code Choose Vis 188 · Vis Choose Code 188
+      有原图修改 94
+      无原图修改 94
+    type: process
+    size: xl
+    position:
+      x: 840
+      'y': 820
+  - id: coding_labels
+    label: |-
+      人工分类
+      附加设计变化标签
+      按每题考查能力分类
+      复核每道编程题
+    type: process
+    size: xl
+    position:
+      x: 1120
+      'y': 820
+  - id: merge
+    label: |-
+      合并并由专家检查全部轨道
+      992 道保留题 + 1,796 道新建题
+      标准答案简短且可直接核验
+    type: process
+    size: xl
+    position:
+      x: 1560
+      'y': 360
+  - id: dataset
+    label: |-
+      EMMA 测试集 · 2,788 题
+      数学 892 · 物理 156
+      化学 1,176 · 编程 564
+      2,002 道选择题 · 786 道自由作答 · 298 道多图题
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 360
   - id: labels
-    label: 技能标注
+    label: |-
+      发布图像、提示和解法
+      学科 · 任务 · 类别
+      来源 · 题型
+      论文对标准答案评分
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: MLLM评测
+      x: 2120
+      'y': 360
+  - id: evaluation_boundary
+    label: |-
+      评测版本边界
+      论文 v1 协议
+      与后续官方评分器分开
+    type: decision
+    size: xl
+    position:
+      x: 2400
+      'y': 360
+  - id: paper_scope
+    label: |-
+      论文 v1 评测范围
+      EMMA-mini：每学科 100 题 = 400
+      人工专家 + o1：仅 mini
+      其余模型：完整基准
+    type: document
+    size: xl
+    position:
+      x: 2680
+      'y': 120
+  - id: paper_eval
+    label: |-
+      直接提示 + CoT
+      不适用于 o1 与 Gemini 2.0 Flash Thinking
+      计算总体 / 学科准确率
+      不使用 MLLM 裁判
+    type: process
+    size: xl
+    position:
+      x: 2960
+      'y': 120
+  - id: release_eval
+    label: |-
+      仓库 @ 4725995 默认评分器
+      等值 / SymPy / 数值比较
+      可选 --gpt_eval 分支
+      chatgpt-4o-latest · Correct / Incorrect
+    type: process
+    size: xl
+    position:
+      x: 2820
+      'y': 560
+  - id: report
+    label: |-
+      EMMA 准确率报告
+      总体与四学科分项
+      论文直接提示 / CoT 保持可比
+      发布评分器单独标注
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3260
+      'y': 360
 edges:
-  - from: source
-    to: caption
-    type: primary
-  - from: caption
+  - from: evidence
+    to: sources
+    type: data
+  - from: evidence
+    to: raven
+    type: data
+  - from: sources
     to: filter
     type: primary
   - from: filter
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: new
+    to: retained
     type: primary
-  - from: new
+  - from: raven
+    to: retained
+    type: primary
+  - from: taxonomy
+    to: physics_new
+    type: primary
+  - from: taxonomy
+    to: chemistry_new
+    type: primary
+  - from: coding_sources
+    to: coding_seeds
+    type: primary
+  - from: coding_seeds
+    to: coding_variants
+    type: primary
+  - from: coding_variants
+    to: coding_questions
+    type: primary
+  - from: coding_questions
+    to: coding_labels
+    type: primary
+  - from: retained
+    to: merge
+    type: primary
+    waypoints:
+      - x: 1460
+        'y': 130
+      - x: 1460
+        'y': 410
+  - from: physics_new
+    to: merge
+    type: primary
+    waypoints:
+      - x: 1480
+        'y': 350
+      - x: 1480
+        'y': 410
+  - from: chemistry_new
+    to: merge
+    type: primary
+    waypoints:
+      - x: 1500
+        'y': 570
+      - x: 1500
+        'y': 410
+  - from: coding_labels
+    to: merge
+    type: primary
+    waypoints:
+      - x: 1520
+        'y': 870
+      - x: 1520
+        'y': 620
+      - x: 1670
+        'y': 620
+  - from: merge
+    to: dataset
+    type: primary
+  - from: dataset
     to: labels
     type: primary
   - from: labels
-    to: eval
+    to: evaluation_boundary
     type: primary
+  - from: evaluation_boundary
+    to: paper_scope
+    type: primary
+  - from: paper_scope
+    to: paper_eval
+    type: primary
+  - from: evaluation_boundary
+    to: release_eval
+    type: primary
+  - from: paper_eval
+    to: report
+    type: primary
+    waypoints:
+      - x: 3220
+        'y': 170
+      - x: 3220
+        'y': 410
+  - from: release_eval
+    to: report
+    type: primary
+    waypoints:
+      - x: 3240
+        'y': 610
+      - x: 3240
+        'y': 410
 modules: []

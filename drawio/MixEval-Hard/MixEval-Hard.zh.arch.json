@@ -1,0 +1,407 @@
+{
+  "version": 1,
+  "title": "MixEval-Hard 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 30,
+    "edges": 32,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "initial_detector",
+      "label": "两个检测器基准\n真实查询/Wikipedia + 作者精选\n提示 Vicuna-33B\n在 Crawl 子集检出约 2 万条\n初始召回率 >99%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gpt4_labels",
+      "label": "GPT-4 重标约 2 万条\n正样本或负样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "trained_detector",
+      "label": "训练 Vicuna-33B 检测器\n召回 >99% · 精度 >98%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "apply_detector",
+      "label": "应用训练后的检测器\n扫描完整 Common Crawl",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "wild_queries",
+      "label": "检出 200 万条用户查询\n真实查询候选池",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "gpt4_filter",
+      "label": "GPT-4 Turbo 过滤并分类\n保留文本输入/文本输出查询",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "general_pool",
+      "label": "12 个通用基准 · 开发集 + 测试集\nMMLU · BoolQ · HellaSwag · ARC\nCSQA · AGIEval · OBQA · GPQA\nWinoGrande · TriviaQA\nDROP · BBH",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "domain_pool",
+      "label": "6 个领域基准 · 开发集 + 测试集\n数学：GSM8K · MATH\n代码：MBPP · HumanEval\n物理：PIQA · 社交：SIQA",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark_pool",
+      "label": "18 个带真值基准\n开发集 + 测试集",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "match",
+      "label": "all-mpnet-base-v2 匹配\n归一化点积 · Top-1\n输入/上下文长度约束 θ",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "mixeval",
+      "label": "MixEval · 论文目标 4,000 条\n英文占 95.15% · 自由回答 + 选择题\n保留源基准真值",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prediction_runs",
+      "label": "在 MixEval 上运行多个模型\n收集模型预测结果",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "error_matrix",
+      "label": "错误矩阵 A\nN_models × N_MixEval · 1 表示错误\nμ 表示各模型准确率",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "difficulty",
+      "label": "难度分数 ξᵢ（xi_i）\nξᵢ = μ · Aᵢ\n按模型准确率加权错误",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "probability",
+      "label": "难度优先抽样\np(bᵢ′) ∝ exp(λξᵢ)\nξᵢ（xi_i）越高 · 概率越大",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "cluster_gate",
+      "label": "分布约束门\nα(B″ ∪ {bᵢ′}, B′) ≤ τ？\n保持真实查询形状",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "hard",
+      "label": "MixEval-Hard · 1,000 条\n英文占 95.22% · 自由回答 + 选择题\n保留源基准真值",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "batch_update",
+      "label": "批次查询更新\n均匀采样不同批次",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "crawl_update",
+      "label": "源查询更新\n使用最新 Common Crawl",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "pool_update",
+      "label": "基准池更新\n加入新的带真值基准",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hard_refresh",
+      "label": "重建 MixEval + 困难子集\n重跑依赖模型预测的采样\n保持 1,000 条规模",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "version_facts",
+      "label": "更新证据\nMixEval 一分钟内 · 5 个 MixEval 版本\nHard 耗时取决于模型预测\n仅用 GPT-4 Turbo 时约两分钟",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "候选模型推理\n官方或 FastChat 模板\n基础模型 · 5-shot",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser_gate",
+      "label": "属于哪个发布分片？\n自由回答或选择题",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "freeform_parser",
+      "label": "GPT-3.5-Turbo-0125 解析器\n自由回答得分 0.0–1.0\n必须输出 [[score]]",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "mc_parser",
+      "label": "GPT-3.5-Turbo-0125 解析器\n抽取选项 · 必须输出 [[A]]\n与真值精确匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "failure_rules",
+      "label": "已发布失败策略 · 随机种子 42\n外层重试 10 次；无效则随机\nBadRequest：自由回答记 0 · 选择题随机",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "overall",
+      "label": "报告总分\n按样本数加权\n自由回答 + 选择题",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "meta_eval",
+      "label": "跨模型元评估\nArena Elo 排名相关性\n不是逐题评分",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "发布边界 · 部分公开\nGit 7c52b419… · 仅评测器与动态数据\nHF 66a05ec3… · 数据卡 Apache-2.0\n构建流水线未发布 · 仓库无 LICENSE",
+      "type": "document",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "initial_detector",
+      "to": "gpt4_labels",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "gpt4_labels",
+      "to": "trained_detector",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "trained_detector",
+      "to": "apply_detector",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "apply_detector",
+      "to": "wild_queries",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "wild_queries",
+      "to": "gpt4_filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "gpt4_filter",
+      "to": "match",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "general_pool",
+      "to": "benchmark_pool",
+      "type": "secondary",
+      "label": "12 个通用基准"
+    },
+    {
+      "id": "edge-8",
+      "from": "domain_pool",
+      "to": "benchmark_pool",
+      "type": "secondary",
+      "label": "6 个领域基准"
+    },
+    {
+      "id": "edge-9",
+      "from": "benchmark_pool",
+      "to": "match",
+      "type": "secondary",
+      "label": "真值基准池"
+    },
+    {
+      "id": "edge-10",
+      "from": "match",
+      "to": "mixeval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "mixeval",
+      "to": "prediction_runs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "prediction_runs",
+      "to": "error_matrix",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "error_matrix",
+      "to": "difficulty",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "difficulty",
+      "to": "probability",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "probability",
+      "to": "cluster_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "cluster_gate",
+      "to": "hard",
+      "type": "primary",
+      "label": "接受"
+    },
+    {
+      "id": "edge-17",
+      "from": "cluster_gate",
+      "to": "probability",
+      "type": "secondary",
+      "label": "拒绝并重采样"
+    },
+    {
+      "id": "edge-18",
+      "from": "hard",
+      "to": "hard_refresh",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "batch_update",
+      "to": "hard_refresh",
+      "type": "secondary",
+      "label": "新批次"
+    },
+    {
+      "id": "edge-20",
+      "from": "crawl_update",
+      "to": "hard_refresh",
+      "type": "secondary",
+      "label": "新 Crawl"
+    },
+    {
+      "id": "edge-21",
+      "from": "pool_update",
+      "to": "hard_refresh",
+      "type": "secondary",
+      "label": "新基准池"
+    },
+    {
+      "id": "edge-22",
+      "from": "hard_refresh",
+      "to": "version_facts",
+      "type": "secondary",
+      "label": "耗时证据"
+    },
+    {
+      "id": "edge-23",
+      "from": "hard_refresh",
+      "to": "inference",
+      "type": "primary",
+      "label": "发布版本"
+    },
+    {
+      "id": "edge-24",
+      "from": "mixeval",
+      "to": "release_boundary",
+      "type": "secondary",
+      "label": "发布边界"
+    },
+    {
+      "id": "edge-25",
+      "from": "inference",
+      "to": "parser_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "parser_gate",
+      "to": "freeform_parser",
+      "type": "primary",
+      "label": "自由回答"
+    },
+    {
+      "id": "edge-27",
+      "from": "parser_gate",
+      "to": "mc_parser",
+      "type": "primary",
+      "label": "选择题"
+    },
+    {
+      "id": "edge-28",
+      "from": "failure_rules",
+      "to": "freeform_parser",
+      "type": "secondary",
+      "label": "失败策略"
+    },
+    {
+      "id": "edge-29",
+      "from": "failure_rules",
+      "to": "mc_parser",
+      "type": "secondary",
+      "label": "失败策略"
+    },
+    {
+      "id": "edge-30",
+      "from": "freeform_parser",
+      "to": "overall",
+      "type": "primary"
+    },
+    {
+      "id": "edge-31",
+      "from": "mc_parser",
+      "to": "overall",
+      "type": "primary"
+    },
+    {
+      "id": "edge-32",
+      "from": "overall",
+      "to": "meta_eval",
+      "type": "primary",
+      "label": "跨模型"
+    }
+  ],
+  "modules": []
+}

@@ -5,85 +5,241 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ChartMimic 构建流程
-  description: 对齐论文的 ChartMimic 构建流程：从 arXiv 与社区来源筛图，经视觉筛选、专家投票、人工编写 图表-指令-代码三元组、人工增强与划分后，用多层图表相似度指标评测。
-  legend: 实线箭头表示基准构建与评测主流程。
+  description: >-
+    对齐 ICLR 2025 和 arXiv v2 的 ChartMimic 构建与评测：通过五阶段流程把近期 CC BY 4.0 arXiv 图形策划为 4,800 个经人工编写与增强的三元组，等分为 Direct 与
+    Customized Mimic，并使用可执行的高层和代码追踪低层相似度指标。
+  legend: 实线表示五阶段策划与评测；虚线表示补充来源进入原型图表池。
 nodes:
   - id: arxiv
-    label: arXiv图表
-    type: cloud
+    label: |-
+      抓取 CC BY 4.0
+      arXiv 源文件
+      发表于 2024 年 2 月后
+      提取 PDF 图形
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: 视觉筛选
-    type: decision
+      'y': 220
+  - id: general_filter
+    label: |-
+      筛选约 174,100 张图
+      仅保留 Matplotlib
+      生成的 PDF
+      留下约 15,800 个候选
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
   - id: experts
-    label: 专家投票
+    label: |-
+      五领域专家复核
+      15,800 → 1,295
+      经 7 天多样性初筛
+      全票或 ≥3/5 → 279 张
     type: user
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 640
+      'y': 220
+  - id: supplemental
+    label: |-
+      补充独特公开样例
+      Matplotlib
+      Stack Overflow
+      Twitter • Reddit
+      填补 arXiv 池缺失风格
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 440
   - id: prototypes
-    label: 原型池
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: triplets
-    label: 人工三元组
+    label: |-
+      人工选择与补齐
+      替换补充样例的数据/配色
+      组装 600 张原型图表
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: augment
-    label: 增强集合
-    type: process
+      x: 940
+      'y': 220
+  - id: annotators
+    label: |-
+      Python 标注员
+      计算机硕士生 • 6 年以上
+      Python 3.9.0
+      matplotlib 3.8.4
+    type: user
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: splits
-    label: 测试划分
+      x: 1240
+      'y': 220
+  - id: direct
+    label: |-
+      Direct Mimic
+      600 个种子三元组
+      用 Python 复现图表
+      编写匹配指令
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: 多层评测
+      x: 1540
+      'y': 60
+  - id: customized
+    label: |-
+      Customized Mimic
+      600 个种子三元组
+      插入新领域数据
+      修改代码/指令
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 380
+  - id: augmentation
+    label: |-
+      人工数据增强
+      每个种子额外生成 3 个变体
+      修改数据/配色/标记
+      合计 4,800
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: release
+    label: |-
+      Direct 2,400
+      Customized 2,400 • 201 子类
+      22 种图型 • 发布 4,800
+      测试 3,600 • Testmini 1,200
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: model
+    label: |-
+      输入图形 + 任务指令
+      生成 Python 图表代码
+      执行代码并渲染输出
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: high_level
+    label: |-
+      高层相似度 • 0–100
+      GPT-4o 比较
+      参考图与输出图
+      判断整体视觉保真度
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 60
+  - id: low_level
+    label: |-
+      低层代码追踪 F1
+      文本 • 布局
+      类型 • 颜色
+      对四项元素得分取平均
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 380
+  - id: overall
+    label: |-
+      总分 = 高层与低层平均
+      执行失败则两项均为零
+      执行率另报且不加权
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: validation
+    label: |-
+      指标与人工判断验证
+      300 个 Direct 测试样本
+      GPT-4o × 4 种提示方法
+      1,200 张输出 • 每图 3 人
+      计算 Pearson 相关系数
+    type: user
+    size: xl
+    position:
+      x: 3340
+      'y': 220
+  - id: report
+    label: |-
+      分别报告 Direct/Customized
+      高层 • 低层 • 总分
+      执行率
+      分析复杂度与失败类型
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3640
+      'y': 220
 edges:
   - from: arxiv
-    to: filter
+    to: general_filter
     type: primary
-  - from: filter
+  - from: general_filter
     to: experts
     type: primary
   - from: experts
     to: prototypes
     type: primary
+  - from: supplemental
+    to: prototypes
+    type: data
+    waypoints:
+      - x: 940
+        'y': 438
+      - x: 940
+        'y': 318
   - from: prototypes
-    to: triplets
+    to: annotators
     type: primary
-  - from: triplets
-    to: augment
+  - from: annotators
+    to: direct
     type: primary
-  - from: augment
-    to: splits
+  - from: annotators
+    to: customized
     type: primary
-  - from: splits
-    to: eval
+  - from: direct
+    to: augmentation
+    type: primary
+  - from: customized
+    to: augmentation
+    type: primary
+  - from: augmentation
+    to: release
+    type: primary
+  - from: release
+    to: model
+    type: primary
+  - from: model
+    to: high_level
+    type: primary
+  - from: model
+    to: low_level
+    type: primary
+  - from: high_level
+    to: overall
+    type: primary
+  - from: low_level
+    to: overall
+    type: primary
+  - from: overall
+    to: validation
+    type: primary
+  - from: validation
+    to: report
     type: primary
 modules: []

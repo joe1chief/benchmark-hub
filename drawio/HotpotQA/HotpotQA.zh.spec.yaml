@@ -1,0 +1,201 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HotpotQA 构建流程
+  description: >-
+    对齐论文的 HotpotQA 流程：从英文 Wikipedia 超链接图采样桥接型和比较型段落对，由众包标注多跳问题与支持事实，经模型辅助难度分层得到 112,779 个样本，并在干扰段落和全 Wikipedia
+    两种设置下评估答案、支持事实及联合 EM/F1。
+  legend: 实线箭头表示两条问题构建支路、难度处理、双基准设置与联合评测。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据与固定快照
+      arXiv:1809.09600v1 · 第 2-3、5 节 · 附录 A
+      官方代码 3635853 · hotpot_evaluate_v1.py
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: wiki
+    label: |-
+      英文 Wikipedia 快照
+      2017 年 10 月 1 日
+      首段文本 + 超链接
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: graph
+    label: |-
+      有向超链接图 G
+      边 (a, b)：文章 a 链接到 b
+      人工筛选 591 个适合的桥接类别 B
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: bridge_pairs
+    label: |-
+      桥接问题支路（75%）
+      采样 b 属于 B 及边 (a, b)
+      由 a → b 链接的两段文本
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 80
+  - id: comparison_pairs
+    label: |-
+      比较问题支路（25%）
+      42 组同类实体列表
+      50% 是非题；50% 跨度答案
+    type: process
+    size: xl
+    position:
+      x: 620
+      'y': 520
+  - id: crowd
+    label: |-
+      AMT / ParlAI 采集
+      编写多跳问题 + 答案
+      标注句级支持事实
+    type: user
+    size: xl
+    position:
+      x: 920
+      'y': 300
+  - id: corpus
+    label: |-
+      112,779 个有效样本
+      答案跨度或是 / 否
+      金标支持句集合
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 300
+  - id: hardness
+    label: |-
+      难度处理
+      标注员审计：简单训练 18,089
+      三折模型：中等训练 56,814
+    type: process
+    size: xl
+    position:
+      x: 1500
+      'y': 300
+  - id: split
+    label: |-
+      剩余难题划分
+      难训练 15,661 / 开发 7,405
+      两个独立测试集：各 7,405
+    type: database
+    size: xl
+    position:
+      x: 1780
+      'y': 300
+  - id: distractor
+    label: |-
+      干扰段落设置
+      两个金标 + 八个 TF-IDF 段落
+      打乱十个段落
+    type: process
+    size: xl
+    position:
+      x: 2080
+      'y': 80
+  - id: fullwiki
+    label: |-
+      全 Wikipedia 设置
+      检索全部 Wikipedia 文章首段
+      不指定金标段落
+    type: process
+    size: xl
+    position:
+      x: 2080
+      'y': 520
+  - id: prediction
+    label: |-
+      问答系统输出
+      答案跨度 / 是 / 否
+      支持事实句集合
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 300
+  - id: metrics
+    label: |-
+      答案 EM/F1 + 支持事实 EM/F1
+      联合精确率 = 两项精确率乘积
+      联合召回率 = 两项召回率乘积
+      联合 F1；联合 EM 要求两项都精确匹配
+    type: terminal
+    size: xl
+    position:
+      x: 2680
+      'y': 300
+  - id: artifact_boundary
+    label: |-
+      公开 / 隐藏测试边界
+      CC BY-SA 4.0 训练与开发集含答案 / 支持事实金标
+      测试答案与支持事实隐藏 · 两个 7,405 样本测试集
+      干扰设置交 Docker 代码 · 全 Wikipedia 设置交预测
+    type: document
+    size: xl
+    position:
+      x: 2980
+      'y': 300
+edges:
+  - from: evidence
+    to: wiki
+    type: data
+  - from: wiki
+    to: graph
+    type: primary
+  - from: graph
+    to: bridge_pairs
+    type: primary
+  - from: graph
+    to: comparison_pairs
+    type: primary
+  - from: bridge_pairs
+    to: crowd
+    type: primary
+  - from: comparison_pairs
+    to: crowd
+    type: primary
+  - from: crowd
+    to: corpus
+    type: primary
+  - from: corpus
+    to: hardness
+    type: primary
+  - from: hardness
+    to: split
+    type: primary
+  - from: split
+    to: distractor
+    type: primary
+  - from: split
+    to: fullwiki
+    type: primary
+  - from: distractor
+    to: prediction
+    type: primary
+  - from: fullwiki
+    to: prediction
+    type: primary
+  - from: prediction
+    to: metrics
+    type: primary
+  - from: metrics
+    to: artifact_boundary
+    type: data
+modules: []

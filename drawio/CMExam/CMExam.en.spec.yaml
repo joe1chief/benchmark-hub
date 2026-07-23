@@ -5,97 +5,191 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMExam Build Process
-  description: Paper-aligned construction and evaluation workflow for CMExam, based on arXiv:2306.03030.
-  legend: Solid arrows show dataset construction and evaluation flow; dashed arrows mark assisted annotation.
+  description: >-
+    Paper-aligned construction and evaluation of CMExam. Authentic Chinese medical licensing questions are filtered and
+    deduplicated, split 8:1:1, enriched with solution explanations and five expert-reviewed test annotations, then used
+    for answer prediction, explanation generation, and human-machine comparison.
+  legend: Solid arrows trace dataset construction and the two official evaluation tasks.
 nodes:
   - id: source
     label: |-
-      CNMLE
-      96k
+      96,161 Authentic Past CNMLE
+      Questions
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: clean
-    label: Text clean
+      'y': 170
+  - id: text_filter
+    label: Filter Non-Text Questions
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: split
-    label: |-
-      MCQs
-      68k
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: solutions
-    label: Solutions
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: gpt
-    label: GPT draft
+      'y': 170
+  - id: dedup
+    label: Deduplicate Questions
     type: process
     size: xl
     position:
+      x: 560
+      'y': 170
+  - id: retained
+    label: |-
+      68,119 Questions; 65,950 Single and
+      2,169 Multiple Answer
+    type: database
+    size: xl
+    position:
       x: 820
-      'y': 250
-  - id: experts
-    label: Expert QC
-    type: decision
+      'y': 170
+  - id: split
+    label: |-
+      Random 8:1:1 Train, Development and
+      Test Split
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: facets
-    label: 5 facets
+      'y': 60
+  - id: solutions
+    label: |-
+      Brief Solution Explanations for
+      85.24 Percent
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
+      x: 1080
+      'y': 280
+  - id: gpt_annotation
     label: |-
-      Eval
-      Acc/F1
-    type: terminal
+      GPT-4 Pre-Annotation
+      Test Questions Only
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 60
+  - id: expert_review
+    label: |-
+      Physician and Medical Doctoral
+      Student Review; Resolve Disagreement
+    type: user
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 60
+  - id: five_facets
+    label: |-
+      ICD-11 Group, Department,
+      Discipline, Competency and
+      Difficulty
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 60
+  - id: benchmark
+    label: |-
+      CMExam Questions, Answers,
+      Explanations and Test Metadata
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 170
+  - id: prediction
+    label: |-
+      Answer Prediction: Zero-Shot or
+      Fine-Tuned Models
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 60
+  - id: reasoning
+    label: |-
+      Open-Ended Solution Explanation
+      Generation
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 280
+  - id: prediction_metrics
+    label: |-
+      Accuracy and Weighted F1; Human
+      Accuracy 71.6 Percent
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: reasoning_metrics
+    label: |-
+      BLEU-1, BLEU-4, ROUGE-1, ROUGE-2 and
+      ROUGE-L
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 280
+  - id: report
+    label: |-
+      Medical QA, Reasoning and Annotation
+      Analysis
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 170
 edges:
   - from: source
-    to: clean
+    to: text_filter
     type: primary
-  - from: clean
+  - from: text_filter
+    to: dedup
+    type: primary
+  - from: dedup
+    to: retained
+    type: primary
+  - from: retained
     to: split
     type: primary
-  - from: split
+  - from: retained
     to: solutions
-    type: data
-    label: rationales
-  - from: split
-    to: gpt
-    type: data
-    label: test annotations
-  - from: gpt
-    to: experts
-    type: optional
-    label: draft labels
-  - from: solutions
-    to: experts
-    type: data
-  - from: experts
-    to: facets
     type: primary
-  - from: facets
-    to: eval
+  - from: split
+    to: gpt_annotation
+    type: primary
+  - from: gpt_annotation
+    to: expert_review
+    type: primary
+  - from: expert_review
+    to: five_facets
+    type: primary
+  - from: five_facets
+    to: benchmark
+    type: primary
+  - from: solutions
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: prediction
+    type: primary
+  - from: benchmark
+    to: reasoning
+    type: primary
+  - from: prediction
+    to: prediction_metrics
+    type: primary
+  - from: reasoning
+    to: reasoning_metrics
+    type: primary
+  - from: prediction_metrics
+    to: report
+    type: primary
+  - from: reasoning_metrics
+    to: report
     type: primary
 modules: []

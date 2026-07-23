@@ -4,76 +4,194 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HarmBench 构建流程
-  description: 对齐论文的 HarmBench 流程：从有害行为策划、验证/测试划分，到红队测试样本生成、 目标模型补全、分类器判定和攻击成功率报告。
-  legend: 实线箭头表示行为策划、数据划分、攻击生成、模型补全、分类判定和 ASR 指标。
+  title: HarmBench 构建与评测流程
+  description: 与论文和官方仓库对齐的 HarmBench 流程：从政策引导的人工行为整理开始，经过官方验证/测试划分、标准化红队生成、 按类别选择分类器，最后计算攻击成功率。
+  legend: 实线表示基准主流程；虚线表示分类体系或公开工件边界。
 nodes:
-  - id: policies
-    label: 政策种子
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv 2402.04249v2 · 第4节/附录B.5
+      仓库 8e1604d
+      data/behavior_datasets
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: behaviors
-    label: 510行为
+      x: 20
+      'y': 260
+  - id: policies
+    label: |-
+      可接受使用政策
+      OpenAI · Anthropic
+      Meta · Inflection
+    type: document
+    size: xl
+    position:
+      x: 260
+      'y': 260
+  - id: distill
+    label: |-
+      GPT-4 蒸馏
+      形成合并政策摘要
+      作为整理指南
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 260
+  - id: manual
+    label: |-
+      作者人工整理
+      违反法律或广泛规范
+      过滤双重意图案例
+      检查差异性可搜索性
+    type: user
+    size: xl
+    position:
+      x: 740
+      'y': 260
+  - id: functional
+    label: |-
+      510 个行为
+      200 标准 · 100 版权
+      100 上下文 · 110 多模态
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 980
+      'y': 100
+  - id: semantic
+    label: |-
+      7 个语义类别
+      网络 · 化学/生物
+      版权 · 虚假信息
+      骚扰 · 非法 · 一般危害
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 420
   - id: split
-    label: 验证/测试
+    label: |-
+      官方行为划分
+      100 验证 · 410 测试
+      不得在测试集或同义行为上调参
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 100
+  - id: attack
+    label: |-
+      生成测试样本
+      红队方法接收行为
+      每个行为生成 N = 512 个测试样本
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: attacks
-    label: 攻击生成
+      x: 1460
+      'y': 100
+  - id: target
+    label: |-
+      目标模型 + 防御
+      贪心解码
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: targets
-    label: 目标补全
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: judge
-    label: 分类判定
+      x: 1700
+      'y': 100
+  - id: route
+    label: |-
+      功能类别路由
+      是否为版权行为？
     type: decision
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: ASR报告
+      x: 1940
+      'y': 100
+  - id: llm_classifier
+    label: |-
+      非版权分类器
+      开放 Llama 2 13B 分类器
+      行为 + 补全 → yes/no
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 20
+  - id: hash_classifier
+    label: |-
+      版权分类器
+      MinHash 处理重叠文本块
+      Jaccard 阈值 > 0.6
+      必须实际生成复制文本
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 300
+  - id: score
+    label: |-
+      攻击成功率（ASR）
+      成功测试样本所占比例
+      逐行为计算并汇总平均
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2420
+      'y': 140
+  - id: artifact_boundary
+    label: |-
+      当前公开工件边界
+      文本 CSV 划分：80/320
+      多模态全集：110
+      无独立 20/90 CSV
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 500
 edges:
-  - from: policies
-    to: behaviors
+  - from: evidence
+    to: policies
     type: primary
-  - from: behaviors
+  - from: policies
+    to: distill
+    type: primary
+  - from: distill
+    to: manual
+    type: primary
+  - from: manual
+    to: functional
+    type: primary
+  - from: manual
+    to: semantic
+    type: secondary
+  - from: functional
     to: split
     type: primary
   - from: split
-    to: attacks
+    to: attack
     type: primary
-  - from: attacks
-    to: targets
+  - from: attack
+    to: target
     type: primary
-  - from: targets
-    to: judge
+  - from: target
+    to: route
     type: primary
-  - from: judge
-    to: metrics
+  - from: route
+    to: llm_classifier
     type: primary
+  - from: route
+    to: hash_classifier
+    type: secondary
+  - from: llm_classifier
+    to: score
+    type: primary
+  - from: hash_classifier
+    to: score
+    type: primary
+  - from: split
+    to: artifact_boundary
+    type: data
 modules: []

@@ -1,0 +1,173 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Global-MMLU-Lite 构建流程
+  description: 按论文版本展示文化标注、翻译、人工校验、平衡 Lite 抽样、评测和后续发布漂移。
+  legend: 虚线表示证据和论文后的 v3 漂移，实线对应 arXiv:2412.03304v2 与论文兼容的 v1 数据快照。 README 总数漂移时，以机器可读 split 元数据为准。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2412.03304v2
+      完整集 0e619dbe
+      Lite v1 b88e8867
+      当前 Lite v3 36c2fd75
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 320
+  - id: source
+    label: |-
+      从英文 MMLU 开始
+      57 学科 · 14,042 道测试题
+      285 个开发示例
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 320
+  - id: cultural_sample
+    label: |-
+      每学科均匀抽取 50 题
+      共 2,850 道英文题
+      200 名专业/社区标注员
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 80
+  - id: cultural_vote
+    label: |-
+      每题至少 3 份标注
+      半数及以上即保留该标签
+      文化 · 地理 · 方言 · 时间
+      前三者任一为真即 CS；否则 CA
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 80
+  - id: machine_translate
+    label: |-
+      全部测试题翻译为 41 种语言
+      每种语言统一用 Google Translate
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 560
+  - id: human_improve
+    label: |-
+      有人工版本时替换或后编辑
+      Gold Set 4 种 · MMMLU 10 种
+      社区 11 种且至少 50 个样本
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 560
+  - id: join
+    label: |-
+      将 CS/CA 标签与译文合并
+      Lite 仅保留人工翻译
+      或人工后编辑语言
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 320
+  - id: lite_filter
+    label: |-
+      构建平衡 Lite
+      排除 14 个仅有 CS 或 CA 的学科
+      可用时每学科抽 5 个 CS + 5 个 CA
+      上采样商业/医学/通识类别
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 320
+  - id: paper_release
+    label: |-
+      发布论文同期 Lite v1
+      15 语言 · 每语言 CS 200 + CA 200
+      测试 6,000；固定数据另有开发 3,225
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 320
+  - id: current_lite
+    label: |-
+      论文后数据边界
+      v3：23 语言 · 测试 9,200
+      机器元数据：开发 4,800
+      README 文字表仍写 4,655
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 80
+  - id: evaluate
+    label: |-
+      论文评测协议
+      5 样本；指令与样本语言一致
+      开放模型：lm-eval 选项对数概率
+      闭源模型：API 生成单个选项
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 560
+  - id: metric
+    label: |-
+      报告准确率
+      按语言 · CS/CA · 资源水平
+      闭源 preamble/解析器原文未公开
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 560
+edges:
+  - from: evidence
+    to: source
+    type: data
+  - from: source
+    to: cultural_sample
+    type: primary
+  - from: cultural_sample
+    to: cultural_vote
+    type: primary
+  - from: source
+    to: machine_translate
+    type: primary
+  - from: machine_translate
+    to: human_improve
+    type: primary
+  - from: cultural_vote
+    to: join
+    type: primary
+  - from: human_improve
+    to: join
+    type: primary
+  - from: join
+    to: lite_filter
+    type: primary
+  - from: lite_filter
+    to: paper_release
+    type: primary
+  - from: paper_release
+    to: current_lite
+    type: data
+  - from: paper_release
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: metric
+    type: primary
+modules: []

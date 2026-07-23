@@ -1,96 +1,186 @@
 {
   "version": 1,
-  "title": "HarmBench 构建流程",
+  "title": "HarmBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 14,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "policies",
-      "label": "政策种子",
+      "id": "evidence",
+      "label": "一手证据\narXiv 2402.04249v2 · 第4节/附录B.5\n仓库 8e1604d\ndata/behavior_datasets",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "behaviors",
-      "label": "510行为",
+      "id": "policies",
+      "label": "可接受使用政策\nOpenAI · Anthropic\nMeta · Inflection",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "distill",
+      "label": "GPT-4 蒸馏\n形成合并政策摘要\n作为整理指南",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "manual",
+      "label": "作者人工整理\n违反法律或广泛规范\n过滤双重意图案例\n检查差异性可搜索性",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "functional",
+      "label": "510 个行为\n200 标准 · 100 版权\n100 上下文 · 110 多模态",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "semantic",
+      "label": "7 个语义类别\n网络 · 化学/生物\n版权 · 虚假信息\n骚扰 · 非法 · 一般危害",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "split",
-      "label": "验证/测试",
+      "label": "官方行为划分\n100 验证 · 410 测试\n不得在测试集或同义行为上调参",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "attack",
+      "label": "生成测试样本\n红队方法接收行为\n每个行为生成 N = 512 个测试样本",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "attacks",
-      "label": "攻击生成",
+      "id": "target",
+      "label": "目标模型 + 防御\n贪心解码",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "targets",
-      "label": "目标补全",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "judge",
-      "label": "分类判定",
+      "id": "route",
+      "label": "功能类别路由\n是否为版权行为？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "ASR报告",
+      "id": "llm_classifier",
+      "label": "非版权分类器\n开放 Llama 2 13B 分类器\n行为 + 补全 → yes/no",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hash_classifier",
+      "label": "版权分类器\nMinHash 处理重叠文本块\nJaccard 阈值 > 0.6\n必须实际生成复制文本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "攻击成功率（ASR）\n成功测试样本所占比例\n逐行为计算并汇总平均",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "当前公开工件边界\n文本 CSV 划分：80/320\n多模态全集：110\n无独立 20/90 CSV",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "policies",
-      "to": "behaviors",
+      "from": "evidence",
+      "to": "policies",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "behaviors",
-      "to": "split",
+      "from": "policies",
+      "to": "distill",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "split",
-      "to": "attacks",
+      "from": "distill",
+      "to": "manual",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attacks",
-      "to": "targets",
+      "from": "manual",
+      "to": "functional",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "targets",
-      "to": "judge",
-      "type": "primary"
+      "from": "manual",
+      "to": "semantic",
+      "type": "secondary"
     },
     {
       "id": "edge-6",
-      "from": "judge",
-      "to": "metrics",
+      "from": "functional",
+      "to": "split",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "split",
+      "to": "attack",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "attack",
+      "to": "target",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "target",
+      "to": "route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "route",
+      "to": "llm_classifier",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "route",
+      "to": "hash_classifier",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-12",
+      "from": "llm_classifier",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "hash_classifier",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "split",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

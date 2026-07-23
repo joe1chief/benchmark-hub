@@ -7,90 +7,192 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 15,
+    "edges": 15,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "sources",
-      "label": "284 Datasets",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "standard",
-      "label": "Standardize",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "tree",
-      "label": "Lexical Tree",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "qa",
-      "label": "VQA Pairs",
+      "id": "evidence",
+      "label": "Evidence boundary\npaper 2408.03361v7\nrepo d8a6a326 · data a8c7450a\nVLMEvalKit 7055d301",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "validate",
-      "label": "Manual Check",
-      "type": "decision",
+      "id": "collect",
+      "label": "Collect 2D/3D medical datasets\nretain 268 public + 16 hospital sets\nclassification · detection · segmentation",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "eval",
-      "label": "LVLM Eval",
+      "id": "standardize",
+      "label": "Standardize data\nSA-Med2D-20M protocol → 2D RGB\nMeSH: expand · unify · merge left/right",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Accuracy",
+      "id": "taxonomy",
+      "label": "Build lexical taxonomy\n38 modalities · 18 tasks · 18 departments\n4 granularities; 3 labelers + vote merge",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "question_templates",
+      "label": "Generate question templates\nper modality × task × granularity\n10 labels × 10 GPT-4o candidates\nmanual review; modality → placeholder",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "option_pools",
+      "label": "Build option pools\nglobal: other labels in source dataset\nlocal: shared by modality/task/granularity",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "assemble",
+      "label": "Assemble VQA candidates\nsample template; restore modality\nadd correct answer + up to 4 options",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "Manual validation\nrequire 3 cues; image must be necessary\ndrop wrong answer · unclear target · poor image",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "select",
+      "label": "Balance and diversify\n≤30 cases per answer; keep all if fewer\nvary appearance · source · age · gender",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "Release 25,831 VQA pairs\nvalidation 4,550 · test 21,281\ntest key withheld; organizer scoring",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "paper_prompt",
+      "label": "Paper evaluation prompt\nsingle: select the correct option\nmulti: select all; comma-separated letters\nzero-shot; no examples",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_parser",
+      "label": "Paper answer extraction\noption letters first\nelse ChatGPT-3.5-turbo-0613\nunextractable output = error",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_metric",
+      "label": "Paper metrics\nsingle ACC = correct / questions\nmulti ACC = match / predicted\nmulti recall = match / ground truth",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "runner_boundary",
+      "label": "Pinned VLMEvalKit\nGMAI inherits ImageMCQDataset\nQuestion + Options; exact suffix\nPlease select the correct answer\nfrom the options above.\nexact_matching / optional judge; no multi-select",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "muir_boundary",
+      "label": "Adjacent-class correction\ndirect-letter prompt belongs to MUIRDataset\nGMAIMMBenchDataset does not use it",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "sources",
-      "to": "standard",
+      "from": "evidence",
+      "to": "collect",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "standard",
-      "to": "tree",
+      "from": "collect",
+      "to": "standardize",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "tree",
-      "to": "qa",
+      "from": "standardize",
+      "to": "taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "qa",
-      "to": "validate",
+      "from": "taxonomy",
+      "to": "question_templates",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "validate",
-      "to": "eval",
+      "from": "taxonomy",
+      "to": "option_pools",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "eval",
-      "to": "score",
+      "from": "question_templates",
+      "to": "assemble",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "option_pools",
+      "to": "assemble",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "assemble",
+      "to": "validate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "validate",
+      "to": "select",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "select",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "release",
+      "to": "paper_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "paper_prompt",
+      "to": "paper_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "paper_parser",
+      "to": "paper_metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "release",
+      "to": "runner_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "runner_boundary",
+      "to": "muir_boundary",
+      "type": "data"
     }
   ],
   "modules": []

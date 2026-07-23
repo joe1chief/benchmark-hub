@@ -4,119 +4,271 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: 2WikiMultihopQA Build Process
-  description: Paper-aligned construction workflow for 2WikiMultihopQA, based on the COLING 2020 paper and arXiv source.
-  legend: >-
-    Solid arrows show construction flow; dashed arrows show branch-specific generation paths before shared quality
-    gates.
+  title: 2WikiMultihopQA Build and Evaluation Process
+  description: >-
+    Paper-aligned construction from dated Wikipedia/Wikidata sources through four question types, explicit validity
+    gates, mismatch-aware post-processing, TF-IDF distractors, difficulty-aware splits, and official three-task scoring.
+  legend: Solid arrows show the construction and evaluation sequence; residual source mismatch is reported, not hidden.
 nodes:
   - id: source
     label: |-
-      Wiki summaries + Wikidata
-      5.95M entities / 23,763 groups
+      Wikipedia / Wikidata Dumps
+      English Wikipedia: 2020-01-01
+      English Wikidata: 2019-12-31
+      5,950,475 entities • 23,763 groups
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 280
   - id: templates
     label: |-
-      Question templates
-      HotpotQA NER + manual templates
-      4 question types
+      Create Question Templates
+      17,456 HotpotQA comparisons
+      spaCy NER + manual templates
+      Top-50 popular entity types
+      Drop single-hop / context-dependent forms
     type: process
     size: xl
     position:
       x: 280
-      'y': 70
-  - id: rules
+      'y': 100
+  - id: logical_rules
     label: |-
-      Logical-rule verification
-      AMIE candidates -> 28 Wikidata rules
+      Mine Logical Rules
+      AMIE candidates
+      Manually verify 28 rules
     type: process
     size: xl
     position:
       x: 280
-      'y': 250
-  - id: compare
+      'y': 500
+  - id: comparison
     label: |-
-      Comparison generation
-      sample entity pairs
-      mutual relations + summaries
+      Comparison Questions
+      Compare paired entities
     type: process
     size: xl
     position:
-      x: 540
-      'y': 70
-  - id: bridge
+      x: 520
+      'y': 40
+  - id: bridge_comparison
     label: |-
-      Bridge generation
-      build two-hop chains
-      inference + compositional
+      Bridge-Comparison Questions
+      Bridge entity + comparison
     type: process
     size: xl
     position:
-      x: 540
-      'y': 250
-  - id: sample
+      x: 520
+      'y': 200
+  - id: inference
     label: |-
-      QA sample fields
-      Q, A, C, sentence SFs
-      evidence triples
+      Inference Questions
+      Apply verified relation chains
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 400
+  - id: compositional
+    label: |-
+      Compositional Questions
+      Compose two relations
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 560
+  - id: comparison_gate
+    label: |-
+      Comparison Validity Gate
+      Both answer spans must occur
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 40
+  - id: bridge_gate
+    label: |-
+      Bridge-Comparison Gate
+      Mention / non-mention constraints
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 200
+  - id: two_hop_gate
+    label: |-
+      Two-Hop Span Gate
+      p mentions bridge; p1 has answer
+      p omits answer; p1 omits source
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 480
+  - id: qa_records
+    label: |-
+      Build QA + Evidence Record
+      Question • answer • supporting facts
+      Wikidata evidence triples
     type: document
     size: xl
     position:
-      x: 800
-      'y': 160
-  - id: quality
+      x: 1000
+      'y': 280
+  - id: postprocess
     label: |-
-      Quality gates
-      remove ambiguity, equal comparisons
-      check Wiki-Wikidata mismatches
-    type: decision
+      Post-Process + Mismatch Audit
+      Balance yes / no; discard ambiguity
+      Heuristics + manual checks
+      8 / 100 train samples still mismatched
+    type: process
     size: xl
     position:
-      x: 1060
-      'y': 160
+      x: 1240
+      'y': 280
+  - id: distractors
+    label: |-
+      Retrieve TF-IDF Distractors
+      Search top 50; retain 8 or 6
+      Shuffle into 10 paragraphs
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 280
   - id: dataset
     label: |-
-      Release and evaluate
-      train / dev / test
-      answer, SF, evidence EM/F1
+      2WikiMultihopQA
+      192,606 questions
+      Four question types
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: split_model
+    label: |-
+      Difficulty-Aware Splitting
+      Single-hop BERT • five folds
+      Mean cross-validation F1: 86.7%
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 280
+  - id: splits
+    label: |-
+      Published Splits
+      train-medium 154,878
+      train-hard 12,576
+      Dev 12,576 • Test 12,576
+    type: database
+    size: xl
+    position:
+      x: 2200
+      'y': 280
+  - id: evaluation
+    label: |-
+      Official Evaluation Input
+      Question + 10 paragraphs
+      Alias / demonym-aware v1.1
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 760
+  - id: three_tasks
+    label: |-
+      Three Prediction Tasks
+      Answer span • supporting facts
+      Evidence triples
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 760
+  - id: joint_metrics
+    label: |-
+      Official Metrics
+      EM / F1 for each task
+      Joint EM • Joint F1
     type: terminal
     size: xl
     position:
-      x: 1320
-      'y': 160
+      x: 1720
+      'y': 760
 edges:
   - from: source
     to: templates
     type: primary
   - from: source
-    to: rules
+    to: logical_rules
     type: primary
   - from: templates
-    to: compare
-    type: data
-    label: comparison / bridge-comparison
+    to: comparison
+    type: primary
   - from: templates
-    to: bridge
-    type: data
-    label: bridge templates
-  - from: rules
-    to: bridge
+    to: bridge_comparison
     type: primary
-    label: inference rules
-  - from: compare
-    to: sample
+  - from: templates
+    to: inference
     type: primary
-  - from: bridge
-    to: sample
+  - from: templates
+    to: compositional
     type: primary
-  - from: sample
-    to: quality
+    waypoints:
+      - x: 412
+        'y': 468
+      - x: 574
+        'y': 468
+  - from: logical_rules
+    to: inference
     type: primary
-  - from: quality
+  - from: comparison
+    to: comparison_gate
+    type: primary
+  - from: bridge_comparison
+    to: bridge_gate
+    type: primary
+  - from: inference
+    to: two_hop_gate
+    type: primary
+  - from: compositional
+    to: two_hop_gate
+    type: primary
+  - from: comparison_gate
+    to: qa_records
+    type: primary
+  - from: bridge_gate
+    to: qa_records
+    type: primary
+  - from: two_hop_gate
+    to: qa_records
+    type: primary
+  - from: qa_records
+    to: postprocess
+    type: primary
+  - from: postprocess
+    to: distractors
+    type: primary
+  - from: distractors
     to: dataset
+    type: primary
+  - from: dataset
+    to: split_model
+    type: primary
+  - from: split_model
+    to: splits
+    type: primary
+  - from: splits
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: three_tasks
+    type: primary
+  - from: three_tasks
+    to: joint_metrics
     type: primary
 modules: []

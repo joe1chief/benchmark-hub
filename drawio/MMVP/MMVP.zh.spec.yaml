@@ -4,88 +4,264 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMVP Build Process
-  description: >-
-    Paper-aligned construction of MMVP: mine CLIP-blind image pairs with CLIP and DINOv2 similarity, design paired
-    questions, and score multimodal visual-pattern failures.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMVP 论文 v2 构建与配对计分流程
+  description: 按 arXiv:2401.06209v2 对齐构建流程，并呈现官方仓库固定版本中的 GPT-4 判分路径；模式分析、 人类研究、公开版本与许可证据均保持独立边界。
+  legend: 实线表示构建和计分主流程，虚线数据箭头表示分析或发布证据。人类 95.7% 是论文报告的单题准确率， 不等同于仓库实现的“两题全对”配对指标。
 nodes:
-  - id: n1
-    label: 图像对
+  - id: corpora
+    label: |-
+      图像源语料
+      ImageNet-1K
+      LAION-Aesthetics
+      论文 §2.1
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: CLIP嵌入
+      'y': 260
+  - id: candidate_pairs
+    label: |-
+      形成候选图像对
+      候选来自 ImageNet 与
+      LAION-Aesthetics
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: DINO嵌入
+      x: 300
+      'y': 260
+  - id: clip
+    label: |-
+      CLIP 分支
+      CLIP ViT-L-14
+      计算成对余弦相似度
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 盲点对
+      x: 560
+      'y': 80
+  - id: dino
+    label: |-
+      纯视觉分支
+      DINOv2 ViT-L-14
+      计算成对余弦相似度
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 440
+  - id: blind_gate
+    label: 同时满足两项 CLIP 盲点条件？
     type: decision
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 人工问题
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 300题
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 配对计分
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 9类模式
+      x: 820
+      'y': 260
+  - id: not_blind
+    label: |-
+      丢弃候选对
+      CLIP 相似度不高于 0.95
+      或 DINOv2 相似度不低于 0.6
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1080
+      'y': 500
+  - id: inspect
+    label: |-
+      人工检查盲点对
+      定位显著视觉差异
+      识别 CLIP 忽略的细节
+    type: user
+    size: xl
+    position:
+      x: 1080
+      'y': 200
+  - id: questions
+    label: |-
+      编写两道配对问题
+      每张图像对应一道问题
+      保持直接且无歧义
+      探测同一视觉差异
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 200
+  - id: release
+    label: |-
+      MMVP-MLLM 快照
+      150 个图像对 • 300 道问题
+      每项输入一张图像与一道问题
+      arXiv:2401.06209v2
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 200
+  - id: pattern_analysis
+    label: |-
+      GPT-4 模式分析
+      输入问题与选项
+      归纳通用视觉特征
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 0
+  - id: patterns
+    label: |-
+      九类视觉模式
+      方向 • 存在 • 状态 • 数量
+      位置 • 外观 • 结构
+      文本 • 视角
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 0
+  - id: model_runner
+    label: |-
+      官方 LLaVA 推理脚本
+      每道题独立询问
+      图像 + 问题 + 选项
+      温度 0.2 • 最多 1,024 Tokens
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 260
+  - id: gpt_grader
+    label: |-
+      仓库 GPT-4 判题器
+      模型 gpt-4-0314 • 温度 0.2
+      系统要求仅回答 yes 或 no
+      API 异常无限重试
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 260
+  - id: grade_gate
+    label: 连续两项判定都严格为“yes”？
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 260
+  - id: pair_credit
+    label: |-
+      该图像对计一分
+      两项回答均被判为正确
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 120
+  - id: pair_zero
+    label: |-
+      该图像对计零分
+      任一 no 或非 yes/no 输出
+      无法解析的判定不算正确
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 400
+  - id: paired_accuracy
+    label: |-
+      配对准确率
+      正确连续图像对数 / 150
+      随机猜测参照：25%
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 260
+  - id: human_study
+    label: |-
+      独立人类研究
+      4 名志愿者 • 300 道题
+      随机顺序呈现
+      平均单题准确率：95.7%
+    type: user
+    size: xl
+    position:
+      x: 1860
+      'y': 580
+  - id: release_boundary
+    label: |-
+      公开发布边界
+      HF 版本 37eafecab8a3
+      300 张图像 + Questions.csv • MIT 卡片
+      仓库 763500597e65：根 LICENSE 缺失
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 580
 edges:
-  - from: n1
-    to: n2
+  - from: corpora
+    to: candidate_pairs
     type: primary
-  - from: n2
-    to: n3
+  - from: candidate_pairs
+    to: clip
     type: primary
-  - from: n3
-    to: n4
+  - from: candidate_pairs
+    to: dino
     type: primary
-  - from: n4
-    to: n5
+  - from: clip
+    to: blind_gate
     type: primary
-  - from: n5
-    to: n6
+  - from: dino
+    to: blind_gate
     type: primary
-  - from: n6
-    to: n7
+  - from: blind_gate
+    to: inspect
     type: primary
-  - from: n7
-    to: n8
+    label: CLIP > 0.95 且 DINOv2 < 0.6
+  - from: blind_gate
+    to: not_blind
     type: primary
+    label: 任一条件失败
+  - from: inspect
+    to: questions
+    type: primary
+  - from: questions
+    to: release
+    type: primary
+  - from: release
+    to: pattern_analysis
+    type: data
+  - from: pattern_analysis
+    to: patterns
+    type: data
+  - from: release
+    to: model_runner
+    type: primary
+  - from: model_runner
+    to: gpt_grader
+    type: primary
+  - from: gpt_grader
+    to: grade_gate
+    type: primary
+  - from: grade_gate
+    to: pair_credit
+    type: primary
+    label: 两项均严格为 yes
+  - from: grade_gate
+    to: pair_zero
+    type: primary
+    label: 任一项为 no 或其他输出
+  - from: pair_credit
+    to: paired_accuracy
+    type: primary
+  - from: pair_zero
+    to: paired_accuracy
+    type: primary
+  - from: release
+    to: human_study
+    type: data
+  - from: release
+    to: release_boundary
+    type: data
 modules: []

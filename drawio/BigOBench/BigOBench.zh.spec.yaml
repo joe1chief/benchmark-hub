@@ -4,99 +4,255 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: BigOBench 构建流程
-  description: 基于论文对齐 BigO(Bench)：从 Code Contests 正确 Python 解法出发，扩展输入并测量运行时间和内存， 通过曲线拟合推断时空复杂度标签和系数，再用于复杂度预测、约束生成与系数排名。
-  legend: 实线表示数据构建和评测流程；profiling 验证细节写入审校说明。
+  title: BigO(Bench) 构建流程
+  description: 对齐论文的经验时空复杂度标注流程：从 Code Contests 正确 Python 解答出发，经 dataclass 解析、沙箱性能分析与非负曲线拟合，形成数据集、验证旁支和三项并行评测。
+  legend: 上方实线主链构建发布集；数据集与整理后的测试集共同进入验证审计，下方三个任务是并行评测而非串行流水线。
 nodes:
-  - id: code_data
-    label: 代码
+  - id: source
+    label: |-
+      Code Contests 来源池
+      8,139题 / 1,485,888份解答
+      仅保留通过公开与私有测试的Python解答
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: inputs
-    label: 输入
+      'y': 100
+  - id: dataclass
+    label: |-
+      题目专用输入 Dataclass
+      Llama 3.1 405B 生成解析器
+      多轮回译覆盖82%的题目
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: profiling
-    label: 测量
+      x: 320
+      'y': 100
+  - id: filter
+    label: |-
+      基准过滤
+      要求可用Dataclass + 至少50份解答
+      删除异常数据类型与失败项
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: curve_fit
-    label: 拟合
+      x: 600
+      'y': 100
+  - id: expand
+    label: |-
+      系统化扩展输入
+      独立 / 联合增长参数规模
+      随机与恒等扩展策略
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: labels
-    label: 标签
+      x: 880
+      'y': 100
+  - id: profile
+    label: |-
+      隔离动态性能分析
+      Bubblewrap 沙箱
+      cProfile运行时间 + tracemalloc内存
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: fit
+    label: |-
+      推断复杂度曲线
+      非负最小二乘
+      最小残差 + 简单性偏置 + 曲线系数
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: dataset
+    label: |-
+      BigO(Bench) 发布
+      3,105题 / 1,190,250份解答
+      时空类别 + 系数 + 原始性能数据
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: test_sets
-    label: 测试集
+      x: 1720
+      'y': 100
+  - id: validate
+    label: |-
+      框架验证
+      与人工标注匹配：时间92% / 空间84%
+      审计数据覆盖率与测试集标签
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: tests
+    label: |-
+      整理复杂度测试集
+      时间：311题 / 640解答 / 11类
+      空间：308题 / 636解答 / 5类 • 重叠63题
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: prediction
-    label: 预测
+      x: 1440
+      'y': 440
+  - id: predict
+    label: |-
+      任务一：复杂度预测
+      输入题目 + 人类解答
+      采样20次模型输出
+      预测时间与空间Big-O类别
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 70
-  - id: generation
-    label: 生成
+      x: 1160
+      'y': 280
+  - id: prediction_metric
+    label: |-
+      任务一：20次采样无偏估计
+      Pass@k • Best@k • All@k
+      时间与空间类别准确率
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: metrics
-    label: 指标
+      x: 880
+      'y': 280
+  - id: generate
+    label: |-
+      任务二：约束代码生成
+      输入题目 + 可行目标复杂度
+      生成满足约束的正确Python解答
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 480
+  - id: generation_metric
+    label: |-
+      任务二指标：每题20次采样
+      Pass@k • Best@k • All@k
+      同时检查正确性与复杂度约束
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 480
+  - id: rank
+    label: |-
+      任务三：系数排序
+      生成20个候选解答
+      在同一Big-O类取最佳正确系数
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: ranking_metric
+    label: |-
+      任务三系数分数
+      20次尝试取最佳值
+      无正确解记0
+      对人类解答计算系数百分位
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 680
+  - id: report
+    label: |-
+      汇报三项并行评测
+      预测准确率 • 生成指标
+      系数百分位排序
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 600
+      'y': 480
 edges:
-  - from: code_data
-    to: inputs
+  - from: source
+    to: dataclass
     type: primary
-  - from: inputs
-    to: profiling
+  - from: dataclass
+    to: filter
     type: primary
-  - from: profiling
-    to: curve_fit
+  - from: filter
+    to: expand
     type: primary
-  - from: curve_fit
-    to: labels
+  - from: expand
+    to: profile
     type: primary
-  - from: labels
-    to: test_sets
+  - from: profile
+    to: fit
     type: primary
-  - from: test_sets
-    to: prediction
+  - from: fit
+    to: dataset
     type: primary
-  - from: test_sets
-    to: generation
+  - from: dataset
+    to: tests
     type: primary
-  - from: prediction
-    to: metrics
+  - from: dataset
+    to: validate
+    type: data
+  - from: tests
+    to: validate
+    type: data
+  - from: tests
+    to: predict
     type: primary
-  - from: generation
-    to: metrics
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.5
+  - from: tests
+    to: generate
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: tests
+    to: rank
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.5
+  - from: predict
+    to: prediction_metric
+    type: primary
+  - from: generate
+    to: generation_metric
+    type: primary
+  - from: rank
+    to: ranking_metric
+    type: primary
+  - from: prediction_metric
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.25
+  - from: generation_metric
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: ranking_metric
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.75
 modules: []

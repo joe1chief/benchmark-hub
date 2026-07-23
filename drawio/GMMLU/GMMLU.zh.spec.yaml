@@ -1,0 +1,190 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Global-MMLU 构建流程
+  description: 论文版本化的文化标注、翻译、完整集与 Lite 构建；论文后 Lite 扩展作为独立发布边界展示。
+  legend: 实线箭头对应 arXiv:2412.03304v2 及论文同期数据。虚线分支记录后续 Lite 扩容，不能据此改写论文的 15 语言计数。
+nodes:
+  - id: evidence
+    label: |-
+      证据边界
+      论文 2412.03304v2
+      完整数据 0e619dbe
+      论文 Lite b88e8867 · 当前 36c2fd75
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 320
+  - id: source
+    label: |-
+      英文 MMLU 源数据
+      57 学科 · 14,042 道测试题
+      285 个开发示例用于五样本提示
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 320
+  - id: cultural_sample
+    label: |-
+      均匀抽取文化标注样本
+      每学科 50 题 = 2,850 道英文题
+      200 名专业及社区标注员
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 80
+  - id: cultural_vote
+    label: |-
+      聚合标注
+      每题 ≥3 人；半数及以上即通过标签
+      文化 · 地理 · 方言 + 时间敏感
+      前三者任一为真即 CS；否则 CA
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 80
+  - id: machine_translate
+    label: |-
+      翻译为 41 种目标语言
+      每种语言统一使用 Google Translate
+      避免模型偏爱自身译文
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: human_improve
+    label: |-
+      有人工版本时替换或后编辑
+      Gold Set：4 种付费翻译语言
+      MMMLU：另 10 种 · 社区：11 种
+      社区语言至少需 50 个样本
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: full_release
+    label: |-
+      论文完整测试发布
+      42 × 14,042 = 589,764 条测试数据
+      CS 33,264 · CA 86,436
+      固定版本另含 42 × 285 条开发数据
+    type: database
+    size: xl
+    position:
+      x: 1280
+      'y': 320
+  - id: lite_filter
+    label: |-
+      构建论文同期 Lite
+      排除 14 个只有 CS 或 CA 的学科
+      可用时每学科抽 5 个 CS + 5 个 CA
+      上采样商业 · 医学 · 通识类别
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 320
+  - id: paper_lite
+    label: |-
+      论文同期 Lite 发布
+      15 种人工翻译或后编辑语言
+      每语言 CS 200 + CA 200 = 测试 6,000
+      固定版本另含 3,225 条开发数据
+    type: database
+    size: xl
+    position:
+      x: 1880
+      'y': 320
+  - id: eval_prompt
+    label: |-
+      论文评测协议
+      五样本；指令与样本语言一致
+      开放模型：lm-eval 选项对数概率
+      闭源 API：生成单个答案选项
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 320
+  - id: parser_boundary
+    label: |-
+      闭源模型边界
+      system preamble 要求仅输出选项
+      preamble 原文与抽取器未公开
+      HF 数据发布无规范解析器
+    type: document
+    size: xl
+    position:
+      x: 2480
+      'y': 320
+  - id: metric
+    label: |-
+      报告准确率
+      按语言 · CS/CA · 资源水平切分
+      比较完整集与平衡 Lite 集
+    type: terminal
+    size: xl
+    position:
+      x: 2780
+      'y': 320
+  - id: current_lite
+    label: |-
+      论文后 Lite 漂移
+      当前 36c2fd75：23 种语言
+      测试 9,200 + 开发 4,800 = 14,000 条
+      不等同论文的 15 语言 Lite
+    type: document
+    size: xl
+    position:
+      x: 2040
+      'y': 620
+edges:
+  - from: evidence
+    to: source
+    type: primary
+  - from: source
+    to: cultural_sample
+    type: primary
+  - from: cultural_sample
+    to: cultural_vote
+    type: primary
+  - from: cultural_vote
+    to: full_release
+    type: primary
+  - from: source
+    to: machine_translate
+    type: primary
+  - from: machine_translate
+    to: human_improve
+    type: primary
+  - from: human_improve
+    to: full_release
+    type: primary
+  - from: full_release
+    to: lite_filter
+    type: primary
+  - from: lite_filter
+    to: paper_lite
+    type: primary
+  - from: paper_lite
+    to: eval_prompt
+    type: primary
+  - from: eval_prompt
+    to: parser_boundary
+    type: primary
+  - from: parser_boundary
+    to: metric
+    type: primary
+  - from: paper_lite
+    to: current_lite
+    type: data
+modules: []

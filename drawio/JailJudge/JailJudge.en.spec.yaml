@@ -6,86 +6,236 @@ meta:
   routing: orthogonal
   title: JailJudge Build Process
   description: >-
-    Paper-aligned JailJudge pipeline from complex harmful scenarios and LLM responses through human labels, train/test
-    splits, MultiAgent fine-grained scoring, Guard tuning, and judge metrics.
-  legend: Solid arrows show benchmark data construction, multi-agent judging, guard training, and evaluation.
+    Paper-aligned JailJudge construction from diverse harmful-prompt and response pairs through a separately
+    human-annotated JAILJUDGETEST branch and a GPT-4 MultiAgent ground-truth branch, followed by LoRA tuning of
+    JAILJUDGE Guard and judge evaluation.
+  legend: >-
+    Solid arrows show construction and evaluation. Dashed arrows mark evidence inputs or release-boundary notes. The BPA
+    uncertainty hyperparameter is kept distinct from the Guard binary-decision threshold.
 nodes:
-  - id: scenes
-    label: Risk Scenarios
+  - id: evidence
+    label: |-
+      Primary Evidence + Fixed Revisions
+      arXiv:2410.12855v2
+      Official Git 8743c13
+      Dataset HF edcd9ae · Guard HF cf624b8
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: labels
-    label: Human Labels
+      x: 20
+      'y': 40
+  - id: prompts
+    label: |-
+      Six Harmful-prompt Sources
+      Vanilla · Synthetic Vanilla · Adversarial
+      Multilingual · In-the-wild · Deceptive
+      Refine to 14 MLCommons Hazard Categories
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: responses
+    label: |-
+      Collect Diverse Target Responses
+      Closed- and Open-source LLM Families
+      System- and Model-level Defenses
+      Random Assignment · Safe + Unsafe Outputs
+    type: cloud
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: pool
+    label: |-
+      Form Candidate Prompt-response Pairs
+      Coverage · Diversity · Balance
+      Before Test and Training Branches
+      Not Yet the Final 35K+ Training Set
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: test_split
+    label: |-
+      Select Held-out JAILJUDGETEST Pairs
+      ID: 4,500 from Non-multilingual Split
+      OOD: 6,300 · 10 Languages
+      All OOD Samples Absent from TRAIN
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: annotation
+    label: |-
+      Create Binary Human Gold Labels
+      Train on Nine MLCommons Policies
+      Manual Labels + GPT-4 Cross-check
+      Re-label Mismatches · Majority Vote
     type: user
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: test
-    label: JailJudgeTest
-    type: document
+      x: 1420
+      'y': 40
+  - id: testsets
+    label: |-
+      Release Human-annotated Test Sets
+      ID 4,500 · OOD 6,300
+      Gold Label: Jailbroken True / False
+    type: database
     size: xl
     position:
-      x: 520
-      'y': 160
+      x: 1700
+      'y': 40
+  - id: judging
+    label: |-
+      GPT-4 MultiAgent Judging Stage
+      3 Judging Agents
+      Each Gives Reason + Score 1–10
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: bpa
+    label: |-
+      Uncertainty-aware Evidence Aggregation
+      Score to BPA · α = 0.1 Sets Uncertainty
+      Dempster's Rule Combines Three BPAs
+      Recover Aggregate Score + Closest Reason
+      α Is Not a Binary-label Threshold
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 380
+  - id: voting
+    label: |-
+      3 Voting Agents
+      Review Aggregated Score and Reason
+      Accept / Reject + Explanation
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: inference
+    label: |-
+      1 Inference Agent
+      Read Aggregated Judging + All Votes
+      Final Judgment · Reason · Explanation
+      Final Jailbreak Score 1–10
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 380
   - id: train
-    label: Train Data
+    label: |-
+      Build JAILJUDGETRAIN Ground Truth
+      35K+ Instruction-tuning Items
+      Input: Prompt + Response
+      Output: Reasoning + Score 1–10
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: multi
-    label: MultiAgent
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: score
-    label: Fine Scores
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 160
+      x: 2260
+      'y': 380
   - id: guard
-    label: Guard Model
+    label: |-
+      LoRA Supervised Fine-tuning
+      Llama-2-7B Base
+      Input: User Prompt + Model Response
+      Output: Explanation + Score 1–10
+      Binary Jailbreak When Score > 2
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
+      x: 2540
+      'y': 380
+  - id: evaluate
+    label: |-
+      Evaluate Jailbreak Judges
+      JAILJUDGE ID / OOD
+      JBB Behaviors / WILDTEST
+      MultiAgent · Guard · Baselines
+    type: process
+    size: xl
+    position:
+      x: 2820
+      'y': 40
   - id: metrics
-    label: Judge Metrics
+    label: |-
+      Report Judge Quality
+      Accuracy · Precision · Recall · F1
+      GPT-4 EQ 1–5 · Human H-score
+      Break Down by Scenario and Language
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 3100
+      'y': 40
+  - id: artifact_boundary
+    label: |-
+      Partly Public Artifact Boundary
+      Git Code Public · Dataset Gated
+      HF Dataset edcd9ae · auto/custom
+      Guard HF cf624b8 Pinned Separately
+      No Full-package Ungated Claim
+    type: document
+    size: xl
+    position:
+      x: 3100
+      'y': 380
 edges:
-  - from: scenes
-    to: labels
+  - from: evidence
+    to: prompts
+    type: data
+  - from: prompts
+    to: responses
     type: primary
-  - from: labels
-    to: test
+  - from: responses
+    to: pool
     type: primary
-  - from: test
+  - from: pool
+    to: test_split
+    type: primary
+  - from: test_split
+    to: annotation
+    type: primary
+  - from: annotation
+    to: testsets
+    type: primary
+  - from: pool
+    to: judging
+    type: primary
+  - from: judging
+    to: bpa
+    type: primary
+  - from: bpa
+    to: voting
+    type: primary
+  - from: voting
+    to: inference
+    type: primary
+  - from: inference
     to: train
     type: primary
   - from: train
-    to: multi
-    type: primary
-  - from: multi
-    to: score
-    type: primary
-  - from: score
     to: guard
     type: primary
+  - from: testsets
+    to: evaluate
+    type: primary
   - from: guard
+    to: evaluate
+    type: primary
+  - from: evaluate
     to: metrics
     type: primary
+  - from: metrics
+    to: artifact_boundary
+    type: data
 modules: []

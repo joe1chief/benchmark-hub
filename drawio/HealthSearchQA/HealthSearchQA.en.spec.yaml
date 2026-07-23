@@ -6,76 +6,166 @@ meta:
   routing: orthogonal
   title: HealthSearchQA Build Process
   description: >-
-    Paper-aligned HealthSearchQA pipeline from medical seed terms and search-engine query retrieval to consumer health
-    questions and clinician/lay human evaluation as part of MultiMedQA.
-  legend: Solid arrows show query curation, open-domain answer generation, human rating axes, and benchmark use.
+    Version-aware construction and sampled human evaluation, reconciling the arXiv preprint with the final Nature
+    article and its official question-only supplement.
+  legend: >-
+    Solid arrows show construction and evaluation. Dashed arrows mark pinned evidence, the preprint-to-final revision,
+    and the separate non-medical rating branch.
 nodes:
-  - id: seeds
-    label: Seed Terms
+  - id: evidence
+    label: |-
+      Primary evidence
+      arXiv:2212.13138v1
+      Nature s41586-023-06291-2
+      ESM SHA a89f6639
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: search
-    label: Search Queries
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: curate
-    label: 3375 Qs
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: response
-    label: Free Answer
+      'y': 360
+  - id: seeds
+    label: |-
+      Consumer-health seed list
+      medical conditions + symptoms
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: axes
-    label: Clinician Axes
+      x: 304
+      'y': 360
+  - id: retrieve
+    label: |-
+      Public search-engine questions
+      shown to all users entering seed terms
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: rating
-    label: Human Rating
-    type: decision
+      x: 568
+      'y': 360
+  - id: preprint
+    label: |-
+      arXiv v1 snapshot
+      3,375 question-only queries
+      human intervals: 100 bootstrap replicas
+    type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: suite
-    label: MultiMedQA
+      x: 832
+      'y': 360
+  - id: artifact_boundary
+    label: |-
+      Final Nature revision
+      3,173 questions · 1,000 bootstrap
+      supersedes preprint counts
+    type: document
+    size: xl
+    position:
+      x: 1096
+      'y': 360
+  - id: release
+    label: |-
+      Official ESM workbook
+      3,173 all · 140 study questions
+      question-only · no answers
+    type: database
+    size: xl
+    position:
+      x: 1360
+      'y': 360
+  - id: sample
+    label: |-
+      Disjoint human-study sample
+      100 HealthSearchQA · 20 LiveQA
+      20 MedicationQA · disjoint from tuning
+    type: process
+    size: xl
+    position:
+      x: 1624
+      'y': 360
+  - id: answers
+    label: |-
+      Compared answer sources
+      clinician reference · Flan-PaLM
+      Med-PaLM responses
+    type: process
+    size: xl
+    position:
+      x: 1888
+      'y': 360
+  - id: blind
+    label: |-
+      Blinded clinical review
+      source hidden from raters
+      one of nine clinicians rates each answer
+    type: user
+    size: xl
+    position:
+      x: 2152
+      'y': 360
+  - id: clinician_axes
+    label: |-
+      Clinician ratings · 12 axes
+      consensus · harm · comprehension
+      bias and other safety / quality axes
+    type: process
+    size: xl
+    position:
+      x: 2416
+      'y': 96
+  - id: lay_axes
+    label: |-
+      Lay ratings
+      five non-medical raters
+      intent match · helpfulness
+    type: user
+    size: xl
+    position:
+      x: 2416
+      'y': 624
+  - id: bootstrap
+    label: |-
+      Study estimates
+      1,000 bootstrap replicas
+      95% percentile intervals
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2680
+      'y': 360
 edges:
+  - from: evidence
+    to: seeds
+    type: data
   - from: seeds
-    to: search
+    to: retrieve
     type: primary
-  - from: search
-    to: curate
+  - from: retrieve
+    to: preprint
     type: primary
-  - from: curate
-    to: response
+  - from: preprint
+    to: artifact_boundary
+    type: data
+  - from: artifact_boundary
+    to: release
     type: primary
-  - from: response
-    to: axes
+  - from: release
+    to: sample
     type: primary
-  - from: axes
-    to: rating
+  - from: sample
+    to: answers
     type: primary
-  - from: rating
-    to: suite
+  - from: answers
+    to: blind
     type: primary
+  - from: blind
+    to: clinician_axes
+    type: primary
+  - from: blind
+    to: lay_axes
+    type: secondary
+  - from: clinician_axes
+    to: bootstrap
+    type: primary
+  - from: lay_axes
+    to: bootstrap
+    type: secondary
 modules: []

@@ -5,119 +5,293 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AdvancedIF 构建流程
-  description: 基于 arXiv:2511.10507 对齐的 AdvancedIF 基准构建与 rubric 评估流程。
-  legend: 实线表示基准样本构建和评估主流程；虚线表示对抗筛选和基于 rubric 的判定。
+  description: 对齐 arXiv:2511.10507v2 第 3.1-3.2 节及表 1 的构建与严格量规评测流程。
+  legend: 上下文延续与系统提示可控性分别经过标注员与 LLM 的多轮对话；复杂单轮直接进入末轮失败筛选，量规须经多轮人工审核后发布。
 nodes:
-  - id: taxonomy
+  - id: scope
     label: |-
-      能力分类
-      复杂指令、多轮上下文
-      system prompt steerability
-    type: database
+      定义进阶指令遵循范围
+      区分指令执行与事实性
+      排除歧义意图
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
+      'y': 240
+  - id: experts
     label: |-
-      专家撰写 prompt
-      人工编写提示
-      聚焦单一 IF 类别
-    type: process
+      招募专家标注员
+      人工编写提示与量规
+      每个提示对应一类
+    type: user
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: adversarial
-    label: |-
-      对抗式保留
-      只保留会触发
-      最后一轮 IF 失败的 prompt
+      x: 320
+      'y': 240
+  - id: category
+    label: 选择指令遵循类别
     type: decision
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: rubrics
+      x: 600
+      'y': 240
+  - id: complex
     label: |-
-      专家 rubric
-      每条最多 20 个 criteria
-      多轮人工 review
+      复杂单轮指令遵循
+      402 个对话
+      至少 6 项约束
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: dataset
+      x: 880
+      'y': 20
+  - id: carried
     label: |-
-      AdvancedIF 集合
-      1,645 个 dialogs
-      人工 prompts + rubrics
-    type: database
+      上下文延续指令遵循
+      736 个对话 • 平均 7.69 轮
+      延续设定、细节与修改
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: responses
+      x: 880
+      'y': 240
+  - id: system
     label: |-
-      模型回答
-      对每个 dialog 或 prompt
-      生成最后一轮响应
+      系统提示可控性
+      507 个对话 • 平均 11.21 轮
+      风格、安全、语气与工具
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 460
+  - id: carried_dialogue
+    label: |-
+      开展标注员与 LLM 对话
+      上下文延续多轮互动
+      将上下文带到末轮
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: verifier
+      x: 1160
+      'y': 240
+  - id: system_dialogue
     label: |-
-      Rubric verifier
-      o3-mini 逐条 criteria 检查
-      全部通过才记 TRUE
+      开展系统提示多轮对话
+      标注员与 LLM 互动
+      507/507 均至少 4 轮
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 460
+  - id: final_response
+    label: |-
+      收集指定模型回答
+      使用目标类别完整上下文
+      检查最终轮回答
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 240
+  - id: failure_gate
+    label: |-
+      末轮指令遵循失败？
+      仅保留目标类别失败样本
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: metrics
+      x: 1720
+      'y': 240
+  - id: discard
     label: |-
-      分类得分
-      ComplexIF / context / system
-      TRUE 百分比
+      排除非失败提示
+      不属于指令遵循失败
+      不纳入发布集
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2000
+      'y': 460
+  - id: rubrics
+    label: |-
+      编写最终轮量规
+      同一标注员 • 最多 20 条
+      二元可验证准则
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: ordering_note
+    label: |-
+      量规准则排序
+      构建顺序未披露
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 20
+  - id: human_review
+    label: |-
+      多轮人工审核
+      仅复核量规准则
+      修订准则后再发布
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+  - id: dataset
+    label: |-
+      发布 AdvancedIF
+      402 + 736 + 507 = 1,645
+      人工对话与人工量规
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 240
+  - id: response
+    label: |-
+      生成模型回答
+      使用完整对话上下文
+      在末轮评分
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 700
+  - id: verifier
+    label: |-
+      逐条验证量规准则
+      o3-mini 判断真或假
+      输入上下文 + 提示
+      回答 + 量规准则
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 700
+  - id: strict
+    label: |-
+      所有准则均为真？
+      任一失败则对话失败
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 700
+  - id: failed_dialog
+    label: |-
+      记录失败对话
+      至少一条准则为假
+      纳入通过率分母
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 860
+  - id: score
+    label: |-
+      汇总严格通过率
+      CIF • CC • SS
+      三类平均
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 700
+  - id: report
+    label: |-
+      报告进阶指令遵循结果
+      比较不同模型设置
+      诊断类别差距
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 700
 edges:
-  - from: taxonomy
-    to: prompts
+  - from: scope
+    to: experts
     type: primary
-  - from: prompts
-    to: adversarial
-    type: data
-    label: 候选 prompts
-  - from: adversarial
-    to: prompts
-    type: optional
-    label: 修改或丢弃
-  - from: adversarial
+  - from: experts
+    to: category
+    type: primary
+  - from: category
+    to: complex
+    type: primary
+  - from: category
+    to: carried
+    type: primary
+  - from: category
+    to: system
+    type: primary
+  - from: carried
+    to: carried_dialogue
+    type: primary
+  - from: complex
+    to: final_response
+    type: primary
+    waypoints:
+      - x: 1320
+        'y': 80
+      - x: 1400
+        'y': 80
+      - x: 1400
+        'y': 200
+  - from: carried_dialogue
+    to: final_response
+    type: primary
+  - from: system
+    to: system_dialogue
+    type: primary
+  - from: system_dialogue
+    to: final_response
+    type: primary
+    waypoints:
+      - x: 1360
+        'y': 520
+      - x: 1400
+        'y': 520
+      - x: 1400
+        'y': 360
+  - from: final_response
+    to: failure_gate
+    type: primary
+  - from: failure_gate
     to: rubrics
     type: primary
-    label: 保留样本
+  - from: failure_gate
+    to: discard
+    type: optional
   - from: rubrics
+    to: human_review
+    type: primary
+  - from: human_review
     to: dataset
     type: primary
   - from: dataset
-    to: responses
+    to: response
     type: primary
-  - from: dataset
-    to: verifier
-    type: data
-    label: prompts + rubrics
-  - from: responses
+  - from: response
     to: verifier
     type: primary
   - from: verifier
-    to: metrics
+    to: strict
+    type: primary
+  - from: strict
+    to: score
+    type: primary
+  - from: strict
+    to: failed_dialog
+    type: optional
+  - from: failed_dialog
+    to: score
+    type: data
+  - from: score
+    to: report
     type: primary
 modules: []

@@ -1,0 +1,448 @@
+meta:
+  profile: academic-paper
+  source: edited
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LPFQA 构建与评测流程
+  description: 对齐论文 v2 的构建流程：从专家审核的专业论坛截图出发，经 VLM 抽取、显式有效性与质量门控、题型分流、 领域专家验证和先导模型难度校准，再按附录 B 与 Hugging Face 的二元评判合同完成评测。
+  legend: >-
+    实线表示 arXiv v2 主流程，带标签分支表示保留或剔除条件；未连线的文档卡片仅表示证据或公开资产边界， 不是处理阶段。主论文为 arXiv:2511.06346v2（2026-01-08）；官方公开资产为
+    m-a-p/LPFQA revision 8bf9f2ee879396909f940b512c9239be121a2505。论文 v2 合同为 430 题，该较早公开快照为 502 条，且未发布 与 430 题集合之间的题目映射。
+nodes:
+  - id: evidence_boundary
+    label: |-
+      证据状态
+      arXiv v2 · 2026-01-08
+      OpenReview：已撤稿
+      仅静态结果表 · 无在线榜单
+    type: document
+    size: xl
+    position:
+      x: 32
+      'y': 32
+    style:
+      fontSize: 10
+  - id: expert_scope
+    label: |-
+      专家范围
+      项目整体共 209 名有偿专家
+      单题分工与裁决人数
+      未披露
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 32
+    style:
+      fontSize: 10
+  - id: forum_curation
+    label: |-
+      整理并交叉审核论坛
+      领域 · URL · 讨论样例
+      核验专业性与真实性
+    type: user
+    size: xl
+    position:
+      x: 32
+      'y': 224
+  - id: crawl
+    label: |-
+      50 多个已审核论坛
+      2,000 多个讨论串 · 近 7 个月
+      帖子均发布于 2025 年 1 月后
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 224
+  - id: screenshots
+    label: |-
+      以截图保留讨论
+      布局 · 格式 · 问答关系
+      仅作为内部构建输入
+    type: document
+    size: xl
+    position:
+      x: 608
+      'y': 224
+  - id: vlm_extract
+    label: |-
+      VLM 结构化抽取
+      is_valid · question · answer
+      explanation · has_answer
+    type: process
+    size: xl
+    position:
+      x: 896
+      'y': 224
+  - id: validity_gate
+    label: |-
+      页面有效且
+      问题清晰？
+    type: decision
+    size: xl
+    position:
+      x: 1184
+      'y': 224
+  - id: discard_invalid
+    label: |-
+      剔除
+      无效或问题不清晰的页面
+    type: loss
+    size: xl
+    position:
+      x: 1184
+      'y': 448
+  - id: quality_filter
+    label: |-
+      LLM 质量筛选
+      准确性 · 完整性 · 专业性 · 时效稳健性
+      知识深度 · 长链/多步 · 抽象/综合
+      迷惑性/原创性 → is_qualified + reason
+    type: process
+    size: xl
+    position:
+      x: 1472
+      'y': 224
+    style:
+      fontSize: 9
+  - id: quality_gate
+    label: |-
+      全部质量
+      准则通过？
+    type: decision
+    size: xl
+    position:
+      x: 1760
+      'y': 224
+  - id: discard_quality
+    label: |-
+      剔除
+      不合格候选
+    type: loss
+    size: xl
+    position:
+      x: 2048
+      'y': 224
+  - id: format_route
+    label: |-
+      问题性质？
+      保持源语言
+    type: decision
+    size: xl
+    position:
+      x: 1760
+      'y': 672
+  - id: mcq
+    label: |-
+      知识型 → 选择题
+      5–7 个选项 · 恰 1 项正确
+      4–6 个可信干扰项
+      随机排序 · 语法一致
+    type: process
+    size: xl
+    position:
+      x: 1472
+      'y': 576
+  - id: short_answer
+    label: |-
+      推理/数值型 → 简答题
+      详细参考答案
+      1–5 个核心知识点
+    type: process
+    size: xl
+    position:
+      x: 1472
+      'y': 768
+  - id: candidates
+    label: |-
+      约 1,000 个候选
+      问题 + 参考答案
+      等待专家验证
+    type: database
+    size: xl
+    position:
+      x: 1184
+      'y': 672
+  - id: expert_gate
+    label: |-
+      领域专家验证通过？
+      长尾 · 清晰 · 形式完备
+      事实正确
+    type: decision
+    size: xl
+    position:
+      x: 896
+      'y': 672
+    style:
+      fontSize: 10
+  - id: discard_expert
+    label: |-
+      剔除
+      未通过专家检查
+    type: loss
+    size: xl
+    position:
+      x: 896
+      'y': 896
+  - id: pilot_models
+    label: |-
+      随机 6–8 个前沿模型
+      计算每题初步通过率
+    type: process
+    size: xl
+    position:
+      x: 608
+      'y': 672
+  - id: trivial_gate
+    label: 是否过于简单？
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 672
+  - id: discard_trivial
+    label: |-
+      剔除
+      过于简单的题目
+    type: loss
+    size: xl
+    position:
+      x: 320
+      'y': 896
+  - id: tier_assignment
+    label: |-
+      按通过率划分难度
+      L1 >50% · 137 题
+      L2 30%–50% · 133 题
+      L3 <30% · 160 题
+    type: process
+    size: xl
+    position:
+      x: 32
+      'y': 672
+    style:
+      fontSize: 10
+  - id: release
+    label: |-
+      论文 v2 合同 · 430 题
+      249 道选择题 · 181 道简答题
+      7 个一级 · 21 个二级领域
+    type: database
+    size: xl
+    position:
+      x: 32
+      'y': 1120
+  - id: model_inference
+    label: |-
+      评测 11 个模型
+      使用发布的问题提示
+      Temperature = 1 · top_p = 1
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 1120
+  - id: judge_input
+    label: |-
+      附录 B / HF 评判
+      参考答案 + 评价点 + 模型回答
+      不提供问题
+    type: process
+    size: xl
+    position:
+      x: 608
+      'y': 1120
+    style:
+      fontSize: 10
+  - id: judge_result
+    label: |-
+      全部评价点门控 + 最终答案语义等价
+      后续自我纠正优先
+      少于 100 token 依据 · answer_score 0 / 1
+    type: process
+    size: xl
+    position:
+      x: 896
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: score
+    label: |-
+      准确率 (%)
+      = 100 / 430 × Σᵢ yᵢ
+      yᵢ ∈ {0, 1}
+    type: formula
+    size: xl
+    position:
+      x: 1184
+      'y': 1120
+    style:
+      fontSize: 10
+  - id: report
+    label: |-
+      论文表 2
+      总体 + 7 个一级领域准确率
+      无按难度拆分的模型得分表
+    type: terminal
+    size: xl
+    position:
+      x: 1472
+      'y': 1120
+  - id: artifact_boundary
+    label: |-
+      版本 / 资产边界
+      v1 摘要 + HF：502 · v1 正文：505
+      v2 论文合同：430
+      无公开题目映射
+    type: document
+    size: xl
+    position:
+      x: 1760
+      'y': 1120
+    style:
+      fontSize: 10
+  - id: judge_drift
+    label: |-
+      评判证据冲突
+      第 4 节：包含问题
+      附录 B + HF：不包含问题
+      主流程遵循附录 / HF
+    type: document
+    size: xl
+    position:
+      x: 608
+      'y': 1344
+    style:
+      fontSize: 10
+  - id: public_boundary
+    label: |-
+      部分公开
+      HF 8bf9f2ee… · 502 条文本记录
+      无 430 子集 / 截图 / 来源 URL
+      无官方评测器代码
+    type: document
+    size: xl
+    position:
+      x: 1760
+      'y': 1344
+    style:
+      fontSize: 10
+edges:
+  - from: forum_curation
+    to: crawl
+    type: primary
+  - from: crawl
+    to: screenshots
+    type: primary
+  - from: screenshots
+    to: vlm_extract
+    type: primary
+  - from: vlm_extract
+    to: validity_gate
+    type: primary
+  - from: validity_gate
+    to: discard_invalid
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: validity_gate
+    to: quality_filter
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: quality_filter
+    to: quality_gate
+    type: primary
+  - from: quality_gate
+    to: discard_quality
+    type: optional
+    label: 未通过
+    labelPosition: end
+  - from: quality_gate
+    to: format_route
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: format_route
+    to: mcq
+    type: primary
+    label: 知识型
+    labelPosition: center
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.5
+  - from: format_route
+    to: short_answer
+    type: primary
+    label: 推理/数值型
+    labelPosition: center
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.5
+  - from: mcq
+    to: candidates
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.25
+  - from: short_answer
+    to: candidates
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.75
+  - from: candidates
+    to: expert_gate
+    type: primary
+  - from: expert_gate
+    to: discard_expert
+    type: optional
+    label: 未通过
+    labelPosition: end
+  - from: expert_gate
+    to: pilot_models
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: pilot_models
+    to: trivial_gate
+    type: primary
+  - from: trivial_gate
+    to: discard_trivial
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: trivial_gate
+    to: tier_assignment
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: tier_assignment
+    to: release
+    type: primary
+  - from: release
+    to: model_inference
+    type: primary
+  - from: model_inference
+    to: judge_input
+    type: primary
+  - from: judge_input
+    to: judge_result
+    type: primary
+  - from: judge_result
+    to: score
+    type: primary
+  - from: score
+    to: report
+    type: primary
+modules: []

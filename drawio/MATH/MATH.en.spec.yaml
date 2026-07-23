@@ -6,72 +6,123 @@ meta:
   routing: orthogonal
   title: MATH Build Process
   description: >-
-    Paper-aligned construction of MATH: competition math problems are collected, categorized by subject and difficulty,
-    formatted with LaTeX/Asymptote and step-by-step solutions, normalized around boxed answers, and evaluated by exact
-    match.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned MATH workflow: collect 12,500 competition problems from AMC 10, AMC 12, AIME, and related AoPS
+    sources; categorize them into seven subjects and AoPS difficulty levels 1-5; encode problems and solutions in
+    consistent LaTeX and Asymptote; attach a full step-by-step solution and boxed final answer; split 7,500 training and
+    5,000 test problems; optionally pretrain the evaluated model on the separate Khan Academy plus Mathematica AMPS
+    corpus; generate an answer; parse boxed content; normalize equivalent forms; and report accuracy.
+  legend: The upper flow constructs MATH; the lower auxiliary branch is optional AMPS model pretraining.
 nodes:
-  - id: pool
+  - id: sources
     label: Contest Pool
     type: database
-    size: xl
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: aops
-    label: AoPS Items
+      'y': 220
+  - id: collect
+    label: 12,500 Set
     type: document
-    size: xl
+    size: large
     position:
-      x: 280
-      'y': 160
+      x: 240
+      'y': 220
   - id: subjects
     label: 7 Subjects
     type: process
-    size: xl
+    size: large
     position:
-      x: 520
-      'y': 160
+      x: 440
+      'y': 220
   - id: levels
-    label: Level 1-5
+    label: AoPS Level 1–5
     type: process
-    size: xl
+    size: large
     position:
-      x: 760
-      'y': 160
+      x: 640
+      'y': 220
   - id: format
-    label: LaTeX/Asy
+    label: LaTeX + Asy
     type: process
-    size: xl
+    size: large
     position:
-      x: 1000
-      'y': 160
-  - id: solve
-    label: Step Solve
-    type: document
-    size: xl
+      x: 840
+      'y': 220
+  - id: solutions
+    label: Steps + Boxed
+    type: process
+    size: large
+    position:
+      x: 1040
+      'y': 220
+  - id: split
+    label: Dataset Split
+    type: decision
+    size: large
     position:
       x: 1240
-      'y': 160
-  - id: answer
-    label: Box Answer
+      'y': 220
+  - id: train
+    label: Train 7,500
     type: document
-    size: xl
+    size: large
     position:
-      x: 1480
-      'y': 160
-  - id: metric
+      x: 1440
+      'y': 100
+  - id: test
+    label: Test 5,000
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 300
+  - id: amps
+    label: AMPS Auxiliary
+    type: database
+    size: large
+    position:
+      x: 1240
+      'y': 500
+  - id: setup
+    label: Model Setup
+    type: process
+    size: large
+    position:
+      x: 1680
+      'y': 180
+  - id: generate
+    label: Model Answer
+    type: process
+    size: large
+    position:
+      x: 1900
+      'y': 260
+  - id: parse
+    label: Parse Boxed
+    type: process
+    size: large
+    position:
+      x: 2120
+      'y': 260
+  - id: normalize
+    label: Normalize
+    type: process
+    size: large
+    position:
+      x: 2340
+      'y': 260
+  - id: score
     label: Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1720
-      'y': 160
+      x: 2560
+      'y': 260
 edges:
-  - from: pool
-    to: aops
+  - from: sources
+    to: collect
     type: primary
-  - from: aops
+  - from: collect
     to: subjects
     type: primary
   - from: subjects
@@ -81,12 +132,43 @@ edges:
     to: format
     type: primary
   - from: format
-    to: solve
+    to: solutions
     type: primary
-  - from: solve
-    to: answer
+  - from: solutions
+    to: split
     type: primary
-  - from: answer
-    to: metric
+  - from: split
+    to: train
+    type: primary
+  - from: split
+    to: test
+    type: primary
+  - from: train
+    to: setup
+    type: primary
+  - from: amps
+    to: setup
+    type: optional
+    waypoints:
+      - x: 1440
+        'y': 620
+      - x: 1640
+        'y': 620
+      - x: 1640
+        'y': 260
+  - from: setup
+    to: generate
+    type: primary
+  - from: test
+    to: generate
+    type: primary
+  - from: generate
+    to: parse
+    type: primary
+  - from: parse
+    to: normalize
+    type: primary
+  - from: normalize
+    to: score
     type: primary
 modules: []

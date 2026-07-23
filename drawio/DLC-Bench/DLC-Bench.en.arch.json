@@ -1,95 +1,173 @@
 {
   "version": 1,
-  "title": "DLC-Bench Build Process",
+  "title": "DLC-Bench Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "seg",
-      "label": "Seg Masks",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "expand",
-      "label": "VLM Expand",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "ssl",
-      "label": "SSL Web",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "attrs",
-      "label": "Attr Set",
+      "id": "evidence",
+      "label": "DLC-Bench · arXiv:2504.16072v1\ncode @ 153ad3d · data @ 2336d95\nDLC-SDP is a training-data pipeline\nnot the benchmark\nconstruction process",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "source",
+      "label": "Objects365 v2 Validation Source\nchallenging object regions\nhuman-annotated segmentation masks\none target region\nper benchmark instance",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "allocation",
+      "label": "Allocate 100 Regions to Three VLMs\nGPT-4o: 34\nGemini 1.5 Pro: 35\nClaude 3.5 Sonnet: 31",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "question_route",
+      "label": "Two question families",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "positive",
+      "label": "Positive Detail Questions\nobject / part: color · shape\ntexture · material · size\nmanually add missing · revise inaccurate\nremove hallucinated / ambiguous",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "negative",
+      "label": "Negative Hallucination Questions\nmislocalization: outside-mask objects\nhallucination: typical parts\nabsent / not visible / occluded\navoid unsupported details",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "curate",
+      "label": "Manual QA Curation\ninspect every question\nremove ambiguous / unclear cases\nmake choices mutually exclusive\ndeduplicate benchmark images\nagainst training images",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "artifact",
+      "label": "Pinned DLC-Bench Artifact @ 2336d95\n100 region instances\nover 77 source images\n892 questions total\n392 positive + 500 negative",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "caption",
-      "label": "Model Cap",
+      "label": "Candidate Localized Caption\nimage + target mask\nproduce a detailed region description\nno reference caption required",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "Ref-free",
-      "type": "terminal",
+      "label": "Meta-Llama-3.1-8B-Instruct\nofficial text-only judge\ntemperature 0 · max 300 tokens\nselect one choice per question",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recognition",
+      "label": "Recognition Gate\nrecognition question is prepended\nif recognition is wrong\nall question scores are capped at ≤ 0",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "Detail Score",
-      "type": "document",
+      "label": "Per-question Score\npositive: 1 / 0.5 / 0 / -1\nnegative: omit unsupported\ndetail = 1\nhallucination = -1\nintermediate cases = 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "DLC-Bench Report\nmean per instance\npositive mean · negative mean\nfinal = average of positive and negative",
+      "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "seg",
-      "to": "expand",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "expand",
-      "to": "ssl",
+      "from": "source",
+      "to": "allocation",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "ssl",
-      "to": "attrs",
+      "from": "allocation",
+      "to": "question_route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "attrs",
-      "to": "caption",
+      "from": "question_route",
+      "to": "positive",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "question_route",
+      "to": "negative",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "positive",
+      "to": "curate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "negative",
+      "to": "curate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "curate",
+      "to": "artifact",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "artifact",
+      "to": "caption",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
       "from": "caption",
       "to": "judge",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-11",
       "from": "judge",
+      "to": "recognition",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "recognition",
       "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],

@@ -5,123 +5,153 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CiteBench Human-Annotation Benchmark Construction
-  description: Paper-aligned full LFQA data chain and construction of the human-annotated metric subset.
+  description: >-
+    Full LFQA pool, paper-disclosed response preprocessing, and three full-response blind annotation passes that judge
+    statements in context before the 200/1,000 metric split.
   legend: >-
-    Solid arrows denote construction; branch nodes separate Retrieval statements requiring citation judgment from the
-    other three context types marked N/A.
+    Each blind pass receives the complete response/sample and proceeds statement by statement with all context visible.
+    Only Retrieval statements receive citation edits and ratings; User, Response, and Parametric statements are N/A.
 nodes:
   - id: sources
-    label: 4 LFQA sets
+    label: Four LFQA sets
     type: document
-    size: large
+    size: medium
     position:
-      x: 64
-      'y': 64
+      x: 32
+      'y': 32
   - id: retrieval
-    label: 10 passages
+    label: 10 passages / query
     type: process
-    size: large
+    size: medium
     position:
-      x: 272
-      'y': 64
+      x: 224
+      'y': 32
   - id: queries
     label: 3,948 queries
     type: document
-    size: large
+    size: medium
     position:
-      x: 480
-      'y': 64
+      x: 416
+      'y': 32
   - id: full_split
-    label: Full Dev 948 / Full Test 3,000
+    label: Full Dev 948 / Test 3,000
     type: document
     size: large
     position:
-      x: 688
-      'y': 64
+      x: 608
+      'y': 32
   - id: sample
     label: Sample 300 from Dev
     type: process
-    size: large
+    size: medium
     position:
-      x: 688
-      'y': 208
+      x: 832
+      'y': 32
   - id: models
-    label: Four models
+    label: Four response models
     type: process
-    size: large
+    size: medium
     position:
-      x: 480
-      'y': 208
+      x: 1024
+      'y': 32
   - id: responses
-    label: 1,200 answers
+    label: 1,200 responses
     type: document
+    size: medium
+    position:
+      x: 1216
+      'y': 32
+  - id: remove_thinking
+    label: Remove thinking tags
+    type: process
+    size: medium
+    position:
+      x: 1408
+      'y': 32
+  - id: sentence_split
+    label: NLTK 3.8.1 sentence split
+    type: process
     size: large
     position:
-      x: 272
-      'y': 208
+      x: 1600
+      'y': 32
+  - id: citation_indices
+    label: Regex citation indices
+    type: process
+    size: medium
+    position:
+      x: 1824
+      'y': 32
+  - id: valid_indices
+    label: Keep valid passage indices
+    type: process
+    size: large
+    position:
+      x: 2016
+      'y': 32
+  - id: blind_passes
+    label: 3 blind passes / full response
+    type: user
+    size: large
+    position:
+      x: 2240
+      'y': 32
   - id: statements
-    label: Split statements per answer
+    label: Each statement · full context
     type: process
     size: large
     position:
-      x: 64
+      x: 2240
       'y': 208
-  - id: blind
-    label: 3× blind passes / statement
-    type: process
-    size: large
-    position:
-      x: 64
-      'y': 384
   - id: context_vote
     label: Context majority vote
     type: decision
-    size: large
+    size: medium
     position:
-      x: 272
-      'y': 384
+      x: 2016
+      'y': 208
   - id: retrieval_annotations
-    label: 'Retrieval: edits + 3 ratings'
+    label: Retrieval · edits + 3 ratings
     type: process
     size: large
     position:
-      x: 480
-      'y': 320
+      x: 1792
+      'y': 208
   - id: rating_mean
     label: Average three ratings
     type: process
-    size: large
+    size: medium
     position:
-      x: 688
-      'y': 320
+      x: 1568
+      'y': 208
   - id: response_pool
     label: Mean applicable statements
     type: process
     size: large
     position:
-      x: 896
-      'y': 320
+      x: 1344
+      'y': 208
   - id: na
-    label: 'Other three: N/A'
+    label: Other three contexts · N/A
     type: process
     size: large
     position:
-      x: 480
-      'y': 512
+      x: 1792
+      'y': 384
   - id: response_rejoin
     label: Rejoin 1,200 responses
     type: document
     size: large
     position:
-      x: 896
-      'y': 512
+      x: 1120
+      'y': 384
   - id: metric_split
-    label: Metric Dev 200 / Metric Test 1,000
+    label: Metric Dev 200 / Test 1,000
     type: terminal
     size: large
     position:
-      x: 1104
-      'y': 512
+      x: 896
+      'y': 384
 edges:
   - from: sources
     to: retrieval
@@ -142,20 +172,34 @@ edges:
     to: responses
     type: primary
   - from: responses
+    to: remove_thinking
+    type: primary
+  - from: remove_thinking
+    to: sentence_split
+    type: primary
+  - from: sentence_split
+    to: citation_indices
+    type: primary
+  - from: citation_indices
+    to: valid_indices
+    type: primary
+  - from: valid_indices
+    to: blind_passes
+    type: primary
+  - from: blind_passes
     to: statements
     type: primary
   - from: statements
-    to: blind
-    type: primary
-  - from: blind
     to: context_vote
     type: primary
   - from: context_vote
     to: retrieval_annotations
     type: primary
+    label: Retrieval
   - from: context_vote
     to: na
-    type: primary
+    type: optional
+    label: User / Response / Parametric
   - from: retrieval_annotations
     to: rating_mean
     type: primary

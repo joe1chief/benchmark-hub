@@ -4,86 +4,223 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIGCBench 构建流程
-  description: 按论文对齐的AIGCBench构建流程：融合真实视频-文本、图像-文本与生成数据，形成3,928个样本，以4个维度的11项指标评测图生视频模型，并用人工判断验证标准。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: AIGCBench 构建与证据边界内的验证流程
+  description: 构建 3,928 个 I2V 样本后，按数据类型使用自动指标并另做人类票选；明确论文与代码的关键帧差异及各方法覆盖范围。
+  legend: 实线表示构建与评测主流程；虚线数据边仅汇合彼此独立的证据报告。
 nodes:
-  - id: n1
-    label: 真实数据对
+  - id: webvid
+    label: |-
+      WebVid 验证集
+      按子类型采样 • 1,000
+      视频-文本对
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 文本组合器
+      'y': 20
+  - id: laion
+    label: |-
+      LAION-Aesthetics
+      925 个图像-文本对
+      论文：随机 • README：精选
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 180
+  - id: text_corpus
+    label: |-
+      提示文本词库
+      CivitAI 高频词
+      + 其他候选词
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 420
+  - id: compose
+    label: |-
+      随机组合 3,000 条
+      主体 • 行为
+      背景 • 风格
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: GPT-4扩写
+      x: 300
+      'y': 420
+  - id: enrich
+    label: |-
+      GPT-4 扩写
+      “让内容更生动
+      且更丰富”
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: SDXL生成筛选
+      x: 560
+      'y': 420
+  - id: generate
+    label: |-
+      SDXL xl-base • 1280 × 720
+      T2I-CompBench 过滤
+      保留 Top 2,003 对
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 3928个样本
-    type: document
+      x: 820
+      'y': 420
+  - id: release
+    label: |-
+      汇成 AIGCBench
+      1,000 + 925 + 2,003
+      共 3,928 个样本
+    type: database
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 图生视频模型
+      x: 1080
+      'y': 200
+  - id: i2v
+    label: |-
+      生成 I2V 输出
+      五种受测方法
+      Pika 仅 60 个样本
+      30 WebVid + 30 生成样本
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 11项指标
+      x: 1340
+      'y': 200
+  - id: frame_policy
+    label: |-
+      按指标选择帧策略
+      默认使用前 16 帧
+      DOVER 使用全部帧
+      帧数指标不截断
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 人工验证
+      x: 1600
+      'y': 200
+  - id: metric_route
+    label: 评测数据类型？
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 200
+  - id: image_metrics
+    label: |-
+      图像-文本样本
+      仅使用无参考视频指标
+      没有参考视频
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 20
+  - id: video_metrics
+    label: |-
+      视频-文本样本
+      有参考 + 无参考指标
+      论文：4 个关键帧
+      代码默认：5 个关键帧
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 300
+  - id: automatic
+    label: |-
+      自动指标报告
+      4 维 • 11 个唯一指标
+      Flow + DOVER 实现
+      固定仓库代码中缺失
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2380
+      'y': 140
+  - id: human_sample
+    label: |-
+      人工研究样本
+      每种方法随机 30 个
+      共五种方法
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 560
+  - id: human_vote
+    label: |-
+      42 名参与者
+      票选四个维度中
+      表现最佳的方法
+    type: user
+    size: xl
+    position:
+      x: 1860
+      'y': 560
+  - id: alignment
+    label: |-
+      定性一致性
+      票选结果相对一致
+      未报告相关统计量
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 280
 edges:
-  - from: n1
-    to: n2
+  - from: webvid
+    to: release
     type: primary
-  - from: n2
-    to: n3
+  - from: laion
+    to: release
     type: primary
-  - from: n3
-    to: n4
+  - from: text_corpus
+    to: compose
     type: primary
-  - from: n4
-    to: n5
+  - from: compose
+    to: enrich
     type: primary
-  - from: n5
-    to: n6
+  - from: enrich
+    to: generate
     type: primary
-  - from: n6
-    to: n7
+  - from: generate
+    to: release
     type: primary
-  - from: n7
-    to: n8
+  - from: release
+    to: i2v
     type: primary
+  - from: i2v
+    to: frame_policy
+    type: primary
+  - from: frame_policy
+    to: metric_route
+    type: primary
+  - from: metric_route
+    to: image_metrics
+    type: primary
+    label: 图像-文本
+  - from: metric_route
+    to: video_metrics
+    type: primary
+    label: 视频-文本
+  - from: image_metrics
+    to: automatic
+    type: primary
+  - from: video_metrics
+    to: automatic
+    type: primary
+  - from: i2v
+    to: human_sample
+    type: primary
+  - from: human_sample
+    to: human_vote
+    type: primary
+  - from: automatic
+    to: alignment
+    type: data
+  - from: human_vote
+    to: alignment
+    type: data
 modules: []

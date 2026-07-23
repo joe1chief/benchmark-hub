@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "title": "PreciseWikiQA 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 22,
+    "edges": 23,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "source_evidence",
+      "label": "固定论文与官方证据\narXiv 2504.17550v1 · PDF 2257f8628da9\nGit 80307ac6bc9f\nGoodWiki 7491f6da6439 · 各来源分开",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark_scope",
+      "label": "定义外在幻觉评测\n提出简短事实查询\n假设知识可能存在于训练语料\n推理时不提供维基百科上下文",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "goodwiki_release",
+      "label": "固定GoodWiki来源\n44,754页 · 采集于2023年9月4日\nHF版本7491f6da6439\nParquet LFS哈希2b8b3edebede",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "wikirank_join",
+      "label": "关联WikiRank 2024重要度\n使用每个维基页面的调和中心性\n标题哈希f83bc6ac3f3a\n分数哈希2acf403c1f0e",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "difficulty_bins",
+      "label": "创建10个档位\n0最难 · 9最易\n中心性代理训练数据出现频率\n保持不同运行的难度分布稳定",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "page_sampling",
+      "label": "抽取来源页面池\n每档抽取500页\n每次试验使用5,000个来源页\n每次试验重新生成动态集合",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "section_sampling",
+      "label": "选择一个参考章节\n将每个维基页面切分为章节\n超过两节时去掉最后一节\n从剩余章节随机选择一个",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "question_generation",
+      "label": "生成客观问题\n使用Llama-3.1-70B-Instruct\n简洁 · 无需上下文 · 唯一答案\n问题温度0.7 · Top-p 0.9",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "answer_generation",
+      "label": "独立生成标准答案\n使用同一参考章节\n仅返回一个词或短语\n可回答性调用温度为0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality_gate",
+      "label": "质量门\n不可回答：重新生成\n超过10词：过滤",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "dynamic_set",
+      "label": "形成动态测试集\n每次试验5,000组问答\n不提供固定公开问题列表\n独立生成并执行三次试验",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "gold_audit",
+      "label": "审核生成的标准答案\n人工标注250组生成问答\n97.2%的答案正确\n另行验证评审模型准确率",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "inference_config",
+      "label": "执行被测模型推理\n只发送问题 · 不附上下文\n温度0 · Top-p 1\n使用各模型默认聊天模板\n三次试验 · 自由文本响应",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "model_response",
+      "label": "收集自由文本响应\n允许直接回答或拒答\n不添加维基百科检索上下文\n为两类评审保留完整文本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "abstention_judge",
+      "label": "使用Llama-3.1-70B-Instruct\n拒答JSON\n纠正答案 = 尝试",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "correctness_judge",
+      "label": "判断已尝试答案是否正确\n将响应与标准答案比较\n正确 · 错误 · 不可验证\n后两类都计为幻觉",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score_metrics",
+      "label": "报告三次试验平均指标\n错误拒答率\n尝试回答中的幻觉率\n总体正确回答率",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "data_boundary",
+      "label": "数据版本边界\n固定GoodWiki版本7491f6da6439\nWikiRank下载地址没有版本号\n本次审查以观测字节哈希固定",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "regeneration_drift",
+      "label": "论文与批处理重生成差异\n论文重试不可回答的问题\n批处理以continue直接丢弃\n每个桶使用100个候选缓冲",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "runner_boundary",
+      "label": "固定运行器边界\n模块默认N为5000 · 脚本传入N为1\n未固定抽样随机种子\n被测模型默认最多生成256词元",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "judge_parser_drift",
+      "label": "评审提示与解析器差异\n提示先列三类又要求Yes或No\n解析器接受精确的correct或yes\n其余结果全部标为幻觉",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "license_boundary",
+      "label": "许可证与权利边界\nHalluLens：CC BY-NC 4.0\nGoodWiki数据集：MIT\n不推断WikiRank未声明的权利",
+      "type": "document",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "source_evidence",
+      "to": "benchmark_scope",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-2",
+      "from": "benchmark_scope",
+      "to": "goodwiki_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "goodwiki_release",
+      "to": "wikirank_join",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "wikirank_join",
+      "to": "difficulty_bins",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "difficulty_bins",
+      "to": "page_sampling",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "page_sampling",
+      "to": "section_sampling",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "section_sampling",
+      "to": "question_generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "question_generation",
+      "to": "answer_generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "answer_generation",
+      "to": "quality_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "quality_gate",
+      "to": "question_generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "quality_gate",
+      "to": "dynamic_set",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "dynamic_set",
+      "to": "gold_audit",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-13",
+      "from": "dynamic_set",
+      "to": "inference_config",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "inference_config",
+      "to": "model_response",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "model_response",
+      "to": "abstention_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "abstention_judge",
+      "to": "correctness_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "abstention_judge",
+      "to": "score_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "correctness_judge",
+      "to": "score_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "goodwiki_release",
+      "to": "data_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-20",
+      "from": "quality_gate",
+      "to": "regeneration_drift",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-21",
+      "from": "inference_config",
+      "to": "runner_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-22",
+      "from": "correctness_judge",
+      "to": "judge_parser_drift",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-23",
+      "from": "source_evidence",
+      "to": "license_boundary",
+      "type": "secondary"
+    }
+  ],
+  "modules": []
+}

@@ -7,50 +7,68 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 10,
+    "edges": 9,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "users",
-      "label": "真实用户",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "collect",
-      "label": "千余编辑",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "taxonomy",
-      "label": "11类任务",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "filter",
-      "label": "多样性筛选",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "bench",
-      "label": "606测试",
+      "id": "evidence",
+      "label": "证据快照 · 论文 2504.17761v5\n仓库 4cca05df · 数据 50766778\n论文 GPT-4o/GPT-4.1 冲突\n固定评测器 GPT-4.1",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "models",
-      "label": "编辑模型",
+      "id": "collect",
+      "label": "收集 >1,000 个真实编辑实例\n来源为公开互联网\n包括 Reddit 类用户请求\n保留真实编辑意图",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "taxonomy",
+      "label": "人工划分 11 类任务\n过滤相同目的的指令\n保持任务多样性\n留下 606 组图像与请求",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "VIEScore",
+      "id": "deidentify",
+      "label": "对用户图像去标识化\n在公开引擎中反向搜图\n替换为匹配的公开图像\n无替代图时改指令但保留意图",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "每组配一条英文和中文指令\n606 组发布为 1,212 行\n图像/原图/任务/语言字段\n包含 Intersection_exist 标记",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "generation",
+      "label": "生成编辑后图像\n输入原图 + 英文或中文请求\n覆盖开源与闭源编辑器\n缺失输出文件会被跳过",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "views",
+      "label": "形成两类报告视图\n完整集：每种语言最多 606 例\n失败或缺失输出不计入\n共同交集：英文 434 · 中文 422",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "viescore",
+      "label": "评判原图 + 编辑图 + 请求\nGPT-4.1 与 Qwen2.5-VL-72B\n输出 0–10 的 SC 与 PQ 数组\n任务模式：tie",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "解析分数数组\n重试一次，随后回退或猜测\nSC=列表最小值 · PQ=列表最小值\nO=sqrt(SC × PQ)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "先计算每类均值\n总体为 11 个类别均值\n的非加权平均\n共同交集采用相同规则",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,7 +76,7 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "users",
+      "from": "evidence",
       "to": "collect",
       "type": "primary"
     },
@@ -71,25 +89,43 @@
     {
       "id": "edge-3",
       "from": "taxonomy",
-      "to": "filter",
+      "to": "deidentify",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "filter",
-      "to": "bench",
+      "from": "deidentify",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "bench",
-      "to": "models",
+      "from": "release",
+      "to": "generation",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "models",
-      "to": "score",
+      "from": "generation",
+      "to": "views",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "views",
+      "to": "viescore",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "viescore",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "parser",
+      "to": "aggregate",
       "type": "primary"
     }
   ],

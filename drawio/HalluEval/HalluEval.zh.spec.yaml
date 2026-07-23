@@ -4,76 +4,262 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HalluEval 构建流程
-  description: 对齐论文的 HaluEval 构建流程：任务数据种子、幻觉样本生成、难例过滤、通用查询筛选、 人工标注、35K 样本组装和幻觉识别评测。
-  legend: 实线箭头表示种子选择、采样、过滤、人工标注、数据集组装和识别评测。
+  title: HaluEval 构建流程
+  description: 与论文一致的 HaluEval 自动生成和人工标注双分支，以及分子集评测与发布边界。
+  legend: 官方名称为 HaluEval。论文定义 30,000 条任务样本与 5,000 条通用回答；固定仓库包含全部任务样本， 但 general_data.json 实际仅 4,507 行，本图明确保留该差异。
 nodes:
-  - id: seeds
-    label: 任务种子
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: sample
-    label: 幻觉采样
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: 难例过滤
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: general
-    label: 通用查询
+  - id: evidence
+    label: |-
+      证据与固定版本
+      HaluEval · arXiv 2305.11747v3
+      官方仓库 b7b66e8
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: labels
-    label: 人工标注
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: dataset
-    label: 35K样本
+      x: 40
+      'y': 300
+  - id: task_seeds
+    label: |-
+      抽取 30,000 条任务种子
+      HotpotQA · OpenDialKG · CNN/DailyMail
+      问答、对话、摘要各 10,000 条
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 识别评测
+      x: 340
+      'y': 40
+  - id: sample
+    label: |-
+      ChatGPT 单轮 + 多轮策略
+      模式数：问答 4 · 对话 3 · 摘要 3
+      温度 1.0 · 最多 256 token · top-p 1.0
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 40
+  - id: filter
+    label: |-
+      真值增强筛选
+      比较两个幻觉候选
+      保留最可信且最困难的一个
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 40
+  - id: auto_set
+    label: |-
+      形成 30,000 条任务记录
+      正确输出 + 选中的幻觉输出
+      保存为一个配对
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 40
+  - id: alpaca
+    label: |-
+      从 Alpaca 52K 查询开始
+      每条查询采样 3 个 ChatGPT 回答
+      面向通用指令跟随
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 560
+  - id: divergence
+    label: |-
+      对回答分歧度排序
+      用 BERTScore 计算平均语义相似度
+      保留相似度最低的 5,000 条查询
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: annotate
+    label: |-
+      每条回答由 3 名标注员判断 3 个维度
+      不可验证 · 非事实 · 不相关
+      记录是/否 + 幻觉片段
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: human_set
+    label: |-
+      应用最大/多数投票
+      30 名入选标注员 · Fleiss κ=0.811
+      论文：5,000 条回答 · 977 条为是
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 560
+  - id: release
+    label: |-
+      论文定义的 HaluEval · 共 35,000 条
+      30,000 条任务配对 + 5,000 条通用样本
+      通用字段：hallucination Yes/No
+      + hallucination_spans
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: eval_route
+    label: |-
+      选择发布子集
+      任务配对或通用回答
+    type: decision
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: task_eval
+    label: |-
+      三个任务型评测器
+      问答 · 对话 · 摘要各加载独立指令
+      随机展示正常或幻觉输出
+      温度 0
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 40
+  - id: task_parser
+    label: |-
+      移除句点
+      同时含 Yes 与 No，或两者均无 → 错误
+      仅有单一 substring 命中 → 归一为 Yes 或 No
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 40
+  - id: general_eval
+    label: |-
+      分类已标注的 ChatGPT 回答
+      论文报告 General 准确率
+      发布的 evaluate.py 未提供通用通路
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 560
+  - id: score
+    label: |-
+      报告识别准确率
+      问答 · 对话 · 摘要
+      通用回答
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2740
+      'y': 300
+  - id: artifact_boundary
+    label: |-
+      b7b66e8 官方产物边界
+      论文/README：通用 5,000 条
+      general_data.json：4,507 行
+      三个任务 JSONL 文件各 10,000 行
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 560
 edges:
-  - from: seeds
+  - from: evidence
+    to: task_seeds
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: evidence
+    to: alpaca
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: task_seeds
     to: sample
     type: primary
   - from: sample
     to: filter
     type: primary
   - from: filter
-    to: general
+    to: auto_set
     type: primary
-  - from: general
-    to: labels
+  - from: alpaca
+    to: divergence
+    type: secondary
+  - from: divergence
+    to: annotate
+    type: secondary
+  - from: annotate
+    to: human_set
+    type: secondary
+  - from: auto_set
+    to: release
     type: primary
-  - from: labels
-    to: dataset
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: human_set
+    to: release
+    type: secondary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: release
+    to: eval_route
     type: primary
-  - from: dataset
-    to: eval
+  - from: eval_route
+    to: task_eval
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: eval_route
+    to: general_eval
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: task_eval
+    to: task_parser
+    type: primary
+  - from: task_parser
+    to: score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: general_eval
+    to: score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: score
+    to: artifact_boundary
+    type: data
 modules: []

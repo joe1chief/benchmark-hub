@@ -2,101 +2,166 @@ meta:
   profile: academic-paper
   source: generated
   theme: academic-color
-  layout: horizontal
+  layout: vertical
   routing: orthogonal
   title: BoolQ 构建流程
-  description: 基于论文对齐 BoolQ：沿用 Natural Questions 风格的搜索查询收集流程，筛选可能的是非问题，匹配维基百科页面和人工选段， 标注 yes/no 答案，切分训练/开发/测试集，抽样审核标注质量，并用准确率评测模型。
-  legend: 实线箭头表示数据构建和评测主路径。
+  description: >-
+    按论文对齐的 BoolQ 流程：从匿名 Google 搜索查询中启发式筛出自然的是非问题，仅保留前五条结果含维基百科页面的查询， 经过三步人工判断与标注，再与 Natural Questions
+    的是非题合并，切分并发布训练、开发和测试集，抽样核验标注质量，再以问题—段落输入和准确率进行评测。
+  legend: 实线表示构建与评测主流程；上方分支表示独立的标注质量抽检。
 nodes:
-  - id: nq
-    label: NQ
+  - id: queries
+    label: |-
+      匿名 Google
+      搜索查询
     type: database
-    size: xl
+    size: large
     position:
-      x: 40
-      'y': 160
-  - id: filter
-    label: 筛选
+      x: 850
+      'y': 130
+  - id: yes_no_filter
+    label: |-
+      启发式筛选
+      可能的是非问题
+    type: process
+    size: large
+    position:
+      x: 850
+      'y': 280
+  - id: wiki_gate
+    label: |-
+      前五条结果含
+      维基百科页面
+    type: process
+    size: large
+    position:
+      x: 850
+      'y': 430
+  - id: quality
+    label: |-
+      看页面前判断
+      问题是否合格
+    type: process
+    size: large
+    position:
+      x: 850
+      'y': 580
+  - id: passage
+    label: |-
+      定位证据段落或
+      标记不可回答
+    type: user
+    size: large
+    position:
+      x: 850
+      'y': 730
+  - id: answer
+    label: |-
+      标注“是 / 否”
+      答案
+    type: process
+    size: large
+    position:
+      x: 850
+      'y': 880
+  - id: pool
+    label: |-
+      新采 1.3 万 + NQ 0.3 万
+      合计 1.6 万
+    type: database
+    size: large
+    position:
+      x: 850
+      'y': 1030
+  - id: audit
+    label: |-
+      抽检 110 题
+      标注准确率 90%
+    type: process
+    size: large
+    position:
+      x: 400
+      'y': 1180
+  - id: split
+    label: |-
+      切分构建完成的数据池
+      所有 NQ 来源题目放入训练集
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: wiki
-    label: 维基
+      x: 1100
+      'y': 1220
+  - id: release
+    label: |-
+      发布 BoolQ 数据划分
+      训练 9,427 有标注 • 开发 3,270 有标注
+      测试 3,245 隐藏标签 • 共 15,942 题
     type: database
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: annotate
-    label: 标注
-    type: user
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: passage
-    label: 段落
+      x: 1100
+      'y': 1370
+  - id: evaluation_input
+    label: |-
+      构建与评测边界
+      向模型输入问题 + 支持段落
+      金标“是 / 否”对模型隐藏并用于评分
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: 切分
+      x: 1100
+      'y': 1520
+  - id: model
+    label: |-
+      运行待评模型
+      预测“是”或“否”
     type: process
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
-  - id: audit
-    label: 审核
-    type: decision
-    size: xl
-    position:
-      x: 1600
-      'y': 160
-  - id: models
-    label: 模型
-    type: process
-    size: xl
-    position:
-      x: 1860
-      'y': 70
-  - id: accuracy
-    label: 准确率
+      x: 1100
+      'y': 1670
+  - id: score
+    label: 模型准确率
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 250
+      x: 1100
+      'y': 1820
 edges:
-  - from: nq
-    to: filter
+  - from: queries
+    to: yes_no_filter
     type: primary
-  - from: filter
-    to: wiki
+  - from: yes_no_filter
+    to: wiki_gate
     type: primary
-  - from: wiki
-    to: annotate
+  - from: wiki_gate
+    to: quality
     type: primary
-  - from: annotate
+  - from: quality
     to: passage
     type: primary
   - from: passage
+    to: answer
+    type: primary
+  - from: answer
+    to: pool
+    type: primary
+  - from: pool
+    to: audit
+    type: data
+  - from: pool
     to: split
     type: primary
   - from: split
-    to: audit
+    to: release
     type: primary
-  - from: audit
-    to: models
+  - from: release
+    to: evaluation_input
     type: primary
-  - from: audit
-    to: accuracy
+  - from: evaluation_input
+    to: model
     type: primary
-  - from: models
-    to: accuracy
+  - from: model
+    to: score
     type: primary
 modules: []

@@ -1,92 +1,663 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongVideoBench Build Process
+  canvas: auto
+  grid:
+    size: 8
+    snap: true
+  title: LongVideoBench Build, Release, and Evaluation Process
   description: >-
-    Paper-aligned construction of LongVideoBench: web videos are collected across duration and content groups, filtered
-    by subtitle and quality criteria, manually curated, annotated with referring-reasoning multiple-choice questions,
-    and evaluated by accuracy.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Evidence-bounded reconstruction from the official NeurIPS 2024 Datasets and Benchmarks paper, official loader commit
+    fc3c553250cfee6853a722f9b181f1b69f478426, main dataset snapshot 60d1c89c1919a198b73be39c2babb213b29d6a5c, and public
+    metadata snapshot cdf3444602208c95f453e7683583a077ce38ddbf.
+  legend: >-
+    Solid arrows show construction, release, inference, and scoring. Dotted or dashed arrows mark access and
+    reproducibility boundaries. Paper-reported video counts are separated from counts observed in the pinned public
+    metadata; test labels and the native test scorer remain withheld.
 nodes:
-  - id: sources
-    label: Video Sources
-    type: database
+  - id: b1
+    label: |-
+      B1 · Define Coverage Grid
+      4 Non-contiguous Duration Bands
+      (8,15] · (15,60] Seconds
+      (180,600] · (900,3600] Seconds
+      10 Content Categories
+    type: process
+    module: build
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: subs
-    label: Sub Filter
-    type: process
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b2
+    label: |-
+      B2 · Download Web Videos
+      119 Channels · 99 Landscape + 20 Portrait
+      Official Platform APIs · April 2024
+      Accept Resolution ≥ 720P
+    type: database
+    module: build
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: whisper
-    label: Whisper Subs
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: quality
-    label: Quality Score
+      x: 320
+      'y': 192
+    style:
+      fontSize: 9
+  - id: d1
+    label: Platform Supplies Transcript?
     type: decision
+    module: build
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: manual
-    label: Manual Filter
+      x: 600
+      'y': 192
+  - id: b3
+    label: |-
+      Provided-transcript Route
+      Reject Missing Transcripts
+      Reject Non-English Transcripts
+      Keep Timestamped English Text
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 880
+      'y': 64
+    style:
+      fontSize: 9
+  - id: b4
+    label: |-
+      No-transcript Route
+      Generate English Subtitles
+      Whisper-V3-Large
+      Keep Timestamps
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 880
+      'y': 320
+    style:
+      fontSize: 9
+  - id: b5
+    label: |-
+      B3 · Sample + Quality Filter
+      Cover Topics / 10 Categories Uniformly
+      Q-Align Score in [0,1]
+      Keep Only Score > 0.25
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 1160
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b6
+    label: |-
+      B4 · Human Video Filter
+      Reject Still Frames / Incomplete Subtitles
+      Paper Final · 3,763 Videos
+      Videos + English Subtitles
+    type: database
+    module: build
+    size: xl
+    position:
+      x: 1440
+      'y': 192
+    style:
+      fontSize: 9
+  - id: a1
+    label: |-
+      B5 · Train Experienced Contractors
+      Controlled Lab · Category Training
+      Show Timestamp-aligned Subtitles
+      Watch Full Video before Annotation
     type: user
+    module: build
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: queries
-    label: Ref Queries
+      x: 1440
+      'y': 688
+    style:
+      fontSize: 9
+  - id: a2
+    label: |-
+      B6 · Author Referring-reasoning MCQs
+      L1 Perception + L2 Relation
+      17 Fine-grained Categories
+      4–5 Choices · 3–4 Relevant Distractors
     type: document
+    module: build
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: mcq
-    label: Human MCQs
+      x: 1160
+      'y': 688
+    style:
+      fontSize: 9
+  - id: a3
+    label: |-
+      B7 · Ground Referred Context
+      Include + Highlight Referring Query
+      Label Frame Index for Every Moment
+      Single or Multiple Moments
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 880
+      'y': 688
+    style:
+      fontSize: 9
+  - id: a4
+    label: |-
+      B8 · Three-role Quality Control
+      Primary Annotates + Rejects Video
+      Examiner Checks Category / Rules
+      Reviser Fixes Flagged Items
+      20% Found Problematic + Revised
+    type: user
+    module: build
+    size: xl
+    position:
+      x: 600
+      'y': 688
+    style:
+      fontSize: 9
+  - id: r1
+    label: |-
+      R1 · Paper Split Contract
+      No Train · Validation 20% / Test 80%
+      Val · 1,337 Q / 752 Videos
+      Test · 5,341 Q / 3,011 Videos
+      Test Labels Hidden
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 320
+      'y': 688
+    style:
+      fontSize: 9
+  - id: r2
+    label: |-
+      R2 · Pinned Meta · cdf34446
+      6,678 Rows · Val 1,337 / Test 5,341
+      Unique Video IDs · Val 753 / Test 3,008
+      Paper Video Counts · 752 / 3,011
+      Data-release Drift Is Explicit
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 40
+      'y': 688
+    style:
+      fontSize: 8
+  - id: r3
+    label: |-
+      R3 · Main Dataset · 60d1c89c
+      Gated Access · CC BY-NC-SA 4.0
+      Video / Subtitle Archives + JSON
+      Val Labels Public · Test Label = −1
+      Non-commercial Use Only
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 40
+      'y': 944
+    style:
+      fontSize: 8
+  - id: r4
+    label: |-
+      Release / Evaluation Boundary
+      GitHub Loader · fc3c5532
+      No Native Scorer in Pinned Repo
+      README Points to Mutable LMMs-Eval main
+      Test Submit by Email · Hidden Scoring
     type: document
+    module: release
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: Accuracy
-    type: terminal
+      x: 320
+      'y': 944
+    style:
+      fontSize: 8
+  - id: e1
+    label: |-
+      E1 · Load One Split
+      Raw MP4 + Subtitle JSON + Metadata
+      Question + 4–5 Options
+      Val correct_choice Is 0–4 · Test Uses −1
+    type: database
+    module: evaluate
+    size: xl
+    position:
+      x: 40
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: e2
+    label: |-
+      E2 · Uniformly Sample Frames
+      num_frames = min(Budget, int(Duration))
+      At Most 1 Frame / Second
+      Paper Sweeps 1–256 on Validation
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 320
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: e3
+    label: |-
+      E3 · Interleave Frames + Text
+      Order by Subtitle Mid-timestamp
+      Pinned Loader Keeps Text Only When
+      a Sampled Frame Covers Its Time Span
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 600
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: e4
+    label: |-
+      E4 · Append MCQ Prompt
+      Question + Lettered Options
+      Request the Option Letter Directly
+      No Chain-of-Thought Requested
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 880
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: d2
+    label: Evaluation Split?
+    type: decision
+    module: evaluate
+    size: xl
+    position:
+      x: 1160
+      'y': 1280
+  - id: e5
+    label: |-
+      Validation · Select Setting
+      Zero-shot · Compare Frame Budgets
+      Choose Optimal Setting per LMM
+      Labels Are Public
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1440
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: e6
+    label: |-
+      Test · Fixed Chosen Setting
+      Zero-shot on 5,341 Items
+      Return A / B / C / D / E
+      Submit JSON · Test Labels Hidden
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1440
+      'y': 1440
+    style:
+      fontSize: 9
+  - id: m1
+    label: |-
+      M1 · Multiple-choice Accuracy
+      Correct Predictions / Total Items
+      No Auxiliary Judge Model
+      Submission Accepts Letter-first Strings
+      Exact Test Scorer Is Not Released
+    type: formula
+    module: evaluate
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 1280
+    style:
+      fontSize: 8
+  - id: m2
+    label: |-
+      M2 · Report + Leaderboard
+      Validation Total + Test Total
+      Four Duration-band Accuracies
+      17 Question-category Accuracies
+      Referring-query Depth Analysis
+    type: terminal
+    module: evaluate
+    size: xl
+    position:
+      x: 2000
+      'y': 1280
+    style:
+      fontSize: 9
 edges:
-  - from: sources
-    to: subs
+  - from: b1
+    to: b2
     type: primary
-  - from: subs
-    to: whisper
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b2
+    to: d1
     type: primary
-  - from: whisper
-    to: quality
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d1
+    to: b3
     type: primary
-  - from: quality
-    to: manual
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d1
+    to: b4
     type: primary
-  - from: manual
-    to: queries
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b3
+    to: b5
     type: primary
-  - from: queries
-    to: mcq
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b4
+    to: b5
     type: primary
-  - from: mcq
-    to: metric
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b5
+    to: b6
     type: primary
-modules: []
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b6
+    to: a1
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a1
+    to: a2
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a2
+    to: a3
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a3
+    to: a4
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a4
+    to: r1
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r1
+    to: r2
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r2
+    to: r3
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r3
+    to: r4
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r3
+    to: e1
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e1
+    to: e2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e2
+    to: e3
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e3
+    to: e4
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e4
+    to: d2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d2
+    to: e5
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d2
+    to: e6
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e5
+    to: m1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e6
+    to: m1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: m1
+    to: m2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+modules:
+  - id: build
+    label: Build
+    color: $primaryLight
+  - id: release
+    label: Release
+    color: $secondaryLight
+  - id: evaluate
+    label: Evaluate
+    color: $accentLight

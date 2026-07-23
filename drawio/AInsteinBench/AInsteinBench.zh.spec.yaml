@@ -4,117 +4,259 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AInsteinBench 构建流程
-  description: 基于 arXiv:2512.21373 对齐的 AInsteinBench 科学代码基准构建与评估流程。
-  legend: 实线表示从科学仓库到任务构建和可执行评估的主流程；虚线表示特征消融与专家复核反馈路径。
+  title: AInsteinBench 筛选与可执行评测
+  description: 按论文区分真实仓库缺陷任务与已明确披露的 Einstein Toolkit 合成任务；两类候选统一进入领域专家验证门，再发布 244 项任务并用 CodeAct 评测。
+  legend: 实线表示必经构建或评测流程；虚线表示仅在功能请求缺少接口信息时使用的条件式 Minimal API 补充。
 nodes:
-  - id: repositories
+  - id: project_selection
     label: |-
-      科学代码仓库
-      PySCF、Qiskit、RDKit
-      AMReX、OpenMM、Einstein Toolkit
+      选择 6 个代码仓库
+      领域认可 • 覆盖广度
+      活跃维护 • 可复现测试
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: pr_crawl
+      'y': 80
+  - id: crawl_all_prs
     label: |-
-      PR 爬取
-      issue 描述、base commit
-      fix patch 与测试更新
+      抓取全部 PR
+      Issue • 基础提交 • 修复/测试补丁
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: feature_ablation
+      x: 320
+      'y': 80
+  - id: pr_filter
     label: |-
-      特征任务合成
-      消融科学模块
-      补充测试相关 API 文档
+      保留已合并科学/数值缺陷
+      必须包含测试更新
+      排除文档/重构/大型功能
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: environment
+      x: 600
+      'y': 80
+  - id: historical_env
     label: |-
-      环境重建
-      历史依赖栈
-      隔离 Docker 测试
+      重建历史 Docker
+      PR 同期依赖
+      隔离且确定性测试
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: filtering
+      x: 880
+      'y': 80
+  - id: f2p
     label: |-
-      fail-to-pass 过滤
-      base 通过、patched 失败
-      fixed patch 通过
-    type: decision
+      失败转成功门
+      基础测试通过 • 测试补丁失败
+      修复补丁通过
+    type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: expert_review
+      x: 1160
+      'y': 80
+  - id: minimal_api
     label: |-
-      领域专家复核
-      科学相关性
-      测试强度与难度分层
-    type: user
+      条件式功能补充
+      从修复差异中仅保留测试使用符号
+      类型化 Minimal API
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: dataset
+      x: 1440
+      'y': 240
+  - id: repo_candidate
     label: |-
-      AInsteinBench 任务
-      244 个问题
-      真实 PR 与特征实现
+      仓库抓取候选
+      可复现 Issue + 测试
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: et_modules
+    label: |-
+      Einstein Toolkit 模块
+      已明确披露的合成来源
+      其他仓库使用情况未披露
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: agent_eval
+      x: 40
+      'y': 480
+  - id: ablation_prompt
     label: |-
-      coding agent 评估
-      查看、编辑、跑测试
-      solve rate 与失败分析
+      消融源码模块
+      文档 + 接口
+      保留代码上下文
+    type: process
+    size: xl
+    position:
+      x: 400
+      'y': 480
+  - id: simulation_tests
+    label: |-
+      行为测试验证
+      仿真 • 参数 • 输出检查
+      接受任意通过测试的实现
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 480
+  - id: synthetic_candidate
+    label: |-
+      合成候选
+      可执行功能任务
+    type: document
+    size: xl
+    position:
+      x: 1120
+      'y': 480
+  - id: issue_review
+    label: |-
+      统一专家 Issue 审核
+      科学相关 • 清晰 • 可复现
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: difficulty
+    label: |-
+      10 位领域 PhD 专家
+      科学 1–5 • 工程 1–5
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: test_audit
+    label: |-
+      覆盖审计
+      加强覆盖不足
+      放宽过度覆盖
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: release
+    label: |-
+      专家复核后发布
+      244 项任务 • 6 个仓库
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: task
+    label: |-
+      初始化可执行任务
+      仓库快照 + 依赖
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 640
+  - id: agent
+    label: |-
+      CodeAct 计划-行动循环
+      检查 • 编辑 • 复现 • 改进
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 640
+  - id: evaluation
+    label: |-
+      运行规定测试
+      全部通过才算解决
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 640
+  - id: resolved
+    label: |-
+      问题解决率
+      成功任务数 / 总任务数
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 640
+  - id: analyses
+    label: |-
+      报告分项
+      领域 • 定位 • 难度
+      效率 / 迭代次数
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 640
 edges:
-  - from: repositories
-    to: pr_crawl
+  - from: project_selection
+    to: crawl_all_prs
     type: primary
-  - from: repositories
-    to: feature_ablation
-    type: data
-  - from: pr_crawl
-    to: environment
+  - from: crawl_all_prs
+    to: pr_filter
     type: primary
-  - from: feature_ablation
-    to: environment
-    type: data
-  - from: environment
-    to: filtering
+  - from: pr_filter
+    to: historical_env
     type: primary
-  - from: filtering
-    to: expert_review
+  - from: historical_env
+    to: f2p
     type: primary
-  - from: expert_review
-    to: filtering
+  - from: f2p
+    to: repo_candidate
+    type: primary
+  - from: f2p
+    to: minimal_api
     type: optional
-    label: 调整测试强度
-  - from: expert_review
-    to: dataset
+  - from: minimal_api
+    to: repo_candidate
+    type: optional
+  - from: et_modules
+    to: ablation_prompt
     type: primary
-  - from: dataset
-    to: agent_eval
+  - from: ablation_prompt
+    to: simulation_tests
+    type: primary
+  - from: simulation_tests
+    to: synthetic_candidate
+    type: primary
+  - from: repo_candidate
+    to: issue_review
+    type: primary
+  - from: synthetic_candidate
+    to: issue_review
+    type: primary
+  - from: issue_review
+    to: difficulty
+    type: primary
+  - from: difficulty
+    to: test_audit
+    type: primary
+  - from: test_audit
+    to: release
+    type: primary
+  - from: release
+    to: task
+    type: primary
+  - from: task
+    to: agent
+    type: primary
+  - from: agent
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: resolved
+    type: primary
+  - from: resolved
+    to: analyses
     type: primary
 modules: []

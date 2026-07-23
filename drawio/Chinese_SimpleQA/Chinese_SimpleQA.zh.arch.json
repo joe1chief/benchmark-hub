@@ -7,57 +7,87 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 13,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
       "id": "knowledge",
-      "label": "知识文本",
-      "type": "cloud",
+      "label": "知识密集型中文内容\n6 个一级主题 • 99 个子主题\n维基百科及其他知识领域",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "quality",
-      "label": "质量过滤",
-      "type": "decision",
+      "id": "quality_filter",
+      "label": "抽取 + 过滤来源文本\n质量评估模型\n移除低质量内容",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "LLM问答",
+      "id": "generate",
+      "label": "GPT-4o-0806 生成\n简短事实问题\n+ 生成的参考答案",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "criteria",
-      "label": "标准检查",
-      "type": "decision",
+      "label": "GPT-4o-0806 标准检查\n客观 • 唯一 • 不随时间变化 • 有挑战性\n截至 2023-12-31 可回答",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "rag",
-      "label": "RAG验证",
+      "label": "RAG 事实验证\nLlamaIndex + Google + Bing\n存在矛盾证据则拒绝",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "difficulty",
-      "label": "难度过滤",
-      "type": "decision",
+      "label": "四模型难度门\nGPT-4o • Llama-3-70B\nQwen2.5-72B • GLM-4-Plus\n全部四个模型答对则丢弃",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "人工复核",
+      "id": "attrition",
+      "label": "论文报告的候选缩减账目\n10,000 → 难度筛后约 6,310\n规则 + RAG 再移除 2,840\n约 3,470 进入人工复核",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "dual_human",
+      "label": "两名独立标注者\n任一认为不符合标准即丢弃\n各自检索答案并提供\n至少 2 个权威 URL",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "final",
-      "label": "最终问答",
-      "type": "document",
+      "id": "adjudicate",
+      "label": "答案裁决\n标注者独立检索\n答案不一致 → 第三名标注者",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agreement",
+      "label": "最终一致性质量门\n人工答案必须与生成的\n参考答案完全一致",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "Chinese SimpleQA\n3,000 道中文问题\n人工验证最终集",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "grader",
+      "label": "三分类判分器\n正确 • 未尝试 • 错误\nCO • NA • IN",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "准确率 = CO / (CO + NA + IN)\nCGA = CO / (CO + IN)\nF = 2 × CO × CGA\n/ (CO + CGA)",
+      "type": "terminal",
       "size": "xl"
     }
   ],
@@ -65,18 +95,18 @@
     {
       "id": "edge-1",
       "from": "knowledge",
-      "to": "quality",
+      "to": "quality_filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "quality",
-      "to": "qa",
+      "from": "quality_filter",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "qa",
+      "from": "generate",
       "to": "criteria",
       "type": "primary"
     },
@@ -95,13 +125,43 @@
     {
       "id": "edge-6",
       "from": "difficulty",
-      "to": "human",
+      "to": "attrition",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "human",
-      "to": "final",
+      "from": "attrition",
+      "to": "dual_human",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dual_human",
+      "to": "adjudicate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "adjudicate",
+      "to": "agreement",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "agreement",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "dataset",
+      "to": "grader",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "grader",
+      "to": "metrics",
       "type": "primary"
     }
   ],

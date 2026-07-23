@@ -1,0 +1,357 @@
+{
+  "version": 1,
+  "title": "MathCanvas-Bench 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 26,
+    "edges": 28,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "collect",
+      "label": "收集多模态数学题\n来源为教材、考试与网站\n覆盖初中与高中\n初始约 63.2 万组题目与解答",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "relevance_review",
+      "label": "第一轮 GPT-5 审查\n判断图像是否参与推理\n将数学公式统一规范为\nLaTeX 格式",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "relevance_gate",
+      "label": "图像是否对推理过程\n确有作用？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "quality_review",
+      "label": "第二轮 GPT-5 审查\n检查正确性与明确答案\n检查图像清晰度\n排除纯绘图任务",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality_gate",
+      "label": "正确、有答案、图像清晰\n且并非纯绘图任务？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "deduplicate",
+      "label": "对文本和图像去重\n保留唯一题目—解答对\n约 30.3 万 → 约 22.2 万\n论文未公开去重阈值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "image_enhance",
+      "label": "标准化全部图像\n使用 SwinIR 超分辨率\n统一缩放至 512 × 512\n保持题目与解答对应关系",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "taxonomy",
+      "label": "使用 GPT-4.1 分类\n划分八个主要知识类别\n添加细粒度子类别\n为按类别抽样做准备",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality_reject",
+      "label": "从整理语料中剔除\n图像无关或质量检查失败",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "mcq_gate",
+      "label": "是否为多项选择题？\n基准候选资格门",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "weighted_sample",
+      "label": "执行基准加权抽样\n类别原占比取 0.7 次方\n提升稀有类别的代表性\n目标规模约三千题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sample_gate",
+      "label": "是否被加权抽入\n基准样本？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark_release",
+      "label": "发布 MathCanvas-Bench\n论文概称 3K 题\n公开固定版本为 3,079 条\n按八个测试类别发布",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "training_candidates",
+      "label": "形成训练候选集\n不具基准资格的选择题\n加未抽中的开放式题\n仅对本分支执行泄漏检查",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "leakage_gate",
+      "label": "与任一基准题的五元词组\nJaccard 相似度是否大于 0.4？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "training_release",
+      "label": "发布 MathCanvas-Instruct\n训练集实际 218,604 题\n论文概称约 21.9 万题\n未检出与测试题近似项",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "leakage_remove",
+      "label": "从训练集中移除\n相似度超过 0.4\n基准题本身保持不变",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "model_output",
+      "label": "运行待评多模态模型\n输入题目与初始图像\n生成图文交错推理过程\n并给出最终答案",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "judge_input",
+      "label": "准备官方裁判输入\n仅拼接文本推理步骤\n加入题目与标准答案\n不向裁判发送生成图像",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gpt_judge",
+      "label": "使用 GPT-4.1-2025-04-14 裁判\n解析带编号标签的标准答案\n从全文匹配提取预测答案\n缺失答案记为空值且判错",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "valid_evaluation_gate",
+      "label": "API 与结构化解析成功\n且答案部分数为一至四？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "parts_gate",
+      "label": "标准答案包含\n几个答案部分？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "invalid_evaluation",
+      "label": "不计入指标分母\nAPI、结构化解析失败或部分数不支持\n分别记录错误数或跳过数",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "single_score",
+      "label": "评分单个答案部分\n正确记 1，错误记 0\n加权分等于二元得分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "multi_score",
+      "label": "评分二至四个答案部分\n后一项权重为前一项的 1.3 倍\n归一化使权重和为 1\n累加所有正确项权重",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "汇总官方指标\n分母为 valid_evaluations\n完整准确率取全答对指示均值\n加权准确率取逐题得分均值",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "collect",
+      "to": "relevance_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "relevance_review",
+      "to": "relevance_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "relevance_gate",
+      "to": "quality_review",
+      "type": "primary",
+      "label": "是 · 保留约 36.7 万"
+    },
+    {
+      "id": "edge-4",
+      "from": "relevance_gate",
+      "to": "quality_reject",
+      "type": "optional",
+      "label": "否 · 剔除"
+    },
+    {
+      "id": "edge-5",
+      "from": "quality_review",
+      "to": "quality_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "quality_gate",
+      "to": "deduplicate",
+      "type": "primary",
+      "label": "是 · 保留约 30.3 万"
+    },
+    {
+      "id": "edge-7",
+      "from": "quality_gate",
+      "to": "quality_reject",
+      "type": "optional",
+      "label": "否 · 剔除"
+    },
+    {
+      "id": "edge-8",
+      "from": "deduplicate",
+      "to": "image_enhance",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "image_enhance",
+      "to": "taxonomy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "taxonomy",
+      "to": "mcq_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "mcq_gate",
+      "to": "training_candidates",
+      "type": "optional",
+      "label": "是 · 仅作训练"
+    },
+    {
+      "id": "edge-12",
+      "from": "mcq_gate",
+      "to": "weighted_sample",
+      "type": "primary",
+      "label": "否 · 基准候选"
+    },
+    {
+      "id": "edge-13",
+      "from": "weighted_sample",
+      "to": "sample_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "sample_gate",
+      "to": "benchmark_release",
+      "type": "primary",
+      "label": "已抽中 · 3,079 条"
+    },
+    {
+      "id": "edge-15",
+      "from": "sample_gate",
+      "to": "training_candidates",
+      "type": "optional",
+      "label": "未抽中 · 转训练"
+    },
+    {
+      "id": "edge-16",
+      "from": "training_candidates",
+      "to": "leakage_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "leakage_gate",
+      "to": "leakage_remove",
+      "type": "optional",
+      "label": "大于 0.4 · 移除"
+    },
+    {
+      "id": "edge-18",
+      "from": "leakage_gate",
+      "to": "training_release",
+      "type": "primary",
+      "label": "不超过 0.4 · 保留"
+    },
+    {
+      "id": "edge-19",
+      "from": "benchmark_release",
+      "to": "model_output",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "model_output",
+      "to": "judge_input",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "judge_input",
+      "to": "gpt_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "gpt_judge",
+      "to": "valid_evaluation_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "valid_evaluation_gate",
+      "to": "parts_gate",
+      "type": "primary",
+      "label": "是 · 有效评测"
+    },
+    {
+      "id": "edge-24",
+      "from": "valid_evaluation_gate",
+      "to": "invalid_evaluation",
+      "type": "optional",
+      "label": "否 · 不计入分母"
+    },
+    {
+      "id": "edge-25",
+      "from": "parts_gate",
+      "to": "single_score",
+      "type": "primary",
+      "label": "一个部分"
+    },
+    {
+      "id": "edge-26",
+      "from": "parts_gate",
+      "to": "multi_score",
+      "type": "primary",
+      "label": "二至四个部分"
+    },
+    {
+      "id": "edge-27",
+      "from": "single_score",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "multi_score",
+      "to": "metrics",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

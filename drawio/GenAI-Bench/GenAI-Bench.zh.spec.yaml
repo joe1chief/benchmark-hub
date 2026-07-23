@@ -1,0 +1,145 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: GenAI-Bench 构建流程
+  description: 固定版本的 GenAI-Arena 偏好采集、过滤、v1 发布、多模态裁判、解析器和准确率流程。
+  legend: 虚线箭头表示固定版本证据；实线箭头表示采集与评测。v1 的 test_v1 不与后续 test 或同名 1,600 提示基准混合。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2406.04485v4
+      仓库 f0b0334d · 数据 7981a194
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 100
+  - id: arena_inputs
+    label: |-
+      集成 35 个开源生成模型
+      图像生成 · 编辑 · 视频生成
+      实时 + ImagenHub/VBench 提示
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 100
+  - id: pair_vote
+    label: |-
+      匿名同任务成对对战
+      左优 / 右优 / 同好 / 均差
+      身份被揭示则该票作废
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 100
+  - id: vote_qc
+    label: |-
+      过滤并由专家抽检
+      抽样 350：有效 303
+      NSFW 17 · 技术问题 30
+      明确合理231 · 模糊51 · 错误21
+      合理或模糊：93.07%
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 100
+  - id: v1_release
+    label: |-
+      发布 v1 分片 test_v1
+      图像 1,735 · 编辑 919
+      视频 1,069 · 合计 3,723
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 100
+  - id: version_boundary
+    label: |-
+      后续 test 分片单独处理
+      3,192 + 983 + 1,911 = 6,086
+      官方代码固定加载 test_v1
+      两个版本不可合并
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 100
+  - id: judge_input
+    label: |-
+      组装多模态裁判输入
+      提示 + 输出 A + 输出 B
+      视频最多取 8 帧
+      视频原生输入或采样帧输入
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 400
+  - id: judge_prompt
+    label: |-
+      使用分任务评分准则
+      提示遵循 · 自然度
+      伪影 · 美学 · 过度编辑
+      时序一致性 · 视频动态性
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 400
+  - id: parser
+    label: |-
+      解析首个贪婪 [[.*]] 匹配
+      接受 A>>B/A>B 与 B>>A/B>A
+      同好：A=B 或 A=B=Good
+      均差：A=B 或 A=B=Bad
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 400
+  - id: metric
+    label: |-
+      布尔准确率均值
+      分任务 + 三任务平均
+      Bradley–Terry 排名另行计算
+    type: terminal
+    size: xl
+    position:
+      x: 560
+      'y': 400
+edges:
+  - from: evidence
+    to: arena_inputs
+    type: data
+  - from: arena_inputs
+    to: pair_vote
+    type: primary
+  - from: pair_vote
+    to: vote_qc
+    type: primary
+  - from: vote_qc
+    to: v1_release
+    type: primary
+  - from: v1_release
+    to: version_boundary
+    type: primary
+  - from: version_boundary
+    to: judge_input
+    type: primary
+  - from: judge_input
+    to: judge_prompt
+    type: primary
+  - from: judge_prompt
+    to: parser
+    type: primary
+  - from: parser
+    to: metric
+    type: primary
+modules: []

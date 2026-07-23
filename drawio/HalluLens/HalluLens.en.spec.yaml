@@ -6,11 +6,12 @@ meta:
   routing: orthogonal
   title: HalluLens Dynamic Test-Set Construction
   description: >-
-    Three dynamic extrinsic-hallucination construction branches from arXiv v1; LongWiki answerability and minimum-length
-    failures are discarded, while inference and scoring stay outside the figure.
+    Three dynamic extrinsic-hallucination construction branches from arXiv:2504.17550v1; the PreciseWikiQA main-paper
+    path regenerates unanswerable questions, while inference and scoring stay outside the figure.
   legend: >-
-    PWQA means PreciseWikiQA; solid arrows show the disclosed construction order, dashed arrows lead to discard, and
-    task endpoints are separate outputs rather than data splits.
+    PWQA means PreciseWikiQA. Paper Section 3.1.2 regenerates an unanswerable PreciseWikiQA question, but the official
+    batch code filters it with continue; this paper-code discrepancy is explicit here. Answers over ten words are
+    filtered. LongWiki retains answerable prompts whose mock answers have at least four sentences.
 nodes:
   - id: scope
     label: Dynamic sets
@@ -40,104 +41,139 @@ nodes:
     position:
       x: 624
       'y': 64
-  - id: precise_qa
-    label: Generate Q / A
+  - id: precise_question
+    label: Generate question
     type: process
     size: large
     position:
       x: 816
+      'y': 64
+  - id: precise_answerability
+    label: Answerable?
+    type: decision
+    size: large
+    position:
+      x: 1008
+      'y': 64
+  - id: precise_answer
+    label: Produce answer
+    type: process
+    size: large
+    position:
+      x: 1200
+      'y': 64
+  - id: precise_length
+    label: At most 10 words?
+    type: decision
+    size: large
+    position:
+      x: 1392
       'y': 64
   - id: precise_final
     label: PWQA · 5,000
     type: terminal
     size: large
     position:
-      x: 1008
+      x: 1584
       'y': 64
+  - id: precise_discard
+    label: Filter sample
+    type: terminal
+    size: large
+    position:
+      x: 1584
+      'y': 176
+  - id: precise_retry
+    label: Regenerate question
+    type: process
+    size: large
+    position:
+      x: 1008
+      'y': 176
   - id: long_source
     label: Levels 5–9
     type: database
     size: large
     position:
       x: 432
-      'y': 224
+      'y': 320
   - id: long_prompt
     label: Prompt gen.
     type: process
     size: large
     position:
       x: 624
-      'y': 224
+      'y': 320
   - id: long_answerability
     label: Answerable?
     type: decision
     size: large
     position:
       x: 816
-      'y': 224
+      'y': 320
   - id: long_mock
     label: Mock answer
     type: process
     size: large
     position:
       x: 1008
-      'y': 224
+      'y': 320
   - id: long_filter
     label: 4+ sentences?
     type: decision
     size: large
     position:
       x: 1200
-      'y': 224
+      'y': 320
   - id: long_final
     label: LongWiki · 250
     type: terminal
     size: large
     position:
       x: 1392
-      'y': 224
+      'y': 320
   - id: long_discard
     label: Discard sample
     type: terminal
     size: large
     position:
       x: 1008
-      'y': 368
+      'y': 464
   - id: nonexist_sources
     label: DBs + seeds
     type: database
     size: large
     position:
       x: 432
-      'y': 560
+      'y': 672
   - id: subtask_split
     label: 2 name methods
     type: process
     size: large
     position:
       x: 624
-      'y': 560
+      'y': 672
   - id: mixed
     label: Mix + DB check
     type: process
     size: large
     position:
       x: 816
-      'y': 496
+      'y': 608
   - id: generated
     label: LLM + web
     type: process
     size: large
     position:
       x: 816
-      'y': 624
+      'y': 736
   - id: nonexist_final
     label: Refusal task
     type: terminal
     size: large
     position:
       x: 1008
-      'y': 560
+      'y': 672
 edges:
   - from: scope
     to: task_split
@@ -155,11 +191,32 @@ edges:
     to: precise_bins
     type: primary
   - from: precise_bins
-    to: precise_qa
+    to: precise_question
     type: primary
-  - from: precise_qa
+  - from: precise_question
+    to: precise_answerability
+    type: primary
+  - from: precise_answerability
+    to: precise_answer
+    type: primary
+  - from: precise_answerability
+    to: precise_retry
+    type: optional
+  - from: precise_retry
+    to: precise_question
+    type: optional
+    waypoints:
+      - x: 896
+        'y': 216
+  - from: precise_answer
+    to: precise_length
+    type: primary
+  - from: precise_length
     to: precise_final
     type: primary
+  - from: precise_length
+    to: precise_discard
+    type: optional
   - from: long_source
     to: long_prompt
     type: primary
@@ -180,13 +237,13 @@ edges:
     type: optional
     waypoints:
       - x: 816
-        'y': 368
+        'y': 464
   - from: long_filter
     to: long_discard
     type: optional
     waypoints:
       - x: 1200
-        'y': 368
+        'y': 464
   - from: nonexist_sources
     to: subtask_split
     type: primary

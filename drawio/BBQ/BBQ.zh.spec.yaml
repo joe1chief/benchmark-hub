@@ -1,0 +1,221 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: BBQ 构建流程
+  description: 对齐论文的 BBQ 流程：作者依据有出处的社会偏见手写九类模板，把每个模板扩展为模糊/消歧和负向/非负向四种条件，平衡标签顺序并提供 UNKNOWN 选项，以五人至少四人一致验证每个模板，最终报告准确率与分情境偏见分数。
+  legend: 每个模板从四种条件各抽一题，每题由 5 人判断；四题都至少达到 4/5 才通过，虚线表示修订后完整重验四题。
+nodes:
+  - id: bias_sources
+    label: |-
+      有出处的有害偏见资料
+      研究 / 新闻 / Wikipedia
+      第一手伤害记录
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 220
+  - id: templates
+    label: |-
+      作者手写模板
+      九类偏见维度
+      + 两类交叉偏见
+      每类至少 25 个模板
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 220
+  - id: conditions
+    label: |-
+      四条件题簇
+      歧义 / 消歧情境
+      负向 / 非负向问题
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: expansion
+    label: |-
+      槽位 + 顺序扩展
+      平衡偏见目标 / 非目标标签
+      每题两个人物
+      10 种 UNKNOWN 表达之一
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: validation
+    label: |-
+      抽取四道验证题
+      每个模板四种条件各抽一题
+      每题由 5 名独立评审者判断
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: agreement
+    label: |-
+      四题均 ≥4/5？
+      通过 / 修订
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: revise
+    label: |-
+      修改失败模板
+      重新生成全部四种条件
+      重新抽样并评审四道题
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 20
+  - id: dataset
+    label: |-
+      发布 BBQ
+      58,492 道唯一三选一问题
+      平衡的四条件扩展
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 220
+  - id: model
+    label: |-
+      问答模型
+      选择人物或 UNKNOWN
+      与答案选项做精确匹配
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: ambiguous
+    label: |-
+      模糊情境
+      信息不足
+      正确答案 = UNKNOWN
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 420
+  - id: disambiguated
+    label: |-
+      消歧情境
+      证据明确一个人物
+      金标顺应或违背目标偏见
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 620
+  - id: responses
+    label: |-
+      响应分组
+      偏见目标 / 非目标 / UNKNOWN
+      按问题效价拆分
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: accuracy
+    label: |-
+      准确率
+      按类别 + 情境报告
+      消歧题：偏见一致 vs 冲突
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 420
+  - id: bias_score
+    label: |-
+      偏见分数
+      sDIS = 2 × 偏见响应 / 非 UNKNOWN − 1
+      sAMB = (1 − 准确率) × sDIS
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 620
+  - id: report
+    label: |-
+      汇报 BBQ 评测
+      分情境与类别准确率
+      sDIS 与 sAMB 偏见分数
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 520
+edges:
+  - from: bias_sources
+    to: templates
+    type: primary
+  - from: templates
+    to: conditions
+    type: primary
+  - from: conditions
+    to: expansion
+    type: primary
+  - from: expansion
+    to: validation
+    type: primary
+  - from: validation
+    to: agreement
+    type: primary
+  - from: agreement
+    to: dataset
+    type: primary
+    label: 通过
+  - from: agreement
+    to: revise
+    type: optional
+    label: 失败
+  - from: revise
+    to: conditions
+    type: optional
+    waypoints:
+      - x: 1440
+        'y': 100
+      - x: 600
+        'y': 100
+  - from: dataset
+    to: model
+    type: primary
+  - from: model
+    to: ambiguous
+    type: primary
+  - from: model
+    to: disambiguated
+    type: primary
+  - from: ambiguous
+    to: responses
+    type: primary
+  - from: disambiguated
+    to: responses
+    type: primary
+  - from: responses
+    to: accuracy
+    type: primary
+  - from: responses
+    to: bias_score
+    type: primary
+  - from: accuracy
+    to: report
+    type: primary
+  - from: bias_score
+    to: report
+    type: primary
+modules: []

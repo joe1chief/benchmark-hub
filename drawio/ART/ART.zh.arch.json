@@ -1,122 +1,204 @@
 {
   "version": 1,
-  "title": "ART 构建流程",
+  "title": "ART 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "ehr_source",
-      "label": "真实 EHR 观测\n5 万记录 / 695 名患者\n实验室代码与时间戳",
+      "id": "failures",
+      "label": "分析 MedAgentBench 失败\n检索 • 聚合\n阈值 / 条件逻辑",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ehr",
+      "label": "挖掘单机构 EHR\nFHIR R5 格式记录\n50,000 条记录 • 695 位患者",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "scenario_agent",
-      "label": "场景识别 Agent\n检索、聚合\n阈值失败模式",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "synthesis",
-      "label": "任务生成 Agent\nGPT-4o-mini 改写\n保留真实临床数据",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "task_schema",
-      "label": "结构化 ART 任务\n指令、上下文\n标准答案与 MRN",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "quality",
-      "label": "质量审核\n源数据对齐检查\n临床专家 HITL 复核",
+      "id": "mode",
+      "label": "选择失败模式",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "benchmark",
-      "label": "平衡评测集\n600 个任务\n每类失败模式 200 个",
+      "id": "retrieval",
+      "label": "检索场景\n≤3 次读数 • 2 小时内聚集\n23–25 小时边界\n覆盖 11 种化验代码",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregation",
+      "label": "24 小时聚合场景\n有效窗口内至少 3 次读数\n血糖 • 血钾 • 血钠",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "conditional",
+      "label": "条件场景\n7 档数值 • HGB / HCT / CR\n年龄与性别相关阈值\n检索 → 判断 → 干预",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "LLM 仅合成措辞\n患者数值与时间保持不变\n每种失败模式生成 200 题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "automatic_audit",
+      "label": "对照源 EHR 验证\n核对数值 • 窗口 • 阈值\n验证后才纳入",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "clinical_audit",
+      "label": "临床 HITL 审核\n审核代表性子集\n事实 • 逻辑 • 临床语境",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "平衡 ART 评测集\n检索 200 • 聚合 200\n条件 200 • 共 600 题",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "medagentbench",
-      "label": "AgentBench 评测\nFHIR 实时 EHR API\n无状态温度 0",
+      "id": "environment",
+      "label": "实时 FHIR 兼容 EHR 运行\n使用 MedAgentBench 框架\n无状态 • 温度 0 • 无历史",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agents",
+      "label": "评测两个医疗 Agent\nGPT-4o-mini\nClaude 3.5 Sonnet",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "精确匹配成功率\n对照 EHR 标准答案\n按失败模式分别报告",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "论文报告成功率\nGPT-4o-mini / Claude 3.5\n检索 100 / 100\n聚合 28 / 64\n条件 32 / 38",
       "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "results",
-      "label": "成功率报告\n按类别 exact match\n检索、聚合、阈值",
-      "type": "database",
+      "id": "limitation",
+      "label": "指标限制\n精确匹配不验证\n推理路径是否正确",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "ehr_source",
-      "to": "scenario_agent",
+      "from": "failures",
+      "to": "ehr",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "scenario_agent",
-      "to": "synthesis",
+      "from": "ehr",
+      "to": "mode",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "synthesis",
-      "to": "task_schema",
+      "from": "mode",
+      "to": "retrieval",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "task_schema",
-      "to": "quality",
+      "from": "mode",
+      "to": "aggregation",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "quality",
-      "to": "benchmark",
+      "from": "mode",
+      "to": "conditional",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "quality",
-      "to": "synthesis",
-      "type": "optional",
-      "label": "修改低置信任务"
+      "from": "retrieval",
+      "to": "generate",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "benchmark",
-      "to": "medagentbench",
+      "from": "aggregation",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "medagentbench",
-      "to": "results",
+      "from": "conditional",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "results",
-      "to": "quality",
-      "type": "optional",
-      "label": "未来 QA-agent 路由"
+      "from": "generate",
+      "to": "automatic_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "automatic_audit",
+      "to": "clinical_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "clinical_audit",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "dataset",
+      "to": "environment",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "environment",
+      "to": "agents",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "agents",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "score",
+      "to": "limitation",
+      "type": "secondary"
     }
   ],
   "modules": []

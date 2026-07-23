@@ -4,118 +4,235 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ALERT Build Process
+  title: ALERT Build and Evaluation Process
   description: >-
-    Paper-aligned recommendation explanation benchmark construction and LLM-judge validation workflow for ALERT, based
-    on Li et al. 2025.
+    Paper-aligned curation of ALERT user-item contexts and criteria, pairwise recommendation-explanation evaluation by
+    first dividing the criteria, then applying one selected ALERT-Gen or ALERT-Disc variant consistently across all four
+    criteria, aggregating preferences, and reporting win rate. A separate meta-evaluation lane keeps interruption and
+    expert-correlation studies parallel.
   legend: >-
-    Solid arrows show dataset construction and evaluator validation; dashed arrows mark feedback from meta-evaluation
-    into criteria refinement.
+    The top row builds the 2,761-interaction benchmark. The main evaluation lane follows paper Figure 3: divide the four
+    criteria, apply the same evaluator variant to all four criteria, then aggregate four preferences. The separate meta
+    lane forks into independent §4.2 interruption and §4.3 expert-correlation experiments; only §4.3 feeds the no-tie
+    expert-accuracy summary.
 nodes:
   - id: source
     label: |-
-      Amazon purchase signals
-      15 e-commerce categories
-      5-star user-item interactions
+      Amazon Reviews 2023
+      15 E-Commerce Categories
+      Purchase Records
+      Implicit Transaction Preferences
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: quality_filter
+      'y': 100
+  - id: context
     label: |-
-      Dataset quality filter
-      title length at least 6 letters
-      users with 5 to 20 transactions
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: balanced_sample
-    label: |-
-      Balanced sampling
-      max 200 behaviors per category
-      2,761 retained interactions
+      Build Recommendation Context
+      Latest Purchase = Target Item
+      Title • Price • Merchant
+      Earlier Purchases = History
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: benchmark_context
+      x: 320
+      'y': 100
+  - id: filter
     label: |-
-      Benchmark context
-      latest purchase as target item
-      history profile from purchases
+      Apply Data Quality Controls
+      Title ≥ 6 Alphabetic Characters
+      Users with 5–20 Purchases
+      5 Stars • ≤200 per Category
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 100
+  - id: dataset
+    label: |-
+      Retain ALERT Dataset
+      2,761 User–Item Interactions
+      15 E-Commerce Categories
+      Sensitive Demographics Excluded
+      User IDs Not Released
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: criteria
+    label: |-
+      4 Editorial + User-Study Criteria
+      Reasoning Consistency
+      Clear + Concise Language
+      Engaging Narrative
+      Neutral Tone
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: pair
+    label: |-
+      Prepare Explanation Pair
+      Candidate vs PreferenceLogic
+      User History + Target Item
+      Carry All 4 Criteria
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: criteria
+      x: 1440
+      'y': 100
+  - id: route
     label: |-
-      Evaluation criteria
-      editorial team and user studies
-      reasoning, clarity, narrative, tone
+      Use One Variant
+      Across All 4 Criteria?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 460
+  - id: gen
+    label: |-
+      ALERT-Gen
+      Claude-3-Sonnet + CoT
+      Output A / B / C (Tie)
+      Swap Explanation Positions
     type: process
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: evaluators
+      x: 880
+      'y': 360
+  - id: disc
     label: |-
-      LLM-powered judges
-      ALERT-Gen CoT comparison
-      ALERT-Disc criterion scores
+      ALERT-Disc
+      ArmoRM Scores Both
+      Criterion-Specific Reward
+      Higher Score Wins
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: aggregate
+      x: 880
+      'y': 560
+  - id: divide
     label: |-
-      Divide and aggregate
-      judge each criterion separately
-      majority-vote final preference
+      Divide 4 Criteria First
+      Reasoning • Clarity
+      Narrative • Tone
+      Create 4 Focused Comparisons
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: meta_eval
+      x: 1440
+      'y': 460
+  - id: vote
     label: |-
-      Reliability validation
-      negative examples and expert labels
-      70% expert-human concordance
+      Aggregate by Majority Vote
+      Combine 4 Criterion Votes
+      Final A / B / Tie Judgment
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 460
+  - id: result
+    label: |-
+      ALERT Benchmark Result
+      Win Rate vs PreferenceLogic
+      % Interactions Candidate Wins
+      Report Gen and Disc Separately
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 320
+      'y': 460
+  - id: meta_suite
+    label: |-
+      Separate Meta-Evaluation
+      ALERT-Gen + ALERT-Disc
+      Independent of Benchmark Scoring
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 800
+  - id: interruption_test
+    label: |-
+      §4.2 Inferior-Explanation Test
+      Controlled Data Interruptions
+      Controlled Prompt Interruptions
+      Semi-Synthetic • No New Labels
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 800
+  - id: expert_correlation
+    label: |-
+      §4.3 Expert Correlation Study
+      88 Explanation Pairs
+      3 Professional Annotators
+      Compare Automated Evaluators
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 800
+  - id: no_tie_accuracy
+    label: |-
+      No-Tie Expert Accuracy
+      ALERT-Gen = 0.667
+      ALERT-Disc = 0.711
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 800
 edges:
   - from: source
-    to: quality_filter
+    to: context
     type: primary
-  - from: quality_filter
-    to: balanced_sample
+  - from: context
+    to: filter
     type: primary
-  - from: balanced_sample
-    to: benchmark_context
+  - from: filter
+    to: dataset
     type: primary
-  - from: benchmark_context
+  - from: dataset
     to: criteria
     type: primary
   - from: criteria
-    to: evaluators
-    type: data
-  - from: evaluators
-    to: aggregate
+    to: pair
     type: primary
-  - from: aggregate
-    to: meta_eval
+  - from: pair
+    to: divide
     type: primary
-  - from: meta_eval
-    to: criteria
-    type: optional
-    label: validate alignment
+  - from: divide
+    to: route
+    type: primary
+  - from: route
+    to: gen
+    type: primary
+  - from: route
+    to: disc
+    type: primary
+  - from: gen
+    to: vote
+    type: primary
+  - from: disc
+    to: vote
+    type: primary
+  - from: vote
+    to: result
+    type: primary
+  - from: meta_suite
+    to: interruption_test
+    type: secondary
+  - from: meta_suite
+    to: expert_correlation
+    type: secondary
+  - from: expert_correlation
+    to: no_tie_accuracy
+    type: secondary
 modules: []

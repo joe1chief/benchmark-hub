@@ -4,131 +4,144 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AutoCodeBench-V2 构建流程
-  description: 基于 arXiv:2508.09101，对齐 AutoCodeBench 系列的 AutoCodeGen 流程：多语言种子抽取、 沙箱测试生成、逆向题目生成、三阶段过滤、系列子集构建与 Pass@1 评测。
-  legend: 实线表示自动化构建与评测主流程；虚线表示沙箱验证和质量控制反馈。
+  title: AutoCodeBench-V2 发布与评测流程
+  description: 证据分层展示原始论文与后续官方 V2 发布、1,000 条初始文件与 998 条修订文件，以及执行 watermark 成功门槛。
+  legend: V2 来自论文之后的官方证据；记录数与 watermark 数来自对两个发布文件的直接核验。
 nodes:
-  - id: seeds
+  - id: paper_original
     label: |-
-      Stack-Edu 种子
-      GitHub 教育代码
-      函数/类/文件级
+      论文 v1：原始 AutoCodeBench
+      3,920 题 / 20 种语言
+      论文不含 V2
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: solutions
+      'y': 100
+  - id: v2_boundary
     label: |-
-      解法生成
-      DeepSeek-V3 few-shot
-      自包含代码
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: sandbox
-    label: |-
-      沙箱验证
-      支持 20+ 语言
-      可执行性检查
-    type: terminal
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: tests
-    label: |-
-      测试函数
-      公开 <=3 用例
-      私有 7+ 边界用例
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: problem_generation
-    label: |-
-      逆向生成题目
-      语言与 I/O 规格
-      不暴露解法提示
+      论文之后的官方 V2 发布
+      2025 年 12 月 4 日公布
+      仓库 + Hugging Face 证据
     type: document
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: filtering
+      x: 320
+      'y': 100
+  - id: refine
     label: |-
-      三阶段过滤
-      10 次采样控难度
-      R1 评判与标注
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: benchmark
-    label: |-
-      AutoCodeBench
-      3,920 道题
-      20 语言 / 14 类别
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 70
-  - id: series
-    label: |-
-      系列变体
-      ACB-Lite 按通过数
-      ACB-Complete 测基座
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: evaluation
-    label: |-
-      模型评测
-      Pass@1
-      30+ LLM 标准提示
+      迭代精炼 V2
+      从原始数据集开始
+      顶级闭源模型 + 沙箱反馈
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 600
+      'y': 100
+  - id: initial_snapshot
+    label: |-
+      Dec. 4 初始快照
+      1,000 条 • 20 种语言
+      简单 / 中等 / 困难
+      136 / 218 / 646
+      982 / 1,000 条含 watermark
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: fixed_snapshot
+    label: |-
+      Feb. 17 修订快照
+      998 条 • 20 种语言
+      简单 / 中等 / 困难
+      136 / 217 / 645
+      998 / 998 条含 watermark
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: schema
+    label: |-
+      V2 记录契约
+      question • signature
+      output • full_test_func
+      language • difficulty
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: model_output
+    label: |-
+      生成候选输出
+      替换 output 字段
+      必须使用单个围栏代码块
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: sandbox
+    label: |-
+      V2 沙箱评测
+      multi-language-sandbox:v2
+      执行 full_test_func
+      32 路并发
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: watermark
+    label: |-
+      执行 watermark 门槛
+      _zfa817ta56vz43s3ji9k
+      位于 stdout
+      exec_outcome = PASSED
+      证明测试函数已经执行
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: report
+    label: |-
+      发布修订快照结果
+      按语言 / 难度报告 Pass@1
+      不混淆 1,000 与 998
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 440
 edges:
-  - from: seeds
-    to: solutions
+  - from: paper_original
+    to: v2_boundary
     type: primary
-  - from: solutions
+  - from: v2_boundary
+    to: refine
+    type: primary
+  - from: refine
+    to: initial_snapshot
+    type: primary
+  - from: initial_snapshot
+    to: fixed_snapshot
+    type: primary
+  - from: fixed_snapshot
+    to: schema
+    type: primary
+  - from: schema
+    to: model_output
+    type: primary
+  - from: model_output
     to: sandbox
     type: primary
   - from: sandbox
-    to: tests
+    to: watermark
     type: primary
-  - from: tests
-    to: problem_generation
+  - from: watermark
+    to: report
     type: primary
-  - from: problem_generation
-    to: filtering
-    type: primary
-  - from: filtering
-    to: benchmark
-    type: primary
-  - from: benchmark
-    to: series
-    type: primary
-  - from: series
-    to: evaluation
-    type: primary
-  - from: sandbox
-    to: solutions
-    type: optional
-    label: 修复失败
-  - from: filtering
-    to: problem_generation
-    type: optional
-    label: 丢弃或重生成
 modules: []

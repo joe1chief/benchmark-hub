@@ -1,89 +1,495 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MEDIQA-QA Build Process (Chinese)
-  description: MEDIQA-QA 的论文对齐构建流程：消费者健康问题送入 CHiQA，候选答案经人工判断，RQE/NLI 证据辅助过滤重排，并用准确率评估答案排序。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  canvas: auto
+  grid:
+    size: 8
+    snap: true
+  title: MEDIQA-QA 构建、发布与官方评测流程
+  description: 基于 ACL Anthology W19-5039 与 MEDIQA2019 官方仓库最终 2019 快照 cefa5a1b89e8263aeea0dbe59da52990963cdd1d 进行证据边界复原。
+  legend: >-
+    实线依次表示问题来源、CHiQA 检索、专家标注、划分发布与 Task 3 官方评测器。 竞赛期间测试集的排序和分数隐藏；当前仓库另行公开了赛后带标签副本。 RQE、MedQuAD 与 NLI
+    只是可选策略。虚线仅表示独立复现审计，不是评分后的数据流。
 nodes:
-  - id: questions
-    label: 健康问题
-    type: document
+  - id: b1
+    label: |-
+      B1 · 收集问题
+      训练：LiveQA 104 + Alexa 104
+      验证 25 · 测试 150
+      留出集来源未披露
+    type: database
+    module: build
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: chiqa
-    label: CHiQA
+      'y': 192
+    style:
+      fontSize: 10
+  - id: b2
+    label: |-
+      B2 · 使用 CHiQA 检索
+      答案数：839 · 862 · 234 · 1,107
+      CHiQA 给出初始顺序
     type: process
+    module: build
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: judged
-    label: 人工答案
-    type: document
+      x: 360
+      'y': 192
+    style:
+      fontSize: 10
+  - id: b3
+    label: |-
+      B3 · 专家评分 + 重排
+      4 优秀 · 3 正确但不完整
+      2 相关 · 1 错误
+      标准排序 1–11
+    type: user
+    module: build
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: nli
-    label: NLI/RQE
+      x: 680
+      'y': 192
+    style:
+      fontSize: 10
+  - id: b4
+    label: |-
+      B4 · 派生标准目标
+      分数 3/4 → 标签 1
+      分数 1/2 → 标签 0
+      ReferenceRank 给出标准顺序
     type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: medquad
-    label: MedQuAD
-    type: database
+    module: build
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: rerank
-    label: 过滤重排
-    type: process
+      'y': 192
+    style:
+      fontSize: 10
+  - id: b5
+    label: |-
+      标注 / 质检证据边界
+      未披露：
+      专家人数 / 一致性
+      双标 / 仲裁
+      检索参数 / 去重
+    type: document
+    module: build
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: submit
-    label: 问答提交
-    type: process
+      x: 1320
+      'y': 192
+    style:
+      fontSize: 10
+  - id: r1
+    label: |-
+      R1 · 固定官方快照
+      提交 cefa5a1 · 2019-09-04
+      Task 3 与评测器至 32311a1 未变
+      README：CC BY 4.0
+    type: database
+    module: release
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: metric
-    label: 准确率
+      x: 1320
+      'y': 520
+    style:
+      fontSize: 10
+  - id: r2
+    label: |-
+      R2 · 训练 / 验证数据
+      208 题 / 1,701 答案 · 验证 25 / 234
+      QID · 问题 · AID · URL · 文本
+      SystemRank · ReferenceRank · 分数
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 1000
+      'y': 520
+    style:
+      fontSize: 10
+  - id: r3
+    label: |-
+      R3 · 2019 测试输入
+      150 题 / 1,107 答案
+      QID · 问题 · AID · URL · 文本
+      不含排序 / 分数属性
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 680
+      'y': 520
+    style:
+      fontSize: 10
+  - id: r4
+    label: |-
+      R4 · 当前带标签测试集
+      增加 SystemRank · ReferenceRank · 分数
+      572 个正例 · 535 个负例
+      二元标准已公开
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 360
+      'y': 520
+    style:
+      fontSize: 10
+  - id: r5
+    label: |-
+      发布 / 来源证据边界
+      仓库声明 CC BY 4.0
+      答案保留第三方来源 URL
+      未列来源版权 / 抓取日期
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 40
+      'y': 520
+    style:
+      fontSize: 10
+  - id: e1
+    label: |-
+      E1 · 为候选答案打分
+      输入：问题 + 候选答案
+      可选：MedQuAD 上的 RQE / NLI
+      二者均非必需
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 40
+      'y': 848
+    style:
+      fontSize: 10
+  - id: e2
+    label: |-
+      E2 · 提交 CSV
+      QuestionID, AnswerID, Label
+      README 称标签 0 会被过滤
+      代码仍将每一行计入名次
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 360
+      'y': 848
+    style:
+      fontSize: 10
+  - id: e3
+    label: |-
+      E3 · 预处理
+      用 header=None 读取
+      QID + AID 去重 · 保留首项
+      精确匹配 QID + AID + 标签
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 680
+      'y': 848
+    style:
+      fontSize: 10
+  - id: e4
+    label: |-
+      E4 · 独立计算指标
+      分类 + 排序
+      共用同一提交和二元标准
+      不计算综合分
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1000
+      'y': 848
+    style:
+      fontSize: 10
+  - id: m1
+    label: |-
+      分类
+      准确率 = 匹配三元组 / 标准行数
+      score = 准确率
+      精确率 = 全局 TP / 预测正例
+    type: formula
+    module: evaluate
+    size: xl
+    position:
+      x: 1320
+      'y': 712
+    style:
+      fontSize: 10
+  - id: m2
+    label: |-
+      排序代码漂移
+      MRR 使用首个正确正例所在行
+      前置标签 0 / 假正例均计入名次
+      Spearman 均值排除 NaN 问题
+    type: formula
+    module: evaluate
+    size: xl
+    position:
+      x: 1320
+      'y': 984
+    style:
+      fontSize: 10
+  - id: e5
+    label: |-
+      E5 · 结果对象
+      score = 准确率
+      score_secondary = Spearman rho
+      meta = MRR + 精确率
     type: terminal
+    module: evaluate
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1640
+      'y': 848
+    style:
+      fontSize: 10
+  - id: g1
+    label: |-
+      公开复现缺口
+      测试标准有表头；解析器假定无表头
+      示例路径不存在
+      需修正表头 + 路径
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 1640
+      'y': 1136
+    style:
+      fontSize: 10
 edges:
-  - from: questions
-    to: chiqa
+  - from: b1
+    to: b2
     type: primary
-  - from: chiqa
-    to: judged
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b2
+    to: b3
     type: primary
-  - from: judged
-    to: nli
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b3
+    to: b4
     type: primary
-  - from: nli
-    to: medquad
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b4
+    to: b5
     type: primary
-  - from: medquad
-    to: rerank
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b5
+    to: r1
     type: primary
-  - from: rerank
-    to: submit
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r1
+    to: r2
     type: primary
-  - from: submit
-    to: metric
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r2
+    to: r3
     type: primary
-modules: []
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r3
+    to: r4
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r4
+    to: r5
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r5
+    to: e1
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e1
+    to: e2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e2
+    to: e3
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e3
+    to: e4
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e4
+    to: m1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e4
+    to: m2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: m1
+    to: e5
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: m2
+    to: e5
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e5
+    to: g1
+    type: optional
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+modules:
+  - id: build
+    label: 构建
+    color: $primaryLight
+  - id: release
+    label: 发布
+    color: $secondaryLight
+  - id: evaluate
+    label: 评测
+    color: $accentLight

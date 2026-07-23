@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "title": "NeedleBench V2 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 23,
+    "edges": 24,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "scope",
+      "label": "定义双语长上下文评测\n合成检索与推理任务\n覆盖信息稀疏与信息密集场景\n自适应上下文长度",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "synthetic",
+      "label": "生成合成信息单元\n虚构事实与亲属关系\n随机姓名和模板\n避免真实世界及预训练知识",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "density_gate",
+      "label": "选择哪种\n信息密度场景？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "haystacks",
+      "label": "稀疏任务填充语料\n英文：Paul Graham 随笔\n中文：领域建模评测语料\n无关文本仅用于稀疏任务",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "sparse_tasks",
+      "label": "实例化三类稀疏任务\nS-RT：单事实检索\nM-RT：多事实检索\nM-RS：2–5 条亲属事实推理",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "sparse_insert",
+      "label": "在受控深度插入针\n单个或多个关键信息单元\n分散多针输入\n保持目标上下文长度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sparse_configs",
+      "label": "遍历官方 V2 配置\n4k · 8k · 32k · 128k\n200k · 256k · 1,000k\nGPT-4 分词器 · 长度缓冲 · R=10",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sparse_inference",
+      "label": "运行候选模型\n阅读完整填充文本与问题\n生成任务指定格式答案\n缓冲后仍保留完整指令",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sparse_parser_gate",
+      "label": "使用哪种稀疏任务\n输出合同？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "retrieval_score",
+      "label": "计分 S-RT 与 M-RT\n关键词感知精确匹配\n出现任一核心关键词即满分\n否则为零",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reasoning_score",
+      "label": "M-RS：论文与固定代码\n论文：boxed + 关键词感知 EM\n固定：boxed 清洗 + 严格相等\n记录计分差异",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sparse_average",
+      "label": "汇总稀疏任务结果\n各任务平均长度 × 深度 × R\n三项任务等权平均\nS-RT · M-RT · M-RS\n取代早期加权均值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_names",
+      "label": "抽取 n+1 个唯一姓名\n英文或中文姓名池\n组成顺序家庭链\n程序化生成标准答案",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "atc_relations",
+      "label": "生成 n 条亲属关系陈述\n随机关系词和语言模板\n代际权重为 1 或 2\n累计总代际距离",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_shuffle",
+      "label": "随机打乱亲属关系\n拼接成连续上下文\n消除位置偏差\n每句话都与答案相关",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_questions",
+      "label": "创建四类 ATC 问题\n最年长祖先 · 第 N 代祖先\n第 N 代后代 · 关系距离\n推导精确标准答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_scale",
+      "label": "按 2 的幂扩展 ATC\n2 · 4 · 8 · 16 · 32\n64 · 128 · 256 · 512 条针\n每种配置重复 R=10",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_inference",
+      "label": "在密集上下文上运行候选模型\n整合每一条亲属关系\n按所选问题类型作答\n最终答案放入 boxed 框",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_parser",
+      "label": "已发布 ATC 解析器\n仅提取 boxed 框内答案\n去除 LaTeX · 斜杠 · 引号 · 波浪号\n缺少 boxed 答案时返回 None",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_accuracy",
+      "label": "计算 ATC 精确匹配\n去除预测与答案首尾空白\n要求字符串完全相等\n按针数报告准确率百分比",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "atc_metrics",
+      "label": "论文定义的 ATC 指标\n按针数加权准确率\nENL-50：准确率 ≥50% 的最大 N\n固定 V2：仅逐针数精确分数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告长上下文能力\n分别保留稀疏任务和 ATC 结果\n比较语言与上下文长度\n分析连续推理失败",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "source_boundary",
+      "label": "论文与代码边界\narXiv v3 SHA-256 ae3779…\nOpenCompass 34da831… · Apache-2.0\nV2 代码与配置公开\nGit 中不含 needlebench 数据载荷",
+      "type": "document",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "scope",
+      "to": "synthetic",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "synthetic",
+      "to": "density_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "density_gate",
+      "to": "sparse_tasks",
+      "type": "primary",
+      "label": "信息稀疏"
+    },
+    {
+      "id": "edge-4",
+      "from": "density_gate",
+      "to": "atc_names",
+      "type": "primary",
+      "label": "信息密集"
+    },
+    {
+      "id": "edge-5",
+      "from": "sparse_tasks",
+      "to": "sparse_insert",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "haystacks",
+      "to": "sparse_insert",
+      "type": "secondary",
+      "label": "仅作填充"
+    },
+    {
+      "id": "edge-7",
+      "from": "sparse_insert",
+      "to": "sparse_configs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "sparse_configs",
+      "to": "sparse_inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "sparse_inference",
+      "to": "sparse_parser_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "sparse_parser_gate",
+      "to": "retrieval_score",
+      "type": "primary",
+      "label": "S-RT 或 M-RT"
+    },
+    {
+      "id": "edge-11",
+      "from": "sparse_parser_gate",
+      "to": "reasoning_score",
+      "type": "primary",
+      "label": "M-RS 推理"
+    },
+    {
+      "id": "edge-12",
+      "from": "retrieval_score",
+      "to": "sparse_average",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "reasoning_score",
+      "to": "sparse_average",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "atc_names",
+      "to": "atc_relations",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "atc_relations",
+      "to": "atc_shuffle",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "atc_shuffle",
+      "to": "atc_questions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "atc_questions",
+      "to": "atc_scale",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "atc_scale",
+      "to": "atc_inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "atc_inference",
+      "to": "atc_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "atc_parser",
+      "to": "atc_accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "atc_accuracy",
+      "to": "atc_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "sparse_average",
+      "to": "report",
+      "type": "primary",
+      "label": "稀疏分支"
+    },
+    {
+      "id": "edge-23",
+      "from": "atc_metrics",
+      "to": "report",
+      "type": "primary",
+      "label": "密集分支"
+    },
+    {
+      "id": "edge-24",
+      "from": "report",
+      "to": "source_boundary",
+      "type": "secondary",
+      "label": "来源边界"
+    }
+  ],
+  "modules": []
+}

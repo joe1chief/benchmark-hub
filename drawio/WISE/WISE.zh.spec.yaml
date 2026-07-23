@@ -1,0 +1,193 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WISE 论文版构建与评测流程
+  description: >-
+    论文从教材、百科与公共参考资料、常识题集及LLM辅助候选中构建1000条知识密集型文生图提示，覆盖25个子域。人工标注者改写或淘汰候选，确保可视觉作答、只有一个可推断目标、事实稳定、措辞自然、预期视觉线索明确，并核对提示、答案与解释的一致性。数据定稿后，表4给出描述性文化分布审计：全量WISE中全球/中性、西方、非西方分别为56.6%、22.6%、20.8%；文化常识子集中分别为17.75%、41.50%、40.75%。论文未规定通过阈值，也未规定再平衡回路。生成图像由GPT-4o-2024-05-13对一致性、真实感与审美质量分别按0至2分评分，WiScore=(0.7C+0.2R+0.1A)/2。本条目固定采用论文协议，不采用仓库后续默认的二元WISE_Verified协议。
+  legend: >-
+    来源：WISE arXiv:2503.07265v4, Section 3.1 and Tables 3-4 for sourcing, quality control, and the descriptive
+    cultural-distribution audit; Section 3.2 Equation (1) and Appendices D-E for WiScore; Appendices H-I for seed and
+    human validation; official repository https://github.com/PKU-YuanGroup/WISE. Version pin: this entry follows the
+    paper WiScore protocol, not the repository-default WISE_Verified maintenance protocol. Table 4 is an audit, not a
+    build gate.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: knowledge_sources
+    label: 知识来源
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: prompt_candidates
+    label: 候选提示
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: visual_gate
+    label: 可视觉作答且目标唯一？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: human_refine
+    label: 人工改写并补解释
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: discard_candidate
+    label: 淘汰候选
+    type: loss
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: quality_gate
+    label: 提示质检通过？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: culture_audit
+    label: 文化分布审计
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: wise_set
+    label: 1000条提示 / 25个子域
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: generate_image
+    label: 生成图像
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: vlm_judge
+    label: GPT-4o 一致性/真实感/审美 (0-2)
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: wiscore
+    label: WiScore=(0.7C+0.2R+0.1A)/2
+    type: formula
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: seed_audit
+    label: 五随机种子稳定性审计
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: human_validation
+    label: 每图五人核验
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 760
+  - id: wise_report
+    label: 论文协议结果
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: culture_report
+    label: 描述性分布报告 · 无门槛/再平衡
+    type: output
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+edges:
+  - from: knowledge_sources
+    to: prompt_candidates
+    type: data
+  - from: prompt_candidates
+    to: visual_gate
+    type: primary
+  - from: visual_gate
+    to: human_refine
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: visual_gate
+    to: discard_candidate
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: human_refine
+    to: quality_gate
+    type: primary
+  - from: quality_gate
+    to: human_refine
+    type: optional
+    label: 修订
+    labelPosition: start
+  - from: wise_set
+    to: generate_image
+    type: primary
+  - from: generate_image
+    to: vlm_judge
+    type: primary
+  - from: vlm_judge
+    to: wiscore
+    type: primary
+  - from: wiscore
+    to: wise_report
+    type: primary
+  - from: generate_image
+    to: seed_audit
+    type: optional
+    label: 附录H
+    labelPosition: center
+  - from: vlm_judge
+    to: human_validation
+    type: optional
+    label: 附录I
+    labelPosition: center
+  - from: seed_audit
+    to: wise_report
+    type: optional
+  - from: human_validation
+    to: wise_report
+    type: optional
+  - from: quality_gate
+    to: wise_set
+    type: primary
+    label: 通过
+    labelPosition: end
+    waypoints:
+      - x: 1280
+        'y': 160
+      - x: 1840
+        'y': 160
+  - from: wise_set
+    to: culture_audit
+    type: optional
+    label: 表4审计
+    labelPosition: center
+  - from: culture_audit
+    to: culture_report
+    type: optional
+modules: []

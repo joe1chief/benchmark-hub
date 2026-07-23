@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "title": "Chatbot Arena 构建流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 15,
+    "edges": 14,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "user",
+      "label": "实时众包用户\n接受数据公开发布条款\n提交新鲜、开放式提示",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "pair",
+      "label": "抽取匿名模型对\n投票前隐藏模型身份\n偏向实力接近的模型对\n非均匀抽样降低不确定性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "battle",
+      "label": "并排多轮对战\n向两个模型发送相同用户消息\n继续对话直至用户能够判断",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "vote",
+      "label": "记录成对偏好\n模型 A • 模型 B • 平局 • 都不好\n保存两段对话与投票",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "content_filter",
+      "label": "身份关键词过滤\n移除提及模型或公司的对话\n保持模型匿名性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "safety_flag",
+      "label": "OpenAI 审核安全标记\n标记不安全请求：3%\n不作为排名输入过滤器",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "snapshot",
+      "label": "论文快照（2024-01-21）\n约 24 万票 • 超 9 万用户 • 超 50 模型\n超 100 种语言 • 英语占 77%\n近期每日 1–2K 个有效投票",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "topic_model",
+      "label": "主题建模方法\ntext-embedding-3-small：1,536 维\nUMAP -> 5；HDBSCAN 最小簇 32",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "diversity",
+      "label": "600 个长尾主题簇\n每簇抽取 10 个提示\nGPT-4-Turbo 生成主题标签",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "experts",
+      "label": "专家重标 160 场对战\n研究生盲评并核查事实\n众包—专家一致率：72.8%–83.1%",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "anomaly",
+      "label": "独立异常 IP 分析\n序贯 p 值 + Fisher 合并\n在第 1–100 票中随机检查 5 次\n用 25 异常 + 25 正常用户验证\n不作为排名输入过滤器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "win_matrix",
+      "label": "估计成对胜率矩阵\n对非均匀模型对抽样做逆概率加权\n目标为模型对上的均匀分布",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "bt",
+      "label": "重加权 Bradley–Terry 极大似然\n每场权重为 1 / P(pair)\n估计总体 BT 系数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "intervals",
+      "label": "Sandwich 稳健置信区间\n大样本时优先于 Bootstrap\n经多重性校正的近似排名",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "leaderboard",
+      "label": "发布论文时期排行榜\nBT 分数 • 胜率 • 置信区间\n给出含不确定性的近似排名",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "user",
+      "to": "pair",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "pair",
+      "to": "battle",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "battle",
+      "to": "vote",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "vote",
+      "to": "content_filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "vote",
+      "to": "safety_flag",
+      "type": "data"
+    },
+    {
+      "id": "edge-6",
+      "from": "content_filter",
+      "to": "snapshot",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "snapshot",
+      "to": "win_matrix",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "snapshot",
+      "to": "topic_model",
+      "type": "data"
+    },
+    {
+      "id": "edge-9",
+      "from": "topic_model",
+      "to": "diversity",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "snapshot",
+      "to": "experts",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
+      "from": "snapshot",
+      "to": "anomaly",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "win_matrix",
+      "to": "bt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "bt",
+      "to": "intervals",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "intervals",
+      "to": "leaderboard",
+      "type": "primary"
+    }
+  ],
+  "modules": []
+}

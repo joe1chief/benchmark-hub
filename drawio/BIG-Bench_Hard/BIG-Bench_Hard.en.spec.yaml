@@ -4,103 +4,200 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: BIG-Bench Extra Hard Build Process
+  title: BIG-Bench Hard Build Process
   description: >-
-    Paper-aligned construction of BIG-Bench Extra Hard as a successor to saturated BIG-Bench Hard, replacing 23 BBH
-    tasks with harder counterparts, iterating against reference models, creating BBEH Mini, and evaluating with harmonic
-    mean accuracy, based on arXiv:2502.19187.
-  legend: Solid arrows show BBEH task construction and evaluation; dashed arrows mark semi-adversarial difficulty iteration.
+    True BBH task selection, dataset packaging, human CoT exemplar authoring, parallel answer-only and CoT prompting,
+    deterministic extraction, and exact-match aggregation from arXiv:2210.09261v1.
+  legend: The upper row constructs BBH; the two lower branches compare answer-only and chain-of-thought prompting.
 nodes:
-  - id: bbh_audit
-    label: BBH audit
+  - id: bigbench
+    label: |-
+      BIG-Bench Evaluation Pool
+      209 Evaluation Tasks
+      Uneven Data and Metadata Coverage
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: task_mapping
-    label: Task map
+      'y': 140
+  - id: structure_filter
+    label: |-
+      Structural Eligibility
+      Remove >3 Subtasks: 209 → 187
+      Remove <103 Examples: 187 → 130
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: harder_tasks
-    label: Harder set
+      x: 320
+      'y': 140
+  - id: baseline_filter
+    label: |-
+      Comparable Evaluation Tasks
+      Require Human Baseline: 130 → 85
+      Keep MC / Exact Match: 85 → 78
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: reference_models
-    label: Ref loop
-    type: decision
+      x: 600
+      'y': 140
+  - id: hardness_filter
+    label: |-
+      Hardness + Scope Review
+      Remove Model > Human: 78 → 36
+      Drop 13 Extreme / Out-of-Scope: 36 → 23
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 880
+      'y': 140
   - id: dataset
-    label: BBEH data
+    label: |-
+      Package BIG-Bench Hard
+      23 Tasks • 27 Subtasks
+      6,511 Evaluation Examples
     type: database
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: mini
-    label: BBEH Mini
-    type: database
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: analysis
-    label: Analysis
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 70
-  - id: metric
-    label: Metrics
+      x: 1160
+      'y': 140
+  - id: examples
+    label: |-
+      Task Example Counts
+      Usually 250 per Task
+      Exceptions: 187 • 146 • 178
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 1440
+      'y': 140
+  - id: human_cot
+    label: |-
+      Human CoT Exemplars
+      Three per Task
+      Reasoning + Final-Answer Format
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 140
+  - id: answer_only
+    label: |-
+      Few-Shot Answer-Only Prompt
+      Same BBH Task Examples
+      Produce the Final Answer Directly
+    type: process
+    size: xl
+    position:
+      x: 1560
+      'y': 440
+  - id: cot_prompt
+    label: |-
+      Few-Shot Chain-of-Thought Prompt
+      Use Three Human CoT Exemplars
+      Reason before the Final Answer
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 440
+  - id: decode
+    label: |-
+      PaLM • InstructGPT • Codex
+      Greedy • Temperature = 0
+      Same Evaluation Examples
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 700
+  - id: extract
+    label: |-
+      Deterministic Extraction
+      Read Text after “the answer is”
+      Normalize per Task
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 700
+  - id: score
+    label: |-
+      BBH Scoring
+      Exact Match + Task Accuracy
+      Unweighted Mean over 23 Tasks
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 700
   - id: report
-    label: Report
+    label: |-
+      Compare Answer-Only versus CoT
+      Against Average Human
+      Analyze Model-Scale Effects
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 700
 edges:
-  - from: bbh_audit
-    to: task_mapping
+  - from: bigbench
+    to: structure_filter
     type: primary
-  - from: task_mapping
-    to: harder_tasks
+  - from: structure_filter
+    to: baseline_filter
     type: primary
-  - from: harder_tasks
-    to: reference_models
+  - from: baseline_filter
+    to: hardness_filter
     type: primary
-  - from: reference_models
+  - from: hardness_filter
     to: dataset
     type: primary
-  - from: reference_models
-    to: harder_tasks
-    type: optional
-    label: add difficulty
   - from: dataset
-    to: mini
+    to: examples
     type: primary
-  - from: dataset
-    to: analysis
+  - from: examples
+    to: human_cot
     type: primary
-  - from: analysis
-    to: metric
+  - from: human_cot
+    to: answer_only
     type: primary
-  - from: metric
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: human_cot
+    to: cot_prompt
+    type: primary
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: answer_only
+    to: decode
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: cot_prompt
+    to: decode
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: decode
+    to: extract
+    type: primary
+  - from: extract
+    to: score
+    type: primary
+  - from: score
     to: report
     type: primary
 modules: []

@@ -4,78 +4,198 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DLC-Bench Build Process
-  description: Paper-aligned DLC-Bench flow from segmentation data to reference-free detailed local caption evaluation.
-  legend: >-
-    Solid arrows show mask/keyword collection, VLM caption expansion, SSL web-image scaling, attribute construction,
-    model captioning, reference-free judging, and detail/hallucination scoring.
+  title: DLC-Bench Build and Evaluation Process
+  description: >-
+    Paper-version benchmark curation and the recognition-gated, reference-free scoring protocol, kept separate from the
+    DLC-SDP training-data pipeline.
+  legend: Solid arrows trace the benchmark pipeline; the evidence card pins the paper, code, and released data revisions.
 nodes:
-  - id: seg
-    label: Seg Masks
+  - id: evidence
+    label: |-
+      DLC-Bench · arXiv:2504.16072v1
+      code @ 153ad3d · data @ 2336d95
+      DLC-SDP is a training-data pipeline
+      not the benchmark
+      construction process
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: source
+    label: |-
+      Objects365 v2 Validation Source
+      challenging object regions
+      human-annotated segmentation masks
+      one target region
+      per benchmark instance
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: expand
-    label: VLM Expand
+      'y': 360
+  - id: allocation
+    label: |-
+      Allocate 100 Regions to Three VLMs
+      GPT-4o: 34
+      Gemini 1.5 Pro: 35
+      Claude 3.5 Sonnet: 31
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: ssl
-    label: SSL Web
-    type: process
+      x: 320
+      'y': 360
+  - id: question_route
+    label: Two question families
+    type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: attrs
-    label: Attr Set
+      x: 600
+      'y': 360
+  - id: positive
+    label: |-
+      Positive Detail Questions
+      object / part: color · shape
+      texture · material · size
+      manually add missing · revise inaccurate
+      remove hallucinated / ambiguous
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: caption
-    label: Model Cap
+      x: 880
+      'y': 140
+  - id: negative
+    label: |-
+      Negative Hallucination Questions
+      mislocalization: outside-mask objects
+      hallucination: typical parts
+      absent / not visible / occluded
+      avoid unsupported details
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 580
+  - id: curate
+    label: |-
+      Manual QA Curation
+      inspect every question
+      remove ambiguous / unclear cases
+      make choices mutually exclusive
+      deduplicate benchmark images
+      against training images
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1160
+      'y': 360
+  - id: artifact
+    label: |-
+      Pinned DLC-Bench Artifact @ 2336d95
+      100 region instances
+      over 77 source images
+      892 questions total
+      392 positive + 500 negative
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: caption
+    label: |-
+      Candidate Localized Caption
+      image + target mask
+      produce a detailed region description
+      no reference caption required
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
   - id: judge
-    label: Ref-free
+    label: |-
+      Meta-Llama-3.1-8B-Instruct
+      official text-only judge
+      temperature 0 · max 300 tokens
+      select one choice per question
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 360
+  - id: recognition
+    label: |-
+      Recognition Gate
+      recognition question is prepended
+      if recognition is wrong
+      all question scores are capped at ≤ 0
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 360
+  - id: score
+    label: |-
+      Per-question Score
+      positive: 1 / 0.5 / 0 / -1
+      negative: omit unsupported
+      detail = 1
+      hallucination = -1
+      intermediate cases = 0
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: report
+    label: |-
+      DLC-Bench Report
+      mean per instance
+      positive mean · negative mean
+      final = average of positive and negative
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Detail Score
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 2840
+      'y': 360
 edges:
-  - from: seg
-    to: expand
+  - from: evidence
+    to: source
+    type: data
+  - from: source
+    to: allocation
     type: primary
-  - from: expand
-    to: ssl
+  - from: allocation
+    to: question_route
     type: primary
-  - from: ssl
-    to: attrs
+  - from: question_route
+    to: positive
     type: primary
-  - from: attrs
+  - from: question_route
+    to: negative
+    type: primary
+  - from: positive
+    to: curate
+    type: primary
+  - from: negative
+    to: curate
+    type: primary
+  - from: curate
+    to: artifact
+    type: primary
+  - from: artifact
     to: caption
     type: primary
   - from: caption
     to: judge
     type: primary
   - from: judge
+    to: recognition
+    type: primary
+  - from: recognition
     to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

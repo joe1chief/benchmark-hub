@@ -6,86 +6,251 @@ meta:
   routing: orthogonal
   title: K-QA Build Process
   description: >-
-    Paper-aligned K-QA pipeline from real patient questions through physician answers, statement tags, and NLI medical
-    QA metrics.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Paper-aligned K-QA construction from deidentified K Health questions through stand-alone medical curation,
+    physician-authored references, GPT-4-assisted statement decomposition, and the official GPT-4 NLI metrics.
+  legend: >-
+    Solid arrows show the construction and scoring path. Dashed arrows mark the fixed evidence, the optional
+    NLI-validator study, and the boundary between released K-QA artifacts and the unreleased raw conversation corpus.
 nodes:
-  - id: patient_queries
-    label: Patient Qs
+  - id: evidence
+    label: |-
+      Primary Evidence + Fixed Revision
+      arXiv:2401.14493v1 · 25 Jan 2024
+      Official Git ef403d0
+      Paper Sections 3–5 + Appendices A–B
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: question_filter
-    label: Q Filter
+      x: 20
+      'y': 40
+  - id: interactions
+    label: |-
+      Source K Health Conversations
+      Real Patient-physician Text Interactions
+      Paper Says Questions Are Deidentified
+      Raw Conversation Corpus Not Released
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: prefilter
+    label: |-
+      Automatic Question Prefilter
+      Fine-tuned BERT: Question vs Statement
+      Regex Removes Logistics Questions
+      Billing and Delivery Examples
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: doctor_review
-    label: Doctor Review
+      x: 580
+      'y': 40
+  - id: candidates
+    label: |-
+      Candidate Question Pool · About 26K
+      Real Consumer-health Wording
+      Ambiguous Jargon + Multiple Conditions
+      Candidates for Stand-alone Review
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: medical_review
+    label: |-
+      Medical-professional Review
+      Assess Every Candidate Individually
+      Require Stand-alone Answerability
+      Assign an ICD-10 Condition
     type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: question_set
-    label: 1212 Questions
-    type: document
+      x: 1140
+      'y': 40
+  - id: questions
+    label: |-
+      K-QA Question Set · 1,212
+      From 1,055 Unique Users
+      172 ICD-10-coded Conditions
+      Only 201 Have Physician References
+    type: database
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: phys_answers
-    label: Dr Answers
+      x: 1420
+      'y': 40
+  - id: answers
+    label: |-
+      Physician References for 201 Questions
+      Six Doctors on Different Question Sets
+      Reviewer · UpToDate / PubMed · Lay Style
+      No Generative AI · About 400 Hours
     type: user
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: statement_split
-    label: Stmt Split
+      x: 1700
+      'y': 40
+  - id: decomposition
+    label: |-
+      Six Different Doctors Decompose Answers
+      GPT-4 Few-shot Suggestions
+      Amend, Remove, or Add Statements
+      6.86% of Suggested Statements Modified
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: must_nice
-    label: Must/Nice Tags
+      x: 1980
+      'y': 40
+  - id: statements
+    label: |-
+      Produce 1,589 Self-contained Statements
+      Average 7.9 per Physician Answer
+      892 Must Have + 697 Nice to Have
+      Each Captures a Distinct Fact
+    type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 380
+  - id: importance
+    label: |-
+      Classify Clinical Importance
+      Same Six Doctors as Decomposition
+      Must: Crucial · Nice: Supplemental
+      Group Discussion to Consensus · 20 Hours
+    type: user
+    size: xl
+    position:
+      x: 1700
+      'y': 380
+  - id: predict
+    label: |-
+      Generate or Load Model Answers
+      Match the 201 Referenced Questions
+      Zero Temperature Where Configurable
+      ICL and Medical RAG Are Variants
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: nli_metrics
-    label: NLI Metrics
+      x: 1420
+      'y': 380
+  - id: nli
+    label: |-
+      Official GPT-4 Few-shot CoT NLI
+      Model Answer = Premise
+      Each Gold Statement = Hypothesis
+      Separate Entailment + Contradiction Checks
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 380
+  - id: comp
+    label: |-
+      Comp · Comprehensiveness
+      Per Question: Entailed Must / All Must
+      Full Score = Sum of Fractions / 201
+      Nice-to-Have Entailment Is Skipped
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 260
+  - id: hall
+    label: |-
+      Hall · Hallucination Rate
+      Count Contradicted Must + Nice Statements
+      Full Score = Total Contradictions / 201
+      Mean Count per Question, Not Statement %
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 500
+  - id: report
+    label: |-
+      Report K-QA Answer Quality
+      Higher Comp · Lower Hall
+      Official Full-benchmark Denominator: 201
+      No Score over 1,011 Unreferenced Questions
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 580
+      'y': 380
+  - id: artifact_boundary
+    label: |-
+      Partly Public Artifact Boundary
+      Public: 1,212 Questions · 201 References
+      Statements + Eval Code · NLI CSV: 399
+      Paper Validator Study Used 402 Statements
+      Raw Patient Conversations Not Released
+    type: document
+    size: xl
+    position:
+      x: 300
+      'y': 380
+  - id: validate
+    label: |-
+      Optional NLI Evaluator Validation
+      50 Question-answer Pairs · 402 Statements
+      Three Physicians + Majority Vote
+      Fleiss Kappa = 0.70
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 700
 edges:
-  - from: patient_queries
-    to: question_filter
+  - from: evidence
+    to: interactions
+    type: data
+  - from: interactions
+    to: prefilter
     type: primary
-  - from: question_filter
-    to: doctor_review
+  - from: prefilter
+    to: candidates
     type: primary
-  - from: doctor_review
-    to: question_set
+  - from: candidates
+    to: medical_review
     type: primary
-  - from: question_set
-    to: phys_answers
+  - from: medical_review
+    to: questions
     type: primary
-  - from: phys_answers
-    to: statement_split
+  - from: questions
+    to: answers
     type: primary
-  - from: statement_split
-    to: must_nice
+  - from: answers
+    to: decomposition
     type: primary
-  - from: must_nice
-    to: nli_metrics
+  - from: decomposition
+    to: statements
     type: primary
+  - from: statements
+    to: importance
+    type: primary
+  - from: importance
+    to: predict
+    type: primary
+  - from: predict
+    to: nli
+    type: primary
+  - from: nli
+    to: comp
+    type: primary
+  - from: nli
+    to: hall
+    type: primary
+  - from: comp
+    to: report
+    type: primary
+  - from: hall
+    to: report
+    type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
+  - from: nli
+    to: validate
+    type: data
+    label: Optional Validator Study
 modules: []

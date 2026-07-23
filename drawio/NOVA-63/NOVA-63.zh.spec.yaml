@@ -1,0 +1,489 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: NOVA-63 构建流程
+  description: 对齐 ACL 权威 PDF 的四阶段母语多语种采集、元信息标注、难度筛选、补充、最终选择与评测流程。
+  legend: 实线表示论文披露的构建、淘汰和评测路径；虚线表示抽样审计、模型组输入或发布边界。权威 ACL PDF 报告 89,107 道题，而 ACL 落地页摘要当前给出了不同总数。
+nodes:
+  - id: native_sources
+    label: |-
+      母语者采集本地题目
+      教育网站 · 学术出版物 · 考试
+      中学至研究生层级
+      验证母语与文化真实性
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: format
+    label: |-
+      LLM 上下文学习格式规范化
+      提取题干 · 选项 · 答案
+      同时分类为选择题或问答题
+      去除 HTML 与无关内容
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: extraction_review
+    label: |-
+      抽样人工核验提取质量
+      检查多媒体过滤与原文保留
+      检查完整性与格式
+      不是逐题人工关卡
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 260
+  - id: extraction_gate
+    label: |-
+      提取完整且可
+      独立作答吗？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 80
+  - id: discard_extract
+    label: |-
+      淘汰提取失败项
+      缺少组件或上下文
+      格式不可用
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 260
+  - id: quality_filter
+    label: |-
+      LLM 质量标注
+      可读性 1–3 · 完整性 0–1
+      清晰度与一致性 1–3
+      评分并给出理由
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: quality_gate
+    label: |-
+      每项质量指标都达到最高分吗？
+      可读性 3 · 完整性 1
+      清晰度与一致性 3
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: discard_quality
+    label: |-
+      淘汰质量失败项
+      缺少媒体或上下文
+      可读性差或含歧义
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 260
+  - id: classify
+    label: |-
+      添加多维元信息
+      13 个一级 · 63 个二级 · 262 个三级学科
+      分层选择最接近类别
+      识记型或推理型
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: model_panel
+    label: |-
+      难度评估模型组
+      对话与推理模型
+      小模型 ≤14B · 大模型 >14B
+      零样本 · 种子 42 · 温度 0
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 650
+  - id: model_annotation
+    label: |-
+      执行模型难度标注
+      记录正误与所选选项
+      先解析 JSON 再按答案文本兜底
+      淘汰显式依赖多媒体的题目
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: difficulty_gate
+    label: |-
+      大模型准确率
+      低于 50% 吗？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: discard_easy
+    label: |-
+      淘汰难度不足项
+      大模型准确率 ≥50%
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 650
+  - id: abnormal_gate
+    label: |-
+      难度模式可疑吗？
+      小模型更高或错误选项答案集中
+      交由母语专家复核
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: manual_validation
+    label: |-
+      母语专家人工核验
+      检查语言 · 歧义 · 缺失媒体
+      验证参考答案
+      需具备相关研究生专业背景
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: validation_gate
+    label: |-
+      触发附录最终阈值
+      或复核发现错误吗？
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 440
+  - id: discard_abnormal
+    label: |-
+      淘汰可疑题目
+      触发附录阈值规则或
+      母语复核发现错误
+    type: terminal
+    size: xl
+    position:
+      x: 320
+      'y': 650
+  - id: selected_pool
+    label: |-
+      初始高难有效题池
+      在二级学科层面
+      统计和协调题量
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 440
+  - id: supplement_gate
+    label: |-
+      二级学科题池
+      需要补充吗？
+    type: decision
+    size: xl
+    position:
+      x: 40
+      'y': 900
+  - id: qa_conversion
+    label: |-
+      将选定问答题转为选择题
+      对照标准答案判定模型回答
+      用常见模型错误构造干扰项
+      共转换 2,425 道题
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 800
+  - id: conversion_rescreen
+    label: |-
+      重新应用此前全部标准
+      再做质量与难度筛选
+      每道转换题都人工复核
+      检查母语流畅度与翻译腔
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 800
+  - id: interdisciplinary
+    label: |-
+      重分配跨学科题目
+      LLM 判断潜在学科交叉
+      将题目移入较小题池
+      平衡二级学科分布
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 1040
+  - id: final_review
+    label: |-
+      最终人工复核
+      学科相关性 · 文本质量
+      机器翻译痕迹
+      完整性与明显逻辑错误
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 900
+  - id: final_gate
+    label: |-
+      所有最终复核
+      标准都通过吗？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 900
+  - id: discard_final
+    label: |-
+      淘汰最终复核失败项
+      相关性或质量低
+      有翻译痕迹或不完整
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 1100
+  - id: balance
+    label: |-
+      平衡语言 × 二级学科
+      至少保留 50 道题
+      上限设为 150 道题
+      超出上限时随机采样
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 900
+  - id: release
+    label: |-
+      NOVA-63 论文基准
+      89,107 道母语选择题 · 14 种语言
+      8 个语系 · 63 个二级学科
+      每个语言-学科单元 50–150 道
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 900
+  - id: evaluate
+    label: |-
+      评测 62 个 LLM
+      对话/推理模型：零样本结尾答案
+      基座模型：五样本选项概率
+      同学科内复用示例
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1260
+  - id: score
+    label: |-
+      报告精确选项准确率
+      题目 · 二级学科 · 一级学科平均
+      主结果采用一级学科均值
+      避免大规模学科权重过高
+    type: terminal
+    size: xl
+    position:
+      x: 1440
+      'y': 1260
+  - id: publication_boundary
+    label: |-
+      论文与发布边界
+      ACL PDF SHA-256 630e3a… 报告 89,107
+      ACL 网页摘要当前写 93,536
+      HF 修订 7bfc985… 仅含 README
+      MIT 数据卡注明数据仍在评审
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 1480
+edges:
+  - from: native_sources
+    to: format
+    type: primary
+  - from: format
+    to: extraction_gate
+    type: primary
+  - from: format
+    to: extraction_review
+    type: secondary
+    label: 抽样核验
+    labelPosition: center
+    style:
+      dashed: true
+  - from: extraction_gate
+    to: quality_filter
+    type: primary
+    label: 通过
+    labelPosition: center
+  - from: extraction_gate
+    to: discard_extract
+    type: primary
+    label: 失败
+    labelPosition: center
+  - from: quality_filter
+    to: quality_gate
+    type: primary
+  - from: quality_gate
+    to: classify
+    type: primary
+    label: 全部满分
+    labelPosition: center
+  - from: quality_gate
+    to: discard_quality
+    type: primary
+    label: 任一不足
+    labelPosition: center
+    waypoints:
+      - x: 1940
+        'y': 180
+      - x: 1940
+        'y': 310
+  - from: classify
+    to: model_annotation
+    type: primary
+  - from: model_panel
+    to: model_annotation
+    type: secondary
+    style:
+      dashed: true
+    label: 固定模型组
+    labelPosition: center
+  - from: model_annotation
+    to: difficulty_gate
+    type: primary
+  - from: difficulty_gate
+    to: abnormal_gate
+    type: primary
+    label: 低于 50%
+    labelPosition: center
+  - from: difficulty_gate
+    to: discard_easy
+    type: primary
+    label: 不低于 50%
+    labelPosition: center
+  - from: abnormal_gate
+    to: selected_pool
+    type: primary
+    label: 无异常
+    labelPosition: center
+    waypoints:
+      - x: 980
+        'y': 390
+      - x: 140
+        'y': 390
+  - from: abnormal_gate
+    to: manual_validation
+    type: primary
+    label: 已标记
+    labelPosition: center
+  - from: manual_validation
+    to: validation_gate
+    type: primary
+  - from: validation_gate
+    to: selected_pool
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: validation_gate
+    to: discard_abnormal
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: selected_pool
+    to: supplement_gate
+    type: primary
+  - from: supplement_gate
+    to: final_review
+    type: primary
+    label: 无需补充
+    labelPosition: center
+    waypoints:
+      - x: 140
+        'y': 1210
+      - x: 980
+        'y': 1210
+  - from: supplement_gate
+    to: qa_conversion
+    type: primary
+    label: 问答题补充
+    labelPosition: center
+  - from: supplement_gate
+    to: interdisciplinary
+    type: primary
+    label: 存在学科交叉
+    labelPosition: center
+  - from: qa_conversion
+    to: conversion_rescreen
+    type: primary
+  - from: conversion_rescreen
+    to: final_review
+    type: primary
+  - from: interdisciplinary
+    to: final_review
+    type: primary
+    waypoints:
+      - x: 700
+        'y': 1140
+      - x: 700
+        'y': 1000
+  - from: final_review
+    to: final_gate
+    type: primary
+  - from: final_gate
+    to: balance
+    type: primary
+    label: 通过
+    labelPosition: center
+  - from: final_gate
+    to: discard_final
+    type: primary
+    label: 失败
+    labelPosition: center
+  - from: balance
+    to: release
+    type: primary
+  - from: release
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: score
+    type: primary
+  - from: release
+    to: publication_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 发布证据
+    labelPosition: center
+    waypoints:
+      - x: 1940
+        'y': 950
+      - x: 2100
+        'y': 950
+      - x: 2100
+        'y': 1430
+modules: []

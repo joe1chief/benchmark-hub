@@ -1,0 +1,359 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OpenMathReasoning构建与下游评测
+  description: 对齐论文v1与固定发布版本，展示AoPS问题处理、思维链、工具推理、生成式选择和外部基准评测。
+  legend: 实线表示论文流程；虚线标出固定证据、发布数量更正、许可边界及其属于训练数据而非独立基准的角色边界。
+nodes:
+  - id: evidence
+    label: |-
+      固定一手证据
+      arXiv 2504.16891v1
+      c4eeeb75e86a
+      HF d3d086647557 / 976666d0a484
+      NeMo 74b8649734a6 Apache 2.0
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: source
+    label: |-
+      收集AoPS论坛讨论
+      排除Middle School Math论坛
+      论文阶段共620K条讨论
+      保留帖子级数学上下文
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: extract
+    label: |-
+      用Qwen2.5-32B-Instruct抽取
+      每帖可识别零个一个或多个问题
+      精炼问题陈述
+      得到580K个问题
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 40
+  - id: classify
+    label: |-
+      分类每个问题
+      区分证明题与非证明题
+      识别多选题或二元问题
+      判断有效或无效
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: filter
+    label: |-
+      移除不适合的格式
+      删除多选题二元题和无效题
+      保留550K个问题
+      保持开放式可回答任务
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: transform
+    label: |-
+      规范问题可回答性
+      把证明题转换为答案题
+      尽可能抽取最终答案
+      标记无法抽取答案的案例
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: decontam
+    label: |-
+      执行数学基准去污染
+      由大模型比对热门任务
+      移除高度相似问题
+      论文流水线得到540K
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: paper_scope
+    label: |-
+      论文v1构建口径
+      540K个唯一问题
+      3.2M条长思维链解答
+      1.7M条工具推理及566K条选择数据
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 400
+  - id: release_scope
+    label: |-
+      官方HF v1.0发布口径
+      306K个问题具有公开解答
+      另有193,170条仅问题记录
+      总计5,678,317行
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 400
+  - id: cot_generate
+    label: |-
+      生成长思维链候选
+      使用DeepSeek-R1与QwQ-32B
+      每题最多生成32个解答
+      温度0.7且Top-p为0.95
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 400
+  - id: cot_filter
+    label: |-
+      过滤长思维链解答
+      核对抽取答案或多数答案
+      由Qwen2.5-32B判断答案等价
+      保留与预期答案一致的候选
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 400
+  - id: cot_release
+    label: |-
+      保留3,201,061条思维链数据
+      其中2.7M条来自DeepSeek-R1
+      其中0.5M条来自QwQ-32B
+      形成长推理训练分集
+    type: database
+    size: xl
+    position:
+      x: 500
+      'y': 400
+  - id: tir_seed
+    label: |-
+      启动工具集成推理
+      提示LIMO-Qwen-32B使用Python
+      合成1.2M个候选解答
+      过滤为15K条阶段零样例
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 400
+  - id: tir_iterate
+    label: |-
+      迭代工具推理训练与生成
+      先训练QwQ再训练14B模型
+      执行并过滤使用代码的解答
+      保留1,718,466条工具推理数据
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 400
+  - id: genselect
+    label: |-
+      构建生成式选择数据
+      采样候选解答并重写摘要
+      先由QwQ-32B选择再由Qwen2.5-32B重写
+      保留565,620条选择记录
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 760
+  - id: release
+    label: |-
+      发布OpenMathReasoning v1.0
+      包含思维链工具推理选择及额外问题
+      数据采用CC BY 4.0并发布开放模型
+      NeMo Skills提供复现流水线
+    type: terminal
+    size: xl
+    position:
+      x: 260
+      'y': 760
+  - id: train_models
+    label: |-
+      训练OpenMath-Nemotron模型
+      用思维链工具推理和选择数据监督微调
+      覆盖1.5B、7B、14B和32B规模
+      用于证明数据集质量
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 760
+  - id: eval_suite
+    label: |-
+      评测下游数学能力
+      使用AIME24、AIME25和HMMT-24-25
+      使用HLE-Math纯文本子集
+      不是数据集自身的内在得分
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 760
+  - id: sample64
+    label: |-
+      每题生成64个答案
+      温度0.6且Top-p为0.95
+      采用思维链或工具推理模式
+      执行答案校验
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 760
+  - id: aggregate
+    label: |-
+      聚合准确率指标
+      pass@1对64次生成取平均
+      maj@64采用多数投票
+      另将GenSelect作为推理变体报告
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 760
+  - id: report
+    label: |-
+      按模型规模和基准报告
+      分别呈现思维链工具推理和选择变体
+      AIMO-2夺冠方案只是使用案例
+      不存在OpenMathReasoning测试集榜单
+    type: terminal
+    size: xl
+    position:
+      x: 1460
+      'y': 760
+  - id: count_boundary
+    label: |-
+      数量更正边界
+      论文540K指流水线阶段问题数
+      HF数据卡更正有解问题为306K
+      过滤及流水线Bug丢失137K个证明题
+    type: document
+    size: xl
+    position:
+      x: 1220
+      'y': 560
+  - id: license_boundary
+    label: |-
+      发布与许可边界
+      HF v1.0数据采用CC BY 4.0
+      NeMo Skills代码采用Apache 2.0
+      论文称发布许可允许商业使用
+    type: document
+    size: xl
+    position:
+      x: 500
+      'y': 1120
+  - id: role_boundary
+    label: |-
+      评测角色边界
+      OpenMathReasoning属于后训练数据
+      论文在外部数学基准上评测模型
+      不可呈现为固定独立评测基准
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 1120
+edges:
+  - from: evidence
+    to: source
+    type: secondary
+    style:
+      dashed: true
+  - from: source
+    to: extract
+    type: primary
+  - from: extract
+    to: classify
+    type: primary
+  - from: classify
+    to: filter
+    type: primary
+  - from: filter
+    to: transform
+    type: primary
+  - from: transform
+    to: decontam
+    type: primary
+  - from: decontam
+    to: paper_scope
+    type: primary
+  - from: paper_scope
+    to: release_scope
+    type: primary
+  - from: release_scope
+    to: cot_generate
+    type: primary
+  - from: cot_generate
+    to: cot_filter
+    type: primary
+  - from: cot_filter
+    to: cot_release
+    type: primary
+  - from: cot_release
+    to: tir_seed
+    type: primary
+  - from: tir_seed
+    to: tir_iterate
+    type: primary
+  - from: tir_iterate
+    to: genselect
+    type: primary
+  - from: genselect
+    to: release
+    type: primary
+  - from: release
+    to: train_models
+    type: primary
+  - from: train_models
+    to: eval_suite
+    type: primary
+  - from: eval_suite
+    to: sample64
+    type: primary
+  - from: sample64
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+  - from: release_scope
+    to: count_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: release
+    to: license_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: report
+    to: role_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1560
+        'y': 1000
+      - x: 1080
+        'y': 1000
+modules: []

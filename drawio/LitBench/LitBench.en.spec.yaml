@@ -1,91 +1,351 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LitBench Build Process
   description: >-
-    Paper-aligned LitBench pipeline from Reddit writing samples through preference-pair filtering, length debiasing,
-    verifier training, and human validation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    EACL 2026 paper-aligned construction of independent post-2022 test and pre-2023 training preference corpora,
+    followed by zero-shot, Bradley-Terry, generative-reward-model, and online-human validation.
+  legend: >-
+    Solid arrows show paper construction, training, or validation; data arrows inject the held-out benchmark; the
+    dependency arrow supplies the trained BT model to the online study. Unconnected document cards preserve pinned
+    public-artifact boundaries and unresolved paper/release drift.
 nodes:
-  - id: reddit_stories
-    label: Reddit Stories
+  - id: evidence
+    label: |-
+      Evidence · EACL 2026 Final
+      2026.eacl-long.362 · Git c1017dbe
+      A.9 · Effective Batch128 · LR1e-5
+      Warmup10% · bfloat16 · AdamW
+      Git GenRM · 2e-5 · 3 Epochs · Max8192
+      Git Shell ≠ Paper Setup
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: story_filter
-    label: Story Filter
+      x: 24
+      'y': 24
+    style:
+      fontSize: 9
+  - id: reddit
+    label: |-
+      r/WritingPrompts Corpus
+      Human Stories under Shared Prompts
+      Upvotes · Comments · Timestamps
+      Upvotes Are a Noisy Preference Proxy
+    type: database
+    size: xl
+    position:
+      x: 24
+      'y': 312
+  - id: test_source
+    label: |-
+      Held-out Test Candidates
+      PRAW Search over Fan et al. Posts
+      Top 100 Results per Source Post
+      5,000+ Prompt Post IDs
+      Discard Stories Older than 2023
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: pair_filter
-    label: Pair Filter
+      x: 344
+      'y': 56
+    style:
+      fontSize: 9
+  - id: train_source
+    label: |-
+      Training Candidates
+      euclaise/WritingPrompts_preferences
+      Source HF 6f0b721 · MIT
+      Stories Strictly before 2023
+    type: database
+    size: xl
+    position:
+      x: 344
+      'y': 384
+    style:
+      fontSize: 9
+  - id: test_story_qc
+    label: |-
+      Story-level QC · Test
+      Require at Least 10 Upvotes
+      Remove Non-story Comments
+      50+ Words · At Most 2,048 Tokens
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: length_debias
-    label: Length Debias
+      x: 664
+      'y': 56
+  - id: train_story_qc
+    label: |-
+      Story-level QC · Train
+      Require at Least 10 Upvotes
+      Remove Non-story Comments
+      50+ Words · At Most 2,048 Tokens
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: train_test
-    label: Train/Test
-    type: document
-    size: xl
-    position:
-      x: 1000
-      'y': 160
-  - id: reward_models
-    label: Reward Models
+      x: 664
+      'y': 384
+  - id: test_pairs
+    label: |-
+      Within-prompt Test Pairs
+      Higher-upvote Story Is Chosen
+      Gap at Least 25% of Chosen Score
+      Chosen Story Must Be Newer
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: llm_judges
-    label: LLM Judges
+      x: 984
+      'y': 56
+  - id: train_pairs
+    label: |-
+      Within-prompt Training Pairs
+      Higher-upvote Story Is Chosen
+      Gap at Least 25% of Chosen Score
+      Chosen Story Must Be Newer
     type: process
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: human_study
-    label: Human Study
+      x: 984
+      'y': 384
+  - id: test_length
+    label: |-
+      Debias Test Pair Length
+      100-bin Chosen-minus-rejected Histogram
+      Prune to a Symmetric Distribution
+      Balance Longer / Shorter Chosen Stories
+    type: process
+    size: xl
+    position:
+      x: 1304
+      'y': 56
+    style:
+      fontSize: 9
+  - id: train_length
+    label: |-
+      Debias Training Pair Length
+      100-bin Chosen-minus-rejected Histogram
+      Prune to a Symmetric Distribution
+      Balance Longer / Shorter Chosen Stories
+    type: process
+    size: xl
+    position:
+      x: 1304
+      'y': 384
+    style:
+      fontSize: 9
+  - id: test_set
+    label: |-
+      Paper Test Benchmark
+      2,480 Pairwise Comparisons
+      3,543 Unique Stories
+      Average Story Length · 550 Words
+    type: database
+    size: xl
+    position:
+      x: 1624
+      'y': 56
+  - id: train_set
+    label: |-
+      Paper Training Corpus
+      43,827 Preference Pairs
+      50,309 Unique Stories
+      Curated Independently from Test
+    type: database
+    size: xl
+    position:
+      x: 1624
+      'y': 384
+  - id: zero_shot
+    label: |-
+      Zero-shot LLM Judges
+      Unlabeled Story A / Story B
+      Explanation then A/B Verdict
+      Evaluate Both Story Orders
+      Average Pairwise Accuracy
+    type: process
+    size: xl
+    position:
+      x: 1944
+      'y': 56
+    style:
+      fontSize: 9
+  - id: bt_model
+    label: |-
+      Bradley-Terry Reward Model
+      Train on 43,827 Pairs
+      Score Each Story Independently
+      Minimize Negative Log-sigmoid
+      of Chosen-minus-rejected Reward
+    type: process
+    size: xl
+    position:
+      x: 1944
+      'y': 384
+    style:
+      fontSize: 9
+  - id: gen_model
+    label: |-
+      Generative Reward Models
+      SFT Direct A/B or GPT-4.1 Rationale + Verdict
+      Randomize A/B at Test Time
+      Temperature 0 · One Sample
+      Cross-entropy Training
+    type: process
+    size: xl
+    position:
+      x: 1944
+      'y': 712
+    style:
+      fontSize: 9
+  - id: report
+    label: |-
+      Pairwise Accuracy + Paper Findings
+      Correct Preferences ÷ Evaluated Pairs
+      Zero-shot Averages Both Story Orders
+      Claude 3.7 Sonnet · 73%
+      Best BT / GenRM · About 78%
+      GenRM-CoT · 72%
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 2264
+      'y': 384
+    style:
+      fontSize: 9
+  - id: rm_ranking
+    label: |-
+      Novel-story RM Ranking
+      64 Stories · 40 LitBench Prompts
+      Generated by GPT-4.1 + GPT-4o
+      Llama-8B BT Ranks New Stories
+      Select RM-best / RM-worst per Prompt
+    type: process
+    size: xl
+    position:
+      x: 1624
+      'y': 1040
+  - id: human_study
+    label: |-
+      Online Human Study
+      46 US/UK Prolific Workers
+      10–13 Raters per Pair
+      RM-preferred · 56.4% vs 43.6%
+    type: user
+    size: xl
+    position:
+      x: 1944
+      'y': 1040
+  - id: release_boundary
+    label: |-
+      Public Artifacts · Pinned
+      Train 079a36d · 43,827 Pairs
+      Test 21e2739 · 2,381 Complete IDs
+      Rationales 7c5e045 · 43,736 Rows
+      91 Short of Paper Train
+      Git c1017dbe · No Licence · PRAW Fetch
+    type: document
+    size: xl
+    position:
+      x: 344
+      'y': 712
+    style:
+      fontSize: 9
+  - id: disclosure_gaps
+    label: |-
+      Artifact Gaps
+      Test 2,480 · Clean IDs 2,381 · 99 Incomplete
+      Train 43,827 · Rationales 43,736 · Gap 91
+      Reddit Text Not Relicensed
+      §4.3: 5/Precision · A.3: 6/Accuracy
+      No Pinned Model or Leaderboard
+    type: document
+    size: xl
+    position:
+      x: 664
+      'y': 1040
+    style:
+      fontSize: 9
 edges:
-  - from: reddit_stories
-    to: story_filter
+  - from: reddit
+    to: test_source
     type: primary
-  - from: story_filter
-    to: pair_filter
+  - from: reddit
+    to: train_source
     type: primary
-  - from: pair_filter
-    to: length_debias
+  - from: test_source
+    to: test_story_qc
     type: primary
-  - from: length_debias
-    to: train_test
+  - from: test_story_qc
+    to: test_pairs
     type: primary
-  - from: train_test
-    to: reward_models
+  - from: test_pairs
+    to: test_length
     type: primary
-  - from: reward_models
-    to: llm_judges
+  - from: test_length
+    to: test_set
     type: primary
-  - from: llm_judges
+  - from: train_source
+    to: train_story_qc
+    type: primary
+  - from: train_story_qc
+    to: train_pairs
+    type: primary
+  - from: train_pairs
+    to: train_length
+    type: primary
+  - from: train_length
+    to: train_set
+    type: primary
+  - from: test_set
+    to: zero_shot
+    type: data
+  - from: test_set
+    to: bt_model
+    type: data
+  - from: test_set
+    to: gen_model
+    type: data
+    waypoints:
+      - x: 1744
+        'y': 16
+      - x: 2864
+        'y': 16
+      - x: 2864
+        'y': 772
+  - from: train_set
+    to: bt_model
+    type: primary
+  - from: train_set
+    to: gen_model
+    type: primary
+    waypoints:
+      - x: 1808
+        'y': 410
+      - x: 1808
+        'y': 714
+  - from: zero_shot
+    to: report
+    type: data
+  - from: bt_model
+    to: report
+    type: data
+  - from: gen_model
+    to: report
+    type: data
+  - from: bt_model
+    to: rm_ranking
+    type: dependency
+    waypoints:
+      - x: 1776
+        'y': 480
+      - x: 1776
+        'y': 944
+      - x: 1628
+        'y': 944
+  - from: rm_ranking
     to: human_study
     type: primary
 modules: []

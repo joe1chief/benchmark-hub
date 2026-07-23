@@ -7,57 +7,81 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 12,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "models",
-      "label": "模型集合",
+      "label": "选择 11 个 T2I 架构\n既有 + 新型扩散/Transformer 模型\n包含领域模型与通用基础模型",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "captions",
-      "label": "MIMIC标注",
-      "type": "database",
+      "id": "model_route",
+      "label": "模型准备路径\n既有领域模型还是通用基础模型？",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "training",
-      "label": "标准训练",
+      "id": "domain_models",
+      "label": "领域专用基线\nRadEdit + LLM-CXR\n不做修改，直接开箱评测\n跳过统一微调路径",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "training",
+      "label": "微调 9 个通用基础架构\n同一 237,388 样本训练 20 轮\n<1B：全量微调\n>1B：QKV 上 LoRA 秩 32",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "data",
+      "label": "MIMIC-CXR 标准划分\n训练划分：237,388\n留出测试提示：5,034\n增强 LLaVA-Rad 图注",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "generate",
-      "label": "合成CXR",
+      "label": "在固定测试提示上生成\n保存提示与合成图像元数据\n统一使用 5,034 图像测试划分",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "fidelity",
-      "label": "保真度指标",
-      "type": "terminal",
+      "label": "保真度 + 模式覆盖\nRadDino FID/KID + PRDC\nBioViL-T 图文对齐\n整体 + 分病理条件分析",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "privacy",
-      "label": "隐私指标",
-      "type": "terminal",
+      "label": "隐私 + 患者重识别\n最近训练图像：像素距离\nRadDino 潜空间距离\nSiamese 重识别：均值 • 最大值 • 计数",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "utility",
-      "label": "实用性指标",
-      "type": "terminal",
+      "id": "classification",
+      "label": "分类效用\n20K 真实 + 20K 合成；ResNet-50\n训练 20 轮；在 5,034 个真实样本测试\nAccuracy • F1 • AUROC",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "release",
-      "label": "SynthCheX-75K",
-      "type": "document",
+      "id": "segmentation",
+      "label": "分割效用\n3,000 真实 + 3,000 合成样本对\n用 159 区域模型生成锁骨掩码\n训练 U-Net；报告留出集 DICE",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "rrg",
+      "label": "放射学报告生成效用\n50K 真实 + 20K 合成\n从头训练 LLaVA-Rad\nBLEU • ROUGE-L • F1-RadGraph\nGREENScore • RaTEScore",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scorecard",
+      "label": "CheXGenBench 20+ 指标评分卡\n比较保真 • 隐私 • 效用\n呈现指标分歧与模型权衡",
+      "type": "terminal",
       "size": "xl"
     }
   ],
@@ -65,43 +89,103 @@
     {
       "id": "edge-1",
       "from": "models",
-      "to": "captions",
+      "to": "model_route",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "captions",
-      "to": "training",
+      "from": "model_route",
+      "to": "domain_models",
       "type": "primary"
     },
     {
       "id": "edge-3",
+      "from": "model_route",
+      "to": "training",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "data",
+      "to": "training",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "data",
+      "to": "generate",
+      "type": "data"
+    },
+    {
+      "id": "edge-6",
+      "from": "domain_models",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
       "from": "training",
       "to": "generate",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-8",
       "from": "generate",
       "to": "fidelity",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "fidelity",
+      "id": "edge-9",
+      "from": "generate",
       "to": "privacy",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "privacy",
-      "to": "utility",
+      "id": "edge-10",
+      "from": "generate",
+      "to": "classification",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "utility",
-      "to": "release",
+      "id": "edge-11",
+      "from": "generate",
+      "to": "segmentation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "generate",
+      "to": "rrg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "fidelity",
+      "to": "scorecard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "privacy",
+      "to": "scorecard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "classification",
+      "to": "scorecard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "segmentation",
+      "to": "scorecard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "rrg",
+      "to": "scorecard",
       "type": "primary"
     }
   ],

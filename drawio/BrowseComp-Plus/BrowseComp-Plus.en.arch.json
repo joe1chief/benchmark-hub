@@ -7,62 +7,116 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 9,
+    "nodes": 18,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "browsecomp",
-      "label": "BrowseComp",
+      "id": "original",
+      "label": "Original BrowseComp\n1,266 Question-answer Pairs\nStart Evidence Collection",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "mine",
-      "label": "Mine",
+      "id": "o3_gate",
+      "label": "Run o3 with Web Search\n124 Fail: Formatting or Abstention\nExclude Failed Responses",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "Verify",
-      "type": "decision",
+      "id": "after_o3",
+      "label": "Retain 1,142 Queries\nStructured Clues • URLs • Snippets\nContinue to Page Collection",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "negatives",
-      "label": "Negatives",
+      "id": "scrape",
+      "label": "Scrape Every Cited URL\nSelenium + Trafilatura\nExtract Candidate Evidence Text",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scrape_gate",
+      "label": "Validate Retrieved Pages\n137 Hallucinated URLs or Scrape Failures\nExclude Unusable Queries",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "after_scrape",
+      "label": "Retain 1,005 Queries\nCandidate Evidence Is Scrapeable\nSend Every Query to Human Review",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "human_verify",
+      "label": "Human-verify Clues and Answerability\n14 Annotators • 400+ Hours • >80% Agreement\nRevise or Search ≥20 Minutes When Needed",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "verified",
+      "label": "Final 830 Verified Queries\nEvidence Docs Support Reasoning\nGold Docs Also Contain the Final Answer",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "decompose",
+      "label": "GPT-4o Query Decomposition\nAbout Seven Sub-queries per Query\nRun Only on the Final 830",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hard_negatives",
+      "label": "Mine Hard Negatives\nSerpAPI: Up to 100 Results per Sub-query\nKeep Related but Non-supporting Documents",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "corpus",
-      "label": "Corpus",
+      "label": "Fixed Deduplicated Corpus\n100,195 Documents for 830 Queries\nEvidence + Gold Qrels + Hard Negatives",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "retriever",
-      "label": "Retriever",
+      "id": "retrievers",
+      "label": "Configure Retrieval\nBM25 • Qwen3 Embedding • ReasonIR\nOracle Evidence Context for Comparison",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "topk",
+      "label": "Agent Search Interface\nTop 5 • 512 Tokens per Result\nOptional Full-document Tool",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "agent",
-      "label": "Agent",
+      "label": "Deep-research Agent\nIterative Search and Cross-checking\nFinal Answer with Document Citations",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "Judge",
-      "type": "decision",
+      "id": "end_to_end",
+      "label": "End-to-end Answer Evaluation\nGPT-4.1 Judge: Accuracy + Recall\nSearch Calls + Calibration Error",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "Metrics",
+      "id": "citation_score",
+      "label": "End-to-end Citation Evaluation\nCoverage + Count\nCitation Precision + Recall",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "retrieval_score",
+      "label": "Standalone Retrieval Evaluation\nEvidence / Gold Recall@5, 100, 1000\nnDCG@10 against Released Qrels",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Report Controlled Results\nSeparate Retrieval, Answering, and Citations\nCompare Retrievers, Oracle, and Ablations",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,56 +124,122 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "browsecomp",
-      "to": "mine",
+      "from": "original",
+      "to": "o3_gate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "mine",
-      "to": "verify",
+      "from": "o3_gate",
+      "to": "after_o3",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "verify",
-      "to": "negatives",
+      "from": "after_o3",
+      "to": "scrape",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "verify",
-      "to": "corpus",
+      "from": "scrape",
+      "to": "scrape_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "negatives",
-      "to": "corpus",
+      "from": "scrape_gate",
+      "to": "after_scrape",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "corpus",
-      "to": "retriever",
+      "from": "after_scrape",
+      "to": "human_verify",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "retriever",
-      "to": "agent",
+      "from": "human_verify",
+      "to": "verified",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "agent",
-      "to": "judge",
+      "from": "verified",
+      "to": "decompose",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "judge",
-      "to": "metrics",
+      "from": "decompose",
+      "to": "hard_negatives",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "verified",
+      "to": "corpus",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "hard_negatives",
+      "to": "corpus",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "corpus",
+      "to": "retrievers",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "retrievers",
+      "to": "topk",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "topk",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "agent",
+      "to": "end_to_end",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "agent",
+      "to": "citation_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "retrievers",
+      "to": "retrieval_score",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
+      "from": "end_to_end",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "citation_score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "retrieval_score",
+      "to": "report",
       "type": "primary"
     }
   ],

@@ -1,108 +1,303 @@
 {
   "version": 1,
-  "title": "L-V-Eval 构建流程",
+  "title": "LV-Eval 构建流程与评测合同",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 21,
+    "edges": 25,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "public_qa",
-      "label": "公开QA",
+      "id": "sources",
+      "label": "公开问答与文本来源\nLIC · HotpotQA + 2Wiki\nDuReader · LooGLE · CMRC\nMFQA（LongBench）\n事实召回：PG-19 +《西游记》",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evidence",
+      "label": "证据边界\n论文：arXiv:2402.05136v3\nGit 63e7ae9 · HF 86a3b0e\n主流程以论文 v3 为准",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "qa_pairs",
-      "label": "问答对",
+      "id": "qa",
+      "label": "汇总 11 个双语问答集\n单跳 7 个 · 多跳 4 个 · 英文 6 / 中文 5\n改造 1,329 个 + 人工编写 2 个事实问答\n= 1,331 个独特问答对",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "length_levels",
-      "label": "长度层级",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "context_mix",
-      "label": "上下文混合",
+      "id": "mix",
+      "label": "混合支持文档与干扰文档\n常规集：同源未选问答的上下文\nHotpot / DuReader：打散多份支持证据\n采样 → 随机排序 → 前缀 Passage i",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "confusing_facts",
-      "label": "混淆事实",
+      "id": "lengths",
+      "label": "生成五档长度\n16K · 32K · 64K · 128K · 256K\n常规集：每问答每档一个上下文\n事实召回：每档 200 个均匀证据位置",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "keyword_replace",
-      "label": "关键词替换",
+      "id": "cfi_route",
+      "label": "属于 CFI 集？\n六个指定数据集",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "cfi",
+      "label": "CFI · 6 集 · 557 个实例\nHotpot · LIC · MFQA 中/英\n事实召回中/英\nGPT-4 生成 2 条相似但事实不同的内容\n语言学标注员消除冲突；随机插入",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "answer_keywords",
-      "label": "答案关键词",
+      "id": "kpr_route",
+      "label": "属于 KPR 集？\n六个指定数据集",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "kpr",
+      "label": "KPR · 6 集 · 1,924 条规则\nHotpot · CMRC · MFQA 中/英\n事实召回中/英\n数量：232 + 786 + 476\n424 + 3 + 3\n同时替换上下文与问答；复核一致性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ak_route",
+      "label": "属于 AK 集？\n除两个数据集外",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "ak",
+      "label": "AK · 9 集 · 955 个实例\n除 CMRC 与 DuReader 外全部适用\n标注答案的关键内容\n两名标注员 · 一个工作日",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "lv_eval",
-      "label": "LV-Eval",
+      "id": "dataset",
+      "label": "发布 LV-Eval 测试工件\n每档 1,729 个实例 × 5 = 8,645\n上下文 · 问题 · 答案 · 长度 · 语言\n按条件包含 AK 与混淆事实字段",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "使用各数据集专用零样本提示\n直接作答 · 无统一解析器\n贪心解码：常规 64 · 事实召回 16\n超窗：保留头部与尾部",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric_route",
+      "label": "论文 v3\n选择指标路径",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "ak_metric",
+      "label": "9 个 AK 数据集\nR_AK = overlap(pred, AK)\n/ |AK|\n门槛：中文 0.2 · 英文 0.4\n未过 → 0；通过 → 黑名单词元 F1\n中英文分别归一化",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "cmrc_metric",
+      "label": "仅 CMRC\n无答案关键词门控\n黑名单感知中文词元 F1",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "dureader_metric",
+      "label": "仅 DuReader\n无答案关键词门控\n黑名单感知 ROUGE-L",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "汇报论文结果\n11 个数据集 × 5 档长度\n得分 = 100 × 样本分数均值\n长度及单跳 / 多跳分析",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "blacklist",
+      "label": "构建共享词黑名单\nLlama2-7B + ChatGLM3 生成答案\n取与标准答案重合最高频的 100 个词\n人工保留无信息量词",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "evaluator_drift",
+      "label": "已发布评测器漂移\n代码门槛英 0.2 / 中 0.4；v3 相反\nAK 最终 F1 未执行完整黑名单过滤\n事实召回：gold_ans 为空 · 使用普通 F1\n论文 loogle-MR → 工件 loogle_MIR",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "公开工件与许可边界\n仅测试数据 · 全部标签公开\n代码 + 9 个数据集采用 MIT\nCMRC + LIC：CC BY-SA 4.0\n静态 README 榜单 · 存在过拟合风险",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "public_qa",
-      "to": "qa_pairs",
-      "type": "primary"
+      "from": "evidence",
+      "to": "sources",
+      "type": "dependency"
     },
     {
       "id": "edge-2",
-      "from": "qa_pairs",
-      "to": "length_levels",
+      "from": "sources",
+      "to": "qa",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "length_levels",
-      "to": "context_mix",
+      "from": "qa",
+      "to": "mix",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "context_mix",
-      "to": "confusing_facts",
+      "from": "mix",
+      "to": "lengths",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "confusing_facts",
-      "to": "keyword_replace",
+      "from": "lengths",
+      "to": "cfi_route",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "keyword_replace",
-      "to": "answer_keywords",
-      "type": "primary"
+      "from": "cfi_route",
+      "to": "cfi",
+      "type": "primary",
+      "label": "是"
     },
     {
       "id": "edge-7",
-      "from": "answer_keywords",
-      "to": "lv_eval",
+      "from": "cfi_route",
+      "to": "kpr_route",
+      "type": "optional",
+      "label": "否"
+    },
+    {
+      "id": "edge-8",
+      "from": "cfi",
+      "to": "kpr_route",
       "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "kpr_route",
+      "to": "kpr",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-10",
+      "from": "kpr_route",
+      "to": "ak_route",
+      "type": "optional",
+      "label": "否"
+    },
+    {
+      "id": "edge-11",
+      "from": "kpr",
+      "to": "ak_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "ak_route",
+      "to": "ak",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-13",
+      "from": "ak_route",
+      "to": "dataset",
+      "type": "optional",
+      "label": "否"
+    },
+    {
+      "id": "edge-14",
+      "from": "ak",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "dataset",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "inference",
+      "to": "metric_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "metric_route",
+      "to": "ak_metric",
+      "type": "primary",
+      "label": "9 个 AK 集"
+    },
+    {
+      "id": "edge-18",
+      "from": "metric_route",
+      "to": "cmrc_metric",
+      "type": "primary",
+      "label": "CMRC 路径"
+    },
+    {
+      "id": "edge-19",
+      "from": "metric_route",
+      "to": "dureader_metric",
+      "type": "primary",
+      "label": "DuReader 路径"
+    },
+    {
+      "id": "edge-20",
+      "from": "ak_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "cmrc_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "dureader_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "blacklist",
+      "to": "metric_route",
+      "type": "dependency"
+    },
+    {
+      "id": "edge-24",
+      "from": "inference",
+      "to": "evaluator_drift",
+      "type": "dependency"
+    },
+    {
+      "id": "edge-25",
+      "from": "dataset",
+      "to": "artifact_boundary",
+      "type": "dependency"
     }
   ],
   "modules": []

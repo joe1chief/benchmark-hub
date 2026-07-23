@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "title": "MedSafetyBench 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 19,
+    "edges": 20,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "principles",
+      "label": "定义医疗安全范围\n九项 AMA 医学伦理原则\n违反原则即有害请求\n建立医疗特有风险分类",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "gpt4_prompt",
+      "label": "GPT-4 生成分支\n每次针对一项原则提示\n要求生成 20 条医疗请求\n要求包含医学术语",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gpt4_filter",
+      "label": "筛选 GPT-4 请求\n共 900 条\n每项原则 100 条\n删除重复与无关样本\n保留直接伦理违规请求",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "llama_gcg",
+      "label": "Llama-2 生成分支\n使用 Llama-2-7b-chat\n贪婪坐标梯度攻击\n优化肯定式目标回答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "llama_filter",
+      "label": "筛选 GCG 请求\n九项原则共 900 条\n各原则数量\n118/114/62/112/100\n48/122/128/96",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "merge",
+      "label": "合并并去重\n得 1,800 条唯一请求\nGPT-4 900 + Llama-2 900\n覆盖九项原则",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "safe_response",
+      "label": "编写安全示范回应\nGPT-4 拒绝每条请求\n简述伦理风险\n人工验证并编辑",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "split",
+      "label": "按九项原则分层\nMedSafety-Eval 900 条\nMedSafety-Improve 900 条\n每份均为 450 + 450 来源",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validation",
+      "label": "医生验证\n25 名医生 × 每人 25 条\n共 625 次评定·567/625 不道德\n482/567 匹配至少两项原则",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "维护版本边界\n当前仓库新增 74,374 条\n论文后 Llama-3 请求\n不纳入论文基准",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "eval_input",
+      "label": "准备安全评测输入\nMedSafety-Eval 900 条\nGenSafety-Eval 330 条\n仅提供有害请求\n不展示安全参考回应",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "生成自由文本回应\n测试通用与医疗大模型\n贪婪解码\nOpenAI 温度为 0\n最多 512 个词元",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "GPT 安全裁判\ngpt-3.5-turbo-0125\n温度为 0\nAMA 或通用安全政策\n输出 #reason 与 #score",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "解释裁判分数\n1 = 完全拒绝\n5 = 完全服从\n分数越低越安全\n报告均值 + 标准误",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "code_gap",
+      "label": "已发布评测器边界\n仅保留 #reason 与 #score 原文\n未提供分数解析或聚合器\n复现时需自行实现",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "improve_sets",
+      "label": "构建对齐数据混合\n医疗安全 900 条\n通用安全 900 条\n合并安全 1,800 条",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "finetune",
+      "label": "微调医疗大模型\nMedalpaca 7B / 13B\nMeditron 7B\n比较三种安全数据混合",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "capability",
+      "label": "检查医疗能力保持\nMedQA · MedMCQA\nPubMedQA · MMLU-Medical\n三样本上下文学习\n从训练集随机抽取示例\n取 10 个随机种子的平均准确率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告安全性与效用\n安全分数均值 + 标准误\n比较对齐前后\n报告能力准确率",
+      "type": "terminal",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "principles",
+      "to": "gpt4_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "gpt4_prompt",
+      "to": "gpt4_filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "principles",
+      "to": "llama_gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "llama_gcg",
+      "to": "llama_filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "gpt4_filter",
+      "to": "merge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "llama_filter",
+      "to": "merge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "merge",
+      "to": "safe_response",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "safe_response",
+      "to": "split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "split",
+      "to": "validation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "split",
+      "to": "eval_input",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "eval_input",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "inference",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "judge",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "split",
+      "to": "improve_sets",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "improve_sets",
+      "to": "finetune",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "finetune",
+      "to": "capability",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "capability",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "judge",
+      "to": "code_gap",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-20",
+      "from": "llama_filter",
+      "to": "release_boundary",
+      "type": "secondary"
+    }
+  ],
+  "modules": []
+}

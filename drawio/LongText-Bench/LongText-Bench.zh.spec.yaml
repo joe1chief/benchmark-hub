@@ -1,0 +1,468 @@
+meta:
+  profile: academic-paper
+  source: edited
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: LongText-Bench 证据对齐构建流程
+  description: >-
+    依据 X-Omni arXiv:2507.22058v1 附录 A、官方代码提交 2b8237bb3789638c290eeda3e83ed81bd3652c3b 与公开数据版本
+    429e30e9c1e0dea535038ae4238ea6ec42823098，重建提示构造、发布工件与评测契约。
+  legend: 实线表示论文明确的构建与评测主路径，数据线连接两个固定语言视图及生成 PNG。边界卡片区分已观察到的发布事实、 未披露协议、评测器实现细节与 Hugging Face 静态结果表。
+nodes:
+  - id: evidence
+    label: |-
+      冻结主要证据版本
+      论文v1 · 附录A
+      代码2b8237bb · 数据429e30e9
+      核查于2026-07-21
+    type: document
+    size: xl
+    position:
+      x: 128
+      'y': 240
+  - id: scenarios
+    label: |-
+      定义八类富文本场景
+      标牌 · 标签 · 印刷品 · 网页
+      幻灯片 · 海报 · 字幕 · 对话
+      论文未报告来源语料库
+    type: database
+    size: xl
+    position:
+      x: 400
+      'y': 240
+  - id: gpt4o
+    label: |-
+      每类生成20条提示
+      GPT-4o · 短文本与长文本各10条
+      生成图像描述
+      原始提示词与解码参数未公开
+    type: process
+    size: xl
+    position:
+      x: 672
+      'y': 240
+  - id: manual_qc
+    label: |-
+      逐条人工后审
+      审核生成的描述
+      调整待渲染文字长度
+      使长度分布更均衡
+    type: user
+    size: xl
+    position:
+      x: 944
+      'y': 240
+  - id: paper_total
+    label: |-
+      论文构建输出
+      8 × 20 = 160条提示
+      设计上短文本与长文本各80条
+      面向中英文文字渲染
+    type: database
+    size: xl
+    position:
+      x: 1216
+      'y': 240
+  - id: release_snapshot
+    label: |-
+      固定公开版本 · 429e30e9
+      英文160行 + 中文160行
+      共享ID · 类别 · 长短标签
+      prompt · text[] · text_length
+      无训练/开发/测试划分
+    type: database
+    size: xl
+    position:
+      x: 1488
+      'y': 240
+    style:
+      fontSize: 9
+  - id: construction_gaps
+    label: |-
+      未披露的构建协议
+      GPT-4o版本/提示词/解码参数
+      中文改写或翻译路径
+      标注人数/拒绝规则/争议裁决
+      无更多过滤或QC协议
+    type: document
+    size: xl
+    position:
+      x: 944
+      'y': 48
+    style:
+      fontSize: 9
+  - id: length_stats
+    label: |-
+      长短标签描述的是分布
+      英文短10–30词 · 长文本多为30–50词
+      中文短文本多为20–40字 · 长文本通常超60字
+      固定发布数据仍含标签离群值
+      这些范围不是硬性验收门槛
+    type: document
+    size: xl
+    position:
+      x: 1488
+      'y': 48
+    style:
+      fontSize: 9
+  - id: en_file
+    label: |-
+      英文语言视图
+      text_prompts.jsonl · 160个ID
+      八类场景 · 每类20条
+      短文本与长文本各80条
+    type: document
+    size: xl
+    position:
+      x: 1760
+      'y': 112
+  - id: zh_file
+    label: |-
+      中文语言视图
+      text_prompts_zh.jsonl · 160个ID
+      ID/类别/长短标签与英文一致
+      内容不是统一的逐字翻译
+    type: document
+    size: xl
+    position:
+      x: 1760
+      'y': 408
+  - id: candidate
+    label: |-
+      候选图像生成模型
+      输入完整的对应语言提示
+      每个提示ID生成4张图
+      基准侧不截断提示
+    type: process
+    size: xl
+    position:
+      x: 2128
+      'y': 260
+  - id: generation_gap
+    label: |-
+      图像生成协议未标准化
+      候选模型与检查点
+      分辨率 · 随机种子 · 采样器 · 引导
+      改写与安全拒绝处理
+      论文和评测器均未固定
+    type: document
+    size: xl
+    position:
+      x: 2128
+      'y': 48
+    style:
+      fontSize: 9
+  - id: sample_files
+    label: |-
+      每种语言预期160 × 4
+      640张PNG · 双语合计1,280张
+      prompt_id_repeat_id.png
+      ID为0–199且有两段20-ID空缺
+    type: document
+    size: xl
+    position:
+      x: 2128
+      'y': 560
+  - id: ingest
+    label: |-
+      官方MODE = en或zh
+      选择匹配JSONL与图像目录
+      排序目录内全部*.png
+      解析下划线或点号前的整数ID
+      用ID映射prompt与text[]
+    type: process
+    size: xl
+    position:
+      x: 1856
+      'y': 560
+    style:
+      fontSize: 9
+  - id: ocr
+    label: |-
+      Qwen2.5-VL-7B-Instruct OCR
+      图像 + 固定英文OCR提示
+      只返回文字 · 避免重复
+      提示规定空结果："No text recognized"
+      max_new_tokens = 1,024
+    type: process
+    size: xl
+    position:
+      x: 1584
+      'y': 560
+    style:
+      fontSize: 9
+  - id: cleanup
+    label: |-
+      固定OCR清理漂移
+      目标为addCriterion与"No text recognized."
+      循环每轮复用原始OCR，首项删除被覆盖
+      带句点的空结果可被删除
+      提示要求的无句点空结果仍保留
+      逐图保存OCR与标准文字
+    type: process
+    size: xl
+    position:
+      x: 1312
+      'y': 560
+    style:
+      fontSize: 9
+  - id: normalize_mode
+    label: 按评测MODE归一化？
+    type: decision
+    size: xl
+    position:
+      x: 1040
+      'y': 560
+  - id: en_norm
+    label: |-
+      英文模式归一化
+      保留中日韩字符/拉丁字母/数字/空格
+      删除标点并合并连续空格
+      小写化 · 按空白切词
+    type: process
+    size: xl
+    position:
+      x: 720
+      'y': 464
+  - id: zh_norm
+    label: |-
+      中文模式归一化
+      保留中日韩字符/拉丁字母/数字
+      删除标点与全部空白
+      每个剩余字符作为一个单位
+    type: process
+    size: xl
+    position:
+      x: 720
+      'y': 656
+  - id: match
+    label: |-
+      无序Counter交集
+      重复单位按双方较小频次计数
+      丢弃片段顺序与相对顺序
+      多余OCR单位不受惩罚
+    type: process
+    size: xl
+    position:
+      x: 400
+      'y': 560
+  - id: image_ratio
+    label: |-
+      单图文字准确率
+      匹配标准单位数 / 标准单位总数
+      类召回覆盖率 · 不用编辑距离
+      代码键名误拼为text_accuray
+    type: formula
+    size: xl
+    position:
+      x: 128
+      'y': 560
+  - id: micro_score
+    label: |-
+      每个MODE的官方Text Score
+      Σ逐图匹配数 / Σ逐图标准单位数
+      对已读入图像做微平均
+      不是提示或4次重复的均值
+    type: formula
+    size: xl
+    position:
+      x: 128
+      'y': 872
+  - id: language_report
+    label: |-
+      每次运行只报告一种语言
+      scores.txt · 保留4位小数
+      不检查全集或重复次数是否完整
+      缺失/额外PNG会改变样本权重
+      并可能改变得分
+    type: process
+    size: xl
+    position:
+      x: 400
+      'y': 872
+  - id: leaderboard
+    label: |-
+      固定HF静态榜单
+      11行模型结果 · 无人工上界
+      英文 · 中文 · Avg
+      Avg = (英文 + 中文) / 2
+      无提交或实时更新协议
+    type: terminal
+    size: xl
+    position:
+      x: 672
+      'y': 872
+    style:
+      fontSize: 9
+  - id: openness
+    label: |-
+      发布与开放边界
+      Apache-2.0公开代码与提示JSONL
+      无官方生成图像包
+      静态表格而非托管评测服务
+      无人工参考得分
+    type: document
+    size: xl
+    position:
+      x: 944
+      'y': 872
+    style:
+      fontSize: 9
+  - id: runner_gap
+    label: |-
+      复现注意事项 · 2b8237bb
+      Qwen模型名未固定revision
+      README固定Transformers 4.52.0
+      eval.sh写出results.jsonl
+      却调用不存在的results.json
+    type: document
+    size: xl
+    position:
+      x: 1216
+      'y': 872
+    style:
+      fontSize: 9
+edges:
+  - from: evidence
+    to: scenarios
+    type: primary
+  - from: scenarios
+    to: gpt4o
+    type: primary
+  - from: gpt4o
+    to: manual_qc
+    type: primary
+  - from: manual_qc
+    to: paper_total
+    type: primary
+  - from: paper_total
+    to: release_snapshot
+    type: data
+  - from: manual_qc
+    to: construction_gaps
+    type: dependency
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: release_snapshot
+    to: length_stats
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: release_snapshot
+    to: en_file
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: release_snapshot
+    to: zh_file
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: en_file
+    to: candidate
+    type: data
+    waypoints:
+      - x: 1992
+        'y': 162
+      - x: 1992
+        'y': 310
+  - from: zh_file
+    to: candidate
+    type: data
+    waypoints:
+      - x: 2032
+        'y': 458
+      - x: 2032
+        'y': 310
+  - from: candidate
+    to: generation_gap
+    type: dependency
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: candidate
+    to: sample_files
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: sample_files
+    to: ingest
+    type: data
+  - from: ingest
+    to: ocr
+    type: data
+  - from: ocr
+    to: cleanup
+    type: primary
+  - from: cleanup
+    to: normalize_mode
+    type: primary
+  - from: normalize_mode
+    to: en_norm
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.5
+  - from: normalize_mode
+    to: zh_norm
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.5
+  - from: en_norm
+    to: match
+    type: primary
+    waypoints:
+      - x: 688
+        'y': 514
+      - x: 688
+        'y': 590
+  - from: zh_norm
+    to: match
+    type: primary
+    waypoints:
+      - x: 648
+        'y': 706
+      - x: 648
+        'y': 630
+  - from: match
+    to: image_ratio
+    type: primary
+  - from: image_ratio
+    to: micro_score
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: micro_score
+    to: language_report
+    type: primary
+  - from: language_report
+    to: leaderboard
+    type: primary
+modules: []

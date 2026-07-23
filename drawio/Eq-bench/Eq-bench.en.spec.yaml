@@ -1,0 +1,274 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: EQ-Bench V1 Build Process
+  description: >-
+    Revision-pinned construction of the 60-item paper-era V1 benchmark, its critique-and-revision prompt, normalized
+    distance score, paper retry protocol, and explicitly separated current-runner divergences.
+  legend: >-
+    Solid arrows follow arXiv:2312.06281 V1. Dashed arrows pin later official evidence or current-runner behavior,
+    including its shorter retry cap. V1 permits negative scores; 0 is the random baseline, not a lower bound.
+nodes:
+  - id: evidence
+    label: |-
+      Fixed evidence boundary
+      arXiv:2312.06281v2 · V1 protocol
+      repo branch v2.4 @ 337df8a
+      V1 data SHA 9c52ae2
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: seeds
+    label: |-
+      Sample dialogue seeds
+      random location
+      random author style
+      broad conflict scenario
+      positive or negative context
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 320
+  - id: dialogues
+    label: |-
+      GPT-4 generates dialogue
+      emotionally charged
+      conflict or tension required
+      paper does not state
+      candidate-pool size
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 320
+  - id: selection
+    label: |-
+      Later official README
+      200 dialogues generated
+      choose 60 most coherent
+      and challenging for V1
+      item-level rubric not disclosed
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 320
+  - id: references
+    label: |-
+      Authors set every question
+      and reference answer
+      choose 4 diverse emotions
+      assign 0–10 intensities
+      store normalized references
+      with sum 10
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 320
+  - id: dataset
+    label: |-
+      EQ-Bench V1 artifact
+      60 English questions
+      emotional understanding
+      author references
+      no GPT-4 judge
+      V1 JSON SHA 9c52ae2
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 320
+  - id: version_gate
+    label: |-
+      Select paper-era protocol
+      current repo defaults to V2
+      171 questions
+      V1 with revision:
+      -v1 -revise
+      V1 / V2 scores not comparable
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 320
+  - id: prompt
+    label: |-
+      Exact zero-shot V1 prompt
+      first-pass 4 emotion ratings
+      each from 0 to 10
+      step-by-step critique
+      then revised ratings
+      fixed headings enable parsing
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 320
+  - id: runner
+    label: |-
+      Paper §3.10 retry protocol
+      temperature starts 0.01
+      add 0.15 after parse failure
+      continue until parseable
+      or attempts exceed 5
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 320
+  - id: repo_runner
+    label: |-
+      Pinned runner divergence
+      only 3 attempts per question
+      same 0.01 start and +0.15
+      require 4 correctly named
+      integer ratings
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 40
+  - id: normalize
+    label: |-
+      Normalize model vector
+      to sum 10
+      reject zero-total
+      reject mismatched emotion names
+      reference already normalized
+      measure relative intensity
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 320
+  - id: question_score
+    label: |-
+      Per-question raw score
+      q = 10 − Σ |model − reference|
+      score parseable first /
+      revised answers only
+      no lower clamp
+      q may be negative
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 320
+  - id: aggregate
+    label: |-
+      Aggregate protocol boundary
+      paper V1 versus pinned current runner
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 320
+  - id: paper_aggregate
+    label: |-
+      Paper V1 aggregation
+      average parseable first /
+      revised runs separately
+      choose better whole run
+      never per question
+      ×10 · fewer than 50/60 fails
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 100
+  - id: repo_aggregate
+    label: |-
+      Pinned runner guard
+      revised score ≥ first
+      revised parseables ≥ 95%
+      of first-pass parseables
+      else use first pass
+      pass threshold 83.33%
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 540
+  - id: report
+    label: |-
+      EQ-Bench V1 score
+      negative values are possible
+      random baseline 0
+      exact-reference ceiling 100
+      report first / revised
+      parseable counts
+    type: terminal
+    size: xl
+    position:
+      x: 3160
+      'y': 320
+edges:
+  - from: evidence
+    to: seeds
+    type: data
+  - from: seeds
+    to: dialogues
+    type: primary
+  - from: dialogues
+    to: selection
+    type: primary
+  - from: selection
+    to: references
+    type: primary
+  - from: references
+    to: dataset
+    type: primary
+  - from: dataset
+    to: version_gate
+    type: primary
+  - from: version_gate
+    to: prompt
+    type: primary
+  - from: prompt
+    to: runner
+    type: primary
+  - from: prompt
+    to: repo_runner
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0
+      entryY: 0.5
+  - from: runner
+    to: normalize
+    type: primary
+  - from: repo_runner
+    to: normalize
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.5
+      entryY: 0
+  - from: normalize
+    to: question_score
+    type: primary
+  - from: question_score
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: paper_aggregate
+    type: primary
+  - from: aggregate
+    to: repo_aggregate
+    type: data
+  - from: paper_aggregate
+    to: report
+    type: primary
+  - from: repo_aggregate
+    to: report
+    type: data
+modules: []

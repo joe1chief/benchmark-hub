@@ -1,0 +1,210 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: HumanEval+ 构建与评测流程
+  description: 依据论文区分 HumanEval+ 测试集构建与代码评测，并固定当前 EvalPlus 评测器及 HumanEval+ 数据版本。
+  legend: 实线表示完整测试集主路径，虚线表示可选 Mini 缩减路径；证据与边界连线用于区分论文协议和持续变化的发布物。
+nodes:
+  - id: evidence
+    label: |-
+      一手证据与固定版本
+      arXiv:2305.01210v3
+      EvalPlus 26d6d00 · v0.1.10
+      发布标签 68cd26d
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: identity
+    label: |-
+      HumanEval+ 是测试集增强
+      保留全部 164 个 HumanEval 任务
+      不是新任务或提示集合
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 340
+  - id: base
+    label: |-
+      原始 HumanEval 输入
+      164 个 Python 签名与文档字符串任务
+      基础测试平均 9.6 个
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 340
+  - id: oracle
+    label: |-
+      修复功能金标
+      重新实现并测试全部金标解
+      超过 10% 的原实现有误
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 340
+  - id: contracts
+    label: |-
+      83 / 164 个任务带有契约
+      人工编写输入前置条件
+      拒绝无效或未定义输入
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 340
+  - id: seeds
+    label: |-
+      ChatGPT 种子初始化
+      每任务约 30 个输入 · 来自 3 个提示
+      金标代码 + 基础输入 + 边界请求
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 340
+  - id: mutation
+    label: |-
+      契约过滤的类型感知变异
+      素材复用 + 复合类型递归变异
+      每任务生成 1,000 个输入 · 1 小时预算
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 340
+  - id: release
+    label: |-
+      论文版 HumanEval+ 数据集
+      164 个任务 · 增强测试平均 764.1 个
+      相比 HumanEval 增加 80 倍
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 340
+  - id: mini
+    label: |-
+      可选 HumanEval+-Mini
+      贪心集合覆盖：分支覆盖
+      变异体击杀 + 其他 LLM 样本击杀
+      平均 16.1 个测试 · 缩减 47 倍
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 80
+  - id: prompt
+    label: |-
+      官方 HumanEval 提示
+      Python 函数签名 + 文档字符串
+      模型补全函数实现
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 580
+  - id: sample
+    label: |-
+      论文采样协议
+      T=.2/.4/.6/.8 各采样 200 次
+      另含贪心解码；商业模型有例外
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 580
+  - id: evaluate
+    label: |-
+      先计算金标输出
+      trusted_exec 执行可信金标解
+      基础 + 增强输入 · 精确或 atol
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 340
+  - id: gate
+    label: |-
+      以非可信代码运行候选解
+      untrusted_check：通过 / 失败 / 超时
+      所有适用测试均须通过
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 340
+  - id: report
+    label: |-
+      报告无偏 Pass@k
+      Pass@1 · Pass@10 · Pass@100
+      对比基础 / 增强 / 可选 Mini
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 340
+  - id: artifact_boundary
+    label: |-
+      公开物与协议边界
+      无 LLM 裁判；以功能执行判定
+      公开数据与评测器：v0.1.10
+      模型生成不属于评分指标
+    type: document
+    size: xl
+    position:
+      x: 3400
+      'y': 340
+edges:
+  - from: evidence
+    to: identity
+    type: data
+  - from: identity
+    to: base
+    type: primary
+  - from: base
+    to: oracle
+    type: primary
+  - from: oracle
+    to: contracts
+    type: primary
+  - from: contracts
+    to: seeds
+    type: primary
+  - from: seeds
+    to: mutation
+    type: primary
+  - from: mutation
+    to: release
+    type: primary
+  - from: release
+    to: mini
+    type: secondary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: evaluate
+    type: primary
+  - from: mini
+    to: evaluate
+    type: secondary
+  - from: evaluate
+    to: gate
+    type: primary
+  - from: gate
+    to: report
+    type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
+modules: []

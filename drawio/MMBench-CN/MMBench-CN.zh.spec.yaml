@@ -4,86 +4,266 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMBench-CN 构建流程
-  description: 对齐来源的 MMBench-CN 构建流程：中文版本沿用 MMBench 图像问题能力体系，使用经验证的中文题面、开发/测试划分、CircularEval 和选项抽取来评估中文视觉问答准确率。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MMBench-CN v1.0 构建流程
+  description: MMBench-CN 是 2023 年 10 月英文 v1.0 发布的经核验中文对应版，具有相同的 1,164 道 DEV 与 1,784 道 TEST 逻辑题；后续 3,217 题的 CN v1.1 文件作为独立版本边界保留。
+  legend: 实线表示来源构建、中文翻译核验与评测；虚线只连接字段、版本、答案可见性或发布代码审计事实， 不给主计分分母增加题目。
 nodes:
-  - id: n1
-    label: MMBench基础
-    type: database
+  - id: taxonomy
+    label: |-
+      三级能力体系
+      2 个 L1 / 6 个 L2
+      20 个 L3 能力
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 中文版本
+      'y': 280
+  - id: seeds
+    label: |-
+      作者冷启动样例
+      每个 L3 能力
+      10–20 道 MCQ
     type: process
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 中文划分
-    type: document
+      x: 320
+      'y': 280
+  - id: collection
+    label: |-
+      学生志愿者扩充
+      互联网 + 公开
+      验证集图像
+    type: user
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 图像选择题
+      x: 600
+      'y': 280
+  - id: raw
+    label: |-
+      英文图像多选题
+      问题 + 可选提示
+      2–4 个选项 + 答案
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: text_qc
+    label: |-
+      纯文本可答过滤
+      LLM 共识筛查
+      再由人工复核
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 循环评估
+      x: 1160
+      'y': 80
+  - id: wrong_qc
+    label: |-
+      错题过滤
+      筛查 VLM 全部失败
+      再由人工复核
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: 选项抽取
-    type: decision
+      x: 1160
+      'y': 480
+  - id: en_release
+    label: |-
+      英文 v1.0 来源
+      2,948 道逻辑题
+      2023 年 10 月修订
+    type: database
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 提交评测
-    type: document
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: 中文准确率
-    type: terminal
+      x: 1440
+      'y': 280
+  - id: translate
+    label: |-
+      GPT-4 翻译
+      问题 + 选项
+      保留专名、符号与代码
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 280
+  - id: verify
+    label: |-
+      人工核验
+      有效性 + 正确性
+      逐题对齐
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: cn_release
+    label: |-
+      MMBench-CN v1.0
+      图像、原题 ID、类别
+      与答案均对应
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: split
+    label: |-
+      中文发布
+      DEV 1,164：金标公开
+      TEST 1,784：金标隐藏
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: prompt
+    label: |-
+      零样本开放式生成
+      图像 + 可选提示
+      中文问题 + 选项
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: heuristic
+    label: |-
+      启发式方法
+      抽出选项了吗
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 120
+  - id: gpt
+    label: |-
+      中文选项匹配
+      gpt-4-0125
+      匹配选项或 Z
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 480
+  - id: circular
+    label: |-
+      CircularEval
+      循环轮换 N 个选项
+      各轮全对才算正确
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 280
+  - id: score
+    label: |-
+      逻辑题准确率
+      总体微平均 + L2/L3
+      测试集走官方提交
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 280
+  - id: v11_audit
+    label: |-
+      版本边界
+      CN v1.1 = 3,217
+      与此 ID 分开
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: schema_audit
+    label: |-
+      v1.0 TSV 审计
+      保留 source/comment
+      轮换行共享原题 ID
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: code_audit
+    label: |-
+      发布代码注意项
+      判题重试 3 次均失败
+      随机有效选项或 Z
+    type: document
+    size: xl
+    position:
+      x: 3680
+      'y': 760
 edges:
-  - from: n1
-    to: n2
+  - from: taxonomy
+    to: seeds
     type: primary
-  - from: n2
-    to: n3
+  - from: seeds
+    to: collection
     type: primary
-  - from: n3
-    to: n4
+  - from: collection
+    to: raw
     type: primary
-  - from: n4
-    to: n5
+  - from: raw
+    to: text_qc
     type: primary
-  - from: n5
-    to: n6
+  - from: raw
+    to: wrong_qc
     type: primary
-  - from: n6
-    to: n7
+  - from: text_qc
+    to: en_release
     type: primary
-  - from: n7
-    to: n8
+  - from: wrong_qc
+    to: en_release
     type: primary
+  - from: en_release
+    to: translate
+    type: primary
+  - from: translate
+    to: verify
+    type: primary
+  - from: verify
+    to: cn_release
+    type: primary
+  - from: cn_release
+    to: split
+    type: primary
+  - from: split
+    to: prompt
+    type: primary
+  - from: prompt
+    to: heuristic
+    type: primary
+  - from: heuristic
+    to: circular
+    type: primary
+    label: 是
+  - from: heuristic
+    to: gpt
+    type: primary
+    label: 否
+  - from: gpt
+    to: circular
+    type: primary
+  - from: circular
+    to: score
+    type: primary
+  - from: cn_release
+    to: v11_audit
+    type: secondary
+    style:
+      dashed: true
+  - from: split
+    to: schema_audit
+    type: secondary
+    style:
+      dashed: true
+  - from: score
+    to: code_audit
+    type: secondary
+    style:
+      dashed: true
 modules: []

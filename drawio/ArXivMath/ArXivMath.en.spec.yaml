@@ -1,0 +1,208 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: ArXivMath Paper-Aligned Build Process
+  description: >-
+    Monthly construction and parallel parser/judge evaluation aligned with ArXivMath v2 Appendices A.1, A.2, A.6.1, and
+    A.6.2.
+  legend: >-
+    Formatting repair is conditional: only parser formatting failures are restated and retried; parser-judge
+    disagreements below one percent receive human review.
+nodes:
+  - id: monthly_papers
+    label: |-
+      Collect Prior-Month Papers
+      Recent arXiv Mathematics
+      Cover Diverse Fields
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 180
+  - id: candidate_pool
+    label: |-
+      Generate About 200 Candidates
+      Central Research Results
+      One Verifiable Final Answer
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 180
+  - id: screening
+    label: |-
+      Screen and Repair Questions
+      Recover Full-Paper Context
+      Remove Doubtful Candidates
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 180
+  - id: final_review
+    label: |-
+      Final MathArena Team Review
+      Check Clarity and Correctness
+      Approve Ground-Truth Answers
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 180
+  - id: release
+    label: |-
+      Release About 30 Problems
+      Monthly Dynamic Benchmark
+      Store Ground-Truth Answers
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 180
+  - id: model_outputs
+    label: |-
+      Generate Model Outputs
+      Use Default Parameters
+      No Search or Code Tools
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 180
+  - id: parser
+    label: |-
+      Run Exact-Answer Parser
+      Symbolic Equivalence
+      Compare with Ground Truth
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 500
+  - id: llm_judge
+    label: |-
+      Run LLM Judge in Parallel
+      Independent Correctness Check
+      Compare Final Decisions
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 760
+  - id: format_gate
+    label: |-
+      Parser Format Failure?
+      Do Not Repair Valid Parses
+      Route Only Failed Formats
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 500
+  - id: restate
+    label: |-
+      Ask Model to Restate
+      Use Expected Answer Format
+      Do Not Resolve Content
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 390
+  - id: parser_retry
+    label: |-
+      Retry the Parser Once
+      Parse Restated Final Answer
+      Retain the New Decision
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 610
+  - id: agreement_gate
+    label: |-
+      Parser and Judge Agree?
+      Disagreements Below 1%
+      Route Exceptions Only
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 610
+  - id: manual_review
+    label: |-
+      Human Review for < 1%
+      Resolve Only Disagreements
+      Record Final Decision
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 850
+  - id: report
+    label: |-
+      Report Final Accuracy
+      Average Repeated Runs
+      Track Monthly Versions
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 610
+edges:
+  - from: monthly_papers
+    to: candidate_pool
+    type: primary
+  - from: candidate_pool
+    to: screening
+    type: primary
+  - from: screening
+    to: final_review
+    type: primary
+  - from: final_review
+    to: release
+    type: primary
+  - from: release
+    to: model_outputs
+    type: primary
+  - from: model_outputs
+    to: parser
+    type: primary
+  - from: model_outputs
+    to: llm_judge
+    type: data
+  - from: parser
+    to: format_gate
+    type: primary
+  - from: format_gate
+    to: restate
+    type: optional
+    label: Format failure
+  - from: restate
+    to: parser_retry
+    type: primary
+  - from: format_gate
+    to: agreement_gate
+    type: primary
+    label: Parsed
+  - from: parser_retry
+    to: agreement_gate
+    type: primary
+  - from: llm_judge
+    to: agreement_gate
+    type: data
+  - from: agreement_gate
+    to: manual_review
+    type: optional
+    label: Disagree < 1%
+  - from: agreement_gate
+    to: report
+    type: primary
+    label: Agree
+  - from: manual_review
+    to: report
+    type: primary
+modules: []

@@ -1,0 +1,247 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: XLRS-Bench Multi-Product Annotation and Evaluation
+  description: >-
+    XLRS-Bench combines 1,400 ultra-high-resolution images from six remote-sensing sources, applies multi-round human
+    cross-validation, and creates three products: 13-task all-human VQA, two-task human grounding, and GPT-4o-assisted
+    captions refined by humans using VQA evidence. Six bilingual experts translate and cross-check long-form content.
+    Evaluation routes VQA to accuracy/OLUC exact-set match, grounding to Acc@IoU 0.5/0.7, and captions to
+    BLEU/METEOR/ROUGE-L. The diagram must disclose the 45,942 headline versus 45,838 Table-5 sum conflict.
+  legend: >-
+    Source: XLRS-Bench arXiv:2503.23771v1, Figures 3-4, Sections 3.1-3.3 and 4.1-4.2, Tables 2-4, and Appendix A.4 Table
+    5; project https://xlrs-bench.github.io/home_page.html, repository https://github.com/AI9Stars/XLRS-Bench, and
+    release collection https://huggingface.co/collections/initiacms/xlrs-bench. Version pin: full-paper 1,400-image
+    bilingual benchmark, not the earlier VQA-only lite release or website scale_en=10,784. Required conflict: repeated
+    headline total is 45,942, while literal Appendix Table 5 rows sum to 45,838.. Solid arrows show the main flow
+    explicitly supported by the paper or official documentation.
+nodes:
+  - id: rs_sources
+    label: Six Remote-Sensing Sources
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: image_pool
+    label: 1,400 Ultra-High-Resolution Images
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: image_qc
+    label: Multi-Round Image Cross-Validation
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: vqa_annotation
+    label: 13-Task Human VQA
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: ground_annotation
+    label: Two Human Grounding Tasks
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: caption_inputs
+    label: 3x3 Crops + Full Image
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: gpt4o_caption
+    label: GPT-4o Caption Draft
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: caption_refine
+    label: Human Caption Refinement
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: vqa_crosscheck
+    label: 3x15 Cross-Check + 10 Specialists
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: ground_qc
+    label: Same VQA QC Team
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: bilingual_review
+    label: 6-Expert EN-to-ZH Review
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: xlrs_release
+    label: '45,942 Headline* / Table 5: 45,838'
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: zero_shot_models
+    label: Zero-Shot MLLM Evaluation
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1040
+  - id: vqa_metrics
+    label: VQA Accuracy + OLUC Exact Set
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 800
+  - id: ground_metrics
+    label: Grounding Acc@IoU 0.5 / 0.7
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 1040
+  - id: caption_metrics
+    label: BLEU / METEOR / ROUGE-L
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 1280
+  - id: xlrs_report
+    label: Product-Specific Results
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 1040
+edges:
+  - from: rs_sources
+    to: image_pool
+    type: data
+  - from: image_pool
+    to: image_qc
+    type: primary
+  - from: image_qc
+    to: vqa_annotation
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: image_qc
+    to: ground_annotation
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: image_qc
+    to: caption_inputs
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: image_qc
+    to: image_pool
+    type: optional
+    label: Recheck
+    labelPosition: start
+  - from: vqa_annotation
+    to: vqa_crosscheck
+    type: primary
+  - from: ground_annotation
+    to: ground_qc
+    type: primary
+  - from: caption_inputs
+    to: gpt4o_caption
+    type: primary
+  - from: gpt4o_caption
+    to: caption_refine
+    type: primary
+  - from: vqa_crosscheck
+    to: bilingual_review
+    type: primary
+  - from: ground_qc
+    to: bilingual_review
+    type: primary
+  - from: caption_refine
+    to: bilingual_review
+    type: primary
+  - from: bilingual_review
+    to: xlrs_release
+    type: primary
+  - from: vqa_crosscheck
+    to: vqa_annotation
+    type: optional
+    label: Resolve
+    labelPosition: start
+  - from: ground_qc
+    to: ground_annotation
+    type: optional
+    label: Revise
+    labelPosition: start
+  - from: bilingual_review
+    to: caption_refine
+    type: optional
+    label: Correct
+    labelPosition: start
+  - from: xlrs_release
+    to: zero_shot_models
+    type: primary
+    waypoints:
+      - x: 2280
+        'y': 680
+      - x: 2280
+        'y': 1090
+  - from: zero_shot_models
+    to: vqa_metrics
+    type: primary
+  - from: zero_shot_models
+    to: ground_metrics
+    type: primary
+  - from: zero_shot_models
+    to: caption_metrics
+    type: primary
+  - from: vqa_metrics
+    to: xlrs_report
+    type: primary
+    waypoints:
+      - x: 1580
+        'y': 720
+      - x: 1280
+        'y': 720
+      - x: 1280
+        'y': 1000
+  - from: ground_metrics
+    to: xlrs_report
+    type: primary
+  - from: caption_metrics
+    to: xlrs_report
+    type: primary
+    waypoints:
+      - x: 1580
+        'y': 1420
+      - x: 1280
+        'y': 1420
+      - x: 1280
+        'y': 1200
+modules: []

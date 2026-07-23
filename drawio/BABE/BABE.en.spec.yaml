@@ -6,105 +6,212 @@ meta:
   routing: orthogonal
   title: BABE Build Process
   description: >-
-    Paper-aligned construction of the Biology Arena Benchmark from frontier biological literature, expert-written
-    question triplets, senior expert review, LLM-assisted simplicity filtering, and strong/weak correlation analysis,
-    based on arXiv:2602.05857.
-  legend: Solid arrows show benchmark construction; dashed arrows mark revision and difficulty-filtering feedback.
+    Paper-aligned Biology Arena Benchmark construction and experimental-reasoning evaluation workflow, based on
+    arXiv:2602.05857.
+  legend: >-
+    Solid arrows show accepted construction and evaluation stages; dashed arrows show the revision loop and the two
+    diagnostic relation branches.
 nodes:
-  - id: sources
-    label: Literature
+  - id: literature
+    label: |-
+      Curate Frontier Biology Literature
+      Peer-Reviewed Papers • Monographs
+      Authoritative Review Articles
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 220
   - id: source_filter
-    label: Screening
-    type: decision
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: expert_items
-    label: Expert items
+    label: |-
+      Screen Source Material
+      Recent • Domain-Relevant • Conceptually Deep
+      Suitable for Multi-Step Reasoning
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: triplets
-    label: Triplets
+      x: 320
+      'y': 220
+  - id: expert_triplet
+    label: |-
+      Domain Expert Writes a Three-Item Set
+      Concept • Method Interpretation
+      Higher-Order Experimental Reasoning
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: item_contract
+    label: |-
+      Enforce Item Contract
+      Self-Contained • Unambiguous • Source-Faithful
+      Avoid Superficial Fact Retrieval
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 880
+      'y': 220
   - id: senior_review
-    label: Review
+    label: |-
+      Senior Expert Panel Reviews
+      Relevance • Factual Fidelity • Logic
+      Answer Correctness and Source Alignment
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 70
+      x: 1160
+      'y': 220
+  - id: revision
+    label: |-
+      Return Rejected Items
+      Repair Inaccuracy, Ambiguity, or Misalignment
+      Run a Second Review
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
   - id: llm_filter
-    label: LLM filter
+    label: |-
+      Remove Simple Questions with LLM Assistance
+      Retain Research-Level Experimental Reasoning
+      Keep Explicit Relevance Annotations
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: correlation
-    label: Strong/weak
+      x: 1440
+      'y': 220
+  - id: strong_relation
+    label: |-
+      Label Strong Correlation
+      Q1 → Q2 → Q3 Sequential Dependency
+      Earlier Answers Are Needed Downstream
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: benchmark
-    label: BABE data
+      x: 1720
+      'y': 80
+  - id: weak_relation
+    label: |-
+      Label Weak Correlation
+      Parallel Independent Evidence Extraction
+      Distinct Contexts from One Source Document
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: release
+    label: |-
+      Release BABE
+      Multimodal Research-Derived Triplets
+      12 Biology Subfields • 45% Strong / 55% Weak
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: evaluation
-    label: Evaluation
+      x: 2000
+      'y': 220
+  - id: model_eval
+    label: |-
+      Evaluate Frontier and Open Models
+      Integrate Experimental Figures and Context
+      Produce Answers for Every Triplet
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: subset_scores
+    label: |-
+      Score Answer Correctness
+      Overall Average • Strong Subset
+      Weak Subset
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 540
+  - id: multi_trial
+    label: |-
+      Run Multi-Trial Inference
+      n = 1, 2, 4, 8
+      Compare Average and Best-of-N Gain
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 820
+  - id: reasoning_analysis
+    label: |-
+      Analyze Reasoning Behavior
+      Deep Reasoning • Self-Exploration
+      Self-Reflection and Convergence
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: report
+    label: |-
+      Report BABE Diagnostics
+      Depth versus Breadth of Understanding
+      Error Propagation and Semantic Interference
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 680
 edges:
-  - from: sources
+  - from: literature
     to: source_filter
     type: primary
   - from: source_filter
-    to: expert_items
+    to: expert_triplet
     type: primary
-  - from: expert_items
-    to: triplets
+  - from: expert_triplet
+    to: item_contract
     type: primary
-  - from: triplets
+  - from: item_contract
     to: senior_review
     type: primary
   - from: senior_review
+    to: revision
+    type: optional
+  - from: revision
+    to: senior_review
+    type: optional
+  - from: senior_review
     to: llm_filter
     type: primary
-  - from: senior_review
-    to: expert_items
-    type: optional
-    label: revise rejected items
   - from: llm_filter
-    to: correlation
-    type: primary
-  - from: correlation
-    to: benchmark
-    type: primary
-  - from: benchmark
-    to: evaluation
-    type: primary
+    to: strong_relation
+    type: data
   - from: llm_filter
-    to: expert_items
-    type: optional
-    label: remove or rewrite
+    to: weak_relation
+    type: data
+  - from: strong_relation
+    to: release
+    type: primary
+  - from: weak_relation
+    to: release
+    type: primary
+  - from: release
+    to: model_eval
+    type: primary
+  - from: model_eval
+    to: subset_scores
+    type: primary
+  - from: model_eval
+    to: multi_trial
+    type: data
+  - from: subset_scores
+    to: reasoning_analysis
+    type: primary
+  - from: multi_trial
+    to: reasoning_analysis
+    type: data
+  - from: reasoning_analysis
+    to: report
+    type: primary
 modules: []

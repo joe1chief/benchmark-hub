@@ -1,89 +1,785 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LiveBench 构建流程
-  description: 根据论文整理的 LiveBench 流程：近期来源、客观答案任务、月度刷新、私有保留题和自动评分。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: LiveBench 构建、发布与评测流程
+  description: >-
+    依据 arXiv:2406.19314v2、固定版本官方代码和已部署官网重建 LiveBench。图中严格区分论文的 18 任务/6 类快照与官网的 23 任务/7 类/1,270 题成本基数，并区分标准客观评分器与后续新增的
+    Agentic Coding 评测链路。
+  legend: 实线表示基准数据、推理与分数流；虚线表示淘汰、证据、版本漂移或评分质检反馈。论文计数与当前官网计数均带版本，不混写。
 nodes:
   - id: recent_sources
-    label: 近期来源
-    type: document
+    label: |-
+      近期信息来源
+      数学竞赛 · arXiv · 新闻
+      Kaggle / Socrata · 电影 · 代码
+      每版冻结来源日期
+    type: database
+    module: construction
     size: xl
     position:
       x: 40
       'y': 160
-  - id: six_tasks
-    label: 六类任务
-    type: process
+    style:
+      fontSize: 9
+  - id: variant_sources
+    label: |-
+      更难 / 更多样的任务变体
+      AMPS · Big-Bench Hard · IFEval
+      程序化合成任务
+      并非全部来自新信息源
+    type: database
+    module: construction
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: objective_gt
-    label: 客观答案
+      x: 40
+      'y': 400
+    style:
+      fontSize: 9
+  - id: construct_tasks
+    label: |-
+      按任务构造题目
+      API · 采样 · 脚本 · 人工作者
+      论文：每任务 40–100 题
+      目标：前沿模型约 30–70% 成功率
+    type: process
+    module: construction
+    size: xl
+    position:
+      x: 360
+      'y': 240
+    style:
+      fontSize: 9
+  - id: objective_gate
+    label: |-
+      有客观真值
+      且可自动评分？
+    type: decision
+    module: construction
+    size: xl
+    position:
+      x: 680
+      'y': 240
+  - id: reject_task
+    label: |-
+      淘汰主观或
+      无法核验的任务
+      不采用人类 / LLM 偏好 Judge
     type: document
+    module: construction
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: prompt_format
-    label: 格式提示
+      x: 680
+      'y': 520
+    style:
+      fontSize: 9
+  - id: prompt_contract
+    label: |-
+      编写任务专用提示
+      零样本 CoT · 不会则猜
+      明确可解析终答格式
+      XML 标签 / 加粗 / 精确格式
     type: process
-    size: xl
-    position:
-      x: 760
-      'y': 160
-  - id: monthly_refresh
-    label: 月度更新
-    type: process
+    module: construction
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: private_holdout
-    label: 私有保留
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: auto_score
-    label: 自动评分
+      'y': 240
+    style:
+      fontSize: 9
+  - id: validate_questions
+    label: |-
+      核验题目与真值
+      生成脚本自动检查
+      作者检查与任务质检
+      保持难度多样性
     type: process
+    module: construction
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: live_score
-    label: Live分数
+      x: 1320
+      'y': 240
+    style:
+      fontSize: 9
+  - id: paper_snapshot
+    label: |-
+      论文 v2 / ICLR 2025 快照
+      18 个任务 · 6 个类别
+      首次更新后共 1,000 题
+      英文 · 仅测试用途
+    type: database
+    module: construction
+    size: xl
+    position:
+      x: 1640
+      'y': 240
+    style:
+      fontSize: 9
+  - id: update_select
+    label: |-
+      选择需要更新的任务
+      最旧 · 最易 · 疑似泄漏
+      论文策略：每月更新
+    type: process
+    module: maintenance
+    size: xl
+    position:
+      x: 1640
+      'y': 720
+    style:
+      fontSize: 9
+  - id: regenerate
+    label: |-
+      重生成 / 替换题目
+      论文每次平均约替换 1/6
+      修改生成器并逐步加难
+      更新后重跑全部模型
+    type: process
+    module: maintenance
+    size: xl
+    position:
+      x: 1960
+      'y': 720
+    style:
+      fontSize: 9
+  - id: version_tags
+    label: |-
+      为每题维护版本
+      发布日期 · 移除日期
+      按日期选择基准版本
+    type: document
+    module: maintenance
+    size: xl
+    position:
+      x: 2280
+      'y': 720
+    style:
+      fontSize: 9
+  - id: public_release
+    label: |-
+      公开题目 / 历史版本
+      GitHub / HF 公开代码与部分数据
+      论文：新批次延迟 1 个月公开
+    type: database
+    module: maintenance
+    size: xl
+    position:
+      x: 2280
+      'y': 960
+    style:
+      fontSize: 9
+  - id: private_window
+    label: |-
+      最新题目暂不公开
+      用于官方排行榜
+      论文目标：约 1/6 私有
+      私有子集精确数量未公开
+    type: database
+    module: maintenance
+    size: xl
+    position:
+      x: 2280
+      'y': 1200
+    style:
+      fontSize: 9
+  - id: current_snapshot
+    label: |-
+      官网版本 · 2026-06-25
+      23 个任务列 · 7 个类别
+      标准成本基数：1,270 题
+      1,198 常规 + 72 Agentic v2
+    type: database
+    module: maintenance
+    size: xl
+    position:
+      x: 1640
+      'y': 1080
+    style:
+      fontSize: 9
+  - id: release_drift
+    label: |-
+      版本漂移 · 不得混写
+      论文：18 / 6 · 每月约 1/6
+      官网：23 / 7 / 1,270 · 约 6 个月全刷新
+      README / 公开 HF 落后于官网
+    type: document
+    module: maintenance
+    size: xl
+    position:
+      x: 1320
+      'y': 1080
+    style:
+      fontSize: 9
+  - id: release_select
+    label: |-
+      选择基准版本
+      固定代码支持 11 个日期
+      截至 2026-06-25
+    type: user
+    module: evaluation
+    size: xl
+    position:
+      x: 40
+      'y': 1440
+    style:
+      fontSize: 9
+  - id: load_filter
+    label: |-
+      加载该版本有效题目
+      发布日期 ≤ 所选日期
+      未移除或移除日期更晚
+      题目 ID 必须唯一
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 360
+      'y': 1440
+    style:
+      fontSize: 9
+  - id: eval_route
+    label: 属于 Agentic Coding？
+    type: decision
+    module: evaluation
+    size: xl
+    position:
+      x: 680
+      'y': 1440
+  - id: standard_infer
+    label: |-
+      标准模型推理
+      论文：单轮 · T=0
+      代码基础回退：T=0
+      模型/题/CLI/服务商配置
+      示例：T=0.7 / 1.0
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1000
+      'y': 1320
+    style:
+      fontSize: 9
+  - id: agentic_infer
+    label: |-
+      当前 Agentic Coding v2
+      Docker 内运行 Mini-SWE-Agent
+      修改真实代码仓库
+      当前 Agent 上限 250 步
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1000
+      'y': 1600
+    style:
+      fontSize: 9
+  - id: standard_scorer
+    label: |-
+      保存答案与元数据
+      任务专用客观评分器
+      正则 / 精确 / 模糊 / 编辑距离
+      测试 / IF 核验器 · 可得小数分
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1640
+      'y': 1320
+    style:
+      fontSize: 9
+  - id: agentic_scorer
+    label: |-
+      应用补丁并运行仓库测试
+      FAIL_TO_PASS + PASS_TO_PASS
+      已解决 = 1 · 未解决 / 无补丁 = 0
+      基础设施 / Flaky：重试或跳过
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1640
+      'y': 1600
+    style:
+      fontSize: 9
+  - id: question_score
+    label: |-
+      汇合两分支逐题判定
+      标准：任务专用得分 [0, 1]
+      Agentic：已解决 1 / 未解决 0
+      保留评测状态元数据
+    type: process
+    module: evaluation
+    size: xl
+    position:
+      x: 1960
+      'y': 1440
+    style:
+      fontSize: 9
+  - id: score_audit
+    label: |-
+      标准解析器人工质检
+      抽查标准任务错误答案
+      必要时扩展公平解析规则
+      规则更新后重评标准任务模型
+    type: user
+    module: evaluation
+    size: xl
+    position:
+      x: 2280
+      'y': 1480
+    style:
+      fontSize: 9
+  - id: task_average
+    label: |-
+      逐题得分取均值
+      → 任务分
+    type: process
+    module: aggregation
+    size: xl
+    position:
+      x: 1960
+      'y': 2080
+  - id: category_average
+    label: |-
+      任务分等权平均
+      → 类别分
+    type: process
+    module: aggregation
+    size: xl
+    position:
+      x: 1640
+      'y': 2080
+  - id: overall_average
+    label: |-
+      类别分等权平均
+      论文 6 类 · 当前官网 7 类
+      → LiveBench 总分
+    type: formula
+    module: aggregation
+    size: xl
+    position:
+      x: 1320
+      'y': 2080
+  - id: leaderboard
+    label: |-
+      特定版本排行榜
+      任务 · 类别 · 总分明细
+      不把不同版本分数混为一套
     type: terminal
+    module: aggregation
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1000
+      'y': 2080
+    style:
+      fontSize: 9
+  - id: release_boundary
+    label: |-
+      公开 / 暂缓公开边界
+      仓库与较早 HF 数据公开
+      最新题目未公开
+      无完整公开的 2026 冻结语料
+    type: document
+    module: evidence_boundary
+    size: xl
+    position:
+      x: 680
+      'y': 2320
+    style:
+      fontSize: 9
+  - id: evidence_pins
+    label: |-
+      证据冻结 · 2026-07-21
+      论文 v2 · 代码 4bf3d6f4
+      官网 f2e0b4bc · 成本 SHA 09ffc358
+      公开 HF 集变更于 2025-04
+    type: document
+    module: evidence_boundary
+    size: xl
+    position:
+      x: 40
+      'y': 2320
+    style:
+      fontSize: 9
 edges:
   - from: recent_sources
-    to: six_tasks
+    to: construct_tasks
     type: primary
-  - from: six_tasks
-    to: objective_gt
+    waypoints:
+      - x: 296
+        'y': 200
+      - x: 296
+        'y': 280
+  - from: variant_sources
+    to: construct_tasks
     type: primary
-  - from: objective_gt
-    to: prompt_format
+    waypoints:
+      - x: 264
+        'y': 440
+      - x: 264
+        'y': 296
+  - from: construct_tasks
+    to: objective_gate
     type: primary
-  - from: prompt_format
-    to: monthly_refresh
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: objective_gate
+    to: reject_task
+    type: optional
+    label: 否
+    style:
+      exitX: 0.5
+      exitY: 1
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.5
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: objective_gate
+    to: prompt_contract
     type: primary
-  - from: monthly_refresh
-    to: private_holdout
+    label: 是
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: prompt_contract
+    to: validate_questions
     type: primary
-  - from: private_holdout
-    to: auto_score
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: validate_questions
+    to: paper_snapshot
     type: primary
-  - from: auto_score
-    to: live_score
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: paper_snapshot
+    to: update_select
     type: primary
-modules: []
+    style:
+      exitX: 0.5
+      exitY: 1
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.5
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: update_select
+    to: regenerate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: regenerate
+    to: version_tags
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: version_tags
+    to: public_release
+    type: primary
+    style:
+      exitX: 0.33
+      exitY: 1
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.5
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: version_tags
+    to: private_window
+    type: primary
+    waypoints:
+      - x: 2600
+        'y': 880
+      - x: 2600
+        'y': 1240
+  - from: public_release
+    to: current_snapshot
+    type: primary
+    waypoints:
+      - x: 2160
+        'y': 1000
+      - x: 2160
+        'y': 1040
+      - x: 1920
+        'y': 1040
+  - from: private_window
+    to: current_snapshot
+    type: primary
+    waypoints:
+      - x: 2120
+        'y': 1240
+      - x: 2120
+        'y': 1160
+      - x: 1920
+        'y': 1160
+  - from: current_snapshot
+    to: release_drift
+    type: optional
+    style:
+      exitX: 0
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: current_snapshot
+    to: release_select
+    type: primary
+    waypoints:
+      - x: 1840
+        'y': 1280
+      - x: 200
+        'y': 1280
+      - x: 200
+        'y': 1440
+  - from: release_select
+    to: load_filter
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: load_filter
+    to: eval_route
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: eval_route
+    to: standard_infer
+    type: primary
+    label: 否
+    style:
+      exitX: 1
+      exitY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: eval_route
+    to: agentic_infer
+    type: primary
+    label: 是
+    style:
+      exitX: 1
+      exitY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: standard_infer
+    to: standard_scorer
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: agentic_infer
+    to: agentic_scorer
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: standard_scorer
+    to: question_score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.25
+      entryDx: 0
+      entryDy: 0
+  - from: agentic_scorer
+    to: question_score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.75
+      entryDx: 0
+      entryDy: 0
+  - from: standard_scorer
+    to: score_audit
+    type: optional
+    label: 解析器质检
+    waypoints:
+      - x: 2200
+        'y': 1380
+      - x: 2200
+        'y': 1540
+  - from: score_audit
+    to: standard_scorer
+    type: optional
+    label: 修正解析器并重评
+    waypoints:
+      - x: 2600
+        'y': 1540
+      - x: 2600
+        'y': 1200
+      - x: 1800
+        'y': 1200
+  - from: question_score
+    to: task_average
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.5
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: task_average
+    to: category_average
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: category_average
+    to: overall_average
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: overall_average
+    to: leaderboard
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: leaderboard
+    to: release_boundary
+    type: data
+    waypoints:
+      - x: 960
+        'y': 2240
+      - x: 840
+        'y': 2240
+  - from: evidence_pins
+    to: release_boundary
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryX: 0
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+modules:
+  - id: construction
+    label: 构建
+    color: $primaryLight
+  - id: maintenance
+    label: 更新
+    color: $secondaryLight
+  - id: evaluation
+    label: 评测
+    color: $accentLight
+  - id: aggregation
+    label: 聚合
+    color: $primaryLight
+  - id: evidence_boundary
+    label: 证据
+    color: $surface

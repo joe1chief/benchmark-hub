@@ -1,0 +1,319 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VisualWebBench — 七类任务构建与指标流程
+  description: >-
+    VisualWebBench 从 SimilarWeb 的12个领域、87个子领域出发，在各子领域排名前五的网站中人工选择代表性网站，并排除 Mind2Web 或 WebArena
+    已使用的网站，最终覆盖139个网站。Playwright
+    以1280像素宽渲染截图，七条任务产线共构造1,534个样本。核验与整理工作由两名作者分工协作完成；论文没有定义逐样本双人签核门。七类数量为134/314/46/245/413/281/101。
+  legend: >-
+    来源：arXiv:2404.05955v1, Sections 3.1-3.4 and Appendix B; official dataset:
+    https://huggingface.co/datasets/visualwebbench/VisualWebBench. Section 3.2 specifies representative websites
+    selected from each subdomain's top five, while Section 3.1 and the official dataset report 139 websites. Appendix B
+    specifies collaborative verification and curation with a division of tasks by two authors, not a per-sample
+    two-signature gate.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: similarWeb
+    label: SimilarWeb · 12领域 · 87子领域
+    type: cloud
+    size: xl
+    position:
+      x: 40
+      'y': 720
+  - id: siteSelect
+    label: 从各子领域前5名中选代表性网站
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 720
+  - id: overlapGate
+    label: 已被 Mind2Web / WebArena 使用？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 720
+  - id: excludeSite
+    label: 排除网站
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 960
+  - id: render
+    label: 139个网站 · Playwright · 宽1280
+    type: service
+    size: xl
+    position:
+      x: 880
+      'y': 720
+  - id: factoryRouter
+    label: 任务产线？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 720
+  - id: captionDraft
+    label: 描述：元数据+截图 → GPT-4V
+    type: service
+    size: xl
+    position:
+      x: 2100
+      'y': 40
+  - id: captionVerify
+    label: 作者核验描述
+    type: user
+    size: xl
+    position:
+      x: 2400
+      'y': 40
+  - id: webQa
+    label: 网页问答：人工 · 每图≤5题
+    type: user
+    size: xl
+    position:
+      x: 2100
+      'y': 280
+  - id: headingOcr
+    label: 标题OCR：首个 h1
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 520
+  - id: elementOcr
+    label: 元素OCR：DOM文本+bbox
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 760
+  - id: elementGround
+    label: 元素定位：目标框+7个负例框
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 1000
+  - id: clickTest
+    label: 动作预测：点击元素
+    type: service
+    size: xl
+    position:
+      x: 2100
+      'y': 1240
+  - id: titleGate
+    label: 目标页标题变化？
+    type: decision
+    size: xl
+    position:
+      x: 2400
+      'y': 1240
+  - id: discardAction
+    label: 剔除动作样本
+    type: terminal
+    size: xl
+    position:
+      x: 2400
+      'y': 1720
+  - id: actionPred
+    label: 目标页标题+7个负选项
+    type: process
+    size: xl
+    position:
+      x: 2700
+      'y': 1240
+  - id: actionGround
+    label: 动作定位：7名资深标注员
+    type: user
+    size: xl
+    position:
+      x: 2100
+      'y': 1480
+  - id: taskPool
+    label: 七类任务样本池
+    type: database
+    size: xl
+    position:
+      x: 3300
+      'y': 720
+  - id: authorCuration
+    label: 两名作者 · 分工协作核验与整理
+    type: user
+    size: xl
+    position:
+      x: 3600
+      'y': 720
+  - id: release
+    label: 发布1,534个样本 · 139个网站
+    type: output
+    size: xl
+    position:
+      x: 3900
+      'y': 720
+  - id: metricRouter
+    label: 任务指标？
+    type: decision
+    size: xl
+    position:
+      x: 3900
+      'y': 1800
+  - id: rouge
+    label: ROUGE-L · 描述/标题OCR/元素OCR
+    type: formula
+    size: xl
+    position:
+      x: 3500
+      'y': 2040
+  - id: squad
+    label: SQuAD F1 · 网页问答
+    type: formula
+    size: xl
+    position:
+      x: 3900
+      'y': 2040
+  - id: accuracy
+    label: 多选准确率 · 3类定位/动作任务
+    type: formula
+    size: xl
+    position:
+      x: 4300
+      'y': 2040
+  - id: report
+    label: 七类任务分数
+    type: output
+    size: xl
+    position:
+      x: 3900
+      'y': 2280
+edges:
+  - from: similarWeb
+    to: siteSelect
+    type: primary
+  - from: siteSelect
+    to: overlapGate
+    type: primary
+  - from: overlapGate
+    to: excludeSite
+    type: optional
+    label: 是
+    labelPosition: center
+  - from: overlapGate
+    to: render
+    type: primary
+    label: 否
+    labelPosition: center
+  - from: render
+    to: factoryRouter
+    type: primary
+  - from: factoryRouter
+    to: captionDraft
+    type: primary
+    label: 网页描述
+    labelPosition: center
+  - from: factoryRouter
+    to: webQa
+    type: primary
+    label: 网页问答
+    labelPosition: center
+  - from: factoryRouter
+    to: headingOcr
+    type: primary
+    label: 标题OCR
+    labelPosition: center
+  - from: factoryRouter
+    to: elementOcr
+    type: primary
+    label: 元素OCR
+    labelPosition: center
+  - from: factoryRouter
+    to: elementGround
+    type: primary
+    label: 元素定位
+    labelPosition: center
+  - from: factoryRouter
+    to: clickTest
+    type: primary
+    label: 动作预测
+    labelPosition: center
+  - from: factoryRouter
+    to: actionGround
+    type: primary
+    label: 动作定位
+    labelPosition: center
+  - from: captionDraft
+    to: captionVerify
+    type: primary
+  - from: captionVerify
+    to: taskPool
+    type: primary
+  - from: webQa
+    to: taskPool
+    type: primary
+  - from: headingOcr
+    to: taskPool
+    type: primary
+  - from: elementOcr
+    to: taskPool
+    type: primary
+  - from: elementGround
+    to: taskPool
+    type: primary
+  - from: clickTest
+    to: titleGate
+    type: primary
+  - from: titleGate
+    to: discardAction
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: titleGate
+    to: actionPred
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: actionPred
+    to: taskPool
+    type: primary
+  - from: actionGround
+    to: taskPool
+    type: primary
+  - from: taskPool
+    to: authorCuration
+    type: primary
+  - from: authorCuration
+    to: release
+    type: primary
+  - from: release
+    to: metricRouter
+    type: primary
+  - from: metricRouter
+    to: rouge
+    type: primary
+    label: 描述/OCR
+    labelPosition: center
+  - from: metricRouter
+    to: squad
+    type: primary
+    label: 网页问答
+    labelPosition: center
+  - from: metricRouter
+    to: accuracy
+    type: primary
+    label: 定位/动作
+    labelPosition: center
+  - from: rouge
+    to: report
+    type: primary
+  - from: squad
+    to: report
+    type: primary
+  - from: accuracy
+    to: report
+    type: primary
+modules: []

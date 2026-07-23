@@ -5,77 +5,145 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GDPVal Build Process
-  description: Paper-aligned GDPVal flow from GDP and BLS occupation sampling to expert pairwise grading.
+  description: Paper-aligned sector selection, expert task authoring, quality control, release, and expert comparison.
   legend: >-
-    Solid arrows show sector and occupation selection, expert task creation, review loop, gold subset release, model
-    deliverables, expert pairwise grading, and win-rate reporting.
+    Evidence is pinned to arXiv:2510.04374v1 and public dataset 11e7900c. The 1,320-task full set is private; the
+    220-task gold set is public. The paper's automated grader is experimental and its implementation is not released.
 nodes:
-  - id: sectors
-    label: GDP Sectors
-    type: database
+  - id: evidence
+    label: |-
+      Evidence snapshot
+      paper 2510.04374v1
+      public data 11e7900c
+      grader code: not released
+    type: document
     size: xl
     position:
       x: 40
       'y': 160
-  - id: jobs
-    label: BLS Jobs
+  - id: sectors
+    label: |-
+      Select Q2 2024 U.S. sectors
+      each contributes >5% of GDP
+      retain 9 sectors
+    type: database
+    size: xl
+    position:
+      x: 296
+      'y': 160
+  - id: occupations
+    label: |-
+      Select digital occupations
+      GPT-4o classifies O*NET tasks
+      weighted digital share ≥60%
+      top compensation choices → 44 roles
     type: process
     size: xl
     position:
-      x: 300
+      x: 552
       'y': 160
-  - id: tasks
-    label: Expert Work
-    type: document
+  - id: experts
+    label: |-
+      Qualify occupation experts
+      interview · checks · training · quiz
+      <10% selected · ≥4 years
+      average experience: 14 years
+    type: process
     size: xl
     position:
-      x: 560
+      x: 808
       'y': 160
-  - id: review
-    label: Review Loop
-    type: decision
+  - id: authoring
+    label: |-
+      Author realistic work tasks
+      request + references + deliverable
+      map to O*NET work activity
+      value = time × median hourly wage
+    type: process
     size: xl
     position:
-      x: 820
+      x: 1064
       'y': 160
-  - id: gold
-    label: Gold Subset
-    type: document
+  - id: qc
+    label: |-
+      Screen, review, and revise
+      model flags are advisory only
+      at least 3 human reviews
+      5 human reviews on average
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: grade
-    label: Pairwise
+      x: 1064
+      'y': 400
+  - id: release
+    label: |-
+      Full private set: 1,320 tasks
+      30 per role · about 7 hours each
+      public gold: 220 · 5 per role
+      prompt/ref/deliverable/rubric fields
+    type: database
+    size: xl
+    position:
+      x: 808
+      'y': 400
+  - id: model_runs
+    label: |-
+      Generate complete deliverables
+      prompt + reference files as input
+      3 independent samples per task
+    type: process
+    size: xl
+    position:
+      x: 552
+      'y': 400
+  - id: human_grade
+    label: |-
+      Blind experts to provenance
+      model versus human deliverable
+      3 graders × 3 samples
+      9 comparisons per task
+    type: process
+    size: xl
+    position:
+      x: 296
+      'y': 400
+  - id: metric
+    label: |-
+      Score win 1 · tie 0.5 · loss 0
+      main: better-or-tied share
+      appendix: better-only win rate
+      report by occupation and overall
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: Win Rate
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 160
+      x: 40
+      'y': 400
 edges:
+  - from: evidence
+    to: sectors
+    type: primary
   - from: sectors
-    to: jobs
+    to: occupations
     type: primary
-  - from: jobs
-    to: tasks
+  - from: occupations
+    to: experts
     type: primary
-  - from: tasks
-    to: review
+  - from: experts
+    to: authoring
     type: primary
-  - from: review
-    to: gold
+  - from: authoring
+    to: qc
     type: primary
-  - from: gold
-    to: grade
+  - from: qc
+    to: release
     type: primary
-  - from: grade
-    to: score
+  - from: release
+    to: model_runs
+    type: primary
+  - from: model_runs
+    to: human_grade
+    type: primary
+  - from: human_grade
+    to: metric
     type: primary
 modules: []

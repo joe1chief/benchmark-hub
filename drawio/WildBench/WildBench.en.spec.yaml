@@ -1,0 +1,367 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WildBench Task, Checklist, WB-Reward, and WB-Score Pipeline
+  description: >-
+    WildBench filters WildChat-1M by length, turns, language, toxicity, semantic similarity, and device identity; three
+    LLMs remove only unanimously easy tasks before a category-preserving 1,500 sample and human review yield 1,024 tasks
+    in 12 categories. Two independent checklist drafts are merged into 5-10 verifiable questions. Evaluation preserves
+    the distinct WB-Reward pairwise branch—including three baselines, five-level mapping, and optional length
+    penalty—and the pointwise WB-Score branch with its published affine transform.
+  legend: >-
+    Source: WildBench arXiv:2406.04770v2 (2024-10-05), Sections 2.1-2.2 and 3.1-3.2, Figure 2; official repository
+    https://github.com/allenai/WildBench and official dataset https://huggingface.co/datasets/WildEval/WildBench-V2.
+    WildEval is the hosting organization/path, not the benchmark name.. Solid arrows show the main flow explicitly
+    supported by the paper or official documentation.
+nodes:
+  - id: wildchat_1m
+    label: WildChat-1M Real-User Conversations
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: rule_filters
+    label: |-
+      Query 10-3000 Tokens
+      At Most 5 Turns / English / Non-Toxic
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: semantic_dedup
+    label: |-
+      SBERT Dedup
+      Remove Cosine Similarity > 0.9
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: device_dedup
+    label: Keep Last Conversation per Unique Device
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: difficulty_raters
+    label: |-
+      3 Difficulty Raters / 5 Levels
+      GPT-4-Turbo + Claude-3-Sonnet + Claude-3-Opus
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: unanimous_easy_gate
+    label: All 3 Rate Easy / Very Easy?
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: easy_reject
+    label: Reject Unanimously Easy Tasks
+    type: loss
+    size: xl
+    position:
+      x: 1440
+      'y': 280
+  - id: sample_1500
+    label: 'Category-Preserving Sample: 1,500'
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: intent_summary
+    label: GPT-4-Turbo Summarizes User Intent
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: human_task_review
+    label: Human Challenge + Diversity Review Pass?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: task_reject
+    label: Remove Nonsensical / Weak Tasks
+    type: loss
+    size: xl
+    position:
+      x: 2280
+      'y': 520
+  - id: final_1024
+    label: |-
+      WildBench-V2
+      1,024 Tasks / 12 Categories
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 280
+  - id: gpt_checklist
+    label: GPT-4-Turbo Drafts Query Checklist
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 440
+  - id: claude_checklist
+    label: Claude-3-Opus Drafts Independent Checklist
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 600
+  - id: checklist_review
+    label: Merge + Human Review
+    type: user
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: checklist_5_10
+    label: 5-10 Verifiable Questions per Task
+    type: document
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: task_payload
+    label: 'Payload: Up to 4 Prior Turns + Current Request'
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 920
+  - id: candidate_response
+    label: Candidate Model Response
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 920
+  - id: evaluator_input
+    label: Query + History + Answer + Task Checklist
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 920
+  - id: metric_branch
+    label: 'Fan Out: WB-Reward + WB-Score'
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 920
+  - id: three_baselines
+    label: |-
+      3 Baselines
+      GPT-4-Turbo-0429 / Claude-3-Haiku / Llama-2-70B-chat
+    type: database
+    size: xl
+    position:
+      x: 3960
+      'y': 1080
+  - id: pairwise_judge
+    label: GPT-4-Turbo Five-Level Pairwise Preference
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 1160
+  - id: preference_map
+    label: 'Map: +1, +0.5, 0, -0.5, -1'
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 1160
+  - id: length_gap_gate
+    label: |-
+      Penalty Enabled + Gap > K
+      + Slight Win / Loss?
+    type: decision
+    size: xl
+    position:
+      x: 4800
+      'y': 1160
+  - id: length_penalty
+    label: |-
+      Optional Penalty
+      Slight Win/Loss -> Tie
+    type: process
+    size: xl
+    position:
+      x: 4800
+      'y': 1400
+  - id: reward_average
+    label: WB-Reward = Sum Preference / (3 × 1,024)
+    type: process
+    size: xl
+    position:
+      x: 5080
+      'y': 1160
+  - id: pointwise_judge
+    label: 'GPT-4-Turbo Pointwise Score: 1-10'
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1560
+  - id: raw_mean
+    label: raw_score = Mean over 1,024 Tasks
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 1560
+  - id: wb_score
+    label: WB-Score = (raw_score - 5) × 2
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 1560
+  - id: wildbench_report
+    label: |-
+      WB-Reward + WB-Score
+      Higher Is Better
+    type: terminal
+    size: xl
+    position:
+      x: 5360
+      'y': 1360
+edges:
+  - from: wildchat_1m
+    to: rule_filters
+    type: primary
+  - from: rule_filters
+    to: semantic_dedup
+    type: primary
+  - from: semantic_dedup
+    to: device_dedup
+    type: primary
+  - from: device_dedup
+    to: difficulty_raters
+    type: primary
+  - from: difficulty_raters
+    to: unanimous_easy_gate
+    type: primary
+  - from: unanimous_easy_gate
+    to: easy_reject
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: unanimous_easy_gate
+    to: sample_1500
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: sample_1500
+    to: intent_summary
+    type: primary
+  - from: intent_summary
+    to: human_task_review
+    type: primary
+  - from: human_task_review
+    to: final_1024
+    type: primary
+    label: Pass
+    labelPosition: end
+  - from: human_task_review
+    to: task_reject
+    type: optional
+    label: Remove
+    labelPosition: end
+  - from: final_1024
+    to: gpt_checklist
+    type: primary
+  - from: final_1024
+    to: claude_checklist
+    type: primary
+  - from: gpt_checklist
+    to: checklist_review
+    type: primary
+  - from: claude_checklist
+    to: checklist_review
+    type: primary
+  - from: checklist_review
+    to: checklist_5_10
+    type: primary
+  - from: final_1024
+    to: task_payload
+    type: primary
+  - from: task_payload
+    to: candidate_response
+    type: primary
+  - from: candidate_response
+    to: evaluator_input
+    type: primary
+  - from: checklist_5_10
+    to: evaluator_input
+    type: data
+  - from: task_payload
+    to: evaluator_input
+    type: data
+    label: Query + History
+    labelPosition: center
+  - from: evaluator_input
+    to: metric_branch
+    type: primary
+  - from: metric_branch
+    to: pairwise_judge
+    type: primary
+    label: WB-Reward
+    labelPosition: end
+  - from: three_baselines
+    to: pairwise_judge
+    type: data
+  - from: pairwise_judge
+    to: preference_map
+    type: primary
+  - from: preference_map
+    to: length_gap_gate
+    type: primary
+  - from: length_gap_gate
+    to: length_penalty
+    type: optional
+    label: 'Yes'
+    labelPosition: end
+  - from: length_gap_gate
+    to: reward_average
+    type: primary
+    label: 'No'
+    labelPosition: end
+  - from: length_penalty
+    to: reward_average
+    type: primary
+  - from: reward_average
+    to: wildbench_report
+    type: primary
+  - from: metric_branch
+    to: pointwise_judge
+    type: primary
+    label: WB-Score
+    labelPosition: end
+  - from: pointwise_judge
+    to: raw_mean
+    type: primary
+  - from: raw_mean
+    to: wb_score
+    type: primary
+  - from: wb_score
+    to: wildbench_report
+    type: primary
+modules: []

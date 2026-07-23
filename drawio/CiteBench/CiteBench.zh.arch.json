@@ -7,56 +7,86 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 13,
+    "edges": 15,
     "modules": 0
   },
   "nodes": [
     {
       "id": "sources",
-      "label": "源数据集",
+      "label": "四个来源数据集\nABURAED • CHEN（Delve + S2ORC）\nLU • XING",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "task",
-      "label": "统一任务",
+      "label": "引文文本生成\nn 个被引目标文档 + 施引来源文档\n及其上下文\n目标：原始引文文本",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "transform",
+      "label": "来源专属转换\n重建各官方数据集\n无实例级筛选",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "schema",
-      "label": "标签输入",
+      "label": "可选 &lt;abs&gt;…&lt;/abs&gt;：施引论文摘要\n&lt;ctx_b&gt;…&lt;/ctx_b&gt;：前文上下文\n无标签的被引论文摘要\n&lt;ctx_a&gt;…&lt;/ctx_a&gt;：后文上下文",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "anchors",
-      "label": "锚点格式",
+      "label": "规范引文锚点\n目标文档按 [0]、[1]、… 递增\n输入与目标中的映射保持一致\nXING 非输入参考文献：#OTHEREFR",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "splits",
+      "label": "五个发布子集\n训练 322,037 • 验证 23,016\n测试 13,712 • 合计 358,765",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "baselines",
-      "label": "基线模型",
-      "type": "terminal",
+      "label": "标准化基线\nLEAD • TextRank • LexRank\nLED Base / Large / Large-arXiv\n直接监督 + 来源迁移",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "generation",
+      "label": "生成引文文本\n统一输入 + 原始目标\n联合训练或单数据集训练",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "指标工具",
-      "type": "document",
+      "label": "HuggingFace ROUGE-1\n/ ROUGE-2 / ROUGE-L\n不词干化、不做词形还原\n对标准引文文本计算 BERTScore",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "transfer",
-      "label": "迁移测试",
+      "label": "跨数据集迁移\n*led-base-[X] 训练设置\n域内与跨数据集结果",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "discourse",
-      "label": "话语分析",
+      "label": "引文篇章分析\nACL-ARC 意图 + CORWA 功能\n以 KL 散度比较分布",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human",
+      "label": "人工评测：3 名标注者\n150 个输出 • XING + CHEN Delve\n5 分制可读性 + 一致性\n25 × 3 类模型 × 2 个数据集",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "多数据集基准报告\n相似度 • 迁移 • 篇章分析\n直接人工判断",
       "type": "terminal",
       "size": "xl"
     }
@@ -71,37 +101,85 @@
     {
       "id": "edge-2",
       "from": "task",
-      "to": "schema",
+      "to": "transform",
       "type": "primary"
     },
     {
       "id": "edge-3",
+      "from": "transform",
+      "to": "schema",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
       "from": "schema",
       "to": "anchors",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "anchors",
-      "to": "baselines",
-      "type": "primary"
-    },
-    {
       "id": "edge-5",
-      "from": "baselines",
-      "to": "metrics",
+      "from": "anchors",
+      "to": "splits",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "metrics",
-      "to": "transfer",
+      "from": "splits",
+      "to": "baselines",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "transfer",
+      "from": "baselines",
+      "to": "generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "generation",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "generation",
+      "to": "transfer",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "generation",
       "to": "discourse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "generation",
+      "to": "human",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "metrics",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "transfer",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "discourse",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "human",
+      "to": "report",
       "type": "primary"
     }
   ],

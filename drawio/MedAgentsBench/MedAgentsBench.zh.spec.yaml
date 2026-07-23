@@ -1,0 +1,336 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedicalAgentsBench 构建与评测流程
+  description: >-
+    与论文 v3 对齐地展示八个医学问答源集经过难度筛选、人工与 MELD 核验形成 862 题论文合同，并按发布代码执行精确选项、成本与时延分析。
+  legend: >-
+    实线表示保留的数据构建与评测流；带标签分支展示低于 50% 的困难门槛、人工有效性剔除、已输出结果分母及论文与发布包漂移。
+    虚线表示剔除或证据边界；论文未披露 MELD 阈值、核验顺序或补位策略。
+nodes:
+  - id: sources
+    label: |-
+      汇集八个医学问答源集
+      MedQA · PubMedQA · MedMCQA · MedBullets
+      MMLU · MMLU-Pro · MedExQA · MedXpertQA
+      MedXpertQA 再分为 R 与 U
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: standardize
+    label: |-
+      统一多项选择题记录
+      问题 · 选项映射 · 标准答案索引
+      保留数据集与真实题目标识
+      每题三至十个选项
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 40
+  - id: probe
+    label: |-
+      用多模型探测每道候选题
+      覆盖多种模型架构
+      统计 N 个模型中答对的 k 个
+      避免单模型难度偏差
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 40
+  - id: hard_gate
+    label: |-
+      答对模型比例 k / N
+      是否严格低于 50%？
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: sample
+    label: |-
+      按子集抽取困难候选题
+      每个子集最多 100 题
+      平衡九个评测子集
+      保持源数据多样性
+    type: process
+    size: xl
+    position:
+      x: 1300
+      'y': 40
+  - id: depth
+    label: |-
+      标注推理深度
+      四名临床阶段医学生
+      五级最少推理步骤量表
+      先校准再重叠标注估计一致性
+    type: user
+    size: xl
+    position:
+      x: 1620
+      'y': 40
+  - id: human_review
+    label: |-
+      审查题目有效性
+      标记错答案与上下文不足
+      标记陈旧或临床无关知识
+      任一标记都会触发小组复核
+    type: process
+    size: xl
+    position:
+      x: 1620
+      'y': 380
+  - id: validity_gate
+    label: |-
+      是否少于两名标注员
+      认定该问题确实成立？
+    type: decision
+    size: xl
+    position:
+      x: 1300
+      'y': 380
+  - id: meld
+    label: |-
+      执行 MELD 污染筛查
+      去掉选项并将问题一分为二
+      让模型续写未见的后半段
+      计算 Levenshtein 相似度
+    type: process
+    size: xl
+    position:
+      x: 1620
+      'y': 700
+  - id: verification_merge
+    label: |-
+      汇合两类核验证据
+      人工有效性 + MELD 证据
+      MELD 阈值与剔除量未披露
+      最终计数对账方式未披露
+    type: process
+    size: xl
+    position:
+      x: 1300
+      'y': 700
+  - id: excluded
+    label: |-
+      从论文困难集剔除
+      简单候选或有效性失败
+      人工审核共剔除 21 题
+      错答案 5 · 上下文 5 · 无关 11
+    type: terminal
+    size: xl
+    position:
+      x: 980
+      'y': 980
+  - id: release
+    label: |-
+      发布论文 v3 MedicalAgentsBench
+      共 862 题 · 平均 147.4 Tokens
+      七个子集各 100 题 + MedBullets 89
+      + MMLU 73，合计九个子集
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 700
+  - id: release_drift
+    label: |-
+      已锁定公开发布包的漂移
+      Git v1.0 与 HF/Zenodo 多出 32 题 AfriMedQA
+      README 任务表合计 894，而非 862
+      论文未给出对账说明
+    type: document
+    size: xl
+    position:
+      x: 660
+      'y': 980
+  - id: evaluation
+    label: |-
+      执行标准化评测
+      七个基础模型 + 三个内化推理模型
+      九种外化方法，覆盖范围不一
+      SPO/AFlow：仅 GPT-4o-mini / GPT-4o
+      Agent 仅评困难集 · 独立运行三次
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 700
+  - id: parser
+    label: |-
+      抽取单个选项标签
+      各方法使用 JSON 或 LLM 解析器
+      必要时重新实现 Agent 选择题解析
+      发布包没有单一通用解析器
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 700
+  - id: emitted_gate
+    label: |-
+      运行器是否输出同时含 realidx
+      与 predicted_answer 的结果行？
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 700
+  - id: missing_boundary
+    label: |-
+      方法专属失败或省略
+      全局计分器不会补回缺失 ID
+      因而不强制使用固定 862 分母
+    type: terminal
+    size: xl
+    position:
+      x: 20
+      'y': 980
+  - id: exact_score
+    label: |-
+      按选项精确相等计分
+      标准答案优先 answer_idx，否则 answer
+      仅预测与标准值相等才正确
+      单题得分为一或零
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 1260
+  - id: aggregate
+    label: |-
+      先按 realidx 去重
+      准确率为保留结果行的均值
+      对论文九个子集做宏平均
+      报告三次运行的均值与标准差
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 1260
+  - id: cost_time
+    label: |-
+      在保留结果行平均成本与耗时
+      成本按 API Tokens 或托管费率
+      原始时间为完整周期墙钟均值
+      Pareto 笔记本调整 DeepSeek-V3
+      绘图时间 = 原始均值 / 10
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 1260
+  - id: report
+    label: |-
+      发布准确率与成本结果
+      Pass@1 与各子集准确率
+      推理成本与调整后时间标记
+      经验准确率成本 Pareto 前沿
+    type: terminal
+    size: xl
+    position:
+      x: 980
+      'y': 1260
+edges:
+  - from: sources
+    to: standardize
+    type: primary
+  - from: standardize
+    to: probe
+    type: primary
+  - from: probe
+    to: hard_gate
+    type: primary
+  - from: hard_gate
+    to: sample
+    type: primary
+    label: 是 · k/N < 0.5
+    labelPosition: end
+  - from: hard_gate
+    to: excluded
+    type: optional
+    label: 否 · 至少 50% 模型答对
+    labelPosition: end
+    waypoints:
+      - x: 1080
+        'y': 250
+      - x: 1080
+        'y': 900
+  - from: sample
+    to: depth
+    type: primary
+  - from: depth
+    to: human_review
+    type: primary
+  - from: human_review
+    to: validity_gate
+    type: primary
+  - from: validity_gate
+    to: verification_merge
+    type: primary
+    label: 是 · 保留
+    labelPosition: end
+  - from: validity_gate
+    to: excluded
+    type: optional
+    label: 否 · 至少两人认可问题
+    labelPosition: end
+    waypoints:
+      - x: 1400
+        'y': 560
+      - x: 1080
+        'y': 560
+  - from: depth
+    to: meld
+    type: primary
+    waypoints:
+      - x: 1740
+        'y': 250
+      - x: 1740
+        'y': 620
+  - from: meld
+    to: verification_merge
+    type: primary
+  - from: verification_merge
+    to: release
+    type: primary
+  - from: release
+    to: release_drift
+    type: optional
+    label: 当前公开包不一致
+    labelPosition: end
+  - from: release
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: parser
+    type: primary
+  - from: parser
+    to: emitted_gate
+    type: primary
+  - from: emitted_gate
+    to: exact_score
+    type: primary
+    label: 是 · 保留结果行
+    labelPosition: end
+  - from: emitted_gate
+    to: missing_boundary
+    type: optional
+    label: 否 · 不进入计分器输入
+    labelPosition: end
+  - from: exact_score
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: cost_time
+    type: primary
+  - from: cost_time
+    to: report
+    type: primary
+modules: []

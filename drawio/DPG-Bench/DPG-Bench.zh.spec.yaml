@@ -1,0 +1,207 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: DPG-Bench 构建与评测流程
+  description: 按论文版本还原提示来源、GPT-4 密集扩写、DSG 问题依赖图标注和四图依赖感知评分。
+  legend: 实线表示论文主流程；证据卡固定 ELLA 代码版本与官方 CSV 摘要。
+nodes:
+  - id: evidence
+    label: |-
+      DPG-Bench · arXiv:2403.05135v1
+      ELLA 仓库 @ 3c228f1
+      官方 dpg_bench.csv @ 68f5076
+      已固定构建与评测版本
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: sources
+    label: |-
+      四类提示来源
+      COCO · PartiPrompts
+      DSG-1k · Object365
+      后续按来源分别处理
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: route
+    label: 按来源调整提示
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 360
+  - id: short
+    label: |-
+      COCO / PartiPrompts / DSG-1k
+      取前三个来源的提示
+      将短提示扩写
+      为长且密集的描述
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 140
+  - id: object365
+    label: |-
+      Object365 组合
+      抽取 1–4 个对象
+      覆盖主类别与子类别
+      形成多对象提示种子
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 580
+  - id: expand
+    label: |-
+      第一次 GPT-4：密集扩写
+      丰富场景上下文
+      增加对象属性
+      指明空间 / 语义关系
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: verify
+    label: |-
+      人工核验
+      检查扩写提示
+      修正无依据或不连贯细节
+      保留有效密集要求
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: dsg
+    label: |-
+      第二次 GPT-4：DSG 标注
+      提取语义元组与类别
+      编写 yes / no 问题
+      构建问题依赖图
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: artifact
+    label: |-
+      固定 DPG-Bench @ 68f5076
+      1,065 条提示 · 平均 83.91 CLIP token
+      4,286 个不同名词
+      5 个一级 · 13 个二级类别
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: generate
+    label: |-
+      候选图像生成
+      每条提示生成 4 张图
+      推荐 2×2 网格
+      文件名必须与提示匹配
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 360
+  - id: vqa
+    label: |-
+      官方 VQA 检查点
+      damo/mplug_visual-question-
+      answering_coco_large_en
+      为每题回答 yes / no
+      独立评分四张图
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 360
+  - id: dependency
+    label: |-
+      依赖感知逐题得分
+      yes = 1 · no = 0
+      若任一父问题为 no
+      子问题得分置 0
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: aggregate
+    label: |-
+      三级聚合
+      单图得分 = 剪枝后问题平均
+      提示得分 = 4 张图得分平均
+      基准得分 = 所有提示平均
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 360
+  - id: report
+    label: |-
+      DPG-Bench 报告
+      总体依赖感知图得分
+      Global · Entity · Attribute
+      Relation · Other + 13 个二级类别
+      分类均值使用依赖剪枝前
+      的原始 yes / no 得分
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 360
+edges:
+  - from: evidence
+    to: sources
+    type: data
+  - from: sources
+    to: route
+    type: primary
+  - from: route
+    to: short
+    type: primary
+  - from: route
+    to: object365
+    type: primary
+  - from: short
+    to: expand
+    type: primary
+  - from: object365
+    to: expand
+    type: primary
+  - from: expand
+    to: verify
+    type: primary
+  - from: verify
+    to: dsg
+    type: primary
+  - from: dsg
+    to: artifact
+    type: primary
+  - from: artifact
+    to: generate
+    type: primary
+  - from: generate
+    to: vqa
+    type: primary
+  - from: vqa
+    to: dependency
+    type: primary
+  - from: dependency
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+modules: []

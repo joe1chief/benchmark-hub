@@ -1,0 +1,163 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: CPQExam 发布与评测流程
+  description: 按来源区分论文中的私有 CPQExam 与后续官方公开的 7,600 道 JSONL，并保留已披露的提示、解析器、精确匹配与分组准确率。
+  legend: 橙色表示选择流程未披露；虚线说明仅适用于 QuarkMed，不属于通用评测器步骤。
+nodes:
+  - id: exam
+    label: |-
+      中国卫生专业技术资格考试
+      用于执业资格与职业晋升
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 190
+  - id: curate
+    label: 原始整理已披露？
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 190
+  - id: boundary
+    label: |-
+      论文状态：私有数据集
+      原始采样 / 过滤 / 去重
+      发布选择规则未披露
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 60
+  - id: release
+    label: |-
+      后续发布：7,600 道题
+      官方公开 JSONL
+      整理后中文数据
+      覆盖 14 个科室
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: levels
+    label: |-
+      四个专业级别
+      初级 600 / 中级 4,800
+      副高 1,200 / 高级
+      1,000
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: formats
+    label: |-
+      题目形式
+      单选 / 多选
+      共用题干 / 案例分析
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: prompt
+    label: |-
+      标准中文提示
+      思考后仅返回 JSON
+      { answer: A/B/C }
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: inference
+    label: |-
+      每个测试样本推理一次
+      所有模型温度 0.6
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 300
+  - id: parse
+    label: |-
+      解析 JSON 答案
+      格式异常时回退正则抽取
+      无效输出记为空答案
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 300
+  - id: normalize
+    label: |-
+      规范预测答案
+      移除分隔符与空白
+      对多选字母排序
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+  - id: score
+    label: |-
+      与标准答案精确匹配
+      按级别、题型与科室报告准确率
+      同时报告无效答案数
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 190
+  - id: quarkmed_note
+    label: |-
+      仅对应表 7 的 QuarkMed
+      结果
+      预测使用知识增强
+      不属于通用评测器约定
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 60
+edges:
+  - from: exam
+    to: curate
+    type: primary
+  - from: curate
+    to: boundary
+    type: primary
+  - from: curate
+    to: release
+    type: primary
+  - from: release
+    to: levels
+    type: primary
+  - from: levels
+    to: formats
+    type: primary
+  - from: formats
+    to: prompt
+    type: primary
+  - from: prompt
+    to: inference
+    type: primary
+  - from: inference
+    to: parse
+    type: primary
+  - from: parse
+    to: normalize
+    type: primary
+  - from: normalize
+    to: score
+    type: primary
+  - from: quarkmed_note
+    to: score
+    type: data
+modules: []

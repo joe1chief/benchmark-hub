@@ -1,0 +1,296 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: WorldVQA 原子视觉知识构建与评测流程
+  description: >-
+    10名资深标注员在原子隔离、百科覆盖、粒度对齐和视觉可靠性门槛下构造视觉知识样例。全球扩充先通过地区标注识别欠覆盖区域，再由GPT/Kimi联想搜索提出候选，最终由人工筛选整理。之后使用ISC与LAION/Common
+    Crawl去重，再由5个前沿MLLM分层难度，Hard样例强制二次人工复核，并行执行Gemini-3-Pro视觉审计与盲审人工独立作答。最终3500对由GPT-oss-120b裁判，以准确率、尝试率、CGA和F分报告；People类别不计入八类总体分。
+  legend: >-
+    来源：WorldVQA arXiv:2602.02537v1, Sections 2.1-2.6, Table 2, Section 3.1, Table 3, and Appendix A; official project
+    https://worldvqa2026.github.io/WorldVQA/, repository https://github.com/MoonshotAI/WorldVQA/, and dataset
+    https://huggingface.co/datasets/moonshotai/WorldVQA. Version pin: 3,500 pairs and nine
+    categories.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: world_taxonomy
+    label: 九类知识体系
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: expert_collection
+    label: 10名专家整理实体与问答
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: design_gates
+    label: 原子覆盖粒度与视觉门槛
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: global_expansion
+    label: 地区标注 + GPT/Kimi联想搜索 -> 人工筛选整理
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: isc_gate
+    label: ISC相似度大于0.95？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: recollect_frame
+    label: 重采视频截图
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: five_model_probe
+    label: 五模型难度探测
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: trivial_gate
+    label: 五模型全对？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: discard_trivial
+    label: 丢弃简单样例
+    type: loss
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: difficulty_tiers
+    label: 简单 / 中等 / 困难
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: easy_downsample
+    label: 随机下采样Easy
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: hard_review
+    label: Hard二次人工复核
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: audit_ready
+    label: Easy样本 + Medium + 已复核Hard
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 160
+  - id: gemini_audit
+    label: Gemini-3-Pro视觉审计
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 40
+  - id: blind_answer
+    label: 盲审人工独立作答
+    type: user
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: dual_gate
+    label: 双审一致且通过？
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 160
+  - id: manual_audit
+    label: 人工分歧复核
+    type: user
+    size: xl
+    position:
+      x: 3400
+      'y': 280
+  - id: purge_item
+    label: 永久清除错误或歧义
+    type: loss
+    size: xl
+    position:
+      x: 3960
+      'y': 280
+  - id: worldvqa_set
+    label: 3500个VQA对
+    type: database
+    size: xl
+    position:
+      x: 3680
+      'y': 40
+  - id: model_answers
+    label: 模型回答或拒答
+    type: document
+    size: xl
+    position:
+      x: 3680
+      'y': 520
+  - id: gptoss_judge
+    label: GPT-oss-120b裁判
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: metric_router
+    label: 准确率尝试率CGA与F分
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: overall_report
+    label: 八类总体分与People单列
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+edges:
+  - from: world_taxonomy
+    to: expert_collection
+    type: primary
+  - from: expert_collection
+    to: design_gates
+    type: primary
+  - from: design_gates
+    to: global_expansion
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: design_gates
+    to: expert_collection
+    type: optional
+    label: 淘汰或返工
+    labelPosition: start
+  - from: global_expansion
+    to: isc_gate
+    type: primary
+  - from: isc_gate
+    to: recollect_frame
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: recollect_frame
+    to: isc_gate
+    type: optional
+    label: 复查
+    labelPosition: start
+  - from: isc_gate
+    to: five_model_probe
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: five_model_probe
+    to: trivial_gate
+    type: primary
+  - from: trivial_gate
+    to: discard_trivial
+    type: optional
+    label: 是
+    labelPosition: end
+  - from: trivial_gate
+    to: difficulty_tiers
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: difficulty_tiers
+    to: hard_review
+    type: primary
+    label: 困难
+    labelPosition: end
+  - from: difficulty_tiers
+    to: audit_ready
+    type: data
+    label: 中等
+    labelPosition: center
+    waypoints:
+      - x: 2200
+        'y': 200
+      - x: 2480
+        'y': 200
+  - from: easy_downsample
+    to: audit_ready
+    type: primary
+  - from: hard_review
+    to: audit_ready
+    type: primary
+  - from: audit_ready
+    to: gemini_audit
+    type: primary
+  - from: audit_ready
+    to: blind_answer
+    type: primary
+  - from: difficulty_tiers
+    to: easy_downsample
+    type: primary
+    label: 简单
+    labelPosition: end
+  - from: gemini_audit
+    to: dual_gate
+    type: primary
+  - from: blind_answer
+    to: dual_gate
+    type: primary
+  - from: dual_gate
+    to: worldvqa_set
+    type: primary
+    label: 一致且通过
+    labelPosition: end
+  - from: dual_gate
+    to: manual_audit
+    type: optional
+    label: 分歧
+    labelPosition: end
+  - from: manual_audit
+    to: worldvqa_set
+    type: primary
+    label: 保留
+    labelPosition: end
+  - from: manual_audit
+    to: purge_item
+    type: optional
+    label: 错误或歧义
+    labelPosition: end
+  - from: worldvqa_set
+    to: model_answers
+    type: primary
+  - from: model_answers
+    to: gptoss_judge
+    type: primary
+  - from: gptoss_judge
+    to: metric_router
+    type: primary
+  - from: metric_router
+    to: overall_report
+    type: primary
+modules: []

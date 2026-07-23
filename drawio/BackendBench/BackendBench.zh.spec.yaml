@@ -1,0 +1,338 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: BackendBench 构建流程
+  description: 严格对齐 BackendBench 官方仓库 commit 2a8d7e19e2c13c789ff2dceb44883ea8ea04dab4 的自定义 PyTorch backend 构建与评测实现；该项目没有独立论文。
+  legend: 实线表示构建、每次互斥选择一个 --suite 及套件内报告；虚线仅把真实模型 tensor trace 输入 TorchBench，不把不同套件合并成一个分数。
+nodes:
+  - id: pytorch_surface
+    label: |-
+      PyTorch 算子范围
+      271 个 OpInfo 算子
+      过滤随机、内存分配
+      与不支持算子
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: hf_traces
+    label: |-
+      真实 Hugging Face trace
+      124 个性能算子
+      高频、大型
+      真实 tensor shape
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 760
+  - id: directories
+    label: |-
+      每算子一个可审计目录
+      空实现 stub
+      版本化尝试
+      评测框架置于
+      生成代码之外
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: variants
+    label: |-
+      映射算子变体
+      函数式 • 原地
+      预分配 Out
+      一个 kernel 覆盖所有形式
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: generate
+    label: |-
+      编写自定义 kernel
+      人工或 LLM
+      Triton • PyTorch
+      CuTeDSL • Helion
+      遵守签名与语义
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: refine
+    label: |-
+      迭代 kernel 尝试
+      LLM 默认五次
+      修复编译与正确性
+      再优化速度
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: register
+    label: |-
+      编译并注册 backend
+      torch.library CUDA dispatch
+      运行现有模型
+      无需改模型代码
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: suite_selector
+    label: |-
+      每次仅一个 --suite
+      Smoke • OpInfo
+      FACTO • TorchBench
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: smoke
+    label: |-
+      Smoke 套件
+      加载所选实现
+      编译 + dispatch + 基本运行
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 100
+  - id: opinfo
+    label: |-
+      OpInfo 正确性套件
+      每算子平均 13 个测试
+      空 tensor • NaN/Inf • dtype
+      广播 • 极值
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 300
+  - id: facto
+    label: |-
+      FACTO 正确性套件
+      生成式边界用例
+      参考实现对 backend
+      使用同一正确性合同
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 500
+  - id: torchbench
+    label: |-
+      TorchBench trace 套件
+      每算子平均 110 个测试
+      真实模型 tensor shape
+      对比 PyTorch eager
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: smoke_report
+    label: |-
+      Smoke 运行报告
+      仅报告所选套件
+      编译 / dispatch / 执行
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 100
+  - id: opinfo_report
+    label: |-
+      OpInfo 正确性报告
+      算子必须通过全部测试
+      equal_nan • atol/rtol 1e-2
+      不做跨套件聚合
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 300
+  - id: facto_report
+    label: |-
+      FACTO 正确性报告
+      每算子的生成用例
+      使用相同数值容差
+      不做跨套件聚合
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 500
+  - id: correctness
+    label: |-
+      TorchBench correctness[]
+      按测试索引配对
+      嵌套结构 • equal_nan
+      atol/rtol 1e-2
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 700
+  - id: performance
+    label: |-
+      TorchBench performance[]
+      triton.do_bench
+      同步与 warmup
+      相对 eager 加速比
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 900
+  - id: paired_arrays
+    label: |-
+      配对套件内数组
+      correctness[i] + performance[i]
+      使用同一 TorchBench 测试索引
+      在本次运行内计算指标
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 800
+  - id: correctness_rate
+    label: |-
+      正确性指标
+      全测试通过的算子平均率
+      每项测试都必须通过
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 600
+  - id: perf_p
+    label: |-
+      Perf@p
+      正确且加速比 > p
+      使用配对数组
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 800
+  - id: geomean
+    label: |-
+      性能几何平均
+      失败实现按 1× 计
+      不设正确性门槛
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 1000
+  - id: report
+    label: |-
+      发布分套件运行产物
+      所选 --suite 结果
+      算子级 CSV + 失败项
+      不合并跨套件分数
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 500
+edges:
+  - from: pytorch_surface
+    to: directories
+    type: primary
+  - from: directories
+    to: variants
+    type: primary
+  - from: variants
+    to: generate
+    type: primary
+  - from: generate
+    to: refine
+    type: primary
+  - from: refine
+    to: register
+    type: primary
+  - from: register
+    to: suite_selector
+    type: primary
+  - from: suite_selector
+    to: smoke
+    type: primary
+  - from: suite_selector
+    to: opinfo
+    type: primary
+  - from: suite_selector
+    to: facto
+    type: primary
+  - from: suite_selector
+    to: torchbench
+    type: primary
+    waypoints:
+      - x: 1580
+        'y': 350
+      - x: 1580
+        'y': 762
+      - x: 1624
+        'y': 762
+  - from: hf_traces
+    to: torchbench
+    type: data
+  - from: smoke
+    to: smoke_report
+    type: primary
+  - from: opinfo
+    to: opinfo_report
+    type: primary
+  - from: facto
+    to: facto_report
+    type: primary
+  - from: torchbench
+    to: correctness
+    type: primary
+  - from: torchbench
+    to: performance
+    type: primary
+  - from: correctness
+    to: paired_arrays
+    type: primary
+  - from: performance
+    to: paired_arrays
+    type: primary
+  - from: paired_arrays
+    to: correctness_rate
+    type: primary
+  - from: paired_arrays
+    to: perf_p
+    type: primary
+  - from: paired_arrays
+    to: geomean
+    type: primary
+  - from: smoke_report
+    to: report
+    type: primary
+  - from: opinfo_report
+    to: report
+    type: primary
+  - from: facto_report
+    to: report
+    type: primary
+  - from: correctness_rate
+    to: report
+    type: primary
+  - from: perf_p
+    to: report
+    type: primary
+  - from: geomean
+    to: report
+    type: primary
+modules: []

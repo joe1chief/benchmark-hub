@@ -4,78 +4,203 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HallusionBench Build Process
+  title: HallusionBench Build and Evaluation Process
   description: >-
-    Paper-aligned HallusionBench construction flow from visual-question taxonomy and expert image curation to edited
-    visual controls, yes/no QA pairs, GPT-4 assisted scoring, and accuracy metrics.
-  legend: Solid arrows show taxonomy, image collection/editing, QA control-pair construction, judging, and metric reporting.
+    Paper- and artifact-aligned workflow for HallusionBench: experts construct Visual Dependent and Visual Supplement
+    control pairs from original, edited, and no-visual inputs; LVLM responses are judged and analyzed for correctness,
+    bias, consistency, and failure type.
+  legend: Solid arrows are the paper's main workflow; dashed arrows show analysis or released-artifact boundaries.
 nodes:
+  - id: evidence
+    label: |-
+      Primary Evidence
+      arXiv 2310.14566v5 · §3–4
+      Repo 744007c · HallusionBench.json
+      SHA256 ca6e0fb
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 260
   - id: taxonomy
-    label: VQ Taxonomy
+    label: |-
+      Visual Dependent (VD)
+      Requires visual context
+      Visual Supplement (VS)
+      Answerable without image
     type: document
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: images
-    label: 346 Images
-    type: database
+      x: 260
+      'y': 260
+  - id: collect
+    label: |-
+      Human Expert Curation
+      165 original images
+      181 edited images
+      346 images total
+    type: user
     size: xl
     position:
-      x: 300
-      'y': 160
-  - id: edits
-    label: Human Edits
+      x: 500
+      'y': 260
+  - id: edit
+    label: |-
+      Human Image Edits
+      Flipping · order reversal · masking
+      OCR · object · color editing
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: qa
-    label: Yes/No QA
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: controls
-    label: Control Pairs
+      x: 740
+      'y': 40
+  - id: inputs
+    label: |-
+      Input Distribution
+      178 no-visual QA
+      447 original-visual QA
+      504 edited-visual QA
     type: database
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 980
+      'y': 260
+  - id: pairs
+    label: |-
+      455 Control Pairs
+      1,129 binary questions
+      VD 591 · VS 538
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 260
+  - id: response
+    label: |-
+      LVLM Responses
+      Yes / No / Uncertain
+      Same question across controls
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 260
   - id: judge
-    label: GPT-4 Eval
+    label: |-
+      Paper Text-only GPT-4 Protocol
+      Correct / Incorrect / Unclear
+      Temperature 0 · 3 runs
+      Average reported
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: metrics
-    label: Acc Metrics
+      x: 1700
+      'y': 260
+  - id: harness
+    label: |-
+      Pinned Harness
+      One correctness call per row
+      No explicit temperature argument
+      Parser: incorrect→0 · correct→1
+      other→2
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 560
+  - id: rules
+    label: |-
+      Scoring Rule
+      VS no-visual: Uncertain acceptable
+      Convert judge outcomes to binary
+    type: decision
+    size: xl
+    position:
+      x: 1940
+      'y': 260
+  - id: score
+    label: |-
+      Correctness Metrics
+      aAcc · fAcc · qAcc
+      Easy / Hard accuracy
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2180
+      'y': 80
+  - id: diagnose
+    label: |-
+      Analytical Diagnostics
+      Yes/No bias · consistency
+      Control-pair decision tree
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 440
+  - id: failure
+    label: |-
+      Failure Attribution
+      Language hallucination
+      Visual illusion
+      Mixed / Uncertain
+    type: terminal
+    size: xl
+    position:
+      x: 2420
+      'y': 440
+  - id: artifact_boundary
+    label: |-
+      Released Artifact Boundary
+      HallusionBench.json: 1,129 rows
+      Pinned snapshot; model generation
+      is user-supplied
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 560
 edges:
+  - from: evidence
+    to: taxonomy
+    type: primary
   - from: taxonomy
-    to: images
+    to: collect
     type: primary
-  - from: images
-    to: edits
+  - from: collect
+    to: edit
     type: primary
-  - from: edits
-    to: qa
+  - from: collect
+    to: inputs
     type: primary
-  - from: qa
-    to: controls
+  - from: edit
+    to: inputs
     type: primary
-  - from: controls
+  - from: inputs
+    to: pairs
+    type: primary
+  - from: pairs
+    to: response
+    type: primary
+  - from: response
     to: judge
     type: primary
   - from: judge
-    to: metrics
+    to: rules
     type: primary
+  - from: judge
+    to: harness
+    type: data
+  - from: rules
+    to: score
+    type: primary
+  - from: rules
+    to: diagnose
+    type: secondary
+  - from: diagnose
+    to: failure
+    type: primary
+  - from: pairs
+    to: artifact_boundary
+    type: data
 modules: []

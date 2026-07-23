@@ -5,85 +5,237 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ChartQA 构建流程
-  description: 对齐论文的 ChartQA 构建流程：从四个网站来源收集真实图表，配套人工问题和基于摘要的 T5 生成问题， 清洗并划分数据，同时用 ChartOCR 抽取表格供多模态问答模型评测。
-  legend: 实线箭头表示图表收集、问答生成、清洗、划分和模型评测流程。
+  description: 对齐论文的 ChartQA 构建与评测：按来源区分图表产物、由合格 AMT 工作者编写并互验问答、用两个 T5 从 Statista 摘要做答案感知增强、执行质量过滤和论文划分，最后以数值与文本共用的单一混合宽松准确率规则评分。
+  legend: 实线表示人工与机器问答流程；虚线表示图表产物进入自动增强支路。
 nodes:
   - id: sources
-    label: 在线图表
-    type: cloud
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: metadata
-    label: 图表元数据
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: human
-    label: 人工问答
-    type: user
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: t5
-    label: T5生成问答
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: clean
-    label: 问答清洗
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: split
-    label: 数据划分
-    type: document
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: chartocr
-    label: ChartOCR表格
+    label: |-
+      策划 20,882 张真实图表
+      Statista • Pew
+      OWID • OECD
+      柱图/线图/饼图
+      多主题与多样式
     type: database
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: models
-    label: ChartQA模型
+      x: 40
+      'y': 220
+  - id: artifacts
+    label: |-
+      按来源保存图表产物
+      Pew：仅图像
+      其余 3 源：表格/元数据
+      SVG • 描述
+      从 SVG 派生元素边界框
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: human_author
+    label: |-
+      筛选合格 AMT 工作者
+      接受率 ≥95% • ≥5,000 HIT
+      通过预试
+      每 HIT 回答 2 个既有问答
+      写 2 个新问答对
+    type: user
+    size: xl
+    position:
+      x: 640
+      'y': 20
+  - id: human_verify
+    label: |-
+      另一标注员独立作答
+      精确匹配即接受 • 61.04%
+      分歧由人工裁决
+      选出最终正确答案
+    type: user
+    size: xl
+    position:
+      x: 940
+      'y': 20
+  - id: human_audit
+    label: |-
+      仅作质量审计
+      随机抽查 500 个问答对
+      计入错字与词汇变体
+      一致率估计 78.55%
+    type: document
+    size: xl
+    position:
+      x: 940
+      'y': 220
+  - id: human_set
+    label: |-
+      完成 9,608 个人工问题
+      训练 7,398 • 验证 960
+      测试 1,250
+      对应 4,804 张图表
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 20
+  - id: summaries
+    label: |-
+      ChartQA-M
+      Statista 摘要
+      把人工摘要与图表数据表配对
+      保留自然语言变化
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 420
+  - id: t5
+    label: |-
+      两个经 SQuAD
+      微调的 T5
+      从摘要抽取答案
+      生成答案感知问题
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 420
+  - id: machine_filter
+    label: |-
+      过滤答案不在图表表格
+      的样本
+      审计 1,250
+      86.64% 完整且正确
+      人工清洗机器测试集
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 420
+  - id: machine_set
+    label: |-
+      完成 23,111 个机器问题
+      训练 20,901 • 验证 960
+      测试 1,250
+      对应 17,141 张图表
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 420
+  - id: release
+    label: |-
+      发布 20,882 张图表
+      32,719 个问题
+      分开保留 ChartQA-H/M
+      沿用原始划分
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: input
+    label: |-
+      开放词表图表问答
+      图表 + 问题
+      + 真值/抽取数据表
+      可选结合视觉特征
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: answer
+    label: |-
+      生成答案
+      数值或文本
+      目标为视觉与逻辑推理
+      按真值类型分流
+    type: decision
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: numeric
+    label: |-
+      数值答案
+      与真值误差在 5% 以内即正确
+      容忍数据抽取噪声
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 80
+  - id: text
+    label: |-
+      非数值答案
+      必须与真值精确匹配
+      不应用数值容差
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 360
+  - id: report
+    label: |-
+      单一混合宽松准确率
+      数值：5% 容差
+      文本：精确匹配
+      报告 H/M/总体
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3040
+      'y': 220
 edges:
   - from: sources
-    to: metadata
+    to: artifacts
     type: primary
-  - from: metadata
-    to: human
+  - from: artifacts
+    to: human_author
     type: primary
-  - from: human
+  - from: artifacts
+    to: summaries
+    type: data
+  - from: human_author
+    to: human_verify
+    type: primary
+  - from: human_verify
+    to: human_set
+    type: primary
+  - from: human_verify
+    to: human_audit
+    type: data
+  - from: summaries
     to: t5
     type: primary
   - from: t5
-    to: clean
+    to: machine_filter
     type: primary
-  - from: clean
-    to: split
+  - from: machine_filter
+    to: machine_set
     type: primary
-  - from: split
-    to: chartocr
+  - from: human_set
+    to: release
     type: primary
-  - from: chartocr
-    to: models
+  - from: machine_set
+    to: release
+    type: primary
+  - from: release
+    to: input
+    type: primary
+  - from: input
+    to: answer
+    type: primary
+  - from: answer
+    to: numeric
+    type: primary
+  - from: answer
+    to: text
+    type: primary
+  - from: numeric
+    to: report
+    type: primary
+  - from: text
+    to: report
     type: primary
 modules: []

@@ -5,85 +5,203 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CVBench 构建流程
-  description: 与论文对齐的 CVBench 构建流程：按任务从 YouTube 采样视频组，筛选视频，分段生成字幕， 标注跨视频关系摘要，生成多选问答，并经过人工质检后用于零样本和 CoT 评测。
-  legend: 实线箭头表示数据构建与评测主流程。
+  description: 与论文对齐的跨视频筛选与四阶段问答生成，随后进行模型辅助校验、带修正回路的两阶段人工质检和准确率评测。
+  legend: 实线表示构建与通过质检的题目；虚线表示未通过题目返回修正。
 nodes:
-  - id: youtube
-    label: YouTube
+  - id: candidates
+    label: |-
+      YouTube 检索
+      1,500 个候选视频
     type: cloud
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: video_qc
-    label: 视频筛选
-    type: decision
+      'y': 210
+  - id: curate
+    label: |-
+      任务驱动筛选
+      内在关系 · 时长 · 720p ·
+      24 fps
+    type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: captions
-    label: 字幕
-    type: process
+      'y': 210
+  - id: videos
+    label: |-
+      已筛选视频组
+      1,315 个视频 · 每组
+      2–4 个
+    type: database
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: relations
-    label: 关系摘要
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: qa
-    label: 问答
+      'y': 210
+  - id: segments
+    label: |-
+      自适应帧采样
+      生成视频片段视觉描述
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: human_qc
-    label: 人工质检
-    type: decision
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: bench
-    label: CVBench
+      x: 820
+      'y': 210
+  - id: descriptions
+    label: |-
+      视频级描述
+      聚合片段证据
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 210
+  - id: relations
+    label: |-
+      跨视频关系摘要
+      状态 · 因果 · 互补 · 矛盾
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 210
+  - id: synthesize
+    label: |-
+      GPT-4o 生成
+      每组至少 2 题 · 1 正确 +
+      3 干扰项
+    type: process
+    size: xl
+    position:
       x: 1600
-      'y': 160
-  - id: eval
-    label: 评测
-    type: terminal
+      'y': 210
+  - id: model_gate
+    label: |-
+      多模型一致性 + 难度校验
+      多模型幻觉检测
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 160
+      'y': 210
+  - id: human_gate
+    label: |-
+      8 名标注员第一轮复核
+      15 项任务专用标准
+      合规 · 正确 · 非平凡？
+    type: decision
+    size: xl
+    position:
+      x: 2120
+      'y': 210
+  - id: repair
+    label: |-
+      修正处理
+      修改低质量问题或干扰项
+      必要时重新采集视频
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 430
+  - id: independent_audit
+    label: |-
+      5 名新标注员
+      每人复核 200 组问答
+      合规 · 正确 · 无幻觉？
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 210
+  - id: benchmark
+    label: |-
+      CVBench
+      1,000 题 · 3 个层级 ·
+      15 个子任务
+    type: database
+    size: xl
+    position:
+      x: 2900
+      'y': 210
+  - id: input
+    label: |-
+      多视频输入
+      视频编号 · 开源模型每视频 8 帧
+    type: process
+    size: xl
+    position:
+      x: 3160
+      'y': 210
+  - id: prompting
+    label: |-
+      提示设置
+      零样本或思维链
+    type: process
+    size: xl
+    position:
+      x: 3420
+      'y': 210
+  - id: accuracy
+    label: |-
+      准确率
+      总体 · 层级 · 子任务
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 210
 edges:
-  - from: youtube
-    to: video_qc
+  - from: candidates
+    to: curate
     type: primary
-  - from: video_qc
-    to: captions
+  - from: curate
+    to: videos
     type: primary
-  - from: captions
+  - from: videos
+    to: segments
+    type: primary
+  - from: segments
+    to: descriptions
+    type: primary
+  - from: descriptions
     to: relations
     type: primary
   - from: relations
-    to: qa
+    to: synthesize
     type: primary
-  - from: qa
-    to: human_qc
+  - from: synthesize
+    to: model_gate
     type: primary
-  - from: human_qc
-    to: bench
+  - from: model_gate
+    to: human_gate
     type: primary
-  - from: bench
-    to: eval
+  - from: human_gate
+    to: repair
+    type: optional
+    label: 修正
+  - from: repair
+    to: human_gate
+    type: optional
+    label: 复检
+  - from: human_gate
+    to: independent_audit
+    type: primary
+    label: 通过
+  - from: independent_audit
+    to: repair
+    type: optional
+    label: 修正
+  - from: independent_audit
+    to: benchmark
+    type: primary
+    label: 通过
+  - from: benchmark
+    to: input
+    type: primary
+  - from: input
+    to: prompting
+    type: primary
+  - from: prompting
+    to: accuracy
     type: primary
 modules: []

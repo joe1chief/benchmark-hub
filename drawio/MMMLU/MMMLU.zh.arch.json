@@ -1,108 +1,376 @@
 {
   "version": 1,
-  "title": "MMMLU 构建流程",
+  "title": "MMMLU 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 28,
+    "edges": 30,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "MMLU测试集",
+      "id": "evidence",
+      "label": "证据与版本锚点\nMMLU 论文 2009.03300v3\nHF 数据 325a01dc\nsimple-evals 初版 01c488b\n当前代码 652c89d",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "paper_scope",
+      "label": "源 MMLU 论文，并非 MMMLU 论文\n57 个多项选择任务\n共收集 15,908 道题\n论文测试集计数 = 14,079",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "public_test",
+      "label": "OpenAI 公开测试版本\n14,042 条 · 57 个学科\n题目 · A–D · 答案 · 学科\n比论文测试计数少 37 条",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "57个学科",
-      "type": "process",
+      "id": "translate",
+      "label": "专业人工翻译\n翻译整个公开测试集\n以译文准确性为先\n纳入低资源约鲁巴语",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "人工翻译",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n4",
-      "label": "14个语种",
+      "id": "translation_boundary",
+      "label": "翻译质检边界\n译者人数与招募方式\n回译 · 仲裁\n验收规则均未公开",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "语种文件",
+      "id": "locale_release",
+      "label": "发布 14 个 Locale CSV\nAR · BN · DE · ES · FR · HI · ID\nIT · JA · KO · PT · SW · YO · ZH\n公开、无需申请 · MIT 标记",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_audit",
+      "label": "固定版本发布审计\n14 × 14,042 = 196,588 条\n57 学科 · 共 5 个空选项单元格\nDE：2 个 D · JA：1 个 A · ZH：2 个 D\n6 个 Locale 答案有差异 · SW/YO 学科漂移 445 条",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "Simple Evals",
+      "id": "access_gate",
+      "label": "加载哪一种 Hugging Face\n配置？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "named_config",
+      "label": "指定 Locale 配置\n恰有 14,042 条测试数据\nLocale 身份来自配置名\n可作为单语种评分单元",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "default_config",
+      "label": "默认配置拼接\n共 196,588 条测试数据\nSchema 没有 Locale 字段\n不能只凭单条数据推断语种",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "eval_pin",
+      "label": "官方 simple-evals 运行器\n共 15 次：EN-US + 14 个翻译版\n加载未固定版本的 OpenAI Blob URL\n本次审计确认其字节与 HF 锚点一致",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "精确匹配",
+      "id": "debug_gate",
+      "label": "是否已关闭 debug\n以执行全量评测？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "debug_sample",
+      "label": "公开入口默认设置\ndebug = True\nseed = 0 · 每 Locale 仅 10 题\n不是 14,042 条全量运行",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "language_gate",
+      "label": "请求的是 EN-US\n还是翻译 Locale？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "translated_blob",
+      "label": "加载 mmlu_LOCALE.csv\n一个翻译测试文件\n共 14,042 条\n以该 Locale 自带答案为准",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "english_blob",
+      "label": "加载 mmlu.csv\n原始 EN-US 基线\n不计入 14 Locale 平均值\n源文件仍有 10 个空选项",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "格式化官方用户提示\n零样本 · 要求逐步思考\n展示题目与 A–D 选项\n末行须为“Answer: 字母”",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "多语准确率",
+      "id": "sample",
+      "label": "调用配置好的采样器\n生成自由文本回答\n模型 / System Message 可变\n保存实际请求的对话",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "response_gate",
+      "label": "采样器是否成功\n返回回答？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "request_abort",
+      "label": "请求异常\nEval 没有逐题重试\n异常会终止整个运行\n不会产出最终分母",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "normalize",
+      "label": "规范化回答文本\n移除 Markdown 与数学外壳\n保留答案内容\n再按顺序扫描正则",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse_gate",
+      "label": "首个匹配的本地化标记\n是否能给出 A–D？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "parsed",
+      "label": "规范化抽取字符\n阿拉伯 · 孟加拉 · 全角字母\n映射为规范 A–D\n首个正则匹配后即停止",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse_fail",
+      "label": "解析失败\nextracted_answer = None\n本题记 0 分\n本题仍保留在分母中",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "exact_score",
+      "label": "答案字母精确比较\n抽取 A–D == Locale 标准答案\n相同 → 1 · 不同 → 0\n不设部分分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric",
+      "label": "聚合准确率\n每 Locale = 逐题得分和 / n\n默认 debug = True 时 n = 10\n仅 debug = False 时 n = 14,042",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "发布多语言结果\n分别报告 14 个翻译 Locale\nAverage = 14 个 Locale 分数均值\nEN-US 单列 · 全量须设 debug = False",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "implementation_drift",
+      "label": "版本与类别漂移\n解析正则于 2025-01 扩展\nsimple-evals 于 2025-07 停止更新\nSW/YO 后缀学科会落入“other”",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
-      "type": "primary"
+      "from": "evidence",
+      "to": "paper_scope",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "paper_scope",
+      "to": "public_test",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "public_test",
+      "to": "translate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "translate",
+      "to": "locale_release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
-      "type": "primary"
+      "from": "translate",
+      "to": "translation_boundary",
+      "type": "optional"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
-      "type": "primary"
+      "from": "locale_release",
+      "to": "release_audit",
+      "type": "optional"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "locale_release",
+      "to": "access_gate",
+      "type": "optional"
+    },
+    {
+      "id": "edge-8",
+      "from": "access_gate",
+      "to": "named_config",
+      "type": "data",
+      "label": "指定 Locale"
+    },
+    {
+      "id": "edge-9",
+      "from": "access_gate",
+      "to": "default_config",
+      "type": "data",
+      "label": "默认配置"
+    },
+    {
+      "id": "edge-10",
+      "from": "locale_release",
+      "to": "eval_pin",
       "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "eval_pin",
+      "to": "debug_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "debug_gate",
+      "to": "language_gate",
+      "type": "primary",
+      "label": "全量运行"
+    },
+    {
+      "id": "edge-13",
+      "from": "debug_gate",
+      "to": "debug_sample",
+      "type": "optional",
+      "label": "默认调试"
+    },
+    {
+      "id": "edge-14",
+      "from": "debug_sample",
+      "to": "language_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "language_gate",
+      "to": "translated_blob",
+      "type": "primary",
+      "label": "翻译 Locale"
+    },
+    {
+      "id": "edge-16",
+      "from": "language_gate",
+      "to": "english_blob",
+      "type": "primary",
+      "label": "EN-US 基线"
+    },
+    {
+      "id": "edge-17",
+      "from": "translated_blob",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "english_blob",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "prompt",
+      "to": "sample",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "sample",
+      "to": "response_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "response_gate",
+      "to": "normalize",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-22",
+      "from": "response_gate",
+      "to": "request_abort",
+      "type": "optional",
+      "label": "否"
+    },
+    {
+      "id": "edge-23",
+      "from": "normalize",
+      "to": "parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "parse_gate",
+      "to": "parsed",
+      "type": "primary",
+      "label": "解析成功"
+    },
+    {
+      "id": "edge-25",
+      "from": "parse_gate",
+      "to": "parse_fail",
+      "type": "primary",
+      "label": "无匹配"
+    },
+    {
+      "id": "edge-26",
+      "from": "parsed",
+      "to": "exact_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "exact_score",
+      "to": "metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "parse_fail",
+      "to": "metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-30",
+      "from": "metric",
+      "to": "implementation_drift",
+      "type": "optional"
     }
   ],
   "modules": []

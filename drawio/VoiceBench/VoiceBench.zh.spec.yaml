@@ -1,0 +1,374 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: VoiceBench — 语音数据构建、鲁棒性与指标流程
+  description: >-
+    VoiceBench 论文 v3 改造七个能力数据集，样本数分别为636/200/553/455/3,074/345/520。能力评测与鲁棒性评测是并行的基准组成部分。CommonEval 和 SD-QA
+    使用真实口语指令；仅合成能力路径会由 GPT-4o 规范化 TTS 文本、用 Google TTS 生成音频、人工核验正确性与30秒时长限制，并在需要时改写文本。鲁棒性种子受来源约束：AlpacaEval
+    提供速度、年龄、音量、音高、环境、内容错误与合成口音变体（使用 Google/Melo TTS），SD-QA 提供真实口音语音。评测比较真实文本输入（T.）与语音输入（S.），并使用任务特定指标。论文报告 Overall
+    列，但论文和官方评测代码都未公开其聚合公式。
+  legend: >-
+    来源：arXiv:2410.17196v3, Sections 3.1-3.2, Tables 2-3, and the official repository
+    https://github.com/MatthewCYM/VoiceBench. The paper defines capability and robustness as parallel benchmark
+    components. GPT-4o text normalization, Google TTS, manual correctness validation, rewriting when needed, and the
+    30-second cap apply to the synthetic path; CommonEval and SD-QA use real speech. Table 3 reports an Overall column,
+    but neither the paper nor the official evaluation code publishes its aggregation formula.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: sources
+    label: 七个来源 · AlpacaEval/CommonEval · SD-QA · OpenBookQA/MMSU · IFEval · AdvBench
+    type: input
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: filters
+    label: 任务特定文本过滤
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 360
+  - id: audioRoute
+    label: 语音来源？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: rewrite
+    label: GPT-4o TTS文本规范化 · 仅合成路径
+    type: service
+    size: xl
+    position:
+      x: 880
+      'y': 160
+  - id: tts
+    label: Google TTS 合成
+    type: service
+    size: xl
+    position:
+      x: 1160
+      'y': 160
+  - id: listenGate
+    label: 合成语音正确且≤30秒？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 160
+  - id: reviseText
+    label: 需要时改写TTS文本
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: realSpeech
+    label: 真实语音 · CommonEval/SD-QA
+    type: input
+    size: xl
+    position:
+      x: 880
+      'y': 560
+  - id: componentRouter
+    label: 能力评测集装配
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: capability
+    label: 能力评测组成部分 · 七个数据集
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 160
+  - id: robustRouter
+    label: |-
+      鲁棒性家族路由
+      按来源约束
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 560
+  - id: speaker
+    label: |-
+      说话人鲁棒性
+      Google TTS：速度 · 音量 · 音高
+      CosyVoice-300M：年龄
+      口音：SD-QA 真实 · Google/Melo 合成
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 800
+  - id: environment
+    label: |-
+      环境（AlpacaEval）
+      远场 · 失真 · 混响 · 丢失 · 噪声
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 800
+  - id: content
+    label: |-
+      内容（AlpacaEval）
+      修复 · 重复 · 停顿 · 不流畅 · 错误
+    type: process
+    size: xl
+    position:
+      x: 2400
+      'y': 800
+  - id: textSet
+    label: 真实文本输入（T.）
+    type: document
+    size: xl
+    position:
+      x: 2800
+      'y': 800
+  - id: evalSet
+    label: 语音输入（S.）· 能力+鲁棒性
+    type: output
+    size: xl
+    position:
+      x: 2800
+      'y': 1040
+  - id: metricRouter
+    label: 任务特定评测 · T. 对比 S.？
+    type: decision
+    size: xl
+    position:
+      x: 2800
+      'y': 1280
+  - id: openJudge
+    label: 开放问答：GPT-4o-mini · 1–5分
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 800
+  - id: sdQa
+    label: SD-QA：PANDA/GPT准确率
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1040
+  - id: mcq
+    label: 多选：规则抽取准确率
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1280
+  - id: ifeval
+    label: IFEval：宽松/严格 · 提示级/指令级
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1520
+  - id: advbench
+    label: AdvBench：拒答率
+    type: formula
+    size: xl
+    position:
+      x: 3300
+      'y': 1760
+  - id: report
+    label: 任务指标+论文Overall · 聚合公式未公开
+    type: output
+    size: xl
+    position:
+      x: 4200
+      'y': 1280
+  - id: alpaca_robust_seed
+    label: |-
+      AlpacaEval 鲁棒性种子
+      说话人 · 环境 · 内容
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 800
+  - id: sdqa_real_accent
+    label: |-
+      SD-QA 种子
+      真实口音
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 1040
+edges:
+  - from: sources
+    to: filters
+    type: primary
+  - from: filters
+    to: audioRoute
+    type: primary
+  - from: filters
+    to: textSet
+    type: data
+    label: 文本 T.
+    labelPosition: center
+    waypoints:
+      - x: 440
+        'y': -120
+      - x: 2920
+        'y': -120
+      - x: 2920
+        'y': 800
+  - from: audioRoute
+    to: rewrite
+    type: primary
+    label: 合成
+    labelPosition: center
+  - from: audioRoute
+    to: realSpeech
+    type: primary
+    label: 真实 · CommonEval/SD-QA
+    labelPosition: center
+  - from: rewrite
+    to: tts
+    type: primary
+  - from: tts
+    to: listenGate
+    type: primary
+  - from: listenGate
+    to: reviseText
+    type: optional
+    label: 否
+    labelPosition: center
+  - from: reviseText
+    to: rewrite
+    type: optional
+  - from: listenGate
+    to: componentRouter
+    type: primary
+    label: 是
+    labelPosition: center
+  - from: realSpeech
+    to: componentRouter
+    type: primary
+  - from: componentRouter
+    to: capability
+    type: primary
+    label: 能力
+    labelPosition: center
+  - from: robustRouter
+    to: speaker
+    type: primary
+    label: 说话人
+    labelPosition: center
+  - from: robustRouter
+    to: environment
+    type: primary
+    label: 环境
+    labelPosition: center
+  - from: robustRouter
+    to: content
+    type: primary
+    label: 内容
+    labelPosition: center
+  - from: capability
+    to: evalSet
+    type: data
+    waypoints:
+      - x: 2680
+        'y': 220
+      - x: 2680
+        'y': 1100
+  - from: speaker
+    to: evalSet
+    type: primary
+  - from: environment
+    to: evalSet
+    type: primary
+  - from: content
+    to: evalSet
+    type: primary
+  - from: textSet
+    to: metricRouter
+    type: data
+    label: 文本（T.）
+    labelPosition: center
+    waypoints:
+      - x: 3160
+        'y': 860
+      - x: 3160
+        'y': 1340
+  - from: evalSet
+    to: metricRouter
+    type: primary
+    label: 语音（S.）
+    labelPosition: center
+  - from: metricRouter
+    to: openJudge
+    type: primary
+    label: 开放问答
+    labelPosition: center
+  - from: metricRouter
+    to: sdQa
+    type: primary
+    label: SD-QA 问答
+    labelPosition: center
+  - from: metricRouter
+    to: mcq
+    type: primary
+    label: 多选
+    labelPosition: center
+  - from: metricRouter
+    to: ifeval
+    type: primary
+    label: IFEval 指令遵循
+    labelPosition: center
+  - from: metricRouter
+    to: advbench
+    type: primary
+    label: AdvBench 拒答
+    labelPosition: center
+  - from: openJudge
+    to: report
+    type: primary
+  - from: sdQa
+    to: report
+    type: primary
+  - from: mcq
+    to: report
+    type: primary
+  - from: ifeval
+    to: report
+    type: primary
+  - from: advbench
+    to: report
+    type: primary
+  - from: sdqa_real_accent
+    to: speaker
+    type: data
+    label: 真实口音
+    waypoints:
+      - x: 1720
+        'y': 1040
+      - x: 1720
+        'y': 940
+      - x: 1840
+        'y': 940
+  - from: alpaca_robust_seed
+    to: robustRouter
+    type: data
+    label: AlpacaEval 种子
+    waypoints:
+      - x: 1720
+        'y': 680
+      - x: 1880
+        'y': 680
+      - x: 1880
+        'y': 560
+modules: []

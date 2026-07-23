@@ -4,134 +4,144 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AutoCodeBench-V2 Build Process
+  title: AutoCodeBench-V2 Release and Evaluation
   description: >-
-    Paper-aligned AutoCodeGen workflow for the AutoCodeBench series: multilingual seed extraction, sandbox-backed test
-    generation, reverse problem generation, three-stage filtering, series subset creation, and Pass@1 evaluation, based
-    on arXiv:2508.09101.
-  legend: Solid arrows show automated benchmark construction and evaluation; dashed arrows mark sandbox and quality feedback.
+    Evidence-bounded V2 workflow separating the original paper from the later official release, the 1,000-record initial
+    file from the 998-record fix, and the execution-watermark success gate.
+  legend: V2 is post-paper official evidence; record and watermark counts are direct audits of the two published files.
 nodes:
-  - id: seeds
+  - id: paper_original
     label: |-
-      Stack-Edu seeds
-      GitHub educational code
-      function, class, file levels
+      Paper v1: Original AutoCodeBench
+      3,920 Problems / 20 Languages
+      No V2 in This Paper
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: solutions
+      'y': 100
+  - id: v2_boundary
     label: |-
-      Solution generation
-      DeepSeek-V3 few-shot
-      self-contained code
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: sandbox
-    label: |-
-      Sandbox validation
-      20+ languages
-      executability check
-    type: terminal
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: tests
-    label: |-
-      Test functions
-      public <=3 cases
-      private 7+ edge cases
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: problem_generation
-    label: |-
-      Reverse problem generation
-      language and I/O specs
-      no solution hints
+      Post-Paper Official V2 Release
+      Announced December 4, 2025
+      Repository + Hugging Face Evidence
     type: document
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: filtering
+      x: 320
+      'y': 100
+  - id: refine
     label: |-
-      Three-stage filtering
-      10-sample difficulty
-      R1 critic and tagging
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: benchmark
-    label: |-
-      AutoCodeBench
-      3,920 problems
-      20 languages / 14 categories
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 70
-  - id: series
-    label: |-
-      Series variants
-      ACB-Lite by pass counts
-      ACB-Complete for base LMs
-    type: database
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: evaluation
-    label: |-
-      Evaluation
-      Pass@1
-      30+ LLMs, standard prompt
+      Iterative V2 Refinement
+      Start from Original Dataset
+      Top Proprietary Models + Sandbox
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 600
+      'y': 100
+  - id: initial_snapshot
+    label: |-
+      Initial Dec. 4 Snapshot
+      1,000 Records • 20 Languages
+      Easy / Medium / Hard
+      136 / 218 / 646
+      982 / 1,000 Carry Watermark
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 100
+  - id: fixed_snapshot
+    label: |-
+      Fixed Feb. 17, 2026 Snapshot
+      998 Records • 20 Languages
+      Easy / Medium / Hard
+      136 / 217 / 645
+      998 / 998 Carry Watermark
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 100
+  - id: schema
+    label: |-
+      V2 Record Contract
+      question • signature • output
+      full_test_func • language • difficulty
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 100
+  - id: model_output
+    label: |-
+      Generate Candidate Output
+      Replace the output Field
+      Required Single Fenced Code Block
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: sandbox
+    label: |-
+      V2 Sandbox Evaluation
+      multi-language-sandbox:v2
+      Execute full_test_func
+      32-Way Concurrency
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 440
+  - id: watermark
+    label: |-
+      Execution Watermark Gate
+      _zfa817ta56vz43s3ji9k in stdout
+      exec_outcome = PASSED
+      Proves Test Function Executed
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: report
+    label: |-
+      Publish Fixed-Snapshot Results
+      Pass@1 by Language / Difficulty
+      Do Not Conflate 1,000 and 998
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 440
 edges:
-  - from: seeds
-    to: solutions
+  - from: paper_original
+    to: v2_boundary
     type: primary
-  - from: solutions
+  - from: v2_boundary
+    to: refine
+    type: primary
+  - from: refine
+    to: initial_snapshot
+    type: primary
+  - from: initial_snapshot
+    to: fixed_snapshot
+    type: primary
+  - from: fixed_snapshot
+    to: schema
+    type: primary
+  - from: schema
+    to: model_output
+    type: primary
+  - from: model_output
     to: sandbox
     type: primary
   - from: sandbox
-    to: tests
+    to: watermark
     type: primary
-  - from: tests
-    to: problem_generation
+  - from: watermark
+    to: report
     type: primary
-  - from: problem_generation
-    to: filtering
-    type: primary
-  - from: filtering
-    to: benchmark
-    type: primary
-  - from: benchmark
-    to: series
-    type: primary
-  - from: series
-    to: evaluation
-    type: primary
-  - from: sandbox
-    to: solutions
-    type: optional
-    label: repair failures
-  - from: filtering
-    to: problem_generation
-    type: optional
-    label: discard or regenerate
 modules: []

@@ -7,90 +7,234 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 18,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "Evidence & fixed revisions\narXiv 2408.15556v1 · repo 5ad1177\nHugging Face dataset 83b9013",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "images",
-      "label": "8K Images",
+      "label": "Collect 200 8K images\nopen DIV8K plus Internet sources\npreserve full-resolution originals",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "tasks",
-      "label": "FSP+FCP",
+      "id": "boxes",
+      "label": "Manually annotate bounding boxes\nmark question-relevant objects\nretain coordinates in each 8K image",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "annotate",
-      "label": "Human QA",
+      "id": "generate",
+      "label": "Crop inside each bounding box\nGPT-4o generates query-answer pairs\nfocus on grounded fine detail",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "coords",
-      "label": "Object Coords",
-      "type": "document",
+      "id": "review",
+      "label": "Human experts review every pair\nremove incorrect or ambiguous queries\nkeep items difficult to answer by guessing",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "crops",
-      "label": "4K Crops",
+      "id": "route",
+      "label": "Assign perception task\nsingle-instance fine detail\nor cross-instance relations",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "fsp",
+      "label": "FSP · 100 samples\nattribute recognition · OCR\nvisual prompting",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fcp",
+      "label": "FCP · 100 samples\nmap analysis · chart analysis\nspatial relationships",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "versions",
+      "label": "Build two resolution views\n8K keeps the source image\n4K crops relevant objects, same aspect ratio",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "options",
-      "label": "MC Options",
+      "label": "Create four choices A-D\nbind the same gold answer to both views\npreserve question-object grounding",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "Acc+Uncert",
+      "id": "paper_protocol",
+      "label": "Paper protocol\ncircularly shift the full A-D sequence\neach option moves to the next position\nfour passes; report mean ACC",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_rows",
+      "label": "Pinned HF release drift · 83b9013\nfour-row group: gold A → B → C → D\nfull option order is not a circular shift",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "eval_prompt",
+      "label": "Candidate MLLM prompt and output\nQuestion + Options A-D + select instruction\npass candidate prediction to evaluator",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "aux_judge",
+      "label": "Repository auxiliary Yes/No judge\nllm_path required; model not pinned\ncorrect answer + candidate prediction\ntop_p 0.8 · top_k 40 · temperature 0.2",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "yn_parser",
+      "label": "Lowercase response; match yes/no prefix\nyes → 1\nno or any other prefix → 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_score",
+      "label": "Repository aggregate\ngroup by cycle_category\nmean gpt_score for category + all\naverage groups; report 4K and 8K separately",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "pilot",
+      "label": "Pilot resolution study\naccuracy + resolution-dependent\nnext-token uncertainty score\nseparate from benchmark evaluation",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "Official-artifact boundary at 5ad1177\n800 rows for 4K + 800 rows for 8K\n200 questions × 4 rows per view\npaper/release permutation drift is explicit\nDC² is an inference method, not curation",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "images",
-      "to": "tasks",
-      "type": "primary"
+      "from": "evidence",
+      "to": "images",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "tasks",
-      "to": "annotate",
+      "from": "images",
+      "to": "boxes",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "annotate",
-      "to": "coords",
+      "from": "boxes",
+      "to": "generate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "coords",
-      "to": "crops",
+      "from": "generate",
+      "to": "review",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "crops",
-      "to": "options",
+      "from": "review",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "options",
-      "to": "metrics",
+      "from": "route",
+      "to": "fsp",
       "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "route",
+      "to": "fcp",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "fsp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "fcp",
+      "to": "versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "versions",
+      "to": "options",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "options",
+      "to": "paper_protocol",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "options",
+      "to": "release_rows",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "release_rows",
+      "to": "eval_prompt",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-14",
+      "from": "eval_prompt",
+      "to": "aux_judge",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-15",
+      "from": "aux_judge",
+      "to": "yn_parser",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-16",
+      "from": "yn_parser",
+      "to": "repo_score",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-17",
+      "from": "versions",
+      "to": "pilot",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-18",
+      "from": "paper_protocol",
+      "to": "artifact_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "repo_score",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

@@ -1,62 +1,80 @@
 {
   "version": 1,
-  "title": "AlpacaEval 构建流程",
+  "title": "原始 AlpacaEval 构建流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 11,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "Alpaca交互",
+      "id": "alpaca_farm",
+      "label": "AlpacaFarm 评测集\n固定 805 个样本\n来源评测分布",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "805条指令",
+      "id": "merge_fields",
+      "label": "简化提示字段\n四分之一 Self-Instruct 样本受影响\n合并 instruction + input",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reference_regeneration",
+      "label": "重生成 text-davinci-003 参考回复\n不设 AlpacaFarm 输出长度上限\n每条指令保留一个参考回复",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "固定 AlpacaEval 评测集\n805 条指令 + 参考回复\n原始评测合同",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "candidate",
+      "label": "待评模型\n回答全部指令\n生成候选回复",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reference",
+      "label": "固定参考回复\ntext-davinci-003\n对应同一 805 条指令",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "模型回答",
+      "id": "randomize",
+      "label": "随机化回复顺序\n候选 / 参考\n控制位置偏差",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "基线回答",
+      "id": "judge",
+      "label": "alpaca_eval_gpt4 评审器\nGPT-4 • 温度 = 0\n成对偏好提示",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "顺序随机化",
+      "id": "preference",
+      "label": "解析偏好结果\n候选胜 / 参考胜\n平局时双方各记 0.5",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "汇总 805 次判断\n平均胜率 + 标准误\n候选对 text-davinci-003",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n6",
-      "label": "GPT-4裁判",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n7",
-      "label": "长度GLM",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "n8",
-      "label": "LC胜率",
+      "id": "report",
+      "label": "原始 AlpacaEval 报告\n胜率与标准误\n自动评测结果",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +82,68 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "alpaca_farm",
+      "to": "merge_fields",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
+      "from": "merge_fields",
+      "to": "reference_regeneration",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
+      "from": "reference_regeneration",
+      "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
+      "from": "dataset",
+      "to": "candidate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
-      "type": "primary"
+      "from": "dataset",
+      "to": "reference",
+      "type": "data"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
+      "from": "candidate",
+      "to": "randomize",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "reference",
+      "to": "randomize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "randomize",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "judge",
+      "to": "preference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "preference",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],

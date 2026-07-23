@@ -1,68 +1,92 @@
 {
   "version": 1,
-  "title": "BIG-Bench Extra Hard 构建流程",
+  "title": "BIG-Bench Hard 构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 9,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "bbh_audit",
-      "label": "BBH审计\n饱和/捷径",
+      "id": "bigbench",
+      "label": "BIG-Bench 评测池\n209 个评测任务\n数据与元数据覆盖不均",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "task_mapping",
-      "label": "任务映射\n23领域",
+      "id": "structure_filter",
+      "label": "结构条件筛选\n移除 >3 子任务者：209 → 187\n移除 <103 样本者：187 → 130",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "harder_tasks",
-      "label": "更难替换\n多跳推理",
+      "id": "baseline_filter",
+      "label": "可比较评测任务\n要求人类基线：130 → 85\n保留选择题 / 精确匹配：85 → 78",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "reference_models",
-      "label": "参考模型\n低于70%",
-      "type": "decision",
+      "id": "hardness_filter",
+      "label": "难度与范围复核\n移除模型超过人类者：78 → 36\n移除 13 个极难 / 超范围者：36 → 23",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "BBEH数据\n23任务",
+      "label": "打包 BIG-Bench Hard\n23 个任务 • 27 个子任务\n6,511 个评测样本",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "mini",
-      "label": "BBEH Mini\n460例",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "analysis",
-      "label": "数据分析\n上下文/思维",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "metric",
-      "label": "指标\n调和/微均",
+      "id": "examples",
+      "label": "各任务样本数\n通常每任务 250 题\n例外：187 • 146 • 178 题",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "human_cot",
+      "label": "人工 CoT 示例\n每任务三个\n推理过程 + 最终答案格式",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "answer_only",
+      "label": "少样本直接作答提示\n使用同一批 BBH 任务示例\n直接输出最终答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cot_prompt",
+      "label": "少样本思维链提示\n使用三个人工 CoT 示例\n先推理再给出最终答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "decode",
+      "label": "PaLM • InstructGPT • Codex\n贪心解码 • 温度 = 0\n使用同一批评测样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "extract",
+      "label": "确定性抽取\n读取 “the answer is” 之后的文本\n按任务归一化",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "score",
+      "label": "BBH 评分\n精确匹配 + 任务准确率\n23 个任务无权平均",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "report",
-      "label": "模型报告\n推理空间",
+      "label": "对比直接作答与 CoT\n对照平均人类表现\n分析模型规模效应",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,56 +94,79 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "bbh_audit",
-      "to": "task_mapping",
+      "from": "bigbench",
+      "to": "structure_filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "task_mapping",
-      "to": "harder_tasks",
+      "from": "structure_filter",
+      "to": "baseline_filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "harder_tasks",
-      "to": "reference_models",
+      "from": "baseline_filter",
+      "to": "hardness_filter",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "reference_models",
+      "from": "hardness_filter",
       "to": "dataset",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "reference_models",
-      "to": "harder_tasks",
-      "type": "optional",
-      "label": "增加难度"
+      "from": "dataset",
+      "to": "examples",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "dataset",
-      "to": "mini",
+      "from": "examples",
+      "to": "human_cot",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "dataset",
-      "to": "analysis",
+      "from": "human_cot",
+      "to": "answer_only",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "analysis",
-      "to": "metric",
+      "from": "human_cot",
+      "to": "cot_prompt",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "metric",
+      "from": "answer_only",
+      "to": "decode",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "cot_prompt",
+      "to": "decode",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "decode",
+      "to": "extract",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "extract",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "score",
       "to": "report",
       "type": "primary"
     }

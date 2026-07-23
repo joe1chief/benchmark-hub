@@ -6,78 +6,182 @@ meta:
   routing: orthogonal
   title: GaokaoBench Build Process
   description: >-
-    Paper-aligned GaokaoBench flow from 2010-2022 Chinese national exam questions to objective/subjective scoring and
-    converted total scores.
+    Paper-and-code-aligned exam digitization, type-specific answer parsing, human grading, repository judge, and score
+    aggregation.
   legend: >-
-    Solid arrows show exam collection, script/manual conversion, question typing, prompting, objective matching,
-    human/LLM grading, and total-score conversion.
+    Dotted arrows denote pinned evidence or alternative comparison paths; solid arrows denote the benchmark build and
+    scoring flow.
 nodes:
-  - id: exams
-    label: Gaokao Exams
-    type: database
+  - id: evidence
+    label: |-
+      Primary evidence
+      arXiv:2305.12474v3
+      official repo 6dbb24f8
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: convert
-    label: Parse+Annotate
-    type: process
+      'y': 260
+  - id: source_pdfs
+    label: |-
+      Source national Gaokao exams
+      all papers from 2010–2022
+      9 science/humanities subjects
+    type: database
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: types
-    label: Obj/Subj Qs
+      'y': 260
+  - id: digitize
+    label: |-
+      Digitize with scripts + manual work
+      PDF → structured JSON
+      mathematical formulas → LaTeX
     type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: prompt
-    label: Zero-shot
-    type: document
+      'y': 260
+  - id: release
+    label: |-
+      Release 2,811 questions
+      objective 1,781: 1,418/273/64/26
+      subjective 1,030: 786/218/26
+    type: database
     size: xl
     position:
       x: 820
-      'y': 160
-  - id: match
-    label: Obj Match
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: grade
-    label: Human Grade
+      'y': 260
+  - id: prompt
+    label: |-
+      Type/subject-specific zero-shot
+      many: reasoning field → eoe
+      some answer-only: five-of-seven,
+      correction, several Chinese readings
+      all: answer field → eoa
     type: process
     size: xl
     position:
+      x: 1080
+      'y': 260
+  - id: route
+    label: |-
+      Route by question type
+      objective parser or
+      subjective grading path
+    type: decision
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Total Score
-    type: terminal
+      'y': 260
+  - id: objective_parser
+    label: |-
+      Parse objective outputs
+      single: last A–D
+      multi-Q: markers else first letters
+      multi-select: tag index >0
+      otherwise scan last 10 chars
+      five-of-seven: first 5 A–G
+    type: process
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 80
+  - id: objective_score
+    label: |-
+      Score-weighted exact matching
+      Physics multi-select: full 6
+      correct subset 3 · extraneous 0
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 80
+  - id: human_grade
+    label: |-
+      Paper primary subjective grade
+      two teachers per answer
+      average their scores
+    type: user
+    size: xl
+    position:
+      x: 1600
+      'y': 300
+  - id: repo_judge
+    label: |-
+      Pinned repo alternative judge
+      GPT-4-1106-preview · T 0
+      caller max_tokens=4,096
+      request omits max_tokens
+      default: no marking criteria
+      parse total-score; mean non-null
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 520
+  - id: aggregate
+    label: |-
+      Aggregate scoring rates
+      correct score / total score
+      objective + subjective by subject
+      science/humanities totals / 750
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 260
+  - id: agreement
+    label: |-
+      Compare judge with humans
+      Spearman ρ + Kendall τ
+      paper judge includes marking criteria
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 520
 edges:
-  - from: exams
-    to: convert
+  - from: evidence
+    to: source_pdfs
+    type: data
+  - from: source_pdfs
+    to: digitize
     type: primary
-  - from: convert
-    to: types
+  - from: digitize
+    to: release
     type: primary
-  - from: types
+  - from: release
     to: prompt
     type: primary
   - from: prompt
-    to: match
+    to: route
     type: primary
-  - from: match
-    to: grade
+  - from: route
+    to: objective_parser
     type: primary
-  - from: grade
-    to: score
+  - from: objective_parser
+    to: objective_score
+    type: primary
+  - from: objective_score
+    to: aggregate
+    type: primary
+  - from: route
+    to: human_grade
+    type: primary
+  - from: human_grade
+    to: aggregate
+    type: primary
+  - from: route
+    to: repo_judge
+    type: data
+  - from: repo_judge
+    to: aggregate
+    type: data
+  - from: human_grade
+    to: agreement
+    type: data
+  - from: repo_judge
+    to: agreement
     type: primary
 modules: []

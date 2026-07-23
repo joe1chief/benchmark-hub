@@ -5,107 +5,175 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMExam 构建流程
-  description: 基于 arXiv:2306.03030 论文整理的 CMExam 构建与评测流程。
-  legend: 实线表示数据集构建与评测主流程；虚线表示辅助标注环节。
+  description: 对齐论文的 CMExam 构建与评测流程：真实中国执业医师考试题经过滤、去重和 8:1:1 划分，补充题解与五类专家复核的测试集标注，再用于答案预测、题解生成和人机比较。
+  legend: 实线箭头表示数据集构建与论文规定的两类评测任务。
 nodes:
   - id: source
-    label: |-
-      执医原题
-      96,161 道
+    label: 96,161 道真实历年执医考试题
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: clean
-    label: |-
-      文本清洗
-      去图表
+      'y': 170
+  - id: text_filter
+    label: 剔除非文本题
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: split
-    label: |-
-      选择题集
-      68,119 道
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: solutions
-    label: |-
-      题目解析
-      85.24%
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: gpt
-    label: |-
-      GPT 预标
-      标签草稿
+      'y': 170
+  - id: dedup
+    label: 题目去重
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: experts
+      x: 560
+      'y': 170
+  - id: retained
     label: |-
-      专家复核
-      协商一致
-    type: decision
+      68,119 题：65,950
+      单选、2,169 多选
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 170
+  - id: split
+    label: |-
+      随机按 8:1:1 划分训练、
+      开发与测试集
+    type: process
     size: xl
     position:
       x: 1080
-      'y': 160
-  - id: facets
-    label: |-
-      五类标注
-      ICD、科室、能力
+      'y': 60
+  - id: solutions
+    label: 85.24% 的题目含简短题解
     type: document
     size: xl
     position:
+      x: 1080
+      'y': 280
+  - id: gpt_annotation
+    label: GPT-4 仅对测试题预标注
+    type: process
+    size: xl
+    position:
       x: 1340
-      'y': 160
-  - id: eval
-    label: |-
-      模型评测
-      Acc、F1、解析
-    type: terminal
+      'y': 60
+  - id: expert_review
+    label: 医师与医学博士生复核，分歧协商一致
+    type: user
     size: xl
     position:
       x: 1600
-      'y': 160
+      'y': 60
+  - id: five_facets
+    label: |-
+      ICD-11 疾病组、科室、学科、
+      能力与难度
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 60
+  - id: benchmark
+    label: |-
+      CMExam 题目、答案、
+      题解与测试元数据
+    type: database
+    size: xl
+    position:
+      x: 2120
+      'y': 170
+  - id: prediction
+    label: 答案预测：零样本或微调模型
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 60
+  - id: reasoning
+    label: 开放式题解生成
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 280
+  - id: prediction_metrics
+    label: |-
+      准确率与加权 F1；人类准确率
+      71.6%
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 60
+  - id: reasoning_metrics
+    label: |-
+      题解生成指标
+      BLEU-1、BLEU-4、
+      ROUGE-1、ROUGE-2、
+      ROUGE-L
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 280
+  - id: report
+    label: 医学问答、推理与标注维度分析
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 170
 edges:
   - from: source
-    to: clean
+    to: text_filter
     type: primary
-  - from: clean
+  - from: text_filter
+    to: dedup
+    type: primary
+  - from: dedup
+    to: retained
+    type: primary
+  - from: retained
     to: split
     type: primary
-  - from: split
+  - from: retained
     to: solutions
-    type: data
-    label: 解析
-  - from: split
-    to: gpt
-    type: data
-    label: 测试集标注
-  - from: gpt
-    to: experts
-    type: optional
-    label: 标签草稿
-  - from: solutions
-    to: experts
-    type: data
-  - from: experts
-    to: facets
     type: primary
-  - from: facets
-    to: eval
+  - from: split
+    to: gpt_annotation
+    type: primary
+  - from: gpt_annotation
+    to: expert_review
+    type: primary
+  - from: expert_review
+    to: five_facets
+    type: primary
+  - from: five_facets
+    to: benchmark
+    type: primary
+  - from: solutions
+    to: benchmark
+    type: primary
+  - from: benchmark
+    to: prediction
+    type: primary
+  - from: benchmark
+    to: reasoning
+    type: primary
+  - from: prediction
+    to: prediction_metrics
+    type: primary
+  - from: reasoning
+    to: reasoning_metrics
+    type: primary
+  - from: prediction_metrics
+    to: report
+    type: primary
+  - from: reasoning_metrics
+    to: report
     type: primary
 modules: []

@@ -5,75 +5,238 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FLAMES 构建流程
-  description: 按论文对齐的 FLAMES 构建流程：从中文价值框架到对抗提示评测和裁判训练。
-  legend: 实线箭头表示价值分类设计、对抗提示构造、攻击筛选、模型回答收集、人工标注、裁判训练和无害性评分。
+  description: 固定版本展示中文对抗提示构建、双人加专家标注、公开评测采样、人工指标与单独训练的专用评分器。
+  legend: 实线遵循 arXiv:2311.06899v6。公开 1K 提示集从提示集合分支；人工指标与评分器构建并行消费已标注回答语料。
 nodes:
-  - id: frame
-    label: 价值框架
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 160
-  - id: prompts
-    label: 对抗提示
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: filter
-    label: 攻击筛选
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: responses
-    label: 17模型回答
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: labels
-    label: 人工标注
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv:2311.06899v6
+      Flames 仓库 @ 234bcb7
+      HF CaasiHUANG/flames-scorer
+      版本 @ cdb1528
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scorer
-    label: 训练裁判
+      x: 40
+      'y': 20
+  - id: framework
+    label: |-
+      定义五维价值框架
+      公平 590 · 安全 779 · 道德 522
+      合法 118 · 数据保护 242
+      中国价值观归入道德维度
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: authoring
+    label: |-
+      众包人员编写中文提示
+      为每个子维度提供具体场景
+      伪装 · 反向诱导 · 不安全询问
+      参考成功示例但自由创作
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 无害分
+      x: 320
+      'y': 360
+  - id: filtering
+    label: |-
+      进行两轮审核
+      1：目标价值 + 明确场景 + 攻击方法
+      2：至少成功攻击一个受测模型
+      检查员修改或丢弃失败提示
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: prompt_set
+    label: |-
+      FLAMES-prompts
+      2,251 条对抗提示
+      平均提示长度：85.92 tokens
+      成功攻击率：53.09%
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 360
+  - id: responses
+    label: |-
+      收集 17 个中文能力模型回答
+      专家迭代细化评分规则
+      是否回应提示中的有害目的
+      也计入评分
+      产出评测回答
+      与评分器训练数据
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 360
+  - id: annotation
+    label: |-
+      每条回答
+      由两名研究生标注
+      公平/安全/道德：3 / 2 / 1
+      合法/数据保护：3 / 1
+      对应领域专家
+      仲裁分歧
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 360
+  - id: corpus
+    label: |-
+      已标注回答语料
+      约 22.9K 条
+      提示-回答-标签
+      支持人工评测
+      与多任务评分器训练
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: release
+    label: |-
+      公开纯提示样本：1,000 条
+      跨维度与子组件随机选择
+      公平 249 · 安全 429
+      道德 201 · 合法 46
+      数据保护 75 · 其余保留
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 80
+  - id: human_metrics
+    label: |-
+      论文人工指标
+      无害率
+      = 标签 3 的回答占比
+      无害分
+      = 平均标签 / 3 × 100
+      五个维度等权宏平均
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 80
+  - id: scorer_split
+    label: |-
+      构建评分器样本
+      输入提示 + 输出回答
+      标签来自人工标注
+      验证：MOSS + GPT-4 回答
+      测试：InternLM-Chat-7B
+      + InternLM-Chat-20B 回答
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 640
+  - id: scorer
+    label: |-
+      训练 FLAMES-scorer
+      每维独立分类头
+      多任务训练
+      RoBERTa-Large 骨干
+      InternLM-Chat-7B 骨干
+      最佳准确率：79.5%
+    type: process
+    size: xl
+    position:
+      x: 2320
+      'y': 640
+  - id: report
+    label: |-
+      发布 FLAMES 评测
+      论文结果：人工无害率
+      + 无害分
+      固定 Flames-1k-Chinese
+      评分器支持自动化
+      OOD 可靠性未验证
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2640
+      'y': 360
 edges:
-  - from: frame
-    to: prompts
+  - from: evidence
+    to: framework
+    type: data
+  - from: framework
+    to: authoring
     type: primary
-  - from: prompts
-    to: filter
+  - from: authoring
+    to: filtering
     type: primary
-  - from: filter
+  - from: filtering
+    to: prompt_set
+    type: primary
+  - from: prompt_set
     to: responses
     type: primary
   - from: responses
-    to: labels
+    to: annotation
     type: primary
-  - from: labels
+  - from: annotation
+    to: corpus
+    type: primary
+  - from: prompt_set
+    to: release
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: corpus
+    to: human_metrics
+    type: primary
+    style:
+      exitX: 0.25
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: corpus
+    to: scorer_split
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: scorer_split
     to: scorer
     type: primary
-  - from: scorer
-    to: score
+  - from: human_metrics
+    to: report
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: scorer
+    to: report
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: release
+    to: report
+    type: data
+    waypoints:
+      - x: 1260
+        'y': 20
+      - x: 2690
+        'y': 20
 modules: []

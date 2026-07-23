@@ -1,0 +1,410 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PathVQA Build and Evaluation Process
+  description: >-
+    Paper-v1 reconstruction of pathology source collection, image-caption extraction, linguistic question generation,
+    full manual proofreading, image-level splitting, and type-specific evaluation, with later release drift preserved.
+  legend: >-
+    Solid arrows are disclosed construction or evaluation stages. Dashed arrows identify fixed evidence, release-count
+    drift, prompt availability, and copyright boundaries; they are not extra benchmark stages.
+nodes:
+  - id: source_evidence
+    label: |-
+      Fixed Paper Evidence
+      arXiv 2003.10286v1
+      PDF cbfe071a8d80
+      ACL 2021 · PDF 9760f1711cdb
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: clinical_gap
+    label: |-
+      Address the Medical-data Gap
+      Public pathology images are scarce
+      Pathologists have little annotation time
+      Use textbooks and digital libraries
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 40
+  - id: textbook_sources
+    label: |-
+      Select Public Textbook Sources
+      Textbook of Pathology
+      Basic Pathology
+      Use public PDF editions online
+    type: database
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: pdf_extract
+    label: |-
+      Extract PDF Images and Text
+      PyPDF2 reads image XObjects
+      PDFMiner reads text and location
+      Preserve page coordinates
+    type: process
+    size: xl
+    position:
+      x: 800
+      'y': 40
+  - id: caption_match
+    label: |-
+      Match Textbook Captions
+      Find Fig or Figure by regular expression
+      Order items by page location
+      Pair images and captions by order
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 40
+  - id: peir_source
+    label: |-
+      Select the Online Library
+      Pathology Education Informational Resource
+      PEIR public digital library
+      Use image pages and captions
+    type: database
+    size: xl
+    position:
+      x: 540
+      'y': 320
+  - id: peir_crawl
+    label: |-
+      Crawl PEIR Image Pairs
+      Requests downloads pages and images
+      Beautiful Soup reads target HTML tags
+      Save captions beside local files
+    type: process
+    size: xl
+    position:
+      x: 800
+      'y': 320
+  - id: clean_pairs
+    label: |-
+      Clean Image-caption Pairs
+      Remove non-pathology images
+      Exclude flowcharts and portraits
+      Correct caption mismatches
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 320
+  - id: corenlp
+    label: |-
+      Parse Captions with CoreNLP
+      Sentence split and tokenization
+      POS and NER annotations
+      Constituency and dependencies
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 320
+  - id: simplify
+    label: |-
+      Simplify Long Sentences
+      Rearrange subjects verbs and clauses
+      Apply published syntactic rules
+      Produce shorter declarative sentences
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 320
+  - id: question_transducer
+    label: |-
+      Apply the Tregex Transducer
+      Query constituent trees with rules
+      Decompose the main verb
+      Perform subject-auxiliary inversion
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 320
+  - id: yesno_generation
+    label: |-
+      Generate Yes Questions
+      Invert subject and auxiliary
+      Keep the caption proposition
+      Use its original answer as yes
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 120
+  - id: negative_generation
+    label: |-
+      Generate Balanced No Questions
+      Sample a same-POS phrase
+      Take the replacement from other captions
+      Replace the original head words
+    type: process
+    size: xl
+    position:
+      x: 2360
+      'y': 120
+  - id: open_generation
+    label: |-
+      Generate Open Questions
+      What · where · when · whose · how
+      How much or how many
+      Remove the target answer phrase
+    type: process
+    size: xl
+    position:
+      x: 2100
+      'y': 520
+  - id: merge_qa
+    label: |-
+      Merge Generated QA Pairs
+      Combine open and yes or no branches
+      Retain the extracted answer phrase
+      Link every item to its image
+    type: database
+    size: xl
+    position:
+      x: 2360
+      'y': 320
+  - id: manual_review
+    label: |-
+      Manually Proofread Every Question
+      Fix spelling syntax and semantics
+      Remove vague or very short questions
+      Strip extra symbols spaces and articles
+    type: process
+    size: xl
+    position:
+      x: 2620
+      'y': 320
+  - id: paper_scope
+    label: |-
+      Finalize the arXiv-v1 Dataset
+      4,998 images · 32,799 QA pairs
+      1,670 textbook · 3,328 PEIR
+      16,465 open · 16,334 yes or no
+    type: database
+    size: xl
+    position:
+      x: 2880
+      'y': 320
+  - id: paper_split
+    label: |-
+      Randomly Split by Image
+      Ratio 0.5 · 0.3 · 0.2
+      Train 2,499 images · 17,325 QA
+      Val 1,499 · 9,462 · Test 1,000 · 6,012
+    type: database
+    size: xl
+    position:
+      x: 3140
+      'y': 320
+  - id: vqa_models
+    label: |-
+      Run the Paper VQA Baselines
+      Encode one image and one question
+      Generate yes or no or free text
+      Compare with the reference answer
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 320
+  - id: metric_gate
+    label: |-
+      Which Question Type?
+      Binary yes or no
+      Open-ended free answer
+      Use the paper's type-specific metric
+    type: decision
+    size: xl
+    position:
+      x: 3660
+      'y': 320
+  - id: binary_metrics
+    label: |-
+      Score Binary Questions
+      Apply exact yes or no Accuracy
+      Report the percentage correct
+      Keep the binary subset separate
+    type: process
+    size: xl
+    position:
+      x: 3920
+      'y': 120
+  - id: open_metrics
+    label: |-
+      Score Open Answers
+      Exact Match · Macro F1
+      BLEU-1 · BLEU-2 · BLEU-3
+      Compare tokens and n-grams
+    type: process
+    size: xl
+    position:
+      x: 3920
+      'y': 520
+  - id: report
+    label: |-
+      Report PathVQA Results
+      Keep binary and open metrics distinct
+      Preserve the official image split
+      Compare disclosed VQA baselines
+    type: terminal
+    size: xl
+    position:
+      x: 4180
+      'y': 320
+  - id: release_boundary
+    label: |-
+      Paper-count Boundary
+      arXiv v1 reports 32,799 QA pairs
+      ACL 2021 reports 32,795
+      The versions are not interchangeable
+    type: document
+    size: xl
+    position:
+      x: 2880
+      'y': 760
+  - id: mirror_boundary
+    label: |-
+      Updated-release Mirror Boundary
+      Author update 117e7f4ef88a: 5,004 · 32,795
+      Mirror keeps 32,632 QA on 4,289 images
+      HF 168583288333 is a community mirror
+    type: document
+    size: xl
+    position:
+      x: 3140
+      'y': 760
+  - id: prompt_boundary
+    label: |-
+      Evaluation Reproducibility Boundary
+      No official inference prompt is disclosed
+      No answer parser or LLM judge is disclosed
+      Do not invent generation configuration
+    type: document
+    size: xl
+    position:
+      x: 3400
+      'y': 760
+  - id: copyright_boundary
+    label: |-
+      License and Copyright Boundary
+      Dataset repository stated MIT
+      Images and captions retain publishers
+      Authors and PEIR retain source rights
+    type: document
+    size: xl
+    position:
+      x: 1060
+      'y': 760
+edges:
+  - from: source_evidence
+    to: clinical_gap
+    type: secondary
+    style:
+      dashed: true
+  - from: clinical_gap
+    to: textbook_sources
+    type: primary
+  - from: clinical_gap
+    to: peir_source
+    type: primary
+  - from: textbook_sources
+    to: pdf_extract
+    type: primary
+  - from: pdf_extract
+    to: caption_match
+    type: primary
+  - from: caption_match
+    to: clean_pairs
+    type: primary
+  - from: peir_source
+    to: peir_crawl
+    type: primary
+  - from: peir_crawl
+    to: clean_pairs
+    type: primary
+  - from: clean_pairs
+    to: corenlp
+    type: primary
+  - from: corenlp
+    to: simplify
+    type: primary
+  - from: simplify
+    to: question_transducer
+    type: primary
+  - from: question_transducer
+    to: yesno_generation
+    type: primary
+  - from: question_transducer
+    to: open_generation
+    type: primary
+  - from: yesno_generation
+    to: negative_generation
+    type: primary
+  - from: negative_generation
+    to: merge_qa
+    type: primary
+  - from: open_generation
+    to: merge_qa
+    type: primary
+  - from: merge_qa
+    to: manual_review
+    type: primary
+  - from: manual_review
+    to: paper_scope
+    type: primary
+  - from: paper_scope
+    to: paper_split
+    type: primary
+  - from: paper_split
+    to: vqa_models
+    type: primary
+  - from: vqa_models
+    to: metric_gate
+    type: primary
+  - from: metric_gate
+    to: binary_metrics
+    type: primary
+  - from: metric_gate
+    to: open_metrics
+    type: primary
+  - from: binary_metrics
+    to: report
+    type: primary
+  - from: open_metrics
+    to: report
+    type: primary
+  - from: paper_scope
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: release_boundary
+    to: mirror_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: vqa_models
+    to: prompt_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: clean_pairs
+    to: copyright_boundary
+    type: secondary
+    style:
+      dashed: true
+modules: []

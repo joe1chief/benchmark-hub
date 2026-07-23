@@ -5,121 +5,297 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AdvancedIF Build Process
-  description: Paper-aligned benchmark construction and rubric-based evaluation workflow for AdvancedIF, based on arXiv:2511.10507.
+  description: Paper-aligned construction and strict rubric evaluation from arXiv:2511.10507v2 Sections 3.1-3.2 and Table 1.
   legend: >-
-    Solid arrows show benchmark item construction and evaluation; dashed arrows mark adversarial filtering and
-    rubric-based judge decisions.
+    Carried-context and system-steerability examples use category-specific annotator-LLM multi-turn dialogues; complex
+    single-turn examples go directly to final-turn failure filtering. Rubrics pass multiple human review rounds before
+    release.
 nodes:
-  - id: taxonomy
+  - id: scope
     label: |-
-      Capability taxonomy
-      complex IF, multi-turn context
-      system prompt steerability
-    type: database
+      Define Advanced IF Scope
+      Separate IF from Factuality
+      Exclude Ambiguous Intent
+    type: process
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: prompts
+      'y': 240
+  - id: experts
     label: |-
-      Expert prompt writing
-      human-authored prompts
-      category-focused instructions
-    type: process
+      Recruit Expert Annotators
+      Human Prompts and Rubrics
+      One Category per Prompt
+    type: user
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: adversarial
-    label: |-
-      Adversarial retention
-      keep prompts that trigger
-      final-turn IF failures
+      x: 320
+      'y': 240
+  - id: category
+    label: Select IF Category
     type: decision
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: rubrics
+      x: 600
+      'y': 240
+  - id: complex
     label: |-
-      Expert rubrics
-      up to 20 criteria
-      human review rounds
+      Complex Single-Turn IF
+      402 Dialogs
+      At Least 6 Constraints
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: dataset
+      x: 880
+      'y': 20
+  - id: carried
     label: |-
-      AdvancedIF set
-      1,645 dialogs
-      human prompts + rubrics
-    type: database
+      Carried-Context IF
+      736 Dialogs • 7.69 Turns
+      Setup, Details, and Edits
+    type: document
     size: xl
     position:
-      x: 820
-      'y': 160
-  - id: responses
+      x: 880
+      'y': 240
+  - id: system
     label: |-
-      Model responses
-      final-turn response
-      for each dialog or prompt
+      System-Prompt Steerability
+      507 Dialogs • 11.21 Turns
+      Style, Safety, Voice, Tools
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 460
+  - id: carried_dialogue
+    label: |-
+      Run Annotator-LLM Dialogue
+      Multi-Turn Interaction
+      Carry Context to Final Turn
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
-  - id: verifier
+      x: 1160
+      'y': 240
+  - id: system_dialogue
     label: |-
-      Rubric verifier
-      o3-mini checks each criterion
-      TRUE only if all pass
+      Run System-Prompt Dialogue
+      Annotator and LLM Multi-Turn
+      507/507 Have at Least 4 Turns
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 460
+  - id: final_response
+    label: |-
+      Collect Provided LLM Response
+      Full category-specific context
+      Inspect the final turn
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 240
+  - id: failure_gate
+    label: |-
+      Final-Turn IF Failure?
+      Retain Only Failures
+      in the Target Category
     type: decision
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: metrics
+      x: 1720
+      'y': 240
+  - id: discard
     label: |-
-      Category scores
-      ComplexIF / context / system
-      percent TRUE
+      Exclude Non-Failure Prompt
+      Not an IF Failure
+      Do Not Add to Release
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 2000
+      'y': 460
+  - id: rubrics
+    label: |-
+      Author Final-Turn Rubric
+      Same Annotator • Up to 20
+      Binary Verifiable Criteria
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: ordering_note
+    label: |-
+      Criterion Ordering
+      Construction order not disclosed
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 20
+  - id: human_review
+    label: |-
+      Multiple Human Review Rounds
+      Review rubric criteria only
+      Revise criteria before release
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+  - id: dataset
+    label: |-
+      Release AdvancedIF
+      402 + 736 + 507 = 1,645
+      Human Dialogs and Rubrics
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 240
+  - id: response
+    label: |-
+      Generate Model Response
+      Use Full Conversation Context
+      Score the Final Turn
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 700
+  - id: verifier
+    label: |-
+      Verify Every Criterion
+      o3-mini Judges TRUE or FALSE
+      Conversation context + prompt
+      Response + rubric criterion
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 700
+  - id: strict
+    label: |-
+      All Criteria TRUE?
+      One Failure Fails the Dialog
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 700
+  - id: failed_dialog
+    label: |-
+      Record Failed Dialog
+      At Least One Criterion FALSE
+      Include in Pass-Rate Denominator
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 860
+  - id: score
+    label: |-
+      Aggregate Strict Pass Rate
+      CIF • CC • SS
+      Three-Category Average
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 700
+  - id: report
+    label: |-
+      Report Advanced IF Results
+      Compare Model Settings
+      Diagnose Category Gaps
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 700
 edges:
-  - from: taxonomy
-    to: prompts
+  - from: scope
+    to: experts
     type: primary
-  - from: prompts
-    to: adversarial
-    type: data
-    label: candidate prompts
-  - from: adversarial
-    to: prompts
-    type: optional
-    label: revise or discard
-  - from: adversarial
+  - from: experts
+    to: category
+    type: primary
+  - from: category
+    to: complex
+    type: primary
+  - from: category
+    to: carried
+    type: primary
+  - from: category
+    to: system
+    type: primary
+  - from: carried
+    to: carried_dialogue
+    type: primary
+  - from: complex
+    to: final_response
+    type: primary
+    waypoints:
+      - x: 1320
+        'y': 80
+      - x: 1400
+        'y': 80
+      - x: 1400
+        'y': 200
+  - from: carried_dialogue
+    to: final_response
+    type: primary
+  - from: system
+    to: system_dialogue
+    type: primary
+  - from: system_dialogue
+    to: final_response
+    type: primary
+    waypoints:
+      - x: 1360
+        'y': 520
+      - x: 1400
+        'y': 520
+      - x: 1400
+        'y': 360
+  - from: final_response
+    to: failure_gate
+    type: primary
+  - from: failure_gate
     to: rubrics
     type: primary
-    label: retained prompts
+  - from: failure_gate
+    to: discard
+    type: optional
   - from: rubrics
+    to: human_review
+    type: primary
+  - from: human_review
     to: dataset
     type: primary
   - from: dataset
-    to: responses
+    to: response
     type: primary
-  - from: dataset
-    to: verifier
-    type: data
-    label: prompts + rubrics
-  - from: responses
+  - from: response
     to: verifier
     type: primary
   - from: verifier
-    to: metrics
+    to: strict
+    type: primary
+  - from: strict
+    to: score
+    type: primary
+  - from: strict
+    to: failed_dialog
+    type: optional
+  - from: failed_dialog
+    to: score
+    type: data
+  - from: score
+    to: report
     type: primary
 modules: []

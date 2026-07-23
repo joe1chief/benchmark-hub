@@ -1,63 +1,111 @@
 {
   "version": 1,
-  "title": "AMEGA-LLM 构建流程",
+  "title": "AMEGA-LLM 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 9,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "guidelines",
-      "label": "医学指南基础\n当前临床指南\n医师专业经验",
+      "label": "选择当前临床指南\n来自权威的美国与全球医学组织\n覆盖诊断、治疗、监测与随访",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "physicians",
+      "label": "由资深医生构建基准\n每位均有超过 5 年临床经验\n选择指南并将建议转化为病例",
+      "type": "user",
+      "size": "xl"
+    },
+    {
       "id": "cases",
-      "label": "临床病例设计\n20 个诊断场景\n覆盖 13 个专科",
+      "label": "编写 20 个虚构临床病例\n覆盖 13 个医学专科\n主诉、病史、查体、化验与影像",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "questions",
-      "label": "开放式问题\n135 个临床交互问题\n诊断与治疗推理",
+      "label": "每病例编写 6–8 个连续问题\n总计 135 个开放式问题\n探查鉴别、检查、治疗、并发症与随访",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "criteria",
-      "label": "加权评分标准\n1337 个评分元素\n源自指南要求",
+      "id": "rubrics",
+      "label": "定义指南衍生的加权 Rubric\n1,337 个独立评分元素\n按临床重要性加权 • 每病例最多 50 分",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "医生复核并发布 AMEGA\n每病例由至少 1 名其他医生复核\n并迭代修订\n每病例 20–30 小时\n总计超过 400 小时",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "模拟零样本临床口试\n先给初始病例，再逐题提问\n统一提示；不提供示范答案\n候选模型温度 0",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "candidate",
-      "label": "候选模型\n回答每个病例问题\n可触发 reask",
-      "type": "terminal",
+      "label": "候选模型回答\n回答当前临床问题\n按顺序继续完成整个病例",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "evaluator",
-      "label": "GPT-4 评估器\n解析答案与标准\n抽取临床概念",
+      "label": "GPT-4-0613 评估器\n并行运行 11 次评估尝试\n每次同时评估全部准则\n返回一个 True / False 向量",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "failure_gate",
+      "label": "格式失败尝试是否 >50%？\nBoolean 数量 ≠ 准则数量",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "split_criteria",
+      "label": "将准则列表拆成两半\n每一半均重新运行 11 次\n再次校验 Boolean 向量",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gate",
+      "label": "准则未满足且允许 Reask？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "reask",
+      "label": "引导式 Reask 与自我反思\n告知未满足准则\n候选补充细节\n关键错误跳过 Reask",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "voting",
-      "label": "重复布尔评审\n11 次并行评估\n多数投票与置信度",
-      "type": "decision",
+      "label": "稳定准则判断\n每项准则运行 11 次并行评估\n多数投票 + 由一致率得到 0–1 置信度",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "scores",
-      "label": "聚合得分报告\n标准到病例逐级汇总\n每病例最高 50 分",
-      "type": "database",
+      "id": "score",
+      "label": "AMEGA 指南遵循结果\n布尔结果 × 临床权重\n问题分 / 病例分 • 50 分均值\n归一化缺陷 • 成本",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "验证评估器可靠性\n50 次模拟；11 次后趋稳\n临床专家比较 2 个病例\n抽查病例 3 与 5",
+      "type": "user",
       "size": "xl"
     }
   ],
@@ -65,59 +113,111 @@
     {
       "id": "edge-1",
       "from": "guidelines",
-      "to": "cases",
+      "to": "physicians",
       "type": "primary"
     },
     {
       "id": "edge-2",
+      "from": "physicians",
+      "to": "cases",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
       "from": "cases",
       "to": "questions",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-4",
       "from": "questions",
-      "to": "criteria",
+      "to": "rubrics",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "criteria",
-      "to": "candidate",
-      "type": "data",
-      "label": "病例与问题"
+      "id": "edge-5",
+      "from": "rubrics",
+      "to": "release",
+      "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
+      "from": "release",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "prompt",
+      "to": "candidate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "candidate",
       "to": "evaluator",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "evaluator",
-      "to": "voting",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "voting",
-      "to": "candidate",
-      "type": "optional",
-      "label": "允许时重新追问"
-    },
-    {
-      "id": "edge-8",
-      "from": "voting",
-      "to": "scores",
-      "type": "primary"
-    },
-    {
       "id": "edge-9",
-      "from": "scores",
+      "from": "evaluator",
+      "to": "failure_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "failure_gate",
+      "to": "split_criteria",
+      "type": "optional",
+      "label": "是：拆分"
+    },
+    {
+      "id": "edge-11",
+      "from": "split_criteria",
       "to": "evaluator",
       "type": "optional",
-      "label": "专家抽查验证"
+      "label": "分半重评"
+    },
+    {
+      "id": "edge-12",
+      "from": "failure_gate",
+      "to": "voting",
+      "type": "primary",
+      "label": "≤50%：投票"
+    },
+    {
+      "id": "edge-13",
+      "from": "voting",
+      "to": "gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "gate",
+      "to": "reask",
+      "type": "optional",
+      "label": "是：Reask"
+    },
+    {
+      "id": "edge-15",
+      "from": "reask",
+      "to": "candidate",
+      "type": "optional",
+      "label": "补充后重新评估"
+    },
+    {
+      "id": "edge-16",
+      "from": "gate",
+      "to": "score",
+      "type": "primary",
+      "label": "否：计分"
+    },
+    {
+      "id": "edge-17",
+      "from": "voting",
+      "to": "validate",
+      "type": "secondary",
+      "label": "验证研究"
     }
   ],
   "modules": []

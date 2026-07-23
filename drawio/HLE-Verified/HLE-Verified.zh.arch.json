@@ -7,50 +7,110 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 17,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "hle",
-      "label": "原始HLE",
+      "id": "evidence",
+      "label": "固定证据边界\narXiv:2602.13964v3\nSKYLENAGE-AI 仓库 @ b705e0f\nHF 数据集 @ 0bc8364\n源 HLE：2,500 题",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "raw",
+      "label": "从全部 2,500 道 HLE 题开始\n题目 + 可选图像\n答案 + 参考解析\n按三个组件分别审核",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "components",
-      "label": "三类组件",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "stage1",
-      "label": "一阶段验证",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "gold",
-      "label": "668金集",
+      "label": "结构化组件标签\n题目有效性：Q1-Q5\n解析有效性：S1-S10\n答案有效性：A1-A4\n共 19 类缺陷",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "stage2",
-      "label": "双轨修复",
+      "id": "experts",
+      "label": "独立领域专家\n二元组件判断 + 说明\n题目 / 答案 / 解析\n最终正确性归专家负责",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "models",
+      "label": "前沿多模态求解模型\npass@8 独立尝试\n提取 / 归一化 / 等价判断\n数值 / 格式 / 语义规则\n仅作诊断证据，不作为真值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "公开可复现边界\nStage I / II 提示已公开\njudge 脚本数据路径未设置\nsolver 交互输入；base URL 已公开\nendpoint/model 完整映射缺失\n访问条件 / 运行产物不可复现",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "stage1",
+      "label": "内部保守裁决\nGold 必须有正向证据\n题目 + 答案均无问题\n无高风险歧义\n解析问题可触发重新审核",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repair_scope",
+      "label": "Stage II 可独立裁决范围\n数学 / 物理 / 化学\n生物医学 / 计算机科学\n弱边界领域 -> 不确定集",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "repairs",
+      "label": "两支独立专家团队\n题目修复 -> 解答修复\n-> 答案修复并记录改动\n保留原目标；仅做最小修订\n必要时标为不可修复",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "auxiliary",
+      "label": "多模型修订候选\n与稳定性检查\n仅作为辅助证据\n不替代专家决策",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "adjudicate",
-      "label": "专家裁决",
-      "type": "decision",
+      "label": "内部专家最终裁决\n选择 / 综合规范修订\n重新验证正确性和稳定性\n仍有歧义 / 不可验证 -> 不确定",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "验证准确率",
+      "id": "uncertain_gate",
+      "label": "汇合并记录不确定性\nStage I：不确定 / 高风险\nStage II：有歧义 / 不可验证\n记录来源 + 所需专长",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gold",
+      "label": "Gold 子集：668 题不修改\n无实质编辑并通过验证",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "revision",
+      "label": "Revision 子集：1,143\n修订并重新复核\n记录结构化改动 / 缺陷元数据",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "uncertain",
+      "label": "Uncertain 子集：689\n显式不确定性来源\n所需专长标签\n保留而非丢弃",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "668 Gold + 1,143 Revision + 689\n三个互斥子集共 2,500 题\n最终题目 / 答案 / 解析\n修订时保留原始字段",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "evaluate",
+      "label": "原始版对比修订版\n全量集 + 实验修订子集\n仅题目或答案发生修改\n纯解析修订不计入比较\n纯文本 · 五次生成 · avg5\n准确率 + 校准 p=2 beta=100",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,38 +118,122 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "hle",
+      "from": "evidence",
+      "to": "raw",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "evidence",
+      "to": "artifact_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-3",
+      "from": "raw",
       "to": "components",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-4",
       "from": "components",
+      "to": "experts",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "components",
+      "to": "models",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "experts",
       "to": "stage1",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-7",
+      "from": "models",
+      "to": "stage1",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "stage1",
       "to": "gold",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "gold",
-      "to": "stage2",
+      "id": "edge-9",
+      "from": "stage1",
+      "to": "repair_scope",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "stage2",
+      "id": "edge-10",
+      "from": "stage1",
+      "to": "uncertain_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "repair_scope",
+      "to": "repairs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "repairs",
+      "to": "auxiliary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "auxiliary",
       "to": "adjudicate",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-14",
       "from": "adjudicate",
-      "to": "score",
+      "to": "revision",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "adjudicate",
+      "to": "uncertain_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "uncertain_gate",
+      "to": "uncertain",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "gold",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "revision",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "uncertain",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "release",
+      "to": "evaluate",
       "type": "primary"
     }
   ],

@@ -9,8 +9,8 @@ meta:
     Human question design, independent validation, mismatch diagnosis, repair or removal, difficulty assignment, and
     release split from arXiv:2311.12983v1.
   legend: >-
-    Two new annotators answer independently. Full agreement passes directly; a single verifier error may be retained
-    after diagnosis, while other mismatches trigger repair or removal.
+    Two new annotators answer independently. Agreement or a diagnosed verifier error passes directly; repairable
+    mismatches are revalidated, while non-repairable or failed-revalidation candidates are removed.
 nodes:
   - id: seeds
     label: Seeds + guide
@@ -55,61 +55,75 @@ nodes:
       x: 736
       'y': 88
   - id: compare
-    label: Compare/check
-    type: process
+    label: Pass as written?
+    type: decision
     size: medium
     position:
       x: 912
       'y': 88
   - id: accept
-    label: Match/verifier
+    label: Agree / verifier error
     type: process
     size: medium
     position:
-      x: 816
-      'y': 224
+      x: 1120
+      'y': 32
   - id: repair
-    label: Repair/drop
+    label: Repair question
     type: process
     size: medium
     position:
-      x: 1008
-      'y': 224
+      x: 1120
+      'y': 144
+  - id: revalidate
+    label: Revalidation passes?
+    type: decision
+    size: medium
+    position:
+      x: 1328
+      'y': 144
+  - id: discard
+    label: Remove candidate
+    type: terminal
+    size: medium
+    position:
+      x: 1536
+      'y': 272
   - id: validated
     label: Validated Qs
     type: database
     size: medium
     position:
-      x: 912
-      'y': 352
+      x: 1536
+      'y': 88
   - id: levels
     label: Level by path
     type: process
     size: medium
     position:
-      x: 736
-      'y': 352
+      x: 1744
+      'y': 88
   - id: final
     label: GAIA 466 Qs
     type: database
     size: medium
     position:
-      x: 560
-      'y': 352
+      x: 1952
+      'y': 88
   - id: dev
     label: Dev 166 + A
     type: terminal
     size: medium
     position:
-      x: 368
-      'y': 296
+      x: 2160
+      'y': 32
   - id: test
     label: Test 300 no A
     type: terminal
     size: medium
     position:
-      x: 368
-      'y': 408
+      x: 2160
+      'y': 144
 edges:
   - from: seeds
     to: craft
@@ -134,13 +148,22 @@ edges:
     type: primary
   - from: compare
     to: repair
-    type: primary
+    type: optional
+  - from: compare
+    to: discard
+    type: optional
   - from: accept
     to: validated
     type: primary
   - from: repair
+    to: revalidate
+    type: primary
+  - from: revalidate
     to: validated
     type: primary
+  - from: revalidate
+    to: discard
+    type: optional
   - from: validated
     to: levels
     type: primary

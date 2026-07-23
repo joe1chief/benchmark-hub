@@ -1,62 +1,194 @@
 {
   "version": 1,
-  "title": "MMLongBench 构建流程",
+  "title": "MMLongBench v3 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 30,
+    "edges": 41,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "n1",
-      "label": "任务池",
+      "id": "evidence",
+      "label": "固定证据边界\narXiv 2505.10610v3 · 2025-10-06\n代码 69044ca · 数据 0c008eb\n13,331 行 · 16 个来源数据集",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "category_route",
+      "label": "属于哪一类\n长上下文任务？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "vrag_build",
+      "label": "视觉 RAG · 2,272 行\nInfoSeek 首段 + ViQuAE KILT 金标准\n2019-08-01 维基 · 百词切块\nBM25 → GTE-large 困难负例\n3 种排列 / 6 个金标准深度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "niah_build",
+      "label": "NIAH · 5,536 行\nVH 单针/多针 + MM-NIAH\n检索 · 计数 · 推理，文本 + 图像\n网页文本切为百词块\n加干扰项直至长度 L",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "icl_build",
+      "label": "多样例 ICL · 1,958 行\n汽车 · Food101 · SUN397 · iNat2021\n各长度使用 5/10/20/40/50 类\n随机映射 0…N−1 · 分轮平衡\n仅截断最后一轮示例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "summ_build",
+      "label": "PDF 摘要 · 387 行\nGovReport：仅 GAO；移除摘要页\nMulti-LexSum：由 HTML 重建 PDF\n移除答案 HTML；从末尾截断\n丢弃 >128K+24K · 15,951 条事实",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_build",
+      "label": "长文档问答 · 3,178 行\nMMLongBench-Doc · LongDocURL · SlideVQA\n纠正答案格式；丢弃无法恢复项\n丢弃超过 5 词的字符串答案\n问题中保留原始文档 ID",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_length_gate",
+      "label": "文档是否长于\n目标长度 L？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "doc_truncate",
+      "label": "从两端均匀截断\n保留所有答案所在页\n截至目标长度 L",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_pad",
+      "label": "左右交替填充\n随机采样负例文档\n最后一份填充 PDF 可按页截断\n前缀“Based on Document {ID}…”",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "token_count",
+      "label": "统一跨模态词元计数\n文本 = Llama2 分词器\n图像 = 14×14 图块\n应用 2×2 像素重排\n文本与视觉词元相加",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "length_versions",
+      "label": "物化五档长度\n8K · 16K · 32K · 64K · 128K\n二进制 K = 2¹⁰\n同一语义样本提供各档 L",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "MMLongBench 论文发布版\n13,331 个样本 · 五类任务\nMMLongBench-Doc 子集 = 961 行\n≠ 独立发布的 1,082 行版本\n数据卡 MIT；来源许可仍适用",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "n2",
-      "label": "五类任务",
+      "id": "denominator",
+      "label": "每档长度的评测分母\nVRAG 900 · NIAH 2,250 · ICL 400\n摘要 200 · DocVQA 300\n每个 L 合计 4,050 个样例",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n3",
-      "label": "图文输入",
-      "type": "document",
+      "id": "inference",
+      "label": "评测 46 个 LCVLM\n候选模型采用贪心解码\n每模型运行五档输入长度\n4,050 × 5 = 20,250 次运行\n超容量不可测项记为 N/A",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "n4",
-      "label": "长度控制",
+      "id": "metric_route",
+      "label": "使用哪类任务专属\n解析器与指标？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "vrag_metric",
+      "label": "视觉 RAG 指标\n解析“Answer:”后的首行\n归一化大小写/标点/冠词\n子串精确匹配\n每档长度 900 个样例",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n5",
-      "label": "标准输入",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "n6",
-      "label": "LCVLM评测",
+      "id": "niah_metric",
+      "label": "NIAH 指标\nVH = 二元准确率\nMM 文本检索/推理 = SubEM\nMM 图像检索/推理 = 选项准确率\n计数 = 总和精确；模态分别平均",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "n7",
-      "label": "任务得分",
-      "type": "document",
+      "id": "icl_metric",
+      "label": "ICL 指标\n要求“label: {整数}”\n兜底取最后数字，再取首个数字\n精确类别准确率\n每档长度 400 个样例",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "n8",
-      "label": "长上下文分析",
+      "id": "summ_judge",
+      "label": "GPT-4o 摘要评判\n参考摘要 → 预生成原子事实\n候选摘要 → 句子精确率\n事实召回率 + 二元流畅度\nT=0.1 · max_tokens=4096",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "summ_parse_gate",
+      "label": "三次调用的最后一个\nJSON 对象均可解析？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "summ_formula",
+      "label": "摘要得分\n召回率 = 命中事实 / 参考事实\n精确率 = 有支持句 / 总句数\nF1 = 调和平均\n流畅度 F1 = 流畅度 × F1",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "summ_skip",
+      "label": "摘要 Judge 失败处理\n请求失败：重试 5 次后抛错\nJSON 无效：跳过该样本\n仅汇总含 gpt4-scores 的行\n若得分行为零则抛错",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "doc_parse",
+      "label": "DocVQA 直接解析\n优先取“Answer:”之后文本\n否则取输出首行\nv3 不使用 GPT-4o 答案抽取器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_format",
+      "label": "参考答案格式？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "doc_string",
+      "label": "字符串 / None\n正则敏感值 → 子串精确匹配\n其余使用词元 F1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_integer",
+      "label": "整数\n提取所有有限整数\n任一精确匹配则记 1，否则 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_float",
+      "label": "浮点数\n提取所有有限数值\n接受 x/100、x 或 100x\n相对容差为 1%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_list",
+      "label": "列表\n论文：贪心选择最佳元素匹配\n对元素得分取平均\n固定代码：每个标准元素均与\n完整解析预测比较",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "按数据集、类别、长度报告\n准确率 · SubEM · 流畅度 F1\nDocVQA 规则得分\n不把 N/A 误记为模型失败\nv1.1 LLM Judge 不属于该固定版本",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +196,266 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "n1",
-      "to": "n2",
+      "from": "evidence",
+      "to": "category_route",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "n2",
-      "to": "n3",
-      "type": "primary"
+      "from": "category_route",
+      "to": "vrag_build",
+      "type": "primary",
+      "label": "视觉 RAG"
     },
     {
       "id": "edge-3",
-      "from": "n3",
-      "to": "n4",
-      "type": "primary"
+      "from": "category_route",
+      "to": "niah_build",
+      "type": "primary",
+      "label": "针藏草堆"
     },
     {
       "id": "edge-4",
-      "from": "n4",
-      "to": "n5",
-      "type": "primary"
+      "from": "category_route",
+      "to": "icl_build",
+      "type": "primary",
+      "label": "上下文学习"
     },
     {
       "id": "edge-5",
-      "from": "n5",
-      "to": "n6",
-      "type": "primary"
+      "from": "category_route",
+      "to": "summ_build",
+      "type": "primary",
+      "label": "摘要"
     },
     {
       "id": "edge-6",
-      "from": "n6",
-      "to": "n7",
-      "type": "primary"
+      "from": "category_route",
+      "to": "doc_build",
+      "type": "primary",
+      "label": "文档问答"
     },
     {
       "id": "edge-7",
-      "from": "n7",
-      "to": "n8",
+      "from": "vrag_build",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "niah_build",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "icl_build",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "summ_build",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "doc_build",
+      "to": "doc_length_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "doc_length_gate",
+      "to": "doc_truncate",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-13",
+      "from": "doc_length_gate",
+      "to": "doc_pad",
+      "type": "primary",
+      "label": "否"
+    },
+    {
+      "id": "edge-14",
+      "from": "doc_truncate",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "doc_pad",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "token_count",
+      "to": "length_versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "length_versions",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "release",
+      "to": "denominator",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "denominator",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "inference",
+      "to": "metric_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "metric_route",
+      "to": "vrag_metric",
+      "type": "primary",
+      "label": "视觉 RAG"
+    },
+    {
+      "id": "edge-22",
+      "from": "metric_route",
+      "to": "niah_metric",
+      "type": "primary",
+      "label": "针藏草堆"
+    },
+    {
+      "id": "edge-23",
+      "from": "metric_route",
+      "to": "icl_metric",
+      "type": "primary",
+      "label": "上下文学习"
+    },
+    {
+      "id": "edge-24",
+      "from": "metric_route",
+      "to": "summ_judge",
+      "type": "primary",
+      "label": "摘要"
+    },
+    {
+      "id": "edge-25",
+      "from": "metric_route",
+      "to": "doc_parse",
+      "type": "primary",
+      "label": "文档问答"
+    },
+    {
+      "id": "edge-26",
+      "from": "vrag_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "niah_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "icl_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "summ_judge",
+      "to": "summ_parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-30",
+      "from": "summ_parse_gate",
+      "to": "summ_formula",
+      "type": "primary",
+      "label": "有效"
+    },
+    {
+      "id": "edge-31",
+      "from": "summ_parse_gate",
+      "to": "summ_skip",
+      "type": "primary",
+      "label": "无效"
+    },
+    {
+      "id": "edge-32",
+      "from": "summ_formula",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-33",
+      "from": "doc_parse",
+      "to": "doc_format",
+      "type": "primary"
+    },
+    {
+      "id": "edge-34",
+      "from": "doc_format",
+      "to": "doc_string",
+      "type": "primary",
+      "label": "字符串"
+    },
+    {
+      "id": "edge-35",
+      "from": "doc_format",
+      "to": "doc_integer",
+      "type": "primary",
+      "label": "整数"
+    },
+    {
+      "id": "edge-36",
+      "from": "doc_format",
+      "to": "doc_float",
+      "type": "primary",
+      "label": "浮点"
+    },
+    {
+      "id": "edge-37",
+      "from": "doc_format",
+      "to": "doc_list",
+      "type": "primary",
+      "label": "列表"
+    },
+    {
+      "id": "edge-38",
+      "from": "doc_string",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-39",
+      "from": "doc_integer",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-40",
+      "from": "doc_float",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-41",
+      "from": "doc_list",
+      "to": "report",
       "type": "primary"
     }
   ],

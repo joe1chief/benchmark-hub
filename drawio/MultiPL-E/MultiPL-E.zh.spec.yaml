@@ -1,0 +1,225 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MultiPL-E 构建与评测流程
+  description: 按论文呈现 HumanEval 与 MBPP 规范化、18 个基准专用小型编译器的翻译，以及在论文固定 19 种语言范围内进行的执行式 Pass@k 评测。
+  legend: 主流程是 v4 论文协议；当前仓库新增的翻译器仅作为虚线实现说明，不扩大论文报告的语言范围。
+nodes:
+  - id: human_eval
+    label: |-
+      HumanEval 来源
+      164 道 Python 题
+      提示 + 隐藏单元测试
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 80
+  - id: he_normalize
+    label: |-
+      HumanEval 规范化
+      排除 3 题；改写 2 道随机题
+      最多 5 个强类型任务可能无法翻译
+    type: process
+    size: xl
+    position:
+      x: 360
+      'y': 80
+  - id: mbpp
+    label: |-
+      MBPP 来源
+      自然语言描述
+      断言最初位于提示中
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: mbpp_normalize
+    label: |-
+      MBPP 规范化
+      隐藏提示中的断言作为测试
+      机械推断函数签名
+    type: process
+    size: xl
+    position:
+      x: 360
+      'y': 300
+  - id: canonical
+    label: |-
+      规范化 Python 合同
+      函数提示 + 隐藏测试
+      不翻译函数体
+    type: document
+    size: xl
+    position:
+      x: 680
+      'y': 190
+  - id: paper_scope
+    label: |-
+      论文 v4 固定范围
+      18 个小型编译器
+      含 Python 共 19 种语言
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 190
+  - id: translation
+    label: |-
+      翻译模型侧提示
+      签名 + 描述 + 术语
+      文档测试 / 示例
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 80
+  - id: test_translation
+    label: |-
+      翻译可执行合同
+      单元测试 + 类型化值
+      类型注解 + 局部推断
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 300
+  - id: parallel_suite
+    label: |-
+      并行基准套件
+      MultiPL-HumanEval + MultiPL-MBPP
+      目标语言提示与测试
+    type: database
+    size: xl
+    position:
+      x: 1640
+      'y': 190
+  - id: generation
+    label: |-
+      每题 200 个补全
+      T=0.2 用于 Pass@1
+      T=0.8 用于 Pass@10 与 Pass@100
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 540
+  - id: sandbox
+    label: |-
+      容器化沙箱
+      编译 + 按语言设置超时
+      运行隐藏测试
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 540
+  - id: verdict
+    label: |-
+      分类每个补全
+      成功 / 编译 / 运行时 / 超时
+      测试失败类型
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 540
+  - id: passk
+    label: |-
+      无偏 Pass@k 估计器
+      Pass@1 / Pass@10 / Pass@100
+      1 - C(n-c,k) / C(n,k)
+    type: process
+    size: xl
+    position:
+      x: 680
+      'y': 540
+  - id: repo_extensions
+    label: |-
+      当前仓库新增语言
+      后续翻译器与评测器
+      不扩展论文范围
+    type: document
+    size: xl
+    position:
+      x: 1000
+      'y': 800
+  - id: report
+    label: |-
+      MultiPL-E 结果
+      执行式跨语言准确率
+      论文范围保持 19 种语言
+    type: terminal
+    size: xl
+    position:
+      x: 360
+      'y': 540
+edges:
+  - from: human_eval
+    to: he_normalize
+    type: primary
+  - from: he_normalize
+    to: canonical
+    type: primary
+  - from: mbpp
+    to: mbpp_normalize
+    type: primary
+  - from: mbpp_normalize
+    to: canonical
+    type: primary
+  - from: canonical
+    to: paper_scope
+    type: primary
+  - from: paper_scope
+    to: translation
+    type: primary
+  - from: paper_scope
+    to: test_translation
+    type: primary
+  - from: translation
+    to: parallel_suite
+    type: primary
+  - from: test_translation
+    to: parallel_suite
+    type: primary
+  - from: parallel_suite
+    to: generation
+    type: primary
+  - from: generation
+    to: sandbox
+    type: primary
+  - from: test_translation
+    to: sandbox
+    type: data
+  - from: sandbox
+    to: verdict
+    type: primary
+  - from: verdict
+    to: passk
+    type: primary
+  - from: passk
+    to: report
+    type: primary
+  - from: paper_scope
+    to: repo_extensions
+    type: data
+    waypoints:
+      - x: 1220
+        'y': 240
+      - x: 1220
+        'y': 850
+      - x: 1200
+        'y': 850
+  - from: repo_extensions
+    to: report
+    type: optional
+    waypoints:
+      - x: 1100
+        'y': 930
+      - x: 460
+        'y': 930
+modules: []

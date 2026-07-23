@@ -5,75 +5,137 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Gaia2 构建流程
-  description: 对齐论文的 Gaia2 流程：从 ARE 移动环境 universe 到人工异步场景和动作级验证。
-  legend: 实线箭头表示环境合成、场景 DAG 标注、验证、增强、ReAct 编排和 verifier pass@1 评分。
+  description: 基于论文与固定版本发布物的场景构建、验证、增强、执行和写操作校验流程。
+  legend: 虚线箭头表示固定版本证据；实线箭头表示构建与评测流程。五个公开数据配置不同于两个从 mini 派生的评测增强。
 nodes:
-  - id: are
-    label: ARE平台
-    type: database
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv:2602.11964v1
+      仓库 79463674 · 数据 78ea3bdb
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: mobile
-    label: 移动环境
+      'y': 100
+  - id: are_mobile
+    label: |-
+      构建 ARE Mobile
+      12 个应用 · 101 个工具 · 10 个宇宙
+      每个宇宙 40万–80万 token
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: scenarios
-    label: 场景DAG
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: validate
-    label: 标注验证
-    type: decision
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: augment
-    label: 噪声/A2A
+      'y': 100
+  - id: annotation
+    label: |-
+      人工编写场景 DAG
+      初始状态 · 预言写操作
+      环境事件 · 单一主导能力
     type: process
     size: xl
     position:
+      x: 560
+      'y': 100
+  - id: validation
+    label: |-
+      多轮独立验证
+      一致性检查 · 事件图护栏
+      基线 Agent 难度校准
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 100
+  - id: core_release
+    label: |-
+      800 个独立核心场景
+      五类能力 × 160
+      筛出 Gaia2-mini：160
+    type: database
+    size: xl
+    position:
       x: 1080
-      'y': 160
-  - id: agents
-    label: 代理运行
+      'y': 100
+  - id: augmentations
+    label: |-
+      对 mini 应用环境增强
+      Noise 160 · Agent2Agent 160
+      复用写操作标注
     type: process
     size: xl
     position:
       x: 1340
-      'y': 160
-  - id: score
-    label: Pass@1
+      'y': 100
+  - id: release_boundary
+    label: |-
+      固定版公开边界
+      五个核心配置 × 160 = 800
+      mini 160 · demo 3
+      私有测试集 · 验证集公开榜
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 380
+  - id: scaffold
+    label: |-
+      ReAct 式 Agent 框架
+      每步单次 JSON 工具调用
+      T 0.5 · 每轮16K · 3 次 · ≤200步
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 380
+  - id: verifier
+    label: |-
+      最小预言写操作验证器
+      刚性参数精确 · 文本灵活匹配
+      因果 · 时序 · 完整性
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 380
+  - id: metric
+    label: |-
+      报告 Pass@1
+      分项与总体得分
+      450条：一致率 0.98
+      精度 0.99 · 召回 0.95
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 560
+      'y': 380
 edges:
-  - from: are
-    to: mobile
+  - from: evidence
+    to: are_mobile
+    type: data
+  - from: are_mobile
+    to: annotation
     type: primary
-  - from: mobile
-    to: scenarios
+  - from: annotation
+    to: validation
     type: primary
-  - from: scenarios
-    to: validate
+  - from: validation
+    to: core_release
     type: primary
-  - from: validate
-    to: augment
+  - from: core_release
+    to: augmentations
     type: primary
-  - from: augment
-    to: agents
+  - from: augmentations
+    to: release_boundary
     type: primary
-  - from: agents
-    to: score
+  - from: release_boundary
+    to: scaffold
+    type: primary
+  - from: scaffold
+    to: verifier
+    type: primary
+  - from: verifier
+    to: metric
     type: primary
 modules: []

@@ -1,0 +1,538 @@
+meta:
+  profile: academic-paper
+  source: edited
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MT-AIME2024 构建与评测流程
+  description: 按论文与固定发布版本展示 MCLM 中 MT-AIME2024 子集的构建，并区分当前公开评测器的语言范围、测试时扩展路线、 宽松准确率解析器与独立一致性计算。
+  legend: 实线表示论文记录的数据构建或可执行评测路径；虚线表示证据、审计、分析或漂移边界。图中严格区分论文主张与固定公开数据、代码版本的实际行为。
+nodes:
+  - id: evidence
+    label: |-
+      证据与版本固定点
+      MCLM 论文 2502.17407v2
+      HF 数据集 aa789e49
+      MCLM 代码 99eef7f6
+      Parquet SHA-256 7504d56a…ec75
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 280
+  - id: source
+    label: |-
+      完整 AIME 2024 源题
+      全部 30 道竞赛题
+      英文题目与参考解答
+      已核验的数值答案
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 280
+  - id: question_translation
+    label: |-
+      GPT-4o 翻译题目
+      使用母语级流畅表达
+      不解题且不遗漏细节
+      保留数学记号与代码
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: solution_translation
+    label: |-
+      GPT-4o 翻译解答
+      保留结构与全部细节
+      保留数学记号与代码
+      生成各目标语言版本
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: invariant_gate
+    label: |-
+      答案和方程是否
+      均保持不变？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: qa_boundary
+    label: |-
+      已公开的质检边界
+      重试与裁决细节未披露
+      仅报告 MATH500 删除一题
+      未报告 MT-AIME2024 删题
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 480
+  - id: release
+    label: |-
+      固定版本 MT-AIME2024
+      test 划分 · 30 个物理行
+      55 个语言列 + answer
+      无 ID、解答或语言字段
+      公开、无门槛 · MIT
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: release_audit
+    label: |-
+      固定发布物审计
+      形状 30 × 56 · 无空值
+      物理记录 30 行而非 1,650 行
+      共 1,650 个逻辑语言实例
+      29 个唯一答案 · 范围 23–902
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: entrypoint_gate
+    label: |-
+      是否不加修复封装而直接运行
+      固定版本公开入口？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 280
+  - id: repaired_runner
+    label: |-
+      应用复现封装
+      补充缺失的 samples 配置
+      加载已发布的 test 划分
+      保持其余评测逻辑固定
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 120
+  - id: entrypoint_blocked
+    label: |-
+      原样固定版本无法启动
+      eval.py 读取缺失的 samples 键
+      随后还请求不存在的 train 划分
+      因此不会产生分数
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: language_scope
+    label: |-
+      本次评测采用
+      哪个语言范围？
+    type: decision
+    size: xl
+    position:
+      x: 2840
+      'y': 280
+  - id: all_languages
+    label: |-
+      完整基准范围
+      全部 55 个已发布语言
+      每种语言 30 道题
+      共 1,650 次逻辑评测
+    type: database
+    size: xl
+    position:
+      x: 3120
+      'y': 80
+  - id: group_b
+    label: |-
+      论文降成本 B 组
+      AF · AR · DE · EN · ES · FR · HE
+      ID · IT · JA · KO · TR · VI · ZH-CN
+      仅 14 种语言，不是完整基准
+    type: database
+    size: xl
+    position:
+      x: 3120
+      'y': 480
+  - id: method_gate
+    label: |-
+      采用哪种推理时
+      策略？
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 280
+  - id: greedy
+    label: |-
+      贪心基线
+      生成一条推理路径
+      不使用奖励模型筛选
+      保留最终回答
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 20
+  - id: budget_forcing
+    label: |-
+      预算强制 BF
+      超出预算时截断
+      未达预算时提示继续推理
+      随后要求输出最终答案
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 200
+  - id: orm
+    label: |-
+      结果奖励模型 ORM
+      生成 N 个完整回答
+      Qwen2.5-Math-72B-RM 逐个打分
+      选择奖励最高的回答
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 400
+  - id: prm
+    label: |-
+      过程奖励模型 PRM
+      每步生成候选续写
+      奖励模型逐步选择
+      沿选中路径继续推理
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 620
+  - id: selected_response
+    label: |-
+      选中的模型回答
+      输入对应语言的题目
+      提取最终数学预测
+      共用同一 answer 标准列
+    type: document
+    size: xl
+    position:
+      x: 3960
+      'y': 280
+  - id: parse_gate
+    label: |-
+      math_verify 能否解析
+      预测与标准答案？
+    type: decision
+    size: xl
+    position:
+      x: 4240
+      'y': 280
+  - id: verify_gate
+    label: |-
+      math_verify 是否判定
+      两个解析值等价？
+    type: decision
+    size: xl
+    position:
+      x: 4520
+      'y': 280
+  - id: exact_correct
+    label: |-
+      验证为正确
+      准确率分子加一
+      样本仍计入分母
+      无需字符串包含检查
+    type: process
+    size: xl
+    position:
+      x: 4800
+      'y': 80
+  - id: substring_gate
+    label: |-
+      两个解析字符串是否
+      有一方包含另一方？
+    type: decision
+    size: xl
+    position:
+      x: 4800
+      'y': 400
+  - id: permissive_correct
+    label: |-
+      宽松回退判为正确
+      字符串包含即视为正确
+      准确率分子加一
+      存在误判为真的边界
+    type: process
+    size: xl
+    position:
+      x: 5080
+      'y': 280
+  - id: incorrect
+    label: |-
+      错误或无法解析
+      分子保持不变
+      异常被记录为 None
+      样本仍计入 len(df)
+    type: process
+    size: xl
+    position:
+      x: 5080
+      'y': 560
+  - id: accuracy
+    label: |-
+      分语言准确率
+      100 × 正确数 / len(df)
+      分母包含失败样本
+      按语言和方法报告
+    type: process
+    size: xl
+    position:
+      x: 5360
+      'y': 280
+  - id: consistency_classifier
+    label: |-
+      独立的一致性分类器
+      要求各语言行数相同
+      仅使用解析与 math_verify
+      不使用字符串包含回退
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 820
+  - id: fleiss
+    label: |-
+      跨语言一致性
+      每道题是被评分对象
+      各语言是二元评分者
+      计算总体 Fleiss' Kappa
+    type: process
+    size: xl
+    position:
+      x: 4800
+      'y': 820
+  - id: report
+    label: |-
+      报告 MT-AIME2024 结果
+      分语言准确率
+      比较贪心、ORM、PRM 与 BF
+      同时给出 Fleiss' Kappa
+    type: terminal
+    size: xl
+    position:
+      x: 5640
+      'y': 280
+edges:
+  - from: evidence
+    to: source
+    type: data
+  - from: source
+    to: question_translation
+    type: primary
+  - from: question_translation
+    to: solution_translation
+    type: primary
+  - from: solution_translation
+    to: invariant_gate
+    type: primary
+  - from: invariant_gate
+    to: release
+    type: primary
+    label: 答案与方程均保持不变
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: invariant_gate
+    to: qa_boundary
+    type: optional
+    label: 发现不一致
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: release
+    to: release_audit
+    type: optional
+  - from: release
+    to: entrypoint_gate
+    type: primary
+  - from: entrypoint_gate
+    to: repaired_runner
+    type: primary
+    label: 否，修复配置与划分
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: entrypoint_gate
+    to: entrypoint_blocked
+    type: optional
+    label: 是，直接使用固定默认值
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: repaired_runner
+    to: language_scope
+    type: primary
+  - from: language_scope
+    to: all_languages
+    type: primary
+    label: 完整 55 语言发布范围
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: language_scope
+    to: group_b
+    type: primary
+    label: 论文降成本 B 组
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: all_languages
+    to: method_gate
+    type: primary
+  - from: group_b
+    to: method_gate
+    type: primary
+  - from: method_gate
+    to: greedy
+    type: primary
+    label: 贪心基线
+    style:
+      exitX: 1
+      exitY: 0.15
+      entryX: 0
+      entryY: 0.5
+  - from: method_gate
+    to: budget_forcing
+    type: primary
+    label: 预算强制
+    style:
+      exitX: 1
+      exitY: 0.4
+      entryX: 0
+      entryY: 0.5
+  - from: method_gate
+    to: orm
+    type: primary
+    label: 结果奖励模型
+    style:
+      exitX: 1
+      exitY: 0.65
+      entryX: 0
+      entryY: 0.5
+  - from: method_gate
+    to: prm
+    type: primary
+    label: 过程奖励模型
+    style:
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: greedy
+    to: selected_response
+    type: primary
+  - from: budget_forcing
+    to: selected_response
+    type: primary
+  - from: orm
+    to: selected_response
+    type: primary
+  - from: prm
+    to: selected_response
+    type: primary
+  - from: selected_response
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: verify_gate
+    type: primary
+    label: 两者均解析成功
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: parse_gate
+    to: incorrect
+    type: primary
+    label: 解析失败或出现异常
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0
+      entryY: 0.75
+  - from: verify_gate
+    to: exact_correct
+    type: primary
+    label: 判定等价
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: verify_gate
+    to: substring_gate
+    type: primary
+    label: 判定不等价
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: substring_gate
+    to: permissive_correct
+    type: primary
+    label: 存在包含关系
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: substring_gate
+    to: incorrect
+    type: primary
+    label: 不存在包含关系
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: exact_correct
+    to: accuracy
+    type: primary
+  - from: permissive_correct
+    to: accuracy
+    type: primary
+  - from: incorrect
+    to: accuracy
+    type: primary
+  - from: selected_response
+    to: consistency_classifier
+    type: data
+  - from: consistency_classifier
+    to: fleiss
+    type: data
+  - from: accuracy
+    to: report
+    type: primary
+  - from: fleiss
+    to: report
+    type: data
+modules: []

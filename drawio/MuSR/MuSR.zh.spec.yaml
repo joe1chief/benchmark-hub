@@ -1,0 +1,588 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MuSR 构建与评测流程
+  description: 对齐论文 v2，展示模板构建、GPT-4 推理树补全、领域专属故事实现、可解性验证、发布与准确率评测，并单列固定代码漂移和公开边界。
+  legend: 一手证据固定为 arXiv:2310.16049v2 与官方仓库提交 b1f4d416。实线表示论文主流程，虚线表示重试或审计边界；团队分配既不用章节化，也不用校验器。
+nodes:
+  - id: evidence
+    label: |-
+      固定证据与任务约定
+      论文 · arXiv 2310.16049v2 · 第 3–5 节
+      附录 G.1/H.1/I · 仓库 b1f4d416
+      输入叙事 x + 问题 qi + 候选答案
+      通过多步推理预测 ai
+      测试时隐藏 F 与 T
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 20
+      'y': 640
+  - id: domain_gate
+    label: |-
+      选择领域模板
+      构建黄金事实 F
+      模板化问题与答案
+      添加多样性事实 G
+    type: decision
+    size: xl
+    position:
+      x: 500
+      'y': 640
+  - id: murder_template
+    label: |-
+      谋杀谜案模板
+      两名嫌疑人
+      凶手 · 手段 + 动机 + 机会
+      无辜者 · 两项有罪事实
+      再加一项无关可疑事实
+      论文最大树深度 · 4
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 760
+      'y': 80
+  - id: object_template
+    label: |-
+      物体放置模板
+      三人 · 三次移动 · 两件物体
+      一件物体移动两次
+      非移动者以概率 0.33 观察
+      答案 · 最后观察到的位置
+      论文最大树深度 · 3
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 760
+      'y': 520
+  - id: team_template
+    label: |-
+      团队分配模板
+      三人 · 两项任务
+      技能与配对分值 · 0 / 1 / 2
+      优化技能 + 团队协作
+      最优方案至少领先次优 2 分
+      论文最大树深度 · 2
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 760
+      'y': 960
+  - id: seed_facts
+    label: |-
+      实例化结构化输入
+      F 决定每个黄金答案
+      G 来自人工列表或大模型
+      G 必须出现在叙事中
+      第一阶段输出 · 二元组 (F, G)
+    type: process
+    size: xl
+    position:
+      x: 1040
+      'y': 520
+  - id: tree_expand
+    label: |-
+      补全推理树 T
+      GPT-4 递归展开每个 fi
+      子节点共同蕴含父节点
+      以场景与 G 为条件
+      展开到领域目标深度
+    type: process
+    size: xl
+    position:
+      x: 1280
+      'y': 520
+  - id: validator_gate
+    label: |-
+      此领域是否使用
+      推理树校验器？
+      谋杀 + 物体 · 使用
+      团队分配 · 不使用
+    type: decision
+    size: xl
+    position:
+      x: 1520
+      'y': 520
+  - id: validate
+    label: |-
+      校验每一步推导
+      强制满足预期结构
+      阻止关键词与推理捷径
+      拒绝空洞转换
+      使用领域专属校验器集合 V
+    type: process
+    size: xl
+    position:
+      x: 1780
+      'y': 120
+  - id: validity_gate
+    label: |-
+      推导样本是否有效？
+      记录当前推导的尝试次数
+    type: decision
+    size: xl
+    position:
+      x: 2020
+      'y': 120
+  - id: retry
+    label: |-
+      重试同一步推导
+      附加校验器反馈
+      让大模型重新采样
+      最多重试提示三次
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 20
+  - id: prune
+    label: |-
+      无有效样本后剪枝
+      停止展开当前分支
+      当前推导变为叶节点
+      继续生成其余推理树
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 320
+  - id: leaf_split
+    label: |-
+      划分推理树叶节点
+      场景事实 S(T) 写入故事
+      常识事实 C(T) 保持隐含
+      叶节点通过推导支持 F
+    type: database
+    size: xl
+    position:
+      x: 2260
+      'y': 640
+  - id: story_gate
+    label: |-
+      把 S(T) 实现为叙事 x
+      选择哪个领域专属路径？
+    type: decision
+    size: xl
+    position:
+      x: 2500
+      'y': 640
+  - id: murder_story
+    label: |-
+      撰写谋杀谜案章节
+      按嫌疑人 / 答案选项拆分事实
+      GPT-4 撰写并校验章节
+      打乱后拼接嫌疑人章节
+      添加故事引入场景
+    type: process
+    size: xl
+    position:
+      x: 2780
+      'y': 120
+  - id: object_story
+    label: |-
+      撰写物体放置章节
+      开场 + 移动 + 观察片段
+      每次携带此前故事继续生成
+      检查事实并按需重写
+      拼接所有章节
+    type: process
+    size: xl
+    position:
+      x: 2780
+      'y': 640
+  - id: team_story
+    label: |-
+      单次生成团队故事
+      写入技能与关系事实
+      不分章节 · 不用树校验器
+      仅重写故事引言
+      不泄露最优分配方案
+    type: process
+    size: xl
+    position:
+      x: 2780
+      'y': 1120
+  - id: release
+    label: |-
+      汇总官方发布数据
+      564 篇叙事 · 756 道问题
+      谋杀 · 250 篇 / 250 题
+      物体 · 64 篇 / 256 题
+      团队 · 250 篇 / 250 题
+    type: database
+    size: xl
+    position:
+      x: 3060
+      'y': 640
+  - id: quality
+    label: |-
+      验证端到端可解性
+      规则基线 · 50.0 / 35.9 / 无
+      七名标注员 · 每题三人标注
+      谋杀 34 · 物体 40 · 团队 34
+      多数票 · 94.1 / 95.0 / 100.0
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 3300
+      'y': 640
+  - id: scope_boundary
+    label: |-
+      验证与公开发布边界
+      人工只检查答案可推导性
+      未正式评测流畅度 / 连贯性 / 常识合理性
+      仓库根许可证 MIT · JSON 无许可证字段
+      无发布标签 / 校验和 / 正式排行榜
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 3300
+      'y': 1040
+  - id: eval_gate
+    label: |-
+      选择论文评测路径
+      常规 · 思维链 · 增强思维链
+      单样本 / 三示例少样本增强思维链
+      主表 · 零样本增强思维链
+      提示方法还是领域专属？
+    type: decision
+    size: xl
+    style:
+      fontSize: 8
+    position:
+      x: 3780
+      'y': 640
+  - id: prompting
+    label: |-
+      运行提示基线
+      常规 · 直接回答
+      思维链 · 分步推理
+      增强思维链 · 领域推理提示
+      提供一个 / 三个已解示例
+    type: process
+    size: xl
+    position:
+      x: 4020
+      'y': 360
+  - id: neurosymbolic
+    label: |-
+      运行领域专属方法
+      谋杀 · 分解式提示
+      物体 · 符号心智理论
+      团队 · 程序辅助语言模型
+      不存在一个通用方法
+    type: process
+    size: xl
+    position:
+      x: 4020
+      'y': 900
+  - id: inference
+    label: |-
+      为每个问题生成答案
+      论文模型使用各自默认参数
+      发布版 GPT-4 配置 · 温度 1
+      核采样概率 1 · 最多 2400 词元
+      可选自洽性投票
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 4260
+      'y': 640
+  - id: parse
+    label: |-
+      解析发布代码输出
+      取最后一个非空答案行
+      将文本转成小写
+      任意位置含黄金数字即判正确
+      否则取出现的首个选项数字
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 4500
+      'y': 640
+  - id: parse_gate
+    label: |-
+      解析文本是否包含
+      任意有效选项数字？
+    type: decision
+    size: xl
+    position:
+      x: 4740
+      'y': 640
+  - id: random_fallback
+    label: |-
+      应用发布版解析回退
+      随机采样一个选项
+      全局随机种子为 0
+      按已解析答案参与计分
+    type: process
+    size: xl
+    position:
+      x: 4980
+      'y': 980
+  - id: accuracy
+    label: |-
+      计算准确率
+      多次采样时使用多数选项
+      正确问题数 / 问题总数
+      三个领域分别报告
+    type: process
+    size: xl
+    position:
+      x: 4980
+      'y': 640
+  - id: code_drift
+    label: |-
+      固定代码复现边界
+      评测代码要求 murder_mysteries.json
+      发布文件为 murder_mystery.json
+      谋杀脚本深度 3 · 论文为 4
+      原样脚本无法跑完三个领域
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 4500
+      'y': 1040
+  - id: report
+    label: |-
+      报告 MuSR 结果
+      三个领域分别给出准确率
+      比较提示和推理方法
+      给出人类多数票上限
+      引用精确论文与代码版本
+    type: terminal
+    size: xl
+    position:
+      x: 5220
+      'y': 640
+edges:
+  - from: evidence
+    to: domain_gate
+    type: primary
+  - from: domain_gate
+    to: murder_template
+    type: primary
+    label: 谋杀
+    labelPosition: center
+  - from: domain_gate
+    to: object_template
+    type: primary
+    label: 物体
+    labelPosition: center
+  - from: domain_gate
+    to: team_template
+    type: primary
+    label: 团队
+    labelPosition: center
+  - from: murder_template
+    to: seed_facts
+    type: primary
+    waypoints:
+      - x: 980
+        'y': 180
+      - x: 980
+        'y': 500
+  - from: object_template
+    to: seed_facts
+    type: primary
+  - from: team_template
+    to: seed_facts
+    type: primary
+    waypoints:
+      - x: 980
+        'y': 1060
+      - x: 980
+        'y': 640
+  - from: seed_facts
+    to: tree_expand
+    type: primary
+  - from: tree_expand
+    to: validator_gate
+    type: primary
+  - from: validator_gate
+    to: validate
+    type: primary
+    label: 谋杀 / 物体
+    labelPosition: center
+  - from: validator_gate
+    to: leaf_split
+    type: primary
+    label: 团队
+    labelPosition: center
+    waypoints:
+      - x: 1620
+        'y': 760
+      - x: 2220
+        'y': 760
+  - from: validate
+    to: validity_gate
+    type: primary
+  - from: validity_gate
+    to: leaf_split
+    type: primary
+    label: 有效
+    labelPosition: center
+    waypoints:
+      - x: 2120
+        'y': 500
+      - x: 2220
+        'y': 500
+  - from: validity_gate
+    to: retry
+    type: secondary
+    style:
+      dashed: true
+    label: 无效 · 仍可重试
+    labelPosition: center
+  - from: retry
+    to: validate
+    type: secondary
+    style:
+      dashed: true
+    label: 重新采样
+    labelPosition: center
+    waypoints:
+      - x: 2360
+        'y': 0
+      - x: 1880
+        'y': 0
+  - from: validity_gate
+    to: prune
+    type: secondary
+    style:
+      dashed: true
+    label: 三次重试均失败
+    labelPosition: center
+  - from: prune
+    to: leaf_split
+    type: primary
+    label: 当前节点为叶节点
+    labelPosition: center
+  - from: leaf_split
+    to: story_gate
+    type: primary
+  - from: story_gate
+    to: murder_story
+    type: primary
+    label: 谋杀
+    labelPosition: center
+  - from: story_gate
+    to: object_story
+    type: primary
+    label: 物体
+    labelPosition: center
+  - from: story_gate
+    to: team_story
+    type: primary
+    label: 团队
+    labelPosition: center
+  - from: murder_story
+    to: release
+    type: primary
+    waypoints:
+      - x: 3000
+        'y': 220
+      - x: 3000
+        'y': 620
+  - from: object_story
+    to: release
+    type: primary
+  - from: team_story
+    to: release
+    type: primary
+    waypoints:
+      - x: 3000
+        'y': 1220
+      - x: 3000
+        'y': 760
+  - from: release
+    to: quality
+    type: primary
+  - from: quality
+    to: eval_gate
+    type: primary
+  - from: quality
+    to: scope_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 明确范围
+    labelPosition: center
+  - from: release
+    to: scope_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 权利
+    labelPosition: center
+  - from: eval_gate
+    to: prompting
+    type: primary
+    label: 提示方法
+    labelPosition: center
+  - from: eval_gate
+    to: neurosymbolic
+    type: primary
+    label: 领域专属
+    labelPosition: center
+  - from: prompting
+    to: inference
+    type: primary
+  - from: neurosymbolic
+    to: inference
+    type: primary
+  - from: inference
+    to: parse
+    type: primary
+  - from: parse
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: accuracy
+    type: primary
+    label: 已找到选项
+    labelPosition: center
+  - from: parse_gate
+    to: random_fallback
+    type: secondary
+    style:
+      dashed: true
+    label: 无选项数字
+    labelPosition: center
+  - from: random_fallback
+    to: accuracy
+    type: primary
+    label: 随机选项
+    labelPosition: center
+  - from: parse
+    to: code_drift
+    type: secondary
+    style:
+      dashed: true
+    label: 固定代码边界
+    labelPosition: center
+  - from: accuracy
+    to: report
+    type: primary
+modules: []

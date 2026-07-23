@@ -5,119 +5,211 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AgentDAM 构建流程
-  description: 基于 arXiv:2503.09780 对齐的 AgentDAM 构建与隐私评估流程。
-  legend: 实线表示任务构建和端到端网页 agent 评估主流程；虚线表示 privacy judge 验证与缓解分析回路。
+  description: 对齐 arXiv:2503.09780v3 第 3.1-3.4 节及附录 B.2 的数据构建、Web Agent 执行与隐私-效用评测流程。
+  legend: 基准在真实行动中测量数据最小化；即使无关敏感事实自然出现在任务相关用户数据中，Agent 也不应披露它们。GPT-4o 产出全量隐私指标，四人复核仅用于评审器验证。
 nodes:
-  - id: sensitive_taxonomy
+  - id: principle
     label: |-
-      敏感数据分类
-      六类 private 信息
-      区分相关和无关
+      操作化数据最小化原则
+      仅在与任务相关且必要时
+      使用潜在隐私数据
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: environments
+      'y': 170
+  - id: web_apps
     label: |-
-      WebArena 环境
-      Reddit、GitLab、Shopping
-      隔离但真实的网页副本
+      选择 VisualWebArena 应用
+      Reddit • Shopping
+      GitLab
+      隔离且逼真的网页副本
     type: process
     size: xl
     position:
-      x: 300
-      'y': 70
-  - id: seeds
+      x: 320
+      'y': 40
+  - id: sensitive_taxonomy
     label: |-
-      人工 seed 编写
-      user_instruction
-      plot 和敏感事实
+      定义敏感数据分类
+      六类潜在隐私事实
+      区分任务相关与无关数据
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 300
+  - id: task_templates
+    label: |-
+      设计八类任务
+      Shopping 3 类 • GitLab 3 类
+      Reddit 2 类
+      要求向网页应用输入信息
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: human_seeds
+    label: |-
+      人工编写 123 个数据种子
+      user_instruction + PLOT
+      SENSITIVE_DATA
+      作为任务无关背景
     type: user
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: user_data
+      x: 600
+      'y': 300
+  - id: synthesize
     label: |-
-      合成 user_data
-      相关隐私事实
-      无关敏感信息
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: agent_loop
-    label: |-
-      网页 agent 执行
-      观察指令、数据、页面
-      行动直到任务完成
+      合成长篇 user_data
+      Llama-3.3-70B 生成
+      连贯聊天或笔记
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 880
+      'y': 170
+  - id: elbow_select
+    label: |-
+      应用肘部法
+      每个人工种子选取 2 个输出
+      保留连贯样本
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 170
+  - id: dataset
+    label: |-
+      封装 AgentDAM：246 个任务
+      每种子 2 个输出 × 123
+      指令 • user_data
+      Agent 元数据
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 170
+  - id: setup
+    label: |-
+      重置自托管环境
+      无障碍树或多模态视图
+      SOM 标记或原始截图
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 170
+  - id: execute
+    label: |-
+      端到端运行 Web Agent
+      观察指令、数据与页面
+      持续执行操作直至终止
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 500
   - id: utility
     label: |-
-      Utility reward
-      环境状态检查
-      目标任务成功率
-    type: decision
+      评估任务效用
+      检查最终环境状态
+      二元任务成功奖励
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 70
+      x: 1440
+      'y': 420
   - id: privacy
     label: |-
-      Privacy evaluator
-      LLM judge 检查 actions
-      与人工 98% 一致
-    type: decision
+      评估隐私
+      GPT-4o CoT 评审每个操作
+      二元非必要披露标签
+    type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 1440
+      'y': 620
+  - id: judge_validation
+    label: |-
+      在一轮评测上验证评审器
+      四人复核
+      GPT-4o + 无障碍树轨迹
+      与 GPT-4o 判断一致率 98%
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 760
   - id: metrics
     label: |-
-      AgentDAM 指标
-      utility 与 privacy score
-      泄露率分析
+      汇报隐私-效用权衡
+      泄露率与隐私表现
+      按应用和模态拆分任务成功率
     type: terminal
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 880
+      'y': 500
+  - id: mitigation
+    label: |-
+      比较隐私缓解方法
+      前置过滤 • 后置过滤
+      隐私提示 + CoT 示例
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 500
 edges:
-  - from: sensitive_taxonomy
-    to: environments
+  - from: principle
+    to: web_apps
     type: primary
-  - from: sensitive_taxonomy
-    to: seeds
+  - from: principle
+    to: sensitive_taxonomy
     type: data
-  - from: environments
-    to: user_data
+  - from: web_apps
+    to: task_templates
     type: primary
-  - from: seeds
-    to: user_data
+  - from: sensitive_taxonomy
+    to: human_seeds
     type: primary
-  - from: user_data
-    to: agent_loop
+  - from: task_templates
+    to: human_seeds
+    type: data
+  - from: human_seeds
+    to: synthesize
     type: primary
-  - from: agent_loop
+  - from: synthesize
+    to: elbow_select
+    type: primary
+  - from: elbow_select
+    to: dataset
+    type: primary
+  - from: dataset
+    to: setup
+    type: primary
+  - from: setup
+    to: execute
+    type: primary
+  - from: execute
     to: utility
     type: primary
-  - from: agent_loop
+  - from: execute
     to: privacy
     type: primary
   - from: privacy
-    to: agent_loop
-    type: optional
-    label: mitigation prompts
-  - from: utility
     to: metrics
     type: primary
   - from: privacy
+    to: judge_validation
+    type: data
+  - from: utility
     to: metrics
+    type: primary
+  - from: metrics
+    to: mitigation
     type: primary
 modules: []

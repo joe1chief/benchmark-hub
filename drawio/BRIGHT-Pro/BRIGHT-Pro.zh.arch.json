@@ -7,62 +7,116 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 18,
+    "edges": 22,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "bright",
-      "label": "BRIGHT查询",
+      "id": "bright_source",
+      "label": "从 BRIGHT StackExchange 出发\n七个领域共 739 个查询\n统一语料含 526,319 个文档",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "experts",
+      "label": "分配同领域专家\n以社区答案作为起点\n独立识别可辩护解答所需前提",
+      "type": "user",
+      "size": "xl"
+    },
+    {
       "id": "aspects",
-      "label": "推理Aspect",
+      "label": "分解每个信息需求\n紧凑且不冗余的推理 aspect\n每个 aspect 配一至两句理由",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "weights",
-      "label": "Aspect权重",
+      "label": "论文 aspect 重要性\nLikert 1–5 分\n归一化后权重总和为 1\n从主导证据到边缘证据",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "reaudit",
-      "label": "重审Gold",
-      "type": "decision",
+      "label": "重审原 BRIGHT 正例\n把显式证据分配给 aspect\n丢弃弱项 • 合并重叠 • 裁剪噪声",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "collect",
-      "label": "新增证据",
+      "label": "收集新的 aspect 证据\n网页搜索或 AI 辅助搜索\n必须提供显式、精确、可信的支持",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "segment",
-      "label": "证据切分",
+      "label": "用 FireCrawl 处理来源页面\n去模板并人工裁剪残余噪声\n多 aspect 页面切成单 aspect 正例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "refine",
+      "label": "迭代修订 aspect 结构\n补缺失前提 • 拆分过宽 aspect\n合并重复推理需求",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "qc",
-      "label": "二次审核",
-      "type": "user",
+      "label": "同领域第二标注员独立复核\n检查粒度、平衡、权重和覆盖\n重查证据可信度 • 50 题 κ = 0.742",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "static",
-      "label": "静态指标",
+      "id": "release",
+      "label": "论文基准汇总\n739 查询 • 526,319 文档\n2,763 aspect • 5,272 金证据\n平均 3.74 aspect • 7.13 正例",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "固定 HF 发布边界\n2,763 条 aspect 使用 {1, 2, 3}\n论文写 Likert 1–5\nHF 修订 dbdc22b",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "static_eval",
+      "label": "运行静态排序检索\n每题输出一个段落排序列表\n奖励互补 aspect 覆盖",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "agentic",
-      "label": "Agentic搜索",
+      "id": "static_metrics",
+      "label": "评分静态检索\nα-nDCG@k，α = 0.5\n加权 A-Recall • NDCG@k\nRecall@k",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agentic_sample",
+      "label": "固定 Agentic 评测样本\n175 题 • 每领域 25 题\n固定随机种子 42\n所有检索器使用相同样本与预算",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "agent_loop",
+      "label": "在搜索 Agent 中运行检索器\nGPT-5-mini + Qwen3.5 后端\n每轮 Top-5\n固定 R=1, 2, 3 或自适应停止",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "reference",
+      "label": "构建并验证参考答案\nGPT-5 高推理读取人工金证据\n对 40 个样本做盲评人类核验",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "GPT-5 评审引用答案\naspect 覆盖 0 / 0.5 / 1\n总体质量 1–5\n完整性 • 轮数 • AER 效率奖励",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "汇报检索器与 Agent 效用\n静态多样性 • 推理完整性\n最终质量、搜索轮数与 AER",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,50 +124,134 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "bright",
-      "to": "aspects",
+      "from": "bright_source",
+      "to": "experts",
       "type": "primary"
     },
     {
       "id": "edge-2",
+      "from": "experts",
+      "to": "aspects",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
       "from": "aspects",
       "to": "weights",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "weights",
+      "id": "edge-4",
+      "from": "experts",
       "to": "reaudit",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-5",
+      "from": "weights",
+      "to": "collect",
+      "type": "data"
+    },
+    {
+      "id": "edge-6",
       "from": "reaudit",
       "to": "collect",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-7",
       "from": "collect",
       "to": "segment",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-8",
       "from": "segment",
+      "to": "refine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "refine",
       "to": "qc",
       "type": "primary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-10",
+      "from": "weights",
+      "to": "qc",
+      "type": "data"
+    },
+    {
+      "id": "edge-11",
       "from": "qc",
-      "to": "static",
+      "to": "refine",
+      "type": "optional"
+    },
+    {
+      "id": "edge-12",
+      "from": "qc",
+      "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-8",
-      "from": "qc",
-      "to": "agentic",
+      "id": "edge-13",
+      "from": "release",
+      "to": "release_boundary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "release_boundary",
+      "to": "static_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "static_eval",
+      "to": "static_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "release_boundary",
+      "to": "agentic_sample",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "agentic_sample",
+      "to": "agent_loop",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "release_boundary",
+      "to": "reference",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "agent_loop",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "reference",
+      "to": "judge",
+      "type": "data"
+    },
+    {
+      "id": "edge-21",
+      "from": "static_metrics",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "judge",
+      "to": "report",
       "type": "primary"
     }
   ],

@@ -1,0 +1,412 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MixEval Build Process
+  description: Paper-v2-aligned query detector, 18-benchmark mixture, dynamic refresh, and released evaluator workflow.
+  legend: >-
+    Solid arrows are the main construction and evaluation path. Dashed arrows are source inputs, refresh alternatives,
+    failure policies, or release boundaries.
+nodes:
+  - id: detector_benchmarks
+    label: |-
+      Two Detector Benchmarks
+      Wild Positives · Wikipedia Negatives
+      Second Set Author-handpicked
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 80
+  - id: initial_detector
+    label: |-
+      Prompt Vicuna-33B
+      Detect About 20k on a Crawl Subset
+      Initial Recall >99%
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: gpt4_labels
+    label: |-
+      GPT-4 Relabels 20k
+      Positive or Negative
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: trained_detector
+    label: |-
+      Train Vicuna-33B Detector
+      Recall >99% · Precision >98%
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: common_crawl
+    label: |-
+      Entire Common Crawl
+      Web Corpus
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 320
+  - id: apply_detector
+    label: |-
+      Apply Trained Detector
+      to the Entire Crawl
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 80
+  - id: wild_queries
+    label: |-
+      2M Detected User Queries
+      Wild-query Reservoir
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: gpt4_filter
+    label: |-
+      GPT-4 Turbo Filter + Classify
+      Keep Text-in/Text-out Queries
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 80
+  - id: general_pool
+    label: |-
+      12 General · Development + Test
+      MMLU · BoolQ · HellaSwag · ARC
+      CSQA · AGIEval · OBQA · GPQA
+      WinoGrande · TriviaQA
+      DROP · BBH
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: domain_pool
+    label: |-
+      Six Domain · Development + Test
+      Math: GSM8K · MATH
+      Code: MBPP · HumanEval
+      Physics: PIQA · Social: SIQA
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: benchmark_pool
+    label: |-
+      18 Ground-truth Benchmarks
+      Development + Test Splits
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: match
+    label: |-
+      all-mpnet-base-v2 Matching
+      Normalized Dot Product · Top-1
+      Input/Context Length Constraint θ
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: mixeval
+    label: |-
+      MixEval · Paper Target 4,000 Items
+      95.15% English · Free-form + MC
+      Retain Source Ground Truth
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: batch_update
+    label: |-
+      Batch Query Update
+      Sample a Different Uniform Batch
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 720
+  - id: crawl_update
+    label: |-
+      Source Query Update
+      Latest Common Crawl
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 720
+  - id: pool_update
+    label: |-
+      Benchmark Pool Update
+      Add New Ground-truth Benchmarks
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 720
+  - id: refresh
+    label: |-
+      Re-run Benchmark Mixture
+      Preserve 4,000-item Size
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: stability
+    label: |-
+      Five Versions · Under One Minute
+      Score Std. 0.36 · Web Unique 99.71%
+      MixEval-item Unique 85.05%
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: inference
+    label: |-
+      Candidate-model Inference
+      Official or FastChat Templates
+      Base Models · 5-shot
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: parser_gate
+    label: |-
+      Which Released Split?
+      Free-form or Multiple-choice
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 400
+  - id: freeform_parser
+    label: |-
+      GPT-3.5-Turbo-0125 Parser
+      Free-form Score 0.0–1.0
+      Required Form [[score]]
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 240
+  - id: mc_parser
+    label: |-
+      GPT-3.5-Turbo-0125 Parser
+      Extract Option · Required [[A]]
+      Exact Match to Ground Truth
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 560
+  - id: failure_rules
+    label: |-
+      Released Failure Policy · Seed 42
+      10 Outer Retries; Invalid → Random
+      BadRequest: Free-form 0 · MC Random
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 800
+  - id: overall
+    label: |-
+      Report Overall Score
+      Sample-count Weighted
+      Free-form + Multiple-choice
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 400
+  - id: meta_eval
+    label: |-
+      Across-model Meta-evaluation
+      Arena Elo Rank Correlation
+      Not Per-item Grading
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 400
+  - id: release_boundary
+    label: |-
+      Published Surface · Partly Public
+      Git 7c52b419… · Evaluator + Dynamic Data Only
+      HF 66a05ec3… · Apache-2.0 Card
+      No Construction Code · No Repository LICENSE
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 720
+edges:
+  - from: detector_benchmarks
+    to: initial_detector
+    type: primary
+  - from: initial_detector
+    to: gpt4_labels
+    type: primary
+  - from: gpt4_labels
+    to: trained_detector
+    type: primary
+  - from: trained_detector
+    to: apply_detector
+    type: primary
+  - from: common_crawl
+    to: apply_detector
+    type: secondary
+    label: Full corpus
+    style:
+      dashed: true
+    waypoints:
+      - x: 960
+        'y': 322
+      - x: 960
+        'y': 180
+      - x: 1064
+        'y': 180
+  - from: apply_detector
+    to: wild_queries
+    type: primary
+  - from: wild_queries
+    to: gpt4_filter
+    type: primary
+  - from: gpt4_filter
+    to: match
+    type: primary
+    waypoints:
+      - x: 1924
+        'y': 220
+      - x: 984
+        'y': 220
+      - x: 984
+        'y': 300
+  - from: general_pool
+    to: benchmark_pool
+    type: secondary
+    label: 12 general
+    style:
+      dashed: true
+    waypoints:
+      - x: 260
+        'y': 350
+      - x: 700
+        'y': 350
+  - from: domain_pool
+    to: benchmark_pool
+    type: secondary
+    label: 6 domain
+    style:
+      dashed: true
+  - from: benchmark_pool
+    to: match
+    type: secondary
+    label: Ground-truth pool
+    style:
+      dashed: true
+  - from: match
+    to: mixeval
+    type: primary
+  - from: mixeval
+    to: refresh
+    type: primary
+  - from: batch_update
+    to: refresh
+    type: secondary
+    label: New batch
+    style:
+      dashed: true
+  - from: crawl_update
+    to: refresh
+    type: secondary
+    label: New crawl
+    style:
+      dashed: true
+  - from: pool_update
+    to: refresh
+    type: secondary
+    label: New pool
+    style:
+      dashed: true
+  - from: refresh
+    to: stability
+    type: secondary
+    label: Version evidence
+    style:
+      dashed: true
+  - from: refresh
+    to: inference
+    type: primary
+    waypoints:
+      - x: 1580
+        'y': 300
+      - x: 1868
+        'y': 300
+  - from: mixeval
+    to: release_boundary
+    type: secondary
+    label: Release boundary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1164
+        'y': 520
+      - x: 884
+        'y': 520
+  - from: inference
+    to: parser_gate
+    type: primary
+  - from: parser_gate
+    to: freeform_parser
+    type: primary
+    label: Free-form
+  - from: parser_gate
+    to: mc_parser
+    type: primary
+    label: Multiple-choice
+  - from: failure_rules
+    to: freeform_parser
+    type: secondary
+    label: Failure policy
+    style:
+      dashed: true
+  - from: failure_rules
+    to: mc_parser
+    type: secondary
+    label: Failure policy
+    style:
+      dashed: true
+  - from: freeform_parser
+    to: overall
+    type: primary
+  - from: mc_parser
+    to: overall
+    type: primary
+  - from: overall
+    to: meta_eval
+    type: primary
+    label: Across models
+modules: []

@@ -1,69 +1,117 @@
 {
   "version": 1,
-  "title": "AutoCodeBench 构建流程",
+  "title": "AutoCodeBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 10,
+    "nodes": 17,
+    "edges": 18,
     "modules": 0
   },
   "nodes": [
     {
       "id": "seeds",
-      "label": "Stack-Edu 种子\n真实 GitHub 代码\n函数/类/文件级",
+      "label": "Stack-Edu 种子代码片段\n来自 The Stack v2 的教育代码\n函数 / 类 / 文件级",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "code_solution",
-      "label": "代码解生成\nDeepSeek-V3 精炼\n清理并加注释",
+      "id": "solution",
+      "label": "精炼代码解答\nDeepSeek-V3-0324 + 少样本\n自包含且可验证",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "test_inputs",
-      "label": "测试输入生成\n公开示例\n私有边界用例",
+      "id": "test_gate",
+      "label": "生成两类测试输入\n公开演示 + 私有完整",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "sandbox_outputs",
-      "label": "沙箱输出\n执行解法和输入\n整合测试函数",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "problem_generation",
-      "label": "题目生成\n从解法逆向\n六类题面规格",
+      "id": "demo_tests",
+      "label": "公开演示测试输入\n不超过 3 个基础用例\n嵌入题面作为示例",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "filtering",
-      "label": "数据过滤\nCoder 模型控难度\nR1 评判与循环采样",
-      "type": "decision",
+      "id": "full_tests",
+      "label": "私有完整隐藏测试输入\n7+ 个用例，含边界情况\n综合正确性测试",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "benchmark",
-      "label": "最终基准\n3,920 道题\n20 语言均衡",
+      "id": "execute_inputs",
+      "label": "执行解答与两类输入\n多语言沙箱\n获取演示与隐藏输出",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "integrate",
+      "label": "构建可执行测试函数\nDeepSeek-V3 整合输入输出\ndemo_test_func\nfull_test_func\n与解答一起重跑两类测试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "problem",
+      "label": "逆向生成编程题\n六项启发式规范\n嵌入演示测试 • 不泄露解法",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "translate",
+      "label": "语言覆盖路由\n6 种语言走直接流程\n其余 14 种翻译未使用数据\n再应用相同过滤",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "difficulty",
+      "label": "难度控制\nDeepSeek-Coder-V2-Lite\n每题尝试 10 次\n丢弃 10 / 10 解出的题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality",
+      "label": "LLM-as-Critic 质量控制\nDeepSeek-R1-0528\n七项一致性准则",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "diversity",
+      "label": "多样性采样\nDeepSeek-V3 类别标签\n跨类别池循环采样",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset",
+      "label": "发布 AutoCodeBench\n3,920 题 • 37,777 个测试\n20 种语言 • 14 个类别",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "human_audit",
-      "label": "人工审计\n6 名专业标注员\n87.6% 有效率估计",
+      "id": "model_output",
+      "label": "生成候选代码\n必须使用单个围栏代码块\n统一系统提示",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "evaluation",
-      "label": "模型评测\nPass@1\n标准代码块提示",
+      "id": "sandbox_eval",
+      "label": "沙箱评测\n运行 full_test_func\n+ demo_test_func\n两者均须返回 PASSED\nPass@1",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "audit",
+      "label": "后验人工核验\n6 位专业标注员\n6 种语言 • 二元有效性\n准确率 87.6%",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告多语言结果\n按语言 / 难度报告 Pass@1\n保留 87.6% 核验限制",
+      "type": "terminal",
       "size": "xl"
     }
   ],
@@ -71,64 +119,110 @@
     {
       "id": "edge-1",
       "from": "seeds",
-      "to": "code_solution",
+      "to": "solution",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "code_solution",
-      "to": "test_inputs",
+      "from": "solution",
+      "to": "test_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "test_inputs",
-      "to": "sandbox_outputs",
+      "from": "test_gate",
+      "to": "demo_tests",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "sandbox_outputs",
-      "to": "problem_generation",
+      "from": "test_gate",
+      "to": "full_tests",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "problem_generation",
-      "to": "filtering",
+      "from": "demo_tests",
+      "to": "execute_inputs",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "filtering",
-      "to": "benchmark",
+      "from": "full_tests",
+      "to": "execute_inputs",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "benchmark",
-      "to": "human_audit",
+      "from": "execute_inputs",
+      "to": "integrate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "human_audit",
-      "to": "evaluation",
+      "from": "integrate",
+      "to": "problem",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "sandbox_outputs",
-      "to": "code_solution",
-      "type": "optional",
-      "label": "验证并修复"
+      "from": "problem",
+      "to": "translate",
+      "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "human_audit",
-      "to": "filtering",
-      "type": "optional",
-      "label": "质量反馈"
+      "from": "translate",
+      "to": "difficulty",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "difficulty",
+      "to": "quality",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "quality",
+      "to": "diversity",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "diversity",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "dataset",
+      "to": "model_output",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "model_output",
+      "to": "sandbox_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "dataset",
+      "to": "audit",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "sandbox_eval",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "audit",
+      "to": "report",
+      "type": "secondary"
     }
   ],
   "modules": []

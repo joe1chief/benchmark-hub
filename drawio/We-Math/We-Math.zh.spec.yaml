@@ -1,0 +1,232 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: We-Math 数据构建与诊断评测流程
+  description: >-
+    We-Math依据教材构建五层知识体系，含99个节点与67个叶子概念，再从权威公开网站、考试和练习中收集6524道全新的视觉数学多选题。合格题需包含多个概念或可分解、图文一致，并有唯一正确答案与有迷惑性的干扰项。三名专家标注概念，至少两人一致才保留；同时标注解题步骤与步数，第二轮专家复核图文、答案与概念对齐。复合题被拆为逻辑连贯的概念子题。正式计分使用1,740题Testmini（一步1,215题、二步360题、三步165题），而非直接使用6,524题全量池。评测统一多选输出并用正则解析，联合复合题与子题的正确性划分IK、IG、CM、RM，并按默认α=0、β=0.5计算Score_average
+    = αS_IK + βS_IG + S_CM。
+  legend: >-
+    来源：We-Math arXiv:2407.01284, Sections 2.1 and 2.2, Section 3, and Appendices B.4-B.5; official repository
+    https://github.com/We-Math/We-Math.。实线箭头表示论文或官方资料明确支持的主流程。
+nodes:
+  - id: knowledge_tree
+    label: 五层 / 99节点 / 67叶子概念
+    type: graph
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: source_mcqs
+    label: 权威视觉数学多选题
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: eligibility_gate
+    label: 合格且答案唯一？
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 40
+  - id: expert_labels
+    label: 三专家概念标注
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 40
+  - id: drop_item
+    label: 排除题目
+    type: loss
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: agreement_gate
+    label: 至少两人一致？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 40
+  - id: step_annotation
+    label: 解题步骤与步数
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: double_review_gate
+    label: 双重复核通过？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: revise_item
+    label: 修订题目与标签
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: wemath_set
+    label: 6524道题
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: testmini_1740
+    label: |-
+      官方 Testmini：1,740 题
+      一步 1,215 · 二步 360 · 三步 165
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 280
+  - id: composite_gate
+    label: 是否复合题？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+  - id: decompose
+    label: 专家拆分概念子题
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 760
+  - id: coherence_gate
+    label: 子题逻辑连贯？
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 760
+  - id: standard_mcq
+    label: 标准多选与正则解析
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 520
+  - id: truth_table
+    label: 复合题 / 子题真值表
+    type: matrix
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: diagnostic_classes
+    label: 诊断类别：IK / IG / CM / RM
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 520
+  - id: wemath_score
+    label: |-
+      Score_average = αS_IK + βS_IG + S_CM
+      默认 α=0 · β=0.5
+    type: formula
+    size: xl
+    position:
+      x: 600
+      'y': 520
+edges:
+  - from: knowledge_tree
+    to: source_mcqs
+    type: dependency
+  - from: source_mcqs
+    to: eligibility_gate
+    type: primary
+  - from: eligibility_gate
+    to: expert_labels
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: eligibility_gate
+    to: drop_item
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: expert_labels
+    to: agreement_gate
+    type: primary
+  - from: agreement_gate
+    to: step_annotation
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: agreement_gate
+    to: drop_item
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: step_annotation
+    to: double_review_gate
+    type: primary
+  - from: double_review_gate
+    to: wemath_set
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: double_review_gate
+    to: revise_item
+    type: optional
+    label: 修订
+    labelPosition: end
+  - from: revise_item
+    to: expert_labels
+    type: optional
+    label: 复核
+    labelPosition: start
+  - from: wemath_set
+    to: testmini_1740
+    type: data
+    label: 正式计分划分
+  - from: composite_gate
+    to: decompose
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: composite_gate
+    to: standard_mcq
+    type: primary
+    label: 单步
+    labelPosition: end
+  - from: decompose
+    to: coherence_gate
+    type: primary
+  - from: coherence_gate
+    to: standard_mcq
+    type: primary
+    label: 通过
+    labelPosition: end
+  - from: coherence_gate
+    to: decompose
+    type: optional
+    label: 修订
+    labelPosition: start
+  - from: standard_mcq
+    to: truth_table
+    type: primary
+  - from: truth_table
+    to: diagnostic_classes
+    type: primary
+  - from: diagnostic_classes
+    to: wemath_score
+    type: primary
+  - from: testmini_1740
+    to: composite_gate
+    type: primary
+modules: []

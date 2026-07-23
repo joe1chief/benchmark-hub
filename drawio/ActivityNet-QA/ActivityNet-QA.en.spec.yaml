@@ -4,88 +4,237 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ActivityNet-QA Build Process
-  description: >-
-    Paper-aligned construction of ActivityNet-QA: derive complex web videos from ActivityNet, crowdsource fully
-    annotated question-answer pairs, clean and analyze the dataset, and benchmark VideoQA models.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: ActivityNet-QA Build and Evaluation Process
+  description: Paper-aligned class-balanced video sampling, controlled bilingual QA annotation, quality review, and evaluation.
+  legend: >-
+    The multi-annotator audit covers a sampled portion as an optional quality branch. The paper does not disclose that
+    sample's size or annotator count.
 nodes:
-  - id: n1
-    label: ActivityNet
+  - id: videos
+    label: |-
+      Class-Balanced Video Sampling
+      5,800 ActivityNet v1.3 videos
+      Train/val balanced • test random
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: Web Videos
+      'y': 100
+  - id: author
+    label: |-
+      Crowdsourced QA Authoring
+      10 Chinese QA pairs per video
     type: process
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: Crowd QA
-    type: user
+      'y': 100
+  - id: types
+    label: |-
+      Control Question Coverage
+      Cover motion + spatial + temporal
+      Remaining questions unrestricted
+    type: process
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: QA Pairs
-    type: document
+      'y': 100
+  - id: length_gate
+    label: |-
+      Enforce QA Length Limits
+      Question ≤20 • answer ≤5 words
+    type: process
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Quality Clean
+      'y': 100
+  - id: yes_no_balance
+    label: |-
+      Balance Yes/No Answers
+      Keep ratio close to 1:1
     type: process
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: Stats
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: VideoQA Eval
+      'y': 100
+  - id: quality
+    label: |-
+      Double-Check Every Answer
+      Independent worker review
+      Regenerate unanswerable items
     type: process
     size: xl
     position:
+      x: 1240
+      'y': 100
+  - id: random_audit
+    label: |-
+      Audit a Sampled Portion
+      Multiple annotators • vote
+      Sample/count not disclosed
+    type: user
+    size: xl
+    position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: Accuracy
-    type: terminal
+      'y': 300
+  - id: translate
+    label: |-
+      Chinese-to-English QA
+      Produce four engine translations
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 100
+  - id: translation_gate
+    label: |-
+      CIDEr Consensus Gate
+      Mean similarity above threshold?
+    type: decision
+    size: xl
+    position:
+      x: 1960
+      'y': 100
+  - id: baidu_translation
+    label: |-
+      Keep Baidu Translation
+      Consensus passes threshold
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 0
+  - id: manual_translation
+    label: |-
+      Human Translation
+      Resolve low-consensus QA
+    type: user
+    size: xl
+    position:
+      x: 2200
+      'y': 240
+  - id: release
+    label: |-
+      ActivityNet-QA
+      QA: 32,000 / 18,000 / 8,000
+      Videos: 3,200 / 1,800 / 800
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 100
+  - id: prediction
+    label: |-
+      VideoQA Prediction
+      Video + question → answer
+    type: document
+    size: xl
+    position:
+      x: 2440
+      'y': 660
+  - id: exact
+    label: |-
+      Exact-Match Accuracy
+      Prediction equals reference
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 560
+  - id: wups
+    label: |-
+      WUPS Similarity
+      Thresholds 0.9 and 0.0
+      Overall score only
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 860
+  - id: aggregate
+    label: |-
+      Aggregate Exact Match by Type
+      Motion • spatial
+      Temporal • free
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 660
+  - id: report
+    label: |-
+      Report Results
+      Exact: overall + per type
+      WUPS: overall only
+    type: terminal
+    size: xl
+    position:
+      x: 1080
+      'y': 660
 edges:
-  - from: n1
-    to: n2
+  - from: videos
+    to: author
     type: primary
-  - from: n2
-    to: n3
+  - from: author
+    to: types
     type: primary
-  - from: n3
-    to: n4
+  - from: types
+    to: length_gate
     type: primary
-  - from: n4
-    to: n5
+  - from: length_gate
+    to: yes_no_balance
     type: primary
-  - from: n5
-    to: n6
+  - from: yes_no_balance
+    to: quality
     type: primary
-  - from: n6
-    to: n7
+  - from: quality
+    to: translate
     type: primary
-  - from: n7
-    to: n8
+  - from: quality
+    to: random_audit
+    type: optional
+    label: Sampled portion
+  - from: random_audit
+    to: translate
+    type: optional
+  - from: translate
+    to: translation_gate
+    type: primary
+  - from: translation_gate
+    to: baidu_translation
+    type: primary
+    label: Above threshold
+  - from: translation_gate
+    to: manual_translation
+    type: optional
+    label: Below threshold
+  - from: baidu_translation
+    to: release
+    type: primary
+  - from: manual_translation
+    to: release
+    type: primary
+  - from: release
+    to: prediction
+    type: primary
+  - from: prediction
+    to: exact
+    type: primary
+  - from: prediction
+    to: wups
+    type: primary
+    waypoints:
+      - x: 2320
+        'y': 900
+      - x: 1320
+        'y': 900
+  - from: exact
+    to: aggregate
+    type: primary
+  - from: wups
+    to: report
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
 modules: []

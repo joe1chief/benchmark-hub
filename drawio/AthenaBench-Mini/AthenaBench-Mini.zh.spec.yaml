@@ -1,0 +1,174 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: AthenaBench-Mini 论文对齐构建流程
+  description: 依据 AthenaBench v2 第 3.1-3.6 与 4.2-4.3 节，展示任务专属构建控制与按随机种子选择 Mini。
+  legend: 质量控制并非全局操作：去重仅用于 RCM/VSP，泄漏检查仅用于 TAA，模型筛选与人工修订仅用于 CKT。
+nodes:
+  - id: ckt_source
+    label: |-
+      收集 CKT 知识
+      权威 CTI 来源
+      生成五选一题目
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 40
+  - id: ckt
+    label: |-
+      用 GPT-5 筛选 CKT
+      Gemini 交叉检查
+      仅 CKT 进行人工修订
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 40
+  - id: cve_source
+    label: |-
+      收集 CVE 与 CVSS 数据
+      根因与严重度字段
+      构建 RCM 与 VSP
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 230
+  - id: rcm_vsp
+    label: |-
+      仅对 RCM / VSP 去重
+      过滤无效记录
+      不扩展到其他任务
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 230
+  - id: taa_source
+    label: |-
+      收集威胁报告
+      攻击者与技术
+      构建 TAA 题目
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 420
+  - id: taa
+    label: |-
+      仅对 TAA 做泄漏检查
+      检查攻击者线索
+      其他任务保持独立
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 420
+  - id: rms_ate
+    label: |-
+      构建 RMS 与 ATE
+      缓解措施与场景
+      使用各自构建过程
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 610
+  - id: full_benchmark
+    label: |-
+      汇总完整 AthenaBench
+      8,100 题 • 六类任务
+      保留任务边界
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 300
+  - id: seed_candidates
+    label: |-
+      应用各任务抽样率 / 配额
+      生成 10 个 Mini 候选集
+      使用 10 个随机种子
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: select_seed
+    label: |-
+      选择整体表现最接近完整集者
+      比较模型表现
+      保留论文规定的任务数量
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 300
+  - id: mini_release
+    label: |-
+      发布 950 道 Mini 题目
+      CKT 300 • ATE 100 • RCM 200
+      RMS 100 • VSP 200 • TAA 50
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 300
+  - id: report
+    label: |-
+      评测六类任务指标
+      比较 Mini 与完整集
+      报告 CTI 表现
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 300
+edges:
+  - from: ckt_source
+    to: ckt
+    type: primary
+  - from: cve_source
+    to: rcm_vsp
+    type: primary
+  - from: taa_source
+    to: taa
+    type: primary
+  - from: ckt
+    to: full_benchmark
+    type: primary
+  - from: rcm_vsp
+    to: full_benchmark
+    type: primary
+  - from: taa
+    to: full_benchmark
+    type: primary
+  - from: rms_ate
+    to: full_benchmark
+    type: primary
+    waypoints:
+      - x: 560
+        'y': 660
+      - x: 560
+        'y': 750
+      - x: 700
+        'y': 750
+      - x: 700
+        'y': 430
+  - from: full_benchmark
+    to: seed_candidates
+    type: primary
+  - from: seed_candidates
+    to: select_seed
+    type: primary
+  - from: select_seed
+    to: mini_release
+    type: primary
+  - from: mini_release
+    to: report
+    type: primary
+modules: []

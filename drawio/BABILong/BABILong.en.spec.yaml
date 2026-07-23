@@ -5,119 +5,254 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BABILong Build Process
-  description: Paper-aligned long-context benchmark construction and evaluation workflow for BABILong, based on arXiv:2406.10149.
+  description: Paper-aligned generation and long-context evaluation workflow for BABILong, based on arXiv:2406.10149v2.
   legend: >-
-    Solid arrows show the BABILong sample-generation and evaluation pipeline; dashed arrows mark retrieval and
-    recurrent-memory evaluation branches reported in the paper.
+    Solid arrows build data and score each method. Dashed arrows select retrieval or recurrent-memory baselines; direct,
+    RAG, and recurrent evaluations retain their distinct paper-specified sample protocols.
 nodes:
-  - id: babi_tasks
+  - id: babi_simulation
     label: |-
-      bAbI task generator
-      QA1 to QA20
-      simulated facts and questions
+      Generate bAbI Simulations
+      Characters • Objects • Places
+      Events • Synthetic Facts
+      Ground-Truth Answers
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: pg19_background
+      'y': 220
+  - id: task_suite
     label: |-
-      PG19 background books
-      natural long contexts
-      irrelevant distractor text
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 70
-  - id: fact_insertion
-    label: |-
-      Fact hiding pipeline
-      insert task sentences
-      preserve background order
+      Select QA1 through QA20
+      Fact Chains • Induction • Deduction
+      Counting • Lists/Sets • Space and Time
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: length_splits
+      x: 320
+      'y': 220
+  - id: pg19
     label: |-
-      Length-controlled samples
-      predefined splits up to 10M
-      variable facts per task
+      Sample PG19 Books
+      Natural Long-Form Narratives
+      Draw Background Sentences
+      in Original Order
     type: database
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: llm_eval
+      x: 320
+      'y': 40
+  - id: interleave
     label: |-
-      Long-context LLM evaluation
-      distinguish relevant facts
-      answer reasoning questions
+      Hide Task Facts in Background Text
+      Interleave Facts + Distractors
+      Preserve Natural Order
+      Preserve Task-Logical Order
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 220
+  - id: length_control
+    label: |-
+      Add Background until Target Length
+      Measure with the GPT-2 Tokenizer
+      Adapt Fact Positions Algorithmically
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 220
+  - id: release
+    label: |-
+      Pre-Generate Reproducible Splits
+      0K • 4K • 8K • 16K • 32K • 64K
+      128K • 512K • 1M • 10M Tokens
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 220
+  - id: direct_eval
+    label: |-
+      Run Long-Context LLMs Directly
+      Locate Supporting Facts
+      Memorize and Reason to the Answer
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: rag_chunks
+    label: |-
+      Run RAG-C Baseline
+      Retrieve 512-Token Chunks
+      Pass Retrieved Evidence to the LLM
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 220
+  - id: rag_sentences
+    label: |-
+      Run RAG-S Baseline
+      Retrieve Individual Sentences
+      Test Multi-Hop and Temporal Failures
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: recurrent_train
+    label: |-
+      Curriculum-Fine-Tune Memory Models
+      RMT • ARMT • Mamba
+      Gradually Increase Recurrent Segments
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 620
+  - id: recurrent_eval
+    label: |-
+      Evaluate Recurrent Memory
+      Extrapolate beyond Training Lengths
+      Test Selected Runs up to 50M Tokens
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 620
+  - id: score
+    label: |-
+      Direct QA1–QA5 Accuracy
+      1,000 per Task / Length
+      through 32K
+      100 Beyond 32K
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 40
+  - id: rag_score
+    label: |-
+      RAG Exact Accuracy
+      50 Examples
+      per Task and Length
+      Score RAG-C / RAG-S Separately
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 310
+  - id: recurrent_score
+    label: |-
+      Recurrent-Memory Accuracy
+      Full Test Set through 1M
+      100 Examples at 10M
+      Selected Runs to 50M
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 620
+  - id: effective_context
+    label: |-
+      Diagnose Context Use
+      One / Two / Three-Fact Tasks
+      Accuracy Decay with Length
+      Retrieval Order / Missing Facts
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 550
+  - id: method_compare
+    label: |-
+      Compare Independent Protocols
+      Direct • RAG-C • RAG-S
+      RMT • ARMT • Mamba
+      Do Not Pool Sample Counts
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 310
+  - id: report
+    label: |-
+      Publish BABILong Results
+      Task / Length / Method Accuracy
+      Keep Protocol Sample Counts
+      Selected 50M Extrapolation
     type: terminal
     size: xl
     position:
-      x: 820
-      'y': 70
-  - id: rag_eval
-    label: |-
-      RAG baselines
-      512-token chunks or sentences
-      retrieve supporting facts
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: memory_models
-    label: |-
-      Recurrent-memory training
-      RMT and ARMT curriculum
-      10k train / 1k eval
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: report
-    label: |-
-      BABILong report
-      accuracy by task and length
-      extrapolation up to 50M tokens
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 160
+      x: 2560
+      'y': 430
 edges:
-  - from: babi_tasks
-    to: fact_insertion
+  - from: babi_simulation
+    to: task_suite
     type: primary
-  - from: pg19_background
-    to: fact_insertion
+  - from: task_suite
+    to: interleave
+    type: primary
+  - from: pg19
+    to: interleave
     type: data
-  - from: fact_insertion
-    to: length_splits
+  - from: interleave
+    to: length_control
     type: primary
-  - from: length_splits
-    to: llm_eval
+  - from: length_control
+    to: release
     type: primary
-  - from: length_splits
-    to: rag_eval
+  - from: release
+    to: direct_eval
+    type: primary
+  - from: release
+    to: rag_chunks
     type: optional
-    label: chunk and sentence retrieval
-  - from: length_splits
-    to: memory_models
+  - from: release
+    to: rag_sentences
     type: optional
-    label: curriculum segments
-  - from: llm_eval
+  - from: release
+    to: recurrent_train
+    type: optional
+    waypoints:
+      - x: 1330
+        'y': 350
+      - x: 1330
+        'y': 670
+  - from: recurrent_train
+    to: recurrent_eval
+    type: primary
+  - from: direct_eval
+    to: score
+    type: primary
+  - from: rag_chunks
+    to: rag_score
+    type: data
+  - from: rag_sentences
+    to: rag_score
+    type: data
+  - from: recurrent_eval
+    to: recurrent_score
+    type: data
+  - from: score
+    to: method_compare
+    type: primary
+  - from: rag_score
+    to: method_compare
+    type: data
+  - from: recurrent_score
+    to: method_compare
+    type: data
+  - from: method_compare
+    to: effective_context
+    type: primary
+  - from: method_compare
+    to: report
+    type: data
+  - from: effective_context
     to: report
     type: primary
-  - from: rag_eval
-    to: report
-    type: data
-  - from: memory_models
-    to: report
-    type: data
 modules: []

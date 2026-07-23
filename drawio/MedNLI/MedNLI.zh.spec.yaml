@@ -1,0 +1,432 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MedNLI 构建、发布与评测流程
+  description: 对齐论文与当前发布版本的临床 NLI 流程：从 MIMIC-III 病历出发，经前提抽样、临床医生撰写假设、 试点有效性与一致性检查、单标注扩展、前提不重叠划分，到 PhysioNet 受限发布与按标签可用性执行准确率评测。
+  legend: >-
+    实线表示数据构建或计分路径，虚线表示证据、访问许可、实现和论文实验边界。论文使用 MIMIC-III v1.3， 而 PhysioNet v1.0.0 将 MIMIC-III v1.4
+    列为父数据集；图中保留该版本差异，不做静默合并。 测试标签若被隐藏，发布代码路径无法对其计分。
+nodes:
+  - id: evidence
+    label: |-
+      固定证据快照
+      arXiv:1808.06752v2 · PDF SHA d328fab8b047
+      代码 HEAD e1fe2531a9e9
+      PhysioNet v1.0.0 · DOI 10.13026/C2RS98
+      辅助 BigBIO 加载器 21f3313de37d
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 24
+  - id: paper_source
+    label: |-
+      论文构建数据源
+      MIMIC-III v1.3
+      38,597 名去标识患者
+      2,078,705 份英文临床病历
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 264
+  - id: deceased_scope
+    label: |-
+      限定临床病历来源
+      PhysioNet 方法说明进一步明确
+      仅使用死亡患者对应病历
+      降低患者隐私风险
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 264
+  - id: section_parse
+    label: |-
+      按章节标题切分病历
+      简单规则程序
+      选择既往病史章节
+      保留去标识化伪影
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 264
+  - id: premise_pool
+    label: |-
+      创建候选前提句
+      生物医学 LingPipe 分句器
+      汇集既往病史句子
+      随机抽取子集
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 264
+  - id: prompt
+    label: |-
+      只展示一个前提句
+      仅依据该句
+      可用医学知识与常识
+      不提供病历其余上下文
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 264
+  - id: hypotheses
+    label: |-
+      临床医生撰写三个假设
+      肯定为真 → 蕴含
+      可能为真 → 中立
+      肯定为假 → 矛盾
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 264
+  - id: pilot
+    label: |-
+      试点标注
+      两名取得专科认证的放射科医生
+      每人 100 个互异前提
+      按临床标注指南执行
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 264
+  - id: validity_gate
+    label: |-
+      该前提能否支持
+      有用的临床推断？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 264
+  - id: discard
+    label: |-
+      丢弃无效试点前提
+      由临床医生判断
+      常见原因为去标识化伪影
+      共移除 16 个前提
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 24
+  - id: cross_label
+    label: |-
+      对保留的试点句对交叉标注
+      一名医生复核另一名医生的句对
+      184 个前提 × 三个假设
+      共 552 个句对
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 264
+  - id: agreement
+    label: |-
+      检查试点一致性
+      肯定 / 可能 / 肯定为假
+      Cohen's Kappa = 0.78
+      复盘“肯定”与“可能”分歧
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 264
+  - id: scale_up
+    label: |-
+      扩大专家标注
+      再招募两名临床医生
+      共四名临床医生 · 六周
+      标注 4,683 个前提
+    type: user
+    size: xl
+    position:
+      x: 2840
+      'y': 264
+  - id: single_annotation
+    label: |-
+      最终标注边界
+      每个句对不做多人重复标注
+      原因是时间与经费限制
+      试点一致性不等于多数投票
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 264
+  - id: dataset
+    label: |-
+      形成 MedNLI
+      4,683 个前提 × 三类标签
+      14,049 个唯一句对
+      蕴含 · 中立 · 矛盾
+    type: database
+    size: xl
+    position:
+      x: 2840
+      'y': 624
+  - id: split
+    label: |-
+      按前提互斥划分数据集
+      训练集 11,232
+      开发集 1,395
+      测试集 1,422
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 624
+  - id: release
+    label: |-
+      PhysioNet MedNLI v1.0.0
+      训练 / 开发 / 测试 JSONL
+      SNLI / MultiNLI 风格记录
+      句对 + 解析树 + 金标字段
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 624
+  - id: version_boundary
+    label: |-
+      数据源版本边界
+      论文：MIMIC-III v1.3
+      PhysioNet 父数据：MIMIC-III v1.4
+      不可把二者视为同一固定版本
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 624
+  - id: access_boundary
+    label: |-
+      受限数据访问边界
+      需 CITI 培训并签署 DUA
+      PhysioNet 健康数据许可 1.5.0
+      代码仓库没有 LICENSE 文件
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 944
+  - id: eval_input
+    label: |-
+      评测临床三分类 NLI
+      前提 + 假设 → 一个标签
+      测试前提不进入训练集
+      基准指标为准确率
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 624
+  - id: paper_models
+    label: |-
+      论文实验协议
+      特征模型 · BOW · InferSent · ESIM
+      Adam · 选择最低验证损失
+      验证损失五轮不改善则停止
+      运行六个不同随机种子
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 624
+  - id: label_gate
+    label: |-
+      被评测划分是否
+      提供金标？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 624
+  - id: unavailable
+    label: |-
+      公开测试标签已隐藏
+      PhysioNet 说明 gold_label 被遮蔽
+      发布读取器丢弃标签为 '-' 的记录
+      仅凭这些行无法计算测试准确率
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 944
+  - id: official_code
+    label: |-
+      发布的复现实验代码
+      read_nli_data 丢弃 gold_label '-'
+      旧版 Python 3.4 / 3.6.3
+      PyTorch 0.2.0 + MetaMap / UMLS
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 624
+  - id: implementation_boundary
+    label: |-
+      实现边界
+      无托管评测器或输出解析器
+      未定义无效输出策略
+      没有官方在线排行榜
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 944
+  - id: argmax
+    label: |-
+      对带金标的记录计分
+      DataLoader shuffle=False
+      对三类模型 logit 取 argmax
+      与金标做精确标签比较
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 624
+  - id: accuracy
+    label: |-
+      计算分类准确率
+      正确预测数 / 数据集长度
+      不设部分得分
+      每次评测得到一个分数
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 624
+  - id: aggregate
+    label: |-
+      汇总论文多次运行
+      六个相同超参数随机种子
+      按模型 / 设置取平均准确率
+      开发与测试结果分别保留
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 624
+  - id: paper_results
+    label: |-
+      报告论文准确率（%）· 开发 / 测试
+      特征 51.9 / 51.9 · BOW 71.9 / 70.2
+      InferSent 76.0 / 73.5 · ESIM 74.4 / 73.1
+      迁移与领域知识增益单独报告
+      无综合分数或在线排行榜
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 944
+edges:
+  - from: evidence
+    to: paper_source
+    type: optional
+    label: 固定论文与发布证据
+    labelPosition: start
+  - from: paper_source
+    to: deceased_scope
+    type: primary
+  - from: deceased_scope
+    to: section_parse
+    type: primary
+  - from: section_parse
+    to: premise_pool
+    type: primary
+  - from: premise_pool
+    to: prompt
+    type: primary
+  - from: prompt
+    to: hypotheses
+    type: primary
+  - from: hypotheses
+    to: pilot
+    type: primary
+  - from: pilot
+    to: validity_gate
+    type: primary
+  - from: validity_gate
+    to: discard
+    type: primary
+    label: 无效 · 16
+    labelPosition: start
+  - from: validity_gate
+    to: cross_label
+    type: primary
+    label: 保留 · 184
+    labelPosition: end
+  - from: cross_label
+    to: agreement
+    type: primary
+  - from: agreement
+    to: scale_up
+    type: primary
+  - from: scale_up
+    to: single_annotation
+    type: optional
+    label: 最终标注规则
+    labelPosition: end
+  - from: scale_up
+    to: dataset
+    type: primary
+  - from: dataset
+    to: split
+    type: primary
+  - from: split
+    to: release
+    type: primary
+  - from: release
+    to: version_boundary
+    type: primary
+  - from: release
+    to: access_boundary
+    type: optional
+    label: 访问与许可
+    labelPosition: end
+  - from: version_boundary
+    to: eval_input
+    type: primary
+  - from: eval_input
+    to: paper_models
+    type: primary
+  - from: paper_models
+    to: label_gate
+    type: primary
+  - from: label_gate
+    to: unavailable
+    type: primary
+    label: 标签已隐藏
+    labelPosition: end
+  - from: label_gate
+    to: official_code
+    type: primary
+    label: 金标可用
+    labelPosition: start
+  - from: official_code
+    to: implementation_boundary
+    type: optional
+    label: 复现限制
+    labelPosition: end
+  - from: official_code
+    to: argmax
+    type: primary
+  - from: argmax
+    to: accuracy
+    type: primary
+  - from: accuracy
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: paper_results
+    type: primary
+modules: []

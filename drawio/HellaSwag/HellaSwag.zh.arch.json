@@ -7,50 +7,68 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
+    "nodes": 10,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "sources",
-      "label": "数据来源",
+      "id": "evidence",
+      "label": "一手证据\narXiv:1905.07830v1\n官方仓库 a29ff8e9",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "activity",
+      "label": "ActivityNet Captions\n时序描述 + 活动标签",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "endings",
-      "label": "GPT结尾",
+      "id": "wikihow",
+      "label": "WikiHow 抓取 · 80K 对\n上下文 + 后续段落\n最多三个句子",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "candidates",
+      "label": "GPT 候选生成\nActivityNet 训练 5 轮\nWikiHow 训练 2 轮\n随机采样 · nucleus p=0.98\n选择两句 WikiHow 输出",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "af",
-      "label": "BERT过滤",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "human",
-      "label": "人工过滤",
+      "label": "迭代对抗过滤\nBERT-Large 每轮重置\n随机 80/20 · 四选一\n采样 3 个负例 · 替换直到收敛",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "best",
-      "label": "高一致上下文",
-      "type": "document",
+      "id": "human",
+      "label": "人工验证\n六选一 · 1 真 + 5 个 AF\n替换显得真实的负例\n保留最少选择 3 个 · 25K + 45K",
+      "type": "user",
       "size": "xl"
     },
     {
-      "id": "splits",
-      "label": "域内/零样本",
+      "id": "paper_release",
+      "label": "论文目标发布 · 70K\ntrain 50K · val 10K · test 10K\nval/test：5K 域内 + 5K 零样本",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "artifact_boundary",
+      "label": "官方仓库快照 a29ff8e9\ntrain 39,905 · val 10,042\ntest 10,003 · test 无标签\n原始 WikiHow/生成器资产缺失",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "model",
+      "label": "四选一补全输入\nctx · ctx_a + ctx_b · 4 个结尾\ntrain/val 含 label · test 概率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "score",
-      "label": "准确率",
+      "label": "官方评测\n准确率：总体 · 域内\n零样本 · 来源分解\ntest 提交：概率 CSV",
       "type": "terminal",
       "size": "xl"
     }
@@ -58,37 +76,61 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "sources",
-      "to": "endings",
-      "type": "primary"
+      "from": "evidence",
+      "to": "activity",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "endings",
+      "from": "evidence",
+      "to": "wikihow",
+      "type": "data"
+    },
+    {
+      "id": "edge-3",
+      "from": "activity",
+      "to": "candidates",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "wikihow",
+      "to": "candidates",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "candidates",
       "to": "af",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-6",
       "from": "af",
       "to": "human",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-7",
       "from": "human",
-      "to": "best",
+      "to": "paper_release",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "best",
-      "to": "splits",
+      "id": "edge-8",
+      "from": "paper_release",
+      "to": "artifact_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-9",
+      "from": "artifact_boundary",
+      "to": "model",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "splits",
+      "id": "edge-10",
+      "from": "model",
       "to": "score",
       "type": "primary"
     }

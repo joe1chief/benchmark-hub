@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "title": "PMC-VQA 构建与评测流程",
+  "type": "academic-diagram",
+  "source": "generated",
+  "profile": "academic-paper",
+  "theme": "academic-color",
+  "layout": "horizontal",
+  "counts": {
+    "nodes": 22,
+    "edges": 23,
+    "modules": 0
+  },
+  "nodes": [
+    {
+      "id": "source_evidence",
+      "label": "固定官方证据\narXiv 2305.10415v6 · PDF 7573df69e4c0\n官方代码 1678ec2c97f0\nHF 数据 b56ae594f794",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "pmc_oa",
+      "label": "从 PMC-OA 开始\n160 万生物医学图像图注对\nPubMed Central 开放获取子集\n来源覆盖 240 万篇论文",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "subset",
+      "label": "选取 38.1 万图像图注对\n使用图像收集第一阶段\n跳过自动子图拆分\n保留多样复杂图像",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "每个图注生成五组问答\n用图注文本提示 ChatGPT\n四个选项且一个正确\n随机化正确选项位置",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "clean",
+      "label": "清洗生成输出\n删除重复拒答与占位样本\n强制满足指定输出模板\n保留 1,497,808 组问答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cross_half",
+      "label": "分成两半交叉拟合\n在其中一半训练\n在另一半推理\n避免过滤自身训练样本",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "text_only",
+      "label": "训练纯文本 LLaMA-7B\n只提供问题与四个选项\n不提供对应图像\n学习仅凭语言可答捷径",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "language_filter",
+      "label": "过滤仅凭语言可答问答\n打乱选项并推理五次\n至少答对三次则删除\n保留 848,433 组问答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "manual_labels",
+      "label": "标注图像可回答性\n人工标注 2,192 组问答\n训练 1,752 · 测试 440\n二元图像可回答标签",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "classifier",
+      "label": "训练问题分类器\n准确率达到 81.77%\n排除只在图注中出现的信息\n应用于剩余候选池",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "final_dataset",
+      "label": "定稿清洗后 PMC-VQA\n226,946 组问答\n149,075 张医疗图像\n约 80% 为放射影像",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "initial_test",
+      "label": "创建图像隔离初始测试集\n随机选择 50,000 组问答\nPMC-VQA-test-initial\n与训练集无图像重叠",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "verified_test",
+      "label": "人工核验测试样本\n检查图像相关性与可回答性\n检查干扰项与图像质量\n保留 2,000 题 PMC-VQA-test",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "choice",
+      "label": "执行 Choice 任务\n论文提示为 Question q · Options a1 到 a4\n后缀为 the answer is\n生成正确的 A B C 或 D\n在人工核验测试集评测",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "blanking",
+      "label": "执行 Blanking 任务\n论文提示为 Question question\n后缀为 the answer is\n生成自由文本答案\n在人工核验测试集评测",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "acc_parser",
+      "label": "将输出映射到答案选项\n使用 difflib.SequenceMatcher 比率\n选择最相似候选项\n计算严格选择准确率",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "bleu",
+      "label": "评分自由文本\nBLEU-1 衡量一元词精确率\n同时映射到选项计算准确率\nBlanking 报告两项指标",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告任务特定指标\nChoice：Accuracy\nBlanking：Accuracy 与 BLEU-1\n分任务保留结果",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "release_snapshot",
+      "label": "固定公开数据快照\nv1：train.csv · images.zip\ntest.csv 50,000 行\ntest_clean.csv 2,000 行\ntest_clean SHA-256 852307310866",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_drift",
+      "label": "论文发布后漂移\nxmcmic 地址现解析到 RadGenome\n数据卡写 train2 test2 images2\n快照文件名在数字 2 前增加下划线",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "metric_boundary",
+      "label": "指标实现边界\n论文定义 SequenceMatcher ACC 与 BLEU-1\nTE 使用 The choices are · TD 使用 Choices\nACC 解析器不同 · 不含 BLEU 实现",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "license_boundary",
+      "label": "许可证边界\n数据卡声明 CC BY-SA\n源论文清单为 CC0 或 CC BY\n官方代码仓库采用 MIT",
+      "type": "document",
+      "size": "xl"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "source_evidence",
+      "to": "pmc_oa",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-2",
+      "from": "pmc_oa",
+      "to": "subset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "subset",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "generate",
+      "to": "clean",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "clean",
+      "to": "cross_half",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "cross_half",
+      "to": "text_only",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "text_only",
+      "to": "language_filter",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "language_filter",
+      "to": "manual_labels",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "manual_labels",
+      "to": "classifier",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "classifier",
+      "to": "final_dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "final_dataset",
+      "to": "initial_test",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "initial_test",
+      "to": "verified_test",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "verified_test",
+      "to": "choice",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "verified_test",
+      "to": "blanking",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "choice",
+      "to": "acc_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "blanking",
+      "to": "acc_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "blanking",
+      "to": "bleu",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "acc_parser",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "bleu",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "final_dataset",
+      "to": "release_snapshot",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-21",
+      "from": "release_snapshot",
+      "to": "release_drift",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-22",
+      "from": "acc_parser",
+      "to": "metric_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-23",
+      "from": "release_snapshot",
+      "to": "license_boundary",
+      "type": "secondary"
+    }
+  ],
+  "modules": []
+}

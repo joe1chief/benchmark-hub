@@ -6,78 +6,212 @@ meta:
   routing: orthogonal
   title: HEAD-QA Build Process
   description: >-
-    Paper-aligned HEAD-QA flow from Spanish healthcare specialization exams to bilingual multiple-choice QA and
-    accuracy/points evaluation.
+    Version-pinned construction of the Spanish and English HEAD-QA views, followed by the exact official evaluator
+    contract from the public repository.
   legend: >-
-    Solid arrows show exam collection, invalid-item removal, JSON structuring, temporal splits, English translation, and
-    MCQ evaluation.
+    Solid arrows follow arXiv:1906.04701v1. Dashed arrows pin the official repository and Hugging Face release. No
+    canonical LLM prompt or generation configuration is published for this 2019 benchmark.
 nodes:
+  - id: evidence
+    label: |-
+      Fixed evidence boundary
+      arXiv:1906.04701v1
+      aghie/head-qa @ da54ff2
+      dvilares/head_qa @ d444ead
+      dataset script version 1.1.0
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: exams
-    label: Health Exams
+    label: |-
+      Collect Spanish public-health exams
+      specialized healthcare positions
+      official examinations from 2013
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: areas
-    label: 6 Areas
+      'y': 320
+  - id: domains
+    label: |-
+      Retain six healthcare areas
+      medicine · pharmacology · psychology
+      nursing · biology · chemistry
     type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 320
+      'y': 320
   - id: clean
-    label: Clean Items
-    type: decision
+    label: |-
+      Apply source-faithful exclusions
+      omit radiophysics: PDF equations
+      resist reliable parsing
+      remove officially invalidated items
+    type: process
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: json
-    label: QA JSON
+      x: 600
+      'y': 320
+  - id: schema
+    label: |-
+      Official record schema
+      name / year / category / qid
+      qtext / ra / optional image
+      answers contain aid + atext
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 880
+      'y': 320
   - id: split
-    label: Year Splits
+    label: |-
+      Chronological official splits
+      2013-14 train: 2,657
+      2015 validation: 1,366
+      later test: 2,742 · total 6,765
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 320
+  - id: spanish
+    label: |-
+      Spanish view: same 6,765 rows
+      2013-14: five choices
+      later exams: four choices
+      ~14% medicine items cite images
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
+      x: 1460
+      'y': 100
   - id: translate
-    label: EN Version
+    label: |-
+      Google API English translation
+      translate question + answer text
+      retain IDs / labels / images / splits
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1460
+      'y': 540
+  - id: audit
+    label: |-
+      Audit 60 random translations
+      bilingual adequacy: 4.35 / 5
+      second adequacy score: 4.71 / 5
+      native-English fluency: 4 / 5
+    type: process
+    size: xl
+    position:
+      x: 1740
+      'y': 540
+  - id: run_es
+    label: |-
+      Paper Spanish baselines
+      Length / Random / Blind / IR
+      referenced images are not exploited
+      no canonical LLM prompt or config
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 100
+  - id: run_en
+    label: |-
+      Paper English / cross-lingual runs
+      use translated questions + options
+      Length / Random / Blind / IR / DrQA
+      DrQA is English-only in official code
+      no canonical LLM prompt or config
+    type: process
+    size: xl
+    position:
+      x: 2020
+      'y': 540
+  - id: parser
+    label: |-
+      Official eval.py contract
+      prediction line = qid + answer ID
+      gold line = qid + answer ID
+      "-" means unanswered
+    type: process
+    size: xl
+    position:
+      x: 2320
+      'y': 320
   - id: score
-    label: Acc/Points
+    label: |-
+      Accuracy + macro P/R/F1
+      official POINTS tally
+      right × 3 · wrong × -1
+      unanswered contributes 0
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2620
+      'y': 320
 edges:
+  - from: evidence
+    to: exams
+    type: data
   - from: exams
-    to: areas
+    to: domains
     type: primary
-  - from: areas
+  - from: domains
     to: clean
     type: primary
   - from: clean
-    to: json
+    to: schema
     type: primary
-  - from: json
+  - from: schema
     to: split
     type: primary
   - from: split
+    to: spanish
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: split
     to: translate
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: spanish
+    to: run_es
+    type: primary
   - from: translate
+    to: audit
+    type: primary
+  - from: audit
+    to: run_en
+    type: primary
+  - from: run_es
+    to: parser
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 0
+  - from: run_en
+    to: parser
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.75
+      entryY: 1
+  - from: parser
     to: score
     type: primary
 modules: []

@@ -1,89 +1,175 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval 构建流程
-  description: 按论文对齐的AlpacaEval流程：整理805条Alpaca指令，生成被测模型与基线回答，随机交换展示顺序，由GPT-4进行成对偏好判断，再用长度控制GLM计算LC胜率。
-  legend: 实线箭头表示benchmark构建与评测主流程。
+  title: 原始 AlpacaEval 构建流程
+  description: 原始 AlpacaEval 简化固定的 AlpacaFarm 评测集，重新生成 text-davinci-003 参考回复，并用随机顺序、温度为零的 alpaca_eval_gpt4 成对评审计算模型胜率。
+  legend: 上排构建固定 805 样本评测集；下两排比较候选与固定参考回复并聚合偏好，不引入后来的 AlpacaEval-LC 回归流程。
 nodes:
-  - id: n1
-    label: Alpaca交互
+  - id: alpaca_farm
+    label: |-
+      AlpacaFarm 评测集
+      固定 805 个样本
+      来源评测分布
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 805条指令
+      'y': 80
+  - id: merge_fields
+    label: |-
+      简化提示字段
+      四分之一 Self-Instruct 样本受影响
+      合并 instruction + input
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 80
+  - id: reference_regeneration
+    label: |-
+      重生成 text-davinci-003 参考回复
+      不设 AlpacaFarm 输出长度上限
+      每条指令保留一个参考回复
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 80
+  - id: dataset
+    label: |-
+      固定 AlpacaEval 评测集
+      805 条指令 + 参考回复
+      原始评测合同
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: candidate
+    label: |-
+      待评模型
+      回答全部指令
+      生成候选回复
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 360
+  - id: reference
+    label: |-
+      固定参考回复
+      text-davinci-003
+      对应同一 805 条指令
     type: document
     size: xl
     position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: 模型回答
+      x: 880
+      'y': 360
+  - id: randomize
+    label: |-
+      随机化回复顺序
+      候选 / 参考
+      控制位置偏差
     type: process
     size: xl
     position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 基线回答
+      x: 600
+      'y': 640
+  - id: judge
+    label: |-
+      alpaca_eval_gpt4 评审器
+      GPT-4 • 温度 = 0
+      成对偏好提示
     type: process
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: 顺序随机化
+      x: 320
+      'y': 640
+  - id: preference
+    label: |-
+      解析偏好结果
+      候选胜 / 参考胜
+      平局时双方各记 0.5
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 640
+  - id: score
+    label: |-
+      汇总 805 次判断
+      平均胜率 + 标准误
+      候选对 text-davinci-003
     type: process
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: GPT-4裁判
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: 长度GLM
-    type: process
-    size: xl
-    position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: LC胜率
+      x: 40
+      'y': 920
+  - id: report
+    label: |-
+      原始 AlpacaEval 报告
+      胜率与标准误
+      自动评测结果
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 320
+      'y': 920
 edges:
-  - from: n1
-    to: n2
+  - from: alpaca_farm
+    to: merge_fields
     type: primary
-  - from: n2
-    to: n3
+  - from: merge_fields
+    to: reference_regeneration
     type: primary
-  - from: n3
-    to: n4
+  - from: reference_regeneration
+    to: dataset
     type: primary
-  - from: n4
-    to: n5
+  - from: dataset
+    to: candidate
     type: primary
-  - from: n5
-    to: n6
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: dataset
+    to: reference
+    type: data
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: candidate
+    to: randomize
     type: primary
-  - from: n6
-    to: n7
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: reference
+    to: randomize
     type: primary
-  - from: n7
-    to: n8
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: randomize
+    to: judge
+    type: primary
+  - from: judge
+    to: preference
+    type: primary
+  - from: preference
+    to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

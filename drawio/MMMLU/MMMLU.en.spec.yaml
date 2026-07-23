@@ -1,91 +1,471 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMMLU Build Process
+  title: MMMLU Build and Evaluation Process
   description: >-
-    Source-aligned construction of MMMLU: translate the original MMLU test set into 14 locales with professional human
-    translators, preserve subject structure, and run multilingual exact-match accuracy evaluation.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+    Source-pinned construction and evaluation of OpenAI MMMLU: the 14 professionally translated MMLU test locales, their
+    audited release invariants and documented gaps, plus the official generation-and-parser protocol.
+  legend: >-
+    Solid arrows are the documented data or evaluation path; dotted arrows mark evidence, audit, or drift boundaries.
+    MMMLU has no dedicated paper: arXiv:2009.03300v3 describes source MMLU, while the OpenAI card documents translation.
 nodes:
-  - id: n1
-    label: MMLU Test
-    type: database
+  - id: evidence
+    label: |-
+      Evidence and Version Pins
+      MMLU paper 2009.03300v3
+      HF data 325a01dc
+      simple-evals release 01c488b
+      current code 652c89d
+    type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 57 Subjects
-    type: process
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: n3
-    label: Pro Translate
-    type: process
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: n4
-    label: 14 Locales
+      'y': 280
+  - id: paper_scope
+    label: |-
+      Source MMLU Paper, Not MMMLU
+      57 Multiple-choice Tasks
+      15,908 Questions Collected
+      Paper Test Count = 14,079
     type: document
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: n5
-    label: Locale Files
+      x: 320
+      'y': 280
+  - id: public_test
+    label: |-
+      OpenAI Public Test Release
+      14,042 Rows · 57 Subjects
+      Question · A–D · Answer · Subject
+      37 Fewer than Paper Test Count
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 280
+  - id: translate
+    label: |-
+      Professional Human Translation
+      Translate the Entire Public Test
+      Prioritize Translation Accuracy
+      Include Low-resource Yoruba
+    type: user
+    size: xl
+    position:
+      x: 880
+      'y': 280
+  - id: translation_boundary
+    label: |-
+      Translation-QA Boundary
+      Translator Count and Recruitment
+      Back-translation · Adjudication
+      Acceptance Rules Not Published
     type: document
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: n6
-    label: Simple Evals
+      x: 880
+      'y': 40
+  - id: locale_release
+    label: |-
+      Release 14 Locale CSV Files
+      AR · BN · DE · ES · FR · HI · ID
+      IT · JA · KO · PT · SW · YO · ZH
+      Public, Non-gated · MIT Tag
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 280
+  - id: release_audit
+    label: |-
+      Pinned-release Audit
+      14 × 14,042 = 196,588 Rows
+      57 Subjects · 5 Blank Choice Cells
+      DE: 2 D · JA: 1 A · ZH: 2 D
+      Gold Differs in 6 Locales · SW/YO Subject Drift 445
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: access_gate
+    label: |-
+      Which Hugging Face
+      Configuration Is Loaded?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 560
+  - id: named_config
+    label: |-
+      Named Locale Config
+      Exactly 14,042 Test Rows
+      Locale Identity Comes from Config
+      Safe Unit for Per-locale Scoring
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 440
+  - id: default_config
+    label: |-
+      Default Config Concatenation
+      196,588 Test Rows
+      Schema Has No Locale Column
+      Do Not Infer Locale from Row Alone
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 680
+  - id: eval_pin
+    label: |-
+      Official simple-evals Runner
+      15 Runs: EN-US + 14 Translations
+      Loads Unversioned OpenAI Blob URLs
+      Blob Bytes Match HF Pin in This Audit
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 160
-  - id: n7
-    label: Exact Match
-    type: document
+      x: 1160
+      'y': 920
+  - id: debug_gate
+    label: |-
+      Is debug Disabled
+      for a Full Run?
+    type: decision
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: n8
-    label: Multi Acc
-    type: terminal
+      x: 1440
+      'y': 920
+  - id: debug_sample
+    label: |-
+      Default Public Entry Point
+      debug = True
+      seed = 0 · 10 Items per Locale
+      Not a Full 14,042-row Run
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 1160
+  - id: language_gate
+    label: |-
+      Requested Language
+      EN-US or Translated Locale?
+    type: decision
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 920
+  - id: translated_blob
+    label: |-
+      Load mmlu_LOCALE.csv
+      One Translated Test File
+      14,042 Rows
+      Locale-specific Gold Is Authoritative
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 800
+  - id: english_blob
+    label: |-
+      Load mmlu.csv
+      Original EN-US Baseline
+      Not Part of the 14-locale Average
+      Ten Blank Source Options Remain
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 1040
+  - id: prompt
+    label: |-
+      Format Official User Prompt
+      Zero-shot · Think Step by Step
+      Show Question and A–D Choices
+      Require Final “Answer: LETTER”
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 920
+  - id: sample
+    label: |-
+      Query Configured Sampler
+      Generate Free-form Response
+      Model/System Message Varies
+      Save Actual Queried Conversation
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 920
+  - id: response_gate
+    label: |-
+      Did the Sampler Return
+      a Response Successfully?
+    type: decision
+    size: xl
+    position:
+      x: 2840
+      'y': 920
+  - id: request_abort
+    label: |-
+      Request Exception
+      No Item-level Retry in Eval
+      Exception Aborts the Run
+      No Final Denominator Is Produced
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 1160
+  - id: normalize
+    label: |-
+      Normalize Response Text
+      Remove Markdown and Math Wrappers
+      Keep Answer Content
+      Then Scan Regexes in Order
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 920
+  - id: parse_gate
+    label: |-
+      Does the First Matching
+      Localized Marker Yield A–D?
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 920
+  - id: parsed
+    label: |-
+      Normalize Extracted Glyph
+      Arabic · Bengali · Full-width
+      Map to Canonical A–D
+      Stop at First Regex Match
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 800
+  - id: parse_fail
+    label: |-
+      Parse Failure
+      extracted_answer = None
+      Item Score = 0
+      Item Stays in Denominator
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 1040
+  - id: exact_score
+    label: |-
+      Exact Letter Comparison
+      Extracted A–D == Locale Gold
+      True → 1 · False → 0
+      No Partial Credit
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 800
+  - id: metric
+    label: |-
+      Aggregate Accuracy
+      Per-locale = Σ Item Score / n
+      n = 10 by Default (debug = True)
+      n = 14,042 Only after debug = False
+    type: process
+    size: xl
+    position:
+      x: 4240
+      'y': 920
+  - id: report
+    label: |-
+      Publish Multilingual Results
+      Report Each of 14 Translations
+      Average = Mean of 14 Locale Scores
+      EN-US Separate · Full Run Needs debug = False
+    type: terminal
+    size: xl
+    position:
+      x: 4520
+      'y': 920
+  - id: implementation_drift
+    label: |-
+      Version and Category Drift
+      Parser Regexes Expanded in Jan 2025
+      simple-evals Deprecated July 2025
+      SW/YO Suffix Subjects Fall to “other”
+    type: document
+    size: xl
+    position:
+      x: 4240
+      'y': 1200
 edges:
-  - from: n1
-    to: n2
+  - from: evidence
+    to: paper_scope
+    type: data
+  - from: paper_scope
+    to: public_test
     type: primary
-  - from: n2
-    to: n3
+  - from: public_test
+    to: translate
     type: primary
-  - from: n3
-    to: n4
+  - from: translate
+    to: locale_release
     type: primary
-  - from: n4
-    to: n5
+  - from: translate
+    to: translation_boundary
+    type: optional
+  - from: locale_release
+    to: release_audit
+    type: optional
+  - from: locale_release
+    to: access_gate
+    type: optional
+  - from: access_gate
+    to: named_config
+    type: data
+    label: Named locale
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: access_gate
+    to: default_config
+    type: data
+    label: Default config
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: locale_release
+    to: eval_pin
     type: primary
-  - from: n5
-    to: n6
+  - from: eval_pin
+    to: debug_gate
     type: primary
-  - from: n6
-    to: n7
+  - from: debug_gate
+    to: language_gate
     type: primary
-  - from: n7
-    to: n8
+    label: Full run
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: debug_gate
+    to: debug_sample
+    type: optional
+    label: Default debug
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: debug_sample
+    to: language_gate
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0.5
+      entryY: 1
+  - from: language_gate
+    to: translated_blob
+    type: primary
+    label: Translated locale
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: language_gate
+    to: english_blob
+    type: primary
+    label: EN-US baseline
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: translated_blob
+    to: prompt
+    type: primary
+  - from: english_blob
+    to: prompt
+    type: primary
+  - from: prompt
+    to: sample
+    type: primary
+  - from: sample
+    to: response_gate
+    type: primary
+  - from: response_gate
+    to: normalize
+    type: primary
+    label: 'Yes'
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: response_gate
+    to: request_abort
+    type: optional
+    label: 'No'
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: normalize
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: parsed
+    type: primary
+    label: Parsed
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: parse_gate
+    to: parse_fail
+    type: primary
+    label: No match
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: parsed
+    to: exact_score
+    type: primary
+  - from: exact_score
+    to: metric
+    type: primary
+  - from: parse_fail
+    to: metric
+    type: primary
+  - from: metric
+    to: report
+    type: primary
+  - from: metric
+    to: implementation_drift
+    type: optional
 modules: []

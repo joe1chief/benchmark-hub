@@ -5,85 +5,235 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CheXBench 构建流程
-  description: 对齐论文的 CheXBench 构建流程：先定义胸片理解任务并收集公开 CXR 数据，经数据工程形成 CheXinstruct，训练 CheXagent，再在八类 CheXbench 任务和放射科医生读片研究中评测。
-  legend: 实线箭头表示数据整理、模型训练、基准评测和临床研究主流程。
+  description: >-
+    对齐论文的 CheXbench 流程：35 项任务分类与 32 个公开数据集经过统一工程和官方划分约束，保留测试样本构成 八类基准任务；CheXinstruct/CheXagent
+    训练和八名放射科医师读片研究与基准构建、评分明确分离。
+  legend: 实线表示基准构建与评分；虚线表示模型训练和临床研究背景。
 nodes:
-  - id: tasks
-    label: 任务设计
+  - id: taxonomy
+    label: |-
+      定义 35 项 CXR 解读任务
+      35 项任务分属五类
+      粗粒度图像感知 • 细粒度图像感知
+      文本生成 • 问答 • 其他
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 120
   - id: sources
-    label: 公开CXR集
+    label: |-
+      收集 32 个公开 CXR 数据集
+      1,077,494 张唯一图像
+      报告 • 标签 • 框 • 图注
     type: database
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 40
+      'y': 520
   - id: engineering
-    label: 数据工程
+    label: |-
+      人工质控 + 自动化工程
+      过滤低质量或无关样本
+      GPT-4 重构自由格式报告
+      统一文件、标签与任务映射
     type: process
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 340
+      'y': 320
+  - id: split
+    label: |-
+      保留官方或传统数据划分
+      严格分开训练、验证与测试
+      防止派生任务间数据泄漏
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 320
   - id: instruct
-    label: CheXinstruct
-    type: document
+    label: |-
+      训练背景：CheXinstruct
+      8,466,352 个指令—图像—回答三元组
+      每项任务从 10 个模板中采样
+    type: database
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 940
+      'y': 40
   - id: train
-    label: CheXagent训练
+    label: |-
+      三阶段训练 CheXagent
+      临床文本语言解码器
+      CXR—报告图像编码器
+      联合视觉语言指令微调
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: bench
-    label: CheXbench任务
+      x: 1540
+      'y': 40
+  - id: axes
+    label: |-
+      构建留出集 CheXbench
+      3 条评测轴上的 8 类任务
+      图像感知 • 图文推理 • 文本生成
     type: document
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: eval
-    label: 模型评测
+      x: 940
+      'y': 320
+  - id: perception
+    label: |-
+      图像感知：3 类任务
+      视角分类：600
+      时序分类：62
+      疾病识别：2,684
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 200
+  - id: reasoning
+    label: |-
+      图文推理：3 类任务
+      细粒度推理：380
+      VQA：238 • 短语定位：149
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 400
+  - id: generation
+    label: |-
+      文本生成：2 类任务
+      所见生成：2,451
+      所见摘要：1,394
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 600
+  - id: inputs
+    label: |-
+      标准化评测输入
+      指令 + 一张或多张 CXR（可带文本）
+      选择题 • 坐标框 • 自由文本
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: models
+    label: |-
+      比较基础模型与任务模型
+      通用 • 医疗 • 闭源模型
+      CheXagent 经独立训练路径进入
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 400
+  - id: metrics
+    label: |-
+      分任务指标
+      Accuracy • mIoU • mAP
+      CheXbert-F1 • BERTScore
+      RadGraph-F1 • ROUGE-L
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 400
+  - id: report
+    label: |-
+      报告 CheXbench 结果
+      比较三条评测轴上的八类任务
+      与临床效用结果分开呈现
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2440
+      'y': 400
   - id: reader
-    label: 读片研究
+    label: |-
+      独立临床读片研究
+      4 名住院医师 + 4 名主治医师
+      50 个 MIMIC 测试病例；每人 30 例
     type: user
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 1840
+      'y': 40
+  - id: reader_report
+    label: |-
+      读片研究结果（不计入基准分）
+      报告时间 • 检查指征适用性
+      编辑原因
+      写作 + 解读效率
+    type: terminal
+    size: xl
+    position:
+      x: 2140
+      'y': 40
 edges:
-  - from: tasks
-    to: sources
+  - from: taxonomy
+    to: engineering
     type: primary
   - from: sources
     to: engineering
     type: primary
   - from: engineering
+    to: split
+    type: primary
+  - from: split
     to: instruct
+    type: data
+  - from: split
+    to: axes
     type: primary
   - from: instruct
     to: train
+    type: data
+  - from: train
+    to: models
+    type: data
+    waypoints:
+      - x: 1740
+        'y': 160
+      - x: 1740
+        'y': 360
+  - from: axes
+    to: perception
+    type: primary
+  - from: axes
+    to: reasoning
+    type: primary
+  - from: axes
+    to: generation
+    type: primary
+  - from: perception
+    to: inputs
+    type: primary
+  - from: reasoning
+    to: inputs
+    type: primary
+  - from: generation
+    to: inputs
+    type: primary
+  - from: inputs
+    to: models
+    type: primary
+  - from: models
+    to: metrics
+    type: primary
+  - from: metrics
+    to: report
     type: primary
   - from: train
-    to: bench
-    type: primary
-  - from: bench
-    to: eval
-    type: primary
-  - from: eval
     to: reader
-    type: primary
+    type: data
+  - from: reader
+    to: reader_report
+    type: data
 modules: []

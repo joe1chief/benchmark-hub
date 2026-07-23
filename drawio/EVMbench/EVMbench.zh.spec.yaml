@@ -5,75 +5,340 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EVMbench 构建流程
-  description: 按论文对齐的 EVMbench 构建流程：从真实审计漏洞到本地 Ethereum 程序化评分。
-  legend: 实线箭头表示审计来源、漏洞筛选、oracle补丁/利用、本地EVM、检测/修补/利用模式、程序化评分和指标统计。
+  description: 按三个版本边界还原智能合约基准的分来源构建、隔离评分、Detect 历史奖励加权与固定聚合。
+  legend: 仅 Code4rena 经过 o3/Solidity/日期/许可门禁；Tempo 独立实现后再汇入 117/44/23 可运行发布。
 nodes:
-  - id: audits
-    label: 审计报告
+  - id: evidence
+    label: |-
+      三版本证据边界
+      CDN 初版 · 2026-02-19 · 120 / 45 / 24
+      arXiv v1 · 2026-03-05 · 117 / 44 / 23
+      固定可运行仓库见下方
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: code4rena
+    label: |-
+      公开 Code4rena 审计报告
+      高危漏洞候选
+      Tempo 不属于该门禁
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: vulns
-    label: 漏洞筛选
+      'y': 360
+  - id: screen
+    label: |-
+      仅 Code4rena 适用的门禁
+      o3 分类资金损失漏洞
+      Solidity · 2023 年 7 月起
+      宽松许可 / 再分发许可
     type: process
     size: xl
     position:
       x: 300
-      'y': 160
-  - id: oracle
-    label: Oracle工件
-    type: document
+      'y': 360
+  - id: quality
+    label: |-
+      Code4rena + OtterSec 质量控制
+      严重且可复现的漏洞
+      补写缺失测试 / 利用
+      人工试跑 · 排除作弊路径
+    type: process
     size: xl
     position:
       x: 560
-      'y': 160
-  - id: env
-    label: 本地EVM
+      'y': 360
+  - id: tempo
+    label: |-
+      选定的 Tempo 安全场景
+      与 Code4rena 报告分开
+      不经过 Code4rena 专属门禁
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 700
+  - id: tempo_qc
+    label: |-
+      Tempo 独立实现分支
+      实现漏洞场景与评分器
+      验证任务可复现且可运行
     type: process
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 560
+      'y': 700
+  - id: merge
+    label: |-
+      合并按来源处理的两条分支
+      最终 117 个漏洞
+      Patch 44 个子集 · Exploit 23 个子集
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 430
+  - id: release
+    label: |-
+      固定可运行发布
+      evmbench @ 2d5c7ab · frontier-evals @ 8ea5c65
+      可运行：Detect 117 · Patch 44 · Exploit 23
+      task_info.csv 仍有 120 条陈旧记录
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 430
+  - id: oracles
+    label: |-
+      构建智能体不可访问的标准产物
+      标准补丁 + 隐藏利用测试
+      部署脚本 + 标准交易序列
+      验证标准解能够正确得分
+    type: process
+    size: xl
+    position:
+      x: 1500
+      'y': 430
+  - id: environment
+    label: |-
+      隔离的 Ubuntu 24.04
+      Docker 任务容器 · 禁网
+      仓库 · 范围 · 已知问题 · 赞助方提示
+      评分使用独立且不可访问的容器
+    type: process
+    size: xl
+    position:
+      x: 1760
+      'y': 430
   - id: modes
-    label: 检修利用
+    label: |-
+      选择基准模式
+      Detect · Patch · Exploit
+    type: decision
+    size: xl
+    position:
+      x: 2020
+      'y': 430
+  - id: detect_agent
+    label: |-
+      Detect 智能体
+      检查限定范围的仓库
+      提交审计报告
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: grade
-    label: 程序评分
-    type: terminal
-    size: xl
-    position:
-      x: 1340
-      'y': 160
-  - id: score
-    label: 召回成功
+      x: 2280
+      'y': 100
+  - id: detect_grade
+    label: |-
+      Detect 裁判：未版本化 gpt-5 别名
+      推理强度 high · 快照未固定
+      匹配每个标准漏洞
+      召回率；误报不惩罚
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 2560
+      'y': 100
+  - id: detect_reward
+    label: |-
+      Detect 金融奖励
+      命中漏洞：历史审计奖励中位数
+      缺失 / 邀请赛 + Tempo = $0
+      输出：detect_award · detect_max_award
+      award_rate_metric = Σ 奖励 / Σ 最大奖励
+    type: document
+    size: xl
+    position:
+      x: 2860
+      'y': 100
+  - id: patch_agent
+    label: |-
+      Patch 智能体
+      修改存在漏洞的合约代码
+      提交仓库改动
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 430
+  - id: patch_grade
+    label: |-
+      恢复受保护测试
+      原有测试必须通过
+      排除依赖漏洞行为的原测试
+      隐藏利用测试必须失败
+      按漏洞判定成功
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 430
+  - id: exploit_agent
+    label: |-
+      Exploit 智能体
+      已注资密钥 + 本地 Anvil RPC
+      提交有序交易列表
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 760
+  - id: exploit_grade
+    label: |-
+      在独立评分器中重新部署并重放
+      Rust 检查状态 · 余额 · 事件
+      Veto RPC 阻止操纵评分器
+      按漏洞判定利用成功
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: attempt_mean
+    label: |-
+      每个漏洞的尝试均值
+      mean_v=(1/3) Σ_r score_vr
+      3 次独立尝试
+    type: process
+    size: xl
+    position:
+      x: 2860
+      'y': 430
+  - id: headline
+    label: |-
+      头条成功率
+      Σ_v mean_v / Σ_v max_v
+      先按漏洞求尝试均值再聚合
+    type: document
+    size: xl
+    position:
+      x: 3140
+      'y': 430
+  - id: bootstrap
+    label: |-
+      扁平漏洞 bootstrap
+      对漏洞进行有放回抽样
+      10,000 次重采样
+      2.5 / 97.5 百分位
+    type: process
+    size: xl
+    position:
+      x: 3420
+      'y': 430
+  - id: report
+    label: |-
+      模式得分报告
+      Detect · Patch · Exploit
+      成功率 + Detect 奖励率区间
+      成本与 token 作为次要诊断
+    type: terminal
+    size: xl
+    position:
+      x: 3700
+      'y': 430
 edges:
-  - from: audits
-    to: vulns
+  - from: evidence
+    to: code4rena
+    type: data
+  - from: code4rena
+    to: screen
     type: primary
-  - from: vulns
-    to: oracle
+  - from: screen
+    to: quality
     type: primary
-  - from: oracle
-    to: env
+  - from: quality
+    to: merge
     type: primary
-  - from: env
+  - from: tempo
+    to: tempo_qc
+    type: primary
+  - from: tempo_qc
+    to: merge
+    type: primary
+    waypoints:
+      - x: 900
+        'y': 750
+      - x: 900
+        'y': 600
+      - x: 1090
+        'y': 600
+  - from: merge
+    to: release
+    type: primary
+  - from: release
+    to: oracles
+    type: primary
+  - from: oracles
+    to: environment
+    type: primary
+  - from: environment
     to: modes
     type: primary
   - from: modes
-    to: grade
+    to: detect_agent
     type: primary
-  - from: grade
-    to: score
+    waypoints:
+      - x: 2150
+        'y': 480
+      - x: 2150
+        'y': 150
+  - from: detect_agent
+    to: detect_grade
+    type: primary
+  - from: modes
+    to: patch_agent
+    type: primary
+  - from: patch_agent
+    to: patch_grade
+    type: primary
+  - from: modes
+    to: exploit_agent
+    type: primary
+    waypoints:
+      - x: 2160
+        'y': 480
+      - x: 2160
+        'y': 810
+  - from: exploit_agent
+    to: exploit_grade
+    type: primary
+  - from: detect_grade
+    to: attempt_mean
+    type: primary
+    waypoints:
+      - x: 2820
+        'y': 150
+      - x: 2820
+        'y': 480
+  - from: detect_grade
+    to: detect_reward
+    type: primary
+  - from: detect_reward
+    to: bootstrap
+    type: data
+  - from: patch_grade
+    to: attempt_mean
+    type: primary
+  - from: exploit_grade
+    to: attempt_mean
+    type: primary
+    waypoints:
+      - x: 2840
+        'y': 810
+      - x: 2840
+        'y': 480
+  - from: attempt_mean
+    to: headline
+    type: primary
+  - from: headline
+    to: bootstrap
+    type: primary
+  - from: bootstrap
+    to: report
     type: primary
 modules: []

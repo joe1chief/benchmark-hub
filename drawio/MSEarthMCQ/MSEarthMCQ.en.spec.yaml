@@ -1,0 +1,365 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: MSEarthMCQ Build Process
+  description: >-
+    Version-3 pipeline from more than 400,000 Earth-science PDFs through figure mining, GPT-4o generation, three-phase
+    model voting, expert screening, and accuracy evaluation of 2,784 MCQs.
+  legend: >-
+    Phase A outcomes are mutually exclusive; MiniLM post-processing is optional and only revisits initially wrong rows.
+    Processing exceptions produce no result row. Source: arXiv:2505.20740v3 and official code commit d3ad753.
+nodes:
+  - id: papers
+    label: |-
+      Parse and Classify Papers
+      >400K OpenDataLab PDFs
+      MinerU JSON · CC BY 4.0
+      Five Earth Spheres
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: filter
+    label: |-
+      Filter Earth-observation Images
+      Qwen2.5-VL-72B · Repeated Sampling
+      Retain Consistent Positives · About 83K Papers
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: align
+    label: |-
+      Align Figures, Captions and Context
+      Regex Figure References · Context >2 Sentences
+      64,560 Papers · 289,891 Figures
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: refine
+    label: |-
+      Refine Captions with GPT-4o
+      Figure · Original Caption · Paper Context
+      Process Only Valid-context Items
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: generate
+    label: |-
+      Generate Candidate MCQs
+      GPT-4o · Figure · Both Captions
+      Four Options · Paper-grounded Reasoning
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
+  - id: phase_a
+    label: |-
+      Phase A Vote Outcome?
+      Original Caption · Five MLLMs
+    type: decision
+    size: xl
+    position:
+      x: 1420
+      'y': 40
+  - id: phase_b
+    label: |-
+      Phase B: >60% Correct?
+      Refined Caption · Same Five MLLMs
+      Pass → Specialized QA
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 420
+  - id: phase_c
+    label: |-
+      Phase C: >60% Correct?
+      GPT-4o · InternVL2.5-78B
+      Qwen2.5-VL-72B · Pass → Hard QA
+    type: decision
+    size: xl
+    position:
+      x: 860
+      'y': 420
+  - id: sample
+    label: |-
+      Sample 3,000 MCQs
+      Phase A 900 · B 1,800 · C 300
+      Send All Samples to Expert Review
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 420
+  - id: expert_valid
+    label: |-
+      Expert Review Valid?
+      Master's-level Earth Scientists
+      Complete Question · Correct Answer
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 420
+  - id: release
+    label: |-
+      Publish MSEarthMCQ
+      2,784 MCQs after 216 Removals
+      2,117 Discovery · 667 Perception
+      1,255 Single · 1,529 Multi-image
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 420
+  - id: discard
+    label: |-
+      Discard Candidate
+      Too Simple, Flawed,
+      Incomplete or Incorrect
+    type: loss
+    size: xl
+    position:
+      x: 860
+      'y': 720
+  - id: model_answer
+    label: |-
+      Run Structured MCQ Inference
+      Image · Question · Original Caption
+      Request JSON Answer and Explanation
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 900
+  - id: row_ok
+    label: Evaluation Row Produced?
+    type: decision
+    size: lg
+    position:
+      x: 300
+      'y': 920
+  - id: omitted
+    label: |-
+      Omit Processing Exception
+      No Result Row Is Written
+    type: loss
+    size: lg
+    position:
+      x: 300
+      'y': 1120
+  - id: initial_compare
+    label: |-
+      Perform Initial Exact Comparison
+      Regex Option, Else Raw Answer Text
+      Compare with Gold Option or Content
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 900
+  - id: initial_correct
+    label: Initially Correct?
+    type: decision
+    size: lg
+    position:
+      x: 860
+      'y': 920
+  - id: optional_retry
+    label: Apply Optional Post-process?
+    type: decision
+    size: lg
+    position:
+      x: 1140
+      'y': 920
+  - id: similarity
+    label: |-
+      all-MiniLM-L6-v2 Similarity
+      Select Closest Option Text
+    type: process
+    size: xl
+    position:
+      x: 1100
+      'y': 1100
+  - id: retry_compare
+    label: |-
+      Recompare Closest Option
+      May Flip Initial Error to Correct
+    type: process
+    size: xl
+    position:
+      x: 1380
+      'y': 1100
+  - id: score
+    label: |-
+      Report Accuracy
+      Correct / Evaluated Mapped Rows
+      Overall and Analysis Slices
+    type: terminal
+    size: xl
+    position:
+      x: 1420
+      'y': 900
+edges:
+  - from: papers
+    to: filter
+    type: primary
+  - from: filter
+    to: align
+    type: primary
+  - from: align
+    to: refine
+    type: primary
+  - from: refine
+    to: generate
+    type: primary
+  - from: generate
+    to: phase_a
+    type: primary
+  - from: phase_a
+    to: discard
+    type: optional
+    label: All correct
+    labelPosition: center
+    waypoints:
+      - x: 1600
+        'y': 200
+      - x: 1600
+        'y': 770
+      - x: 1060
+        'y': 770
+  - from: phase_a
+    to: phase_b
+    type: primary
+    label: '>40% wrong'
+    labelPosition: end
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 1
+      entryY: 0.5
+  - from: phase_a
+    to: sample
+    type: primary
+    label: Otherwise
+    labelPosition: center
+    waypoints:
+      - x: 1520
+        'y': 300
+      - x: 680
+        'y': 300
+  - from: phase_b
+    to: sample
+    type: primary
+    label: Pass >60%
+    labelPosition: center
+    waypoints:
+      - x: 1240
+        'y': 260
+      - x: 680
+        'y': 260
+  - from: phase_b
+    to: phase_c
+    type: primary
+    label: Fail ≤60%
+    labelPosition: center
+  - from: phase_c
+    to: sample
+    type: primary
+    label: Pass >60%
+    labelPosition: center
+  - from: phase_c
+    to: discard
+    type: optional
+    label: Fail ≤60%
+    labelPosition: center
+  - from: sample
+    to: expert_valid
+    type: primary
+  - from: expert_valid
+    to: release
+    type: primary
+    label: Valid
+    labelPosition: center
+  - from: expert_valid
+    to: discard
+    type: optional
+    label: Invalid
+    labelPosition: center
+    waypoints:
+      - x: 400
+        'y': 680
+      - x: 860
+        'y': 680
+  - from: release
+    to: model_answer
+    type: primary
+  - from: model_answer
+    to: row_ok
+    type: primary
+  - from: row_ok
+    to: initial_compare
+    type: primary
+    label: Yes · keep row
+    labelPosition: center
+  - from: row_ok
+    to: omitted
+    type: optional
+    label: No · exception
+    labelPosition: center
+  - from: initial_compare
+    to: initial_correct
+    type: primary
+  - from: initial_correct
+    to: score
+    type: primary
+    label: Yes · count correct
+    labelPosition: center
+    waypoints:
+      - x: 960
+        'y': 840
+      - x: 1520
+        'y': 840
+  - from: initial_correct
+    to: optional_retry
+    type: optional
+    label: No · initial error
+    labelPosition: center
+  - from: optional_retry
+    to: score
+    type: primary
+    label: No · keep error
+    labelPosition: center
+  - from: optional_retry
+    to: similarity
+    type: optional
+    label: Yes · poor instruction following
+    labelPosition: center
+  - from: similarity
+    to: retry_compare
+    type: optional
+  - from: retry_compare
+    to: score
+    type: optional
+  - from: omitted
+    to: score
+    type: optional
+    label: Excluded from denominator
+    labelPosition: center
+    waypoints:
+      - x: 400
+        'y': 1300
+      - x: 1520
+        'y': 1300
+modules: []

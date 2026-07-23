@@ -4,66 +4,108 @@ meta:
   source: generated
   layout: horizontal
   routing: orthogonal
-  title: CMATH 数据集构建流程
-  description: 依据论文第 2.2 至 2.3 节整理的题源、文本化、过滤、验证与四类标注流程。
-  legend: 实线箭头表示核心数据集构建主链；数字为六个年级规模之和。
+  title: CMATH 核心集构建与公开仓库子集
+  description: 依据论文第 2.2-2.3 节展示核心集收集与标注，再单独展示公开仓库中的 600 行开发集与 360 行干扰集。
+  legend: 实线箭头表示同一范围内的构建；次级箭头从论文 1,689 题核心集分支到公开仓库子集。程序计算最大数字位数使用题面数值与答案。
 nodes:
   - id: sources
-    label: 在线练习册与试卷
+    label: 网上练习册 + 考试
     type: document
     size: large
     position:
-      x: 80
-      'y': 80
+      x: 64
+      'y': 64
   - id: formats
-    label: PDF / Word 原文
+    label: PDF / Word 原稿
     type: document
     size: large
     position:
       x: 288
-      'y': 80
+      'y': 64
   - id: text
-    label: 自动或人工文本化
+    label: 自动/人工文本转写
     type: process
     size: large
     position:
-      x: 496
-      'y': 80
+      x: 512
+      'y': 64
+  - id: remove_graphical
+    label: 去除含图题
+    type: process
+    size: large
+    position:
+      x: 736
+      'y': 64
   - id: filter
-    label: 去图与清洗去重
+    label: 清洗去重
     type: process
     size: large
     position:
-      x: 704
-      'y': 80
+      x: 736
+      'y': 208
   - id: review
-    label: 多轮作者验证
+    label: 作者多轮复核
     type: process
     size: large
     position:
-      x: 704
-      'y': 272
+      x: 512
+      'y': 208
   - id: labels1
-    label: 年级与数值答案
-    type: process
-    size: large
-    position:
-      x: 496
-      'y': 272
-  - id: labels2
-    label: 步数与数字位数
+    label: 年级 + 数值答案
     type: process
     size: large
     position:
       x: 288
-      'y': 272
-  - id: final
-    label: 1,689 道核心题
+      'y': 208
+  - id: reasoning_steps
+    label: 人工推理步数
+    type: process
+    size: large
+    position:
+      x: 176
+      'y': 352
+  - id: answer_digits
+    label: 程序计算最大数字位数
+    type: process
+    size: large
+    position:
+      x: 400
+      'y': 352
+  - id: core_final
+    label: 论文核心集 · 1,689
     type: terminal
     size: large
     position:
-      x: 80
-      'y': 272
+      x: 288
+      'y': 496
+  - id: repo_dev
+    label: 公开开发集 · 600
+    type: database
+    size: large
+    position:
+      x: 64
+      'y': 640
+  - id: sample_60
+    label: 抽样 60 题 · 每年级 10 题
+    type: process
+    size: large
+    position:
+      x: 288
+      'y': 640
+  - id: distractor_variants
+    label: 添加 1-5 个数字干扰项
+    type: process
+    size: large
+    position:
+      x: 512
+      'y': 640
+  - id: repo_distractor
+    label: 公开干扰集 · 360
+    type: terminal
+    size: large
+    position:
+      x: 736
+      'y': 640
 edges:
   - from: sources
     to: formats
@@ -72,6 +114,9 @@ edges:
     to: text
     type: primary
   - from: text
+    to: remove_graphical
+    type: primary
+  - from: remove_graphical
     to: filter
     type: primary
   - from: filter
@@ -81,9 +126,31 @@ edges:
     to: labels1
     type: primary
   - from: labels1
-    to: labels2
+    to: reasoning_steps
     type: primary
-  - from: labels2
-    to: final
+  - from: labels1
+    to: answer_digits
+    type: primary
+  - from: reasoning_steps
+    to: core_final
+    type: primary
+  - from: answer_digits
+    to: core_final
+    type: primary
+  - from: core_final
+    to: repo_dev
+    type: secondary
+    style:
+      dashed: true
+  - from: core_final
+    to: sample_60
+    type: secondary
+    style:
+      dashed: true
+  - from: sample_60
+    to: distractor_variants
+    type: primary
+  - from: distractor_variants
+    to: repo_distractor
     type: primary
 modules: []

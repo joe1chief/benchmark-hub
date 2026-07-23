@@ -4,89 +4,192 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ClemBench Build Process
+  title: clembench-2024 Build Process
   description: >-
-    Paper-aligned construction flow for clembench2024: dialogue games are specified by templates, parsers, and game
-    flows; a GameMaster instantiates fresh instances for LLM self-play; scores are computed from formal play and game
-    quality, then compared with human and multilingual baselines.
-  legend: Solid arrows show game specification, instance generation, self-play evaluation, and baseline analysis.
+    Paper-era clembench flow: reusable game specifications generate fresh instances for offline self-play; formal play
+    and normalized game quality form clemscore, while expert and translated reference-game studies validate the design.
+  legend: Solid arrows follow the May 2024 paper; the dashed branch records later v3.0 repository drift.
 nodes:
-  - id: templates
-    label: Game Templates
+  - id: evidence_boundary
+    label: |-
+      Paper-era Evidence Boundary
+      arXiv 2405.20859v1
+      Official Repo ba687db
+      Evaluation Run: May 2024
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: parsers
-    label: Parsing Rules
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: master
-    label: GameMaster
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: instances
-    label: Fresh Set
+      'y': 220
+  - id: release_drift
+    label: |-
+      Current Repo adff278
+      v3.0 Games and CLI
+      Later Release; Not 2024 Paper
     type: document
     size: xl
     position:
-      x: 820
-      'y': 160
+      x: 340
+      'y': 440
+  - id: game_spec
+    label: |-
+      Specify Each Dialogue Game
+      Prompt Templates
+      Response Parsing Rules
+      Game Flow + Terminal State
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: instances
+    label: |-
+      Create New Instances for All Games
+      Sample Existing Pools
+      Light Manual Target Curation
+      Reduce Fixed-instance Contamination
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 220
+  - id: gamemaster
+    label: |-
+      Instantiate Programmatic GameMaster
+      Fill Templates with Instances
+      Control Turns + Game Rules
+      Detect Terminal States
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 220
   - id: selfplay
-    label: LLM Self-play
+    label: |-
+      Run LLM-vs-LLM Self-play
+      Prompt Both Roles Turn by Turn
+      Record Full Offline Episodes
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: Game Scores
-    type: document
+      x: 1240
+      'y': 220
+  - id: formal
+    label: |-
+      Check Formal Play
+      Parsing-rule Violations = Not Played
+      Measure % Games Played to End
+    type: process
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1540
+      'y': 40
+  - id: quality
+    label: |-
+      Score Game-specific Quality
+      Main Metric 0–100 per Game
+      Score Well-formed Episodes
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 400
+  - id: clemscore
+    label: |-
+      Compute clemscore
+      Average Main Metric per Game
+      Then Average across Games
+      % Played × Quality Score Product
+    type: terminal
+    size: xl
+    position:
+      x: 1840
+      'y': 220
   - id: human
-    label: Human Baseline
+    label: |-
+      Human Expert Baseline
+      Authors Play 10–15 Episodes/Game
+      Exclude Instances They Created
+      Omit Wordle-clue/Critic Variants
     type: user
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: multi
-    label: Multilingual
+      x: 2140
+      'y': 40
+  - id: multilingual
+    label: |-
+      Reference Game Case Study
+      Native Speakers Translate Prompts
+      Target Expressions + Parsing Rules
+      Keep the Same Game Logic
+    type: user
+    size: xl
+    position:
+      x: 2140
+      'y': 400
+  - id: validation
+    label: |-
+      Validate Benchmark Properties
+      Run-to-run Rank Correlation 0.71
+      Human Quality 86.93 • 100% Played
+      CA τ=0.65 • HELM τ=0.39
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: report
+    label: |-
+      Publish May 2024 Results
+      clemscore • % Played • Quality
+      53 Models + Human Baseline
+      Multilingual Reference Analysis
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 2740
+      'y': 220
 edges:
-  - from: templates
-    to: parsers
+  - from: evidence_boundary
+    to: game_spec
     type: primary
-  - from: parsers
-    to: master
-    type: primary
-  - from: master
+  - from: evidence_boundary
+    to: release_drift
+    type: data
+  - from: game_spec
     to: instances
     type: primary
   - from: instances
+    to: gamemaster
+    type: primary
+  - from: gamemaster
     to: selfplay
     type: primary
   - from: selfplay
-    to: scores
+    to: formal
     type: primary
-  - from: scores
+  - from: selfplay
+    to: quality
+    type: primary
+  - from: formal
+    to: clemscore
+    type: primary
+  - from: quality
+    to: clemscore
+    type: primary
+  - from: clemscore
     to: human
     type: primary
+  - from: clemscore
+    to: multilingual
+    type: primary
   - from: human
-    to: multi
+    to: validation
+    type: primary
+  - from: multilingual
+    to: validation
+    type: primary
+  - from: validation
+    to: report
     type: primary
 modules: []

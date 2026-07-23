@@ -4,117 +4,269 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: 2WikiMultihopQA 构建流程
-  description: 基于 COLING 2020 论文与 arXiv 源码整理的 2WikiMultihopQA 数据集构建流程。
-  legend: 实线表示主构建流程；虚线表示进入统一质量门之前的分支生成路径。
+  title: 2WikiMultihopQA 构建与评测流程
+  description: 按论文重建带日期的 Wikipedia/Wikidata 信源、四类问题、显式有效性门控、保留残余错配事实的后处理、TF-IDF 干扰段、难度划分与官方三任务评分。
+  legend: 实线箭头表示构建与评测顺序；残余信源错配会如实标注，而非画成已完全清除。
 nodes:
   - id: source
     label: |-
-      Wiki 摘要 + Wikidata
-      5.95M 实体 / 23,763 组
+      Wikipedia / Wikidata 数据转储
+      英文 Wikipedia：2020-01-01
+      英文 Wikidata：2019-12-31
+      5,950,475 个实体 • 23,763 个分组
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 280
   - id: templates
     label: |-
-      问题模板
-      HotpotQA NER + 人工模板
-      4 类问题
+      创建问题模板
+      17,456 道 HotpotQA 比较题
+      spaCy NER + 人工模板
+      前 50 类热门实体
+      删除单跳 / 依赖上下文的形式
     type: process
     size: xl
     position:
       x: 280
-      'y': 70
-  - id: rules
+      'y': 100
+  - id: logical_rules
     label: |-
-      逻辑规则校验
-      AMIE 候选 -> 28 条 Wikidata 规则
+      挖掘逻辑规则
+      AMIE 候选规则
+      人工验证 28 条规则
     type: process
     size: xl
     position:
       x: 280
-      'y': 250
-  - id: compare
+      'y': 500
+  - id: comparison
     label: |-
-      comparison 生成
-      抽取实体对
-      共同关系 + 摘要
+      比较类问题
+      比较配对实体
     type: process
     size: xl
     position:
-      x: 540
-      'y': 70
-  - id: bridge
+      x: 520
+      'y': 40
+  - id: bridge_comparison
     label: |-
-      bridge 生成
-      构造二跳链路
-      inference + compositional
+      桥接比较类问题
+      桥接实体 + 比较
     type: process
     size: xl
     position:
-      x: 540
-      'y': 250
-  - id: sample
+      x: 520
+      'y': 200
+  - id: inference
     label: |-
-      QA 样本字段
-      Q、A、C、句级 SF
-      证据三元组
+      推断类问题
+      应用已验证关系链
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 400
+  - id: compositional
+    label: |-
+      组合类问题
+      组合两条关系
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 560
+  - id: comparison_gate
+    label: |-
+      比较有效性门控
+      两个答案跨度均须出现
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 40
+  - id: bridge_gate
+    label: |-
+      桥接比较门控
+      满足提及 / 不提及约束
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 200
+  - id: two_hop_gate
+    label: |-
+      两跳跨度门控
+      p 提及桥接实体；p1 含答案
+      p 不得含答案；p1 不得含起始实体
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 480
+  - id: qa_records
+    label: |-
+      构建问答与证据记录
+      问题 • 答案 • 支持事实
+      Wikidata 证据三元组
     type: document
     size: xl
     position:
-      x: 800
-      'y': 160
-  - id: quality
+      x: 1000
+      'y': 280
+  - id: postprocess
     label: |-
-      质量门
-      移除歧义、相等比较
-      检查 Wiki-Wikidata 不匹配
-    type: decision
+      后处理与错配审计
+      平衡 yes / no；删除歧义
+      启发式规则 + 人工检查
+      训练抽查仍有 8 / 100 语义错配
+    type: process
     size: xl
     position:
-      x: 1060
-      'y': 160
+      x: 1240
+      'y': 280
+  - id: distractors
+    label: |-
+      检索 TF-IDF 干扰段
+      检索前 50，保留 8 或 6 段
+      打乱组成 10 个段落
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 280
   - id: dataset
     label: |-
-      发布与评估
-      train / dev / test
-      answer、SF、evidence EM/F1
+      2WikiMultihopQA
+      192,606 道问题
+      四类问题
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 280
+  - id: split_model
+    label: |-
+      按难度划分
+      单跳 BERT • 五折分析
+      交叉验证平均 F1：86.7%
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 280
+  - id: splits
+    label: |-
+      发布划分
+      训练中等 154,878
+      训练困难 12,576
+      开发 12,576 • 测试 12,576
+    type: database
+    size: xl
+    position:
+      x: 2200
+      'y': 280
+  - id: evaluation
+    label: |-
+      官方评测输入
+      问题 + 10 个段落
+      v1.1 支持别名 / 居民称谓
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 760
+  - id: three_tasks
+    label: |-
+      三项预测任务
+      答案跨度 • 句级支持事实
+      证据三元组
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 760
+  - id: joint_metrics
+    label: |-
+      官方指标
+      各任务 EM / F1
+      联合 EM • 联合 F1
     type: terminal
     size: xl
     position:
-      x: 1320
-      'y': 160
+      x: 1720
+      'y': 760
 edges:
   - from: source
     to: templates
     type: primary
   - from: source
-    to: rules
+    to: logical_rules
     type: primary
   - from: templates
-    to: compare
-    type: data
-    label: comparison / bridge-comparison
+    to: comparison
+    type: primary
   - from: templates
-    to: bridge
-    type: data
-    label: bridge 模板
-  - from: rules
-    to: bridge
+    to: bridge_comparison
     type: primary
-    label: inference 规则
-  - from: compare
-    to: sample
+  - from: templates
+    to: inference
     type: primary
-  - from: bridge
-    to: sample
+  - from: templates
+    to: compositional
     type: primary
-  - from: sample
-    to: quality
+    waypoints:
+      - x: 412
+        'y': 468
+      - x: 574
+        'y': 468
+  - from: logical_rules
+    to: inference
     type: primary
-  - from: quality
+  - from: comparison
+    to: comparison_gate
+    type: primary
+  - from: bridge_comparison
+    to: bridge_gate
+    type: primary
+  - from: inference
+    to: two_hop_gate
+    type: primary
+  - from: compositional
+    to: two_hop_gate
+    type: primary
+  - from: comparison_gate
+    to: qa_records
+    type: primary
+  - from: bridge_gate
+    to: qa_records
+    type: primary
+  - from: two_hop_gate
+    to: qa_records
+    type: primary
+  - from: qa_records
+    to: postprocess
+    type: primary
+  - from: postprocess
+    to: distractors
+    type: primary
+  - from: distractors
     to: dataset
+    type: primary
+  - from: dataset
+    to: split_model
+    type: primary
+  - from: split_model
+    to: splits
+    type: primary
+  - from: splits
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: three_tasks
+    type: primary
+  - from: three_tasks
+    to: joint_metrics
     type: primary
 modules: []

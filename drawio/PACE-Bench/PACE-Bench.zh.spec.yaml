@@ -1,0 +1,420 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: PACE-Bench 构建、验证与发布流程
+  description: 与论文 v2 和固定一手源一致地展示严格局部/全局代理筛选、留出模型验证，以及四个加权目标代理的独立全模型发布分支。
+  legend: 实线区分留一验证与全模型发布；虚线隔离固定证据、论文与代码的 SVD 差异、发布身份、未解析内容和上游混合许可。
+nodes:
+  - id: evidence
+    label: |-
+      固定一手证据
+      arXiv 2607.02032v2 SHA256 0af39b8c953f
+      Git dc2ef80e00ad · 筛选代码 a42cd03e0977
+      HF ce177cfe25bc · 数据卡 c7fbf603d2d6
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
+  - id: targets
+    label: |-
+      评测四个智能体目标与 14 个模型
+      GAIA 165 · SWE-Bench Verified 500
+      SWE-Bench Multimodal 102
+      SWT-Bench 430 · 使用 OpenHands Index
+    type: database
+    size: xl
+    position:
+      x: 260
+      'y': 40
+  - id: sources
+    label: |-
+      评测 19 个非智能体基准
+      覆盖 11 类能力的实例得分
+      使用 lm-evaluation-harness 或官方代码
+      提供低成本文本、代码与多模态信号
+    type: database
+    size: xl
+    position:
+      x: 500
+      'y': 220
+  - id: matrices
+    label: |-
+      构建来源与目标矩阵
+      X：模型乘来源实例得分
+      P：逐目标实例的智能体得分
+      丢弃近零方差来源列
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: protocol_gate
+    label: |-
+      选择协议
+      留出验证
+      或全模型发布
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 40
+  - id: loocv
+    label: |-
+      执行严格模型留一验证
+      14 个模型中留出 1 个
+      其余 13 个用于筛选与拟合
+      汇总 14 次留出预测
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 40
+  - id: global_basis
+    label: |-
+      形成论文全局 SVD 基
+      仅对校准矩阵 X 做薄 SVD
+      保留右奇异几何结构 V
+      论文方法声明排除留出模型
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 40
+  - id: code_boundary
+    label: |-
+      论文与代码的 SVD 边界
+      论文声明排除留出模型
+      cli.py 用全部 14 行 X 构建 Vt_full
+      目标 Y 仍只使用训练折
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: signals
+    label: |-
+      为每个候选实例打分
+      相关性为绝对 Spearman rho
+      杠杆度 h 为 V 载荷平方和
+      rho 仅由校准模型计算
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 400
+  - id: selection_gate
+    label: |-
+      拆分严格预算 C
+      局部预算 C_L
+      全局预算 C_G
+    type: decision
+    size: xl
+    position:
+      x: 1220
+      'y': 400
+  - id: local
+    label: |-
+      选择局部子集 L
+      按绝对 Spearman rho 排序
+      在已选 X_L 上重新执行 SVD
+      构建目标自适应局部基
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 280
+  - id: global
+    label: |-
+      选择全局子集 G
+      按 h 乘绝对 rho 排序
+      使用全局来源池几何结构
+      兼顾信息量与目标相关性
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 520
+  - id: union
+    label: |-
+      保证 C 个唯一复合实例
+      按 C_L:C_G 比例合并 L 与 G
+      遇到重叠时继续扩展两侧排序
+      每个目标达到 C = 100 后停止
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 400
+  - id: embeddings
+    label: |-
+      嵌入校准模型与留出模型
+      L 使用局部 SVD 坐标
+      G 使用全局伪逆坐标
+      始终保留两个独立视角
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 400
+  - id: bootstrap
+    label: |-
+      筛选后自助采样目标实例
+      对目标条目进行有放回采样
+      复现设置 B = 300 且种子为 42
+      汇集含噪目标均值用于拟合
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 400
+  - id: goal_gate
+    label: |-
+      预测目标
+      绝对得分
+      或成对排序
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 400
+  - id: absolute
+    label: |-
+      目标 A：发布代码实现
+      以 Spearman 权重投影 SVD 坐标
+      对自助采样目标均值拟合带截距 OLS
+      论文正文描述原始 C 维向量预测器
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 700
+  - id: pairwise
+    label: |-
+      目标 B：预测成对偏好
+      构造有序模型得分差
+      拟合带岭正则的逻辑回归
+      复用目标 A 的实例筛选
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 920
+  - id: ensemble
+    label: |-
+      集成局部与全局路径
+      用 lambda 混合两类留出预测
+      按目标调节预算、秩与混合系数
+      保持严格 100 实例并集
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 800
+  - id: report
+    label: |-
+      报告 C = 100 的留一代理质量
+      平均 MAE 3.80% · Spearman 0.81
+      Pearson 0.74 · 成对准确率 84.37%
+      目标成本低于 1%
+      自动调参使用聚合后的留出标签
+    type: terminal
+    size: xl
+    position:
+      x: 740
+      'y': 800
+  - id: fit_all
+    label: |-
+      物化全模型 PACE-Bench
+      使用固定超参数与全部 14 个模型
+      此分支没有留出预测
+      为四个目标拟合两条路径的权重
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 1050
+  - id: hf_release
+    label: |-
+      发布四个加权 JSONL 文件
+      GAIA 100 · SWE 100
+      多模态 105 · SWT 107 行
+      含题面、答案、指标、权重、图像 · 来源 12 / 19
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 1050
+  - id: release_boundary
+    label: |-
+      验证与身份边界
+      留一指标不等于全模型发布评测
+      每个文件有 100 个唯一复合键
+      多模态 5 行、SWT 7 行为局部/全局重复
+    type: document
+    size: xl
+    position:
+      x: 1220
+      'y': 1050
+  - id: content_boundary
+    label: |-
+      发布内容边界
+      412 行中 405 行内容已解析
+      上游漂移导致 7 行仍未解析
+      身份键为基准、子目录与实例 ID
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 1050
+  - id: license_boundary
+    label: |-
+      开放性与许可边界
+      HF 声明 mixed-upstream
+      每个实例保留各自上游条款
+      Git 快照没有 LICENSE 或标签发布
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 1050
+edges:
+  - from: evidence
+    to: targets
+    type: secondary
+    style:
+      dashed: true
+  - from: evidence
+    to: sources
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 140
+        'y': 190
+      - x: 620
+        'y': 190
+  - from: targets
+    to: matrices
+    type: primary
+  - from: sources
+    to: matrices
+    type: primary
+    waypoints:
+      - x: 700
+        'y': 100
+  - from: matrices
+    to: protocol_gate
+    type: primary
+  - from: protocol_gate
+    to: loocv
+    type: primary
+    label: 验证
+  - from: protocol_gate
+    to: fit_all
+    type: primary
+    label: 发布
+    waypoints:
+      - x: 1100
+        'y': 190
+      - x: 1960
+        'y': 190
+      - x: 1960
+        'y': 1110
+  - from: loocv
+    to: global_basis
+    type: primary
+  - from: global_basis
+    to: signals
+    type: primary
+  - from: global_basis
+    to: code_boundary
+    type: secondary
+    label: 论文代码差异
+    style:
+      dashed: true
+  - from: signals
+    to: selection_gate
+    type: primary
+  - from: selection_gate
+    to: local
+    type: primary
+    label: 局部
+  - from: selection_gate
+    to: global
+    type: primary
+    label: 全局
+  - from: local
+    to: union
+    type: primary
+  - from: global
+    to: union
+    type: primary
+  - from: union
+    to: embeddings
+    type: primary
+  - from: embeddings
+    to: bootstrap
+    type: primary
+  - from: bootstrap
+    to: goal_gate
+    type: primary
+  - from: goal_gate
+    to: absolute
+    type: primary
+    label: 目标 A
+  - from: goal_gate
+    to: pairwise
+    type: primary
+    label: 目标 B
+    waypoints:
+      - x: 140
+        'y': 620
+      - x: 380
+        'y': 620
+  - from: absolute
+    to: ensemble
+    type: primary
+  - from: pairwise
+    to: ensemble
+    type: primary
+  - from: ensemble
+    to: report
+    type: primary
+  - from: fit_all
+    to: hf_release
+    type: primary
+  - from: report
+    to: release_boundary
+    type: secondary
+    label: 留一验证证据
+    style:
+      dashed: true
+    waypoints:
+      - x: 860
+        'y': 970
+      - x: 1340
+        'y': 970
+  - from: hf_release
+    to: release_boundary
+    type: secondary
+    label: 快照
+    style:
+      dashed: true
+      fontSize: 9
+  - from: release_boundary
+    to: content_boundary
+    type: secondary
+    label: 内容覆盖
+    style:
+      dashed: true
+  - from: content_boundary
+    to: license_boundary
+    type: secondary
+    label: 许可条款
+    style:
+      dashed: true
+modules: []

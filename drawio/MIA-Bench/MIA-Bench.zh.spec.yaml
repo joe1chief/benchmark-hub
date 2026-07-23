@@ -1,89 +1,538 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MIA-Bench Build Process (Chinese)
-  description: MIA-Bench 的论文对齐构建流程：多源图像配人工分层指令，质量规则防止泄漏和非视觉捷径，子指令分类加权，并由 GPT-4o 评估遵循分数。
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: MIA-Bench 证据对齐构建流程
+  description: 基于 arXiv:2407.01509v5 与官方仓库提交 5422852d98cb167390da9501200360860435efb1，重建基准构建、 固定公开版本及可执行的 GPT-4o 评测器。
+  legend: 实线主箭头表示正常构建与评测链，虚线数据箭头表示固定发布链，可选分支终止被排除的评测行，依赖箭头指向证据边界。 第 3.2 节 SFT 数据不属于基准构建范围。
 nodes:
-  - id: images
-    label: 图像来源
+  - id: evidence
+    label: |-
+      固定一手证据
+      论文 v5 · ICLR 2025
+      仓库 5422852d · 无标签
+      核查于 2026-07-21
+    type: document
+    module: build
+    size: xl
+    position:
+      x: 96
+      'y': 240
+  - id: sources
+    label: |-
+      确定四类图像来源
+      COCO 2017 验证集 · SBU
+      TextVQA · Flickr
+      最终 400 个图像-提示对
     type: database
+    module: build
     size: xl
     position:
-      x: 40
-      'y': 160
-  - id: prompts
-    label: 人工提示
-    type: document
-    size: xl
-    position:
-      x: 280
-      'y': 160
-  - id: rules
-    label: 质量规则
-    type: decision
-    size: xl
-    position:
-      x: 520
-      'y': 160
-  - id: types
-    label: 八类指令
+      x: 368
+      'y': 240
+  - id: sampling
+    label: |-
+      选择来源图像
+      随机：COCO · SBU · TextVQA
+      Flickr：论文仅报告多样主题
+      Flickr 选择方法未披露
     type: process
+    module: build
     size: xl
     position:
-      x: 760
-      'y': 160
-  - id: levels
-    label: 复杂度
+      x: 640
+      'y': 240
+  - id: content_labels
+    label: |-
+      标注图像内容
+      GPT-4V 主题用于图 4
+      公开 JSON 不含内容标签
+      标注提示 / 快照未公开
     type: process
+    module: build
     size: xl
     position:
-      x: 1000
-      'y': 160
-  - id: weights
-    label: 权重
-    type: document
-    size: xl
-    position:
-      x: 1240
-      'y': 160
-  - id: judge
-    label: GPT-4o评判
+      x: 912
+      'y': 240
+  - id: author
+    label: |-
+      人工编写指令
+      多样 · 困难 · 开放式
+      组合多个请求 / 约束
+      每张图像对应一条指令
     type: user
+    module: build
     size: xl
     position:
-      x: 1480
-      'y': 160
-  - id: score
-    label: 遵循率
+      x: 1184
+      'y': 240
+  - id: construction_gaps
+    label: |-
+      未披露的构建协议
+      来源配额 / 随机种子
+      标注者数量 / 培训
+      无公开质检 / 拒绝 / 仲裁流程
+      GPT-4V 提示 / 版本 / 解码
+    type: document
+    module: build
+    size: xl
+    position:
+      x: 1184
+      'y': 40
+    style:
+      fontSize: 9
+  - id: qc
+    label: |-
+      遵循三项编写原则
+      正确性：人类可回答
+      不泄露答案
+      回答必须依赖图像
+      未发布接受 / 拒绝门槛
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 1456
+      'y': 240
+  - id: decompose
+    label: |-
+      拆分每条指令
+      保存原子子指令
+      保留有序组件边界
+      记录 num_of_component
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 1728
+      'y': 240
+  - id: taxonomy
+    label: |-
+      分配两套采集分类
+      论文八类子指令
+      五类复杂度标签
+      复杂度不作为报告指标
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 2000
+      'y': 240
+  - id: weights
+    label: |-
+      分配组件最高权重
+      重要性 + 难度 · 1–10
+      论文规则：每题总和 = 10
+      若含描述类：两组件时为 6，三项以上为 4
+    type: process
+    module: build
+    size: xl
+    position:
+      x: 2272
+      'y': 240
+    style:
+      fontSize: 9
+  - id: dataset
+    label: |-
+      构成论文基准
+      400 个图像-提示对
+      图像 + 指令 + 组件
+      类型 + 权重 + 复杂度
+    type: database
+    module: build
+    size: xl
+    position:
+      x: 2272
+      'y': 560
+  - id: release_fields
+    label: |-
+      固定 JSON 版本 · f75671cd
+      400 行 · 398 条唯一指令
+      image · instruction · type
+      num_of_component · components
+      component_weight · component_type
+      image_name：80 行 · 21 个值
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 2000
+      'y': 560
+    style:
+      fontSize: 9
+  - id: release_audit
+    label: |-
+      发布完整性审计
+      每题组件数：2 / 3 / 4 / 5
+      对应数量：204 / 155 / 40 / 1
+      单题内类别重复：22
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 1728
+      'y': 560
+    style:
+      fontSize: 9
+  - id: weight_drift
+    label: |-
+      论文权重规则审计 · 零基行号
+      描述类违例：3 · 9 · 31
+      308 · 316 · 372
+      行 261：含两个描述类组件，规则有歧义
+      权重和 = 8：行 241 · 247
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 1456
+      'y': 560
+    style:
+      fontSize: 9
+  - id: taxonomy_drift
+    label: |-
+      论文名称 ↔ 发布键名
+      description ↔ describe
+      genre ↔ linguistics · OCR ↔ textual
+      其余采用规范化蛇形命名
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 1184
+      'y': 560
+    style:
+      fontSize: 9
+  - id: image_boundary
+    label: |-
+      图像访问边界
+      400 个唯一图像字符串
+      399 个 HTTP(S) · 零基行 193 缺协议
+      仅 URL · 无图像包
+      README：URL 不稳定 · 三次修复
+      无逐行来源字段
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 912
+      'y': 560
+    style:
+      fontSize: 9
+  - id: openness
+    label: |-
+      公开发布边界
+      数据 + notebook + 单行示例
+      仓库附自定义 Apple 许可
+      无依赖锁定 / 测试
+      无参考答案 / 裁判输出
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 640
+      'y': 560
+    style:
+      fontSize: 9
+  - id: candidate
+    label: |-
+      运行候选多模态模型推理
+      README 约定：url + text
+      失败时令 text = "error"
+      单行示例却使用
+      question_id + prompt + text
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 2272
+      'y': 880
+    style:
+      fontSize: 9
+  - id: positional_join
+    label: |-
+      载入基准与候选 JSONL
+      按候选文件行数迭代
+      按行位置配对指令
+      忽略基准 image 字段
+      裁判直接接收候选行 url
+      不校验 URL / 长度 / 顺序
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 2000
+      'y': 880
+    style:
+      fontSize: 9
+  - id: error_gate
+    label: 候选 text 是否为 "error"？
+    type: decision
+    module: evaluate
+    size: xl
+    position:
+      x: 1728
+      'y': 880
+  - id: judge_prompt
+    label: |-
+      否 → 构造固定英文裁判提示
+      指令 + 有序组件
+      各组件最高权重
+      候选回答 + 严格评分要求
+      要求首句采用指定分数格式
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1456
+      'y': 880
+    style:
+      fontSize: 9
+  - id: judge_call
+    label: |-
+      调用多模态 GPT-4o 裁判
+      用户文本 + 候选行 url
+      无系统消息 · max_tokens 2,000
+      bare except 最多重试五次
+      快照 / 其他解码参数未固定
+    type: user
+    module: evaluate
+    size: xl
+    position:
+      x: 1184
+      'y': 880
+    style:
+      fontSize: 9
+  - id: parse
+    label: |-
+      仅解析首句
+      句点 → 逗号 → 冒号 / 斜杠
+      按类别与总分保存整数比率
+      不检查边界 / 组件数 / 求和
+      不保证八类均有得分
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 912
+      'y': 880
+    style:
+      fontSize: 9
+  - id: failure_skip
+    label: |-
+      是 / 调用失败 / 格式异常 → 排除
+      "error" 或五次失败：保留初始整数
+      裁判格式异常：score_raw 为字符串
+      广义解析异常：静默吞掉
+      不进入均值；实际分母缩小
     type: terminal
+    module: evaluate
     size: xl
     position:
-      x: 1720
-      'y': 160
+      x: 1456
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: judge_drift
+    label: |-
+      裁判版本漂移 · 论文 v5
+      mini-2024-07-18 · 4o-2024-05-13
+      4o-2024-11-20 · chatgpt-4o-latest
+      分数变化，八模型排名稳定
+      表3：0–100 · 表6–9：0–1
+      波动约1%；notebook："gpt-4o"
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 1184
+      'y': 1400
+    style:
+      fontSize: 9
+  - id: overwrite
+    label: |-
+      分类汇总注意项
+      score_dict 以类别为键
+      重复类别会覆盖先前组件
+      发布集中 22 题可能触发
+      total_score 单独解析
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 912
+      'y': 1400
+    style:
+      fontSize: 9
+  - id: aggregate
+    label: |-
+      对成功解析的比率求均值
+      各类别算术平均
+      total_score 算术平均
+      notebook 输出范围：0–1
+    type: formula
+    module: evaluate
+    size: xl
+    position:
+      x: 640
+      'y': 880
+  - id: report
+    label: |-
+      报告尺度约定
+      方法与表 1 / 3：0–100
+      notebook 与表 6–9：0–1
+      主总分 = 原始均分 ÷ 10 × 100
+      八类分项 · 声称使用全部 400 条
+      不报告复杂度标签
+    type: terminal
+    module: evaluate
+    size: xl
+    position:
+      x: 368
+      'y': 880
+    style:
+      fontSize: 9
+  - id: evaluator_gaps
+    label: |-
+      复现边界
+      论文表格的裁判快照未固定
+      示例结构与 notebook 冲突
+      无全集守卫 / 错误报告
+      无托管提交流程
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 96
+      'y': 880
+    style:
+      fontSize: 9
 edges:
-  - from: images
-    to: prompts
+  - from: evidence
+    to: sources
     type: primary
-  - from: prompts
-    to: rules
+  - from: sources
+    to: sampling
     type: primary
-  - from: rules
-    to: types
+  - from: sampling
+    to: content_labels
     type: primary
-  - from: types
-    to: levels
+  - from: content_labels
+    to: author
     type: primary
-  - from: levels
+  - from: author
+    to: qc
+    type: primary
+  - from: author
+    to: construction_gaps
+    type: dependency
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: qc
+    to: decompose
+    type: primary
+  - from: decompose
+    to: taxonomy
+    type: primary
+  - from: taxonomy
     to: weights
     type: primary
   - from: weights
-    to: judge
+    to: dataset
     type: primary
-  - from: judge
-    to: score
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: dataset
+    to: release_fields
+    type: data
+  - from: release_fields
+    to: release_audit
+    type: data
+  - from: release_audit
+    to: weight_drift
+    type: data
+  - from: weight_drift
+    to: taxonomy_drift
+    type: data
+  - from: taxonomy_drift
+    to: image_boundary
+    type: data
+  - from: image_boundary
+    to: openness
+    type: data
+  - from: dataset
+    to: candidate
     type: primary
-modules: []
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: candidate
+    to: positional_join
+    type: primary
+  - from: positional_join
+    to: error_gate
+    type: primary
+  - from: error_gate
+    to: judge_prompt
+    type: primary
+  - from: judge_prompt
+    to: judge_call
+    type: primary
+  - from: judge_call
+    to: parse
+    type: primary
+  - from: parse
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
+    type: primary
+  - from: report
+    to: evaluator_gaps
+    type: dependency
+  - from: error_gate
+    to: failure_skip
+    type: optional
+    waypoints:
+      - x: 1728
+        'y': 1056
+      - x: 1576
+        'y': 1056
+  - from: judge_call
+    to: failure_skip
+    type: optional
+    waypoints:
+      - x: 1320
+        'y': 1040
+      - x: 1416
+        'y': 1040
+      - x: 1416
+        'y': 1120
+  - from: parse
+    to: failure_skip
+    type: optional
+    waypoints:
+      - x: 1048
+        'y': 1280
+      - x: 1456
+        'y': 1280
+modules:
+  - id: build
+    label: 构建
+    color: $primaryLight
+  - id: release
+    label: 发布
+    color: $secondaryLight
+  - id: evaluate
+    label: 评测
+    color: $accentLight

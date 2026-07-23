@@ -4,88 +4,240 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AdvBench Build Process
-  description: >-
-    Paper-and-dataset-aligned construction of AdvBench: collect harmful behavior instructions, search transferable
-    adversarial suffixes, test whether models comply instead of refusing, and report attack success or safety behavior.
-  legend: Solid arrows show the main benchmark construction and evaluation flow.
+  title: AdvBench Construction and GCG Attack Process
+  description: Paper-aligned construction of the two AdvBench sets followed by individual, universal, or transfer GCG evaluation.
+  legend: >-
+    The paper discloses seed counts and generator settings. Its unspecified post-generation filter chain is shown only
+    as an unconnected annotation, not a required pipeline stage.
 nodes:
-  - id: n1
-    label: Harmful Tasks
+  - id: seed_strings
+    label: |-
+      Harmful-String Seeds
+      100 written examples
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: n2
-    label: 500 Prompts
+      'y': 0
+  - id: seed_behaviors
+    label: |-
+      Harmful-Behavior Seeds
+      50 written examples
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 200
+  - id: string_prompt
+    label: |-
+      Harmful-String 5-Shot Prompt
+      Sample only string seeds
     type: document
     size: xl
     position:
       x: 280
-      'y': 160
-  - id: n3
-    label: Attack Suffix
+      'y': 0
+  - id: behavior_prompt
+    label: |-
+      Harmful-Behavior 5-Shot Prompt
+      Sample only behavior seeds
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 200
+  - id: generator
+    label: |-
+      Wizard-Vicuna-30B-Uncensored
+      Generate 10 items per round
     type: process
     size: xl
     position:
       x: 520
-      'y': 160
-  - id: n4
-    label: Model Queries
-    type: process
+      'y': 100
+  - id: filter_unknown
+    label: |-
+      Not Disclosed by Paper
+      Post-generation filter chain
+      Annotation only • no edge
+    type: document
     size: xl
     position:
       x: 760
-      'y': 160
-  - id: n5
-    label: Compliance
-    type: decision
+      'y': 260
+  - id: release
+    label: |-
+      Release AdvBench
+      Paper: 500 strings + 500 behaviors
+    type: database
     size: xl
     position:
       x: 1000
-      'y': 160
-  - id: n6
-    label: Safety Judge
+      'y': 100
+  - id: protocol
+    label: |-
+      Select Attack Protocol
+      Individual • universal
+      Transfer
     type: process
     size: xl
     position:
       x: 1240
-      'y': 160
-  - id: n7
-    label: Success Rate
+      'y': 440
+  - id: individual
+    label: |-
+      Individual Protocol
+      100 runs • 1 behavior • 1 model
     type: process
     size: xl
     position:
       x: 1480
-      'y': 160
-  - id: n8
-    label: Refusal
-    type: terminal
+      'y': 240
+  - id: universal
+    label: |-
+      Universal Protocol
+      Optimize on 25 behaviors
+      Evaluate 100 behaviors
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 440
+  - id: transfer
+    label: |-
+      Transfer Protocol
+      Optimize on 25 behaviors
+      Evaluate 388 unseen behaviors
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 640
+  - id: gcg
+    label: |-
+      Run GCG Search
+      20-token suffix • 500 steps
+      Gradient top-k 256 • batch 512
+    type: process
     size: xl
     position:
       x: 1720
-      'y': 160
+      'y': 440
+  - id: run
+    label: |-
+      Run Victim Models
+      Keep best adversarial suffix
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 440
+  - id: success_gate
+    label: Which success rule?
+    type: decision
+    size: xl
+    position:
+      x: 2200
+      'y': 440
+  - id: string_score
+    label: |-
+      Harmful-String Score
+      Target cross-entropy only
+      Check exact target elicitation
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 320
+  - id: behavior_score
+    label: |-
+      Harmful-Behavior Score
+      Human judgment of compliance
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 560
+  - id: asr
+    label: |-
+      Attack Success Rate
+      Individual • universal
+      Transfer
+    type: process
+    size: xl
+    position:
+      x: 2680
+      'y': 440
+  - id: report
+    label: |-
+      Report Robustness
+      ASR + target loss
+    type: terminal
+    size: xl
+    position:
+      x: 2920
+      'y': 440
 edges:
-  - from: n1
-    to: n2
+  - from: seed_strings
+    to: string_prompt
     type: primary
-  - from: n2
-    to: n3
+  - from: seed_behaviors
+    to: behavior_prompt
     type: primary
-  - from: n3
-    to: n4
+  - from: string_prompt
+    to: generator
     type: primary
-  - from: n4
-    to: n5
+  - from: behavior_prompt
+    to: generator
     type: primary
-  - from: n5
-    to: n6
+  - from: generator
+    to: release
     type: primary
-  - from: n6
-    to: n7
+  - from: release
+    to: protocol
     type: primary
-  - from: n7
-    to: n8
+  - from: protocol
+    to: individual
+    type: primary
+    label: Individual
+  - from: protocol
+    to: universal
+    type: primary
+    label: Universal
+  - from: protocol
+    to: transfer
+    type: primary
+    label: Transfer
+  - from: individual
+    to: gcg
+    type: primary
+  - from: universal
+    to: gcg
+    type: primary
+  - from: transfer
+    to: gcg
+    type: primary
+  - from: gcg
+    to: run
+    type: primary
+  - from: run
+    to: success_gate
+    type: primary
+  - from: success_gate
+    to: string_score
+    type: primary
+    label: String
+  - from: success_gate
+    to: behavior_score
+    type: primary
+    label: Behavior
+  - from: string_score
+    to: asr
+    type: primary
+  - from: behavior_score
+    to: asr
+    type: primary
+  - from: asr
+    to: report
     type: primary
 modules: []

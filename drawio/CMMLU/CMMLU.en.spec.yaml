@@ -5,102 +5,193 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CMMLU Build Process
-  description: Paper-aligned construction and evaluation workflow for CMMLU, based on arXiv:2306.09212.
-  legend: Solid arrows show benchmark construction flow; dashed arrows show quality verification.
+  description: >-
+    Paper-aligned CMMLU workflow: four educated annotators collect Chinese questions with an emphasis on hard-to-crawl
+    sources, standardize four-choice single-answer items and formulas, verify 5% per subject, split 11,528 questions
+    across 67 subjects, and evaluate zero- or few-shot accuracy through model-appropriate answer extraction.
+  legend: Solid arrows show construction and evaluation; the two right branches are the official answer-selection paths.
 nodes:
-  - id: scope
-    label: 67 subjects
-    type: database
-    size: xl
+  - id: annotators
+    label: |-
+      4 Annotators
+      About 250 Hours
+    type: user
+    size: large
     position:
       x: 40
-      'y': 160
-  - id: annotators
-    label: 4 annotators
-    type: user
-    size: xl
-    position:
-      x: 300
-      'y': 160
+      'y': 240
   - id: sources
-    label: PDF OCR
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 160
-  - id: format
-    label: MCQ format
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: formula
-    label: Formula mix
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: qc
-    label: 5% QC
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: dataset
     label: |-
-      CMMLU
-      11.5k
+      Free Resources
+      80%+ PDF after OCR
     type: database
-    size: xl
+    size: large
     position:
-      x: 1340
-      'y': 160
+      x: 240
+      'y': 240
+  - id: contamination
+    label: |-
+      Non-public Material
+      Mocks + Quiz Shows
+    type: process
+    size: large
+    position:
+      x: 440
+      'y': 240
+  - id: mcq
+    label: |-
+      4 Choices
+      1 Correct Answer
+    type: process
+    size: large
+    position:
+      x: 640
+      'y': 100
+  - id: formula
+    label: |-
+      Formulae When Present: 50:50
+      LaTeX / Unambiguous Plain Text
+    type: process
+    size: large
+    position:
+      x: 640
+      'y': 380
+  - id: qc
+    label: |-
+      Verify 5% / Subject
+      About 2% Noise
+    type: process
+    size: large
+    position:
+      x: 840
+      'y': 240
+  - id: pool
+    label: |-
+      11,528 Questions
+      67 Subjects
+    type: database
+    size: large
+    position:
+      x: 1040
+      'y': 240
   - id: split
-    label: Dev/test
+    label: Per-subject Split
+    type: decision
+    size: large
+    position:
+      x: 1240
+      'y': 240
+  - id: dev
+    label: |-
+      Development
+      5 / Subject
     type: document
-    size: xl
+    size: large
     position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: Eval
+      x: 1440
+      'y': 100
+  - id: test
+    label: |-
+      Test
+      More than 100 / Subject
+    type: document
+    size: large
+    position:
+      x: 1440
+      'y': 380
+  - id: prompt
+    label: |-
+      Zero-shot or
+      Optional 5-shot Dev Examples
+    type: process
+    size: large
+    position:
+      x: 1640
+      'y': 240
+  - id: strategy
+    label: Model Access Path
+    type: decision
+    size: large
+    position:
+      x: 1840
+      'y': 240
+  - id: generation
+    label: |-
+      Closed API
+      Generate + Regex
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 100
+  - id: next_token
+    label: |-
+      Open-source
+      Argmax A / B / C / D
+    type: process
+    size: large
+    position:
+      x: 2040
+      'y': 380
+  - id: score
+    label: |-
+      Subject Macro
+      Accuracy
     type: terminal
-    size: xl
+    size: large
     position:
-      x: 1860
-      'y': 160
+      x: 2240
+      'y': 240
 edges:
-  - from: scope
-    to: annotators
-    type: primary
   - from: annotators
     to: sources
     type: primary
   - from: sources
-    to: format
+    to: contamination
     type: primary
-  - from: sources
+  - from: contamination
+    to: mcq
+    type: primary
+  - from: contamination
     to: formula
-    type: data
-    label: STEM items
-  - from: format
+    type: primary
+  - from: mcq
     to: qc
     type: primary
   - from: formula
     to: qc
     type: primary
   - from: qc
-    to: dataset
+    to: pool
     type: primary
-    label: accepted items
-  - from: dataset
+  - from: pool
     to: split
     type: primary
   - from: split
-    to: eval
+    to: dev
+    type: primary
+  - from: split
+    to: test
+    type: primary
+  - from: dev
+    to: prompt
+    type: data
+  - from: test
+    to: prompt
+    type: primary
+  - from: prompt
+    to: strategy
+    type: primary
+  - from: strategy
+    to: generation
+    type: primary
+  - from: strategy
+    to: next_token
+    type: primary
+  - from: generation
+    to: score
+    type: primary
+  - from: next_token
+    to: score
     type: primary
 modules: []

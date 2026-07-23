@@ -6,87 +6,237 @@ meta:
   routing: orthogonal
   title: ChartMimic Build Process
   description: >-
-    Paper-aligned construction flow for ChartMimic: arXiv and community charts are filtered, expert-voted, manually
-    written as figure-instruction-code triplets, augmented, split, and evaluated with multi-level chart similarity
-    metrics.
-  legend: Solid arrows show the benchmark curation and evaluation pipeline.
+    ICLR-2025 and arXiv-v2-aligned ChartMimic construction and evaluation: five-stage curation from recent CC BY 4.0
+    arXiv figures to 4,800 manually authored and augmented triplets, split evenly across Direct and Customized Mimic,
+    with executable high-level and code-traced low-level similarity metrics.
+  legend: Solid arrows show the five-stage curation and evaluation pipeline; dashed arrows carry supplemental sources.
 nodes:
   - id: arxiv
-    label: arXiv Figures
-    type: cloud
+    label: |-
+      Scrape CC BY 4.0 arXiv Sources
+      Published after February 2024
+      Extract PDF Figures
+    type: database
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: filter
-    label: Visual Filter
-    type: decision
+      'y': 220
+  - id: general_filter
+    label: |-
+      Filter ≈174,100 Figures
+      Keep Matplotlib PDFs
+      Retain ≈15,800 Candidates
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 160
+      x: 340
+      'y': 220
   - id: experts
-    label: Expert Voting
+    label: |-
+      Five-domain Expert Review
+      15,800 → 1,295
+      after 7-day Diversity Pass
+      Unanimous or ≥3/5 → 279
     type: user
     size: xl
     position:
-      x: 560
-      'y': 160
+      x: 640
+      'y': 220
+  - id: supplemental
+    label: |-
+      Add Distinctive Examples
+      Matplotlib • Stack Overflow
+      Twitter • Reddit
+      Fill Missing arXiv Styles
+    type: database
+    size: xl
+    position:
+      x: 640
+      'y': 440
   - id: prototypes
-    label: Prototype Pool
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: triplets
-    label: Human Triplets
+    label: |-
+      Manual Selection/Filling
+      Replace Data and Colors
+      Assemble 600 Prototypes
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: augment
-    label: Augmented Set
-    type: process
+      x: 940
+      'y': 220
+  - id: annotators
+    label: |-
+      Python Annotators
+      CS Master's Students • 6+ Years
+      Python 3.9.0
+      matplotlib 3.8.4
+    type: user
     size: xl
     position:
-      x: 1340
-      'y': 160
-  - id: splits
-    label: Test Splits
+      x: 1240
+      'y': 220
+  - id: direct
+    label: |-
+      Direct Mimic
+      600 Seed Triplets
+      Reproduce Figure in Python
+      Write Matching Instruction
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 160
-  - id: eval
-    label: Metric Eval
+      x: 1540
+      'y': 60
+  - id: customized
+    label: |-
+      Customized Mimic
+      600 Seed Triplets
+      Insert New-domain Data
+      Modify Code/Instruction
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 380
+  - id: augmentation
+    label: |-
+      Manual Data Augmentation
+      Add 3 Additional Variants
+      per Seed Triplet
+      Change Data/Colors/Marks → 4,800
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 220
+  - id: release
+    label: |-
+      Direct 2,400 • Customized 2,400
+      201 Subclasses • 22 Chart Types
+      Release 4,800 Triplets
+      Test 3,600 • Testmini 1,200
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 220
+  - id: model
+    label: |-
+      Figure + Task Instruction
+      Generate Python Chart Code
+      Execute to Render Output
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 220
+  - id: high_level
+    label: |-
+      High-level Similarity • 0–100
+      GPT-4o: Reference vs. Output
+      Judge Overall Visual Fidelity
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 60
+  - id: low_level
+    label: |-
+      Low-level Code Tracer F1
+      Text • Layout • Type • Color
+      Average Four Element Scores
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 380
+  - id: overall
+    label: |-
+      Average of High + Low
+      Execution Failure: Both Zero
+      Exec. Rate Reported Separately
+      No Weight in Overall
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 220
+  - id: validation
+    label: |-
+      Metric–Human Validation
+      300 Direct Test Examples
+      GPT-4o × 4 Prompting Methods
+      1,200 Outputs • 3 Evaluators
+      Pearson Correlation
+    type: user
+    size: xl
+    position:
+      x: 3340
+      'y': 220
+  - id: report
+    label: |-
+      Direct/Customized Results
+      High • Low • Overall
+      Execution Rate
+      Complexity/Failure Analysis
     type: terminal
     size: xl
     position:
-      x: 1860
-      'y': 160
+      x: 3640
+      'y': 220
 edges:
   - from: arxiv
-    to: filter
+    to: general_filter
     type: primary
-  - from: filter
+  - from: general_filter
     to: experts
     type: primary
   - from: experts
     to: prototypes
     type: primary
+  - from: supplemental
+    to: prototypes
+    type: data
+    waypoints:
+      - x: 940
+        'y': 438
+      - x: 940
+        'y': 318
   - from: prototypes
-    to: triplets
+    to: annotators
     type: primary
-  - from: triplets
-    to: augment
+  - from: annotators
+    to: direct
     type: primary
-  - from: augment
-    to: splits
+  - from: annotators
+    to: customized
     type: primary
-  - from: splits
-    to: eval
+  - from: direct
+    to: augmentation
+    type: primary
+  - from: customized
+    to: augmentation
+    type: primary
+  - from: augmentation
+    to: release
+    type: primary
+  - from: release
+    to: model
+    type: primary
+  - from: model
+    to: high_level
+    type: primary
+  - from: model
+    to: low_level
+    type: primary
+  - from: high_level
+    to: overall
+    type: primary
+  - from: low_level
+    to: overall
+    type: primary
+  - from: overall
+    to: validation
+    type: primary
+  - from: validation
+    to: report
     type: primary
 modules: []

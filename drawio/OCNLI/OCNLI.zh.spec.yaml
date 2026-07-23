@@ -1,0 +1,413 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: OCNLI 构建与评测流程
+  description: 对齐论文 v1 与固定发布版本的原生中文前提采集、四种并行假设生成条件、五标签复核、受控划分、无多数票处理、模型与人工评测及计数冲突。
+  legend: 简单、中等、困难表示同一前提—标签下第一、第二和第三个生成的假设，是生成顺序而非独立标定的难度分数。
+nodes:
+  - id: source
+    label: |-
+      收集原生中文前提句
+      政府 · 新闻 · 文学
+      电视谈话 · 电话对话
+      同时覆盖书面与口语原始来源
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 250
+  - id: preprocess
+    label: |-
+      预处理来源句子
+      移除中文 Callhome 标注符号
+      保留 8–50 个汉字的句子
+      不从英文数据翻译
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 250
+  - id: writers
+    label: |-
+      招募 145 名假设撰写者
+      中文母语者
+      高校本科生与研究生
+      中文或其他语言专业
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 250
+  - id: protocol
+    label: |-
+      改编 MNLI 假设生成协议
+      蕴含 · 中立 · 矛盾
+      假设与前提重叠不超过 70%
+      限制单个撰写者的贡献量
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 250
+  - id: strategy_gate
+    label: |-
+      采用哪种假设
+      生成条件？
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 250
+  - id: single
+    label: |-
+      SINGLE · MNLI 式
+      每个 NLI 标签写一个假设
+      论文报告 11,986 个句对
+      不设简单/中等/困难顺序
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 0
+  - id: multi
+    label: |-
+      MULTI
+      每标签最多写三个假设
+      第一 · 第二 · 第三个 = 简单 · 中等 · 困难
+      论文报告 12,328 个句对
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 160
+  - id: encourage
+    label: |-
+      MULTI ENCOURAGE
+      奖励多样化假设
+      鼓励不用否定词构造矛盾
+      论文报告 16,584 个句对
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 340
+  - id: constraint
+    label: |-
+      MULTI CONSTRAINT
+      三个矛盾假设中最多一个含否定词
+      随机检查 · 违规降低报酬
+      论文报告 15,627 个句对
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 500
+  - id: corpus
+    label: |-
+      形成原始 OCNLI 语料
+      论文标题数与表中总数为 56,486
+      四个子集行相加却为 56,525
+      显式保留 39 条计数冲突
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 250
+  - id: verify
+    label: |-
+      从每种条件抽样复标
+      SINGLE 1,919 · MULTI 1,994
+      ENCOURAGE 3,000 · CONSTRAINT 3,000
+      四个独立标签 + 原撰写标签 = 五个
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 250
+  - id: agreement
+    label: |-
+      检查复标一致性
+      至少三票一致率为 98.3–98.8%
+      比较生成条件与生成顺序
+      保留全部五个标签作为证据
+    type: process
+    size: xl
+    position:
+      x: 1940
+      'y': 250
+  - id: gold
+    label: |-
+      确定参考标签
+      对五个标签多数投票
+      蕴含 · 中立 · 矛盾
+      无多数票样本标记为“-”
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 250
+  - id: split
+    label: |-
+      创建论文主划分
+      随机打散 6,000 条已复标 ENCOURAGE/CONSTRAINT
+      验证 3,000 + 测试 3,000 · 平衡生成顺序
+      SINGLE/MULTI 与其余句对进入训练集
+    type: database
+    size: xl
+    position:
+      x: 2420
+      'y': 250
+  - id: full_release
+    label: |-
+      固定仓库发布 b53efde…
+      训练 50,486 · 验证 3,000 · 测试 3,000
+      测试输入公开但标签隐藏
+      训练含 49 条“-” · 验证含 50 条“-”
+    type: database
+    size: xl
+    position:
+      x: 2660
+      'y': 180
+  - id: small_release
+    label: |-
+      删除与验证/测试重合的前提
+      train.small 发布 30,286 行
+      仓库另采样 10k 与 3k 子集
+      共用同一验证集与测试集
+    type: database
+    size: xl
+    position:
+      x: 2660
+      'y': 440
+  - id: model_eval
+    label: |-
+      预测三个 NLI 标签之一
+      CBOW · 双向长短期记忆网络 · ESIM
+      中文 BERT-base · RoBERTa-large
+      分别使用完整 50k 或去重 30k 训练
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 180
+  - id: label_gate
+    label: |-
+      参考标签可用
+      且不是“-”吗？
+    type: decision
+    size: xl
+    position:
+      x: 3140
+      'y': 180
+  - id: exclude
+    label: |-
+      不在本地计分
+      排除无多数票的“-”样本
+      隐藏测试标签需提交到 CLUE
+    type: terminal
+    size: xl
+    position:
+      x: 3140
+      'y': 500
+  - id: accuracy
+    label: |-
+      计算三分类准确率
+      排除无多数票参考项
+      分别报告验证与测试结果
+      论文模型结果取五次运行均值
+    type: process
+    size: xl
+    position:
+      x: 3380
+      'y': 180
+  - id: human
+    label: |-
+      保守人工基线
+      20 条练习 + 300 条随机测试样本
+      五名未参与构建的本科生为 90.3%
+      五名语言学博士为 89.3% · 采用本科生分数
+    type: process
+    size: xl
+    position:
+      x: 3380
+      'y': 0
+  - id: report
+    label: |-
+      报告 OCNLI 准确率
+      RoBERTa 78.2% 对人工 90.3%
+      人机差距约 12 个百分点
+      比较完整与前提去重训练集
+    type: terminal
+    size: xl
+    position:
+      x: 3620
+      'y': 180
+  - id: source_boundary
+    label: |-
+      论文与发布边界
+      arXiv v1 SHA-256 fa195f…
+      仓库 b53efde… · CC BY-NC 2.0
+      新闻前提经 LCMC/ELRA 授权使用
+      CLUE 排行榜处理隐藏测试标签
+    type: document
+    size: xl
+    position:
+      x: 3620
+      'y': 500
+edges:
+  - from: source
+    to: preprocess
+    type: primary
+  - from: preprocess
+    to: writers
+    type: primary
+  - from: writers
+    to: protocol
+    type: primary
+  - from: protocol
+    to: strategy_gate
+    type: primary
+  - from: strategy_gate
+    to: single
+    type: primary
+    label: 单假设
+    labelPosition: center
+    style:
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: strategy_gate
+    to: multi
+    type: primary
+    label: 多假设
+    labelPosition: center
+    style:
+      exitX: 1
+      exitY: 0.35
+      entryX: 0
+      entryY: 0.5
+  - from: strategy_gate
+    to: encourage
+    type: primary
+    label: 鼓励多样
+    labelPosition: center
+    style:
+      exitX: 1
+      exitY: 0.65
+      entryX: 0
+      entryY: 0.5
+  - from: strategy_gate
+    to: constraint
+    type: primary
+    label: 约束否定
+    labelPosition: center
+    style:
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: single
+    to: corpus
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: multi
+    to: corpus
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.35
+  - from: encourage
+    to: corpus
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.65
+  - from: constraint
+    to: corpus
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.9
+  - from: corpus
+    to: verify
+    type: primary
+  - from: verify
+    to: agreement
+    type: primary
+  - from: agreement
+    to: gold
+    type: primary
+  - from: gold
+    to: split
+    type: primary
+  - from: split
+    to: full_release
+    type: primary
+  - from: full_release
+    to: small_release
+    type: primary
+    label: 删除重合
+    labelPosition: center
+  - from: full_release
+    to: model_eval
+    type: primary
+    label: 完整 50k
+    labelPosition: center
+  - from: small_release
+    to: model_eval
+    type: primary
+    label: 去重 30k
+    labelPosition: center
+  - from: model_eval
+    to: label_gate
+    type: primary
+  - from: label_gate
+    to: accuracy
+    type: primary
+    label: 公开有效标签
+    labelPosition: center
+  - from: label_gate
+    to: exclude
+    type: primary
+    label: “-”或隐藏
+    labelPosition: center
+  - from: accuracy
+    to: report
+    type: primary
+  - from: full_release
+    to: human
+    type: primary
+    label: 300 条测试样本
+    labelPosition: center
+    waypoints:
+      - x: 2780
+        'y': 90
+      - x: 3260
+        'y': 90
+  - from: human
+    to: report
+    type: primary
+    label: 人工参考
+    labelPosition: center
+  - from: report
+    to: source_boundary
+    type: secondary
+    label: 来源边界
+    labelPosition: center
+    style:
+      dashed: true
+modules: []

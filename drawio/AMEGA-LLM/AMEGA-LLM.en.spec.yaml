@@ -4,123 +4,250 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AMEGA-LLM Build Process
+  title: AMEGA-LLM Build and Evaluation Process
   description: >-
-    Paper-aligned AMEGA benchmark construction and autonomous medical guideline-adherence evaluation workflow, based on
-    npj Digital Medicine volume 7, article 358.
+    Paper-aligned physician construction of guideline-grounded clinical cases and automated oral-exam evaluation with
+    criterion-level GPT-4 judgments, failed-attempt recovery, majority voting over valid attempts, explicitly gated
+    reasks, weighted scores, and evaluator validation.
   legend: >-
-    Solid arrows show case construction and model evaluation; dashed arrows mark reask, repeated judging, and human
-    validation safeguards.
+    The diagram intentionally uses the paper snapshot of 20 cases, 135 questions, and 1,337 criteria. The current
+    official repository later extends the resource to 24 cases, 163 questions, and 1,497 criteria. The solid lane
+    follows the Methods order: an attempt is malformed when its Boolean count differs from the criterion count; >50%
+    malformed attempts trigger bisection and a fresh 11-attempt evaluation of each half. Otherwise, valid vectors
+    proceed to criterion majority vote and confidence before the Reask decision. The dashed validation branch is a
+    separate reliability study.
 nodes:
   - id: guidelines
     label: |-
-      Medical guideline base
-      current clinical guidance
-      physician expertise
+      Select Current Guidelines
+      US + Global Organizations
+      Diagnosis • Treatment
+      Monitoring • Follow-Up
     type: database
     size: xl
     position:
       x: 40
-      'y': 160
+      'y': 100
+  - id: physicians
+    label: |-
+      Experienced Physicians
+      >5 Years Clinical Experience
+      Select Guidelines
+      Translate Them into Cases
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 100
   - id: cases
     label: |-
-      Crafted clinical cases
-      20 diagnostic scenarios
-      13 specialties
+      Craft 20 Fictional Cases
+      13 Medical Specialties
+      Complaint • History • Exam
+      Labs • Imaging
     type: document
     size: xl
     position:
-      x: 300
-      'y': 70
+      x: 600
+      'y': 100
   - id: questions
     label: |-
-      Open-ended questions
-      135 real clinical prompts
-      diagnosis and treatment
+      Write 6–8 Sequential Questions
+      135 Open-Ended Questions
+      Differential • Workup • Therapy
+      Complications • Follow-Up
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: criteria
+      x: 880
+      'y': 100
+  - id: rubrics
     label: |-
-      Weighted criteria
-      1337 scoring elements
-      guideline-derived checks
+      Define Weighted Rubrics
+      1,337 Scoring Elements
+      Guideline-Derived
+      Clinical Weights • 50 per Case
     type: document
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: candidate
+      x: 1160
+      'y': 100
+  - id: release
     label: |-
-      Candidate model
-      answers each case question
-      may receive reask
-    type: terminal
-    size: xl
-    position:
-      x: 820
-      'y': 70
-  - id: evaluator
-    label: |-
-      GPT-4 evaluator
-      parse answer and criteria
-      extract clinical concepts
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: voting
-    label: |-
-      Repeated Boolean judging
-      11 parallel attempts
-      majority vote and confidence
-    type: decision
-    size: xl
-    position:
-      x: 1080
-      'y': 160
-  - id: scores
-    label: |-
-      Aggregated score report
-      criterion to case score
-      50-point case maximum
+      Physician Review + Release
+      ≥1 Additional Physician
+      Iteratively Refines Each Case
+      20–30 h / Case • >400 h Total
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1440
+      'y': 100
+  - id: prompt
+    label: |-
+      Zero-Shot Oral Examination
+      Initial Case, Then One Question
+      Standardized Prompt • No Demos
+      Candidate Temperature 0
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 470
+  - id: candidate
+    label: |-
+      Candidate Model Response
+      Answer Current Question
+      Continue through Case
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 470
+  - id: evaluator
+    label: |-
+      GPT-4-0613 Evaluator
+      11 Parallel Attempts
+      Each Returns One Boolean Vector
+      All Criteria Evaluated Together
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 470
+  - id: failure_gate
+    label: |-
+      Malformed Attempts >50%?
+      Boolean Count ≠ Criterion Count
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 470
+  - id: split_criteria
+    label: |-
+      Bisect the Criteria List
+      Each Half: 11 Attempts
+      Repeat Vector Validation
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 740
+  - id: gate
+    label: |-
+      Unmet Criteria +
+      Reask Permitted?
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 470
+  - id: reask
+    label: |-
+      Guided Reask + Reflection
+      Reveal Unmet Criteria
+      Candidate Adds Details
+      Skip Critical-Error Reask
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 740
+  - id: voting
+    label: |-
+      Stabilize Criterion Judgments
+      11 Runs per Criterion
+      Majority Vote + Confidence
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 470
+  - id: score
+    label: |-
+      AMEGA Results
+      Boolean × Clinical Weights
+      Question / Case Scores
+      50-Point Mean • Deficiency • Cost
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 470
+  - id: validate
+    label: |-
+      Validate Evaluator
+      50-Run Stability Study
+      Expert Check: 2 Cases
+      Spot Checks: Cases 3 and 5
+    type: user
+    size: xl
+    position:
+      x: 600
+      'y': 740
 edges:
   - from: guidelines
+    to: physicians
+    type: primary
+  - from: physicians
     to: cases
     type: primary
   - from: cases
     to: questions
     type: primary
   - from: questions
-    to: criteria
+    to: rubrics
     type: primary
-  - from: criteria
+  - from: rubrics
+    to: release
+    type: primary
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
     to: candidate
-    type: data
-    label: case + question
+    type: primary
   - from: candidate
     to: evaluator
     type: primary
   - from: evaluator
-    to: voting
+    to: failure_gate
     type: primary
-  - from: voting
-    to: candidate
+  - from: failure_gate
+    to: split_criteria
     type: optional
-    label: reask if allowed
-  - from: voting
-    to: scores
-    type: primary
-  - from: scores
+    label: 'Yes: split'
+  - from: split_criteria
     to: evaluator
     type: optional
-    label: expert spot checks
+    label: Repeat halves
+  - from: failure_gate
+    to: voting
+    type: primary
+    label: '≤50%: vote'
+  - from: voting
+    to: gate
+    type: primary
+  - from: gate
+    to: reask
+    type: optional
+    label: 'Yes: Reask'
+    waypoints:
+      - x: 324
+        'y': 850
+      - x: 1444
+        'y': 850
+  - from: reask
+    to: candidate
+    type: optional
+    label: Supplement + Re-evaluate
+  - from: gate
+    to: score
+    type: primary
+    label: 'No: score'
+  - from: voting
+    to: validate
+    type: secondary
+    label: Validation study
 modules: []

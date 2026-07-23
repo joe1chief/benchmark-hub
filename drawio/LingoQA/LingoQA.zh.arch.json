@@ -2,107 +2,367 @@
   "version": 1,
   "title": "LingoQA 构建流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 30,
+    "edges": 28,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "drive_clips",
-      "label": "驾驶片段",
-      "type": "document",
+      "id": "sessions",
+      "label": "录制驾驶行程\n单前视 RGB 相机\n基准输入不含激光雷达",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "action_data",
-      "label": "动作数据",
+      "id": "clips",
+      "label": "4 秒场景 · 1 Hz\n跨 4 秒共 5 帧\n人脸与车牌已匿名化",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "gpt_rewrite",
-      "label": "GPT改写",
-      "type": "process",
+      "id": "train_branch",
+      "label": "训练集构建分支？",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "scenery_data",
-      "label": "场景数据",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "gpt4_qa",
-      "label": "GPT-4问答",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "eval_labels",
-      "label": "评估标签",
+      "id": "action_seed",
+      "label": "动作分支 · 显著行为变化\n减速 · 加速 · 变道 · 转弯\n操作员标注情境与行为\n信号灯 · 检测 · 天气\n速度 · 方向盘 · 道路类型",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "lingo_judge",
-      "label": "LingoJudge",
+      "id": "action_gpt",
+      "label": "动作/理由模板\n示例问题 + 答案提示\nGPT-3.5 改写 · 作答 · 扩展",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "vqa_scores",
-      "label": "VQA分数",
+      "id": "action_balance",
+      "label": "按动作与行为策略类别重平衡\n每类最多采样 500 个事件\n论文正文称 24,577 个动作片段",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scenery_seed",
+      "label": "场景分支 · 3 段各 30 分钟\nELAN 每秒密集描述\n约 15 类描述",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "scenery_gpt",
+      "label": "GPT-4 思维链提示\n生成感知问题与答案\n每场景约 43 条问答",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_total",
+      "label": "论文总体数据标题数\n范围尚无法对齐\n2.8 万场景 · 41.99 万问答\n动作 + 场景 · 9 项能力\n自由回答平均 17.2 词",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "count_drift",
+      "label": "规模漂移 · 论文与发布工件\n正文动作 167,774 · 表 3 267.8K\n表 3 场景 152.5K · 合计 420.3K\nREADME 对调分支数量与比例\nparquet 413,829 问答 · 27,999 片段",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "missing_contracts",
+      "label": "论文披露缺口与文字冲突\n动作段：改写 · 作答 · 扩展\n后文却称 GPT-3.5 仅改写\n生成提示词与参数未公开\n训练生成物 QC / 拒绝率未披露",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "heldout",
+      "label": "留出评测数据\n100 个短视频场景\n每场景 5 道独立问题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "human_qa",
+      "label": "20+ 名内部人工评估员\n编写问题与答案\n共 500 道独立人工问题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "double_label",
+      "label": "初始答案双标\n同一评估员不重复看到同题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "qc_gate",
+      "label": "存在语义分歧或错误？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "relabel",
+      "label": "争议样本再标注两次",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "majority",
+      "label": "按多数语义裁决\n最大限度保留措辞多样性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "eval_release",
+      "label": "评测集发布\n500 题 · 1,000 条参考答案\n每题 2 个正确且多样的答案",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "model_input",
+      "label": "候选模型\n5 帧 + 问题\n生成自由文本答案",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "predictions_csv",
+      "label": "predictions.csv · 500 个答案\nquestion_id · segment_id\nanswer",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "judge_prompt",
+      "label": "官方 Judge 预处理\n参考答案/预测：小写并去首尾空白\n问题保持原样\n[CLS] · Question · Answer\nStudent · max_length=128",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge_logits",
+      "label": "已发布 Lingo-Judge\nDeBERTa-V3 文本分类器\n每个参考答案输出一个原始 logit\n不输入视频",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "max_logit",
+      "label": "每题两个参考答案\n论文公式漏 q · 实现包含 q\nzᵢ = maxⱼ f(qᵢ, rᵢⱼ, aᵢ)\n正确当且仅当 zᵢ > 0",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "accuracy",
+      "label": "LingoQA 准确率（%）\n100 / 500 × Σᵢ 1[zᵢ > 0]",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "LingoQA 准确率报告\n完整提交 N = 500\n官方代码仅警告匹配数不足",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "judge_data",
+      "label": "Judge 训练数据\n早期模型预测\n评测问题 + 参考答案\n人工正确性标签",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "judge_lora",
+      "label": "DeBERTa-V3 + LoRA\n类别标记上的线性头\n训练规模/划分/LoRA 参数未披露",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge_release",
+      "label": "主动学习修正\n重标废弃模型的错判\n已发布 Judge 版本\na1a6e2194fd1aedaba02\nbde82316a6b73753d1d5",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge_evidence",
+      "label": "Judge 验证证据\n留出准确率 95.0%\n17 个系统 · 15 个模型 + 2 组人工\nSpearman .950 · Pearson .993",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "发布与开放边界\n部分公开 · Drive 数据 + HF Judge\n自定义非商业 · 可撤销许可证\n无候选 VLM 提示词/解析器/代码\n无官方实时排行榜",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "drive_clips",
-      "to": "action_data",
+      "from": "sessions",
+      "to": "clips",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "action_data",
-      "to": "gpt_rewrite",
+      "from": "clips",
+      "to": "train_branch",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "gpt_rewrite",
-      "to": "scenery_data",
+      "from": "clips",
+      "to": "heldout",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "scenery_data",
-      "to": "gpt4_qa",
+      "from": "train_branch",
+      "to": "action_seed",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "gpt4_qa",
-      "to": "eval_labels",
+      "from": "train_branch",
+      "to": "scenery_seed",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "eval_labels",
-      "to": "lingo_judge",
+      "from": "action_seed",
+      "to": "action_gpt",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "lingo_judge",
-      "to": "vqa_scores",
+      "from": "action_gpt",
+      "to": "action_balance",
       "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "action_balance",
+      "to": "paper_total",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "scenery_seed",
+      "to": "scenery_gpt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "scenery_gpt",
+      "to": "paper_total",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "heldout",
+      "to": "human_qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "human_qa",
+      "to": "double_label",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "double_label",
+      "to": "qc_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "qc_gate",
+      "to": "eval_release",
+      "type": "primary",
+      "label": "无问题"
+    },
+    {
+      "id": "edge-15",
+      "from": "qc_gate",
+      "to": "relabel",
+      "type": "primary",
+      "label": "分歧 / 错误"
+    },
+    {
+      "id": "edge-16",
+      "from": "relabel",
+      "to": "majority",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "majority",
+      "to": "eval_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "eval_release",
+      "to": "judge_prompt",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "eval_release",
+      "to": "model_input",
+      "type": "data"
+    },
+    {
+      "id": "edge-20",
+      "from": "model_input",
+      "to": "predictions_csv",
+      "type": "data"
+    },
+    {
+      "id": "edge-21",
+      "from": "predictions_csv",
+      "to": "judge_prompt",
+      "type": "data"
+    },
+    {
+      "id": "edge-22",
+      "from": "judge_prompt",
+      "to": "judge_logits",
+      "type": "data"
+    },
+    {
+      "id": "edge-23",
+      "from": "judge_logits",
+      "to": "max_logit",
+      "type": "data"
+    },
+    {
+      "id": "edge-24",
+      "from": "max_logit",
+      "to": "accuracy",
+      "type": "data"
+    },
+    {
+      "id": "edge-25",
+      "from": "accuracy",
+      "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-26",
+      "from": "judge_data",
+      "to": "judge_lora",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "judge_lora",
+      "to": "judge_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "judge_release",
+      "to": "judge_logits",
+      "type": "dependency"
     }
   ],
   "modules": []

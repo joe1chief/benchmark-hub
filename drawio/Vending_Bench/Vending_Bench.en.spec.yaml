@@ -1,0 +1,212 @@
+meta:
+  profile: academic-paper
+  source: generated
+  theme: academic-color
+  layout: horizontal
+  routing: orthogonal
+  title: Vending-Bench Agent-Environment Loop and Scoring
+  description: >-
+    Vending-Bench couples a basic LLM agent loop with a 30K-token context, scratchpad/key-value/vector memories, remote
+    business tools, a physical-operation sub-agent, simulated supplier email, and daily demand, fee, and time dynamics.
+    Runs start with USD 500, charge a USD 2 daily fee, repeat five times, and stop at 2,000 messages or bankruptcy after
+    ten consecutive unpaid-fee days; most consume about 25M tokens. The primary score is final net worth: cash on hand
+    plus cash in the machine plus unsold inventory valued at wholesale cost. Balance, units sold, tool use, run
+    variance, and failure traces are secondary diagnostics.
+  legend: >-
+    Source: Vending-Bench arXiv:2502.15840 and official Andon Labs evaluation page. Solid arrows show the main flow
+    explicitly supported by the paper or official documentation.
+nodes:
+  - id: config
+    label: |-
+      USD 500 Start · USD 2 Daily Fee
+      30K Context · 5 Runs
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 80
+  - id: agent
+    label: |-
+      Basic LLM
+      Agent Loop
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: memory
+    label: |-
+      Scratchpad · KV · Vector
+      Memory Tools
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 80
+  - id: remote
+    label: |-
+      Email · Search · Balance
+      Remote Tools
+    type: service
+    size: xl
+    position:
+      x: 340
+      'y': 240
+  - id: subagent
+    label: |-
+      Physical-Operation
+      Sub-Agent
+    type: service
+    size: xl
+    position:
+      x: 340
+      'y': 400
+  - id: supplier
+    label: |-
+      Supplier Email
+      Simulation
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 560
+  - id: demand
+    label: |-
+      Daily Demand · Fees
+      Time Advance
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 720
+  - id: state
+    label: |-
+      Inventory · Orders · Prices
+      Cash + Sales State
+    type: database
+    size: xl
+    position:
+      x: 680
+      'y': 400
+  - id: stop
+    label: Stop Condition?
+    type: decision
+    size: xl
+    position:
+      x: 980
+      'y': 400
+  - id: log
+    label: |-
+      Complete Trajectory
+      Log
+    type: database
+    size: xl
+    position:
+      x: 1280
+      'y': 400
+  - id: networth
+    label: |-
+      Primary: Final Net Worth
+      Cash + Machine Cash + Inventory
+    type: formula
+    size: xl
+    position:
+      x: 1580
+      'y': 240
+  - id: secondary
+    label: |-
+      Balance · Units Sold · Tool Use
+      Variance + Failure Traces
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 560
+  - id: report
+    label: |-
+      Long-Term Coherence
+      Report
+    type: terminal
+    size: xl
+    position:
+      x: 1880
+      'y': 400
+edges:
+  - from: config
+    to: agent
+    type: primary
+  - from: agent
+    to: memory
+    type: bidirectional
+    waypoints:
+      - x: -120
+        'y': 402
+      - x: -120
+        'y': -20
+      - x: 340
+        'y': -20
+  - from: agent
+    to: remote
+    type: bidirectional
+  - from: agent
+    to: subagent
+    type: bidirectional
+  - from: agent
+    to: supplier
+    type: bidirectional
+  - from: agent
+    to: demand
+    type: bidirectional
+    waypoints:
+      - x: -120
+        'y': 402
+      - x: -120
+        'y': 820
+      - x: 340
+        'y': 820
+  - from: memory
+    to: state
+    type: data
+  - from: remote
+    to: state
+    type: data
+  - from: subagent
+    to: state
+    type: data
+  - from: supplier
+    to: state
+    type: data
+  - from: demand
+    to: state
+    type: data
+  - from: state
+    to: stop
+    type: primary
+  - from: stop
+    to: agent
+    type: optional
+    label: Continue
+    labelPosition: center
+    waypoints:
+      - x: 1100
+        'y': 850
+      - x: 160
+        'y': 850
+  - from: stop
+    to: log
+    type: primary
+    label: 2,000 messages / bankrupt
+    labelPosition: end
+  - from: log
+    to: networth
+    type: primary
+  - from: log
+    to: secondary
+    type: primary
+  - from: networth
+    to: report
+    type: primary
+  - from: secondary
+    to: report
+    type: primary
+modules: []

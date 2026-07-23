@@ -5,75 +5,291 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HalluQA 构建流程
-  description: 对齐论文的 HalluQA 构建流程：中文误导题型设计、模型探测、对抗样本筛选、正确/错误 答案集合、专家质检和 GPT-4 评判。
-  legend: 实线箭头表示对抗问题创建、样本筛选、标注、质检和评测。
+  description: 与论文一致的 450 道中文对抗问题三分支构建流程和 GPT-4 五票评测流程。
+  legend: HalluQA 覆盖 30 个领域，含 175 道误导题、69 道困难误导题和 206 道知识题。 论文判据与固定评测脚本的枚举差异单独标明。
 nodes:
-  - id: patterns
-    label: 中文题型
+  - id: evidence
+    label: |-
+      证据与固定版本
+      arXiv 2310.03368v4 · 仓库 c025c0d
+      HalluQA.json e2f8ac3 · 450 行
     type: document
     size: xl
     position:
       x: 40
-      'y': 160
-  - id: probes
-    label: 模型探测
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 160
-  - id: select
-    label: 对抗筛选
+      'y': 300
+  - id: route
+    label: |-
+      设计中文对抗问题
+      历史 · 文化 · 习俗 · 社会现象
+      按幻觉成因分流
     type: decision
     size: xl
     position:
-      x: 560
-      'y': 160
-  - id: answers
-    label: 答案集合
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 160
-  - id: qc
-    label: 专家质检
+      x: 340
+      'y': 300
+  - id: misleading_design
+    label: |-
+      编写误导问题
+      20 种 TruthfulQA 启发模式
+      适配中国文化语境
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 160
-  - id: dataset
-    label: 450问题
+      x: 640
+      'y': 40
+  - id: glm_probe
+    label: |-
+      GLM-130B 随机采样 5 次
+      6 个人工中文问答示例
+      至少 3/5 次生成错误才保留
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 40
+  - id: misleading_set
+    label: |-
+      形成误导题集
+      175 道作者编写问题
+      覆盖 22 个领域
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 160
+      x: 1240
+      'y': 40
+  - id: hard_design
+    label: |-
+      收集近期中文互联网疑难问题
+      用 ChatGPT 3.5 构造对抗问题
+      要求问题本身含误导信息
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 300
+  - id: hard_set
+    label: |-
+      形成困难误导题集
+      69 道作者复核问题
+      覆盖 15 个领域
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 300
+  - id: knowledge_design
+    label: |-
+      10 名中文母语研究生实习生
+      编写事实知识问题
+      覆盖多个领域
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: dual_probe
+    label: |-
+      ChatGPT + Puyu 各运行 5 次
+      两者都至少答错 3/5 才保留
+      收集约 1,000 道候选题
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: knowledge_set
+    label: |-
+      NLP 专家筛选高质量样本
+      核验答案并保留 206 道
+      覆盖 14 个领域
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 560
+  - id: annotate
+    label: |-
+      补充答案与支撑证据
+      误导题：4 个正确 + 4 个错误答案
+      知识题：正确和错误答案各至少 1 个
+    type: document
+    size: xl
+    position:
+      x: 1540
+      'y': 300
+  - id: quality
+    label: |-
+      知识题：用外部链接核验
+      误导题：由未参与出题的作者复核
+      改写或丢弃有缺陷的问题
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 300
+  - id: dataset
+    label: |-
+      发布 HalluQA · 450 道题
+      覆盖 30 个领域
+      175 道误导 + 69 道困难 + 206 道知识
+    type: database
+    size: xl
+    position:
+      x: 2140
+      'y': 300
+  - id: inference
+    label: |-
+      要求回答每题
+      拒答计为幻觉
+      仅标准答案为不可回答时例外
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 300
   - id: judge
-    label: GPT-4评判
+    label: |-
+      GPT-4-0613 + 论文 5 条判据
+      5 次投票 · 温度 0 · top-p 0.5
+      以正确答案示例作为证据
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: score
+    label: |-
+      报告非幻觉率
+      计算全部 450 条输出中的比例
+      保留被判定无幻觉的结果
     type: terminal
     size: xl
     position:
-      x: 1600
-      'y': 160
+      x: 3040
+      'y': 300
+  - id: consistency
+    label: |-
+      独立评判器验证
+      100 道题 × 6 个模型 = 600 条输出
+      五票结果与人工一致率 93.50%
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 40
+  - id: artifact_boundary
+    label: |-
+      论文/脚本边界
+      论文正文：5 条判据
+      固定脚本提示：6 条编号项
+      使用同一评判设置与决策规则
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 560
 edges:
-  - from: patterns
-    to: probes
+  - from: evidence
+    to: route
+    type: data
+  - from: route
+    to: misleading_design
     type: primary
-  - from: probes
-    to: select
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+  - from: misleading_design
+    to: glm_probe
     type: primary
-  - from: select
-    to: answers
+  - from: glm_probe
+    to: misleading_set
     type: primary
-  - from: answers
-    to: qc
+  - from: route
+    to: hard_design
     type: primary
-  - from: qc
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: hard_design
+    to: hard_set
+    type: primary
+  - from: route
+    to: knowledge_design
+    type: secondary
+    style:
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+  - from: knowledge_design
+    to: dual_probe
+    type: secondary
+  - from: dual_probe
+    to: knowledge_set
+    type: secondary
+  - from: misleading_set
+    to: annotate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+  - from: hard_set
+    to: annotate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: knowledge_set
+    to: annotate
+    type: secondary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
+  - from: annotate
+    to: quality
+    type: primary
+  - from: quality
     to: dataset
     type: primary
   - from: dataset
+    to: inference
+    type: primary
+  - from: inference
     to: judge
     type: primary
+  - from: judge
+    to: score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: judge
+    to: consistency
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: judge
+    to: artifact_boundary
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
 modules: []
