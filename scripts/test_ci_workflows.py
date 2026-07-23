@@ -116,7 +116,7 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("IMAGEMAGICK_FONT=", installer)
         self.assertIn("drawio-fidelity:", self.ci)
         self.assertIn("name: Draw.io Export Fidelity (macOS)", self.ci)
-        self.assertIn("runs-on: macos-15", self.ci)
+        self.assertIn("runs-on: macos-26", self.ci)
         self.assertIn("scripts/ci/install_drawio_toolchain_macos.sh", self.ci)
         self.assertIn("scripts/ci/diagnose_drawio_png_macos.sh", self.ci)
         self.assertIn("pnpm test:drawio-fidelity", self.ci)
