@@ -38,6 +38,6 @@ sudo apt-get install --yes "${desktop_package}" xvfb
 {
   printf 'IMPORTER_DRAWIO_E2E_CLI=%s\n' \
     "${skill_checkout}/skills/drawio/scripts/cli.js"
-  printf 'DRAWIO_DESKTOP_CLI=%s\n' \
+  printf 'CI_DRAWIO_DESKTOP_CLI=%s\n' \
     "${GITHUB_WORKSPACE}/scripts/ci/drawio-desktop-ci.sh"
 } >> "${GITHUB_ENV}"

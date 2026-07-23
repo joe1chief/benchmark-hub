@@ -73,7 +73,8 @@ class CiWorkflowContractTests(unittest.TestCase):
             installer,
         )
         self.assertIn("IMPORTER_DRAWIO_E2E_CLI=", installer)
-        self.assertIn("DRAWIO_DESKTOP_CLI=", installer)
+        self.assertIn("CI_DRAWIO_DESKTOP_CLI=", installer)
+        self.assertNotRegex(installer, r"(?m)^\s*printf 'DRAWIO_DESKTOP_CLI=")
         self.assertIn("scripts/ci/install_drawio_toolchain.sh", self.ci)
 
     def test_drawio_dependencies_install_from_the_locked_repository_root(self):
@@ -81,6 +82,14 @@ class CiWorkflowContractTests(unittest.TestCase):
             ROOT / "scripts" / "ci" / "install_drawio_toolchain.sh"
         ).read_text(encoding="utf-8")
         self.assertIn('npm ci --prefix "${skill_checkout}"\n', installer)
+
+    def test_linux_desktop_smoke_is_separate_from_platform_byte_fidelity(self):
+        smoke_test = (
+            ROOT / "scripts" / "ci" / "smoke_drawio_desktop.mjs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("CI_DRAWIO_DESKTOP_CLI", smoke_test)
+        self.assertIn("smoke_drawio_desktop.mjs", self.ci)
+        self.assertNotIn("DRAWIO_DESKTOP_CLI:", self.ci)
 
     def test_linux_drawio_wrapper_uses_xvfb(self):
         wrapper = (
