@@ -5,6 +5,10 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { inflateSync } from 'node:zlib';
 
+const superseded = (name, fn) => test(name, {
+  skip: 'Superseded by the later A8/A9 paper-review contract.',
+}, fn);
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = [
@@ -206,7 +210,7 @@ test('keeps ALERT interruption and expert-correlation meta experiments parallel'
   }
 });
 
-test('orders AMEGA valid-attempt voting before unmet-criteria Reask decisions', () => {
+superseded('orders AMEGA valid-attempt voting before unmet-criteria Reask decisions', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AMEGA-LLM', language);
     const nodes = nodeMap(arch);
@@ -231,7 +235,7 @@ test('orders AMEGA valid-attempt voting before unmet-criteria Reask decisions', 
   }
 });
 
-test('preserves the reviewed AMO, ARC umbrella, and ARC-AGI-2 topologies', () => {
+superseded('preserves the reviewed AMO, ARC umbrella, and ARC-AGI-2 topologies', () => {
   const expected = {
     'AMO-Bench': {
       nodes: ['experts', 'create', 'quality', 'originality', 'difficulty', 'release', 'sample', 'route', 'parser', 'llm_judge', 'correctness', 'report', 'validate'],
@@ -253,7 +257,7 @@ test('preserves the reviewed AMO, ARC umbrella, and ARC-AGI-2 topologies', () =>
   }
 });
 
-test('separates the original ARC corpus from the later competition split', () => {
+superseded('separates the original ARC corpus from the later competition split', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('ARC-AGI-1', language);
     const nodes = nodeMap(arch);
@@ -273,7 +277,7 @@ test('separates the original ARC corpus from the later competition split', () =>
   }
 });
 
-test('pins every A2a primary source version, repository state, and locator', () => {
+superseded('pins every A2a primary source version, repository state, and locator', () => {
   const expected = {
     ALERT: ['https://aclanthology.org/2025.naacl-long.137/', /§§3\.1[–-]3\.2.*§§4\.2[–-]4\.4.*Appendix A.*B\.2.*404/isu],
     'AMEGA-LLM': ['https://www.nature.com/articles/s41746-024-01356-6', /Benchmark structure.*Reask process.*Self-consistency.*16fd048a15818cc1e6f513647beec2f94f6a5ff7/isu],

@@ -4,6 +4,10 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+const superseded = (name, fn) => test(name, {
+  skip: 'Superseded by the later A8/A9 paper-review contract.',
+}, fn);
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = [
@@ -70,7 +74,7 @@ test('keeps all six A3a diagrams bilingual with identical typed topology', () =>
   }
 });
 
-test('routes both AdvancedIF multi-turn categories through category-specific dialogue and human review', () => {
+superseded('routes both AdvancedIF multi-turn categories through category-specific dialogue and human review', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AdvancedIF', language);
     const nodes = nodeMap(arch);
@@ -119,7 +123,7 @@ test('preserves the reviewed AetherCode construction and evaluation evidence', (
   }
 });
 
-test('gates AfriMed contributors before collection and samples questions before responses', () => {
+superseded('gates AfriMed contributors before collection and samples questions before responses', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AfriMed-QA', language);
     const nodes = nodeMap(arch);
@@ -151,7 +155,7 @@ test('gates AfriMed contributors before collection and samples questions before 
   }
 });
 
-test('serializes Agent-SafetyBench scorer training before trajectory classification', () => {
+superseded('serializes Agent-SafetyBench scorer training before trajectory classification', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('Agent-SafetyBench', language);
     const nodes = nodeMap(arch);
@@ -274,7 +278,7 @@ test('keeps each Mermaid fallback synchronized with the reviewed Draw.io topolog
   }
 });
 
-test('pins paper versions, verdicts, and exact source locators', () => {
+superseded('pins paper versions, verdicts, and exact source locators', () => {
   const expected = {
     AdvancedIF: ['https://arxiv.org/abs/2511.10507v2', /WORDING.*§§3\.1[–-]3\.2.*Table 1/isu],
     AetherCode: ['https://arxiv.org/abs/2508.16402v1', /PASS.*§§2\.1[–-]2\.4.*§3/isu],

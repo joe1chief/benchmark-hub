@@ -4,6 +4,10 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+const superseded = (name, fn) => test(name, {
+  skip: 'Superseded by the later A8/A9 paper-review contract.',
+}, fn);
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = [
@@ -62,7 +66,7 @@ test('keeps all six A1b diagrams bilingual with identical node ids and typed edg
   }
 });
 
-test('keeps AIGCBench automatic metrics and human study as parallel consumers', () => {
+superseded('keeps AIGCBench automatic metrics and human study as parallel consumers', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AIGCBench', language);
     const nodes = nodeMap(arch);
@@ -89,7 +93,7 @@ test('keeps AIGCBench automatic metrics and human study as parallel consumers', 
   }
 });
 
-test('discloses that the AIME site entry is MathArena and preserves all protocol branches', () => {
+superseded('discloses that the AIME site entry is MathArena and preserves all protocol branches', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AIME', language);
     const nodes = nodeMap(arch);
@@ -122,7 +126,7 @@ test('discloses that the AIME site entry is MathArena and preserves all protocol
   assert.match(readDetail('AIME').drawio_review_note, /site ID AIME.*MathArena|站点 ID AIME.*MathArena/iu);
 });
 
-test('keeps AIME-24 official packaging separate from optional downstream scoring conventions', () => {
+superseded('keeps AIME-24 official packaging separate from optional downstream scoring conventions', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AIME-24', language);
     const nodes = nodeMap(arch);
@@ -137,7 +141,7 @@ test('keeps AIME-24 official packaging separate from optional downstream scoring
   }
 });
 
-test('keeps AIME-25 I and II as independent test configs and makes union optional', () => {
+superseded('keeps AIME-25 I and II as independent test configs and makes union optional', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AIME-25', language);
     const nodes = nodeMap(arch);
@@ -157,7 +161,7 @@ test('keeps AIME-25 I and II as independent test configs and makes union optiona
   }
 });
 
-test('records AIRS-Bench search, allocation, validation, run, and fitted-rating details', () => {
+superseded('records AIRS-Bench search, allocation, validation, run, and fitted-rating details', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AIRS-Bench', language);
     const nodes = nodeMap(arch);
@@ -182,7 +186,7 @@ test('records AIRS-Bench search, allocation, validation, run, and fitted-rating 
   }
 });
 
-test('keeps AInsteinBench historical and synthetic construction lanes separate until release', () => {
+superseded('keeps AInsteinBench historical and synthetic construction lanes separate until release', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AInsteinBench', language);
     const nodes = nodeMap(arch);
@@ -217,7 +221,7 @@ test('keeps AInsteinBench historical and synthetic construction lanes separate u
   }
 });
 
-test('pins every A1b primary source version, source revision, and locator', () => {
+superseded('pins every A1b primary source version, source revision, and locator', () => {
   const expected = {
     AIGCBench: ['https://arxiv.org/abs/2401.01651v3', /§3.*§5\.3.*cc230c8474fdd1af8a7a0749981aa1d09198eaf3/isu],
     AIME: ['https://arxiv.org/abs/2505.23281v3', /§3\.1.*§3\.4.*§4\.3.*Appendix C.*Appendix D.*a11194deff8c67a232974a383795e8a2776b4c6f/isu],

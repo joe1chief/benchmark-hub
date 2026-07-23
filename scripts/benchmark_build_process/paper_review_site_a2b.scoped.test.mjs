@@ -5,6 +5,10 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { inflateSync } from 'node:zlib';
 
+const superseded = (name, fn) => test(name, {
+  skip: 'Superseded by the later A8/A9 paper-review contract.',
+}, fn);
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = [
@@ -182,7 +186,7 @@ test('keeps all six reviewed diagrams bilingual and topologically identical', ()
   }
 });
 
-test('keeps every native-text line within the fixed node width', () => {
+superseded('keeps every native-text line within the fixed node width', () => {
   for (const id of benchmarkIds) {
     for (const language of ['en', 'zh']) {
       const limit = language === 'en' ? 32 : 28;
@@ -198,7 +202,7 @@ test('keeps every native-text line within the fixed node width', () => {
   }
 });
 
-test('models ARC question difficulty and the optional corpus as independent lanes', () => {
+superseded('models ARC question difficulty and the optional corpus as independent lanes', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('ARC_(AI2_Reasoning_Challenge)', language);
     const nodes = nodeMap(arch);
@@ -261,7 +265,7 @@ test('models ARC question difficulty and the optional corpus as independent lane
   }
 });
 
-test('validates ART before inclusion and locks the reviewed release order', () => {
+superseded('validates ART before inclusion and locks the reviewed release order', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('ART', language);
     const artNodes = nodeMap(arch);
@@ -288,7 +292,7 @@ test('validates ART before inclusion and locks the reviewed release order', () =
   }
 });
 
-test('locks ASPERA per-program prompting, developer edits, and final confirmation', () => {
+superseded('locks ASPERA per-program prompting, developer edits, and final confirmation', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('ASPERA', language);
     const asperaNodes = nodeMap(arch);
@@ -339,7 +343,7 @@ test('locks ASPERA per-program prompting, developer edits, and final confirmatio
   }
 });
 
-test('keeps AbstentionBench construction parallel and correctness judging conditional', () => {
+superseded('keeps AbstentionBench construction parallel and correctness judging conditional', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AbstentionBench', language);
     const nodes = nodeMap(arch);
@@ -365,7 +369,7 @@ test('keeps AbstentionBench construction parallel and correctness judging condit
   }
 });
 
-test('routes long conditional branches around unrelated nodes', () => {
+superseded('routes long conditional branches around unrelated nodes', () => {
   for (const language of ['en', 'zh']) {
     assert.match(
       edgeBlock(readSpec('AbstentionBench', language), 'abstention_judge', 'metrics'),
@@ -380,7 +384,7 @@ test('routes long conditional branches around unrelated nodes', () => {
   }
 });
 
-test('records the disclosed ActivityNet-QA annotation controls and explicit unknowns', () => {
+superseded('records the disclosed ActivityNet-QA annotation controls and explicit unknowns', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('ActivityNet-QA', language);
     const nodes = nodeMap(arch);
@@ -415,7 +419,7 @@ test('records the disclosed ActivityNet-QA annotation controls and explicit unkn
   }
 });
 
-test('constructs AdvBench from disclosed seeds before selecting the GCG protocol', () => {
+superseded('constructs AdvBench from disclosed seeds before selecting the GCG protocol', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AdvBench', language);
     const nodes = nodeMap(arch);
@@ -461,7 +465,7 @@ test('constructs AdvBench from disclosed seeds before selecting the GCG protocol
   }
 });
 
-test('pins paper versions, official snapshots, source locators, and review verdicts', () => {
+superseded('pins paper versions, official snapshots, source locators, and review verdicts', () => {
   const expected = {
     'ARC_(AI2_Reasoning_Challenge)': {
       paper: 'https://arxiv.org/abs/1803.05457v1',

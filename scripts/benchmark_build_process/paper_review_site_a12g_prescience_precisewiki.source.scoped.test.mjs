@@ -95,7 +95,7 @@ function renderFallback(graph) {
   return lines.join('\n');
 }
 
-test('keeps PreScience and PreciseWikiQA bilingual, topology-locked, and source-boundary safe', () => {
+test('keeps published PreScience and PreciseWikiQA bundles bilingual, topology-locked, and source-boundary safe', () => {
   for (const id of benchmarkIds) {
     const detail = readDetail(id);
     const en = readSpec(id, 'en');
@@ -148,7 +148,7 @@ test('keeps PreScience and PreciseWikiQA bilingual, topology-locked, and source-
     assert.equal(detail.widely_tested, false, `${id} widely-tested flag`);
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} review date`);
     assert.ok(detail.drawio_review_note.length > 3_000, `${id} review evidence`);
-    assert.doesNotMatch(detail.drawio_review_note, /Formal publication evidence/iu, `${id} source-only note`);
+    assert.match(detail.drawio_review_note, /Formal publication evidence/iu, `${id} publication evidence`);
   }
 });
 

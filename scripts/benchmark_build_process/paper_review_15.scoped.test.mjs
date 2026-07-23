@@ -198,8 +198,8 @@ test('publishes re-rendered diagrams as fixed-light SVGs without visible fallbac
       assert.match(drawio, /convertToSvg=1/u, `${id}.${language}.drawio`);
       assert.doesNotMatch(
         drawio,
-        /<mxCell\b[^>]*\bvalue="[^"]+"[^>]*\bedge="1"/u,
-        `${id}.${language}.drawio must render each edge label only through its label cell`,
+        /style="edgeLabel(?:;|")/u,
+        `${id}.${language}.drawio must store each edge label on its parent edge`,
       );
       assert.match(svg, /<text\b/u, `${id}.${language}.svg`);
       assert.doesNotMatch(svg, /<foreignObject\b/u, `${id}.${language}.svg`);

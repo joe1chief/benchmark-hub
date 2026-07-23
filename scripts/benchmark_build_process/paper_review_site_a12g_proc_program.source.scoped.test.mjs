@@ -159,7 +159,7 @@ function assertEdges(graph, expected, context) {
   }
 }
 
-test('keeps ProcBench and ProgramBench source bundles bilingual, orthogonal, and style-locked', () => {
+test('keeps published ProcBench and ProgramBench bundles bilingual, orthogonal, and style-locked', () => {
   for (const id of benchmarkIds) {
     const detail = readDetail(id);
     const en = readSpec(id, 'en');
@@ -210,7 +210,7 @@ test('keeps ProcBench and ProgramBench source bundles bilingual, orthogonal, and
       }
     }
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} review date`);
-    assert.doesNotMatch(detail.drawio_review_note, /Formal publication evidence/u, `${id} source-stage note`);
+    assert.match(detail.drawio_review_note, /Formal publication evidence/u, `${id} publication evidence`);
     assert.ok(detail.drawio_review_note.length > 5_000, `${id} evidence depth`);
   }
 });
