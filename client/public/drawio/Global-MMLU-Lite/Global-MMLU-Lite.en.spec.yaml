@@ -5,140 +5,172 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Global-MMLU-Lite Build Process
-  description: Paper-release construction of the culturally balanced, fully human-translated Global-MMLU-Lite subset.
+  description: >-
+    Paper-versioned cultural labeling, translation, human verification, balanced Lite sampling, evaluation, and later
+    release drift.
   legend: >-
-    This figure follows the 15-language, 6,000-item v1 release evaluated in arXiv:2412.03304; the maintained dataset
-    later expanded beyond the paper release.
+    Dashed arrows mark evidence and post-paper v3 drift; solid arrows follow arXiv:2412.03304v2 and the paper-compatible
+    v1 data snapshot. Machine-readable split metadata is authoritative where README totals drift.
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      Start from English MMLU
-      about 14K four-choice questions
-      57 exam subjects
-    type: database
+      Primary evidence
+      arXiv:2412.03304v2
+      full 0e619dbe · Lite v1 b88e8867
+      current Lite v3 36c2fd75
+    type: document
     size: xl
     position:
       x: 40
-      'y': 300
-  - id: cultural_sample
+      'y': 320
+  - id: source
     label: |-
-      Uniformly sample 2,850 questions
-      50 from each subject
-      engage 200 professional/community annotators
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 80
-  - id: cultural_labels
-    label: |-
-      Collect at least 3 labels per item
-      tag cultural · geographic · dialect knowledge
-      derive CS or CA membership
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 80
-  - id: translate
-    label: |-
-      Translate MMLU into 41 target languages
-      use Google Translate uniformly
-      keep question and four-option structure
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 520
-  - id: human
-    label: |-
-      Maximize human-verified translations
-      professional MMMLU + paid Gold Set
-      native community post-edits improve 25 languages
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 520
-  - id: merge
-    label: |-
-      Join CS/CA labels with translations
-      retain only fully human-translated
-      or human-post-edited language versions for Lite
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 300
-  - id: languages
-    label: |-
-      Select 15 paper-release languages
-      fully human-translated or post-edited
-      preserve cultural labels in every language
-    type: process
-    size: xl
-    position:
-      x: 1280
-      'y': 300
-  - id: balance
-    label: |-
-      Balance within each language
-      sample 200 Culturally Sensitive
-      plus 200 Culturally Agnostic questions
-    type: process
-    size: xl
-    position:
-      x: 1580
-      'y': 300
-  - id: release
-    label: |-
-      Release Global-MMLU-Lite v1
-      15 × (200 CS + 200 CA)
-      6,000 multilingual items total
+      Start from English MMLU
+      57 subjects · 14,042 test questions
+      285 dev examples
     type: database
     size: xl
     position:
-      x: 1880
-      'y': 300
-  - id: score
+      x: 300
+      'y': 320
+  - id: cultural_sample
     label: |-
-      Run multilingual four-choice evaluation
-      exact-match the selected option
-      report overall, language, CS, and CA accuracy
+      Uniformly sample 50 per subject
+      2,850 English items
+      200 professional/community annotators
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 80
+  - id: cultural_vote
+    label: |-
+      At least 3 labels per item
+      half-or-more keeps each label
+      culture · geography · dialect · temporal
+      CS if first three; otherwise CA
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 80
+  - id: machine_translate
+    label: |-
+      Translate all test items to 41 languages
+      Google Translate for every language
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 560
+  - id: human_improve
+    label: |-
+      Replace or post-edit where available
+      Gold Set 4 · MMMLU 10
+      community 11 with ≥50 items
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 560
+  - id: join
+    label: |-
+      Join CS/CA labels to translations
+      retain human-translated/post-edited
+      languages for Lite
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 320
+  - id: lite_filter
+    label: |-
+      Construct balanced Lite
+      exclude 14 one-sided CS/CA subjects
+      sample 5 CS + 5 CA where possible
+      upsample Business/Medical/General
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 320
+  - id: paper_release
+    label: |-
+      Release paper-era Lite v1
+      15 languages · 200 CS + 200 CA each
+      6,000 test; pinned data has 3,225 dev
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 320
+  - id: current_lite
+    label: |-
+      Post-paper data boundary
+      v3: 23 languages · 9,200 test
+      machine metadata: 4,800 dev
+      README prose table still says 4,655
+    type: document
+    size: xl
+    position:
+      x: 1860
+      'y': 80
+  - id: evaluate
+    label: |-
+      Paper evaluation protocol
+      5-shot; instruction in sample language
+      open: lm-eval option log-probability
+      closed: generate one option via API
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 560
+  - id: metric
+    label: |-
+      Report accuracy
+      by language · CS/CA · resource level
+      exact closed preamble/parser unpublished
     type: terminal
     size: xl
     position:
-      x: 2180
-      'y': 300
+      x: 2120
+      'y': 560
 edges:
+  - from: evidence
+    to: source
+    type: data
   - from: source
     to: cultural_sample
     type: primary
   - from: cultural_sample
-    to: cultural_labels
-    type: primary
-  - from: cultural_labels
-    to: merge
+    to: cultural_vote
     type: primary
   - from: source
-    to: translate
+    to: machine_translate
     type: primary
-  - from: translate
-    to: human
+  - from: machine_translate
+    to: human_improve
     type: primary
-  - from: human
-    to: merge
+  - from: cultural_vote
+    to: join
     type: primary
-  - from: merge
-    to: languages
+  - from: human_improve
+    to: join
     type: primary
-  - from: languages
-    to: balance
+  - from: join
+    to: lite_filter
     type: primary
-  - from: balance
-    to: release
+  - from: lite_filter
+    to: paper_release
     type: primary
-  - from: release
-    to: score
+  - from: paper_release
+    to: current_lite
+    type: data
+  - from: paper_release
+    to: evaluate
+    type: primary
+  - from: evaluate
+    to: metric
     type: primary
 modules: []

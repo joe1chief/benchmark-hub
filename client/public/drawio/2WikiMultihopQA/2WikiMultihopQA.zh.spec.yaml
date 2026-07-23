@@ -4,14 +4,16 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: 2WikiMultihopQA 构建流程
-  description: 按论文重建从 Wikipedia/Wikidata 信源，经模板与逻辑规则分支、四类问题、各类型有效性门控、串行后处理与 TF-IDF 干扰段检索，直至按难度划分数据集的流程。
-  legend: 实线箭头表示数据集构建顺序；四类问题均须通过各自的有效性门控。
+  title: 2WikiMultihopQA 构建与评测流程
+  description: 按论文重建带日期的 Wikipedia/Wikidata 信源、四类问题、显式有效性门控、保留残余错配事实的后处理、TF-IDF 干扰段、难度划分与官方三任务评分。
+  legend: 实线箭头表示构建与评测顺序；残余信源错配会如实标注，而非画成已完全清除。
 nodes:
   - id: source
     label: |-
-      Wikipedia 摘要 + Wikidata
-      595 万实体 • 23,763 个分组
+      Wikipedia / Wikidata 数据转储
+      英文 Wikipedia：2020-01-01
+      英文 Wikidata：2019-12-31
+      5,950,475 个实体 • 23,763 个分组
     type: database
     size: xl
     position:
@@ -19,10 +21,11 @@ nodes:
       'y': 280
   - id: templates
     label: |-
-      设计问题模板
-      HotpotQA NER + 人工模板
-      删除单跳模板
-      删除依赖上下文的模板
+      创建问题模板
+      17,456 道 HotpotQA 比较题
+      spaCy NER + 人工模板
+      前 50 类热门实体
+      删除单跳 / 依赖上下文的形式
     type: process
     size: xl
     position:
@@ -94,8 +97,9 @@ nodes:
       'y': 200
   - id: two_hop_gate
     label: |-
-      两跳有效性门控
-      中间实体与答案路径均有效
+      两跳跨度门控
+      p 提及桥接实体；p1 含答案
+      p 不得含答案；p1 不得含起始实体
     type: process
     size: xl
     position:
@@ -113,9 +117,10 @@ nodes:
       'y': 280
   - id: postprocess
     label: |-
-      问题后处理
-      平衡 yes / no 答案
-      删除歧义与不匹配项
+      后处理与错配审计
+      平衡 yes / no；删除歧义
+      启发式规则 + 人工检查
+      训练抽查仍有 8 / 100 语义错配
     type: process
     size: xl
     position:
@@ -145,6 +150,7 @@ nodes:
     label: |-
       按难度划分
       单跳 BERT • 五折分析
+      交叉验证平均 F1：86.7%
     type: process
     size: xl
     position:
@@ -153,13 +159,44 @@ nodes:
   - id: splits
     label: |-
       发布划分
-      训练 154,878 + 困难 12,576
+      训练中等 154,878
+      训练困难 12,576
       开发 12,576 • 测试 12,576
     type: database
     size: xl
     position:
       x: 2200
       'y': 280
+  - id: evaluation
+    label: |-
+      官方评测输入
+      问题 + 10 个段落
+      v1.1 支持别名 / 居民称谓
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 760
+  - id: three_tasks
+    label: |-
+      三项预测任务
+      答案跨度 • 句级支持事实
+      证据三元组
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 760
+  - id: joint_metrics
+    label: |-
+      官方指标
+      各任务 EM / F1
+      联合 EM • 联合 F1
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 760
 edges:
   - from: source
     to: templates
@@ -222,5 +259,14 @@ edges:
     type: primary
   - from: split_model
     to: splits
+    type: primary
+  - from: splits
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: three_tasks
+    type: primary
+  - from: three_tasks
+    to: joint_metrics
     type: primary
 modules: []

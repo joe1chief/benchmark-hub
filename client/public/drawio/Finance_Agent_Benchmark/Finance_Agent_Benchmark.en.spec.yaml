@@ -5,102 +5,145 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Finance Agent Benchmark Build Process
-  description: Paper-aligned expert construction, rubric development, tool-using agent evaluation, and class-balanced scoring.
+  description: Paper-aligned expert construction, rubric scoring, agent protocol, and explicit public/private release boundary.
   legend: >-
-    Solid arrows follow arXiv:2508.00828. Rubrics are derived from expert answers and reviewed manually; final
-    correctness requires every rubric check and no contradiction.
+    Solid arrows follow arXiv:2508.00828v1. Dashed arrows separate the 50-row public release and the pinned 2026 harness
+    from the paper protocol; the public repository does not expose the gated judge implementation.
 nodes:
-  - id: taxonomy
+  - id: evidence
     label: |-
-      Consult 7 financial-industry experts
-      banks · hedge funds · private equity / startups
-      define 9 practical task categories and difficulty
-    type: process
-    size: xl
-    position:
-      x: 40
-      'y': 250
-  - id: questions
-    label: |-
-      Experts author 537 real research questions
-      require multiple public documents / SEC filings
-      focus on documents published from 2024 onward
+      Evidence boundary: arXiv:2508.00828v1
+      finance-agent @ 82337852 · public SHA 901e8cff
+      paper protocol + pinned 2026 repository audit
     type: document
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: annotations
+      x: 40
+      'y': 180
+  - id: taxonomy
     label: |-
-      Attach expert supervision to each question
-      ground-truth answer · necessary sources
-      step-by-step solution / calculation trajectory
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 250
-  - id: review
-    label: |-
-      A different expert peer-reviews each item
-      correct or remove calculation/content errors
-      authors standardize formatting in a final review
+      Consult 7 practitioners across finance
+      define 9 real analyst task categories
+      easy retrieval through hard market analysis
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: rubrics
+      x: 300
+      'y': 180
+  - id: questions
     label: |-
-      GPT-4o extracts atomic answer rubrics
-      authors verify every generated criterion
-      add a whole-answer contradiction rubric
+      Experts author 537 multi-document questions
+      open-web / SEC sources published from 2024
+      cover retrieval, reasoning, modeling, analysis
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 180
+  - id: annotations
+    label: |-
+      Attach expert answer + required sources
+      record a step-by-step solution trajectory
+      questions must be answerable from public data
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 180
+  - id: peer_review
+    label: |-
+      A different expert checks every item
+      correct or remove calculation/content errors
+      authors perform final format standardization
     type: process
     size: xl
     position:
       x: 1080
-      'y': 250
-  - id: splits
+      'y': 180
+  - id: rubric_generation
     label: |-
-      Preserve category distributions across splits
-      public validation 50 · private validation 150
-      fully private test 337
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: harness
-    label: |-
-      Run the same ReAct-style agent harness
-      Google Search · EDGAR Search · Parse HTML
-      Retrieve Information via a key-value store
+      GPT-4o prompt returns a JSON array
+      atomic operator/criteria checks from the answer
+      authors manually review + add contradiction
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: judge
+      x: 1340
+      'y': 180
+  - id: splits
     label: |-
-      LLM judge scores each rubric separately
-      apply conjunction across required checks
-      reject any conflict with the expert answer
+      Preserve 9-category distributions
+      public validation 50 · private validation 150
+      fully private test 337 · metrics use all 537
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 180
+  - id: paper_prompt
+    label: |-
+      Paper run: identical user prompt; no system prompt
+      finish with FINAL ANSWER plus sources
+      temperature 0 · max 16,384 if supported
     type: process
     size: xl
     position:
       x: 1860
-      'y': 250
-  - id: metrics
+      'y': 180
+  - id: tools
     label: |-
-      Report accuracy with uncertainty
-      primary: equal-weight mean of 9 category accuracies
-      also naive accuracy, time, tool use, and cost
-    type: terminal
+      ReAct-style agent with four tools
+      GoogleSearch · EdgarSearch · ParseHTML
+      RetrieveInformation over key-value storage
+    type: process
     size: xl
     position:
       x: 2120
-      'y': 250
+      'y': 180
+  - id: judge
+    label: |-
+      LLM judge scores each atomic rubric
+      correct only if all correctness checks pass
+      and no contradiction with the expert answer
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 180
+  - id: metrics
+    label: |-
+      Primary: equal-weight mean of 9 category scores
+      also report naive question-level accuracy
+      plus time, tool use, and cost per query
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 180
+  - id: public_release
+    label: |-
+      Public repository exposes 50 rows only
+      public.csv: 200 correctness + 50 contradiction
+      private items and Vals evaluation are gated
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 470
+  - id: repo_protocol
+    label: |-
+      Pinned 2026 repo prompt date: April 07, 2025
+      submit_final_result · 32,000 tokens · 50 turns
+      judge implementation and parser are absent
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 470
 edges:
+  - from: evidence
+    to: taxonomy
+    type: primary
   - from: taxonomy
     to: questions
     type: primary
@@ -108,21 +151,30 @@ edges:
     to: annotations
     type: primary
   - from: annotations
-    to: review
+    to: peer_review
     type: primary
-  - from: review
-    to: rubrics
+  - from: peer_review
+    to: rubric_generation
     type: primary
-  - from: rubrics
+  - from: rubric_generation
     to: splits
     type: primary
   - from: splits
-    to: harness
+    to: paper_prompt
     type: primary
-  - from: harness
+  - from: paper_prompt
+    to: tools
+    type: primary
+  - from: tools
     to: judge
     type: primary
   - from: judge
     to: metrics
     type: primary
+  - from: splits
+    to: public_release
+    type: secondary
+  - from: public_release
+    to: repo_protocol
+    type: secondary
 modules: []

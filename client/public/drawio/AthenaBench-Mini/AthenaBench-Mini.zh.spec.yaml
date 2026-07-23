@@ -4,189 +4,139 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AthenaBench-Mini 构建流程
-  description: 基于 arXiv:2511.01144 对齐的 CTI 数据构建、代表性 Mini 子集选择与六任务评测流程。
-  legend: AthenaBench-Mini 是从 8,100 条完整基准中选择的 950 条公开子集；按任务设置采样比例，使其总体模型排名尽可能接近完整基准。
+  title: AthenaBench-Mini 论文对齐构建流程
+  description: 依据 AthenaBench v2 第 3.1-3.6 与 4.2-4.3 节，展示任务专属构建控制与按随机种子选择 Mini。
+  legend: 质量控制并非全局操作：去重仅用于 RCM/VSP，泄漏检查仅用于 TAA，模型筛选与人工修订仅用于 CKT。
 nodes:
-  - id: cti_sources
+  - id: ckt_source
     label: |-
-      整理权威 CTI 知识
-      MITRE ATT&CK • CWE • CAPEC • CISA
-      STIX/TAXII • GDPR 与行业标准
+      收集 CKT 知识
+      权威 CTI 来源
+      生成五选一题目
     type: database
     size: xl
     position:
       x: 40
       'y': 40
-  - id: cve_sources
-    label: |-
-      接入实时漏洞数据
-      NVD API • CVE 描述
-      CVSS 指标与 CWE 标签
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 220
-  - id: threat_sources
-    label: |-
-      收集威胁与防御证据
-      APT 厂商报告 • 安全博客
-      MITRE STIX 技术与缓解措施
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 400
   - id: ckt
     label: |-
-      构建 CTI Knowledge Test
-      GPT-5 生成五选一问题
-      双模型标记 + 人工修正
+      用 GPT-5 筛选 CKT
+      Gemini 交叉检查
+      仅 CKT 进行人工修订
     type: process
     size: xl
     position:
       x: 320
       'y': 40
+  - id: cve_source
+    label: |-
+      收集 CVE 与 CVSS 数据
+      根因与严重度字段
+      构建 RCM 与 VSP
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 230
   - id: rcm_vsp
     label: |-
-      构建 RCM 与 VSP
-      映射根因 CWE 并预测 CVSS
-      去重并过滤过短记录
+      仅对 RCM / VSP 去重
+      过滤无效记录
+      不扩展到其他任务
     type: process
     size: xl
     position:
       x: 320
-      'y': 220
-  - id: taa_rms_ate
+      'y': 230
+  - id: taa_source
     label: |-
-      构建 TAA、RMS 与 ATE
-      匿名化攻击者 • 关联缓解措施
-      将技术描述改写为场景
+      收集威胁报告
+      攻击者与技术
+      构建 TAA 题目
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 420
+  - id: taa
+    label: |-
+      仅对 TAA 做泄漏检查
+      检查攻击者线索
+      其他任务保持独立
     type: process
     size: xl
     position:
       x: 320
-      'y': 400
+      'y': 420
+  - id: rms_ate
+    label: |-
+      构建 RMS 与 ATE
+      缓解措施与场景
+      使用各自构建过程
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 610
   - id: full_benchmark
     label: |-
       汇总完整 AthenaBench
-      六类 CTI 任务共 8,100 条
-      删除重复与答案泄露线索
+      8,100 题 • 六类任务
+      保留任务边界
     type: database
     size: xl
     position:
       x: 600
-      'y': 220
-  - id: sampling_policy
+      'y': 300
+  - id: seed_candidates
     label: |-
-      应用任务特定采样比例
-      CKT/RCM/VSP 取 10% • ATE/RMS 取 20%
-      TAA 取 50%
+      应用各任务抽样率 / 配额
+      生成 10 个 Mini 候选集
+      使用 10 个随机种子
     type: process
     size: xl
     position:
       x: 880
-      'y': 40
-  - id: candidate_subsets
+      'y': 300
+  - id: select_seed
     label: |-
-      生成候选 Mini 子集
-      使用十个随机种子
-      评估模型总体表现
+      选择整体表现最接近完整集者
+      比较模型表现
+      保留论文规定的任务数量
     type: process
     size: xl
     position:
-      x: 880
-      'y': 220
-  - id: representative_selection
-    label: |-
-      选择代表性随机种子
-      总体表现与完整基准
-      最接近的候选子集
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 400
+      x: 1160
+      'y': 300
   - id: mini_release
     label: |-
-      发布 AthenaBench-Mini
+      发布 950 道 Mini 题目
       CKT 300 • ATE 100 • RCM 200
       RMS 100 • VSP 200 • TAA 50
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 220
-  - id: model_eval
-    label: |-
-      评测 12 个 LLM
-      闭源与开源模型
-      支持时统一温度为 0
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 220
-  - id: categorical_metrics
-    label: |-
-      评分离散答案任务
-      CKT、ATE、RCM、TAA 使用准确率
-      按任务标准答案精确判断
-    type: process
-    size: xl
-    position:
       x: 1440
-      'y': 580
-  - id: rms_metric
-    label: |-
-      评分风险缓解任务
-      RMS 使用多标签 F1
-      允许多个有效缓解策略
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 580
-  - id: vsp_metric
-    label: |-
-      评分漏洞严重性
-      解析 CVSS 并计算 MAD
-      标准化准确率为 1 - MAD / 7.7
-    type: process
-    size: xl
-    position:
-      x: 2000
-      'y': 580
-  - id: combined
-    label: |-
-      汇总六类任务分数
-      统一为百分比量纲
-      比较完整集与 Mini 排名
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 800
+      'y': 300
   - id: report
     label: |-
-      汇报 AthenaBench-Mini 结果
-      六项任务指标 + Combined Score
-      诊断 CTI 推理能力缺口
+      评测六类任务指标
+      比较 Mini 与完整集
+      报告 CTI 表现
     type: terminal
     size: xl
     position:
       x: 1720
-      'y': 1020
+      'y': 300
 edges:
-  - from: cti_sources
+  - from: ckt_source
     to: ckt
     type: primary
-  - from: cve_sources
+  - from: cve_source
     to: rcm_vsp
     type: primary
-  - from: threat_sources
-    to: taa_rms_ate
+  - from: taa_source
+    to: taa
     type: primary
   - from: ckt
     to: full_benchmark
@@ -194,43 +144,31 @@ edges:
   - from: rcm_vsp
     to: full_benchmark
     type: primary
-  - from: taa_rms_ate
+  - from: taa
     to: full_benchmark
     type: primary
+  - from: rms_ate
+    to: full_benchmark
+    type: primary
+    waypoints:
+      - x: 560
+        'y': 660
+      - x: 560
+        'y': 750
+      - x: 700
+        'y': 750
+      - x: 700
+        'y': 430
   - from: full_benchmark
-    to: sampling_policy
+    to: seed_candidates
     type: primary
-  - from: sampling_policy
-    to: candidate_subsets
+  - from: seed_candidates
+    to: select_seed
     type: primary
-  - from: candidate_subsets
-    to: representative_selection
-    type: primary
-  - from: representative_selection
+  - from: select_seed
     to: mini_release
     type: primary
   - from: mini_release
-    to: model_eval
-    type: primary
-  - from: model_eval
-    to: categorical_metrics
-    type: primary
-  - from: model_eval
-    to: rms_metric
-    type: data
-  - from: model_eval
-    to: vsp_metric
-    type: data
-  - from: categorical_metrics
-    to: combined
-    type: primary
-  - from: rms_metric
-    to: combined
-    type: primary
-  - from: vsp_metric
-    to: combined
-    type: primary
-  - from: combined
     to: report
     type: primary
 modules: []

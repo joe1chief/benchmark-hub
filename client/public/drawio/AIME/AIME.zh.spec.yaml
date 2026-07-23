@@ -4,40 +4,42 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: 站点 AIME 条目 / MathArena 构建与评测流程
-  description: 本站 AIME 标识实际承载 MathArena 论文快照及其按任务区分的评测协议，并非仅指年度 AIME 数据集。
-  legend: 162 题快照按普通答案题、可使用工具的 Project Euler、普通证明题和 IMO 2025 证明筛选协议分流后发布成绩。
+  title: 站点旧 AIME 标识 / MathArena 论文协议
+  description: 站点旧 AIME 标识对应 MathArena 论文基准：162 道多竞赛题快照，分别执行答案题、USAMO 证明、Project Euler 与 IMO 2025 证明筛选协议。
+  legend: 实线表示协议阶段；四个任务分支保留论文各自的生成与评分边界，最后汇总并发布 MathArena 成绩。
 nodes:
-  - id: stream
+  - id: identity
     label: |-
-      追踪新竞赛
-      采用主办方审核题目
-      保留发布日期
-    type: database
+      站点旧 ID：AIME
+      论文基准：MathArena
+      非单一 AIME 题集
+    type: terminal
     size: xl
     position:
       x: 40
-      'y': 260
-  - id: select
+      'y': 280
+  - id: competitions
     label: |-
-      选择竞赛
+      选择新竞赛
       高难度且有公信力
       覆盖答案题与证明题
+      排除已饱和的 Kangaroo
     type: process
     size: xl
     position:
-      x: 320
-      'y': 260
+      x: 300
+      'y': 280
   - id: extract
     label: |-
-      提取并标准化
-      原始题目与解答
+      提取原始材料
+      题目与官方解答
+      统一格式
       人工检查错漏
     type: document
     size: xl
     position:
-      x: 600
-      'y': 260
+      x: 560
+      'y': 280
   - id: snapshot
     label: |-
       MathArena • 共 162 题
@@ -47,140 +49,155 @@ nodes:
     type: database
     size: xl
     position:
-      x: 880
-      'y': 260
+      x: 820
+      'y': 280
   - id: models
     label: |-
-      选择模型
-      总榜 • 开源权重
-      成本-性能前沿
+      选择评测模型
+      总榜领先 + 开源权重
+      成本-性能帕累托前沿
+      排除非推理模型
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 260
-  - id: route
-    label: 采用哪类协议？
-    type: decision
-    size: xl
-    position:
-      x: 1440
-      'y': 260
-  - id: ordinary_answers
+      x: 1080
+      'y': 280
+  - id: generation
     label: |-
-      普通答案题
-      通常生成 4 份响应
+      每题 4 份响应
+      提供方推荐设置
+      不做额外调参
       临近竞赛发布时评测
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 0
-  - id: answer_grade
+      x: 1340
+      'y': 280
+  - id: route
+    label: 采用哪类论文协议？
+    type: decision
+    size: xl
+    position:
+      x: 1600
+      'y': 280
+  - id: ordinary_answers
     label: |-
-      最终答案评分
-      解析方框答案
-      复核分歧
+      普通答案题
+      AIME • HMMT
+      BRUMO • CMIMC
+      解析最终方框答案
     type: process
     size: xl
     position:
-      x: 2000
+      x: 1860
       'y': 0
   - id: project_euler
     label: |-
-      Project Euler
-      允许使用工具求解
-      20 道研究型题目
+      Project Euler • 20 题
+      Python + C++20 安全沙箱
+      返回最终方框答案
     type: process
     size: xl
     position:
-      x: 1720
+      x: 2120
       'y': 180
-  - id: ordinary_proofs
+  - id: answer_parse
     label: |-
-      生成普通证明
+      共享答案解析器
+      LaTeX 转 SymPy 等价判断
+      Gemini-2.5-Flash 语义裁判
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 80
+  - id: answer_qc
+    label: |-
+      答案质量复核
+      GUI 标记分歧
+      人工复核并更新解析器
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 80
+  - id: proofs
+    label: |-
+      USAMO 证明生成
       每题 4 份响应
       匿名化模型身份
-    type: user
+    type: process
     size: xl
     position:
-      x: 1720
-      'y': 360
+      x: 2120
+      'y': 400
   - id: proof_score
     label: |-
-      2 名人工评分员
-      按部分分细则评分
-      独立记录理由
+      USAMO 证明评分
+      竞赛式部分分细则
+      2 名独立人工评分员
+      记录分数与书面理由
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 360
+      x: 2640
+      'y': 400
   - id: imo_samples
     label: |-
-      IMO 2025 协议
-      生成 32 份样本
-      每题每模型执行
+      IMO 2025 证明筛选
+      每题每模型生成 32 份样本
+      形成候选证明池
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 540
+      x: 2380
+      'y': 620
   - id: judge_bracket
     label: |-
-      模型裁判淘汰赛
+      模型自评淘汰赛
       成对比较证明
-      胜者晋级
+      每轮胜者晋级
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 540
-  - id: selected_proof
-    label: |-
-      选出一份证明
-      采用淘汰赛胜者
-      隐藏模型身份
-    type: document
-    size: xl
-    position:
-      x: 2280
-      'y': 540
+      x: 2640
+      'y': 620
   - id: imo_human
     label: |-
-      IMO 人工评分
-      2 名人工评分员
-      按竞赛细则评分
+      最佳证明 + 2 名人工评分员
+      采用竞赛评分细则
+      4 轮与 32 选优的关系
+      论文未披露
     type: user
     size: xl
     position:
-      x: 2560
-      'y': 540
+      x: 2900
+      'y': 620
   - id: score
     label: |-
-      汇总成绩
-      答案 • 工具 • 证明
-      统计置信区间
+      答案准确率 + 证明部分分
+      排名区间：配对置换检验
+      准确率区间：伯努利分布
     type: process
     size: xl
     position:
-      x: 2840
-      'y': 260
+      x: 3160
+      'y': 280
   - id: publish
     label: |-
-      发布 MathArena
+      发布 MathArena 成绩
       排行榜与完整响应
       成本和日期提示
     type: terminal
     size: xl
     position:
-      x: 3120
-      'y': 260
+      x: 3420
+      'y': 280
 edges:
-  - from: stream
-    to: select
+  - from: identity
+    to: competitions
     type: primary
-  - from: select
+  - from: competitions
     to: extract
     type: primary
   - from: extract
@@ -190,42 +207,45 @@ edges:
     to: models
     type: primary
   - from: models
+    to: generation
+    type: primary
+  - from: generation
     to: route
     type: primary
   - from: route
     to: ordinary_answers
     type: primary
-  - from: ordinary_answers
-    to: answer_grade
-    type: primary
-  - from: answer_grade
-    to: score
-    type: primary
   - from: route
     to: project_euler
     type: primary
-  - from: project_euler
-    to: score
+  - from: route
+    to: proofs
     type: primary
   - from: route
-    to: ordinary_proofs
+    to: imo_samples
     type: primary
-  - from: ordinary_proofs
+  - from: ordinary_answers
+    to: answer_parse
+    type: primary
+  - from: project_euler
+    to: answer_parse
+    type: primary
+  - from: answer_parse
+    to: answer_qc
+    type: primary
+  - from: answer_qc
+    to: score
+    type: primary
+  - from: proofs
     to: proof_score
     type: primary
   - from: proof_score
     to: score
     type: primary
-  - from: route
-    to: imo_samples
-    type: primary
   - from: imo_samples
     to: judge_bracket
     type: primary
   - from: judge_bracket
-    to: selected_proof
-    type: primary
-  - from: selected_proof
     to: imo_human
     type: primary
   - from: imo_human

@@ -1,157 +1,302 @@
 {
   "version": 1,
-  "title": "MATH500 构建流程",
+  "title": "MATH500 构建、发布、判分与论文评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
-    "modules": 0
+    "nodes": 21,
+    "edges": 20,
+    "modules": 3
   },
   "nodes": [
     {
-      "id": "parent",
-      "label": "从 MATH 数据集出发\n共 12,500 道竞赛数学题\n7 个学科 · 5 个难度等级\n带分步参考解答",
+      "id": "b1",
+      "label": "B1 · 父 MATH 数据来源\n高中数学竞赛\nAMC 10 / AMC 12 / AIME 等\n许多题目可从 AoPS 获取",
       "type": "database",
+      "module": "build",
       "size": "xl"
     },
     {
-      "id": "split",
-      "label": "使用原始 MATH 划分\n训练集 7,500 题\n测试集 5,000 题\n保留题目、解答和元数据",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "expand",
-      "label": "扩充过程监督训练集\n移入原测试集的 4,500 题\n将其加入训练池\n避免在最终留出集上调参",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "sample",
-      "label": "选择最终留出集\n采用均匀随机抽样\n保留余下 500 道题\n不将这些题用于训练",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "check",
-      "label": "检查留出集组成\n比较学科分布\n比较难度分布\n确认其代表 MATH 测试集",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "release",
-      "label": "发布 MATH500\n共 500 道留出题\n官方划分位于 PRM800K 仓库\n保留完整参考解答",
+      "id": "b2",
+      "label": "B2 · 父 MATH 数据合同\n12,500 题 · 训练 7,500 / 测试 5,000\n7 个学科 · 难度 1–5\n题目 + 完整解答 + 方框答案\nLaTeX · 图形使用 Asymptote 源码",
       "type": "database",
+      "module": "build",
       "size": "xl"
     },
     {
-      "id": "response",
-      "label": "生成模型解答\n每次输入一道竞赛题\n允许自由形式推理\n要求给出最终答案",
+      "id": "b3",
+      "label": "B3 · 扩大训练题覆盖\n目标：减少对 7,500 道训练题的过拟合\n使用原测试集中的 4,500 题\n用于 PRM800K / 奖励模型训练",
       "type": "process",
+      "module": "build",
       "size": "xl"
     },
     {
-      "id": "extract",
-      "label": "抽取候选最终答案\n定位答案片段\n删除非答案措辞\n保留数学表达式",
+      "id": "b4",
+      "label": "B4 · 创建非标准划分\n从原测试集均匀随机选 500 题\n留作评测\n另 4,500 题加入原 7,500 题训练集",
       "type": "process",
+      "module": "build",
       "size": "xl"
     },
     {
-      "id": "normalize",
-      "label": "归一化两侧答案\n使用 Hendrycks 风格规则\n处理 LaTeX、单位、百分比与元组\n再应用 PRM800K 自定义规则",
+      "id": "b5",
+      "label": "B5 · 检查代表性\n论文图 5：学科直方图\n+ 难度等级直方图\n仅进行子集选择\n论文未报告新标注",
       "type": "process",
+      "module": "build",
       "size": "xl"
     },
     {
-      "id": "equivalent",
-      "label": "两侧答案等价？\n归一化字符串相同\n或 SymPy 差为 0",
+      "id": "r1",
+      "label": "R1 · PRM800K 官方固定版本\n提交 7ecc7947 · 2023-06-01\nOpenAI 仓库 · MIT\n数据使用 Git LFS 存储",
+      "type": "database",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "r2",
+      "label": "R2 · 已发布划分文件\ntrain.jsonl · 12,000 行\ntest.jsonl · 500 行\n测试 LFS SHA-256 · 35dc4108…\n训练 / 测试 ID 无重叠",
+      "type": "database",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "r3",
+      "label": "R3 · MATH500 测试合同\n500 行 · 500 个唯一 ID\n全部来自原 MATH 测试集\nproblem / solution / answer\nsubject / level / unique_id",
+      "type": "database",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "r4",
+      "label": "固定训练文件审计\n12,000 行 · 11,999 个唯一 ID\n一个 ID 重复两次，解答不同\n两行 answer 为空\n不影响 500 行测试集",
+      "type": "document",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "r5",
+      "label": "发布 / 可复现性边界\n公开：划分 + 参考 + 判分器 + eval.py\n私有：生成器 / ORM / PRM 权重\n无通用提示或答案抽取器\n无官方在线提交 / 排行榜",
+      "type": "document",
+      "module": "release",
+      "size": "xl"
+    },
+    {
+      "id": "e1",
+      "label": "E1 · 预先抽取答案合同\ngrade_answer(given_answer, ground_truth)\n两个输入必须已是字符串\n未发布从完整解答抽取答案的实现\n候选为 None → False",
+      "type": "document",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "g1",
+      "label": "E2 · 精确匹配接受层\n对两个字符串做 Hendrycks 归一化\n相同 → True\n否则再做 PRM 自定义归一化\n相同 → True · 否则继续",
       "type": "process",
+      "module": "evaluate",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "计算单题正确性\n正确 · 1\n错误或不可解析 · 0\n每道题保留一个得分",
+      "id": "g2",
+      "label": "E3 · 结构约束\n拆分元组 / 区间元素\n要求相同元数 + 相同括号类型\n两个分数必须精确相同\n整数与非整数 → False",
       "type": "process",
+      "module": "evaluate",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "报告 MATH500 准确率\n500 题平均正确率\n可按学科与难度分解\n始终使用固定留出集",
+      "id": "g3",
+      "label": "E4 · 保守的 SymPy 回退\n仅处理前面未匹配的元素\n拒绝异常幂或 >2 个未知字母\n解析参考值 − 候选值\n化简为 0 → 等价 · 异常 → False",
+      "type": "process",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "g4",
+      "label": "E5 · 产生 is_correct\n每个候选答案得到布尔值\nREADME 警告判分器较保守\n可能拒绝正确答案或接受错误答案",
       "type": "terminal",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "e2",
+      "label": "E6 · 公开预评分样本 Blob\neval.py 硬编码 Azure 路径\n每题最多 1,860 个候选\n1,024 tokens 内无答案者已丢弃\n2.159 GB · 可变 / 无仓库哈希",
+      "type": "database",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "e3",
+      "label": "E7 · 选择论文评测方法\n--method prm 或 orm\n读取已存储 prm_score / orm_score\n读取已存储 is_correct\neval.py 不调用 grade_answer",
+      "type": "process",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "e4",
+      "label": "E8 · 重采样 Best-of-N\n400 次试验 · 每题补到 1,860 个\n未设随机种子的打乱 · 抽取 N 个\nN = 10, 25, 50, 75, 100, 200, 300,\n400, 500, 750, 1000, 1250, 1500, 1860\n移除填充与缺失答案",
+      "type": "process",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "e5",
+      "label": "E9 · 选最高分候选\nPRM：最大已存储 prm_score\n论文 PRM 分：步骤分数乘积\n中性步骤视为正确\nORM：最大已存储 orm_score",
+      "type": "process",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "m1",
+      "label": "M1 · 每个 N 的准确率\n已选 is_correct → 1\n无候选 / 错误 → 0\n正确题数 / 500",
+      "type": "formula",
+      "module": "evaluate",
+      "size": "xl"
+    },
+    {
+      "id": "m2",
+      "label": "M2 · 报告论文结果\n400 次试验的均值 + 标准差\nBest-of-N 曲线\nN=1,860：PRM 78.2 / ORM 72.4\n论文多数投票 69.6 · eval.py 未实现",
+      "type": "terminal",
+      "module": "evaluate",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "parent",
-      "to": "split",
+      "from": "b1",
+      "to": "b2",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "split",
-      "to": "expand",
+      "from": "b2",
+      "to": "b3",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "expand",
-      "to": "sample",
+      "from": "b3",
+      "to": "b4",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "sample",
-      "to": "check",
+      "from": "b4",
+      "to": "b5",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "check",
-      "to": "release",
+      "from": "b5",
+      "to": "r1",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "release",
-      "to": "response",
+      "from": "r1",
+      "to": "r2",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "response",
-      "to": "extract",
+      "from": "r2",
+      "to": "r3",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "extract",
-      "to": "normalize",
+      "from": "r3",
+      "to": "r4",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "normalize",
-      "to": "equivalent",
-      "type": "primary"
+      "from": "r4",
+      "to": "r5",
+      "type": "optional"
     },
     {
       "id": "edge-10",
-      "from": "equivalent",
-      "to": "score",
+      "from": "r5",
+      "to": "e1",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "score",
-      "to": "report",
+      "from": "e1",
+      "to": "g1",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "g1",
+      "to": "g2",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "g2",
+      "to": "g3",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "g3",
+      "to": "g4",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "g4",
+      "to": "e2",
+      "type": "data"
+    },
+    {
+      "id": "edge-16",
+      "from": "e2",
+      "to": "e3",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "e3",
+      "to": "e4",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "e4",
+      "to": "e5",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "e5",
+      "to": "m1",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "m1",
+      "to": "m2",
       "type": "primary"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "build",
+      "label": "构建",
+      "color": "$primaryLight"
+    },
+    {
+      "id": "release",
+      "label": "发布",
+      "color": "$secondaryLight"
+    },
+    {
+      "id": "evaluate",
+      "label": "评测",
+      "color": "$accentLight"
+    }
+  ]
 }

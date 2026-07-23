@@ -1,180 +1,318 @@
 {
   "version": 1,
-  "title": "PopQA Build and Evaluation Process",
+  "title": "PopQA Build, Release, and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 25,
+    "edges": 25,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "Define Popularity-Sensitive QA\nProbe factual parametric memory\nInclude popular and long-tail entities\nUse open-domain questions",
+      "id": "source_evidence",
+      "label": "Fixed Official Evidence\narXiv 2212.10511v4 · PDF 6de64bcf9b19\nGit 8172ab04794a · HF 098765c79ea1\nShared TSV · SHA 9a5227f41bff",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "Select 16 Wikidata Relations\nCover people · places · works\nInclude one-to-one and one-to-many\nRetain interpretable relation types",
-      "type": "process",
+      "id": "factual_scope",
+      "label": "Define Open-domain Factual QA\nRepresent Facts as Subject · Relation · Object\nAsk Entity-centric Questions\nProvide No Ground-truth Paragraph",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "Randomly Sample Knowledge Triples\nDraw subject-relation-object facts\nSpan a broad popularity range\nPreserve Wikidata identifiers",
+      "id": "relations",
+      "label": "Select 16 Wikidata Relations\noccupation · place of birth · genre · father\ncountry · producer · director · capital of\nscreenwriter · composer · color · religion\nsport · author · mother · capital",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "Write One Template per Relation\nManually express the relation\nUse a natural question form\nKeep wording consistent within type",
+      "id": "weighted_sampling",
+      "label": "Weight Sampling Toward Popularity\nKeep iff \\(f > \\exp(8R - 6)\\)\nR Is Uniform on (0,1)\nf Is Exact-match Frequency\n800 MB C4 Sample · Subject Aliases",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "Instantiate Natural Questions\nSubstitute the triple subject\nPreserve relation semantics\nProduce one open-domain prompt",
+      "id": "relation_cap",
+      "label": "Cap Each Relation\nStop Each Relation at 2,000 Triples\nIncrease Relation-type Diversity",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_6",
-      "label": "Collect All Acceptable Objects\nFind every entity E with S-R-E\nSupport multi-answer relations\nAvoid a single-object gold shortcut",
+      "id": "template_authoring",
+      "label": "Authors Manually Annotate Templates\nOne Final Natural-language Template per Relation\nAppendix Table 2 Lists All 16 Templates",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "question_instantiation",
+      "label": "Instantiate Each Question\nSubstitute Subject S\nUse the Template for R\nProduce a Natural-language Question",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_7",
-      "label": "Expand Answer and Entity Metadata\nAdd subject and object aliases\nStore IDs · URIs · Wikipedia titles\nRetain the relationship type",
+      "id": "answer_closure",
+      "label": "Close the Acceptable Answer Set\nInclude Every Entity E\nWhere (S, R, E) Exists in Wikidata\nUse All Such Entities as Gold Answers",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "pageviews",
+      "label": "Attach Popularity\nQuery Wikipedia Monthly Page Views\nUse Subject Popularity as the Proxy\nAnalyze Memorization by Subject Popularity",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "fixed_release",
+      "label": "Package the Fixed Release\n14,267 Rows · 17 Columns\nGit TSV Equals HF test.tsv\nIDs · Aliases · URIs · Wikipedia Titles\nQuestion · Popularity · Possible Answers",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_8",
-      "label": "Attach Popularity Signals\nQuery monthly Wikipedia page views\nRecord subject popularity\nRecord object popularity metadata",
+      "id": "prompt_config",
+      "label": "Use the Paper Prompt\nExact Text: Q: &lt;question&gt; A:\nGPT-3 Uses Zero-shot\nGPT-Neo and OPT Use 15-shot\nOne Example from Each Other 15 Relations",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "memory_gate",
+      "label": "Choose the Memory Regime\nVanilla Parametric Memory\nBM25 · Contriever · GenRead\nCompare with the Same Questions",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "Release 14,267 Questions\nKeep question and answer aliases\nKeep relation and entity metadata\nPreserve popularity for analysis",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "step_10",
-      "label": "Run Open-Domain QA\nProvide no supporting paragraph\nUse zero-shot or few-shot prompts\nGenerate a free-form answer",
+      "id": "vanilla",
+      "label": "Use Parametric Memory\nUse the Configured Zero- or 15-shot Prompt\nNo Retrieved or Generated Context",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "Compare Memory Regimes\nEvaluate vanilla model memory\nAdd BM25 or Contriever retrieval\nAdd GenRead or adaptive retrieval",
+      "id": "retrieval",
+      "label": "Use an Augmented Context\nBM25: Keep Full Top Retrieved Passage\nContriever: Split on \". \"; Drop Final Segment\nGenRead: Wikipedia Background · Max 150 Tokens\nThen Append the QA Prompt",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "Normalize Model Predictions\nPreserve answer text for matching\nCompare against every gold alias\nAllow any valid relation object",
+      "id": "generate",
+      "label": "Generate a Free-form Answer\nRunner Allows 15 New Tokens\nGPT-3 Temperature 0 · Top-p 1\nLocal Models Use Greedy Decoding\nKeep the First Output Line",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "Apply Exact-Substring Correctness\nMatch any gold answer exactly\nAccept a match inside the prediction\nScore each question correct or wrong",
+      "id": "code_scorer",
+      "label": "Apply the Fixed Runner Scorer\nLoad possible_answers\nTest Original · lower · capitalize Gold\nFind Gold in the Prediction Substring\nNo General Normalization",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_14",
-      "label": "Report Accuracy by Popularity\nOverall and per-relation accuracy\nCorrelate with log page views\nCompare retrieval policies",
+      "id": "report",
+      "label": "Report PopQA Results\nMean Accuracy · Per Relation\nCorrelate Binary Correctness\nwith Log Subject Popularity",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "adaptive_split",
+      "label": "Run Adaptive Retrieval Protocol\n75 Percent for Threshold Development\n25 Percent for Evaluation\nRepeat 100 Random Splits",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "threshold",
+      "label": "Learn a Per-relation Threshold\nBrute-force Popularity Thresholds\nMaximize Adaptive Accuracy\nUse Development Predictions Only",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "adaptive_gate",
+      "label": "Apply the Per-relation Threshold Policy\nUse Retrieval-augmented Prediction Below Threshold\nUse Parametric Prediction Otherwise",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "adaptive_report",
+      "label": "Report Adaptive Accuracy\nAverage over 100 Splits\nCompare Accuracy and Retrieval Share\nPreserve Per-relation Thresholding",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "Release and Run-count Boundary\nFixed TSV and Figure 4: 14,267\nAppendix B GPT-3 Runs: 14,282\n15-question Difference Is Unresolved\nDo Not Equate Run Snapshot with Fixed TSV",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_boundary",
+      "label": "Invocation Drift\nPaper GPT-3: 0-shot · Runner: 15-shot\nREADME Omits --n_examples 0\nContriever README: --ret_file\nRunner: --ret_path",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "scorer_boundary",
+      "label": "Paper-to-runner Scorer Boundary\nPaper: Exact Gold Substring\nRunner Tests Three Gold Casings\nPrediction Is Not Lowercased\nNo Token or Alias Normalizer",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "adaptive_boundary",
+      "label": "Adaptive Result Boundary\nNotebook Input Paths Are Blank\nNo Pinned Result Files Are Included\nThreshold Logic Is Reproducible\nPublished Results Are Not Recomputed Here",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
-      "type": "primary"
+      "from": "source_evidence",
+      "to": "factual_scope",
+      "type": "secondary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "factual_scope",
+      "to": "relations",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "relations",
+      "to": "weighted_sampling",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "from": "weighted_sampling",
+      "to": "relation_cap",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "from": "relation_cap",
+      "to": "template_authoring",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "template_authoring",
+      "to": "question_instantiation",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "question_instantiation",
+      "to": "answer_closure",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "answer_closure",
+      "to": "pageviews",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "pageviews",
+      "to": "prompt_config",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
-      "type": "primary"
+      "from": "pageviews",
+      "to": "fixed_release",
+      "type": "secondary"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "prompt_config",
+      "to": "memory_gate",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "from": "memory_gate",
+      "to": "vanilla",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
+      "from": "memory_gate",
+      "to": "retrieval",
       "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "vanilla",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "retrieval",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "generate",
+      "to": "code_scorer",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "code_scorer",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "code_scorer",
+      "to": "adaptive_split",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "adaptive_split",
+      "to": "threshold",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "threshold",
+      "to": "adaptive_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "adaptive_gate",
+      "to": "adaptive_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "fixed_release",
+      "to": "release_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-23",
+      "from": "prompt_config",
+      "to": "prompt_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-24",
+      "from": "code_scorer",
+      "to": "scorer_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-25",
+      "from": "adaptive_report",
+      "to": "adaptive_boundary",
+      "type": "secondary"
     }
   ],
   "modules": []

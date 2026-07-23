@@ -4,17 +4,18 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: 2WikiMultihopQA Build Process
+  title: 2WikiMultihopQA Build and Evaluation Process
   description: >-
-    Paper-aligned construction from Wikipedia/Wikidata sources through template and logical-rule branches, four question
-    types, type-specific validity gates, serialized post-processing and TF-IDF distractor retrieval, and
-    difficulty-aware splits.
-  legend: Solid arrows show the dataset-construction sequence; all four question-type branches must pass their gate.
+    Paper-aligned construction from dated Wikipedia/Wikidata sources through four question types, explicit validity
+    gates, mismatch-aware post-processing, TF-IDF distractors, difficulty-aware splits, and official three-task scoring.
+  legend: Solid arrows show the construction and evaluation sequence; residual source mismatch is reported, not hidden.
 nodes:
   - id: source
     label: |-
-      Wikipedia Summaries + Wikidata
-      5.95M entities • 23,763 groups
+      Wikipedia / Wikidata Dumps
+      English Wikipedia: 2020-01-01
+      English Wikidata: 2019-12-31
+      5,950,475 entities • 23,763 groups
     type: database
     size: xl
     position:
@@ -22,10 +23,11 @@ nodes:
       'y': 280
   - id: templates
     label: |-
-      Design Question Templates
-      HotpotQA NER + manual templates
-      Remove single-hop forms
-      Remove context-dependent forms
+      Create Question Templates
+      17,456 HotpotQA comparisons
+      spaCy NER + manual templates
+      Top-50 popular entity types
+      Drop single-hop / context-dependent forms
     type: process
     size: xl
     position:
@@ -97,8 +99,9 @@ nodes:
       'y': 200
   - id: two_hop_gate
     label: |-
-      Two-Hop Validity Gate
-      Valid intermediate and answer path
+      Two-Hop Span Gate
+      p mentions bridge; p1 has answer
+      p omits answer; p1 omits source
     type: process
     size: xl
     position:
@@ -116,9 +119,10 @@ nodes:
       'y': 280
   - id: postprocess
     label: |-
-      Post-Process Questions
-      Balance yes / no answers
-      Remove ambiguity and mismatches
+      Post-Process + Mismatch Audit
+      Balance yes / no; discard ambiguity
+      Heuristics + manual checks
+      8 / 100 train samples still mismatched
     type: process
     size: xl
     position:
@@ -148,6 +152,7 @@ nodes:
     label: |-
       Difficulty-Aware Splitting
       Single-hop BERT • five folds
+      Mean cross-validation F1: 86.7%
     type: process
     size: xl
     position:
@@ -156,13 +161,44 @@ nodes:
   - id: splits
     label: |-
       Published Splits
-      Train 154,878 + 12,576 hard
+      train-medium 154,878
+      train-hard 12,576
       Dev 12,576 • Test 12,576
     type: database
     size: xl
     position:
       x: 2200
       'y': 280
+  - id: evaluation
+    label: |-
+      Official Evaluation Input
+      Question + 10 paragraphs
+      Alias / demonym-aware v1.1
+    type: document
+    size: xl
+    position:
+      x: 2200
+      'y': 760
+  - id: three_tasks
+    label: |-
+      Three Prediction Tasks
+      Answer span • supporting facts
+      Evidence triples
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 760
+  - id: joint_metrics
+    label: |-
+      Official Metrics
+      EM / F1 for each task
+      Joint EM • Joint F1
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 760
 edges:
   - from: source
     to: templates
@@ -225,5 +261,14 @@ edges:
     type: primary
   - from: split_model
     to: splits
+    type: primary
+  - from: splits
+    to: evaluation
+    type: primary
+  - from: evaluation
+    to: three_tasks
+    type: primary
+  - from: three_tasks
+    to: joint_metrics
     type: primary
 modules: []

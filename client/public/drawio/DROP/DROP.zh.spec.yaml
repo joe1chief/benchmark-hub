@@ -4,138 +4,190 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DROP 构建流程
-  description: >-
-    论文对齐的 DROP 流程：叙事性和数字密集的 Wikipedia 段落用于对抗式众包，标注员必须编写实时 BiDAF 阅读器答错的 离散推理题，答案为片段、日期或数字；96,567 道题按段落划分、复标、过滤，并以 EM
-    和数值敏感 F1 评分。
-  legend: 实线箭头表示段落选择、对抗式出题、答案类型、验证和评测。
+  title: DROP 构建与评测流程
+  description: 对 DROP 数据构建和评分版本进行钉住，并明确区分 2019 论文中的贪心多片段对齐描述与发布版 AllenNLP 评分器的匈牙利最优匹配实现。
+  legend: 实线串联数据构建和评分；末端分支保留论文描述与发布评分器的版本边界。
 nodes:
-  - id: passages
+  - id: evidence
     label: |-
-      Wikipedia 段落搜索
-      叙事 + 数字密集文本
-      NFL / 历史 / 至少 20 个数字
-      约 7,000 个段落
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 200
-  - id: hit
-    label: |-
-      AMT 任务
-      随机给出 5 个段落
-      至少编写 12 组问答
-    type: user
-    size: xl
-    position:
-      x: 300
-      'y': 200
-  - id: reasoning
-    label: |-
-      离散推理提示
-      加减 / 最大最小 / 计数
-      选择 / 比较
+      论文 arXiv:1903.00161v2
+      发布包 SHA256 39d2278…
+      AllenNLP v0.9.0 @ 052353e
+      论文描述 ≠ 发布评分器
     type: document
     size: xl
     position:
+      x: 40
+      'y': 240
+  - id: passages
+    label: |-
+      Wikipedia 段落检索
+      叙事与数字密集文本
+      NFL / 历史 / 至少 20 个数字
+      约 7,000 个候选段落
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 240
+  - id: hit
+    label: |-
+      AMT 任务 · 随机 5 个段落
+      至少编写 12 组问答
+      加减 · 最大最小
+      计数 · 选择 · 比较
+    type: user
+    size: xl
+    position:
       x: 560
-      'y': 200
+      'y': 240
   - id: adversarial
     label: |-
-      实时 BiDAF 门
-      仅模型答错时可提交
+      实时 BiDAF 门槛
+      仅基线答错时
+      才能提交问题
     type: process
-    size: large
+    size: xl
     position:
       x: 820
-      'y': 200
+      'y': 240
   - id: answer_types
     label: |-
       标注员提供答案
       段落 / 问题文本片段
-      日期或带明确单位的数字
+      日期或数字
+      数字题必须写明单位
     type: process
     size: xl
     position:
-      x: 1060
-      'y': 200
-  - id: dataset
-    label: |-
-      DROP：96,567 道题
-      7,735 个段落
-      英文
-    type: database
-    size: large
-    position:
-      x: 1320
-      'y': 200
+      x: 1080
+      'y': 240
   - id: split
     label: |-
-      按段落划分
-      训练 77,409 / 开发 9,536
-      测试 9,622
+      将已收集问答按段落划分
+      80/10/10
+      问题数
+      77,409 / 9,536 / 9,622
+      段落数 · 5,565 / 582 / 588
     type: database
     size: xl
     position:
-      x: 1560
-      'y': 200
+      x: 1340
+      'y': 240
   - id: validate
     label: |-
-      开发 / 测试验证
+      开发 / 测试集复标
       至少 2 个附加答案
       移除 0.7% 无效题
-      Cohen's κ = 0.74
+      κ = 0.74 · 数字 0.81
+      片段 0.62 · 日期 0.65
     type: user
     size: xl
     position:
-      x: 1820
-      'y': 200
+      x: 1600
+      'y': 240
+  - id: dataset
+    label: |-
+      DROP 最终发布集
+      96,567 道英文问题
+      共 6,735 个段落
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 240
   - id: predict
     label: |-
-      阅读理解 + 离散推理
-      预测片段、日期或数字
+      阅读器生成预测
+      片段、日期或数字
+      与全部标准答案比较
     type: process
     size: xl
     position:
-      x: 2080
-      'y': 200
-  - id: score
+      x: 2120
+      'y': 240
+  - id: metric_boundary
     label: |-
-      归一化精确匹配
-      数值敏感宏平均 F1
-      对齐多片段；多答案取最大
+      评分版本边界
+      2019 论文描述
+      与发布评分器
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 240
+  - id: paper_metric
+    label: |-
+      论文 v2 描述
+      归一化 EM + 宏平均 F1
+      多片段贪心一对一对齐
+      数字不匹配 → F1 为 0
+      多个标准答案取最大
+    type: document
+    size: xl
+    position:
+      x: 2640
+      'y': 70
+  - id: release_metric
+    label: |-
+      AllenNLP v0.9.0 评分器
+      匈牙利最优匹配
+      数字匹配门槛
+      对齐片段 F1 取均值
+      多个标准答案取最大
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 410
+  - id: report
+    label: |-
+      DROP 评测报告
+      精确匹配 · 宏平均 F1
+      必须注明评分器版本
     type: terminal
     size: xl
     position:
-      x: 2340
-      'y': 200
+      x: 2900
+      'y': 240
 edges:
+  - from: evidence
+    to: passages
+    type: primary
   - from: passages
     to: hit
     type: primary
   - from: hit
-    to: reasoning
-    type: primary
-  - from: reasoning
     to: adversarial
     type: primary
   - from: adversarial
     to: answer_types
     type: primary
   - from: answer_types
-    to: dataset
-    type: primary
-  - from: dataset
     to: split
     type: primary
   - from: split
     to: validate
     type: primary
   - from: validate
+    to: dataset
+    type: primary
+  - from: dataset
     to: predict
     type: primary
   - from: predict
-    to: score
+    to: metric_boundary
+    type: primary
+  - from: metric_boundary
+    to: paper_metric
+    type: primary
+  - from: metric_boundary
+    to: release_metric
+    type: primary
+  - from: paper_metric
+    to: report
+    type: primary
+  - from: release_metric
+    to: report
     type: primary
 modules: []

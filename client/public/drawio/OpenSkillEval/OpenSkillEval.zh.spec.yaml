@@ -5,178 +5,261 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: OpenSkillEval 构建与评测流程
-  description: 依据论文，动态生成案例、按时间快照整理社区技能、统一运行Agent，并从轨迹和最终工件两条通道评测。
-  legend: 论文当前版本包含五类任务共677个案例，以及按高社区采用度筛选的30个社区skill快照。
+  description: 依据论文 v2 重建工件驱动案例生成、按时间快照整理社区技能、无技能与强制使用技能的受控实验，以及轨迹和工件双通道评测。
+  legend: 实线表示论文披露的构建或评测阶段；虚线表示固定证据、人工验证、发布边界和运行边界，不是额外的基准步骤。
 nodes:
-  - id: families
+  - id: source_evidence
     label: |-
-      定义五类任务
-      演示文稿生成
-      网页海报与数据可视化
-      报告生成
+      固定官方证据
+      arXiv 2605.23657v2 · PDF 15909b00291f
+      Git d0e109283eee
+      HF b48e00fc4094
     type: document
     size: xl
     position:
       x: 20
       'y': 40
+  - id: families
+    label: |-
+      定义五类任务
+      数据可视化 · 海报
+      演示文稿 · 报告
+      网页设计
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 40
   - id: sources
     label: |-
       按类别收集来源
-      最新网页和文档
-      获奖网站与海报素材
-      开放数据及表格数据集
+      网页 · 文档 · 获奖网站
+      海报素材 · 开放数据样例
+      真实表格数据集
     type: database
     size: xl
     position:
-      x: 260
+      x: 540
       'y': 40
   - id: snapshot
     label: |-
-      保存来源包
-      快照工件和源材料
-      存储source brief与数据文件
-      为后续请求提供依据
+      保存有依据的来源包
+      对当前工件做快照
+      存储 source_brief.md 与数据文件
+      让每个请求可追溯到来源
     type: process
     size: xl
     position:
-      x: 500
+      x: 800
       'y': 40
-  - id: extract
+  - id: generate
     label: |-
       反向构造用户意图
-      使用Claude-4.6-Opus和GPT-5.2
+      使用 Claude 4.6 Opus 与 GPT-5.2
       遵循任务专用模式
       推断约束与预期输出
     type: process
     size: xl
     position:
-      x: 740
+      x: 1060
       'y': 40
-  - id: specs
+  - id: task_spec
     label: |-
-      创建结构化任务规格
-      写入task_input JSON
-      记录目标与要求
-      把分析关联到来源内容
+      编写结构化任务规格 T
+      存储为 task_input.json
+      目标 · 约束 · 预期输出
+      把所需分析关联到来源
     type: document
     size: xl
     position:
-      x: 980
+      x: 1320
       'y': 40
   - id: instruction
     label: |-
-      创建自然语言指令
-      写入instruction Markdown
+      编写自然语言指令 I
+      存储为 instruction.md
       与结构化规格保持一致
-      维持真实请求风格
+      保持真实用户请求风格
     type: document
     size: xl
     position:
-      x: 1220
-      'y': 40
+      x: 1320
+      'y': 360
   - id: verify
     label: |-
       验证生成案例
-      Verifier LLM检查完整性
-      检查依据与一致性
+      检查完整性与来源依据
+      检查 T–I 一致性及兼容性
       过滤薄弱或无支持案例
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 40
+      x: 1580
+      'y': 200
   - id: cases
     label: |-
-      发布动态案例集
-      来源包加规格加指令
-      覆盖五类应用
-      共677个任务实例
+      发布 677 个验证案例
+      数据可视化 150 · 海报 119
+      演示文稿 82 · 报告 195
+      网页 131 · 来源包 + T + I
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: skills
+      x: 1840
+      'y': 200
+  - id: skill_sources
     label: |-
-      收集社区技能
-      来自ClawHub、Skills.sh等
-      按任务家族匹配skill
-      视为特定时间快照
+      收集社区技能包
+      ClawHub · skills.sh
+      OpenSkills · SkillsMP
+      按任务类别匹配候选技能
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: curate
+      x: 1320
+      'y': 600
+  - id: skill_filter
     label: |-
-      按社区采用度筛选
-      以下载量为信号
-      采用成本敏感选择
-      保留30个skill
+      整理特定时间的技能快照
+      使用采用度与下载量信号
+      成本敏感筛选 · 共 30 个技能
+      各类数量 6 · 4 · 6 · 6 · 8
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
+      x: 1580
+      'y': 600
+  - id: variants
+    label: |-
+      构造受控实验变体
+      无技能 对比 强制使用技能
+      同案例 · 同裁判 · 同模型
+      固定任务，只改变技能
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 600
   - id: runner
     label: |-
-      运行统一Agent实验
-      使用Harbor与Docker隔离
-      比较无skill和强制使用设置
-      记录输出成本与轨迹
+      在统一运行器中执行
+      Harbor · Docker · ubuntu:24.04
+      开放网络 · 官方 Responses API
+      构建 9000 秒 · 运行 4500 秒
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: trajectory
+      x: 1840
+      'y': 920
+  - id: outputs
     label: |-
-      评估Agent轨迹
-      用ATIF归一化轨迹
-      Agent裁判拆分skill步骤
-      测量读取遵循跳过与违背
+      捕获运行证据
+      PPTX · index.html · PNG · HTML
+      工件 · Token 用量 · 墙钟时间
+      兼容 ATIF 的 Agent 轨迹
+    type: document
+    size: xl
+    position:
+      x: 1580
+      'y': 920
+  - id: trajectory_eval
+    label: |-
+      评估 Agent 轨迹
+      使用 ATIF 归一化
+      Agent 裁判展开技能步骤
+      读取 · 遵循 · 跳过 · 违背
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: artifact
+      x: 1320
+      'y': 800
+  - id: artifact_eval
     label: |-
       评估最终工件
-      任务专用VLM与量规
-      截图交互及代码检查
-      评判质量完整性与准确性
+      使用任务专用 VLM 量规
+      执行 Playwright 交互检查
+      通过代码验证数据准确性
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 1320
+      'y': 1080
+  - id: human_validation
+    label: |-
+      验证自动评测管线
+      100 例 · 四位资深标注员
+      质量>2.98 · 一致率 98.8%
+      评测 2.86 · 75.0%
+      相关性 0.855 / 0.821
+    type: document
+    size: xl
+    position:
+      x: 1580
+      'y': 1320
   - id: report
     label: |-
-      审计Agent与Skill
-      报告家族及总体质量
-      测量技能增益多样性Token时间
+      报告 Agent 与技能效应
+      按类别和整体汇总 1–5 分质量
+      技能增益 · 多样性 · Token · 时间
       比较成本性能权衡
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1060
+      'y': 940
+  - id: release_boundary
+    label: |-
+      固定发布边界
+      代码 Apache-2.0 · 案例 CC-BY-NC-4.0
+      案例生成器与验证器未发布
+      已随库提供：30个技能变体 · 35个 SKILL.md 文件
+    type: document
+    size: xl
+    position:
+      x: 2100
+      'y': 600
+  - id: runtime_boundary
+    label: |-
+      运行复现边界
+      download_cases.py 未传入版本号
+      默认下载会跟随移动的 HEAD
+      还需要 Docker、凭据和外部 API
+    type: document
+    size: xl
+    position:
+      x: 2100
+      'y': 920
 edges:
+  - from: source_evidence
+    to: families
+    type: secondary
+    style:
+      dashed: true
   - from: families
     to: sources
     type: primary
+  - from: families
+    to: skill_sources
+    type: primary
+    waypoints:
+      - x: 380
+        'y': 520
+      - x: 1420
+        'y': 520
   - from: sources
     to: snapshot
     type: primary
   - from: snapshot
-    to: extract
+    to: generate
     type: primary
-  - from: extract
-    to: specs
+  - from: generate
+    to: task_spec
     type: primary
-  - from: specs
+  - from: generate
     to: instruction
+    type: primary
+  - from: task_spec
+    to: verify
     type: primary
   - from: instruction
     to: verify
@@ -184,22 +267,68 @@ edges:
   - from: verify
     to: cases
     type: primary
+  - from: skill_sources
+    to: skill_filter
+    type: primary
   - from: cases
-    to: skills
+    to: variants
     type: primary
-  - from: skills
-    to: curate
+  - from: skill_filter
+    to: variants
     type: primary
-  - from: curate
+  - from: variants
     to: runner
     type: primary
   - from: runner
-    to: trajectory
+    to: outputs
     type: primary
-  - from: trajectory
-    to: artifact
+  - from: outputs
+    to: trajectory_eval
     type: primary
-  - from: artifact
+  - from: outputs
+    to: artifact_eval
+    type: primary
+  - from: trajectory_eval
     to: report
     type: primary
+  - from: artifact_eval
+    to: report
+    type: primary
+  - from: human_validation
+    to: trajectory_eval
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1540
+        'y': 1260
+      - x: 900
+        'y': 1260
+      - x: 900
+        'y': 740
+      - x: 1280
+        'y': 740
+  - from: human_validation
+    to: artifact_eval
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1560
+        'y': 1260
+      - x: 1560
+        'y': 1130
+  - from: cases
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 2200
+        'y': 300
+  - from: runner
+    to: runtime_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

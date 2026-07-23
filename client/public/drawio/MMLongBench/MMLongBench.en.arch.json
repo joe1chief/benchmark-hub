@@ -1,86 +1,194 @@
 {
   "version": 1,
-  "title": "MMLongBench Build Process",
+  "title": "MMLongBench v3 Build and Evaluation Process",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 30,
+    "edges": 41,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "Select 16 Existing Datasets\nCover Natural and Synthetic Images\nReuse Established Annotations\nAvoid New Crowdsourcing",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "categories",
-      "label": "Organize Five Task Categories\nVisual RAG · NIAH · ICL\nPDF Summarization\nLong-document VQA",
+      "id": "evidence",
+      "label": "Fixed Evidence Boundary\narXiv 2505.10610v3 · 6 Oct 2025\nCode 69044ca · Data 0c008eb\n13,331 Rows · 16 Source Datasets",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "vrag",
-      "label": "Construct Visual RAG Contexts\nSplit Wikipedia into 100-word Passages\nInsert Gold Evidence at Depths\nAdd Distractors to Target Length",
+      "id": "category_route",
+      "label": "Which Long-context\nTask Category?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "vrag_build",
+      "label": "Visual RAG · 2,272 Rows\nInfoSeek Lead + ViQuAE KILT Gold\nWikipedia 2019-08-01 · 100 Words\nBM25 → GTE-large Hard Negatives\n3 Permutations / 6 Gold Depths",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "niah",
-      "label": "Adapt NIAH Tasks\nControl Negative Images or Web Text\nMix Text and Image Needles\nTest Retrieval · Count · Reasoning",
+      "id": "niah_build",
+      "label": "NIAH · 5,536 Rows\nVH-Single / Multi + MM-NIAH\nRet · Count · Reason, Text + Image\nWeb Text in 100-word Chunks\nAdd Distractors to Length L",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "icl",
-      "label": "Build Many-shot ICL\nUse 5 · 10 · 20 · 40 · 50 Classes\nBalance In-context Exemplars\nRandomly Map Integer Labels",
+      "id": "icl_build",
+      "label": "Many-shot ICL · 1,958 Rows\nCars · Food101 · SUN397 · iNat2021\n5/10/20/40/50 Classes by Length\nRandom IDs 0…N−1 · Balanced Rounds\nTruncate Only the Last Round",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "summary",
-      "label": "Render Summarization PDFs\nUse GovReport and Multi-LexSum\nDecompose Gold into Atomic Claims\nPrepare Model-based Scoring",
+      "id": "summ_build",
+      "label": "PDF Summarization · 387 Rows\nGovReport: GAO Only; Remove Summary\nMulti-LexSum: Rebuild PDFs from HTML\nRemove Answer HTML; Truncate from End\nDrop >128K + 24K · 15,951 Claims",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "docvqa",
-      "label": "Adapt Long-document VQA\nUse Three Document QA Datasets\nPreserve Answer-bearing Pages\nControl Length by Page Truncation",
+      "id": "doc_build",
+      "label": "Long-document VQA · 3,178 Rows\nMMLongBench-Doc · LongDocURL · SlideVQA\nCorrect Answer Formats; Drop Unrecoverable\nDrop String Answers Longer than 5 Words\nKeep Original Document ID in Question",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "tokenize",
-      "label": "Count Cross-modal Tokens\nDerive Image Vision Patches\nApply Pixel Unshuffle\nAdd Image and Text Tokens",
+      "id": "doc_length_gate",
+      "label": "Document Longer\nthan Target L?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "doc_truncate",
+      "label": "Truncate Both Sides Evenly\nPreserve Every Answer Page\nStop at Target Length L",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "lengths",
-      "label": "Standardize Five Input Lengths\n8K · 16K · 32K Tokens\n64K · 128K Tokens\nKeep Examples Extendable",
+      "id": "doc_pad",
+      "label": "Alternate Left / Right Padding\nSample Negative Documents\nLast Padding PDF May Be Page-truncated\nPrefix “Based on Document {ID}…”",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "Assemble MMLongBench\n13,331 Total Examples\nFive Categories · 16 Datasets\nMultiple Lengths per Example",
+      "id": "token_count",
+      "label": "Unified Cross-modal Token Count\nText = Llama2 Tokenizer\nImage = 14×14 Patches\nApply 2×2 Pixel Unshuffle\nSum Text + Visual Tokens",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "length_versions",
+      "label": "Materialize Five Lengths\n8K · 16K · 32K · 64K · 128K\nBinary K = 2¹⁰\nSame Semantic Example at Each L",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "MMLongBench Paper Release\n13,331 Examples · Five Categories\nMMLongBench-Doc Slice = 961 Rows\n≠ Stand-alone 1,082-row Release\nMIT Card; Source Licenses Still Apply",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "evaluate",
-      "label": "Evaluate 46 LCVLMs\nSample 4,050 Examples per Length\nRun Five Lengths per Model\nTotal 20,250 Evaluations",
+      "id": "denominator",
+      "label": "Evaluation Denominator per Length\nVRAG 900 · NIAH 2,250 · ICL 400\nSummarization 200 · DocVQA 300\nTotal = 4,050 Cases at Each L",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "Evaluate 46 LCVLMs\nGreedy Candidate Decoding\nFive Input Lengths per Model\n4,050 × 5 = 20,250 Runs\nUntestable Capacity Cases = N/A",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "metric_route",
+      "label": "Which Category-specific\nParser and Metric?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "vrag_metric",
+      "label": "Visual RAG Metric\nParse “Answer:” then First Line\nNormalize Case / Punctuation / Articles\nSubstring Exact Match\n900 Cases per Length",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "niah_metric",
+      "label": "NIAH Metrics\nVH = Binary Accuracy\nMM Text Ret/Reason = SubEM\nMM Image Ret/Reason = Choice Accuracy\nCount = Exact Sum; Modalities Averaged",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "icl_metric",
+      "label": "ICL Metric\nRequire “label: {integer}”\nFallback to Last, then First Number\nExact Class Accuracy\n400 Cases per Length",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "summ_judge",
+      "label": "GPT-4o Summary Judge\nGold → Pre-generated Atomic Claims\nCandidate → Sentence Precision\nClaim Recall + Binary Fluency\nT=0.1 · max_tokens=4096",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "summ_parse_gate",
+      "label": "Last JSON Object Parses\nfor All Three Calls?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "summ_formula",
+      "label": "Summary Score\nRecall = Found Claims / Gold Claims\nPrecision = Supported / Sentences\nF1 = Harmonic Mean\nFluency-F1 = Fluency × F1",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "summ_skip",
+      "label": "Summary Judge Failure Handling\nRequest: Retry 5×, Then Raise\nInvalid JSON: Skip This Sample\nAggregate Rows with gpt4-scores Only\nZero Scored Rows → Raise Error",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "doc_parse",
+      "label": "DocVQA Direct Parser\nPrefer Text after “Answer:”\nOtherwise Use First Output Line\nNo GPT-4o Answer Extractor in v3",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_format",
+      "label": "Reference Answer Format?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "doc_string",
+      "label": "String / None\nRegex-sensitive Value → SubEM\nOtherwise Token F1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_integer",
+      "label": "Integer\nExtract All Finite Integers\nAny Exact Match → 1, Else 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_float",
+      "label": "Float\nExtract All Finite Numbers\nAccept x/100, x, or 100x\nRelative Tolerance = 1%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "doc_list",
+      "label": "List\nPaper: Greedy Best Element Match\nAverage Element Scores\nPinned Code Scores Each Gold Element\nagainst Full Parsed Prediction",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "report",
-      "label": "Report Task-aware Metrics\nAccuracy and Substring Exact Match\nGPT-4o Fluency-F1 for Summaries\nAggregate by Task and Length",
+      "label": "Report by Dataset, Category, Length\nAccuracy · SubEM · Fluency-F1\nDocVQA Rule Score\nDo Not Convert N/A into Failure\nv1.1 LLM Judge Is Outside This Pin",
       "type": "terminal",
       "size": "xl"
     }
@@ -88,67 +196,265 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "categories",
+      "from": "evidence",
+      "to": "category_route",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "categories",
-      "to": "vrag",
-      "type": "primary"
+      "from": "category_route",
+      "to": "vrag_build",
+      "type": "primary",
+      "label": "Visual RAG"
     },
     {
       "id": "edge-3",
-      "from": "vrag",
-      "to": "niah",
-      "type": "primary"
+      "from": "category_route",
+      "to": "niah_build",
+      "type": "primary",
+      "label": "NIAH"
     },
     {
       "id": "edge-4",
-      "from": "niah",
-      "to": "icl",
-      "type": "primary"
+      "from": "category_route",
+      "to": "icl_build",
+      "type": "primary",
+      "label": "ICL"
     },
     {
       "id": "edge-5",
-      "from": "icl",
-      "to": "summary",
-      "type": "primary"
+      "from": "category_route",
+      "to": "summ_build",
+      "type": "primary",
+      "label": "Summary"
     },
     {
       "id": "edge-6",
-      "from": "summary",
-      "to": "docvqa",
-      "type": "primary"
+      "from": "category_route",
+      "to": "doc_build",
+      "type": "primary",
+      "label": "DocVQA"
     },
     {
       "id": "edge-7",
-      "from": "docvqa",
-      "to": "tokenize",
+      "from": "vrag_build",
+      "to": "token_count",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "tokenize",
-      "to": "lengths",
+      "from": "niah_build",
+      "to": "token_count",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "lengths",
-      "to": "dataset",
+      "from": "icl_build",
+      "to": "token_count",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "dataset",
-      "to": "evaluate",
+      "from": "summ_build",
+      "to": "token_count",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "evaluate",
+      "from": "doc_build",
+      "to": "doc_length_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "doc_length_gate",
+      "to": "doc_truncate",
+      "type": "primary",
+      "label": "Yes"
+    },
+    {
+      "id": "edge-13",
+      "from": "doc_length_gate",
+      "to": "doc_pad",
+      "type": "primary",
+      "label": "No"
+    },
+    {
+      "id": "edge-14",
+      "from": "doc_truncate",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "doc_pad",
+      "to": "token_count",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "token_count",
+      "to": "length_versions",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "length_versions",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "release",
+      "to": "denominator",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "denominator",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "inference",
+      "to": "metric_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "metric_route",
+      "to": "vrag_metric",
+      "type": "primary",
+      "label": "Visual RAG"
+    },
+    {
+      "id": "edge-22",
+      "from": "metric_route",
+      "to": "niah_metric",
+      "type": "primary",
+      "label": "NIAH"
+    },
+    {
+      "id": "edge-23",
+      "from": "metric_route",
+      "to": "icl_metric",
+      "type": "primary",
+      "label": "ICL"
+    },
+    {
+      "id": "edge-24",
+      "from": "metric_route",
+      "to": "summ_judge",
+      "type": "primary",
+      "label": "Summary"
+    },
+    {
+      "id": "edge-25",
+      "from": "metric_route",
+      "to": "doc_parse",
+      "type": "primary",
+      "label": "DocVQA"
+    },
+    {
+      "id": "edge-26",
+      "from": "vrag_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "niah_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "icl_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "summ_judge",
+      "to": "summ_parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-30",
+      "from": "summ_parse_gate",
+      "to": "summ_formula",
+      "type": "primary",
+      "label": "Valid"
+    },
+    {
+      "id": "edge-31",
+      "from": "summ_parse_gate",
+      "to": "summ_skip",
+      "type": "primary",
+      "label": "Invalid"
+    },
+    {
+      "id": "edge-32",
+      "from": "summ_formula",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-33",
+      "from": "doc_parse",
+      "to": "doc_format",
+      "type": "primary"
+    },
+    {
+      "id": "edge-34",
+      "from": "doc_format",
+      "to": "doc_string",
+      "type": "primary",
+      "label": "String"
+    },
+    {
+      "id": "edge-35",
+      "from": "doc_format",
+      "to": "doc_integer",
+      "type": "primary",
+      "label": "Integer"
+    },
+    {
+      "id": "edge-36",
+      "from": "doc_format",
+      "to": "doc_float",
+      "type": "primary",
+      "label": "Float"
+    },
+    {
+      "id": "edge-37",
+      "from": "doc_format",
+      "to": "doc_list",
+      "type": "primary",
+      "label": "List"
+    },
+    {
+      "id": "edge-38",
+      "from": "doc_string",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-39",
+      "from": "doc_integer",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-40",
+      "from": "doc_float",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-41",
+      "from": "doc_list",
       "to": "report",
       "type": "primary"
     }

@@ -1,80 +1,86 @@
 {
   "version": 1,
-  "title": "Context Arena OpenAI-MRCR Evaluation Process",
+  "title": "Context Arena GDM-MRCRv2 Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 11,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "Published OpenAI MRCR v2 Data\nInspired by Google DeepMind MRCR\nContext Arena Uses External Results",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "generation",
-      "label": "GPT-4o Generates Needles and Distractors\nMultiple Writing Media and Topics\nUnique Synthetic Conversation per Test",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "conversation",
-      "label": "Long Multi-Turn Conversation\n2 / 4 / 8 Identical Requests\nResponses Scattered among Distractors",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "query",
-      "label": "Final Ordinal Retrieval Query\nReturn the Nth Matching Response\nPrepend a Per-Test Random Hash",
+      "id": "evidence",
+      "label": "Michelangelo arXiv:2409.12640v2\neval_hub Commit 67b7fd2\ncontextarena.ai Observed 2026-07-18",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "bins",
-      "label": "Length Bins via o200k_base\n8K / 16K / 32K / 64K / 128K\n256K / 512K / 1M; 100 Tests per Bin",
+      "id": "history",
+      "label": "Historical OpenAI MRCR @ f4c69fa\n2 / 4 / 8 Needles; 2025-12-05 Bug Fix\nPrior Dashboard Source, Not Current Flow",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "run",
-      "label": "External Model Evaluation\nClaude Card Uses Hardest 8-Needle Variant\nFive Trials for Its Internal Table",
+      "id": "construct",
+      "label": "Build Long User–Assistant Transcript\nKeys = Format + Topic + Style\nDistinct Responses Interleaved with Distractors\nFinal Query Requests the ith Matching Response",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "current_release",
+      "label": "GDM MRCRv2 Release\n2 / 4 / 8 Needles; Files up to 8M Tokens\nRequire a Unique Random 12-Character Prefix",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "arena_slice",
+      "label": "Current Arena: Full 8-Needle Only\nEight Bins from 8K through 1M\nRun Counts Are Not Fixed at 100 per Bin",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "independent_run",
+      "label": "Run Each Model Independently\nNo Head-to-Head Battle; No LLM Judge\nReport Tool Access for Comparability",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "hash",
-      "label": "Valid Hash?",
+      "label": "Last Occurrence of the\nRequired 12-Character Hash Found?",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "zero",
-      "label": "Missing or Wrong Hash → Score 0",
+      "label": "Hash Missing\nPer-Example Score = 0",
       "type": "terminal",
       "size": "xl"
     },
     {
       "id": "compare",
-      "label": "Remove Valid Hash\nPython difflib SequenceMatcher\nCompare Response to Expected Needle",
+      "label": "Keep Content after the Last Hash\ndifflib.SequenceMatcher vs. Target\nRatio in [0, 1]",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "bin_score",
-      "label": "Mean Match Ratio per Length Bin\nAverage 100 Tests in Each Bin",
+      "id": "bin_mean",
+      "label": "Mean Per-Example Ratio per Bin\nPointwise Bin Score",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "Pointwise + Cum AVG (Unweighted Bins)\nAUC = Normalized Trapezoid on Linear Endpoints\nMissing Bins Count as 0",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "Context Arena Dashboard\n128K / 1M Scores and Normalized AUC\nModel AUC, Token Efficiency, Cost",
+      "label": "Context Arena Dashboard\nScores / Cum AVG / AUC at 128K and 1M\nToken Efficiency and Cost Are Auxiliary",
       "type": "terminal",
       "size": "xl"
     }
@@ -82,37 +88,37 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "generation",
-      "type": "primary"
+      "from": "evidence",
+      "to": "history",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "generation",
-      "to": "conversation",
+      "from": "evidence",
+      "to": "construct",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "conversation",
-      "to": "query",
+      "from": "construct",
+      "to": "current_release",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "query",
-      "to": "bins",
+      "from": "current_release",
+      "to": "arena_slice",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "bins",
-      "to": "run",
+      "from": "arena_slice",
+      "to": "independent_run",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "run",
+      "from": "independent_run",
       "to": "hash",
       "type": "primary"
     },
@@ -131,18 +137,24 @@
     {
       "id": "edge-9",
       "from": "zero",
-      "to": "report",
+      "to": "bin_mean",
       "type": "primary"
     },
     {
       "id": "edge-10",
       "from": "compare",
-      "to": "bin_score",
+      "to": "bin_mean",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "bin_score",
+      "from": "bin_mean",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "aggregate",
       "to": "report",
       "type": "primary"
     }

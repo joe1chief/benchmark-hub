@@ -4,108 +4,148 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LAB-Bench DbQA Build Process
-  description: >-
-    Paper-aligned programmatic construction and evaluation of the 650-question LAB-Bench database question-answering
-    subset.
-  legend: >-
-    Solid arrows trace database-grounded task generation, multiple-choice assembly, zero-shot evaluation, parsing, and
-    metrics.
+  title: LAB-Bench DbQA Build and Evaluation Process
+  description: Paper-version programmatic database QA construction, public-private split, and zero-shot baseline evaluation.
+  legend: DbQA is the LAB-Bench database subset; the paper's 35% value is human-evaluation coverage, not the public share.
 nodes:
-  - id: sources
+  - id: evidence
     label: |-
-      Versioned biology databases
-      OMIM · DisGeNET · Ensembl · MSigDB
-      miRDB · GTRD · ClinVar and others
+      LAB-Bench · DbQA Subset
+      arXiv:2407.10362v3
+      official repo @ 998a8e0
+      capitalization and identity
+      disambiguated
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
+  - id: source_versions
+    label: |-
+      Versioned Biology Sources
+      DisGeNet / OMIM · Ensembl 110
+      MSigDB 2023.2 · miRDB 6.0
+      GTRD · ClinVar / ProteinGym
+      MGI/MouseMine · P-HIPSter/Enrichr
     type: database
     size: xl
     position:
       x: 40
-      'y': 210
+      'y': 320
   - id: subtasks
     label: |-
-      Define 10 retrieval subtasks
-      associations · locations · targets · variants
-      signatures · response · viral interactions
-    type: document
+      Define 10 Programmatic Subtasks
+      disease association · gene location
+      miRNA target · tumor / oncogenic
+      TFBS · variant tasks (two forms)
+      vaccine response · viral PPI
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 210
+      x: 320
+      'y': 320
   - id: generate
     label: |-
-      Programmatic question generation
-      derive source-grounded correct answers
+      Generate Database-grounded Questions
+      pin source or evidence level
+      in each stem
+      derive one attributable
+      correct answer
+      preserve version-specific provenance
     type: process
     size: xl
     position:
-      x: 560
-      'y': 210
+      x: 600
+      'y': 320
   - id: distractors
     label: |-
-      Construct hard distractors
-      set differences · nearby loci · same entities
+      Construct Hard Distractors
+      set differences · protein-coding complements
+      same chromosome, different cytoband
+      opposite ClinVar class
+      on the same sequence
     type: process
     size: xl
     position:
-      x: 820
-      'y': 210
-  - id: disambiguate
+      x: 880
+      'y': 320
+  - id: full
     label: |-
-      Make provenance explicit
-      name database release and evidence level
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 210
-  - id: benchmark
-    label: |-
-      DbQA subset
-      650 questions · 10 subtasks · 35% public
+      Full Paper DbQA
+      650 questions
+      10 database-retrieval subtasks
+      attributable multiple-choice answers
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 210
+      x: 1160
+      'y': 320
+  - id: split
+    label: |-
+      Public / Private @ 998a8e0
+      520 public · 130 private
+      80% / 20%
+      35% = human coverage
+      not the public share
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 320
   - id: prompt
     label: |-
-      Assemble multiple-choice prompt
-      shuffle choices + “Insufficient information”
+      Paper Baseline Prompt
+      randomize choices
+      + Insufficient information
+      zero-shot chain-of-thought
+      [ANSWER] tags
+      models receive no tools
     type: document
     size: xl
     position:
-      x: 1600
-      'y': 210
-  - id: run
+      x: 1720
+      'y': 320
+  - id: baseline
     label: |-
-      Zero-shot chain-of-thought run
-      no tool augmentation in paper baseline
+      Generate Natural-language Completion
+      one tagged choice requested
+      refusal option counts as not attempted
+      same protocol
+      across model APIs
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 210
+      x: 2000
+      'y': 320
   - id: parse
     label: |-
-      Parse [ANSWER] tag
-      regex first · Claude 2 fallback
+      Paper Answer Parser
+      regex extracts [ANSWER] choice
+      first
+      Claude 2 fallback
+      if regex fails
+      compare parsed letter with gold choice
     type: process
     size: xl
     position:
-      x: 2120
-      'y': 210
+      x: 2280
+      'y': 320
   - id: metrics
     label: |-
-      Accuracy · precision · coverage
-      compare with biology-expert baseline
+      DbQA Metrics
+      accuracy = correct / total
+      precision = correct / attempted
+      coverage = attempted / total
     type: terminal
     size: xl
     position:
-      x: 2380
-      'y': 210
+      x: 2560
+      'y': 320
 edges:
-  - from: sources
+  - from: evidence
+    to: source_versions
+    type: data
+  - from: source_versions
     to: subtasks
     type: primary
   - from: subtasks
@@ -115,18 +155,18 @@ edges:
     to: distractors
     type: primary
   - from: distractors
-    to: disambiguate
+    to: full
     type: primary
-  - from: disambiguate
-    to: benchmark
+  - from: full
+    to: split
     type: primary
-  - from: benchmark
+  - from: split
     to: prompt
     type: primary
   - from: prompt
-    to: run
+    to: baseline
     type: primary
-  - from: run
+  - from: baseline
     to: parse
     type: primary
   - from: parse

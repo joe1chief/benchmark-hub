@@ -4,150 +4,171 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AIGCBench 构建与验证流程
-  description: 按论文构建 3,928 个 AIGCBench 样本，并让自动指标与人工研究并行验证图生视频输出。
-  legend: 实线表示主要构建或评测流。自动指标与人工研究分别消费生成视频，仅在最终一致性分析处合流。
+  title: AIGCBench 构建与证据边界内的验证流程
+  description: 构建 3,928 个 I2V 样本后，按数据类型使用自动指标并另做人类票选；明确论文与代码的关键帧差异及各方法覆盖范围。
+  legend: 实线表示构建与评测主流程；虚线数据边仅汇合彼此独立的证据报告。
 nodes:
   - id: webvid
     label: |-
       WebVid 验证集
-      按视频子类型采样 1,000
-      真实视频-文本对
+      按子类型采样 • 1,000
+      视频-文本对
     type: database
     size: xl
     position:
       x: 40
-      'y': 40
+      'y': 20
   - id: laion
     label: |-
       LAION-Aesthetics
-      美学子集采样 925
-      真实图像-文本对
+      925 个图像-文本对
+      论文：随机 • README：精选
     type: database
     size: xl
     position:
       x: 40
       'y': 180
-  - id: prompts
+  - id: text_corpus
     label: |-
-      组合 3,000 条提示词
+      提示文本词库
+      CivitAI 高频词
+      + 其他候选词
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 420
+  - id: compose
+    label: |-
+      随机组合 3,000 条
       主体 • 行为
       背景 • 风格
     type: process
     size: xl
     position:
-      x: 40
-      'y': 320
+      x: 300
+      'y': 420
   - id: enrich
     label: |-
       GPT-4 扩写
-      丰富四段式提示词
-      保留语义结构
+      “让内容更生动
+      且更丰富”
     type: process
     size: xl
     position:
-      x: 320
-      'y': 320
+      x: 560
+      'y': 420
   - id: generate
     label: |-
-      生成并筛选图像
-      SDXL：1280 × 720
-      T2I 筛至 2,003 条
+      SDXL xl-base • 1280 × 720
+      T2I-CompBench 过滤
+      保留 Top 2,003 对
     type: process
     size: xl
     position:
-      x: 600
-      'y': 320
+      x: 820
+      'y': 420
   - id: release
     label: |-
-      组装 AIGCBench
+      汇成 AIGCBench
       1,000 + 925 + 2,003
       共 3,928 个样本
     type: database
     size: xl
     position:
-      x: 880
-      'y': 180
+      x: 1080
+      'y': 200
   - id: i2v
     label: |-
-      生成图生视频输出
-      图像 + 文本控制
-      得到候选视频
+      生成 I2V 输出
+      五种受测方法
+      Pika 仅 60 个样本
+      30 WebVid + 30 生成样本
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 180
-  - id: normalize
+      x: 1340
+      'y': 200
+  - id: frame_policy
     label: |-
-      视频标准化
-      使用前 16 帧
-      必要时取 4 个参考关键帧
+      按指标选择帧策略
+      默认使用前 16 帧
+      DOVER 使用全部帧
+      帧数指标不截断
     type: process
     size: xl
     position:
-      x: 1440
-      'y': 40
-  - id: metrics
+      x: 1600
+      'y': 200
+  - id: metric_route
+    label: 评测数据类型？
+    type: decision
+    size: xl
+    position:
+      x: 1860
+      'y': 200
+  - id: image_metrics
     label: |-
-      自动评测
-      4 个维度
-      11 项指标
+      图像-文本样本
+      仅使用无参考视频指标
+      没有参考视频
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 40
-  - id: auto_report
+      x: 2120
+      'y': 20
+  - id: video_metrics
+    label: |-
+      视频-文本样本
+      有参考 + 无参考指标
+      论文：4 个关键帧
+      代码默认：5 个关键帧
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 300
+  - id: automatic
     label: |-
       自动指标报告
-      对齐 • 运动
-      一致性 • 质量
+      4 维 • 11 个唯一指标
+      Flow + DOVER 实现
+      固定仓库代码中缺失
     type: terminal
     size: xl
     position:
-      x: 2000
-      'y': 40
+      x: 2380
+      'y': 140
   - id: human_sample
     label: |-
-      人工研究采样
-      每种方法 30 个视频
-      5 种图生视频方法
+      人工研究样本
+      每种方法随机 30 个
+      共五种方法
     type: process
     size: xl
     position:
-      x: 1440
-      'y': 320
+      x: 1600
+      'y': 560
   - id: human_vote
     label: |-
       42 名参与者
-      对 4 个维度投票
-      独立判断
+      票选四个维度中
+      表现最佳的方法
     type: user
     size: xl
     position:
-      x: 1720
-      'y': 320
-  - id: human_report
-    label: |-
-      人工研究报告
-      四维排序
-      汇总投票
-    type: terminal
-    size: xl
-    position:
-      x: 2000
-      'y': 320
+      x: 1860
+      'y': 560
   - id: alignment
     label: |-
-      验证一致性
-      自动指标对比人工投票
-      形成最终分析
+      定性一致性
+      票选结果相对一致
+      未报告相关统计量
     type: terminal
     size: xl
     position:
-      x: 2280
-      'y': 180
+      x: 2640
+      'y': 280
 edges:
   - from: webvid
     to: release
@@ -155,7 +176,10 @@ edges:
   - from: laion
     to: release
     type: primary
-  - from: prompts
+  - from: text_corpus
+    to: compose
+    type: primary
+  - from: compose
     to: enrich
     type: primary
   - from: enrich
@@ -168,13 +192,24 @@ edges:
     to: i2v
     type: primary
   - from: i2v
-    to: normalize
+    to: frame_policy
     type: primary
-  - from: normalize
-    to: metrics
+  - from: frame_policy
+    to: metric_route
     type: primary
-  - from: metrics
-    to: auto_report
+  - from: metric_route
+    to: image_metrics
+    type: primary
+    label: 图像-文本
+  - from: metric_route
+    to: video_metrics
+    type: primary
+    label: 视频-文本
+  - from: image_metrics
+    to: automatic
+    type: primary
+  - from: video_metrics
+    to: automatic
     type: primary
   - from: i2v
     to: human_sample
@@ -182,13 +217,10 @@ edges:
   - from: human_sample
     to: human_vote
     type: primary
+  - from: automatic
+    to: alignment
+    type: data
   - from: human_vote
-    to: human_report
-    type: primary
-  - from: auto_report
     to: alignment
-    type: primary
-  - from: human_report
-    to: alignment
-    type: primary
+    type: data
 modules: []

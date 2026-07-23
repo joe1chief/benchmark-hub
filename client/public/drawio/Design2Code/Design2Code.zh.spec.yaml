@@ -5,14 +5,15 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Design2Code 构建流程
-  description: 依据论文呈现从 C4 整理真实网页截图到代码测试集的过程，以及通过高层与元素级视觉指标比较渲染页面、 再以人类成对偏好验证指标的评测协议。
-  legend: 上行从左到右阅读主基准构建，下行从右到左阅读截图到代码评测；橙色节点区分 C4 主集与独立来源的 HARD 集。
+  description: 依据论文呈现从 C4 整理 484 个真实网页，以及从 GitHub Pages 独立构建 80 页 HARD 集的过程。自动指标对渲染输出评分；论文的人类研究用于验证指标，而非逐次基准运行评分。
+  legend: 上行从左到右阅读 C4 主集构建，下行从右到左阅读截图到代码评测；侧分支表示独立 HARD 数据来源与离线人工指标验证。
 nodes:
   - id: c4
     label: |-
-      C4 验证集网页链接
+      C4 验证集链接
       抓取真实世界网页
-      将全部 CSS 内联为单个 HTML 文件
+      内联全部 CSS
+      每页一个 HTML 文件
     type: database
     size: xl
     position:
@@ -21,8 +22,9 @@ nodes:
   - id: raw
     label: |-
       初始真实网页池
-      127.9k 个自包含 HTML 页面
-      保留真实布局与内容复杂度
+      127.9k 个 CSS 已内联
+      单 HTML 页面
+      保留布局与复杂度
     type: database
     size: xl
     position:
@@ -31,8 +33,10 @@ nodes:
   - id: auto_filter
     label: |-
       自动过滤与去重
-      移除过长或过于简单页面
-      127.9k -> 14k 个候选
+      移除 >100k GPT-2 Token
+      移除仅图像 / 仅文本页
+      去重 127.9k
+      -> 14k 候选
     type: process
     size: xl
     position:
@@ -40,9 +44,10 @@ nodes:
       'y': 100
   - id: isolate
     label: |-
-      转换为可评测页面
+      可评测页面
       移除外部依赖
-      用占位符替换多媒体内容
+      多媒体内容
+      替换为占位符
     type: process
     size: xl
     position:
@@ -51,8 +56,10 @@ nodes:
   - id: manual
     label: |-
       两位作者人工筛选
-      先共同标注 200 页并达 75% 一致率
-      审查 7k 页的质量、安全、格式与多样性
+      共同 200 页 -> 75%
+      再拆分随机 7k
+      自包含 / 安全
+      格式 / 多样性
     type: user
     size: xl
     position:
@@ -61,18 +68,34 @@ nodes:
   - id: sets
     label: |-
       两套评测集
-      主集：484 个 C4 真实网页
-      独立 HARD：80 个 GitHub 网页并沿用同类过滤
+      主集：484 个 C4 页面
+      HARD：80 个 GitHub 页面
+      独立来源
+      沿用同类过滤
     type: process
     size: xl
     position:
       x: 1440
       'y': 100
+  - id: hard_source
+    label: |-
+      HARD GitHub Pages
+      80 个页面
+      许可白名单仓库
+      最终筛选至 80 页
+      方法未披露
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 270
   - id: screenshot
     label: |-
       模型输入
-      参考网页截图
-      直接、文本增强或自修订提示
+      仅提供参考截图
+      不暴露参考源码
+      直接 / 文本增强
+      自修订提示
     type: document
     size: xl
     position:
@@ -80,9 +103,10 @@ nodes:
       'y': 440
   - id: code
     label: |-
-      多模态代码生成
-      生成 HTML 与 CSS 实现
-      不向模型暴露参考源码
+      多模态生成
+      生成 HTML + CSS
+      参考源码
+      不暴露
     type: process
     size: xl
     position:
@@ -91,8 +115,9 @@ nodes:
   - id: render
     label: |-
       浏览器渲染
-      执行生成的页面实现
-      捕获生成网页截图
+      执行生成代码
+      捕获生成的
+      网页截图
     type: process
     size: xl
     position:
@@ -100,9 +125,10 @@ nodes:
       'y': 440
   - id: match
     label: |-
-      页面元素检测与匹配
+      页面元素匹配
       文本块与非文本块
-      按文本相似度做匈牙利匹配
+      按文本相似度
+      做匈牙利匹配
     type: process
     size: xl
     position:
@@ -110,24 +136,38 @@ nodes:
       'y': 440
   - id: metrics
     label: |-
-      自动视觉指标
-      块匹配、文本、位置与颜色
-      高层 CLIP 相似度
+      自动指标
+      块匹配 / 文本
+      位置 / 颜色
+      高层 CLIP
     type: process
     size: xl
     position:
       x: 320
       'y': 440
-  - id: human
+  - id: report
     label: |-
-      人工验证与报告
-      100 个样本 x 5 人并取多数票
-      指标预测成对偏好的准确率为 79.9%
+      Design2Code 结果
+      块匹配 / 文本
+      位置 / 颜色
+      主集 + HARD CLIP
     type: terminal
     size: xl
     position:
       x: 40
       'y': 440
+  - id: human
+    label: |-
+      独立人工验证
+      100 样本 x 5 人
+      多数票
+      435 胜负对；50/50 拆分
+      测试准确率 79.9%
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 650
 edges:
   - from: c4
     to: raw
@@ -144,6 +184,9 @@ edges:
   - from: manual
     to: sets
     type: primary
+  - from: hard_source
+    to: sets
+    type: data
   - from: sets
     to: screenshot
     type: primary
@@ -160,6 +203,9 @@ edges:
     to: metrics
     type: primary
   - from: metrics
-    to: human
+    to: report
     type: primary
+  - from: metrics
+    to: human
+    type: secondary
 modules: []

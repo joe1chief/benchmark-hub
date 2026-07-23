@@ -7,81 +7,99 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 15,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
       "id": "pypi",
-      "label": "Top PyPI 包全集\n8,000 个有影响力的 Python 包\n解析对应 GitHub 仓库",
+      "label": "Top PyPI 全集\n8,000 个 Python 包\n解析 GitHub 仓库",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "scope",
-      "label": "仓库范围过滤\n要求有许可证且 PR 超过 1,000 个\n约 600 个仓库保留",
+      "label": "仓库过滤\n要求许可证\nPR >1,000 个\n约 600 个仓库",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "fast",
-      "label": "快速安装与测试验证\n每仓前 20 个修改测试文件的 PR\npip install -e . + pytest -> 119 个来源仓",
+      "label": "快速安装 / 测试门禁\n每仓前 20 个测试变更 PR\n18 个 SWE-bench + 101 个其他仓\n= 119 个仓库",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "pr",
-      "label": "拉取请求任务候选\n抓取所有含测试变更的 PR\n基线提交、环境、测试补丁与金标准补丁",
+      "label": "已合并 PR 候选\n测试文件变更\n基线提交 + 环境\n测试补丁 + 金标准补丁",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "component",
-      "label": "基于规则的新组件门禁\n解析新增函数、类与文档\n至少 1 个、占编辑行 >25%、补丁 <=8,192 Token",
+      "label": "新组件门禁\n新增 Python 函数\n或类 + 文档\n>=1；编辑行占比 >25%",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "intent",
-      "label": "基于意图的门禁\nGPT-4o 分类 PR 描述\n仅保留主要意图为新增功能的任务",
+      "label": "意图门禁\nGPT-4o 分类 PR\n仅保留主要意图\n= 新增功能",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "size_gate",
+      "label": "补丁长度门禁\n金标准补丁 <=8,192 Token\n符合上下文预算",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "verify",
-      "label": "可执行单元测试验证\n基线应用测试补丁：可能有测试失败\n再应用金标准补丁：相关测试必须全过",
+      "label": "可执行测试门禁\n基线 + 测试补丁\n可通过或失败\n允许 ImportError\n允许 AttributeError\n金标准补丁：无 FAILED",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "FEA-Bench 发布集\n完整版：1,401 题 / 83 个仓库\nLite：200 题 / 48 个仓库",
+      "label": "FEA-Bench 发布集\n完整版：1,401 / 83 仓\nLite：200 / 48 仓",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "prompt",
-      "label": "模型可见任务合同\n功能请求与新组件签名\n基线仓库和环境；隐藏金标准补丁与测试",
+      "label": "模型可见合同\n功能请求\n+ 新组件定义\n隐藏金标准补丁\n+ 测试补丁",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "context",
-      "label": "仓库上下文与提示\nOracle / BM25 / Agentless 检索\n详细或精简的新组件定义",
+      "label": "仓库上下文\nOracle / BM25\nAgentless 检索\n详细 / 精简\n新组件定义",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "edit",
-      "label": "生成并应用仓库编辑\n自然编辑格式或直接 Patch\n运行隐藏单元测试",
+      "label": "单次生成\n应用候选补丁\n运行隐藏单元测试",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "FEA-Bench 结果\n实例解决率与补丁应用成功率\n检索精确率、召回率及复杂度切片",
+      "label": "FEA-Bench 结果\n全部单元测试通过\n才算解决\n解决率 / 应用成功率\n检索 P/R + 复杂度切片",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "lite_gate",
+      "label": "Lite 边界\n规则筛选\n非专业人工验证\n未来构建验证子集",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "发布边界\n完整数据集不发布\nHF 仅含核心字段\n其余从 GitHub 重建",
+      "type": "document",
       "size": "xl"
     }
   ],
@@ -119,38 +137,56 @@
     {
       "id": "edge-6",
       "from": "intent",
-      "to": "verify",
+      "to": "size_gate",
       "type": "primary"
     },
     {
       "id": "edge-7",
+      "from": "size_gate",
+      "to": "verify",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "verify",
       "to": "dataset",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-9",
       "from": "dataset",
       "to": "prompt",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-10",
       "from": "prompt",
       "to": "context",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-11",
       "from": "context",
       "to": "edit",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-12",
       "from": "edit",
       "to": "report",
       "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "dataset",
+      "to": "lite_gate",
+      "type": "optional"
+    },
+    {
+      "id": "edge-14",
+      "from": "dataset",
+      "to": "release_boundary",
+      "type": "data"
     }
   ],
   "modules": []

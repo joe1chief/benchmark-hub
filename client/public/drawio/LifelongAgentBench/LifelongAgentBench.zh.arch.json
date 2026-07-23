@@ -2,168 +2,482 @@
   "version": 1,
   "title": "LifelongAgentBench 构建流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 13,
-    "modules": 0
+    "nodes": 30,
+    "edges": 37,
+    "modules": 2
   },
   "nodes": [
     {
+      "id": "sources",
+      "label": "固定官方来源\n论文 v3 · 2025-05-30\n代码 d6f19b42 · 数据 75054b60",
+      "type": "document",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
       "id": "skills",
-      "label": "定义环境原子技能\n数据库 · 22 项 SQL 技能\n操作系统 · 29 个 Bash 命令\n知识图谱 · 7 种逻辑操作",
+      "label": "定义原子技能\nDB 22 · OS 29 · KG 7\n分析关系 · 非采样门禁\nas⁽ᵐ,ⁿ⁾[E⁽ⁱ⁾] = 2aₘaₙ\n÷ (aₘ + aₙ)\naₖ = as⁽ᵏ⁾[E⁽ⁱ⁾]",
+      "type": "process",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "db_sample",
+      "label": "采样 SQL 技能\n优先低频技能\n权重 ∝ 1 / (次数 + 1)\n生成单表任务",
+      "type": "process",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "db_generate",
+      "label": "生成数据库候选\nDeepSeek-R1 / deepseek-reasoner\nSQL · 表结构 · 指令 · 数据行\n判断指令一致性",
+      "type": "process",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "db_gate",
+      "label": "数据库候选有效？\nSQL 可解析且覆盖目标技能\n查询执行结果一致\n结果或状态哈希可定义",
+      "type": "decision",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "db_reject",
+      "label": "淘汰数据库候选\n无效或不一致",
+      "type": "terminal",
+      "module": "construction",
+      "size": "large"
+    },
+    {
+      "id": "db_release",
+      "label": "筛选 500 条数据库任务\n来自 1,306 条候选\n分层保证技能覆盖\n每项技能至少出现 20 次",
       "type": "database",
+      "module": "construction",
       "size": "xl"
     },
     {
-      "id": "sample",
-      "label": "采样技能驱动的任务计划\n以概率机制提升稀有技能占比\n改变复杂度 · 噪声 · 技能重叠\n保留任务间依赖关系",
+      "id": "os_sample",
+      "label": "采样 OS 目标技能\n29 个允许的 Bash 命令\n论文目标：9–12 个命令\n生成器未强制校验命令数",
       "type": "process",
+      "module": "construction",
       "size": "xl"
     },
     {
-      "id": "db_tasks",
-      "label": "构建数据库任务\nDeepSeek-R1 使用采样 SQL 技能造题\n在全新 Docker MySQL 中初始化表\n查询 · 插入 · 删除 · 更新任务",
+      "id": "os_generate",
+      "label": "生成 OS 候选\nDeepSeek-R1 / deepseek-reasoner\n指令 · 初始化 · 标准解\n任务评价器 · 指令润色",
       "type": "process",
+      "module": "construction",
       "size": "xl"
     },
     {
-      "id": "db_verify",
-      "label": "校验数据库标签\n在 MySQL 中执行生成的 SQL\n读取任务比较查询结果\n写入任务哈希数据库状态",
-      "type": "process",
+      "id": "os_gate",
+      "label": "OS 候选有效？\n解题前评价器返回非零\n标准解后评价器返回 0\n含目标技能且通过超时检查",
+      "type": "decision",
+      "module": "construction",
       "size": "xl"
     },
     {
-      "id": "os_tasks",
-      "label": "构建操作系统任务\n使用 Ubuntu 容器环境\n组合 Bash 命令技能序列\n每个任务从原始镜像重置",
-      "type": "process",
-      "size": "xl"
+      "id": "os_reject",
+      "label": "淘汰 OS 候选\n未通过脚本门禁",
+      "type": "terminal",
+      "module": "construction",
+      "size": "large"
     },
     {
-      "id": "os_verify",
-      "label": "校验操作系统标签\n执行预期 Bash 工作流\n运行任务专属评估脚本\n仅接受退出码为 0",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "kg_tasks",
-      "label": "构建知识图谱任务\n从 GrailQA S-expression 出发\n将逻辑形式映射为智能体动作\n生成兼容 SPARQL 的操作",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "kg_verify",
-      "label": "校验知识图谱标签\n执行逻辑动作序列\n比较返回的 SPARQL 输出\n保留可复现的答案状态",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "stream",
-      "label": "打包统一的终身任务流\n共用智能体 · 环境 · 控制器接口\n强制按严格顺序执行\n人工复核 10% 的任务样本",
+      "id": "os_release",
+      "label": "固定 HF 发布：500 条 OS 任务\n实际命令数范围：4–26\n339 条在 9–12 · 161 条在区间外\n论文目标不是硬筛选",
       "type": "database",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "kg_source",
+      "label": "来源为 GrailQA\nS-expression · 实体 · 答案\n不是 LLM 生成的任务计划\n保留问题函数分布",
+      "type": "database",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "kg_convert",
+      "label": "转换为约束动作\n关系 · 邻居 · 交集\n属性 · 最大 · 最小 · 计数\n经 SPARQL 执行",
+      "type": "process",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "kg_gate",
+      "label": "KG 候选有效？\n动作转换无错误\nS-expression 执行正确\n实体名称通过发布过滤",
+      "type": "decision",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "kg_reject",
+      "label": "淘汰 KG 候选\n转换或执行错误",
+      "type": "terminal",
+      "module": "construction",
+      "size": "large"
+    },
+    {
+      "id": "kg_release",
+      "label": "筛选 396 条 KG 任务\n长度 2–8 各 50 条\n长度 9 为 46 条\n长度 7–9 额外复核",
+      "type": "database",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "manual_review",
+      "label": "逐环境人工复核\n各随机抽取 10% 任务\n检查语法 · 逻辑 · 实用性\n采用试运行后的配置",
+      "type": "user",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "dataset_release",
+      "label": "发布 1,396 条任务\nDB 500 · OS 500 · KG 396\n三份公开 Parquet 文件\nHF 展示为 default / train",
+      "type": "database",
+      "module": "construction",
+      "size": "xl"
+    },
+    {
+      "id": "framework",
+      "label": "配置六个组件\n模型池 · 智能体 · 环境\n历史工厂 · 控制器 · 回调\n本地或透明 RPC 部署",
+      "type": "process",
+      "module": "evaluation",
+      "size": "xl"
+    },
+    {
+      "id": "sequence",
+      "label": "按固定顺序执行任务\n控制器支持断点恢复\n禁止并行任务序列\n随时间累积经验",
+      "type": "process",
+      "module": "evaluation",
+      "size": "xl"
+    },
+    {
+      "id": "db_eval",
+      "label": "数据库运行与评分\n每次实验一个 MySQL 容器 · 每任务建删库\nAction: Operation / Answer · 最多 3 轮\nSELECT 比结果 · 写操作比状态 MD5",
+      "type": "process",
+      "module": "evaluation",
+      "size": "xl"
+    },
+    {
+      "id": "os_eval",
+      "label": "OS 运行与评分\n每任务使用全新 Ubuntu 容器\nAct: bash / Act: finish · 最多 5 轮\n评价器退出码 0 才成功",
+      "type": "process",
+      "module": "evaluation",
+      "size": "xl"
+    },
+    {
+      "id": "kg_eval",
+      "label": "KG 运行与评分\n7 种动作 API · 最多 15 轮\nFinal Answer: 变量 #n\n精确匹配 · F1 · 可执行率",
+      "type": "process",
+      "module": "evaluation",
+      "size": "xl"
+    },
+    {
+      "id": "success_gate",
+      "label": "是否正确完成？\n二元任务奖励",
+      "type": "decision",
+      "module": "evaluation",
+      "size": "large"
+    },
+    {
+      "id": "replay_memory",
+      "label": "保存成功轨迹\n近期 FIFO 经验记忆\n失败任务不保存",
+      "type": "database",
+      "module": "evaluation",
       "size": "xl"
     },
     {
       "id": "replay",
-      "label": "评测经验回放\n设置不检索经验的基线\n回放近期 1 · 4 · 8 · 16 · 32 · 64 条经验\n只保存成功轨迹",
+      "label": "比较经验回放\n基线 N = 0\n测试 N：1 · 2 · 4 · 8 · 16 · 32 · 64\n注入近期成功轨迹",
       "type": "process",
+      "module": "evaluation",
       "size": "xl"
     },
     {
       "id": "gsc",
-      "label": "应用分组自一致性\n将检索经验划分成多个组\n各组独立预测\n以多数投票降低 Token 与 OOM",
+      "label": "原始推理后的可选 GSC\n公开回调仅支持 DB + OS\n原始响应 + 分组候选\n多数投票可替换当前动作",
       "type": "process",
+      "module": "evaluation",
+      "size": "xl"
+    },
+    {
+      "id": "agent_infer",
+      "label": "生成原始智能体响应\n固定提示 + 当前环境观察\n使用环境专属解析格式\n回调接收这份原始响应",
+      "type": "process",
+      "module": "evaluation",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "汇报终身智能体成功率\n正确执行动作并完成任务才算成功\n按数据库 · 操作系统 · 知识图谱拆分\n比较回放深度 · 分组数 · Token 成本",
+      "label": "汇报任务成功率\n按 DB · OS · KG 拆分\n技能 · 难度 · 回放深度\n分组 · 输入 Token · OOM",
       "type": "terminal",
+      "module": "evaluation",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "skills",
-      "to": "sample",
+      "from": "sources",
+      "to": "skills",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "sample",
-      "to": "db_tasks",
-      "type": "primary"
+      "from": "skills",
+      "to": "db_sample",
+      "type": "primary",
+      "label": "DB 技能表"
     },
     {
       "id": "edge-3",
-      "from": "sample",
-      "to": "os_tasks",
-      "type": "primary"
+      "from": "skills",
+      "to": "os_sample",
+      "type": "primary",
+      "label": "OS 技能表"
     },
     {
       "id": "edge-4",
-      "from": "sample",
-      "to": "kg_tasks",
-      "type": "primary"
+      "from": "skills",
+      "to": "kg_source",
+      "type": "primary",
+      "label": "KG 动作表"
     },
     {
       "id": "edge-5",
-      "from": "db_tasks",
-      "to": "db_verify",
+      "from": "db_sample",
+      "to": "db_generate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "os_tasks",
-      "to": "os_verify",
+      "from": "db_generate",
+      "to": "db_gate",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "kg_tasks",
-      "to": "kg_verify",
-      "type": "primary"
+      "from": "db_gate",
+      "to": "db_release",
+      "type": "primary",
+      "label": "通过"
     },
     {
       "id": "edge-8",
-      "from": "db_verify",
-      "to": "stream",
-      "type": "primary"
+      "from": "db_gate",
+      "to": "db_reject",
+      "type": "optional",
+      "label": "淘汰"
     },
     {
       "id": "edge-9",
-      "from": "os_verify",
-      "to": "stream",
+      "from": "os_sample",
+      "to": "os_generate",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "kg_verify",
-      "to": "stream",
+      "from": "os_generate",
+      "to": "os_gate",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "stream",
+      "from": "os_gate",
+      "to": "os_release",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-12",
+      "from": "os_gate",
+      "to": "os_reject",
+      "type": "optional",
+      "label": "淘汰"
+    },
+    {
+      "id": "edge-13",
+      "from": "kg_source",
+      "to": "kg_convert",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "kg_convert",
+      "to": "kg_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "kg_gate",
+      "to": "kg_release",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-16",
+      "from": "kg_gate",
+      "to": "kg_reject",
+      "type": "optional",
+      "label": "淘汰"
+    },
+    {
+      "id": "edge-17",
+      "from": "db_release",
+      "to": "manual_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "os_release",
+      "to": "manual_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "kg_release",
+      "to": "manual_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "manual_review",
+      "to": "dataset_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "dataset_release",
+      "to": "framework",
+      "type": "primary",
+      "label": "进入评测"
+    },
+    {
+      "id": "edge-22",
+      "from": "framework",
+      "to": "sequence",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "sequence",
       "to": "replay",
       "type": "primary"
     },
     {
-      "id": "edge-12",
+      "id": "edge-24",
       "from": "replay",
+      "to": "agent_infer",
+      "type": "primary",
+      "label": "原始推理"
+    },
+    {
+      "id": "edge-25",
+      "from": "agent_infer",
       "to": "gsc",
+      "type": "optional",
+      "label": "仅 DB / OS"
+    },
+    {
+      "id": "edge-26",
+      "from": "agent_infer",
+      "to": "db_eval",
+      "type": "primary",
+      "label": "DB · 不分组"
+    },
+    {
+      "id": "edge-27",
+      "from": "agent_infer",
+      "to": "os_eval",
+      "type": "primary",
+      "label": "OS · 不分组"
+    },
+    {
+      "id": "edge-28",
+      "from": "agent_infer",
+      "to": "kg_eval",
+      "type": "primary",
+      "label": "KG · 无公开 GSC"
+    },
+    {
+      "id": "edge-29",
+      "from": "gsc",
+      "to": "db_eval",
+      "type": "primary",
+      "label": "投票后的 DB 动作"
+    },
+    {
+      "id": "edge-30",
+      "from": "gsc",
+      "to": "os_eval",
+      "type": "primary",
+      "label": "投票后的 OS 动作"
+    },
+    {
+      "id": "edge-31",
+      "from": "db_eval",
+      "to": "success_gate",
       "type": "primary"
     },
     {
-      "id": "edge-13",
-      "from": "gsc",
-      "to": "report",
+      "id": "edge-32",
+      "from": "os_eval",
+      "to": "success_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-33",
+      "from": "kg_eval",
+      "to": "success_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-34",
+      "from": "success_gate",
+      "to": "replay_memory",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-35",
+      "from": "success_gate",
+      "to": "report",
+      "type": "optional",
+      "label": "否 · 不保存"
+    },
+    {
+      "id": "edge-36",
+      "from": "replay_memory",
+      "to": "report",
+      "type": "primary",
+      "label": "已记录"
+    },
+    {
+      "id": "edge-37",
+      "from": "replay_memory",
+      "to": "replay",
+      "type": "data",
+      "label": "供后续任务使用"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction",
+      "label": "构建",
+      "color": "$primaryLight"
+    },
+    {
+      "id": "evaluation",
+      "label": "评测",
+      "color": "$secondaryLight"
+    }
+  ]
 }

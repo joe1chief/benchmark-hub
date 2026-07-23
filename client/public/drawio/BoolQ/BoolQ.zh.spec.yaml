@@ -2,12 +2,12 @@ meta:
   profile: academic-paper
   source: generated
   theme: academic-color
-  layout: horizontal
+  layout: vertical
   routing: orthogonal
   title: BoolQ 构建流程
   description: >-
     按论文对齐的 BoolQ 流程：从匿名 Google 搜索查询中启发式筛出自然的是非问题，仅保留前五条结果含维基百科页面的查询， 经过三步人工判断与标注，再与 Natural Questions
-    的是非题合并，切分训练、开发和测试集，抽样核验标注质量并以准确率评测。
+    的是非题合并，切分并发布训练、开发和测试集，抽样核验标注质量，再以问题—段落输入和准确率进行评测。
   legend: 实线表示构建与评测主流程；上方分支表示独立的标注质量抽检。
 nodes:
   - id: queries
@@ -17,8 +17,8 @@ nodes:
     type: database
     size: large
     position:
-      x: 40
-      'y': 220
+      x: 850
+      'y': 130
   - id: yes_no_filter
     label: |-
       启发式筛选
@@ -26,8 +26,8 @@ nodes:
     type: process
     size: large
     position:
-      x: 240
-      'y': 220
+      x: 850
+      'y': 280
   - id: wiki_gate
     label: |-
       前五条结果含
@@ -35,8 +35,8 @@ nodes:
     type: process
     size: large
     position:
-      x: 440
-      'y': 220
+      x: 850
+      'y': 430
   - id: quality
     label: |-
       看页面前判断
@@ -44,8 +44,8 @@ nodes:
     type: process
     size: large
     position:
-      x: 640
-      'y': 220
+      x: 850
+      'y': 580
   - id: passage
     label: |-
       定位证据段落或
@@ -53,8 +53,8 @@ nodes:
     type: user
     size: large
     position:
-      x: 840
-      'y': 220
+      x: 850
+      'y': 730
   - id: answer
     label: |-
       标注“是 / 否”
@@ -62,8 +62,8 @@ nodes:
     type: process
     size: large
     position:
-      x: 1040
-      'y': 220
+      x: 850
+      'y': 880
   - id: pool
     label: |-
       新采 1.3 万 + NQ 0.3 万
@@ -71,8 +71,8 @@ nodes:
     type: database
     size: large
     position:
-      x: 1240
-      'y': 220
+      x: 850
+      'y': 1030
   - id: audit
     label: |-
       抽检 110 题
@@ -80,54 +80,53 @@ nodes:
     type: process
     size: large
     position:
-      x: 1440
-      'y': 40
+      x: 400
+      'y': 1180
   - id: split
-    label: 官方切分
-    type: decision
-    size: large
-    position:
-      x: 1440
-      'y': 300
-  - id: train
     label: |-
-      训练集 0.94 万
-      NQ 题仅在此处
-    type: document
-    size: large
+      切分构建完成的数据池
+      所有 NQ 来源题目放入训练集
+    type: process
+    size: xl
     position:
-      x: 1640
-      'y': 160
-  - id: dev
-    label: 开发集 0.32 万
-    type: document
-    size: large
+      x: 1100
+      'y': 1220
+  - id: release
+    label: |-
+      发布 BoolQ 数据划分
+      训练 9,427 有标注 • 开发 3,270 有标注
+      测试 3,245 隐藏标签 • 共 15,942 题
+    type: database
+    size: xl
     position:
-      x: 1640
-      'y': 300
-  - id: test
-    label: 测试集 0.32 万
+      x: 1100
+      'y': 1370
+  - id: evaluation_input
+    label: |-
+      构建与评测边界
+      向模型输入问题 + 支持段落
+      金标“是 / 否”对模型隐藏并用于评分
     type: document
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 440
+      x: 1100
+      'y': 1520
   - id: model
     label: |-
-      问题 + 段落输入
-      预测是 / 否
+      运行待评模型
+      预测“是”或“否”
     type: process
     size: large
     position:
-      x: 1840
-      'y': 300
+      x: 1100
+      'y': 1670
   - id: score
     label: 模型准确率
     type: terminal
     size: large
     position:
-      x: 2040
-      'y': 300
+      x: 1100
+      'y': 1820
 edges:
   - from: queries
     to: yes_no_filter
@@ -154,21 +153,12 @@ edges:
     to: split
     type: primary
   - from: split
-    to: train
+    to: release
     type: primary
-  - from: split
-    to: dev
+  - from: release
+    to: evaluation_input
     type: primary
-  - from: split
-    to: test
-    type: primary
-  - from: train
-    to: model
-    type: primary
-  - from: dev
-    to: model
-    type: primary
-  - from: test
+  - from: evaluation_input
     to: model
     type: primary
   - from: model

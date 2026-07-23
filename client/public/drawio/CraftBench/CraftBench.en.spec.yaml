@@ -6,9 +6,9 @@ meta:
   routing: orthogonal
   title: CraftBench Record and AWM Synthesis Process
   description: >-
-    Evidence-bounded AWM construction flow for the released CraftBench scenario record, with its exact artifacts and the
-    boundary between an AWM training environment and a standalone benchmark.
-  legend: Dashed links carry provenance or reward evidence; the main path is scenario-to-environment synthesis.
+    Evidence-bounded AWM construction flow for the released CraftBench scenario record, with component-specific
+    execution feedback loops and a separate agent-evaluation branch.
+  legend: Dashed links carry provenance, feedback, or evaluation evidence; solid links show construction and scoring order.
 nodes:
   - id: evidence
     label: |-
@@ -33,7 +33,7 @@ nodes:
     label: |-
       Self-Instruct Scenario Expansion
       CRUD Classifier
-      Embedding De-Dup: Cosine < 0.85
+      Embedding De-Dup: Retain Cosine ≤ 0.85
       Category Caps
     type: process
     size: xl
@@ -52,8 +52,8 @@ nodes:
   - id: craft_record
     label: |-
       CraftBench: Custom Manufacturing Job Tracker
-      Official ID (Underscore-Separated)
-      manufacturing · execution · system · 1
+      Official Scenario ID
+      manufacturing_execution_system_1
     type: database
     size: xl
     position:
@@ -69,54 +69,61 @@ nodes:
     position:
       x: 1160
       'y': 300
-  - id: sqlite
+  - id: schema
     label: |-
-      SQLite State and Initial Data
-      Craft: 18 Tables · 114 INSERT Rows
+      SQLite Schema Synthesis
+      Craft: 18 Tables
     type: database
     size: xl
     position:
       x: 1440
       'y': 300
-  - id: interface
+  - id: sample_data
     label: |-
-      SQLAlchemy · Pydantic · FastAPI
-      MCP: 18 API Groups · 50 Endpoints
-      Each Endpoint Becomes a Tool
-    type: process
+      Initial-Data Synthesis
+      Craft: 114 INSERT Rows
+    type: database
     size: xl
     position:
       x: 1720
       'y': 300
-  - id: verifier
+  - id: api_spec
     label: |-
-      Task Verifier
-      Compare Before/After Database State
-      Extract Success and Failure Criteria
+      Interface Specification First
+      18 API Groups · 50 Endpoints
     type: process
     size: xl
     position:
       x: 2000
       'y': 300
-  - id: self_correct
+  - id: env_code
     label: |-
-      Execution-Based Self-Correction
-      Traceback Compressed to 200–500 Tokens
-      Feed Back; Retry up to 5 Times
+      Environment Implementation
+      SQLAlchemy · Pydantic · FastAPI
+      MCP Server · Endpoints Become Tools
     type: process
     size: xl
     position:
       x: 2280
       'y': 300
-  - id: tolerance
+  - id: verifier
     label: |-
-      After Retries: Keep Lowest-Error Attempt
-      Schema/Data Allow 10% Errors
-      Environment Startup Threshold: 0%
+      Task Verifier Synthesis
+      Compare Before/After Database State
+      Structured Evidence + NL Criteria
     type: process
     size: xl
     position:
       x: 2560
+      'y': 300
+  - id: release
+    label: |-
+      Released Executable AWM Environment
+      MCP Tools + Task Verifier
+    type: database
+    size: xl
+    position:
+      x: 2840
       'y': 300
   - id: boundary
     label: |-
@@ -126,11 +133,84 @@ nodes:
     type: document
     size: xl
     position:
-      x: 2840
+      x: 3400
       'y': 300
-  - id: awm_reward
+  - id: schema_feedback
+    label: |-
+      Schema Feedback Loop
+      Execute DDL · Accept < 10% Failures
+      Traceback → 200–500-Token LLM Summary
+      Regenerate · Max 5 Attempts
+      Then Keep Lowest-Error Attempt
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 40
+  - id: data_feedback
+    label: |-
+      Sample-Data Feedback Loop
+      Execute INSERTs · Accept < 10% Failures
+      Traceback → 200–500-Token LLM Summary
+      Regenerate · Max 5 Attempts
+      Then Keep Lowest-Error Attempt
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 40
+  - id: env_feedback
+    label: |-
+      Environment Feedback Loop
+      Launch · Health Check · List Tools
+      Accept Only 0% Startup Errors
+      Traceback → 200–500-Token LLM Summary
+      Regenerate ×5; Then Keep Lowest Error
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 40
+  - id: agent_trajectory
+    label: |-
+      Agent Evaluation Rollout
+      Agent Trajectory
+      List Tools · Call Tools
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 600
+  - id: verification_signals
+    label: |-
+      Task Verifier Output
+      Structured Verification Signals
+    type: document
+    size: xl
+    position:
+      x: 2560
+      'y': 760
+  - id: judge
     label: |-
       Code-Augmented GPT-5 Judge
+      Trajectory + Verification Signals
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 680
+  - id: outcome
+    label: |-
+      Outcome Classification
+      Completed · Partially Completed
+      Agent Error · Environment Error
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 680
+  - id: awm_reward
+    label: |-
       AWM Training Reward Only
       Completed = 1.0 · Partial = 0.1
       Otherwise = 0.0
@@ -138,8 +218,8 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 2000
-      'y': 40
+      x: 3680
+      'y': 680
 edges:
   - from: evidence
     to: craft_record
@@ -157,24 +237,63 @@ edges:
     to: tasks
     type: primary
   - from: tasks
-    to: sqlite
+    to: schema
     type: primary
-  - from: sqlite
-    to: interface
+  - from: schema
+    to: sample_data
     type: primary
-  - from: interface
+  - from: sample_data
+    to: api_spec
+    type: primary
+  - from: api_spec
+    to: env_code
+    type: primary
+  - from: env_code
     to: verifier
     type: primary
   - from: verifier
-    to: self_correct
+    to: release
     type: primary
-  - from: self_correct
-    to: tolerance
-    type: primary
-  - from: tolerance
+  - from: release
     to: boundary
     type: primary
+  - from: schema
+    to: schema_feedback
+    type: data
+  - from: schema_feedback
+    to: schema
+    type: data
+  - from: sample_data
+    to: data_feedback
+    type: data
+  - from: data_feedback
+    to: sample_data
+    type: data
+  - from: env_code
+    to: env_feedback
+    type: data
+  - from: env_feedback
+    to: env_code
+    type: data
+  - from: release
+    to: agent_trajectory
+    type: data
   - from: verifier
+    to: verification_signals
+    type: data
+  - from: agent_trajectory
+    to: judge
+    type: data
+  - from: verification_signals
+    to: judge
+    type: data
+  - from: judge
+    to: outcome
+    type: primary
+  - from: outcome
     to: awm_reward
+    type: primary
+  - from: awm_reward
+    to: boundary
     type: data
 modules: []

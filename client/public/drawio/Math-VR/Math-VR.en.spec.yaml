@@ -4,180 +4,309 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Math-VR Build Process
+  title: Math-VR Build and Evaluation Process
   description: >-
-    Paper-aligned creation of a bilingual visual-mathematics corpus and its held-out benchmark, with VLM filtering,
-    GPT-assisted standardization, expert review, verified scoring points, and separate answer-correctness and partial
-    scores.
+    Paper-aligned construction of the bilingual visual-mathematics corpus and benchmark, followed by the released
+    GPT-4.1 judging implementation. Manual selection and rubric verification are one combined review stage; code-level
+    retry, omission, coverage, and denominator behavior are explicit.
   legend: >-
-    arXiv:2510.11718 reports 89,075 unique questions (178,150 bilingual samples), split into 86,575 training and 2,500
-    test questions; the bilingual benchmark contains 5,000 language-specific items from those 2,500 test questions.
+    Paper boundary: arXiv:2510.11718v1. Code boundary: HKU-MMLab/Math-VR-CodePlot-CoT snapshot 45b8c88. Public English
+    benchmark data: gogoduan/Math-VR-bench snapshot b15f5bb (2,500 rows); its README has a contradictory 3,000-row
+    table.
 nodes:
   - id: collect
     label: |-
       Collect about 900K Math Problems
-      Secondary-school Level
-      Public Websites
-      Require an Image in the Solution
+      Secondary-school Level · Public Websites
+      Each Solution Contains at Least One Image
+      Source URLs and Crawl Date Not Disclosed
     type: database
     size: xl
     position:
       x: 20
       'y': 40
-  - id: filter
+  - id: image_gate
     label: |-
-      Filter Images with Qwen2.5-VL-72B
-      Label the Role of Each Image
-      Retain Mathematical Figures
-      Drop Irrelevant / Text-only Images
-    type: process
+      Qwen2.5-VL-72B Image Gate
+      Does the Solution Contain a
+      Reasoning-relevant Mathematical Figure?
+    type: decision
     size: xl
     position:
       x: 300
       'y': 40
+  - id: retain
+    label: |-
+      Retain Figure-dependent Problems
+      Keep Questions Requiring the Figure
+      for Mathematical Reasoning
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 0
+  - id: drop_image
+    label: |-
+      Reject at Image Gate
+      Irrelevant or Purely Textual Image
+      Sample Is Not Retained
+    type: terminal
+    size: xl
+    position:
+      x: 580
+      'y': 200
   - id: standardize
     label: |-
       Standardize with GPT-4.1
       Transcribe Remaining Text Images
       Separate Question and Solution
-      Rewrite Both in Markdown
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 40
-  - id: qc_translate
-    label: |-
-      Verify and Translate with GPT-4.1
-      Remove Incomplete / Incoherent Items
-      Translate the Standardized Records
-      Form Chinese–English Pairs
+      Rewrite Both as Markdown
     type: process
     size: xl
     position:
       x: 860
-      'y': 40
-  - id: corpus
+      'y': 0
+  - id: quality_gate
     label: |-
-      Build the Math-VR Corpus
-      89,075 Unique Questions
-      86,575 Train + 2,500 Test
-      178,150 Bilingual Samples
-    type: database
+      GPT-4.1 Quality Gate
+      Are the Standardized Question
+      and Solution Complete and Coherent?
+    type: decision
     size: xl
     position:
       x: 1140
-      'y': 40
-  - id: taxonomy
+      'y': 0
+  - id: translate
     label: |-
-      Label a Subject Hierarchy
-      Geometry · Algebra · Calculus · Statistics
-      Geometry Accounts for 81%
-      29% Text · 71% Multimodal
+      Create the English Version
+      Translate Standardized Samples
+      Pair Chinese and English Records
+      Preserve Question · Solution · Answer
     type: process
     size: xl
     position:
       x: 1420
-      'y': 40
-  - id: candidates
+      'y': 0
+  - id: drop_qc
     label: |-
-      Form Benchmark Candidates
-      Exclude Proofs and Most Multiple Choice
-      Randomly Pool 3,000 Remaining Questions
-      Target Nontrivial Visual Reasoning
-    type: process
-    size: xl
-    position:
-      x: 1700
-      'y': 40
-  - id: human_review
-    label: |-
-      Conduct Expert Manual Review
-      15 Senior STEM College Students
-      Remove Minimal / Trivial Visual Reasoning
-      Verify Questions and Answers
-    type: user
-    size: xl
-    position:
-      x: 1700
-      'y': 420
-  - id: benchmark
-    label: |-
-      Release the Bilingual Benchmark
-      2,500 Unique Test Questions
-      1,000 Text + 1,500 Multimodal
-      5,000 Chinese / English Items
-    type: database
-    size: xl
-    position:
-      x: 1420
-      'y': 420
-  - id: rubric
-    label: |-
-      Build Verified Scoring References
-      GPT-4.1 Summarizes the Answer
-      Generate Critical Scoring Points
-      Humans Verify Points and Difficulty Weights
-    type: document
-    size: xl
-    position:
-      x: 1140
-      'y': 420
-  - id: response
-    label: |-
-      Generate a Model Response
-      Supply Text or Multimodal Question
-      Preserve Bilingual Evaluation Split
-      Record Full Reasoning and Final Answer
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 420
-  - id: judge
-    label: |-
-      Judge with GPT-4.1
-      AC · Binary Entire-answer Correctness
-      PS · Weighted Scoring-point Hits
-      Apply the Paper-defined PS Discount
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 420
-  - id: validate
-    label: |-
-      Validate Automatic Judging
-      1,000 Questions × 3 Model Answers
-      Compare with Human Ratings
-      κ / MCC for AC · Pearson / Spearman for PS
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 420
-  - id: report
-    label: |-
-      Report AC and PS
-      Text · Multimodal · Overall
-      Analyze Subject and Language Results
-      Preserve Separate Metric Meanings
+      Reject at Quality Gate
+      Incomplete or Incoherent Record
+      Sample Is Not Retained
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1420
+      'y': 200
+  - id: corpus
+    label: |-
+      Assemble the Bilingual Corpus
+      89,075 Unique Questions Total
+      178,150 Chinese / English Records
+      Split Is Not Yet Finalized Here
+    type: database
+    size: xl
+    position:
+      x: 1700
+      'y': 0
+  - id: taxonomy
+    label: |-
+      Apply GPT-4.1 Hierarchical Taxonomy
+      29% Text · 71% Multimodal
+      Geometry Share Differs in v1 PDF
+      81% Main p.4 + App. A.2 p.14
+      77% Fig. 3 p.5 · 76% Fig. 6 p.14
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 0
+  - id: candidates
+    label: |-
+      Form a 3,000-question Candidate Pool
+      Exclude Proof Questions
+      Exclude Most Multiple-choice Questions
+      Random Seed Not Reported
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 0
+  - id: auto_rubric
+    label: |-
+      Generate Evaluation Metadata
+      GPT-4.1 Summarizes Final Answers
+      Extracts Critical Scoring Points
+      Assigns Each Point Value 1 or 2
+    type: document
+    size: xl
+    position:
+      x: 2540
+      'y': 0
+  - id: manual_gate
+    label: |-
+      Manual Review · 15 Senior
+      STEM Students
+      Nontrivial Visual Reasoning?
+      Answer + Rubric Metadata Valid?
+    type: decision
+    size: xl
+    position:
+      x: 2820
+      'y': 0
+  - id: benchmark
+    label: |-
+      Finalize Paper Corpus and Benchmark
+      86,575 Train + 2,500 Test
+      Test: 1,000 Text + 1,500 Multimodal
+      5,000 Chinese / English Test Items
+    type: database
+    size: xl
+    position:
+      x: 3100
+      'y': 0
+  - id: drop_review
+    label: |-
+      Reject during Manual Review
+      Trivial / Minimal Visual Reasoning
+      or Unqualified Evaluation Metadata
+    type: terminal
+    size: xl
+    position:
+      x: 3380
+      'y': 200
+  - id: response
+    label: |-
+      Read Candidate Answer JSON
+      Map Question ID → Full Solution
+      Evaluate Only Supplied IDs
+      No 2,500-ID Coverage Check
+    type: process
+    size: xl
+    position:
+      x: 2820
+      'y': 520
+  - id: judge
+    label: |-
+      Judge Each Supplied Answer · GPT-4.1
+      Question Text + Answer Summary + Rubric
+      Candidate Reasoning and Final Answer
+      Judge Receives No Question Images
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 520
+  - id: json_gate
+    label: |-
+      Judge Output Decodes as JSON?
+      Slice the First “{” through Last “}”
+      json.loads Only
+      No Schema or Type Validation
+    type: decision
+    size: xl
+    position:
+      x: 2260
+      'y': 520
+  - id: retry_gate
+    label: |-
+      Attempts Remaining?
+      At Most Five Judge Calls per ID
+    type: decision
+    size: xl
+    position:
+      x: 2260
+      'y': 760
+  - id: omit
+    label: |-
+      Omit Exhausted Invalid JSON
+      ID Is Absent from result.json
+      It Is Also Absent from the Mean
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 760
+  - id: correct_gate
+    label: |-
+      is_fully_correct Truthy?
+      This Is the PS Full-score Gate
+      Python Truthiness, Not a Boolean Check
+    type: decision
+    size: xl
+    position:
+      x: 1980
+      'y': 520
+  - id: full_score
+    label: |-
+      Truthy Route
+      PS = 100
+      AC = 100 Only for Python “is True”
+      “False” or 1 → PS 100 · AC 0
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 440
+  - id: partial_score
+    label: |-
+      Falsy Route
+      AC = 0
+      PS = 0.7 × final_score / max_score × 100
+      No Type or Range Validation
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 620
+  - id: report
+    label: |-
+      Average Stored result.json Entries
+      Text · Multimodal · Overall
+      Missing IDs Do Not Enter Denominators
+      Stored Missing Fields Count as Zero
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 520
+  - id: validate
+    label: |-
+      Human-correlation Study
+      1,000 Questions · 3 Model Answers Each
+      15 Students · 200 Answers per Student
+      AC κ/MCC .75 · PS Pearson .72/Spearman .70
+    type: terminal
+    size: xl
+    position:
+      x: 1140
+      'y': 520
 edges:
   - from: collect
-    to: filter
+    to: image_gate
     type: primary
-  - from: filter
+  - from: image_gate
+    to: retain
+    type: primary
+    label: Yes · relevant math figure
+  - from: image_gate
+    to: drop_image
+    type: primary
+    label: No · irrelevant / text-only image
+  - from: retain
     to: standardize
     type: primary
   - from: standardize
-    to: qc_translate
+    to: quality_gate
     type: primary
-  - from: qc_translate
+  - from: quality_gate
+    to: translate
+    type: primary
+    label: Yes · complete + coherent
+  - from: quality_gate
+    to: drop_qc
+    type: primary
+    label: No · reject
+  - from: translate
     to: corpus
     type: primary
   - from: corpus
@@ -187,24 +316,70 @@ edges:
     to: candidates
     type: primary
   - from: candidates
-    to: human_review
+    to: auto_rubric
     type: primary
-  - from: human_review
+  - from: auto_rubric
+    to: manual_gate
+    type: primary
+  - from: manual_gate
     to: benchmark
     type: primary
-  - from: benchmark
-    to: rubric
+    label: Yes · retain + verify
+  - from: manual_gate
+    to: drop_review
     type: primary
-  - from: rubric
+    label: No · flag unqualified
+    waypoints:
+      - x: 2920
+        'y': 200
+      - x: 3280
+        'y': 200
+  - from: benchmark
     to: response
     type: primary
+    waypoints:
+      - x: 3200
+        'y': 400
+      - x: 2920
+        'y': 400
   - from: response
     to: judge
     type: primary
   - from: judge
-    to: validate
+    to: json_gate
     type: primary
-  - from: validate
+  - from: json_gate
+    to: correct_gate
+    type: primary
+    label: Yes · json.loads succeeds
+  - from: json_gate
+    to: retry_gate
+    type: primary
+    label: No · JSON decode failure
+  - from: retry_gate
+    to: judge
+    type: secondary
+    label: Yes · retry
+  - from: retry_gate
+    to: omit
+    type: primary
+    label: No · five attempts exhausted
+  - from: correct_gate
+    to: full_score
+    type: primary
+    label: Yes · truthy
+  - from: correct_gate
+    to: partial_score
+    type: primary
+    label: No · falsy
+  - from: full_score
     to: report
     type: primary
+  - from: partial_score
+    to: report
+    type: primary
+  - from: report
+    to: validate
+    type: secondary
+    label: Published reliability study
 modules: []

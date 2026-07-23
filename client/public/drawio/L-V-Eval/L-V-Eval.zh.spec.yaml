@@ -4,188 +4,333 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LV-Eval 构建流程
-  description: 对齐论文的 11 个中英双语长上下文问答数据集构建流程，包括可控上下文混合、混淆事实插入、 降低知识泄漏的替换、人工标注和关键词感知的两阶段评分。
-  legend: 同一组 1,729 个问答对复用于五个长度等级，形成 8,645 个从 16K 到 256K 词或汉字的合成上下文； 其中六个数据集为英文，五个为中文。
+  title: LV-Eval 构建流程与评测合同
+  description: 对齐论文 v3 的 11 个中英双语长上下文问答数据集构建流程：仅在精确适用的数据集上执行 CFI、KPR 与答案关键词分支， 再按论文的三路指标合同评分，并显式标注已发布工件边界。
+  legend: >-
+    主实线路径以 arXiv:2402.05136v3 为准。全基准有 1,331 个独特问答对；事实召回在每种语言中将一个问答放到 200 个证据位置，因此每档长度有 1,729 个实例，五档合计 8,645
+    个。英文长度按词计，中文按字计；论文报告均值 102,380、范围 11,896–387,406。五位现场全职硕士标注员参与 CFI、KPR 与 AK 工作。虚线表示证据、评测器漂移、 黑名单支持和公开工件边界，不属于主数据流。
 nodes:
   - id: sources
     label: |-
-      选择公开问答与文本来源
-      HotpotQA · 2Wiki · DuReader · LooGLE
-      LongBench · CMRC · MultiFieldQA
-      PG-19 · 西游记 · 长指令数据
+      公开问答与文本来源
+      LIC · HotpotQA + 2Wiki
+      DuReader · LooGLE · CMRC
+      MFQA（LongBench）
+      事实召回：PG-19 +《西游记》
     type: database
     size: xl
     position:
       x: 20
-      'y': 40
+      'y': 80
+  - id: evidence
+    label: |-
+      证据边界
+      论文：arXiv:2402.05136v3
+      Git 63e7ae9 · HF 86a3b0e
+      主流程以论文 v3 为准
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 320
   - id: qa
     label: |-
-      构建 11 个双语问答集
-      改造 9 个公开问答数据集
-      合成 2 个事实召回数据集
-      英文 6 个 · 中文 5 个
+      汇总 11 个双语问答集
+      单跳 7 个 · 多跳 4 个 · 英文 6 / 中文 5
+      改造 1,329 个 + 人工编写 2 个事实问答
+      = 1,331 个独特问答对
     type: process
     size: xl
     position:
       x: 300
-      'y': 40
-  - id: pool
-    label: |-
-      固定 1,729 个问答对
-      单跳与多跳任务
-      两种语言各写一个事实问答
-      各长度复用完全相同的问答
-    type: database
-    size: xl
-    position:
-      x: 580
-      'y': 40
+      'y': 80
   - id: mix
     label: |-
       混合支持文档与干扰文档
-      逐篇采样干扰文档至目标长度
-      打散多跳任务的支持段落
-      随机排序并添加段落编号
+      常规集：同源未选问答的上下文
+      Hotpot / DuReader：打散多份支持证据
+      采样 → 随机排序 → 前缀 Passage i
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 80
+  - id: lengths
+    label: |-
+      生成五档长度
+      16K · 32K · 64K · 128K · 256K
+      常规集：每问答每档一个上下文
+      事实召回：每档 200 个均匀证据位置
     type: process
     size: xl
     position:
       x: 860
-      'y': 40
-  - id: lengths
+      'y': 80
+  - id: cfi_route
     label: |-
-      构建五档可控长度
-      16K · 32K · 64K · 128K · 256K
-      每个问答与长度对应一个上下文
-      平均 102,380 词或汉字
+      属于 CFI 集？
+      六个指定数据集
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 80
+  - id: cfi
+    label: |-
+      CFI · 6 集 · 557 个实例
+      Hotpot · LIC · MFQA 中/英
+      事实召回中/英
+      GPT-4 生成 2 条相似但事实不同的内容
+      语言学标注员消除冲突；随机插入
     type: process
     size: xl
     position:
       x: 1140
-      'y': 40
-  - id: cfi
+      'y': 320
+  - id: kpr_route
     label: |-
-      六个数据集插入混淆事实
-      GPT-4 生成两条相似事实
-      语言学标注员消解冲突
-      随机插入不矛盾的混淆事实
+      属于 KPR 集？
+      六个指定数据集
+    type: decision
+    size: xl
+    position:
+      x: 1420
+      'y': 80
+  - id: kpr
+    label: |-
+      KPR · 6 集 · 1,924 条规则
+      Hotpot · CMRC · MFQA 中/英
+      事实召回中/英
+      数量：232 + 786 + 476
+      424 + 3 + 3
+      同时替换上下文与问答；复核一致性
     type: process
     size: xl
     position:
       x: 1420
-      'y': 40
-  - id: kpr
+      'y': 320
+  - id: ak_route
     label: |-
-      应用关键词与短语替换
-      六个数据集 · 1,924 个替换对
-      人工制定替换规则
-      通读修改后上下文消解新冲突
-    type: process
+      属于 AK 集？
+      除两个数据集外
+    type: decision
     size: xl
     position:
       x: 1700
-      'y': 40
-  - id: annotation
+      'y': 80
+  - id: ak
     label: |-
-      完成人工标注
-      五名全职硕士标注员
-      复核 557 条混淆事实实例
-      标注 955 条答案关键词实例
+      AK · 9 集 · 955 个实例
+      除 CMRC 与 DuReader 外全部适用
+      标注答案的关键内容
+      两名标注员 · 一个工作日
     type: user
     size: xl
     position:
       x: 1700
-      'y': 380
+      'y': 320
   - id: dataset
     label: |-
-      发布 LV-Eval · 8,645 个上下文
-      1,729 个问答对 × 五档长度
-      上下文 · 问题 · 标准答案
-      混淆事实与答案关键词
+      发布 LV-Eval 测试工件
+      每档 1,729 个实例 × 5 = 8,645
+      上下文 · 问题 · 答案 · 长度 · 语言
+      按条件包含 AK 与混淆事实字段
     type: database
     size: xl
     position:
       x: 1420
-      'y': 380
+      'y': 560
   - id: inference
     label: |-
-      执行长上下文推理
-      各数据集专用零样本提示
-      贪心生成答案
-      超窗时截断上下文中部
+      使用各数据集专用零样本提示
+      直接作答 · 无统一解析器
+      贪心解码：常规 64 · 事实召回 16
+      超窗：保留头部与尾部
     type: process
     size: xl
     position:
       x: 1140
-      'y': 380
-  - id: recall
+      'y': 560
+  - id: metric_route
     label: |-
-      第一阶段 · 答案关键词召回
-      匹配人工标注的关键内容
-      要求达到数据集阈值
-      拒绝缺少关键词的回答
-    type: process
+      论文 v3
+      选择指标路径
+    type: decision
     size: xl
     position:
       x: 860
-      'y': 380
-  - id: f1
+      'y': 560
+  - id: ak_metric
     label: |-
-      第二阶段 · 黑名单感知相似度
-      去除常见无信息词
-      计算中英文问答 F1
-      指定任务使用原生 Rouge 指标
-    type: process
+      9 个 AK 数据集
+      R_AK = overlap(pred, AK)
+      / |AK|
+      门槛：中文 0.2 · 英文 0.4
+      未过 → 0；通过 → 黑名单词元 F1
+      中英文分别归一化
+    type: formula
     size: xl
     position:
       x: 580
-      'y': 380
+      'y': 400
+  - id: cmrc_metric
+    label: |-
+      仅 CMRC
+      无答案关键词门控
+      黑名单感知中文词元 F1
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 560
+  - id: dureader_metric
+    label: |-
+      仅 DuReader
+      无答案关键词门控
+      黑名单感知 ROUGE-L
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 720
   - id: report
     label: |-
-      汇报可控长上下文得分
-      11 个数据集级指标
-      五档长度平均分
-      单跳与多跳分析
+      汇报论文结果
+      11 个数据集 × 5 档长度
+      得分 = 100 × 样本分数均值
+      长度及单跳 / 多跳分析
     type: terminal
     size: xl
     position:
       x: 300
-      'y': 380
+      'y': 560
+  - id: blacklist
+    label: |-
+      构建共享词黑名单
+      Llama2-7B + ChatGLM3 生成答案
+      取与标准答案重合最高频的 100 个词
+      人工保留无信息量词
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 820
+  - id: evaluator_drift
+    label: |-
+      已发布评测器漂移
+      代码门槛英 0.2 / 中 0.4；v3 相反
+      AK 最终 F1 未执行完整黑名单过滤
+      事实召回：gold_ans 为空 · 使用普通 F1
+      论文 loogle-MR → 工件 loogle_MIR
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 820
+  - id: artifact_boundary
+    label: |-
+      公开工件与许可边界
+      仅测试数据 · 全部标签公开
+      代码 + 9 个数据集采用 MIT
+      CMRC + LIC：CC BY-SA 4.0
+      静态 README 榜单 · 存在过拟合风险
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 820
 edges:
+  - from: evidence
+    to: sources
+    type: dependency
   - from: sources
     to: qa
     type: primary
   - from: qa
-    to: pool
-    type: primary
-  - from: pool
     to: mix
     type: primary
   - from: mix
     to: lengths
     type: primary
   - from: lengths
+    to: cfi_route
+    type: primary
+  - from: cfi_route
     to: cfi
     type: primary
+    label: 是
+    labelPosition: end
+  - from: cfi_route
+    to: kpr_route
+    type: optional
+    label: 否
+    labelPosition: end
   - from: cfi
+    to: kpr_route
+    type: primary
+  - from: kpr_route
     to: kpr
     type: primary
+    label: 是
+    labelPosition: end
+  - from: kpr_route
+    to: ak_route
+    type: optional
+    label: 否
+    labelPosition: end
   - from: kpr
-    to: annotation
+    to: ak_route
     type: primary
-  - from: annotation
+  - from: ak_route
+    to: ak
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: ak_route
+    to: dataset
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: ak
     to: dataset
     type: primary
   - from: dataset
     to: inference
     type: primary
   - from: inference
-    to: recall
+    to: metric_route
     type: primary
-  - from: recall
-    to: f1
+  - from: metric_route
+    to: ak_metric
     type: primary
-  - from: f1
+    label: 9 个 AK 集
+    labelPosition: end
+  - from: metric_route
+    to: cmrc_metric
+    type: primary
+    label: CMRC 路径
+    labelPosition: end
+  - from: metric_route
+    to: dureader_metric
+    type: primary
+    label: DuReader 路径
+    labelPosition: end
+  - from: ak_metric
     to: report
     type: primary
+  - from: cmrc_metric
+    to: report
+    type: primary
+  - from: dureader_metric
+    to: report
+    type: primary
+  - from: blacklist
+    to: metric_route
+    type: dependency
+  - from: inference
+    to: evaluator_drift
+    type: dependency
+  - from: dataset
+    to: artifact_boundary
+    type: dependency
 modules: []

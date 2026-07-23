@@ -5,86 +5,95 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: OlmoBaseEval GenQA Build Process
-  description: Source-aligned construction and evaluation flow for the GenQA macro-average reported by Olmo 3.
+  description: Source-aligned clustering, nine-entry suite assembly, task-specific evaluation, and macro aggregation.
   legend: >-
-    GenQA is not a standalone dataset: it is an OlmoBaseEval task cluster defined by the Olmo 3 report and official
-    OLMES suite. The two branches use different formats before merging into one macro-average.
+    Dashed arrows mark evidence or a published limitation; solid arrows follow the Olmo 3 report and OLMES
+    olmo3:base:gen configuration. GenQA is a capability cluster, not a standalone dataset.
 nodes:
-  - id: pool
+  - id: evidence
     label: |-
-      Collect 23K benchmark results
-      from 70 open-weight models
-      compare task-level model rankings
-    type: database
+      Primary evidence
+      arXiv:2512.13961v2
+      OLMES repo 5a51f502
+    type: document
     size: xl
     position:
       x: 40
       'y': 300
+  - id: pool
+    label: |-
+      Pool 23K benchmark scores
+      70 external open-weight models
+      compare task-level model rankings
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 300
   - id: cluster
     label: |-
-      Hierarchically cluster evaluations
-      Ward variance minimization
-      merge tasks that rank models similarly
+      Ward hierarchical clustering
+      merge evaluations that rank models alike
     type: process
     size: xl
     position:
-      x: 340
+      x: 560
       'y': 300
   - id: align
     label: |-
       Align clusters with task format
-      move same-format tasks together
-      split multiple choice into STEM/non-STEM
+      split single-token MC into STEM/non-STEM
     type: process
     size: xl
     position:
-      x: 640
+      x: 820
       'y': 300
-  - id: rc
+  - id: rc_branch
     label: |-
-      GenQA rank-choice/continuation branch
+      Rank-choice / continuation branch
       HellaSwag · WinoGrande · LAMBADA
-      BasicSkills (6 subtasks)
+      BasicSkills nested six-subtask suite
     type: process
     size: xl
     position:
-      x: 980
+      x: 1080
       'y': 80
-  - id: gen
+  - id: gen_branch
     label: |-
-      GenQA short-answer branch
+      Generative short-answer branch
       DROP · Jeopardy · NaturalQs
       SQuAD · CoQA
     type: process
     size: xl
     position:
-      x: 980
+      x: 1080
       'y': 520
-  - id: prompt_rc
+  - id: eval_rc
     label: |-
-      Run RC/continuation evaluation
-      mostly 5-shot; LAMBADA is 0-shot
-      normalize likelihood per task definition
+      Run rank-choice / continuation
+      5-shot; LAMBADA 0-shot greedy
+      per-char · raw · per-token variants
     type: process
     size: xl
     position:
-      x: 1280
+      x: 1340
       'y': 80
-  - id: prompt_gen
+  - id: eval_gen
     label: |-
       Generate short answers
-      5-shot except built-in 0-shot CoQA
-      temperature 0 · top-p 1 · max 50/100 tokens
+      5-shot; CoQA uses 0-shot context
+      T 0 · top-p 1 · max 100/50 tokens
     type: process
     size: xl
     position:
-      x: 1280
+      x: 1340
       'y': 520
   - id: task_score
     label: |-
-      Score each source task
-      RC/continuation uses accuracy
-      short answers use F1 against answer banks
+      Score nine suite entries
+      rank/continuation: accuracy variant
+      short answers: F1 vs answer banks
+      BasicSkills: macro over six subtasks
     type: process
     size: xl
     position:
@@ -92,25 +101,29 @@ nodes:
       'y': 300
   - id: macro
     label: |-
-      Macro-average nine task scores
-      report Olmo 3-Eval GenQA
-      use as one OlmoBaseEval Main capability
+      Macro-average the nine entries
+      report OlmoBaseEval GenQA
+      one base-model Main capability
     type: terminal
     size: xl
     position:
-      x: 1940
+      x: 1900
       'y': 300
-  - id: caveat
+  - id: limitation
     label: |-
-      Preserve the documented limitation
-      incomplete short-answer banks can cause
-      false negatives; Gen2MC is a separate remedy
-    type: terminal
+      Published boundary
+      answer banks can miss valid answers
+      Gen2MC is separate from GenQA
+      no standalone GenQA dataset
+    type: document
     size: xl
     position:
-      x: 2240
+      x: 2160
       'y': 300
 edges:
+  - from: evidence
+    to: pool
+    type: data
   - from: pool
     to: cluster
     type: primary
@@ -118,27 +131,27 @@ edges:
     to: align
     type: primary
   - from: align
-    to: rc
+    to: rc_branch
     type: primary
   - from: align
-    to: gen
+    to: gen_branch
     type: primary
-  - from: rc
-    to: prompt_rc
+  - from: rc_branch
+    to: eval_rc
     type: primary
-  - from: gen
-    to: prompt_gen
+  - from: gen_branch
+    to: eval_gen
     type: primary
-  - from: prompt_rc
+  - from: eval_rc
     to: task_score
     type: primary
-  - from: prompt_gen
+  - from: eval_gen
     to: task_score
     type: primary
   - from: task_score
     to: macro
     type: primary
   - from: macro
-    to: caveat
-    type: primary
+    to: limitation
+    type: data
 modules: []

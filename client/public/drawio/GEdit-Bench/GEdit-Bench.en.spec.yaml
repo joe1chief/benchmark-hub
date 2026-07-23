@@ -5,126 +5,149 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GEdit-Bench Build Process
-  description: >-
-    Paper-aligned real-user collection, privacy filtering, bilingualization, and VIEScore evaluation flow for
-    GEdit-Bench.
+  description: Paper-, dataset-, and evaluator-aligned collection, privacy handling, bilingual release, and VIEScore flow.
   legend: >-
-    Solid arrows follow the Step1X-Edit paper (arXiv:2504.17761). The full 606-example benchmark is distinct from the
-    smaller intersections used when only valid outputs from every compared model are scored.
+    Evidence is pinned to arXiv:2504.17761v5, repository 4cca05df, and dataset 50766778. Paper v5 is internally
+    inconsistent: Figure 7 and one prose sentence say GPT-4o, while Section 4.2.1 and Tables 2-3 say GPT-4.1; the pinned
+    evaluator uses GPT-4.1.
 nodes:
-  - id: collect
+  - id: evidence
     label: |-
-      Collect more than 1K real editing instances
-      Internet sources including Reddit-style requests
-      preserve genuine user images and intentions
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 250
-  - id: taxonomy
-    label: |-
-      Manually organize instructions
-      assign 11 real-world editing categories
-      filter similar-purpose requests for diversity
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: privacy
-    label: |-
-      De-identify user-uploaded images
-      reverse-search multiple public search engines
-      replace with a public visual/semantic match
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 250
-  - id: fallback
-    label: |-
-      Preserve intent when no substitute exists
-      minimally modify the instruction instead
-      maintain image–instruction fidelity
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 250
-  - id: bilingual
-    label: |-
-      Pair every image with two instructions
-      one English and one Chinese formulation
-      human-filter wording and image suitability
+      Evidence snapshot
+      paper 2504.17761v5
+      repo 4cca05df · data 50766778
+      paper GPT-4o/GPT-4.1 conflict
+      fixed eval GPT-4.1
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 250
-  - id: release
+      x: 40
+      'y': 160
+  - id: collect
     label: |-
-      Assemble 606 real-world test examples
-      reference image + genuine editing request
-      public benchmark spanning 11 categories
+      Collect >1K real edit cases
+      public Internet sources
+      include Reddit-style requests
+      retain genuine editing intent
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 250
-  - id: edit
+      x: 296
+      'y': 160
+  - id: taxonomy
     label: |-
-      Run open and proprietary editors
-      submit source image plus EN or ZH instruction
-      retain successfully generated edited images
+      Manually assign 11 categories
+      filter same-purpose instructions
+      preserve task diversity
+      retain 606 image-request pairs
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: subsets
+      x: 552
+      'y': 160
+  - id: deidentify
     label: |-
-      Separate full-set and valid-output views
-      full benchmark: 606 examples
-      common valid-output intersections: EN 434 · ZH 422
+      De-identify user images
+      reverse-search public engines
+      substitute a public matching image
+      else modify instruction, keep intent
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 250
-  - id: score
+      x: 808
+      'y': 160
+  - id: release
     label: |-
-      Apply VIEScore with two VLM judges
+      Pair one EN + one ZH instruction
+      release 1,212 rows from 606 pairs
+      image/raw image/task/language fields
+      Intersection_exist flag included
+    type: database
+    size: xl
+    position:
+      x: 1064
+      'y': 160
+  - id: generation
+    label: |-
+      Generate edited images
+      source image + EN or ZH request
+      open and proprietary editors
+      missing output files are skipped
+    type: process
+    size: xl
+    position:
+      x: 1064
+      'y': 400
+  - id: views
+    label: |-
+      Form reporting views
+      full: up to 606 per language
+      failed/missing outputs excluded
+      common: EN 434 · ZH 422
+    type: process
+    size: xl
+    position:
+      x: 808
+      'y': 400
+  - id: viescore
+    label: |-
+      Judge original + edit + request
       GPT-4.1 and Qwen2.5-VL-72B
-      Semantic Consistency · Perceptual Quality · Overall
+      output SC and PQ arrays, 0–10
+      task mode: tie
+    type: process
+    size: xl
+    position:
+      x: 552
+      'y': 400
+  - id: parser
+    label: |-
+      Parse score arrays
+      retry once; then fallback/guess
+      SC=min list · PQ=min list
+      O=sqrt(SC × PQ)
+    type: process
+    size: xl
+    position:
+      x: 296
+      'y': 400
+  - id: aggregate
+    label: |-
+      Mean within each category
+      overall = unweighted mean
+      across all 11 category means
+      apply same rule to common subset
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 250
+      x: 40
+      'y': 400
 edges:
+  - from: evidence
+    to: collect
+    type: primary
   - from: collect
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: privacy
+    to: deidentify
     type: primary
-  - from: privacy
-    to: fallback
-    type: primary
-  - from: fallback
-    to: bilingual
-    type: primary
-  - from: bilingual
+  - from: deidentify
     to: release
     type: primary
   - from: release
-    to: edit
+    to: generation
     type: primary
-  - from: edit
-    to: subsets
+  - from: generation
+    to: views
     type: primary
-  - from: subsets
-    to: score
+  - from: views
+    to: viescore
+    type: primary
+  - from: viescore
+    to: parser
+    type: primary
+  - from: parser
+    to: aggregate
     type: primary
 modules: []

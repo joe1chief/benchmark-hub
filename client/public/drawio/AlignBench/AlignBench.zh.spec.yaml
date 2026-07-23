@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AlignBench 构建流程
-  description: AlignBench 通过人工参与的参考答案核验与三模型难度过滤整理 683 条真实中文场景查询，再使用规则校准的多维 GPT-4 点式评审器完成评测。
-  legend: 三层按折线路径构成连续的构建与评测流程；虚线分支表示人工核验知识密集型参考答案时必须记录的网页证据。
+  description: AlignBench 通过人工参考答案核验与三模型难度过滤整理 683 条查询，再执行固定 GPT-4-0613 协议、评分字典解析及官方推理/语言聚合。
+  legend: 各层构成连续路径；开放创作类目标回复采用 T=0.7，评审固定为 gpt-4-0613、T=0.1。最终总分等权平均推理组与语言组。
 nodes:
   - id: sources
     label: |-
@@ -109,8 +109,9 @@ nodes:
       'y': 360
   - id: model
     label: |-
-      目标 LLM 回复
-      按类别设置温度
+      生成目标 LLM 回复
+      固定答案类别：T = 0.1
+      开放 / 写作 / 角色目标 T = 0.7
     type: process
     size: xl
     position:
@@ -118,23 +119,45 @@ nodes:
       'y': 360
   - id: judge
     label: |-
-      GPT-4 点式评审
+      固定 gpt-4-0613 点式评审
+      评审 T = 0.1
+      查询 + 参考答案 + 目标回复
       任务特定维度 + 思维链
-      规则校准的 1–10 分细则
     type: process
     size: xl
     position:
       x: 40
       'y': 360
-  - id: score
+  - id: score_dict
     label: |-
-      各维度分与总分
-      人工参考答案锚定为 8 分
-      最终采用 1–10 分制
-    type: terminal
+      解析末尾评分字典
+      提取各维度整数分
+      读取“综合得分”；正则回退
+    type: document
     size: xl
     position:
       x: 40
+      'y': 640
+  - id: aggregate
+    label: |-
+      聚合官方结果
+      推理 = 数学与逻辑平均分
+      语言 = 其余 6 类平均分
+      总分 = (推理 + 语言) / 2
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 640
+  - id: score
+    label: |-
+      AlignBench 结果
+      类别 • 推理 • 语言
+      1–10 分制总分
+    type: terminal
+    size: xl
+    position:
+      x: 600
       'y': 640
 edges:
   - from: sources
@@ -179,6 +202,12 @@ edges:
     to: judge
     type: primary
   - from: judge
+    to: score_dict
+    type: primary
+  - from: score_dict
+    to: aggregate
+    type: primary
+  - from: aggregate
     to: score
     type: primary
 modules: []

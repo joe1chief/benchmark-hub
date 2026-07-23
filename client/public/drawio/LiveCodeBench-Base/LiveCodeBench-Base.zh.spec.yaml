@@ -1,178 +1,199 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LiveCodeBench-Base 构建流程
-  description: 将公开的 LiveCodeBench 构建流程与 DeepSeek-V3 报告中的基础模型评测适配层明确分开。
-  legend: >-
-    LiveCodeBench-Base 不是单独发布的数据集。arXiv:2412.19437 用它表示 0801–1101 的 LiveCodeBench 时间窗， 并在 DeepSeek-AI 内部框架中以 3-shot 和
-    Pass@1 评测基础模型。
+  description: 将论文 v2 的 LiveCodeBench 构建流程，与名为 LiveCodeBench-Base（0801–1101）的 DeepSeek-V3 私有基础模型评测适配层分开。
+  legend: 实线表示已披露的构建与评测步骤；点线分支表示披露边界和协议边界，并非额外处理阶段。
 nodes:
-  - id: platforms
+  - id: lcb_sources
     label: |-
-      从公开编程竞赛出发
-      LeetCode · AtCoder · CodeForces
-      仅使用公开可见内容
-      保留每场竞赛日期
+      公开编程竞赛
+      LeetCode周赛/双周赛
+      AtCoder ABC
+      部分CodeForces Div.3/4
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: collect
+      x: 64
+      'y': 96
+  - id: scrape
     label: |-
-      收集问题元组
-      自然语言题面
-      可获得时收集标准解与测试
-      平台难度和发布日期
+      抓取公开网页
+      题面P · 竞赛日期D
+      标准解S
+      可获得时收集测试T
     type: process
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: curate
+      x: 336
+      'y': 96
+  - id: filter
     label: |-
-      按平台整理测试
-      AtCoder · 公开与隐藏测试
-      LeetCode · 生成测试与失败样例
-      CodeForces · 半自动测试生成器
+      应用论文筛选规则
+      解析公式 · 排除图片题
+      排除不可输入输出判题任务
+      按阈值排除过难问题
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: codegen
+      x: 608
+      'y': 96
+  - id: construct_tests
+    label: |-
+      补全隐藏测试
+      可得时直接使用平台测试
+      否则构造GPT-4-Turbo生成器
+      用正确程序验证输入
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 96
+  - id: codegen_instances
     label: |-
       形成代码生成实例
-      带起始代码的函数格式
-      或标准输入格式
-      用未见功能测试评估
-    type: process
+      LeetCode · 函数式+起始代码
+      AtCoder/CodeForces · 标准输入
+      全部测试共同定义功能正确
+    type: database
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: window
+      x: 1152
+      'y': 96
+  - id: base_identity
     label: |-
-      应用DeepSeek-V3时间窗口
-      LiveCodeBench-Base · 0801–1101
-      2024年8月至11月问题
-      所有模型使用固定日期切片
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: label
-    label: |-
-      将“Base”视为评测标签
-      不是独立LCB发布版本
-      源数据仍来自LiveCodeBench
-      报告协议来自DeepSeek-V3
+      DeepSeek报告适配层
+      LiveCodeBench-Base（0801–1101）
+      评测标签 · 无独立发布版本
     type: document
     size: xl
     position:
-      x: 1420
-      'y': 40
+      x: 1424
+      'y': 96
+  - id: window
+    label: |-
+      固定2024年0801–1101切片
+      四个基础模型使用同一切片
+      精确边界与题量未披露
+    type: process
+    size: xl
+    position:
+      x: 1424
+      'y': 416
   - id: models
     label: |-
-      选择基础模型
+      比较四个基础模型
       DeepSeek-V2 · Qwen2.5-72B
       LLaMA-3.1-405B · DeepSeek-V3
-      使用相同内部评测框架
+      使用同一内部设置
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: prompt
+      x: 1152
+      'y': 416
+  - id: three_shot
     label: |-
-      构造基础模型提示词
-      采用3-shot评测
-      提供题面与输入输出约定
-      要求生成可执行程序
+      应用DeepSeek-V3设置
+      内部HAI-LLM框架
+      生成式评测 · 3-shot
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: generate
+      x: 880
+      'y': 416
+  - id: internal_eval
     label: |-
-      生成候选代码
-      采用生成式评测
-      从补全结果抽取程序
-      保持统一可比设置
+      生成并判定程序
+      报告只标明Pass@1
+      内部适配器未发布
     type: process
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: execute
+      x: 608
+      'y': 416
+  - id: pass1
     label: |-
-      在基准测试上执行
-      编译或运行候选程序
-      将输出与标准结果比较
-      强制按功能正确性判定
-    type: process
+      表3 · Pass@1
+      DeepSeek-V2 11.6 · Qwen2.5 12.9
+      LLaMA-3.1 15.5 · DeepSeek-V3 19.4
+    type: formula
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: pass
-    label: |-
-      程序是否通过全部测试？
-      是 · 该题正确
-      否 / 报错 / 超时 · 错误
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 420
+      x: 336
+      'y': 416
   - id: report
     label: |-
-      报告LiveCodeBench-Base Pass@1
-      统计成功解题比例
-      在同一切片比较基础模型
-      与聊天模型LCB结果分开
+      静态技术报告结果
+      不是LCB官方榜单发布
+      未发布可复现的Base包
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 64
+      'y': 416
+  - id: unknowns
+    label: |-
+      公开资料未披露
+      提示示例 · 候选数量
+      解码 · 解析器 · 检查器 · 超时
+      精确任务ID
+    type: document
+    size: xl
+    position:
+      x: 608
+      'y': 736
+  - id: do_not_substitute
+    label: |-
+      协议边界
+      不等于LCB论文的1-shot基础协议
+      不代入当前runner的n=10默认值
+      不等于另行报告的聊天模型CoT
+    type: document
+    size: xl
+    position:
+      x: 1424
+      'y': 736
 edges:
-  - from: platforms
-    to: collect
+  - from: lcb_sources
+    to: scrape
     type: primary
-  - from: collect
-    to: curate
+  - from: scrape
+    to: filter
     type: primary
-  - from: curate
-    to: codegen
+  - from: filter
+    to: construct_tests
     type: primary
-  - from: codegen
+  - from: construct_tests
+    to: codegen_instances
+    type: primary
+  - from: codegen_instances
+    to: base_identity
+    type: primary
+  - from: base_identity
     to: window
     type: primary
   - from: window
-    to: label
-    type: primary
-  - from: label
     to: models
     type: primary
   - from: models
-    to: prompt
+    to: three_shot
     type: primary
-  - from: prompt
-    to: generate
+  - from: three_shot
+    to: internal_eval
     type: primary
-  - from: generate
-    to: execute
+  - from: internal_eval
+    to: pass1
     type: primary
-  - from: execute
-    to: pass
-    type: primary
-  - from: pass
+  - from: pass1
     to: report
     type: primary
+  - from: internal_eval
+    to: unknowns
+    type: optional
+  - from: window
+    to: do_not_substitute
+    type: optional
 modules: []

@@ -5,56 +5,58 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: clembench-2024 构建流程
-  description: >-
-    与论文对齐的 clembench 流程：对话游戏将可复用提示模板、回答解析器和游戏逻辑与新采样实例分离；程序化 GameMaster 运行 LLM 自我对弈，形式分与质量分组成
-    clemscore，并以人类和多语言研究验证难度及可扩展性。
-  legend: 实线表示游戏构建与评分主流程；分支表示人类基线与多语言验证研究。
+  description: 与论文时代对齐的 clembench 流程：复用游戏规格生成新实例并离线自博弈；形式完成率与归一化游戏质量组成 clemscore，再以专家基线和翻译后的指称游戏研究验证设计。
+  legend: 实线遵循 2024 年 5 月论文；虚线分支记录后续 v3.0 仓库漂移。
 nodes:
-  - id: games
+  - id: evidence_boundary
     label: |-
-      选择能力探测型对话游戏
-      指令遵循 • 策略目标 • 语言理解
-      具有完全可定义的目标与终止状态
-    type: database
+      论文时代证据边界
+      arXiv 2405.20859v1
+      官方仓库 ba687db
+      评测批次：2024 年 5 月
+    type: document
     size: xl
     position:
       x: 40
       'y': 220
-  - id: templates
+  - id: release_drift
     label: |-
-      编写提示模板
-      定义玩家角色与逐轮指令
-      将游戏规格与具体实例分离
+      当前仓库 adff278
+      v3.0 游戏与 CLI
+      属后续发布；不等同 2024 论文
     type: document
     size: xl
     position:
       x: 340
-      'y': 40
-  - id: parsers
+      'y': 440
+  - id: game_spec
     label: |-
-      实现解析器与游戏流程
-      强制回答符合格式
-      检测合法动作与终止状态
-    type: process
+      定义每个对话游戏
+      提示模板
+      回应解析规则
+      游戏流程 + 终止状态
+    type: document
     size: xl
     position:
       x: 340
-      'y': 400
+      'y': 220
   - id: instances
     label: |-
-      创建全新游戏实例
-      从现有池采样或轻量人工选择目标
-      降低固定实例的数据污染风险
+      为所有游戏创建新实例
+      从现有池采样
+      轻量人工选择目标
+      降低固定实例污染
     type: process
     size: xl
     position:
       x: 640
       'y': 220
-  - id: master
+  - id: gamemaster
     label: |-
       实例化程序化 GameMaster
-      用具体实例填充模板
-      控制轮次、状态与游戏专属规则
+      用实例填充模板
+      控制轮次与游戏规则
+      检测终止状态
     type: process
     size: xl
     position:
@@ -62,9 +64,9 @@ nodes:
       'y': 220
   - id: selfplay
     label: |-
-      运行 LLM 对 LLM 自我对弈
-      逐轮提示双方玩家角色
-      记录完整离线对话 episode
+      运行 LLM 对 LLM 自博弈
+      逐轮提示双方角色
+      记录完整离线对局
     type: terminal
     size: xl
     position:
@@ -72,9 +74,9 @@ nodes:
       'y': 220
   - id: formal
     label: |-
-      衡量形式正确性
-      统计完整玩到终局的游戏比例
-      暴露格式与协议失败
+      检查形式完成情况
+      违反解析规则 = 未完成
+      统计完成游戏占比
     type: process
     size: xl
     position:
@@ -82,19 +84,20 @@ nodes:
       'y': 40
   - id: quality
     label: |-
-      计算游戏专属质量
-      应用每个游戏的主要指标
-      将质量归一化到 0—100
+      评分游戏专属质量
+      每个游戏主指标 0–100
+      仅评分格式正确对局
     type: process
     size: xl
     position:
       x: 1540
       'y': 400
-  - id: aggregate
+  - id: clemscore
     label: |-
       计算 clemscore
-      结合形式正确性与对弈质量
-      先按游戏平均，再跨游戏汇总
+      先逐游戏汇总主指标
+      再跨游戏平均
+      完成率 × 质量分的乘积
     type: terminal
     size: xl
     position:
@@ -103,8 +106,9 @@ nodes:
   - id: human
     label: |-
       建立人类专家基线
-      作者配对每游戏进行 10—15 个 episode
-      不使用同一玩家创建的实例
+      作者每游戏玩 10–15 局
+      排除自己创建的实例
+      略去两个 Wordle 变体
     type: user
     size: xl
     position:
@@ -112,9 +116,10 @@ nodes:
       'y': 40
   - id: multilingual
     label: |-
-      开展多语言案例研究
-      母语者翻译模板与目标表达
-      保持相同解析器和游戏逻辑
+      指称游戏多语言研究
+      母语者翻译提示
+      目标表达 + 解析规则
+      保持同一游戏逻辑
     type: user
     size: xl
     position:
@@ -122,9 +127,10 @@ nodes:
       'y': 400
   - id: validation
     label: |-
-      验证基准属性
-      新实例与旧实例排名相关 0.71
-      比较人类上限与语言影响
+      验证基准特性
+      跨批次排名相关 0.71
+      人类质量 86.93 • 完成率 100%
+      CA τ=0.65 • HELM τ=0.39
     type: process
     size: xl
     position:
@@ -132,31 +138,29 @@ nodes:
       'y': 220
   - id: report
     label: |-
-      发布动态基准结果
-      clemscore • 完成比例 • 质量分
-      模型排名 + 人类 + 多语言分析
+      发布 2024 年 5 月结果
+      clemscore • 完成率 • 质量分
+      53 个模型 + 人类基线
+      多语言指称游戏分析
     type: terminal
     size: xl
     position:
       x: 2740
       'y': 220
 edges:
-  - from: games
-    to: templates
+  - from: evidence_boundary
+    to: game_spec
     type: primary
-  - from: games
-    to: parsers
-    type: primary
-  - from: templates
-    to: instances
-    type: primary
-  - from: parsers
+  - from: evidence_boundary
+    to: release_drift
+    type: data
+  - from: game_spec
     to: instances
     type: primary
   - from: instances
-    to: master
+    to: gamemaster
     type: primary
-  - from: master
+  - from: gamemaster
     to: selfplay
     type: primary
   - from: selfplay
@@ -166,15 +170,15 @@ edges:
     to: quality
     type: primary
   - from: formal
-    to: aggregate
+    to: clemscore
     type: primary
   - from: quality
-    to: aggregate
+    to: clemscore
     type: primary
-  - from: aggregate
+  - from: clemscore
     to: human
     type: primary
-  - from: aggregate
+  - from: clemscore
     to: multilingual
     type: primary
   - from: human

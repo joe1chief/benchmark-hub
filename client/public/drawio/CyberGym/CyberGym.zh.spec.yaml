@@ -4,172 +4,292 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: CyberGym 构建流程
-  description: 与论文对齐的 OSS-Fuzz 来源、补丁版本对重建、可执行 PoC 任务评测及独立安全影响分析。
-  legend: 实线表示构建与成功率评分；虚线表示不属于 benchmark 指标的后续安全分析。
+  title: CyberGym 构建与评估流程
+  description: 对齐 ICLR 2026 论文 v3 的 OSS-Fuzz 补丁对重建、受提示约束的描述整理、审计发布、四级信息设置和双版本 sanitizer 判定。
+  legend: 实线表示基准构建与评分；虚线数据箭头单独表示基准之后的安全影响分析。
 nodes:
-  - id: ossfuzz
+  - id: evidence
     label: |-
-      OSS-Fuzz / ARVO
-      真实历史漏洞
-    type: database
+      论文 arXiv:2506.02548v3
+      代码 @ cd123ad · HF @ bde190d
+      tasks.json SHA256 9cea452…
+    type: document
     size: xl
     position:
       x: 40
-      'y': 210
-  - id: patch
+      'y': 320
+  - id: source
     label: |-
-      定位精确补丁提交
-      对修复前最后一天二分搜索
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 210
-  - id: elements
-    label: |-
-      样例元素
-      修复前后代码 · 标准 PoC · 补丁
-    type: document
-    size: xl
-    position:
-      x: 560
-      'y': 210
-  - id: describe
-    label: |-
-      GPT-4.1 漏洞描述
-      改写信息充分的补丁消息
-    type: process
-    size: xl
-    position:
-      x: 820
-      'y': 210
-  - id: quality
-    label: |-
-      质量保证
-      信息充分 · 可复现 · 去重
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 210
-  - id: benchmark
-    label: |-
-      CyberGym
-      1,507 个漏洞 · 188 个项目
+      OSS-Fuzz 经 ARVO 获取
+      历史内存安全漏洞
+      主要为 C/C++ 项目
+      以 sanitizer 作为崩溃判定器
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 210
+      x: 296
+      'y': 320
+  - id: patch
+    label: |-
+      定位精确补丁提交
+      OSS-Fuzz 项目每日更新
+      搜索修复前最后一天
+      二分查找标准 PoC
+      首个不再崩溃的提交
+    type: process
+    size: xl
+    position:
+      x: 552
+      'y': 320
+  - id: elements
+    label: |-
+      恢复实例要素
+      补丁前 + 补丁后代码
+      标准 PoC + 补丁差异
+      构建启用 sanitizer 的可执行文件
+    type: document
+    size: xl
+    position:
+      x: 808
+      'y': 320
+  - id: filter_prompt
+    label: |-
+      GPT-4.1 质量评判提示
+      满足任一条件即可：
+      至少 1 个完整句子描述漏洞或修复
+      或给出漏洞位置
+      拒绝多问题消息
+      加入人工少样本示例
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1064
+      'y': 320
+  - id: rephrase_prompt
+    label: |-
+      GPT-4.1 改写提示
+      保留含义、函数名 + 文件名
+      移除交叉引用 + 修补说明
+      不得推测 · 只用现在时
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 320
+  - id: qa
+    label: |-
+      可复现性 + 去重质检
+      在双版本重跑标准 PoC
+      按同一补丁 / 相似崩溃栈去重
+      审计 300 = 保留 150 + 剔除 150
+      96 个项目 · κ=0.82±0.03 · 精度 96%
+    type: process
+    size: xl
+    position:
+      x: 1576
+      'y': 320
+  - id: benchmark
+    label: |-
+      CyberGym 发布集
+      1,368 个 ARVO（≤2024-07-31）+ 139 个新增
+      1,507 个漏洞 · 188 个项目
+      披露日期 2017-01-01–2025-04-21
+      固定 HF tasks.json @ bde190d
+    type: database
+    size: xl
+    position:
+      x: 1832
+      'y': 320
   - id: levels
-    label: |-
-      难度等级 0–3
-      逐级增加描述 · 堆栈 · 补丁上下文
-    type: document
-    size: xl
-    position:
-      x: 1600
-      'y': 210
-  - id: task
-    label: |-
-      主要 Level-1 输入
-      修复前代码 + 漏洞描述
-    type: document
-    size: xl
-    position:
-      x: 1860
-      'y': 210
-  - id: agent
-    label: |-
-      智能体编写 PoC
-      提交、观察并迭代改进
-    type: process
-    size: xl
-    position:
-      x: 2120
-      'y': 210
-  - id: pre
-    label: |-
-      修复前版本执行
-      必须触发 sanitizer 崩溃
-    type: process
-    size: xl
-    position:
-      x: 2380
-      'y': 110
-  - id: post
-    label: |-
-      修复后版本执行
-      必须不触发 sanitizer 崩溃
-    type: process
-    size: xl
-    position:
-      x: 2640
-      'y': 110
-  - id: verdict
-    label: 同时满足两项条件？
+    label: 信息级别
     type: decision
     size: xl
     position:
-      x: 2900
-      'y': 210
-  - id: success
+      x: 2088
+      'y': 320
+  - id: level0
     label: |-
-      成功率
-      成功 PoC 数 / 1,507 个样例
-    type: terminal
-    size: xl
-    position:
-      x: 3160
-      'y': 210
-  - id: impact
-    label: |-
-      独立安全影响分析
-      17 个不完整补丁 · 共确认 35 个零日漏洞
+      Level 0 · 探索式
+      仅补丁前代码
+      无漏洞描述
     type: document
     size: xl
     position:
-      x: 2900
-      'y': 390
+      x: 2344
+      'y': 0
+  - id: level1
+    label: |-
+      Level 1 · 主任务
+      补丁前代码
+      + 漏洞描述
+    type: document
+    size: xl
+    position:
+      x: 2344
+      'y': 176
+  - id: level2
+    label: |-
+      Level 2
+      Level 1 输入
+      + 标准崩溃栈
+    type: document
+    size: xl
+    position:
+      x: 2344
+      'y': 352
+  - id: level3
+    label: |-
+      Level 3 · 一日漏洞语境
+      Level 2 + 标准补丁差异
+      + 补丁后代码
+    type: document
+    size: xl
+    position:
+      x: 2344
+      'y': 528
+  - id: agent
+    label: |-
+      智能体生成 PoC
+      使用 submit.sh 提交
+      观察退出码 + 输出
+      迭代改进 PoC
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 320
+  - id: oracle
+    label: |-
+      双版本执行判定
+      补丁前：必须 sanitizer 崩溃
+      补丁后：必须无 sanitizer 崩溃
+      两条件共同锁定被修复漏洞
+    type: process
+    size: xl
+    position:
+      x: 2856
+      'y': 320
+  - id: metric
+    label: |-
+      基准指标
+      成功 PoC / 1,507 个实例
+      基于执行的成功率
+      论文未报告训练 / 开发 / 测试划分
+    type: terminal
+    size: xl
+    position:
+      x: 3112
+      'y': 320
+  - id: impact_boundary
+    label: |-
+      独立影响边界 · 论文 v3 内部冲突
+      摘要：34 个零日 + 18 个不完整补丁
+      正文：17 个不充分补丁 + 10 + 25 = 35 个零日
+      作为版本化论文漂移报告，
+      不作为基准指标
+    type: document
+    size: xl
+    position:
+      x: 3368
+      'y': 528
 edges:
-  - from: ossfuzz
+  - from: evidence
+    to: source
+    type: primary
+  - from: source
     to: patch
     type: primary
   - from: patch
     to: elements
     type: primary
   - from: elements
-    to: describe
+    to: filter_prompt
     type: primary
-  - from: describe
-    to: quality
+  - from: filter_prompt
+    to: rephrase_prompt
     type: primary
-  - from: quality
+  - from: rephrase_prompt
+    to: qa
+    type: primary
+  - from: qa
     to: benchmark
     type: primary
   - from: benchmark
     to: levels
     type: primary
   - from: levels
-    to: task
+    to: level0
     type: primary
-  - from: task
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+  - from: levels
+    to: level1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.4
+      entryX: 0
+      entryY: 0.5
+  - from: levels
+    to: level2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.6
+      entryX: 0
+      entryY: 0.5
+  - from: levels
+    to: level3
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+  - from: level0
     to: agent
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+  - from: level1
+    to: agent
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+  - from: level2
+    to: agent
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+  - from: level3
+    to: agent
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
   - from: agent
-    to: pre
+    to: oracle
     type: primary
-  - from: pre
-    to: post
+  - from: oracle
+    to: metric
     type: primary
-  - from: post
-    to: verdict
-    type: primary
-  - from: verdict
-    to: success
-    type: primary
-  - from: verdict
-    to: impact
-    type: optional
+  - from: metric
+    to: impact_boundary
+    type: data
 modules: []

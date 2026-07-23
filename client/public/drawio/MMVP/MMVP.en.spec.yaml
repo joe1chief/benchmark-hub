@@ -4,157 +4,229 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMVP Build Process
+  title: MMVP Paper-v2 Construction and Paired-Scoring Process
   description: >-
-    Paper-aligned construction of 150 CLIP-blind image pairs and 300 direct questions, followed by paired
-    visual-grounding evaluation across nine systematic visual patterns.
-  legend: A pair receives credit only when both independently presented questions are answered correctly.
+    Evidence-aligned construction from arXiv:2401.06209v2, followed by the fixed official-repository GPT-4 grading path
+    and separately bounded pattern, human-study, release, and license evidence.
+  legend: >-
+    Solid arrows follow construction and scoring; dashed data arrows mark analyses or release evidence. Human 95.7% is
+    reported per question and is not the repository's both-questions-correct pair metric.
 nodes:
-  - id: corpus
+  - id: corpora
     label: |-
-      Collect Image Corpus
+      Source Image Corpora
       ImageNet-1K
       LAION-Aesthetics
-      Form Candidate Image Pairs
+      Paper §2.1
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
+      x: 40
+      'y': 260
+  - id: candidate_pairs
+    label: |-
+      Form Candidate Pairs
+      Candidates Drawn from ImageNet
+      and LAION-Aesthetics
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 260
   - id: clip
     label: |-
-      Encode with CLIP
+      CLIP Branch
       CLIP ViT-L-14
-      Compute Pairwise Embeddings
-      Measure Cosine Similarity
+      Pairwise Cosine Similarity
     type: process
     size: xl
     position:
-      x: 300
-      'y': 40
+      x: 560
+      'y': 80
   - id: dino
     label: |-
-      Encode with DINOv2
+      Vision-only Branch
       DINOv2 ViT-L-14
-      Vision-only Reference
-      Measure Cosine Similarity
+      Pairwise Cosine Similarity
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: filter
-    label: |-
-      Apply Blind-pair Filter
-      CLIP Similarity above 0.95
-      DINOv2 Similarity below 0.6
-      Retain Disagreement Pairs
-    type: process
+      x: 560
+      'y': 440
+  - id: blind_gate
+    label: Both CLIP-blind Conditions Met?
+    type: decision
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: inspect
+      x: 820
+      'y': 260
+  - id: not_blind
     label: |-
-      Inspect Pairs Manually
-      Locate Stark Visual Difference
-      Identify Detail Missed by CLIP
-      Select Diagnostic Content
-    type: user
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: questions
-    label: |-
-      Write Paired Questions
-      One Question per Image
-      Probe the Missed Detail
-      Keep Direct and Unambiguous
-    type: document
-    size: xl
-    position:
-      x: 1420
-      'y': 40
-  - id: release
-    label: |-
-      Assemble MMVP-MLLM
-      150 Image Pairs
-      300 Questions
-      Two Questions per Pair
-    type: database
-    size: xl
-    position:
-      x: 1420
-      'y': 420
-  - id: categorize
-    label: |-
-      Generalize Failure Patterns
-      Prompt GPT-4 with Q and Options
-      Categorize Visual Features
-      Identify Nine Patterns
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 420
-  - id: patterns
-    label: |-
-      Cover Nine Visual Patterns
-      Direction · Presence · State
-      Count · Position · Appearance
-      Structure · Text · Viewpoint
-    type: document
-    size: xl
-    position:
-      x: 860
-      'y': 420
-  - id: inference
-    label: |-
-      Query Each Item Independently
-      Present One Image and Question
-      Remove Chat-history Bias
-      Record One Answer per Question
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 420
-  - id: human
-    label: |-
-      Run Human Study
-      Randomize All 300 Questions
-      Measure Question Simplicity
-      Mean Question Accuracy 95.7%
-    type: user
-    size: xl
-    position:
-      x: 300
-      'y': 420
-  - id: score
-    label: |-
-      Compute Paired Accuracy
-      Require Both Answers Correct
-      Otherwise Pair Scores Zero
-      Report Model-human Gap
+      Discard Candidate
+      CLIP Similarity at Most 0.95
+      or DINOv2 Similarity at Least 0.6
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1080
+      'y': 500
+  - id: inspect
+    label: |-
+      Manually Inspect Blind Pair
+      Locate the Stark Difference
+      Identify Detail Missed by CLIP
+    type: user
+    size: xl
+    position:
+      x: 1080
+      'y': 200
+  - id: questions
+    label: |-
+      Author Two Paired Questions
+      One Question per Image
+      Direct and Unambiguous
+      Probe the Same Visual Difference
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 200
+  - id: release
+    label: |-
+      MMVP-MLLM Snapshot
+      150 Image Pairs • 300 Questions
+      One Image + One Question per Item
+      arXiv:2401.06209v2
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 200
+  - id: pattern_analysis
+    label: |-
+      GPT-4 Pattern Analysis
+      Prompt with Questions + Options
+      Generalize Visual Features
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 0
+  - id: patterns
+    label: |-
+      Nine Visual Patterns
+      Direction • Presence • State • Count
+      Position • Appearance • Structure
+      Text • Viewpoint
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 0
+  - id: model_runner
+    label: |-
+      Official LLaVA Runner
+      Query Each Item Independently
+      Image + Question + Options
+      Temp 0.2 • Max 1,024 Tokens
+    type: process
+    size: xl
+    position:
+      x: 1860
+      'y': 260
+  - id: gpt_grader
+    label: |-
+      Repository GPT-4 Judge
+      Model gpt-4-0314 • Temp 0.2
+      System: Answer Only Yes or No
+      API Exceptions Retry without Cap
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 260
+  - id: grade_gate
+    label: Two Consecutive Grades Exactly “yes”?
+    type: decision
+    size: xl
+    position:
+      x: 2380
+      'y': 260
+  - id: pair_credit
+    label: |-
+      Credit One Pair
+      Both Item Answers Judged Correct
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 120
+  - id: pair_zero
+    label: |-
+      Credit Zero for Pair
+      Any “no” or Non-yes/no Output
+      Unparsed Grade Is Not Correct
+    type: process
+    size: xl
+    position:
+      x: 2640
+      'y': 400
+  - id: paired_accuracy
+    label: |-
+      Paired Accuracy
+      Credited Consecutive Pairs / 150
+      Random-guess Reference: 25%
+    type: terminal
+    size: xl
+    position:
+      x: 2900
+      'y': 260
+  - id: human_study
+    label: |-
+      Separate Human Study
+      Four Volunteers • 300 Questions
+      Randomized Presentation
+      Mean Question Accuracy: 95.7%
+    type: user
+    size: xl
+    position:
+      x: 1860
+      'y': 580
+  - id: release_boundary
+    label: |-
+      Public-release Boundary
+      HF Revision 37eafecab8a3
+      300 Images + Questions.csv • MIT Card
+      Repo 763500597e65: Root LICENSE Absent
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 580
 edges:
-  - from: corpus
+  - from: corpora
+    to: candidate_pairs
+    type: primary
+  - from: candidate_pairs
     to: clip
     type: primary
-  - from: clip
+  - from: candidate_pairs
     to: dino
     type: primary
-  - from: dino
-    to: filter
+  - from: clip
+    to: blind_gate
     type: primary
-  - from: filter
+  - from: dino
+    to: blind_gate
+    type: primary
+  - from: blind_gate
     to: inspect
     type: primary
+    label: CLIP > 0.95 and DINOv2 < 0.6
+  - from: blind_gate
+    to: not_blind
+    type: primary
+    label: Either condition fails
   - from: inspect
     to: questions
     type: primary
@@ -162,18 +234,38 @@ edges:
     to: release
     type: primary
   - from: release
-    to: categorize
-    type: primary
-  - from: categorize
+    to: pattern_analysis
+    type: data
+  - from: pattern_analysis
     to: patterns
+    type: data
+  - from: release
+    to: model_runner
     type: primary
-  - from: patterns
-    to: inference
+  - from: model_runner
+    to: gpt_grader
     type: primary
-  - from: inference
-    to: human
+  - from: gpt_grader
+    to: grade_gate
     type: primary
-  - from: human
-    to: score
+  - from: grade_gate
+    to: pair_credit
     type: primary
+    label: Both exact yes
+  - from: grade_gate
+    to: pair_zero
+    type: primary
+    label: Any no or other
+  - from: pair_credit
+    to: paired_accuracy
+    type: primary
+  - from: pair_zero
+    to: paired_accuracy
+    type: primary
+  - from: release
+    to: human_study
+    type: data
+  - from: release
+    to: release_boundary
+    type: data
 modules: []

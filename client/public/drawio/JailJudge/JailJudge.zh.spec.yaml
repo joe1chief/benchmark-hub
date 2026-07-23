@@ -5,142 +5,192 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: JailJudge 构建流程
-  description: 对齐论文的 JailJudge 构建流程：从六类有害提示和多样模型回答出发，分别构建人工标注测试集与 MultiAgent 监督数据，再微调 JAILJUDGE Guard 并评测裁判质量。
-  legend: 提示-回答池分叉为人工标注 ID/OOD 测试集与 MultiAgent 训练真值两条路径，仅在裁判评测阶段汇合。
+  description: >-
+    对齐论文的 JailJudge 构建流程：多类有害提示与目标回答先形成候选配对，再分别进入人工标注的 JAILJUDGETEST 分支和 GPT-4 MultiAgent 训练真值分支，随后以 LoRA 微调 JAILJUDGE
+    Guard 并评测裁判质量。
+  legend: 实线表示构建与评测主流程；虚线表示证据输入或发布边界说明。BPA 不确定性超参数与 Guard 二元判定阈值分别标注，不能混用。
 nodes:
-  - id: prompts
+  - id: evidence
     label: |-
-      构建六类有害提示来源
-      原始 · 合成原始 · 对抗改写
-      多语言 · 真实世界 · 欺骗性提示
-      细化为 14 个危害类别
-    type: database
+      主要证据与固定版本
+      arXiv:2410.12855v2
+      官方 Git 8743c13
+      数据集 HF edcd9ae
+      Guard HF cf624b8
+    type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: responses
+  - id: prompts
     label: |-
-      收集多样目标回答
-      闭源与开源大模型
-      系统级与模型级防御
-      同时包含安全与不安全输出
-    type: cloud
+      六类有害提示来源
+      原始 · 合成原始 · 合成对抗
+      多语言 · 真实世界 · 欺骗性
+      细化为 14 个 MLCommons 危害类别
+    type: database
     size: xl
     position:
       x: 300
       'y': 40
-  - id: pool
+  - id: responses
     label: |-
-      形成提示-回答配对池
-      覆盖性 · 多样性 · 平衡性
-      JAILJUDGETRAIN 来源配对
-      35K+ 指令微调条目
-    type: database
+      收集多样目标回答
+      闭源与开源大模型家族
+      系统级与模型级防御
+      随机分配提示；同时覆盖安全与不安全输出
+    type: cloud
     size: xl
     position:
       x: 580
       'y': 40
+  - id: pool
+    label: |-
+      形成候选提示-回答对
+      覆盖度 · 多样性 · 平衡性
+      先分叉测试与训练路径
+      尚不是最终 35K+ 训练集
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: test_split
+    label: |-
+      选择留出的 JAILJUDGETEST 配对
+      ID：4,500 条非多语言测试切分
+      OOD：6,300 条 · 10 种语言
+      OOD 样本全部不进训练集
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 40
   - id: annotation
     label: |-
-      人工测试标注
-      按 MLCommons 政策培训标注员
-      人工标签与 GPT-4 交叉比较
+      构建人工二元金标准
+      按九项 MLCommons 政策培训
+      人工标签与 GPT-4 交叉检查
       重标分歧项并执行多数投票
     type: user
     size: xl
     position:
-      x: 860
+      x: 1420
       'y': 40
   - id: testsets
     label: |-
-      发布 JAILJUDGETEST
-      ID：4.5K+ 广泛风险配对
-      OOD：十种语言 6K+ 配对
-      人工二元金标准标签
+      发布人工标注测试集
+      ID 4,500 · OOD 6,300
+      金标准：越狱 True / False
     type: database
     size: xl
     position:
-      x: 1140
+      x: 1700
       'y': 40
   - id: judging
     label: |-
-      MultiAgent 初判阶段
-      多个 Judging Agent
-      推理解释与 1–10 分
-      将分数转换为证据质量
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 380
-  - id: voting
-    label: |-
-      证据聚合与投票
-      用 Dempster 规则合并裁判证据
-      Voting Agent 接受或拒绝
-      保留理由与不确定性
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 380
-  - id: inference
-    label: |-
-      Inference Agent
-      读取聚合后的裁判结果
-      读取全部投票结果
-      输出最终理由与 1–10 分
+      GPT-4 MultiAgent 初判
+      3 个 Judging Agent
+      各输出理由与 1–10 分
     type: process
     size: xl
     position:
       x: 1140
       'y': 380
-  - id: groundtruth
+  - id: bpa
     label: |-
-      构建可解释训练真值
-      细粒度分数与推理说明
-      阈值 alpha 转为二元标签
-      监督 JAILJUDGETRAIN
-    type: document
+      不确定性感知证据聚合
+      每个分数转 BPA；α = 0.1 表示不确定性
+      Dempster 规则合并三个 BPA
+      还原聚合分数与最接近理由
+      α 不是二元越狱阈值
+    type: process
     size: xl
     position:
       x: 1420
       'y': 380
-  - id: guard
+  - id: voting
     label: |-
-      指令微调 JAILJUDGE Guard
-      基于 Llama-2-7B
-      输入：用户提示与目标回答
-      输出：解释与 1–10 分
+      3 个 Voting Agent
+      审查聚合分数与理由
+      接受 / 拒绝并解释
     type: process
     size: xl
     position:
       x: 1700
       'y': 380
-  - id: evaluate
+  - id: inference
     label: |-
-      评测越狱裁判
-      JAILJUDGE ID 与 OOD
-      另测 JBB Behaviors 和 WILDTEST
-      比较 MultiAgent、Guard 与基线
+      1 个 Inference Agent
+      读取聚合初判与全部投票
+      最终判断 · 理由 · 解释
+      最终越狱分数 1–10
     type: process
     size: xl
     position:
       x: 1980
+      'y': 380
+  - id: train
+    label: |-
+      构建 JAILJUDGETRAIN 真值
+      35K+ 条指令微调数据
+      输入：提示 + 回答
+      输出：推理解释 + 1–10 分
+    type: document
+    size: xl
+    position:
+      x: 2260
+      'y': 380
+  - id: guard
+    label: |-
+      LoRA 监督微调
+      Llama-2-7B 基座
+      输入：用户提示 + 模型回答
+      输出：解释 + 1–10 分
+      二元判定阈值：score > 2
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 380
+  - id: evaluate
+    label: |-
+      评测越狱裁判
+      JAILJUDGE ID / OOD
+      JBB Behaviors / WILDTEST
+      MultiAgent · Guard · 基线
+    type: process
+    size: xl
+    position:
+      x: 2820
       'y': 40
   - id: metrics
     label: |-
       汇报裁判质量
       准确率 · 精确率 · 召回率 · F1
-      GPT-4 解释质量评分：1–5
+      GPT-4 EQ 1–5 · 人工 H-score
       按场景与语言细分
     type: terminal
     size: xl
     position:
-      x: 2260
+      x: 3100
       'y': 40
+  - id: artifact_boundary
+    label: |-
+      部分公开资产边界
+      Git 代码公开 · 数据集需门控
+      HF 数据 edcd9ae · auto/custom
+      Guard HF cf624b8 单独固定
+      不能宣称整包无门槛公开
+    type: document
+    size: xl
+    position:
+      x: 3100
+      'y': 380
 edges:
+  - from: evidence
+    to: prompts
+    type: data
   - from: prompts
     to: responses
     type: primary
@@ -148,6 +198,9 @@ edges:
     to: pool
     type: primary
   - from: pool
+    to: test_split
+    type: primary
+  - from: test_split
     to: annotation
     type: primary
   - from: annotation
@@ -155,17 +208,20 @@ edges:
     type: primary
   - from: pool
     to: judging
-    type: secondary
+    type: primary
   - from: judging
+    to: bpa
+    type: primary
+  - from: bpa
     to: voting
     type: primary
   - from: voting
     to: inference
     type: primary
   - from: inference
-    to: groundtruth
+    to: train
     type: primary
-  - from: groundtruth
+  - from: train
     to: guard
     type: primary
   - from: testsets
@@ -177,4 +233,7 @@ edges:
   - from: evaluate
     to: metrics
     type: primary
+  - from: metrics
+    to: artifact_boundary
+    type: data
 modules: []

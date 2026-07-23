@@ -8,7 +8,7 @@ meta:
   description: 对齐论文的 AMO-Bench 专家原创、盲审质量检查、原创性核验、人类与模型难度筛选、 按答案类型评分、评分质检和 32 次采样汇总流程。
   legend: >-
     上排实现论文 v1 报告的四阶段构建与原创性筛查；下排将 39 道可解析答案与 11 道描述性答案分流给不同评分器，再报告 AVG@32。 官方 meituan-longcat/AMO-Bench 仓库后来修订 Problem
-    35，并记录 Problem 26 与 Problem 38/39 的相似性反馈；这些发布后说明不用于静默改写 v1 流程。
+    35，并记录 Problem 26 与 Problem 38/39 的相似性反馈；1,000 回答评分器验证是大规模评测前的独立质检支线，这些发布后说明不用于静默改写 v1 流程。
 nodes:
   - id: experts
     label: |-
@@ -54,7 +54,8 @@ nodes:
     label: |-
       应用难度门禁
       人类专家确认达到或超过 IMO 难度
-      至少 2 个先进模型在各 3 次采样中无法稳定解出
+      至少两个先进模型未做到 3/3 全对
+      每模型采样三次
     type: process
     size: xl
     position:
@@ -122,8 +123,8 @@ nodes:
     label: |-
       AMO-Bench 结果
       AVG@32 = 32 个采样回答的平均准确率
-      Pass@32 • 输出长度 • 题类
-      AMO-Bench-P
+      Pass@k（含 Pass@32）
+      输出长度 • 题类
     type: terminal
     size: xl
     position:
@@ -139,6 +140,16 @@ nodes:
     position:
       x: 320
       'y': 580
+  - id: amo_p
+    label: |-
+      可选 AMO-Bench-P
+      39 道解析器评分题
+      快速复现子集
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 360
 edges:
   - from: experts
     to: create
@@ -178,5 +189,8 @@ edges:
     type: primary
   - from: correctness
     to: validate
-    type: primary
+    type: secondary
+  - from: report
+    to: amo_p
+    type: optional
 modules: []

@@ -4,197 +4,279 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: PubMedQA Build Process
+  title: PubMedQA Build and Evaluation Process
   description: >-
-    Paper-aligned PubMedQA workflow: structured PubMed abstracts yield expert-labeled PQA-L, rule-filtered PQA-U, and
-    heuristic PQA-A branches; models may train in phases across the three resources, but the benchmark evaluates
-    yes/no/maybe reasoning on the PQA-L test set with accuracy and macro-F1.
+    Fixed-source reconstruction of the three PubMedQA subsets, the asymmetric two-annotator PQA-L protocol,
+    rule-filtered PQA-U, heuristic PQA-A, and reasoning-required PQA-L evaluation.
   legend: >-
-    Solid arrows show the natural-question and artificial-question branches, three released subsets, training, and the
-    PQA-L evaluation protocol.
+    Solid arrows reproduce paper-disclosed construction and evaluation. Dashed arrows mark fixed evidence,
+    official-release, evaluator-implementation, and license boundaries.
 nodes:
-  - id: pubmed
+  - id: source_evidence
     label: |-
-      PubMed Structured Abstracts
-      Title + Body + Conclusion
+      Fixed Official Evidence
+      arXiv 1909.06146v1
+      PDF 190af87fa13a
+      Official Code 1cbae8e92f72
+    type: document
+    size: xl
+    position: { x: 20, y: 340 }
+    style: { fontSize: 9 }
+  - id: pubmed_pool
+    label: |-
+      PubMed Article Pool
+      Structured Abstracts
+      Title · Body · Conclusion
     type: database
-    size: large
-    position:
-      x: 40
-      'y': 300
-  - id: natural_titles
+    size: xl
+    position: { x: 260, y: 340 }
+  - id: natural_gate
     label: |-
-      Natural Question Titles
+      Select Natural Questions
       Title Contains Question Mark
-      Abstract Has Conclusion Section
+      Structured Abstract Has
+      a Conclusive Section
     type: process
     size: xl
-    position:
-      x: 320
-      'y': 80
+    position: { x: 500, y: 80 }
+    style: { fontSize: 9 }
   - id: natural_instance
     label: |-
-      pre-PQA-U Instance
-      Question = Title
+      Build pre-PQA-U Instance
+      Question = Original Title
       Context = Abstract without Conclusion
       Long Answer = Conclusion
     type: document
     size: xl
-    position:
-      x: 600
-      'y': 80
-  - id: expert_annotation
+    position: { x: 740, y: 80 }
+    style: { fontSize: 9 }
+  - id: pqal_sample
     label: |-
-      Two M.D. Candidate Annotators
-      One Sees Long Answer; One Does Not
-      Discuss Disagreement or Remove Item
-    type: user
-    size: xl
-    position:
-      x: 900
-      'y': 20
-  - id: pqa_l
-    label: |-
-      PQA-L: 1,000 Expert-labeled
-      500 for 10-fold Cross-validation
-      500 Held-out Test
-    type: database
-    size: xl
-    position:
-      x: 1200
-      'y': 20
-  - id: answerable_filter
-    label: |-
-      PQA-U Rule Filter
-      Drop Wh-questions + Multi-entity Choice
-      >93% Agreement on Answerability
+      Randomly Sample Candidates
+      for Expert PQA-L Annotation
     type: process
     size: xl
-    position:
-      x: 900
-      'y': 240
+    position: { x: 980, y: -60 }
+  - id: answerability_gate
+    label: |-
+      Yes · No · Maybe Answerable?
+      Remove Non-answerable Items
+      before Expert Labeling
+    type: process
+    size: xl
+    position: { x: 1220, y: -60 }
+  - id: annotator_one
+    label: |-
+      Annotator 1 · M.D. Candidate
+      Sees Question + Context
+      + Long Answer
+      Reasoning-free Label
+    type: user
+    size: xl
+    position: { x: 1460, y: -200 }
+    style: { fontSize: 9 }
+  - id: annotator_two
+    label: |-
+      Annotator 2 · M.D. Candidate
+      Sees Question + Context Only
+      Long Answer Is Hidden
+      Reasoning-required Label
+    type: user
+    size: xl
+    position: { x: 1460, y: 80 }
+    style: { fontSize: 9 }
+  - id: agreement_gate
+    label: |-
+      Compare Two Labels
+      Same Label Becomes
+      the Ground Truth
+    type: process
+    size: xl
+    position: { x: 1700, y: -60 }
+  - id: discussion
+    label: |-
+      If Labels Differ
+      Annotators Discuss
+      Seek One Agreed Label
+    type: process
+    size: xl
+    position: { x: 1940, y: 180 }
+  - id: removed_item
+    label: |-
+      Remove Candidate
+      Non-answerable or
+      No Agreement Reached
+    type: terminal
+    size: xl
+    position: { x: 2180, y: 380 }
+  - id: pqa_l
+    label: |-
+      PQA-L
+      1,000 Expert-labeled Items
+      Yes 55.2% · No 33.8%
+      Maybe 11.0%
+    type: database
+    size: xl
+    position: { x: 2180, y: -60 }
+    style: { fontSize: 9 }
+  - id: pqa_l_split
+    label: |-
+      Fixed PQA-L Split
+      500 Random Items for
+      10-fold Cross-validation
+      Remaining 500 Test Items
+    type: database
+    size: xl
+    position: { x: 2420, y: -60 }
+    style: { fontSize: 9 }
+  - id: eval_input
+    label: |-
+      Reasoning-required Test
+      Input Question + Context
+      Conclusion Remains Hidden
+    type: process
+    size: xl
+    position: { x: 2660, y: -60 }
+  - id: predict
+    label: |-
+      Predict One Label
+      Yes · No · Maybe
+      for Every Test PMID
+    type: process
+    size: xl
+    position: { x: 2900, y: -60 }
+  - id: metrics
+    label: |-
+      PQA-L Test Report
+      Accuracy
+      Macro-F1 over Three Labels
+    type: terminal
+    size: xl
+    position: { x: 3140, y: -60 }
+  - id: pqa_u_filter
+    label: |-
+      Rule-filter pre-PQA-U
+      Remove Wh-word Questions
+      and Multi-entity Selections
+      Answerability Agreement
+      More than 93% vs Annotator 1
+    type: process
+    size: xl
+    position: { x: 980, y: 400 }
+    style: { fontSize: 9 }
   - id: pqa_u
     label: |-
       PQA-U
-      61.2K Unlabeled
-      Yes / No / Maybe-answerable
+      61.2K Unlabeled Items
+      Retained as Answerable by
+      Yes · No · Maybe
     type: database
     size: xl
-    position:
-      x: 1200
-      'y': 240
-  - id: statement_titles
+    position: { x: 1220, y: 400 }
+    style: { fontSize: 9 }
+  - id: statement_gate
     label: |-
-      Statement-title Articles
-      NP-(VBP/VBZ) Pattern
-      Structured Conclusion Required
+      Select Statement Titles
+      NP-(VBP/VBZ) POS Pattern
+      Structured Abstract Has
+      a Conclusive Section
     type: process
     size: xl
-    position:
-      x: 320
-      'y': 520
+    position: { x: 500, y: 760 }
+    style: { fontSize: 9 }
   - id: artificial_convert
     label: |-
-      Heuristic Question Conversion
-      Move / Add Copula or Auxiliary
-      Label Yes / No from Verb Negation
+      Heuristic PQA-A Conversion
+      Move or Add Copula/Auxiliary
+      Revise into a Question
+      Label by Verb Negation
     type: process
     size: xl
-    position:
-      x: 600
-      'y': 520
+    position: { x: 740, y: 760 }
+    style: { fontSize: 9 }
   - id: pqa_a
     label: |-
-      PQA-A: 211.3K Artificial
-      Train 200K / Validation 11.3K
-      Yes 92.8% / No 7.2%
+      PQA-A
+      211.3K Artificial Items
+      Yes 92.8% · No 7.2%
+      No Maybe Labels
     type: database
     size: xl
-    position:
-      x: 900
-      'y': 520
-  - id: training
+    position: { x: 980, y: 760 }
+    style: { fontSize: 9 }
+  - id: pqa_a_split
     label: |-
-      Optional Multi-phase Training
-      PQA-A Pretrain → PQA-U Pseudo-label
-      → PQA-L Fine-tune
-    type: process
+      PQA-A Split
+      Random 200K Training
+      Remaining 11.3K Validation
+    type: database
     size: xl
-    position:
-      x: 1500
-      'y': 300
-  - id: evaluate
+    position: { x: 1220, y: 760 }
+  - id: release_snapshot
     label: |-
-      PQA-L Reasoning-required Test
-      Input: Question + Context
-      Conclusion Hidden at Inference
-    type: process
+      Fixed Official Release
+      Commit 1cbae8e92f72
+      PQA-L 1,000 Records
+      ori_pqal 8b3276be8942
+      Test GT 939fe566f090
+    type: document
     size: xl
-    position:
-      x: 1800
-      'y': 300
-  - id: prediction
+    position: { x: 2180, y: 720 }
+    style: { fontSize: 9 }
+  - id: evaluator_boundary
     label: |-
-      Predict One Label
-      Yes / No / Maybe
-    type: process
-    size: large
-    position:
-      x: 2080
-      'y': 300
-  - id: metric
+      Evaluator Implementation
+      evaluation.py 2838af5bb0ac
+      Requires Exactly Test PMIDs
+      sklearn Accuracy + Macro-F1
+    type: document
+    size: xl
+    position: { x: 3140, y: 480 }
+    style: { fontSize: 9 }
+  - id: license_boundary
     label: |-
-      Test Accuracy
-      Macro-F1 across Three Labels
-    type: terminal
-    size: large
-    position:
-      x: 2320
-      'y': 300
+      Release Terms Boundary
+      Repository LICENSE Is MIT
+      License SHA 8e75abc6136b
+    type: document
+    size: xl
+    position: { x: 2420, y: 980 }
+    style: { fontSize: 9 }
 edges:
-  - from: pubmed
-    to: natural_titles
-    type: primary
-  - from: pubmed
-    to: statement_titles
-    type: primary
-  - from: natural_titles
-    to: natural_instance
-    type: primary
-  - from: natural_instance
-    to: expert_annotation
-    type: primary
-  - from: expert_annotation
-    to: pqa_l
-    type: primary
-  - from: natural_instance
-    to: answerable_filter
-    type: primary
-  - from: answerable_filter
-    to: pqa_u
-    type: primary
-  - from: statement_titles
-    to: artificial_convert
-    type: primary
-  - from: artificial_convert
-    to: pqa_a
-    type: primary
+  - { from: source_evidence, to: pubmed_pool, type: secondary, style: { dashed: true } }
+  - { from: pubmed_pool, to: natural_gate, type: primary }
+  - { from: pubmed_pool, to: statement_gate, type: primary }
+  - { from: natural_gate, to: natural_instance, type: primary }
+  - { from: natural_instance, to: pqal_sample, type: primary }
+  - { from: natural_instance, to: pqa_u_filter, type: primary }
+  - { from: pqal_sample, to: answerability_gate, type: primary }
+  - { from: answerability_gate, to: annotator_one, type: primary }
+  - { from: answerability_gate, to: annotator_two, type: primary }
+  - { from: answerability_gate, to: removed_item, type: primary }
+  - { from: annotator_one, to: agreement_gate, type: primary }
+  - { from: annotator_two, to: agreement_gate, type: primary }
+  - { from: agreement_gate, to: pqa_l, type: primary }
+  - { from: agreement_gate, to: discussion, type: primary }
+  - { from: discussion, to: pqa_l, type: primary }
+  - { from: discussion, to: removed_item, type: primary }
+  - { from: pqa_u_filter, to: pqa_u, type: primary }
+  - { from: statement_gate, to: artificial_convert, type: primary }
+  - { from: artificial_convert, to: pqa_a, type: primary }
+  - { from: pqa_a, to: pqa_a_split, type: primary }
+  - { from: pqa_l, to: pqa_l_split, type: primary }
+  - { from: pqa_l_split, to: eval_input, type: primary }
+  - { from: eval_input, to: predict, type: primary }
+  - { from: predict, to: metrics, type: primary }
   - from: pqa_l
-    to: training
-    type: primary
-  - from: pqa_u
-    to: training
-    type: primary
-  - from: pqa_a
-    to: training
-    type: primary
-  - from: training
-    to: evaluate
-    type: primary
-  - from: evaluate
-    to: prediction
-    type: primary
-  - from: prediction
-    to: metric
-    type: primary
+    to: release_snapshot
+    type: secondary
+    style: { dashed: true }
+    waypoints:
+      - { x: 2280, y: 120 }
+      - { x: 2400, y: 120 }
+      - { x: 2400, y: 770 }
+  - { from: pqa_u, to: release_snapshot, type: secondary, style: { dashed: true } }
+  - { from: pqa_a, to: release_snapshot, type: secondary, style: { dashed: true } }
+  - { from: metrics, to: evaluator_boundary, type: secondary, style: { dashed: true } }
+  - { from: release_snapshot, to: license_boundary, type: secondary, style: { dashed: true } }
 modules: []

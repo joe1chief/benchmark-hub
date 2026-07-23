@@ -6,152 +6,187 @@ meta:
   routing: orthogonal
   title: ClinicalBench Build Process
   description: >-
-    Paper-aligned ClinicalBench flow: two MIMIC databases are filtered and split for three prediction tasks, training
-    labels alone are under-sampled, structured features and code-to-text inputs feed 11 traditional models and 22 LLMs,
-    and direct, prompting, and fine-tuning strategies are compared with task-specific F1 and AUROC.
-  legend: Solid arrows show cohort construction and comparison; branches separate traditional ML and LLM evaluation paths.
+    Paper-v2-aligned ClinicalBench flow: fixed MIMIC versions, first-visit cohort filtering, stratified splits and
+    training-only balancing feed matched traditional-ML and open-source-LLM comparisons across three prediction tasks.
+  legend: Solid arrows follow the paper experiment; the dashed branch records the current README's MIMIC-IV version drift.
 nodes:
-  - id: data
+  - id: evidence_boundary
     label: |-
-      Use Two Credentialed Clinical Databases
-      MIMIC-III v1.4 + MIMIC-IV v2.2
-      Preserve the Same Cohort Contract for All Models
-    type: database
+      Paper + Fixed Repo Boundary
+      arXiv 2411.06469v2 • §2
+      §§3–5 • Appendices A–D
+      Official Repo e7828b1
+    type: document
     size: xl
     position:
       x: 40
       'y': 220
-  - id: tasks
+  - id: release_drift
     label: |-
-      Define Three Prediction Tasks
-      Length of Stay — Three Classes
-      Mortality + Readmission — Binary Classes
+      Current Repo README Drift
+      MIMIC-IV 3.0 Download
+      Paper Contract Remains v2.2
     type: document
     size: xl
     position:
       x: 340
-      'y': 220
-  - id: cohort
+      'y': 440
+  - id: data
     label: |-
-      Filter the Patient Cohort
-      Keep First-time Visits Only
-      Exclude Age below 18 and Missing Values
-    type: process
+      Paper Data Versions
+      MIMIC-III v1.4
+      MIMIC-IV v2.2
+      Credentialed Databases
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 220
+  - id: tasks
+    label: |-
+      Define Three Prediction Tasks
+      Length of Stay: 3 Classes
+      Mortality: Current-visit Binary
+      Readmission: 2-week Binary
+    type: document
     size: xl
     position:
       x: 640
       'y': 220
-  - id: split
+  - id: cohort
     label: |-
-      Create Stratified Data Splits
-      Training • Validation • Test
-      Share Identical Splits across Model Families
+      Filter Cohorts
+      Keep Each Patient's First Visit
+      Age ≥18 • No Missing Values
     type: process
     size: xl
     position:
       x: 940
       'y': 220
-  - id: balance
+  - id: split
     label: |-
-      Rebalance Training Labels Only
-      Apply Under-sampling to the Training Set
-      Leave Validation and Test Unchanged
-    type: decision
+      Stratified Train / Validation / Test
+      Same Test Set for Prompting
+      Same Splits for ML + Fine-tuning
+    type: process
     size: xl
     position:
       x: 1240
       'y': 220
+  - id: balance
+    label: |-
+      Rebalance Labels by Under-sampling
+      Training Set Only
+      Validation + Test Unchanged
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 220
   - id: structured
     label: |-
       Prepare Structured ML Features
-      Diagnoses • Procedures • Medications • Drugs
-      Retain Coded Clinical Variables
+      Demographics • Diagnoses
+      Procedures • Medications / Drugs
     type: process
     size: xl
     position:
-      x: 1540
+      x: 1840
       'y': 40
   - id: text
     label: |-
-      Convert Codes to LLM-readable Text
-      ICD-9/10 Diagnosis and Procedure Descriptions
-      ATC Medication and Drug Descriptions
+      Convert Codes to Text
+      ICD-9/10 Diagnosis + Procedure
+      ATC Medication / Drug Names
     type: process
     size: xl
     position:
-      x: 1540
+      x: 1840
       'y': 400
   - id: ml
     label: |-
-      Train 11 Traditional Models
-      LR • SVM • Trees • XGBoost • KNN
-      MLP • Transformer • RNN and Others
+      Train 11 Traditional ML Models
+      LR • SVM • Trees • XGBoost
+      KNN • MLP
+      Transformer • RNN
+      Standard Supervised Training
     type: terminal
     size: xl
     position:
-      x: 1840
+      x: 2140
       'y': 40
   - id: llms
     label: |-
-      Evaluate 22 Language Models
-      14 General-purpose + 8 Medical LLMs
-      Compare Model Scale and Decoding Temperature
+      Evaluate 22 Open-source LLMs
+      14 General + 8 Medical
+      Closed Models Excluded
+      MIMIC Data-use Policy
     type: terminal
     size: xl
     position:
-      x: 1840
+      x: 2140
       'y': 400
   - id: prompt
     label: |-
-      Test LLM Prompting Strategies
-      Direct • Chain-of-Thought • Self-reflection
-      Role-playing • In-context Learning
-    type: process
-    size: xl
-    position:
-      x: 2140
-      'y': 320
-  - id: finetune
-    label: |-
-      Test Task-specific Fine-tuning
-      Full and Partial LoRA Variants
-      Evaluate Data-scale Effects
-    type: process
-    size: xl
-    position:
-      x: 2140
-      'y': 480
-  - id: predictions
-    label: |-
-      Collect Held-out Predictions
-      Use the Same Validation/Test Cases
-      Compare ML and LLM Outputs Head to Head
+      Compare Prompting Strategies
+      Direct + Chain-of-Thought
+      Self-reflection • Role-playing
+      In-context Learning
     type: process
     size: xl
     position:
       x: 2440
+      'y': 300
+  - id: finetune
+    label: |-
+      Task-specific Fine-tuning
+      LoRA Full + LoRA Last Layer
+      20 Epochs
+      Select Checkpoint on Validation
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 500
+  - id: predictions
+    label: |-
+      Collect Held-out Predictions
+      Head-to-head ML vs LLM
+      Same Evaluation Cases
+      Compare Scale + Temperature Too
+    type: process
+    size: xl
+    position:
+      x: 2740
       'y': 220
   - id: metrics
     label: |-
       Apply Task-specific Metrics
       Length of Stay: Macro F1 + AUROC
-      Mortality/Readmission: F1 + AUROC
-    type: terminal
-    size: xl
-    position:
-      x: 2740
-      'y': 220
-  - id: report
-    label: |-
-      Report Repeated Comparisons
-      Five-run 95% Confidence Intervals
-      Confusion Matrices + Loss Curves + Findings
+      Mortality / Readmission: F1 + AUROC
     type: terminal
     size: xl
     position:
       x: 3040
       'y': 220
+  - id: report
+    label: |-
+      Report Five Runs + 95% CIs
+      Confusion Matrices
+      Fine-tuning Loss Curves
+      Cross-strategy Findings
+    type: terminal
+    size: xl
+    position:
+      x: 3340
+      'y': 220
 edges:
+  - from: evidence_boundary
+    to: data
+    type: primary
+  - from: evidence_boundary
+    to: release_drift
+    type: data
   - from: data
     to: tasks
     type: primary

@@ -1,179 +1,573 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LongBench 构建流程
-  description: 重建 LongBench 六类中英双语长上下文数据流程、标准化发布格式与按任务自动评测方法。
-  legend: >-
-    LongBench 含 21 个数据集和 4,750 条测试样本：14 个英文任务、5 个中文任务和 2 个代码任务。 LongBench-E 从 13 个适用数据集中按 0–4k、4–8k、8k+ 三档均匀采样，每档最多 100
-    条。
+  description: 按论文 v2/ACL 版本重建原始双语 LongBench：六类任务的独立构建、4,750 条标准发布集、3,668 条均匀长度 LongBench-E 分支，以及固定版本的官方提示、截断、后处理、指标与聚合规则。
+  legend: 实线表示论文支持的构建或评测流程；虚线数据边表示可选 LongBench-E 分支与发布/版本证据。此处 LongBench 专指原始 21 数据集基准；LongBench v2 是独立的 503 题基准，不属于本流程。
 nodes:
-  - id: sources
+  - id: evidence
     label: |-
-      汇集长上下文任务来源
-      使用既有验证集或测试集
-      覆盖英文 · 中文 · 代码数据
-      面向六类目标能力
+      固定原版LongBench证据
+      arXiv 2308.14508v2 · ACL 2024
+      THUDM/LongBench @ 2e00731f
+      HF数据集 @ 5e628be4
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 448
+  - id: source_splits
+    label: |-
+      固定公开任务来源划分
+      论文：公开任务使用测试集
+      VCSUM为论文所述例外
+      仓库说明写验证集或测试集
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: convert
+      x: 352
+      'y': 448
+  - id: route
+    label: 分流至六类任务
+    type: decision
+    size: xl
+    position:
+      x: 664
+      'y': 448
+  - id: single_doc
     label: |-
-      复用并转换既有任务
-      NarrativeQA · Qasper · 摘要数据
-      应用ZeroSCROLLS风格纯文本模板
-      保留问题与参考答案
+      单文档问答 · 750条
+      NarrativeQA 200 · Qasper 200
+      MultiField英文150 · 中文200
+      将公开数据重排为纯文本
+      3名博士生构建MultiField
     type: process
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: qa
+      x: 976
+      'y': 0
+    style:
+      fontSize: 9
+  - id: multi_doc
     label: |-
-      构建长文档问答
-      多文档 · 证据段落加干扰文档
-      MultiFieldQA · 多来源长文档
-      博硕士标注者编写问答对
+      多文档问答 · 800条
+      Hotpot · 2Wiki · MuSiQue各200条
+      2–4篇证据 + 完整篇章 + 干扰文档
+      随机排列篇章
+      DuReader 200条 · 相关加任意文档至20篇
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
+      x: 976
+      'y': 176
+  - id: summarization
+    label: |-
+      摘要 · 800条
+      GovReport · QMSum · MultiNews · VCSUM
+      每个数据集200条
+      前三项使用ZeroSCROLLS模板
+      VCSUM用专用模板与长片段
+    type: process
+    size: xl
+    position:
+      x: 976
+      'y': 352
   - id: fewshot
     label: |-
-      构建少样本学习任务
+      少样本学习 · 800条
+      TREC · TriviaQA · SAMSum · LSHT
+      每个数据集200个目标查询
       从训练集抽取示例
-      拼接一个验证集查询
-      覆盖TREC · TriviaQA · SAMSum · LSHT
+      范围100–600 · 2–24 · 10–100 · 10–40
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
+      x: 976
+      'y': 528
+    style:
+      fontSize: 9
   - id: synthetic
     label: |-
-      构建合成检索与计数任务
-      抽取Wikipedia或中文C4段落
-      GPT-3.5-Turbo摘要其中一段
-      PassageCount随机重复并打乱段落
+      合成任务 · 600条
+      中英文检索 · PassageCount
+      每个数据集200条
+      30个段落 + GPT-3.5摘要
+      计数：M为17–50 · N为2–M · 打乱
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
+      x: 976
+      'y': 704
+    style:
+      fontSize: 9
   - id: code
     label: |-
-      构建代码补全任务
-      抽样LCC下一行代码补全
-      使用RepoBench-P XF-F与Oracle-Filled
-      拼接标准片段及跨文件片段
+      代码补全 · 1,000条
+      LCC 500 · RepoBench-P 500
+      抽样LCC下一行任务
+      XF-F · Oracle-Filled RepoBench-P
+      打乱标准片段与跨文件片段
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 40
+      x: 976
+      'y': 880
   - id: schema
     label: |-
-      标准化每条样本
+      标准化候选记录
       input · context · answers · length
       dataset · language · all_classes · _id
       英文/代码计词 · 中文计字符
+      length统计前三个字段
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: release
+      x: 1320
+      'y': 448
+    style:
+      fontSize: 9
+  - id: standard_release
     label: |-
-      发布LongBench
+      随机抽样标准LongBench
       21个数据集 · 4,750条测试样本
-      14个英文 · 5个中文 · 2个代码任务
-      覆盖六类长上下文场景
+      14个英文 · 5个中文 · 2个代码
+      六类任务 · 自然长度分布
+      论文均值：英文6,711词 · 中文13,386字
     type: database
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: e
+      x: 1640
+      'y': 448
+    style:
+      fontSize: 9
+  - id: release_drift
     label: |-
-      可选构建LongBench-E
-      选取13个适用数据集
-      每个长度档最多采样100条
+      保留版本漂移
+      论文/HF英文均值6,711/6,666.63词
+      论文/HF中文均值13,386/13,338.71字
+      仓库根目录为v2 · 原版移至LongBench/
+      THUDM数据URL重定向到zai-org
+    type: document
+    size: xl
+    position:
+      x: 1960
+      'y': 240
+    style:
+      fontSize: 9
+  - id: publication
+    label: |-
+      公开发布边界
+      仓库代码带MIT许可证
+      HF数据卡未声明许可证元数据
+      README含官方静态榜单
+      无提交入口或版本化排行榜
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 240
+    style:
+      fontSize: 9
+  - id: e_select
+    label: |-
+      选取13个英文/代码数据集
+      Qasper · MultiField英文 · Hotpot · 2Wiki
+      GovReport · MultiNews · TREC · TriviaQA
+      SAMSum · 计数 · 英文检索
+      LCC · RepoBench-P
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 680
+    style:
+      fontSize: 9
+  - id: e_bins
+    label: |-
+      按词数均匀采样
       0–4k · 4–8k · 8k+
+      每数据集每档最多100条
+      Qasper 100/100/24 · MultiField 67/70/13
+      MultiNews 100/100/94
     type: process
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: infer
+      x: 2280
+      'y': 680
+    style:
+      fontSize: 9
+  - id: e_release
     label: |-
-      运行任务专用零样本推理
-      按模板组织input和context
-      应用数据集专用输出上限
-      超长时保留首尾两半并删中间
+      发布均匀长度LongBench-E
+      13个数据集共3,668条
+      其余10个数据集每档100条
+      沿用记录结构与任务指标
+    type: database
+    size: xl
+    position:
+      x: 2600
+      'y': 680
+  - id: eval_set
+    label: |-
+      选择评测集
+      标准LongBench或LongBench-E
+      按数据集分别运行
     type: process
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: score
+      x: 2600
+      'y': 1120
+  - id: prompts
     label: |-
-      应用各数据集指标
+      应用数据集专用提示
+      填入input与context字段
+      多个模板在上下文前后重复指令
+      输出上限为32 · 64 · 128 · 512词元
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1120
+  - id: truncate
+    label: |-
+      用候选模型分词器编码
+      提示长度超过模型上限M时
+      保留前M/2与后M/2词元
+      加聊天模板前删除中间部分
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 1120
+  - id: wrappers
+    label: |-
+      加入模型专用聊天模板
+      TREC · TriviaQA · SAMSum · LSHT除外
+      LCC · RepoBench-P也除外
+      这六项保持补全式提示
+    type: process
+    size: xl
+    position:
+      x: 1640
+      'y': 1120
+  - id: decode
+    label: |-
+      生成至数据集输出上限
+      贪心解码 · 不采样
+      每条测试记录生成一个预测
+      SAMSum额外遇换行停止
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 1120
+  - id: postprocess
+    label: |-
+      执行官方后处理
+      XGen去Assistant · InternLM截至eoa
+      四个少样本任务取首行
+      代码任务取首个非注释行
+      与每个参考答案比较
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 1120
+  - id: metrics
+    label: |-
+      分派数据集指标
       问答F1 · ROUGE-L
-      分类/检索准确率
+      论文称CLS · 评测器按标签命中数给1/n
+      论文称EM · 评测器按匹配数字计分
       代码编辑相似度
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: report
+      x: 680
+      'y': 1120
+  - id: dataset_score
     label: |-
-      报告长上下文表现
-      数据集与类别平均分
-      分别展示英文与中文结果
-      LongBench-E按长度档报告
+      计算数据集得分（%）
+      对多个参考答案取最大指标值
+      数据集求均值后乘100
+      LongBench-E再按长度档分组
+    type: formula
+    size: xl
+    position:
+      x: 360
+      'y': 1120
+  - id: aggregate
+    label: |-
+      聚合论文结果
+      类内先平均各数据集
+      总分为六类均值的平均
+      中英文视图均计入代码任务
+    type: formula
+    size: xl
+    position:
+      x: 40
+      'y': 1120
+  - id: leaderboard
+    label: |-
+      报告21个数据集得分
+      六类均值 · 英文 · 中文 · 总分
+      LongBench-E三档长度结果
+      在官方README发布结果表
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 40
+      'y': 1440
 edges:
-  - from: sources
-    to: convert
+  - from: evidence
+    to: source_splits
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: source_splits
+    to: route
     type: primary
-  - from: convert
-    to: qa
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: single_doc
     type: primary
-  - from: qa
+    style:
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: multi_doc
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: summarization
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.4
+      entryX: 0
+      entryY: 0.5
+  - from: route
     to: fewshot
     type: primary
-  - from: fewshot
+    style:
+      exitX: 1
+      exitY: 0.6
+      entryX: 0
+      entryY: 0.5
+  - from: route
     to: synthetic
     type: primary
-  - from: synthetic
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: route
     to: code
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: single_doc
+    to: schema
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: multi_doc
+    to: schema
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: summarization
+    to: schema
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+  - from: fewshot
+    to: schema
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+  - from: synthetic
+    to: schema
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
   - from: code
     to: schema
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.9
   - from: schema
-    to: release
+    to: standard_release
     type: primary
-  - from: release
-    to: e
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: standard_release
+    to: release_drift
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.7
+  - from: release_drift
+    to: publication
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: schema
+    to: e_select
+    type: data
+    waypoints:
+      - x: 1480
+        'y': 832
+      - x: 1960
+        'y': 832
+  - from: e_select
+    to: e_bins
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: e_bins
+    to: e_release
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: standard_release
+    to: eval_set
     type: primary
-  - from: e
-    to: infer
+    waypoints:
+      - x: 2920
+        'y': 448
+      - x: 2920
+        'y': 1120
+  - from: e_release
+    to: eval_set
     type: primary
-  - from: infer
-    to: score
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: eval_set
+    to: prompts
     type: primary
-  - from: score
-    to: report
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: prompts
+    to: truncate
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: truncate
+    to: wrappers
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: wrappers
+    to: decode
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: decode
+    to: postprocess
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: postprocess
+    to: metrics
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: metrics
+    to: dataset_score
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: dataset_score
+    to: aggregate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: aggregate
+    to: leaderboard
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
 modules: []

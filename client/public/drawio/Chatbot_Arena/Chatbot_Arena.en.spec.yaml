@@ -6,15 +6,15 @@ meta:
   routing: orthogonal
   title: Chatbot Arena Build Process
   description: >-
-    Paper-aligned Chatbot Arena flow: consenting users submit live prompts to anonymous model pairs, cast pairwise
-    votes, filters and anomalous-user checks form valid battles, and reweighted Bradley–Terry estimation with confidence
-    intervals produces the public ranking.
-  legend: Solid arrows show live battle collection and ranking; dashed arrows show diversity and expert-quality validation.
+    Paper-snapshot Chatbot Arena flow: consenting users conduct anonymous multi-turn battles, identity-keyword filtering
+    forms the preference snapshot, and reweighted Bradley-Terry estimation produces approximate ranks. Safety flagging,
+    diversity, vote-quality, and anomalous-IP analyses remain independent of ranking inputs.
+  legend: Solid arrows show collection and ranking; dashed arrows show paper validation analyses that do not feed the rank.
 nodes:
   - id: user
     label: |-
       Live Crowd Users
-      Accept Terms and Data-release Consent
+      Accept Terms for Public Data Release
       Submit Fresh, Open-ended Prompts
     type: user
     size: xl
@@ -25,7 +25,8 @@ nodes:
     label: |-
       Sample an Anonymous Model Pair
       Hide Identities until after Voting
-      Favor Similar-strength Pairs to Reduce Uncertainty
+      Prefer Similar-strength Pairs
+      Non-uniform Sampling Reduces Uncertainty
     type: process
     size: xl
     position:
@@ -35,7 +36,7 @@ nodes:
     label: |-
       Side-by-side Multi-turn Battle
       Send the Same User Messages to Both Models
-      Continue until the User Can Choose
+      Continue until the User Can Decide
     type: process
     size: xl
     position:
@@ -45,7 +46,7 @@ nodes:
     label: |-
       Record Pairwise Preference
       Model A • Model B • Tie • Both Are Bad
-      Store Two Conversations plus the Vote
+      Store Both Conversations + Vote
     type: document
     size: xl
     position:
@@ -53,93 +54,116 @@ nodes:
       'y': 220
   - id: content_filter
     label: |-
-      Content and Identity Filtering
-      Remove Model/company-name Leakage
-      Flag Unsafe Requests with Moderation
+      Identity Keyword Filter
+      Remove Conversations Naming Models
+      or Companies to Preserve Anonymity
     type: process
     size: xl
     position:
       x: 1240
       'y': 220
-  - id: anomaly
+  - id: safety_flag
     label: |-
-      Detect Anomalous Users
-      Test Repetitive, Meaningless, or Strategic Patterns
-      Exclude Votes that Threaten Ranking Integrity
-    type: process
+      OpenAI Moderation Safety Flag
+      Flag Unsafe Requests: 3%
+      Not a Ranking-input Filter
+    type: document
+    size: xl
+    position:
+      x: 1240
+      'y': 0
+  - id: snapshot
+    label: |-
+      Paper Snapshot (2024-01-21)
+      ~240K Votes • >90K Users • >50 Models
+      >100 Languages • 77% English
+      Recent Rate: 1–2K Valid Votes per Day
+    type: database
     size: xl
     position:
       x: 1540
       'y': 220
-  - id: valid
+  - id: topic_model
     label: |-
-      Valid Human-preference Battles
-      More Than 240K Votes in the Paper Snapshot
-      About 1–2K Valid Votes per Day
-    type: database
+      Topic-modeling Method
+      text-embedding-3-small: 1,536 Dimensions
+      UMAP -> 5; HDBSCAN Minimum Cluster 32
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 0
+  - id: diversity
+    label: |-
+      600 Long-tail Topic Clusters
+      Sample 10 Prompts per Cluster
+      GPT-4-Turbo Generates Topic Labels
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 0
+  - id: experts
+    label: |-
+      Expert Relabeling: 160 Battles
+      Blind Graduate-student Fact-checking
+      Crowd–expert Agreement: 72.8%–83.1%
+    type: user
+    size: xl
+    position:
+      x: 1540
+      'y': 440
+  - id: anomaly
+    label: |-
+      Independent Anomalous-IP Analysis
+      Sequential p-values + Fisher Combination
+      5 Random Checks among Votes 1–100
+      Validate 25 Anomalous + 25 Normal Users
+      Not a Ranking-input Filter
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 440
+  - id: win_matrix
+    label: |-
+      Estimate Pairwise Win Matrix
+      Inverse-weight for Non-uniform Pair Sampling
+      Target a Uniform Distribution over Pairs
+    type: process
     size: xl
     position:
       x: 1840
       'y': 220
-  - id: diversity
+  - id: bt
     label: |-
-      Validate Prompt Diversity
-      Embed and Cluster Prompts into 600 Topics
-      Long-tail Coverage across Coding, Math, Poetry, Medicine
+      Reweighted Bradley–Terry MLE
+      Weight Each Battle by 1 / P(pair)
+      Estimate Population BT Coefficients
     type: process
     size: xl
     position:
       x: 2140
-      'y': 40
-  - id: experts
+      'y': 220
+  - id: intervals
     label: |-
-      Validate Vote Quality on 160 Battles
-      Blind Graduate-student Fact-checking
-      Crowd–expert Agreement: 72%–83%
-    type: user
-    size: xl
-    position:
-      x: 2140
-      'y': 400
-  - id: win_matrix
-    label: |-
-      Estimate Pairwise Win Matrix
-      Account for Non-uniform Pair Sampling
-      Adaptive Sampling Improves Precision per Vote
+      Sandwich Robust Confidence Intervals
+      Preferred over Bootstrap at Large Samples
+      Multiplicity-corrected Approximate Rank
     type: process
     size: xl
     position:
       x: 2440
       'y': 220
-  - id: bt
-    label: |-
-      Fit Reweighted Bradley–Terry Scores
-      Maximum-likelihood Estimation using 1 / P(pair)
-      Use Sandwich Covariance for Misspecification
-    type: process
-    size: xl
-    position:
-      x: 2740
-      'y': 220
-  - id: intervals
-    label: |-
-      Compute Score Confidence Intervals
-      Report Corrected and Uncorrected Intervals
-      Convert Scores into an Approximate Ranking
-    type: process
-    size: xl
-    position:
-      x: 3040
-      'y': 220
   - id: leaderboard
     label: |-
-      Publish Chatbot Arena Leaderboard
-      Human-preference Rank + Win Rates
-      Continuously Refresh with Live Battles
+      Publish the Paper-era Leaderboard
+      BT Score • Win Rate • Confidence Interval
+      Approximate Ranks with Uncertainty
     type: terminal
     size: xl
     position:
-      x: 3340
+      x: 2740
       'y': 220
 edges:
   - from: user
@@ -154,27 +178,32 @@ edges:
   - from: vote
     to: content_filter
     type: primary
+  - from: vote
+    to: safety_flag
+    type: data
   - from: content_filter
-    to: anomaly
+    to: snapshot
     type: primary
-  - from: anomaly
-    to: valid
+  - from: snapshot
+    to: win_matrix
     type: primary
-  - from: valid
+  - from: snapshot
+    to: topic_model
+    type: data
+  - from: topic_model
     to: diversity
     type: data
-  - from: valid
+  - from: snapshot
     to: experts
     type: data
-  - from: valid
-    to: win_matrix
-    type: primary
-  - from: diversity
-    to: win_matrix
+  - from: snapshot
+    to: anomaly
     type: data
-  - from: experts
-    to: win_matrix
-    type: data
+    waypoints:
+      - x: 1680
+        'y': 360
+      - x: 1740
+        'y': 490
   - from: win_matrix
     to: bt
     type: primary

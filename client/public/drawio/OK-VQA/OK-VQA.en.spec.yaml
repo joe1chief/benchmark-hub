@@ -6,202 +6,298 @@ meta:
   routing: orthogonal
   title: OK-VQA Build and Evaluation Process
   description: >-
-    Paper-aligned crowdsourcing and filtering of external-knowledge visual questions over COCO images, followed by the
-    official five-answer VQA scoring protocol and knowledge-category reporting.
+    Source-frozen construction, release, and evaluation path for OK-VQA, separating the CVPR paper protocol from the
+    downloadable v1.1 annotations and the fixed generic VQA scorer.
   legend: >-
-    OK-VQA requires information unavailable from the image and question alone. Five answer annotations are each counted
-    twice to match the standard ten-answer VQA metric, after Porter stemming.
+    Solid arrows are paper-disclosed collection, rejection, release, and evaluation paths. The dashed arrow marks the
+    fixed implementation and openness boundary. The five independently collected answers are stored twice in v1.1 to
+    form ten VQA-format answer records.
 nodes:
-  - id: images
+  - id: coco
     label: |-
-      Sample Natural COCO Images
-      Use Original Train and Validation Splits
-      About 80K and 40K Images
-      Preserve Visually Complex Scenes
+      Random COCO Images
+      Original 80k Train Split
+      Original 40k Validation Split
+      Preserve as OK-VQA Train and Test
     type: database
     size: xl
     position:
-      x: 20
-      'y': 70
-  - id: questions
+      x: 40
+      'y': 80
+  - id: question_round
     label: |-
-      Crowdsource Knowledge Questions
-      MTurk Round 1
-      Ask Questions to Fool a Smart Robot
-      Require Image Relation and Outside Knowledge
+      MTurk Round 1: Write Questions
+      Fool a Smart Robot
+      Keep Each Question Image-related
+      Require Outside Knowledge
     type: process
     size: xl
     position:
-      x: 260
-      'y': 40
-  - id: answers
+      x: 320
+      'y': 80
+  - id: answer_round
     label: |-
-      Collect Open-ended Answers
-      MTurk Round 2
-      Five Independent Workers per Pair
-      Preserve Multiple Valid Answers
+      MTurk Round 2: Answer Collection
+      Five Different Workers per Pair
+      Open Answers from Each Worker
+      One Image-question Pair at a Time
     type: process
     size: xl
     position:
-      x: 500
-      'y': 40
-  - id: knowledge_filter
+      x: 600
+      'y': 80
+  - id: candidate_pool
     label: |-
-      Manually Filter for Knowledge
-      Remove Counting and Detection Questions
-      Remove Image-independent or Nonsensical Items
-      86,700 → 34,921 Questions
+      Raw Crowdsourced Pool
+      86,700 Questions
+      Includes Knowledge and Low-quality Items
+      Answers Collected before Final Filtering
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 80
+  - id: manual_review
+    label: |-
+      Manual Knowledge Review
+      Remove Counting · Image-independent
+      Remove Nonsensical Questions
+      Reviewer Protocol Not Disclosed
     type: process
     size: xl
     position:
-      x: 740
-      'y': 40
+      x: 1160
+      'y': 80
+  - id: knowledge_gate
+    label: |-
+      Requires Outside Knowledge?
+      34,921 Questions Retained
+      Must Relate to Image Content
+      Must Need More than Visual Recognition
+    type: decision
+    size: xl
+    position:
+      x: 1440
+      'y': 80
+  - id: reject_quality
+    label: |-
+      Reject Low-quality Candidate
+      Counting or Detection
+      Answerable without Image
+      Nonsensical or Not Knowledge-based
+    type: terminal
+    size: xl
+    position:
+      x: 1720
+      'y': 80
   - id: bias_filter
     label: |-
-      Reduce Answer-frequency Bias
-      Cap Repeated Modal Answers
-      Remove Items beyond Five Instances
-      Emphasize Long-tail Answers
+      Control Answer-frequency Bias
+      Process Train and Test Separately
+      Count Each Most-common Answer
+      Flag More Than Five Instances
     type: process
     size: xl
     position:
-      x: 980
-      'y': 40
-  - id: agreement
+      x: 1440
+      'y': 440
+  - id: bias_gate
     label: |-
-      Any Agreement?
-      Drop Zero-agreement Items
-    type: process
+      Modal-answer Count
+      At Most Five?
+    type: decision
     size: xl
     position:
-      x: 1220
-      'y': 40
-  - id: split
+      x: 1160
+      'y': 440
+  - id: reject_bias
     label: |-
-      Preserve COCO-derived Splits
-      9,009 Training Questions
-      5,046 Test Questions
-      No Synthetic Knowledge Corpus
-    type: process
+      Remove Frequency-biased Item
+      Most-common Answer Appears
+      More Than Five Times
+    type: terminal
     size: xl
     position:
-      x: 1460
-      'y': 40
-  - id: categories
+      x: 1160
+      'y': 680
+  - id: agreement_gate
     label: |-
-      Annotate Knowledge Categories
-      Five Workers per Question
+      Any Inter-annotator Agreement?
+      Compare Five Worker Answers
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 440
+  - id: reject_disagreement
+    label: |-
+      Remove Zero-agreement Item
+      No Answer Shared by Workers
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 680
+  - id: final_split
+    label: |-
+      Final COCO-derived Splits
+      9,009 Train · 5,046 Test
+      14,055 Questions · 14,031 Images
+      8,998 Train Images · 5,033 Test Images
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: category_annotation
+    label: |-
+      Annotate Knowledge Category
+      Five MTurk Workers per Question
       Ten Defined Categories
       Plurality Label or Other
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
+      x: 320
+      'y': 440
   - id: release
     label: |-
-      Release OK-VQA
-      14,055 Questions · 14,031 Images
-      Five Answers per Question
-      Open-ended External-knowledge VQA
+      Public OK-VQA v1.1 · July 29, 2020
+      9,009 Train · 5,046 Test
+      Ten Answer Records
+      Five Answers Stored Twice
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 450
-  - id: input
+      x: 40
+      'y': 440
+  - id: model_answer
     label: |-
-      Present Image and Question
-      Recognize Relevant Visual Content
-      Identify Missing Knowledge
-      Retrieve and Integrate Outside Facts
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: predict
-    label: |-
-      Generate an Open Answer
+      Predict One Open Answer
+      Input Image and Question
       No Multiple-choice Options
-      Use Image and External Knowledge
-      Compare with Human Answers
+      External Knowledge May Be Retrieved
     type: document
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: stem
+      x: 40
+      'y': 840
+  - id: paper_normalization
     label: |-
-      Normalize Answer Morphology
-      Apply Porter Stemming
-      Merge Plural and Conjugated Forms
-      Retain Semantic Answer Content
+      Paper Protocol: Normalize Answers
+      Porter Stemming Required by Paper
+      v1.1 Gold answer Is Pre-stemmed
+      Prediction Not Stemmed by Fixed Scorer
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: score
+      x: 320
+      'y': 840
+  - id: vqa_score
     label: |-
-      Apply Standard VQA Score
-      Duplicate Each of Five Answers Twice
-      Match Ten-annotation Convention
-      Award Agreement-based Credit
+      Leave-one-out Human Agreement
+      Per Comparison: min(1, matches / 3)
+      Average Ten Answer Records
+      Then Average Questions
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 600
+      'y': 840
   - id: report
     label: |-
       Report OK-VQA Performance
       Overall VQA Score
       Ten Knowledge Categories
-      Plus Other Category Breakdown
+      Plus Other Category
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 880
+      'y': 840
+  - id: source_boundary
+    label: |-
+      Fixed Public Boundary
+      v1.1 JSON: CC BY 4.0 · COCO External
+      a013f004… Generic VQA Scorer
+      Knowledge-category Partitions Not Bundled
+    type: document
+    size: xl
+    position:
+      x: 1400
+      'y': 840
 edges:
-  - from: images
-    to: questions
+  - from: coco
+    to: question_round
     type: primary
-  - from: questions
-    to: answers
+  - from: question_round
+    to: answer_round
     type: primary
-  - from: answers
-    to: knowledge_filter
+  - from: answer_round
+    to: candidate_pool
     type: primary
-  - from: knowledge_filter
+  - from: candidate_pool
+    to: manual_review
+    type: primary
+  - from: manual_review
+    to: knowledge_gate
+    type: primary
+  - from: knowledge_gate
     to: bias_filter
     type: primary
+    label: 34,921 retained
+    labelPosition: center
+  - from: knowledge_gate
+    to: reject_quality
+    type: primary
+    label: Does not qualify
+    labelPosition: center
   - from: bias_filter
-    to: agreement
+    to: bias_gate
     type: primary
-  - from: agreement
-    to: split
+  - from: bias_gate
+    to: agreement_gate
     type: primary
-  - from: split
-    to: categories
+    label: At most five
+    labelPosition: center
+  - from: bias_gate
+    to: reject_bias
     type: primary
-  - from: categories
+    label: More than five
+    labelPosition: center
+  - from: agreement_gate
+    to: final_split
+    type: primary
+    label: Some agreement
+    labelPosition: center
+  - from: agreement_gate
+    to: reject_disagreement
+    type: primary
+    label: No agreement
+    labelPosition: center
+  - from: final_split
+    to: category_annotation
+    type: primary
+  - from: category_annotation
     to: release
     type: primary
   - from: release
-    to: input
+    to: model_answer
     type: primary
-  - from: input
-    to: predict
+  - from: model_answer
+    to: paper_normalization
     type: primary
-  - from: predict
-    to: stem
+  - from: paper_normalization
+    to: vqa_score
     type: primary
-  - from: stem
-    to: score
-    type: primary
-  - from: score
+  - from: vqa_score
     to: report
     type: primary
+  - from: report
+    to: source_boundary
+    type: secondary
+    label: Fixed implementation boundary
+    labelPosition: center
+    style:
+      dashed: true
 modules: []

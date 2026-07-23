@@ -5,157 +5,189 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EgoTempo 构建流程
-  description: 对齐论文的 Ego4D 视频片段构建、Gemini 辅助时序问答整理、捷径过滤与受控视频证据评测。
-  legend: 实线箭头展示基准构建；输入分支在相同开放问答评分协议下比较纯文本、单帧与多帧证据。
+  description: 固定版本的 Ego4D 片段构建、Gemini 辅助时序问答策展、单帧捷径控制，以及严格对齐论文的开放式评测。
+  legend: 实线表示 CVPR 2025 论文流程；虚线用于固定证据并审计发布 JSON。图中明确标出论文与发布数量漂移，以及论文与仓库的评审模型差异。
 nodes:
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv:2503.13646v1
+      仓库 @ 7022ba7
+      数据集 v1.0 · JSON SHA adc9e7d
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: source
     label: |-
       Ego4D 源视频
       多样真实场景
-      带时间戳的第一视角叙述
+      带时间戳的第一人称叙述 (Nj, tj)
     type: database
     size: xl
     position:
       x: 40
-      'y': 250
+      'y': 320
   - id: windows
     label: |-
-      推导叙述时间窗口
-      叙述时间戳 + 局部及全局间隔
-      短片段平均约 5 秒
+      为每条叙述推导时间窗口
+      Tj = tj ± βi / (2α)
+      βi：局部平均时间戳间隔
+      α：这些间隔的全局平均值
     type: process
     size: xl
     position:
       x: 300
-      'y': 250
+      'y': 320
   - id: clips
     label: |-
-      合并连续片段
-      最多 120 条叙述或 120 秒
-      保留时序问题所需上下文
+      合并连续叙述片段
+      达到 120 条叙述或 120 秒即停止
+      源短片段平均约 5 秒
     type: process
     size: xl
     position:
       x: 560
-      'y': 250
+      'y': 320
   - id: caption
     label: |-
-      Gemini 1.5 Pro 零样本描述
-      输入视频片段与叙述
-      为交互叙述补充背景细节
+      Gemini 1.5 Pro 零样本视频描述
+      输入：片段 + Ego4D 叙述
+      补充叙述中缺失的背景上下文
     type: process
     size: xl
     position:
       x: 820
-      'y': 250
+      'y': 320
   - id: taxonomy
     label: |-
-      按 10 类能力生成开放问答
-      动作、事件、物体的顺序与计数，
-      预测、空间关系及对象定位
+      用 Gemini 1.5 Pro 生成 10 类开放式问答
+      动作：顺序 · 计数 · 事件次序 · 未来预测
+      特定物体动作 · 物体顺序 · 物体计数
+      空间关系 · 物体定位 · 特定动作物体
     type: document
     size: xl
     position:
       x: 1080
-      'y': 250
+      'y': 320
   - id: review
     label: |-
-      人工视频依据复核
-      对照片段验证问题与答案
-      移除无关或缺少时序复杂度的样本
+      人工对照视频复核
+      必须依赖多帧信息
+      问题与答案必须逻辑一致
+      剔除无关或缺少时序复杂度的样本
     type: process
     size: xl
     position:
       x: 1340
-      'y': 250
+      'y': 320
   - id: shortcut
     label: |-
-      单帧捷径门槛
-      剔除 Gemini 仅凭一帧即可答对的样本
-      保留真实时序依赖
+      Gemini 单帧捷径门禁
+      剔除单帧即可回答的问答
+      策展门禁所用帧未披露
+      评测单帧设置使用中心帧
     type: process
     size: xl
     position:
       x: 1600
-      'y': 250
+      'y': 320
   - id: benchmark
     label: |-
-      EgoTempo 基准
-      500 个问答对 · 每类 50 个
-      221 段视频的 365 个片段 · 40 场景
+      论文：EgoTempo 开放式问答基准
+      500 个问答 · 10 类各 50 个
+      221 段视频的 365 个片段 · 40 个场景
+      3–140 秒 · 平均 45 秒
     type: database
     size: xl
     position:
       x: 1860
-      'y': 250
+      'y': 320
+  - id: release_audit
+    label: |-
+      固定 v1.0 JSON 审计
+      500 行 · 367 个唯一 clip_id
+      222 个唯一 video_uid
+      发布数量与论文不一致
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 20
   - id: inputs
     label: |-
       受控证据设置
-      使用相同问题与标准答案
+      使用相同问题与参考答案
     type: decision
     size: xl
     position:
       x: 2120
-      'y': 250
+      'y': 320
   - id: text
     label: |-
       纯文本
-      诊断常识与语言捷径
+      诊断语言或常识捷径
     type: document
     size: xl
     position:
       x: 2380
-      'y': 10
+      'y': 80
   - id: single
     label: |-
-      单帧
+      单个中心帧
       诊断静态视觉捷径
     type: document
     size: xl
     position:
       x: 2380
-      'y': 250
+      'y': 320
   - id: video
     label: |-
-      多帧
-      受控采样率 S = 0.1、0.5、1 FPS
-      并做固定帧数及采样策略消融
+      均匀采样的多帧
+      采样率 S = 0.1、0.5、1 FPS
+      固定帧数与顺序消融另行开展
     type: document
     size: xl
     position:
       x: 2380
-      'y': 490
+      'y': 560
   - id: prediction
     label: |-
-      多模态模型开放式预测
-      运行商用与开源视频模型
-      Gemini Flash 与 Pro 生成数据隔离
+      多模态大模型开放式预测
+      覆盖闭源与开源视频模型
+      Gemini 实验使用 1.5 Flash
+      不使用生成数据的 Pro
     type: process
     size: xl
     position:
       x: 2640
-      'y': 250
+      'y': 320
   - id: judge
     label: |-
-      Gemini 1.5 Pro 评委
-      比较预测与标准答案
-      给出正确或错误及理由
+      论文协议：Gemini 1.5 Pro 评审
+      预测 + 参考答案 → 正确或错误
+      同时返回判定理由
+      固定仓库 notebook 则默认 Flash
     type: process
     size: xl
     position:
       x: 2900
-      'y': 250
+      'y': 320
   - id: report
     label: |-
-      准确率与时序证据增益
-      10 类能力分项
-      绝对分及单帧→视频提升倍率
+      报告各能力与总体准确率
+      报告各证据设置的绝对分数
+      视频增益 = Accuracy(S) / 单帧准确率
     type: terminal
     size: xl
     position:
       x: 3160
-      'y': 250
+      'y': 320
 edges:
+  - from: evidence
+    to: source
+    type: data
   - from: source
     to: windows
     type: primary
@@ -177,6 +209,9 @@ edges:
   - from: shortcut
     to: benchmark
     type: primary
+  - from: benchmark
+    to: release_audit
+    type: data
   - from: benchmark
     to: inputs
     type: primary

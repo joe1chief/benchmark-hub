@@ -7,56 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "domain_seed",
-      "label": "Experts seed useful AI-agent subdomains\nGPT-4 expands and groups them into super-domains\nhumans iterate regeneration and review",
-      "type": "process",
+      "id": "evidence",
+      "label": "Evidence boundary: arXiv:2402.18667v1\nFoFo @ 140b1661 · test SHA 8f4cddcb\npaper method + pinned public release audit",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "taxonomy",
-      "label": "Fix the domain taxonomy\n10 domains × 5 subdomains each\nhealthcare, finance, software, legal, arts, and more",
+      "id": "domain_taxonomy",
+      "label": "Experts seed useful agent subdomains\nGPT-4 expands; humans iterate and regroup\n10 domains × 5 subdomains = 50",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "format_generation",
-      "label": "GPT-4 proposes 5 text formats per subdomain\nrequire human-readable, domain-specific examples\ninitially exclude generic TXT/CSV/JSON/XML",
+      "id": "format_candidates",
+      "label": "GPT-4 proposes 5 domain formats per subdomain\n500 candidate triplets · 254 unique strings\nhuman-readable; generic formats excluded first",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "format_review",
-      "label": "Experts assess, regenerate, or remove formats\nadd universal JSON/XML/CSV/Markdown/YAML back\nfinal pool: 248 data formats",
+      "label": "Experts assess, regenerate, or remove proposals\nadd JSON / XML / CSV / Markdown / YAML\nthen select the domain-format inventory",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "instruction_generation",
-      "label": "GPT-4 writes FORMAT-INSTRU per triplet\ndetailed real-world task + exact format configuration\ninclude dummy context or permission to improvise",
+      "id": "instruction_authoring",
+      "label": "GPT-4 writes one FORMAT-INSTRU per triplet\nexact configuration + real-world task\ndummy context or permission to improvise",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "instruction_review",
-      "label": "Humans verify, edit, remove, or regenerate each item\nfinal 494 FORMAT-INSTRU\naverage instruction length: 2,908 characters",
+      "id": "release",
+      "label": "Humans verify, edit, remove, or regenerate\nrelease: 494 instructions · 248 formats\nmean instruction length: 2,908 characters",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "generation",
-      "label": "Generate one response per test instruction\nuse each model's official prompt format\nsampling temperature 0.7 · max 5,120 new tokens",
+      "id": "prompting",
+      "label": "Wrap each instruction for the model family\nAlpaca · Vicuna · Mistral · Zephyr · OpenChat\notherwise pass the raw instruction",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "evaluation",
-      "label": "GPT-4 gives binary format verdict + explanation\nmissing any requirement fails the whole item\nreport format accuracy; human check agrees 84/100",
+      "id": "generation",
+      "label": "Generate one response for every instruction\ntemperature 0.7 · top-p 1 · max 5,120 tokens\ndecode; strip prompt (Zephyr special split)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "GPT-4 judge · max 1,024 · temperature 0\nbinary verdict plus reasons for each response\nmissing any format requirement means failure",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser_metric",
+      "label": "json_parser extracts format_correctness\nkeep only binary 0/1 labels\naccuracy = 100 × n_correct / n_total",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_audit",
+      "label": "Human audit: 100 model responses\n84/100 agree with GPT-4\nall 16 disagreements are judge false positives",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "domain_seed",
-      "to": "taxonomy",
+      "from": "evidence",
+      "to": "domain_taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "taxonomy",
-      "to": "format_generation",
+      "from": "domain_taxonomy",
+      "to": "format_candidates",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "format_generation",
+      "from": "format_candidates",
       "to": "format_review",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "format_review",
-      "to": "instruction_generation",
+      "to": "instruction_authoring",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "instruction_generation",
-      "to": "instruction_review",
+      "from": "instruction_authoring",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "instruction_review",
-      "to": "generation",
+      "from": "release",
+      "to": "prompting",
       "type": "primary"
     },
     {
       "id": "edge-7",
+      "from": "prompting",
+      "to": "generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "generation",
-      "to": "evaluation",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "judge",
+      "to": "parser_metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "parser_metric",
+      "to": "human_audit",
       "type": "primary"
     }
   ],

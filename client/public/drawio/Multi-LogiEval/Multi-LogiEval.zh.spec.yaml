@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Multi-LogiEval 构建与评测流程
-  description: 对齐论文展示命题/一阶逻辑与非单调推理两路构建、按深度组合规则、LLM 故事生成、人工修订和二元蕴含评测。
-  legend: 通过验证的基准包含 1,552 条英文上下文-问题数据，覆盖三类逻辑和一至五步推理深度。
+  description: 对齐论文 v3 展示命题逻辑、一阶逻辑与非单调逻辑的构建；Appendix H 扩展与官方发布漂移 明确放在 1,552 条主集之外。
+  legend: 实线表示论文主集的构建和评测路径；虚线表示附录或发布证据边界，不向 1,552 条主集增加样本。
 nodes:
   - id: goal
     label: |-
@@ -18,139 +18,169 @@ nodes:
     size: xl
     position:
       x: 20
-      'y': 230
+      'y': 250
   - id: inventory
     label: |-
       整理逻辑构件
-      命题 · 一阶 · 非单调逻辑
-      33 条核心 PL / FOL 推理规则
-      八种 NM 推理模式
+      33 条零变量或单变量规则
+      用于 PL / FOL
+      八种非单调推理模式
+      覆盖一至五步深度
     type: database
     size: xl
     position:
-      x: 260
-      'y': 230
+      x: 280
+      'y': 250
   - id: monotonic
     label: |-
       构建 PL 与 FOL 路径
-      深度 1 使用单条规则
-      结论连接后续规则前提
-      每步对应一条推理规则
+      单条规则定义深度一
+      每一步只使用一条推理规则
+      后一步前提复用前一步结论
     type: process
     size: xl
     position:
-      x: 500
+      x: 540
       'y': 40
   - id: nonmonotonic
     label: |-
       构建非单调逻辑路径
       从八种默认推理模式开始
-      每条深度链只用一条 NM 规则
-      再与经典逻辑混合
+      每条链只使用一条非单调规则
+      再把其结论与经典逻辑组合
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
+      x: 540
+      'y': 460
   - id: monotonic_combos
     label: |-
       组合单调逻辑规则链
       第 i 步结论进入第 i+1 步前提
-      创建 71 种组合
-      覆盖深度 2 至 5
+      创建 71 种规则组合
+      覆盖深度二至五
     type: process
     size: xl
     position:
-      x: 740
+      x: 800
       'y': 40
   - id: nonmonotonic_combos
     label: |-
-      组合 NM 与经典逻辑链
-      人工定义分深度模板
+      人工组合非单调与经典逻辑链
       12 · 2 · 2 · 1 种组合
       分别对应深度 2 · 3 · 4 · 5
+      配合 MP · MT · DS 规则
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
+      x: 800
+      'y': 460
   - id: monotonic_generation
     label: |-
       少样本提示 Claude-2
-      规则 · 格式 · 多样性 · 任务
-      每种规则组合给五个示例
-      生成上下文与问题
+      规则 · 格式 · 多样性 · 两项任务
+      每种组合给五个上下文示例
+      并非生成五条输出
+      生成自然语言
+      上下文与问题
     type: process
     size: xl
     position:
-      x: 980
+      x: 1060
       'y': 40
   - id: nonmonotonic_generation
     label: |-
-      提示生成非单调数据
-      定义任务和假设
+      提示 Claude-2 生成非单调数据
+      定义任务和规则假设
       指定逻辑连接关系
       强制系统化输出格式
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: naturalize
+      x: 1060
+      'y': 460
+  - id: candidates
     label: |-
-      把逻辑实例自然语言化
-      用真实实体替换符号标签
+      候选上下文—问题数据
+      用真实实体
+      替换符号标签
       扩展领域与概念集合
-      推导是或否的答案
-    type: process
+      按逻辑推导
+      是或否的答案
+    type: document
     size: xl
     position:
-      x: 1220
-      'y': 230
+      x: 1320
+      'y': 250
   - id: validate
     label: |-
-      人工验证并修订
-      检查预期逻辑关系
+      人工检查每一段上下文
+      核对预期逻辑关系
       修正故事错误 · 语法 · 拼写
-      筛选或改写高质量实例
+      深度一每条规则保留 10 条
+      每种组合保留 15 或 20 条
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 230
+      x: 1580
+      'y': 250
   - id: release
     label: |-
-      发布 1,552 条验证数据
+      论文主集：1,552 条验证数据
       PL 525 · FOL 535 · NM 492
       深度 1–5：410 · 442 · 310 · 280 · 110
-      答案：是 1,126 · 否 426
+      标签：是 1,126 · 否 426
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 500
+      x: 1840
+      'y': 250
   - id: evaluate
     label: |-
-      评测六个 LLM
-      零样本思维链提示
-      预测二元蕴含标签
-      检查生成的推理链
+      评测六个大语言模型
+      使用零样本思维链提示
+      输入提示词 + 上下文 + 问题
+      预测是或否的二元蕴含标签
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 500
+      x: 1840
+      'y': 560
   - id: report
     label: |-
-      报告逻辑推理准确率
+      报告准确率
       按逻辑类型和深度拆分
       跟踪随深度增加的下降
-      分析推理过程正确性
+      分析推理链的正确性
     type: terminal
     size: xl
     position:
-      x: 980
-      'y': 650
+      x: 1580
+      'y': 560
+  - id: extended_fol
+    label: |-
+      附录 H：七条多元一阶逻辑规则
+      论文为 70 条且仅做单步推理
+      另用三个大型模型单独评测
+      不计入 1,552 条论文主集
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 680
+  - id: release_boundary
+    label: |-
+      发布面边界 · 部分公开
+      Git 6d55ade5… · MIT
+      仅数据与说明
+      固定树：主集 JSON 条目 1,556
+      + 附录 H 条目 140
+      未发布生成器或评测器代码
+    type: document
+    size: xl
+    position:
+      x: 2100
+      'y': 560
 edges:
   - from: goal
     to: inventory
@@ -174,12 +204,12 @@ edges:
     to: nonmonotonic_generation
     type: primary
   - from: monotonic_generation
-    to: naturalize
+    to: candidates
     type: primary
   - from: nonmonotonic_generation
-    to: naturalize
+    to: candidates
     type: primary
-  - from: naturalize
+  - from: candidates
     to: validate
     type: primary
   - from: validate
@@ -191,4 +221,26 @@ edges:
   - from: evaluate
     to: report
     type: primary
+  - from: inventory
+    to: extended_fol
+    type: secondary
+    label: 附录 H，不计入主集
+    style:
+      dashed: true
+    waypoints:
+      - x: 400
+        'y': 620
+      - x: 400
+        'y': 680
+  - from: release
+    to: release_boundary
+    type: secondary
+    label: 已发布内容
+    style:
+      dashed: true
+    waypoints:
+      - x: 2060
+        'y': 410
+      - x: 2220
+        'y': 410
 modules: []

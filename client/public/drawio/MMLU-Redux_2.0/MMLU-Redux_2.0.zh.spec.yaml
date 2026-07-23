@@ -1,177 +1,554 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLU-Redux 2.0 构建流程
-  description: 按论文由专家重新标注覆盖 57 个学科的 5,700 道 MMLU 测试题，并对比全量与仅正确题目的精确匹配结果。
-  legend: 建议正确答案属于标注元数据；论文评测并未用它替换原始 MMLU 标签。
+  title: MMLU-Redux 2.0 构建与评测流程
+  description: >-
+    对齐论文 v3 与发布快照的 MMLU-Redux 2.0：从 30 学科扩展到完整 57 学科，形成 5,700 条专家标注，并完整呈现分层错误标签、一致性审计、完整 MMLU 加权错误率估计、HELM
+    重评，以及自动错误检测的提示词与解析器。
+  legend: >-
+    MMLU-Redux 2.0 为初版未覆盖的其余 27 个学科各新增 100 题，并按需规范化或重新标注已有行。原始 MMLU 答案仍是评测标签，建议 correct_answer
+    只作为元数据。虚线失败路径描述公开实现的实际行为，而非理想化的论文协议。
 nodes:
-  - id: sample
+  - id: mmlu_source
     label: |-
-      从 MMLU 测试集抽样
-      每个学科抽取 100 题
-      覆盖全部 57 个学科
-      合计 5,700 道题
+      原始 MMLU 测试集
+      57 学科 • 14,042 条测试题
+      保留题目、选项
+      与原始 0–3 答案索引
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: taxonomy
+      x: 40
+      'y': 120
+  - id: expansion
     label: |-
-      定义分层错误体系
-      问题或选项不清晰
-      无正确或多个正确答案
-      错误真值 · 正常 · 待专家
-    type: document
+      扩展 Redux 初版范围
+      起点：30 × 100 = 3,000 条
+      补入其余 27 × 100 = 2,700 条
+      形成 MMLU-Redux 2.0
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: assign
+      x: 320
+      'y': 120
+  - id: sample_union
+    label: |-
+      形成 2.0 审计集
+      30 + 27 = 完整 57 学科
+      每科 100 条 • 共 5,700 条
+      按需规范化 / 重新标注
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 120
+  - id: experts
     label: |-
       分配 14 名人类专家
       匹配对应学科专长
-      审查问题与选项
-      检查原始答案
+      检查题目、选项
+      与原始标准答案
     type: user
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: source
+      x: 880
+      'y': 120
+  - id: source_route
     label: |-
-      追溯支持性来源
-      尽可能查找原始出处
-      否则使用可信来源
-      优先官方资料或教材
+      是否能按题目 + 选项
+      精确找到原始来源？
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 120
+  - id: original_source
+    label: |-
+      检查匹配到的来源
+      核对其答案与上下文
+      同时仍需运用学科专长
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: annotate
+      x: 1440
+      'y': 20
+  - id: trusted_source
     label: |-
-      标注每条抽样题目
-      记录错误类型与来源
-      给出建议正确答案
-      补充支持性解释
+      检索可信证据
+      政府资料 • 教材 • WHO
+      或其他权威来源
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: uncertain
+      x: 1440
+      'y': 220
+  - id: confidence
     label: |-
-      上报不确定样本
-      标记为待专家处理
-      避免无依据的判断
-      保留可审计信息
+      证据与专业知识
+      是否足以完成分类？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 120
+  - id: question_clear
+    label: |-
+      题目是否清晰、
+      无歧义且信息完整？
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 120
+  - id: options_clear
+    label: |-
+      选项是否清晰、
+      互异且形式完整？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 220
+  - id: valid_answers
+    label: |-
+      实际有多少个
+      正确选项？
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 320
+  - id: gt_match
+    label: |-
+      恰有一个正确选项
+      原始 MMLU 标准答案
+      是否与其一致？
+    type: decision
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: label_merge
+    label: |-
+      输出错误 / Expert 标签
+      Expert • BQC • BOC
+      NCA • MCA • WGT
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: agreement
+      x: 3120
+      'y': 300
+  - id: record
     label: |-
-      检查标注者一致性
-      三人复标五个学科
-      聚焦错误较多的学科
-      Cohen Kappa 高于 0.6
-    type: user
+      写入七字段记录
+      question • choices • answer
+      error_type • source
+      correct_answer • potential_reason
+    type: document
     size: xl
     position:
-      x: 1420
-      'y': 420
+      x: 3400
+      'y': 300
   - id: release
     label: |-
-      汇总 Redux 2.0 元数据
-      问题 · 选项 · 原始答案
-      错误类型 · 来源 · 建议答案
-      完整覆盖 57 个学科
+      MMLU-Redux 2.0 发布集
+      完整 57 学科 × 每科 100 条
+      共 5,700 条专家标注
+      公开 • CC BY 4.0
     type: database
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: estimate
+      x: 3680
+      'y': 300
+  - id: source_pin
     label: |-
-      估计完整 MMLU 错误率
-      汇总各学科抽样结果
-      加权观察到的错误
-      报告 6.49%
-    type: process
+      范围与版本锚点
+      arXiv v3 • 2025-01-10
+      数据快照 63f54eb
+      DOI 10.57967/hf/3469
+      HF = 57 × 100 • 公开 CC BY 4.0
+      附录 / README / 绘图仍残留“30”
+      当前 372ea：2025-02 修正两条
+    type: document
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: original
+      x: 3960
+      'y': 300
+  - id: agreement_audit
     label: |-
-      评估模型预测
-      使用原始精确匹配
-      报告全量题目结果
-      保持论文评测协议
-    type: process
+      三人复标五个学科
+      病毒学 • 逻辑谬误
+      大学化学 • 形式逻辑
+      人类性学
+      两种 Cohen's Kappa 均 > 0.6
+    type: user
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: filter
+      x: 3680
+      'y': 720
+  - id: weighted_estimate
     label: |-
-      构造仅正确题目视图
-      按错误类型元数据过滤
-      排除错误与待专家题目
-      重新计算精确匹配
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 420
-  - id: compare
-    label: |-
-      对比分数与排名
-      全量题目对比仅正确题目
-      量化标注错误影响
-      报告准确率变化
+      完整 MMLU 分层估计
+      先算各学科抽样错误率
+      再按原始学科题量加权
+      分母 = 14,042 条测试题
+      OK 93.51% • 五类错误 6.49%
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 3680
+      'y': 900
+  - id: experiment_route
+    label: |-
+      论文实验路线
+      HELM 重评还是
+      自动错误检测？
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 1180
+  - id: helm_archive
+    label: |-
+      已归档 HELM 预测
+      排行榜 v1.3.0
+      不重新提示候选模型
+    type: database
+    size: xl
+    position:
+      x: 3400
+      'y': 1080
+  - id: align
+    label: |-
+      对齐并计算精确匹配
+      优先精确匹配题目 + 选项
+      重复项 → 首条；模糊 90 起每次减 5
+      HELM 答案 vs 原始 A–D 标签
+      不替换为建议答案
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1080
+  - id: score_report
+    label: |-
+      分组并报告平均精确匹配率
+      全部 • OK • 错误题
+      分母 = 各组实际题量
+      五个最高错误率学科表格
+      公开代码仍绘制 30 学科
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 1080
+  - id: prompt_route
+    label: |-
+      错误检测方法路线
+      零/少样本、CoT / RAG
+      还是指令微调？
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 1420
+  - id: plain_prompt
+    label: |-
+      直接式零/少样本 + 解析器
+      只能输出“ok”或“not ok”
+      少样本：每类错误 2 个示例
+      temp 0 • top_p 1 • max_tokens 600
+      默认随机种子
+      对整段 trim + lowercase
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 1320
+  - id: cot_rag_prompt
+    label: |-
+      CoT / RAG 提示词 + 解析器
+      依次检查清晰度 → 答案数 → 标签
+      RAG：BM25 前 5 段 Wiki / MS MARCO
+      生成参数与直接式相同
+      最后一行 JSON；须有 Classification
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 1520
+  - id: tune_protocol
+    label: |-
+      指令微调路线
+      在 LabelChaos 上微调 Llama3-8B
+      分类输出“ok” / “not ok”
+      使用同一二值标签检查
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1720
+  - id: parse_gate
+    label: |-
+      是否得到规范标签
+      “ok”或“not ok”？
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 1420
+  - id: coerce_non_ok
+    label: |-
+      仓库中的失败映射
+      冗长 / 无效预测
+      二值转换时均落为非 OK
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1520
+  - id: api_abort
+    label: |-
+      请求 / 文件失败
+      公开脚本没有重试路径
+      异常会终止运行
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 1960
+  - id: detection_metrics
+    label: |-
+      论文错误检测指标
+      模型：GPT-4 Turbo / GPT-4o
+      Claude 3 Opus / Llama3-70B
+      “not ok”为正类 • Recall / F1 / F2
+      漂移：非 RAG 代码将 OK 设为 1
+      无效输出会映射为非 OK
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 1320
 edges:
-  - from: sample
-    to: taxonomy
+  - from: mmlu_source
+    to: expansion
     type: primary
-  - from: taxonomy
-    to: assign
+  - from: expansion
+    to: sample_union
     type: primary
-  - from: assign
-    to: source
+  - from: sample_union
+    to: experts
     type: primary
-  - from: source
-    to: annotate
+  - from: experts
+    to: source_route
     type: primary
-  - from: annotate
-    to: uncertain
+  - from: source_route
+    to: original_source
     type: primary
-  - from: uncertain
-    to: agreement
+    label: 找到
+  - from: source_route
+    to: trusted_source
     type: primary
-  - from: agreement
+    label: 未找到
+  - from: original_source
+    to: confidence
+    type: primary
+  - from: trusted_source
+    to: confidence
+    type: primary
+  - from: confidence
+    to: question_clear
+    type: primary
+    label: 是
+  - from: confidence
+    to: label_merge
+    type: primary
+    label: 否 → Expert
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.1
+  - from: question_clear
+    to: label_merge
+    type: primary
+    label: 否 → BQC
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.25
+  - from: question_clear
+    to: options_clear
+    type: primary
+    label: 是
+  - from: options_clear
+    to: label_merge
+    type: primary
+    label: 否 → BOC
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.4
+  - from: options_clear
+    to: valid_answers
+    type: primary
+    label: 是
+  - from: valid_answers
+    to: label_merge
+    type: primary
+    label: 0 个 → NCA
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.55
+  - from: valid_answers
+    to: label_merge
+    type: primary
+    label: 多个 → MCA
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.7
+  - from: valid_answers
+    to: gt_match
+    type: primary
+    label: 1 个
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: gt_match
+    to: label_merge
+    type: primary
+    label: 否 → WGT
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.85
+  - from: gt_match
+    to: record
+    type: primary
+    label: 是 → OK
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.2
+  - from: label_merge
+    to: record
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+  - from: record
     to: release
     type: primary
   - from: release
-    to: estimate
+    to: source_pin
+    type: dependency
+  - from: release
+    to: agreement_audit
+    type: data
+  - from: release
+    to: weighted_estimate
+    type: data
+  - from: release
+    to: experiment_route
     type: primary
-  - from: estimate
-    to: original
+  - from: experiment_route
+    to: helm_archive
     type: primary
-  - from: original
-    to: filter
+    label: HELM 配置
+  - from: helm_archive
+    to: align
     type: primary
-  - from: filter
-    to: compare
+  - from: align
+    to: score_report
     type: primary
+  - from: experiment_route
+    to: prompt_route
+    type: primary
+    label: 错误检测
+  - from: prompt_route
+    to: plain_prompt
+    type: primary
+    label: 零/少样本
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.5
+  - from: prompt_route
+    to: cot_rag_prompt
+    type: primary
+    label: CoT / RAG 提示
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: prompt_route
+    to: tune_protocol
+    type: primary
+    label: 微调
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.5
+  - from: plain_prompt
+    to: parse_gate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.25
+  - from: cot_rag_prompt
+    to: parse_gate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: tune_protocol
+    to: parse_gate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.75
+  - from: parse_gate
+    to: detection_metrics
+    type: primary
+    label: 有效
+  - from: parse_gate
+    to: coerce_non_ok
+    type: primary
+    label: 无效 / 冗长
+  - from: coerce_non_ok
+    to: detection_metrics
+    type: primary
+  - from: plain_prompt
+    to: api_abort
+    type: optional
+    label: 异常
+  - from: cot_rag_prompt
+    to: api_abort
+    type: optional
+    label: 异常
 modules: []

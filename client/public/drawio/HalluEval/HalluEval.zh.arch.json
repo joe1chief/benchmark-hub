@@ -7,138 +7,210 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 10,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "证据与固定版本\nHaluEval · arXiv 2305.11747v3\n官方仓库 b7b66e8",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "task_seeds",
-      "label": "抽取 30,000 个任务种子\nHotpotQA · OpenDialKG · CNN/DailyMail\n问答、对话、摘要各 10,000 个",
+      "label": "抽取 30,000 条任务种子\nHotpotQA · OpenDialKG · CNN/DailyMail\n问答、对话、摘要各 10,000 条",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "生成两个幻觉候选\nChatGPT 一次性完整指令\n加逐步学习指令的对话式生成",
+      "label": "ChatGPT 单轮 + 多轮策略\n模式数：问答 4 · 对话 3 · 摘要 3\n温度 1.0 · 最多 256 token · top-p 1.0",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "filter",
-      "label": "筛选高难幻觉\n由含标准答案示例的 ChatGPT 评判\n保留最可信的候选答案",
+      "label": "真值增强筛选\n比较两个幻觉候选\n保留最可信且最困难的一个",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "auto_set",
-      "label": "定稿 30,000 个任务样本\n事实/正常答案与选中的\n幻觉对应答案配对",
+      "label": "形成 30,000 条任务记录\n正确输出 + 选中的幻觉输出\n保存为一个配对",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "alpaca",
-      "label": "从 Alpaca 52K 查询开始\n每个查询采样三条 ChatGPT 回答\n面向通用指令跟随场景",
+      "label": "从 Alpaca 52K 查询开始\n每条查询采样 3 个 ChatGPT 回答\n面向通用指令跟随",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "divergence",
-      "label": "按回答分歧排序\n计算两两 BERTScore 平均相似度\n保留相似度最低的 5,000 个查询",
+      "label": "对回答分歧度排序\n用 BERTScore 计算平均语义相似度\n保留相似度最低的 5,000 条查询",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "annotate",
-      "label": "每条保留回答由三人标注\n幻觉是/否与对应文本片段\n不可验证 · 非事实 · 不相关",
+      "label": "每条回答由 3 名标注员判断 3 个维度\n不可验证 · 非事实 · 不相关\n记录是/否 + 幻觉片段",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human_set",
-      "label": "对人工标签做多数投票\n30 名合格标注员 · Fleiss kappa 0.811\n5,000 条回答 · 977 条含幻觉",
+      "label": "应用最大/多数投票\n30 名入选标注员 · Fleiss κ=0.811\n论文：5,000 条回答 · 977 条为是",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "merge",
-      "label": "汇总 HaluEval\n30,000 个任务样本 + 5,000 个通用样本\n共 35,000 个幻觉/正常样本",
+      "id": "release",
+      "label": "论文定义的 HaluEval · 共 35,000 条\n30,000 条任务配对 + 5,000 条通用样本\n通用字段：hallucination Yes/No\n+ hallucination_spans",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "inference",
-      "label": "构造幻觉识别输入\n随机呈现正常或幻觉输出\n要求判断内容是否含幻觉",
+      "id": "eval_route",
+      "label": "选择发布子集\n任务配对或通用回答",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "task_eval",
+      "label": "三个任务型评测器\n问答 · 对话 · 摘要各加载独立指令\n随机展示正常或幻觉输出\n温度 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "task_parser",
+      "label": "移除句点\n同时含 Yes 与 No，或两者均无 → 错误\n仅有单一 substring 命中 → 归一为 Yes 或 No",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "general_eval",
+      "label": "分类已标注的 ChatGPT 回答\n论文报告 General 准确率\n发布的 evaluate.py 未提供通用通路",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "报告幻觉识别准确率\n问答 · 知识支撑对话\n摘要 · 通用查询",
+      "label": "报告识别准确率\n问答 · 对话 · 摘要\n通用回答",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "b7b66e8 官方产物边界\n论文/README：通用 5,000 条\ngeneral_data.json：4,507 行\n三个任务 JSONL 文件各 10,000 行",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "task_seeds",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "evidence",
+      "to": "alpaca",
+      "type": "data"
+    },
+    {
+      "id": "edge-3",
       "from": "task_seeds",
       "to": "sample",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-4",
       "from": "sample",
       "to": "filter",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-5",
       "from": "filter",
       "to": "auto_set",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "auto_set",
-      "to": "merge",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "alpaca",
       "to": "divergence",
       "type": "secondary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
       "from": "divergence",
       "to": "annotate",
       "type": "secondary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-8",
       "from": "annotate",
       "to": "human_set",
       "type": "secondary"
     },
     {
-      "id": "edge-8",
-      "from": "human_set",
-      "to": "merge",
-      "type": "secondary"
-    },
-    {
       "id": "edge-9",
-      "from": "merge",
-      "to": "inference",
+      "from": "auto_set",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "inference",
+      "from": "human_set",
+      "to": "release",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-11",
+      "from": "release",
+      "to": "eval_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "eval_route",
+      "to": "task_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "eval_route",
+      "to": "general_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "task_eval",
+      "to": "task_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "task_parser",
       "to": "score",
       "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "general_eval",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "score",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

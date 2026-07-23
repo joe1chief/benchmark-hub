@@ -5,110 +5,135 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GENIUS 构建流程
-  description: 与论文一致的 GENIUS 510 样本构建和混合评测流程。
-  legend: 三条分支对应论文基于 CHC 理论定义的生成式流体智能维度，最终汇入共同的专家策划数据集， 并按 arXiv:2602.11144 披露的 Gemini-3-Pro 混合评分协议评测。
+  description: 按论文、数据集与评测代码对齐的 GENIUS 构建与评分流程。
+  legend: >-
+    证据固定到 arXiv:2602.11144v1、仓库 115338d6 和数据集 a1c68adc。仓库 README 声明 CC-BY-NC 4.0，固定 Hugging Face 卡片声明 MIT；两者均保留。评测器运行 3
+    轮评分，且仅对含图像标签的提示计入 VC。
 nodes:
-  - id: framework
+  - id: evidence
     label: |-
-      操作化定义生成式流体智能
-      基于 CHC 理论划分三个维度
-      测试从即时上下文证据中适应的能力
+      证据快照
+      论文 2602.11144v1
+      仓库 115338d6 · 数据 a1c68adc
+      模型推理：未标准化
     type: document
     size: xl
     position:
       x: 40
-      'y': 300
+      'y': 320
+  - id: framework
+    label: |-
+      定义生成式流体智能
+      从即时上下文证据适应
+      依据 CHC 理论组织
+    type: document
+    size: xl
+    position:
+      x: 296
+      'y': 320
   - id: implicit
     label: |-
-      隐式模式归纳 · 86 个样本
-      隐式模式生成任务
-      从未显式说明的上下文中归纳规则
+      隐式模式归纳
+      86 个样本
+      1 类生成任务
+      推断未明示的局部规则
     type: process
     size: xl
     position:
-      x: 340
+      x: 552
       'y': 80
   - id: constraint
     label: |-
-      即时约束执行 · 213 个样本
-      视觉约束 + 符号约束生成
-      组合上下文临时给出的新规则
+      即时约束执行
+      213 个样本
+      符号 153 · 视觉 60
+      执行新给出的局部约束
     type: process
     size: xl
     position:
-      x: 340
-      'y': 300
+      x: 552
+      'y': 320
   - id: adaptation
     label: |-
-      情境知识适应 · 211 个样本
-      先验冲突 + 多语义生成
-      抑制记忆先验并遵循局部语义
+      情境知识适应
+      211 个样本
+      先验冲突 101 · 多语义 110
+      覆盖已记忆的先验
     type: process
     size: xl
     position:
-      x: 340
-      'y': 520
+      x: 552
+      'y': 560
   - id: curate
     label: |-
-      专家策划交错式多模态样本
-      缺少任一模态都会导致任务不可解
-      避免语义捷径和既有知识关联
+      专家策划多模态样本
+      每种模态都不可缺少
+      评测提示交叉验证
+      至少经过 3 轮
     type: process
     size: xl
     position:
-      x: 680
-      'y': 300
+      x: 808
+      'y': 320
   - id: release
     label: |-
-      汇总 510 个样本、20 个子任务
-      三个维度下共五类生成任务
-      人工标注任务专用评测提示
+      发布 510 个样本
+      3 维度 · 5 任务 · 20 子任务
+      上下文/编号/指令/RC + 可选 VC
+      仓库 CC-BY-NC 4.0 · HF 卡 MIT
     type: database
     size: xl
     position:
-      x: 980
-      'y': 300
-  - id: generate
+      x: 1064
+      'y': 320
+  - id: outputs
     label: |-
-      向模型提供多模态上下文证据
-      统一多模态模型生成图像
-      单靠外部先验知识无法完成任务
+      每个样本提交一张 PNG
+      outputs/模型/任务/编号.png
+      缺失输出记零分
+      未公开生成脚本
     type: process
     size: xl
     position:
-      x: 1280
-      'y': 300
+      x: 1064
+      'y': 720
   - id: judge
     label: |-
-      使用 Gemini-3-Pro 混合评分
-      比较输出、参考图和人工评测提示
-      相关任务先做像素同一性抄袭检查
+      运行 Gemini-3-Pro-preview 评委
+      执行 3 轮评分
+      每轮 RC/AQ 各一次
+      VC 与抄袭检查逐图像提示调用
     type: process
     size: xl
     position:
-      x: 1580
-      'y': 300
-  - id: dimensions
+      x: 808
+      'y': 720
+  - id: parser
     label: |-
-      各维度按 0–2 分评分
-      规则遵循 · 视觉一致性
-      美学质量
+      解析固定指标标签
+      解析失败记零分
+      3 轮结果取均值后取整
+      VC 仅计入含图像标签的提示
     type: process
     size: xl
     position:
-      x: 1880
-      'y': 300
+      x: 552
+      'y': 720
   - id: score
     label: |-
-      计算加权总分
-      规则:一致性:美学 = 6:3.5:0.5
-      完全复制参考图时视觉一致性记 0 分
+      将 0/1/2 映射为 0/50/100
+      对可用指标值求均值
+      总分 = 0.6 RC + 0.35 VC
+      + 0.05 AQ
     type: terminal
     size: xl
     position:
-      x: 2180
-      'y': 300
+      x: 296
+      'y': 720
 edges:
+  - from: evidence
+    to: framework
+    type: primary
   - from: framework
     to: implicit
     type: primary
@@ -131,15 +156,15 @@ edges:
     to: release
     type: primary
   - from: release
-    to: generate
+    to: outputs
     type: primary
-  - from: generate
+  - from: outputs
     to: judge
     type: primary
   - from: judge
-    to: dimensions
+    to: parser
     type: primary
-  - from: dimensions
+  - from: parser
     to: score
     type: primary
 modules: []

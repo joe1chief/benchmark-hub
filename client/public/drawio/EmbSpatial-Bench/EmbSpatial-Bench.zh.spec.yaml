@@ -5,100 +5,131 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: EmbSpatial-Bench 构建流程
-  description: 对齐论文：从带标注的具身三维场景构建均衡的自我中心空间关系选择题，并进行 LVLM 零样本准确率评测。
-  legend: 实线箭头复现 ACL 2024 论文的基准构建流程。EmbSpatial-SFT 是独立训练集，不与 3,640 题评测集混合。
+  description: 固定版本地展示从带标注具身三维场景到人工核验的自我中心空间多选题，以及零样本 LVLM 准确率评测。
+  legend: 实线表示 ACL 2024 基准流程；虚线用于固定论文、仓库与 Hugging Face 发布证据。EmbSpatial-SFT 是独立训练集， 不属于 3,640 道评测题。
 nodes:
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv:2406.05756v1
+      仓库 @ 75792fc
+      HF 数据集 @ e2733ca
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: sources
     label: |-
-      选择带标注的具身场景
-      MP3D 测试集 · ScanNet 验证集
-      AI2-THOR：7 类 ALFRED 任务 / 93 场景
+      选择带标注的具身三维场景
+      Matterport3D 测试集 · ScanNet 验证集
+      AI2-THOR：7 类 ALFRED 任务 / 93 个场景
     type: database
     size: xl
     position:
       x: 40
-      'y': 250
+      'y': 320
   - id: frames
     label: |-
-      采集目标 RGB-D 帧
-      MP3D / ScanNet 随机视点
-      AI2-THOR 按 PDDL 选关键帧
+      采集目标 RGB-D 图像
+      MP3D / ScanNet 中随机选择视点
+      AI2-THOR 每个 PDDL 子目标后选取关键帧
     type: process
     size: xl
     position:
       x: 300
-      'y': 250
+      'y': 320
   - id: project
     label: |-
-      将三维物体投影到图像
+      将带标注的三维物体投影到图像
       相机参数 + 三维坐标
-      得到二维边界框与平均深度
+      得到二维框及框内平均深度
     type: process
     size: xl
     position:
       x: 560
-      'y': 250
+      'y': 320
   - id: relations
     label: |-
-      提取不重叠空间关系三元组
-      整框判断：上 / 下 / 左 / 右
-      平均深度：近 / 远 · 观察者视角
+      仅对不重叠边界框提取三元组
+      整框几何：上 / 下 / 左 / 右
+      平均深度：近 / 远
+      所有关系均采用观察者视角
     type: process
     size: xl
     position:
       x: 820
-      'y': 250
+      'y': 320
   - id: qa
     label: |-
-      生成多项选择问答
-      四种方向关系使用 5 个模板
+      生成多项选择题
+      四类方向关系使用 5 种模板
+      不相关关系作为错误选项
       聚合物体生成最近 / 最远问题
     type: document
     size: xl
     position:
       x: 1080
-      'y': 250
+      'y': 320
   - id: filter
     label: |-
-      自动过滤并平衡分布
-      移除过大 / 过小边界框
-      平衡六种空间关系
+      自动过滤边界框并平衡分布
+      宽或高小于 50 像素即剔除
+      宽或高超过对应图像轴一半即剔除
+      保持空间关系分布平衡
     type: process
     size: xl
     position:
       x: 1340
-      'y': 250
+      'y': 320
   - id: verify
     label: |-
       逐样本人工核验
-      移除指代不清的物体
-      移除空间关系错误的问题
+      相关物体必须唯一且清晰可辨
+      目标空间关系必须正确
+      每个负选项都必须错误
     type: process
     size: xl
     position:
       x: 1600
-      'y': 250
-  - id: dataset
+      'y': 320
+  - id: per_source
     label: |-
-      EmbSpatial-Bench
-      3,640 个 QA · 2,181 张图 · 277 个场景
-      294 个物体类别 · 6 种关系
+      问答 / 图像 / 物体类别 / 场景
+      MP3D：1,201 / 928 / 133 / 26
+      AI2-THOR：1,239 / 683 / 95 / 93
+      ScanNet：1,200 / 570 / 35 / 175
     type: database
     size: xl
     position:
       x: 1860
-      'y': 250
-  - id: evaluation
+      'y': 320
+  - id: dataset
     label: |-
-      LVLM 零样本评测
-      生成式答案或最大似然选项
-      分策略报告准确率
-    type: terminal
+      EmbSpatial-Bench 评测集
+      3,640 个问答 · 2,181 张 RGB-D 图像
+      277 个场景 · 294 个物体类别
+      六类平衡的自我中心空间关系
+    type: database
     size: xl
     position:
       x: 2120
-      'y': 250
+      'y': 320
+  - id: evaluation
+    label: |-
+      LVLM 零样本评测
+      生成式：解析模型预测的选项
+      似然式：arg max Pθ(选项 | 图像, 问题)
+      分别报告两种策略的准确率
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 320
 edges:
+  - from: evidence
+    to: sources
+    type: data
   - from: sources
     to: frames
     type: primary
@@ -118,6 +149,9 @@ edges:
     to: verify
     type: primary
   - from: verify
+    to: per_source
+    type: primary
+  - from: per_source
     to: dataset
     type: primary
   - from: dataset

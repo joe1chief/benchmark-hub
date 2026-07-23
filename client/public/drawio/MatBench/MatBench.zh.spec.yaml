@@ -4,16 +4,16 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MatBench 构建流程
-  description: 将原始 MatBench 的 13 项材料属性任务与固定嵌套交叉验证协议，同 Intern-S1 / OpenCompass 使用的四任务生成式 LLM 适配器明确分开，避免混淆两者的指标口径。
+  title: MatBench 构建与评测流程
+  description: 按论文复原 MatBench v0.1 的构建和五折嵌套交叉验证，并用独立泳道记录后续 Intern-S1/OpenCompass 四任务生成式适配器；两条流程保留各自的数据范围、解析器、指标和聚合方式。
   legend: >-
-    原始 MatBench 论文（arXiv:2005.00707）定义 13 项任务，报告 MAE 或 ROC-AUC；Intern-S1 的 OpenCompass 适配器选择其中四项，使用 LLM
-    抽取/裁判，并转换为归一化综合分。
+    主协议依据 arXiv:2005.00707v2 与 materialsproject/matbench v0.6 源码快照 936176d；适配器边界为 OpenCompass 快照 34da831，且仅加载四项任务的 fold
+    0 测试文件，不能视为原始 13 任务协议。
 nodes:
   - id: sources
     label: |-
       汇集 10 个材料数据源
-      包含 DFT 与实验数据
+      包含 DFT 与实验记录
       光学、热学、电子与热力学
       拉伸与弹性属性
     type: database
@@ -23,10 +23,10 @@ nodes:
       'y': 40
   - id: clean
     label: |-
-      逐源标准化和清洗
-      仅保留材料输入与一个目标值
-      删除辅助元数据
-      剔除非物理、稀有或无关记录
+      逐项重建 MatBench v0.1 任务
+      执行 Methods 表 2 的第 1–11 项
+      这些是按任务选用的数据修改
+      第 7/8 项包含删除辅助列
     type: process
     size: xl
     position:
@@ -34,21 +34,21 @@ nodes:
       'y': 40
   - id: tasks
     label: |-
-      定义 13 项 MatBench 任务
+      固定 13 项监督任务
       10 项回归 · 3 项分类
       输入为成分或晶体结构
-      每项 312–132,752 条样本
-    type: process
+      声子：论文 1,296 · v0.6 为 1,265
+    type: database
     size: xl
     position:
       x: 580
       'y': 40
   - id: folds
     label: |-
-      固定五个外层折
-      随机种子 · 18012019
+      固定五个外层测试折
+      KFold · 随机种子 18012019
+      分类任务使用 StratifiedKFold
       80% 训练/验证 · 20% 测试
-      分类任务采用分层划分
     type: process
     size: xl
     position:
@@ -56,92 +56,132 @@ nodes:
       'y': 40
   - id: fit
     label: |-
-      仅在各训练折内调参
-      使用嵌套交叉验证
-      在外层训练分区拟合
-      预测对应留出测试分区
+      仅在外层训练数据内调参
+      每个外层折拟合一个模型
+      预测所有留出样本
+      缺失或多余预测均被拒绝
     type: process
     size: xl
     position:
       x: 1140
       'y': 40
-  - id: original_metrics
+  - id: original_type
     label: |-
-      使用原始任务指标
-      回归 · 平均绝对误差
-      分类 · ROC-AUC
-      对五折结果取平均
-    type: process
+      原始任务类型？
+      回归或分类
+    type: decision
     size: xl
     position:
       x: 1420
       'y': 40
-  - id: baselines
+  - id: regression_metric
     label: |-
-      发布可复现参考结果
-      Dummy · 随机森林
-      Automatminer · CGCNN · MEGNet
-      在相同外层折上比较
-    type: terminal
+      回归分支
+      每个测试折计算 MAE
+      对五折 MAE 取平均
+      越低越好
+    type: process
     size: xl
     position:
       x: 1700
-      'y': 40
+      'y': 0
+  - id: classification_metric
+    label: |-
+      分类分支
+      每个测试折计算 ROC-AUC
+      对五折 ROC-AUC 取平均
+      越高越好
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 180
+  - id: original_report
+    label: |-
+      发布可比较的参考结果
+      Automatminer Express · Dummy · RF
+      适用时加入 CGCNN / MEGNet
+      所有方法使用相同外层折
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 80
   - id: select_four
     label: |-
-      Intern-S1 适配器选择 4 项任务
+      后续 OpenCompass 适配器 · 34da831
+      只加载 fold 0 测试文件
       钢材 · 实验带隙
-      实验金属分类 · 玻璃形成
-      使用 OpenCompass 任务文件
+      金属分类 · 玻璃形成
     type: database
     size: xl
     position:
-      x: 580
-      'y': 420
+      x: 860
+      'y': 440
   - id: prompt
     label: |-
-      构造零样本生成式提示
-      插入每道材料问题
-      要求模型输出自由文本
-      保留数值或类别真值
+      执行零样本生成式推理
+      插入材料问题
+      收集自由文本模型回答
+      不复现原始五折嵌套验证
     type: document
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: parse
-    label: |-
-      按目标类型裁判回答
-      数值 · 由 LLM 抽取浮点数
-      分类 · 由 LLM 判断是否正确
-      汇总任务级预测
-    type: process
-    size: xl
-    position:
       x: 1140
-      'y': 420
-  - id: adapter_metrics
+      'y': 440
+  - id: adapter_type
     label: |-
-      计算适配器任务得分
-      数值任务 · MAE
-      分类任务 · 准确率
-      分别保留四项结果
-    type: process
+      适配器目标类型？
+      数值或二元类别
+    type: decision
     size: xl
     position:
       x: 1420
-      'y': 420
-  - id: aggregate
+      'y': 440
+  - id: numeric_parse
     label: |-
-      形成 Intern-S1 综合分
-      带隙 · (2 − MAE) / 2 × 100
-      钢材 · (2000 − MAE) / 2000 × 100
-      再合并两项分类准确率
-    type: terminal
+      数值裁判分支
+      裁判须只返回一个浮点数
+      不完整或无法确定 → 0
+      正则取首个数字；无数字 → 0
+    type: process
     size: xl
     position:
       x: 1700
-      'y': 420
+      'y': 360
+  - id: class_judge
+    label: |-
+      分类裁判分支
+      提示冲突：A/B 与 CORRECT/INCORRECT
+      解析器只查找首个 A 或 B
+      无 A/B → unknown → 按未答对计
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 540
+  - id: adapter_scores
+    label: |-
+      计算四项适配器得分
+      带隙与钢材 · MAE
+      金属与玻璃 · 准确率（%）
+      分别保留每项任务得分
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 440
+  - id: aggregate
+    label: |-
+      计算 Intern-S1 综合分
+      带隙 · (2 − MAE) / 2 × 100
+      钢材 · (2000 − MAE) / 2000 × 100
+      与两项准确率取算术平均
+    type: terminal
+    size: xl
+    position:
+      x: 2260
+      'y': 440
 edges:
   - from: sources
     to: clean
@@ -156,24 +196,47 @@ edges:
     to: fit
     type: primary
   - from: fit
-    to: original_metrics
+    to: original_type
     type: primary
-  - from: original_metrics
-    to: baselines
+  - from: original_type
+    to: regression_metric
+    type: primary
+    label: 回归 · 10 项
+  - from: original_type
+    to: classification_metric
+    type: primary
+    label: 分类 · 3 项
+  - from: regression_metric
+    to: original_report
+    type: primary
+  - from: classification_metric
+    to: original_report
     type: primary
   - from: tasks
     to: select_four
     type: secondary
+    label: 后续 LLM 适配器
   - from: select_four
     to: prompt
     type: primary
   - from: prompt
-    to: parse
+    to: adapter_type
     type: primary
-  - from: parse
-    to: adapter_metrics
+  - from: adapter_type
+    to: numeric_parse
     type: primary
-  - from: adapter_metrics
+    label: 带隙 + 钢材
+  - from: adapter_type
+    to: class_judge
+    type: primary
+    label: 金属 + 玻璃
+  - from: numeric_parse
+    to: adapter_scores
+    type: primary
+  - from: class_judge
+    to: adapter_scores
+    type: primary
+  - from: adapter_scores
     to: aggregate
     type: primary
 modules: []

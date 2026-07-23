@@ -1,181 +1,668 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLongBench Build Process
+  title: MMLongBench v3 Build and Evaluation Process
   description: >-
-    Paper-aligned assembly of 13,331 examples from 16 existing datasets into five long-context vision-language task
-    categories, each delivered at five standardized cross-modal token lengths.
+    Paper-v3 and fixed-release reconstruction of 13,331 examples from 16 source datasets, including five task-specific
+    builders, unified cross-modal length control, paper-era prompts and parsers, failure handling, and the exact
+    4,050-per-length evaluation denominator.
   legend: >-
-    Evaluation uses task-appropriate Accuracy, Substring Exact Match, or GPT-4o-based Fluency-F1 rather than one
-    universal metric.
+    Solid arrows are the paper/repository execution path; dotted arrows mark provenance or drift. Decision-edge outcomes
+    use English labels. The academic-color theme supplies the default 11pt node font. MMLongBench-Doc is one source
+    dataset inside this suite, not the separately scored MMLongBench-Doc benchmark pipeline.
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      Select 16 Existing Datasets
-      Cover Natural and Synthetic Images
-      Reuse Established Annotations
-      Avoid New Crowdsourcing
-    type: database
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: categories
-    label: |-
-      Organize Five Task Categories
-      Visual RAG · NIAH · ICL
-      PDF Summarization
-      Long-document VQA
+      Fixed Evidence Boundary
+      arXiv 2505.10610v3 · 6 Oct 2025
+      Code 69044ca · Data 0c008eb
+      13,331 Rows · 16 Source Datasets
     type: document
     size: xl
     position:
-      x: 300
+      x: 40
+      'y': 520
+  - id: category_route
+    label: |-
+      Which Long-context
+      Task Category?
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: vrag_build
+    label: |-
+      Visual RAG · 2,272 Rows
+      InfoSeek Lead + ViQuAE KILT Gold
+      Wikipedia 2019-08-01 · 100 Words
+      BM25 → GTE-large Hard Negatives
+      3 Permutations / 6 Gold Depths
+    type: process
+    size: xl
+    position:
+      x: 600
       'y': 40
-  - id: vrag
+  - id: niah_build
     label: |-
-      Construct Visual RAG Contexts
-      Split Wikipedia into 100-word Passages
-      Insert Gold Evidence at Depths
-      Add Distractors to Target Length
+      NIAH · 5,536 Rows
+      VH-Single / Multi + MM-NIAH
+      Ret · Count · Reason, Text + Image
+      Web Text in 100-word Chunks
+      Add Distractors to Length L
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: niah
+      x: 600
+      'y': 260
+  - id: icl_build
     label: |-
-      Adapt NIAH Tasks
-      Control Negative Images or Web Text
-      Mix Text and Image Needles
-      Test Retrieval · Count · Reasoning
+      Many-shot ICL · 1,958 Rows
+      Cars · Food101 · SUN397 · iNat2021
+      5/10/20/40/50 Classes by Length
+      Random IDs 0…N−1 · Balanced Rounds
+      Truncate Only the Last Round
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: icl
+      x: 600
+      'y': 480
+  - id: summ_build
     label: |-
-      Build Many-shot ICL
-      Use 5 · 10 · 20 · 40 · 50 Classes
-      Balance In-context Exemplars
-      Randomly Map Integer Labels
+      PDF Summarization · 387 Rows
+      GovReport: GAO Only; Remove Summary
+      Multi-LexSum: Rebuild PDFs from HTML
+      Remove Answer HTML; Truncate from End
+      Drop >128K + 24K · 15,951 Claims
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: summary
+      x: 600
+      'y': 700
+  - id: doc_build
     label: |-
-      Render Summarization PDFs
-      Use GovReport and Multi-LexSum
-      Decompose Gold into Atomic Claims
-      Prepare Model-based Scoring
+      Long-document VQA · 3,178 Rows
+      MMLongBench-Doc · LongDocURL · SlideVQA
+      Correct Answer Formats; Drop Unrecoverable
+      Drop String Answers Longer than 5 Words
+      Keep Original Document ID in Question
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: docvqa
+      x: 600
+      'y': 920
+  - id: doc_length_gate
     label: |-
-      Adapt Long-document VQA
-      Use Three Document QA Datasets
-      Preserve Answer-bearing Pages
-      Control Length by Page Truncation
+      Document Longer
+      than Target L?
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 920
+  - id: doc_truncate
+    label: |-
+      Truncate Both Sides Evenly
+      Preserve Every Answer Page
+      Stop at Target Length L
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: tokenize
+      x: 1160
+      'y': 840
+  - id: doc_pad
     label: |-
-      Count Cross-modal Tokens
-      Derive Image Vision Patches
-      Apply Pixel Unshuffle
-      Add Image and Text Tokens
+      Alternate Left / Right Padding
+      Sample Negative Documents
+      Last Padding PDF May Be Page-truncated
+      Prefix “Based on Document {ID}…”
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: lengths
+      x: 1160
+      'y': 1020
+  - id: token_count
     label: |-
-      Standardize Five Input Lengths
-      8K · 16K · 32K Tokens
-      64K · 128K Tokens
-      Keep Examples Extendable
+      Unified Cross-modal Token Count
+      Text = Llama2 Tokenizer
+      Image = 14×14 Patches
+      Apply 2×2 Pixel Unshuffle
+      Sum Text + Visual Tokens
     type: process
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: dataset
+      x: 1720
+      'y': 520
+  - id: length_versions
     label: |-
-      Assemble MMLongBench
-      13,331 Total Examples
-      Five Categories · 16 Datasets
-      Multiple Lengths per Example
+      Materialize Five Lengths
+      8K · 16K · 32K · 64K · 128K
+      Binary K = 2¹⁰
+      Same Semantic Example at Each L
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 520
+  - id: release
+    label: |-
+      MMLongBench Paper Release
+      13,331 Examples · Five Categories
+      MMLongBench-Doc Slice = 961 Rows
+      ≠ Stand-alone 1,082-row Release
+      MIT Card; Source Licenses Still Apply
     type: database
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: evaluate
+      x: 2280
+      'y': 520
+  - id: denominator
+    label: |-
+      Evaluation Denominator per Length
+      VRAG 900 · NIAH 2,250 · ICL 400
+      Summarization 200 · DocVQA 300
+      Total = 4,050 Cases at Each L
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 520
+  - id: inference
     label: |-
       Evaluate 46 LCVLMs
-      Sample 4,050 Examples per Length
-      Run Five Lengths per Model
-      Total 20,250 Evaluations
+      Greedy Candidate Decoding
+      Five Input Lengths per Model
+      4,050 × 5 = 20,250 Runs
+      Untestable Capacity Cases = N/A
     type: user
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: report
+      x: 2840
+      'y': 520
+  - id: metric_route
     label: |-
-      Report Task-aware Metrics
-      Accuracy and Substring Exact Match
-      GPT-4o Fluency-F1 for Summaries
-      Aggregate by Task and Length
+      Which Category-specific
+      Parser and Metric?
+    type: decision
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: vrag_metric
+    label: |-
+      Visual RAG Metric
+      Parse “Answer:” then First Line
+      Normalize Case / Punctuation / Articles
+      Substring Exact Match
+      900 Cases per Length
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 40
+  - id: niah_metric
+    label: |-
+      NIAH Metrics
+      VH = Binary Accuracy
+      MM Text Ret/Reason = SubEM
+      MM Image Ret/Reason = Choice Accuracy
+      Count = Exact Sum; Modalities Averaged
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 260
+  - id: icl_metric
+    label: |-
+      ICL Metric
+      Require “label: {integer}”
+      Fallback to Last, then First Number
+      Exact Class Accuracy
+      400 Cases per Length
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 480
+  - id: summ_judge
+    label: |-
+      GPT-4o Summary Judge
+      Gold → Pre-generated Atomic Claims
+      Candidate → Sentence Precision
+      Claim Recall + Binary Fluency
+      T=0.1 · max_tokens=4096
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 700
+  - id: summ_parse_gate
+    label: |-
+      Last JSON Object Parses
+      for All Three Calls?
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 700
+  - id: summ_formula
+    label: |-
+      Summary Score
+      Recall = Found Claims / Gold Claims
+      Precision = Supported / Sentences
+      F1 = Harmonic Mean
+      Fluency-F1 = Fluency × F1
+    type: formula
+    size: xl
+    position:
+      x: 3960
+      'y': 620
+  - id: summ_skip
+    label: |-
+      Summary Judge Failure Handling
+      Request: Retry 5×, Then Raise
+      Invalid JSON: Skip This Sample
+      Aggregate Rows with gpt4-scores Only
+      Zero Scored Rows → Raise Error
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 3960
+      'y': 800
+  - id: doc_parse
+    label: |-
+      DocVQA Direct Parser
+      Prefer Text after “Answer:”
+      Otherwise Use First Output Line
+      No GPT-4o Answer Extractor in v3
+    type: process
+    size: xl
+    position:
+      x: 3400
+      'y': 1060
+  - id: doc_format
+    label: Reference Answer Format?
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 1120
+  - id: doc_string
+    label: |-
+      String / None
+      Regex-sensitive Value → SubEM
+      Otherwise Token F1
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1000
+  - id: doc_integer
+    label: |-
+      Integer
+      Extract All Finite Integers
+      Any Exact Match → 1, Else 0
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1140
+  - id: doc_float
+    label: |-
+      Float
+      Extract All Finite Numbers
+      Accept x/100, x, or 100x
+      Relative Tolerance = 1%
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1280
+  - id: doc_list
+    label: |-
+      List
+      Paper: Greedy Best Element Match
+      Average Element Scores
+      Pinned Code Scores Each Gold Element
+      against Full Parsed Prediction
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1420
+  - id: report
+    label: |-
+      Report by Dataset, Category, Length
+      Accuracy · SubEM · Fluency-F1
+      DocVQA Rule Score
+      Do Not Convert N/A into Failure
+      v1.1 LLM Judge Is Outside This Pin
+    type: terminal
+    size: xl
+    position:
+      x: 4240
+      'y': 520
 edges:
-  - from: source
-    to: categories
+  - from: evidence
+    to: category_route
     type: primary
-  - from: categories
-    to: vrag
+  - from: category_route
+    to: vrag_build
     type: primary
-  - from: vrag
-    to: niah
+    label: Visual RAG
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: niah_build
     type: primary
-  - from: niah
-    to: icl
+    label: NIAH
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: icl_build
     type: primary
-  - from: icl
-    to: summary
+    label: ICL
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: summ_build
     type: primary
-  - from: summary
-    to: docvqa
+    label: Summary
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: category_route
+    to: doc_build
     type: primary
-  - from: docvqa
-    to: tokenize
+    label: DocVQA
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: vrag_build
+    to: token_count
     type: primary
-  - from: tokenize
-    to: lengths
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: niah_build
+    to: token_count
     type: primary
-  - from: lengths
-    to: dataset
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: icl_build
+    to: token_count
     type: primary
-  - from: dataset
-    to: evaluate
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: summ_build
+    to: token_count
     type: primary
-  - from: evaluate
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: doc_build
+    to: doc_length_gate
+    type: primary
+  - from: doc_length_gate
+    to: doc_truncate
+    type: primary
+    label: 'Yes'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: doc_length_gate
+    to: doc_pad
+    type: primary
+    label: 'No'
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: doc_truncate
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.82
+  - from: doc_pad
+    to: token_count
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.95
+  - from: token_count
+    to: length_versions
+    type: primary
+  - from: length_versions
+    to: release
+    type: primary
+  - from: release
+    to: denominator
+    type: primary
+  - from: denominator
+    to: inference
+    type: primary
+  - from: inference
+    to: metric_route
+    type: primary
+  - from: metric_route
+    to: vrag_metric
+    type: primary
+    label: Visual RAG
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: niah_metric
+    type: primary
+    label: NIAH
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: icl_metric
+    type: primary
+    label: ICL
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: summ_judge
+    type: primary
+    label: Summary
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: metric_route
+    to: doc_parse
+    type: primary
+    label: DocVQA
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: vrag_metric
     to: report
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: niah_metric
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: icl_metric
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+  - from: summ_judge
+    to: summ_parse_gate
+    type: primary
+  - from: summ_parse_gate
+    to: summ_formula
+    type: primary
+    label: Valid
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: summ_parse_gate
+    to: summ_skip
+    type: primary
+    label: Invalid
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: summ_formula
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.58
+  - from: doc_parse
+    to: doc_format
+    type: primary
+  - from: doc_format
+    to: doc_string
+    type: primary
+    label: String
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.15
+      entryX: 0
+      entryY: 0.5
+  - from: doc_format
+    to: doc_integer
+    type: primary
+    label: Integer
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.38
+      entryX: 0
+      entryY: 0.5
+  - from: doc_format
+    to: doc_float
+    type: primary
+    label: Float
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.62
+      entryX: 0
+      entryY: 0.5
+  - from: doc_format
+    to: doc_list
+    type: primary
+    label: List
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.85
+      entryX: 0
+      entryY: 0.5
+  - from: doc_string
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.68
+  - from: doc_integer
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.76
+  - from: doc_float
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.84
+  - from: doc_list
+    to: report
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.94
 modules: []

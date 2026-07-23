@@ -4,13 +4,14 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MatBench Build Process
+  title: MatBench Build and Evaluation Process
   description: >-
-    Separates the original 13-task materials-property benchmark and fixed nested-cross-validation protocol from the
-    four-task generative LLM adapter used by Intern-S1 and OpenCompass, preventing their metrics from being conflated.
+    Paper-aligned construction and five-fold nested-cross-validation for MatBench v0.1, with a separate lane for the
+    later Intern-S1/OpenCompass four-task generative adapter. The two lanes intentionally preserve different data scope,
+    parsers, metrics, and aggregation.
   legend: >-
-    The original MatBench paper (arXiv:2005.00707) defines 13 tasks and reports MAE or ROC-AUC. The Intern-S1
-    OpenCompass adapter selects four tasks, uses LLM extraction/judging, and converts results to a normalized aggregate.
+    Primary protocol: arXiv:2005.00707v2 and materialsproject/matbench v0.6 source snapshot 936176d. Adapter boundary:
+    OpenCompass snapshot 34da831 loads only fold 0 test files for four tasks. It is not the original 13-task protocol.
 nodes:
   - id: sources
     label: |-
@@ -25,10 +26,10 @@ nodes:
       'y': 40
   - id: clean
     label: |-
-      Standardize and Clean Each Source
-      Keep Material Input + One Target
-      Remove Auxiliary Metadata
-      Drop Unphysical / Rare / Irrelevant Rows
+      Recreate Each MatBench v0.1 Task
+      Apply Methods Table 2 Items 1–11
+      Task-specific Data Modifications
+      Items 7/8 Remove Auxiliary Columns
     type: process
     size: xl
     position:
@@ -36,21 +37,21 @@ nodes:
       'y': 40
   - id: tasks
     label: |-
-      Define 13 MatBench Tasks
+      Freeze 13 Supervised Tasks
       10 Regression · 3 Classification
       Composition or Crystal-structure Input
-      312–132,752 Samples per Task
-    type: process
+      Phonons: Paper 1,296 · v0.6 1,265
+    type: database
     size: xl
     position:
       x: 580
       'y': 40
   - id: folds
     label: |-
-      Fix Five Outer Folds
-      Seed · 18012019
+      Fix Five Outer Test Folds
+      KFold · Seed 18012019
+      Classification Uses StratifiedKFold
       80% Train/Validation · 20% Test
-      Stratify Classification Tasks
     type: process
     size: xl
     position:
@@ -58,92 +59,132 @@ nodes:
       'y': 40
   - id: fit
     label: |-
-      Tune Only inside Each Training Fold
-      Use Nested Cross-validation
-      Fit on the Outer Training Partition
-      Predict Its Held-out Test Partition
+      Tune Only within Outer Training Data
+      Fit One Model per Outer Fold
+      Predict Every Held-out Sample
+      Missing / Extra Predictions Are Rejected
     type: process
     size: xl
     position:
       x: 1140
       'y': 40
-  - id: original_metrics
+  - id: original_type
     label: |-
-      Apply Original Task Metrics
-      Regression · Mean Absolute Error
-      Classification · ROC-AUC
-      Average Scores across Five Folds
-    type: process
+      Original Task Type?
+      Regression or Classification
+    type: decision
     size: xl
     position:
       x: 1420
       'y': 40
-  - id: baselines
+  - id: regression_metric
     label: |-
-      Publish Reproducible References
-      Dummy · Random Forest
-      Automatminer · CGCNN · MEGNet
-      Compare under Identical Outer Folds
-    type: terminal
+      Regression Route
+      Compute MAE on Each Test Fold
+      Average MAE across Five Folds
+      Lower Is Better
+    type: process
     size: xl
     position:
       x: 1700
-      'y': 40
+      'y': 0
+  - id: classification_metric
+    label: |-
+      Classification Route
+      Compute ROC-AUC on Each Test Fold
+      Average ROC-AUC across Five Folds
+      Higher Is Better
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 180
+  - id: original_report
+    label: |-
+      Publish Comparable References
+      Automatminer Express · Dummy · RF
+      CGCNN / MEGNet where Applicable
+      Identical Outer Folds for Every Method
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 80
   - id: select_four
     label: |-
-      Intern-S1 Adapter Selects 4 Tasks
+      Later OpenCompass Adapter · 34da831
+      Load Fold 0 Test Files Only
       Steels · Experimental Band Gap
-      Experimental Is-metal · Glass
-      Use OpenCompass Task Files
+      Is-metal · Glass Formation
     type: database
     size: xl
     position:
-      x: 580
-      'y': 420
+      x: 860
+      'y': 440
   - id: prompt
     label: |-
-      Build Zero-shot Generative Prompts
-      Insert Each Material Problem
-      Request a Free-form Model Response
-      Preserve Numeric or Class Ground Truth
+      Run Zero-shot Generative Inference
+      Insert the Material Problem
+      Collect a Free-form Model Response
+      Do Not Recreate Five-fold NCV
     type: document
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: parse
-    label: |-
-      Judge Responses by Target Type
-      Numeric · LLM Extracts a Float
-      Classification · LLM Judges Correctness
-      Aggregate Task-level Predictions
-    type: process
-    size: xl
-    position:
       x: 1140
-      'y': 420
-  - id: adapter_metrics
+      'y': 440
+  - id: adapter_type
     label: |-
-      Compute Adapter Task Scores
-      Numeric Tasks · MAE
-      Classification Tasks · Accuracy
-      Keep the Four Results Separate
-    type: process
+      Adapter Target Type?
+      Numeric or Binary Class
+    type: decision
     size: xl
     position:
       x: 1420
-      'y': 420
-  - id: aggregate
+      'y': 440
+  - id: numeric_parse
     label: |-
-      Form the Intern-S1 Aggregate
-      Gap · (2 − MAE) / 2 × 100
-      Steels · (2000 − MAE) / 2000 × 100
-      Combine with Two Accuracy Scores
-    type: terminal
+      Numeric Judge Route
+      Judge Must Return One Float
+      Incomplete / Undetermined → 0
+      Regex Takes First Number · None → 0
+    type: process
     size: xl
     position:
       x: 1700
-      'y': 420
+      'y': 360
+  - id: class_judge
+    label: |-
+      Classification Judge Route
+      Prompt Conflicts: A/B vs CORRECT/INCORRECT
+      Parser Searches the First A or B Only
+      No A/B → “unknown” → Not Correct
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 540
+  - id: adapter_scores
+    label: |-
+      Score Four Adapter Tasks
+      Gap + Steels · MAE
+      Is-metal + Glass · Accuracy (%)
+      Preserve One Score per Task
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 440
+  - id: aggregate
+    label: |-
+      Compute Intern-S1 Aggregate
+      Gap · (2 − MAE) / 2 × 100
+      Steels · (2000 − MAE) / 2000 × 100
+      Arithmetic Mean with Two Accuracies
+    type: terminal
+    size: xl
+    position:
+      x: 2260
+      'y': 440
 edges:
   - from: sources
     to: clean
@@ -158,24 +199,47 @@ edges:
     to: fit
     type: primary
   - from: fit
-    to: original_metrics
+    to: original_type
     type: primary
-  - from: original_metrics
-    to: baselines
+  - from: original_type
+    to: regression_metric
+    type: primary
+    label: Regression · 10 tasks
+  - from: original_type
+    to: classification_metric
+    type: primary
+    label: Classification · 3 tasks
+  - from: regression_metric
+    to: original_report
+    type: primary
+  - from: classification_metric
+    to: original_report
     type: primary
   - from: tasks
     to: select_four
     type: secondary
+    label: Later LLM adapter
   - from: select_four
     to: prompt
     type: primary
   - from: prompt
-    to: parse
+    to: adapter_type
     type: primary
-  - from: parse
-    to: adapter_metrics
+  - from: adapter_type
+    to: numeric_parse
     type: primary
-  - from: adapter_metrics
+    label: Gap + steels
+  - from: adapter_type
+    to: class_judge
+    type: primary
+    label: Is-metal + glass
+  - from: numeric_parse
+    to: adapter_scores
+    type: primary
+  - from: class_judge
+    to: adapter_scores
+    type: primary
+  - from: adapter_scores
     to: aggregate
     type: primary
 modules: []

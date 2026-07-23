@@ -7,62 +7,98 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 15,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "Start from the full GSM8K test set\n1,319 English grade-school word problems\nquestion + worked solution + final integer",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "screen",
-      "label": "Run a panel of frontier LLMs\nzero-shot · temperature 0.5\nstep-by-step prompt except for reasoning models",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "flag",
-      "label": "Flag any question with one model error\n219 items require manual inspection\nremaining 1,100 receive consensus status",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "inspect",
-      "label": "Manually distinguish benchmark defects\nambiguity · logical contradiction · flawed wording\nversus a correct question with wrong answer label",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "triage",
-      "label": "Resolve all 219 flagged items\nremove 110 poorly written questions\nverify 99 labels · correct 10 mislabeled answers",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "release",
-      "label": "Release 1,209 GSM8K-Platinum items\n1,100 consensus + 99 verified + 10 revised\ndrop-in replacement for the original test set",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "schema",
-      "label": "Preserve official GSM8K fields\nquestion · multi-step answer · final integer\nadd cleaning_status: consensus/verified/revised",
+      "id": "evidence",
+      "label": "Evidence boundary\npaper 2502.03461v1\nrepo 8fd2f82e · data e7624924\npaper subset ≠ later full release",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "evaluate",
-      "label": "Solve with the same zero-shot format\nreturn Answer: XXX as one integer\nexact-compare against the corrected target",
+      "id": "paper_source",
+      "label": "Paper snapshot\nrandom 300-item GSM8K subset\nTable 2; not the full 1,319 test set",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "paper_screen",
+      "label": "Paper multi-model screen\nzero-shot · temperature 0.5\nCoT except o1/R1/Gemini Thinking\ninspect if any model errs",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_triage",
+      "label": "Paper human triage\nremove 26 bad questions\nrelabel 1 wrong solution",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_release",
+      "label": "Paper GSM8K-Platinum subset\n274 questions\npaper evaluation reports error count",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "full_source",
+      "label": "Later full-test expansion\nall 1,319 GSM8K test questions\nexact screen prompt published in data card\nfrontier-model panel not disclosed",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "full_prompt",
+      "label": "Data-card exact zero-shot prompt\nSolve the following math word problem.\nThink step-by-step. Then, provide the final\nanswer as a single integer in the format",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "full_prompt_tail",
+      "label": "\"Answer: XXX\" with no extra formatting.\nreasoning models omit Think step-by-step",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "full_screen",
+      "label": "Full-release screen\n219 flagged by at least one model\n1,100 all-model consensus; not reviewed",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "full_triage",
+      "label": "Human review of 219\nreject 110 · verify 99 · relabel 10\nquestions are never rewritten",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "full_release",
+      "label": "Pinned full release\n1,209 test rows\n1,100 consensus + 99 verified + 10 revised\nquestion · answer · cleaning_status",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "runner_prompt",
+      "label": "Pinned runner prompt materialization\nplatinum_prompt = data-card template\nplatinum_prompt_no_cot removes CoT\no1 also changes Then, provide → Provide",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "runner_settings",
+      "label": "Runner model boundary\nreasoning models omit CoT; o1 wording tweak\ndefault temperature 0.5\no1/o3 use 1; thinking Claude uses none",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "Pinned math parser\nprefer Answer:; else boxed value/last line\nstrip * · # · commas; do not strip /\ntake first signed numeric substring\nfloat(target) == float(prediction)",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metric",
-      "label": "Report genuine model failures\nofficial study emphasizes error count\naccuracy is the equivalent leaderboard view",
+      "label": "Official runner output\nerror_count = number incorrect\nparse/API failures count as errors\nno accuracy column in current runner",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,49 +106,85 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "screen",
+      "from": "evidence",
+      "to": "paper_source",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "screen",
-      "to": "flag",
+      "from": "paper_source",
+      "to": "paper_screen",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "flag",
-      "to": "inspect",
+      "from": "paper_screen",
+      "to": "paper_triage",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "inspect",
-      "to": "triage",
+      "from": "paper_triage",
+      "to": "paper_release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "triage",
-      "to": "release",
+      "from": "evidence",
+      "to": "full_source",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "release",
-      "to": "schema",
+      "from": "full_source",
+      "to": "full_prompt",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "schema",
-      "to": "evaluate",
+      "from": "full_prompt",
+      "to": "full_prompt_tail",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "evaluate",
+      "from": "full_prompt_tail",
+      "to": "full_screen",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "full_screen",
+      "to": "full_triage",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "full_triage",
+      "to": "full_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "full_release",
+      "to": "runner_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "runner_prompt",
+      "to": "runner_settings",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "runner_settings",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "parser",
       "to": "metric",
       "type": "primary"
     }

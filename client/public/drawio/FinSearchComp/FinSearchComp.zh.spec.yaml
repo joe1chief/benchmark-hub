@@ -5,117 +5,148 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FinSearchComp 构建流程
-  description: 按论文还原 635 道开放域金融搜索题的专家构建与端到端评测流程。
-  legend: 实线箭头遵循 arXiv:2509.13160，从三类分析师工作流和分任务来源，经盲审专家验证、动态/范围真值、开放工具使用到准则评分。
+  description: 与论文对齐的专家构建和评分流程，并单独审计论文后公开评测代码的固定版本。
+  legend: 实线是 arXiv:2509.13160v1 论文协议；虚线审计固定的论文后 GitHub 发布物。公开代码中的两个缺陷仅作披露，不替代论文指标。
 nodes:
-  - id: task_design
+  - id: evidence
     label: |-
-      定义三类分析师工作流
-      T1 时效数据获取 · T2 简单历史查询
-      T3 复杂历史调查
+      证据边界：arXiv:2509.13160v1
+      FinSearchComp @ 55b6393f
+      数据 SHA 6437a6da
+      论文协议 + 固定论文后代码审计
     type: document
     size: xl
     position:
       x: 40
-      'y': 250
-  - id: task_sources
+      'y': 180
+  - id: task_design
     label: |-
-      构建分任务证据管线
-      T1 公共API + 可执行动态答案
-      T2/T3 申报文件、权威网站与金融数据库
+      定义三类客观任务
+      T1 时效数据 · T2 简单历史查询
+      T3 复杂历史调查 · 均需外部工具
     type: process
     size: xl
     position:
       x: 300
-      'y': 250
-  - id: task_answers
+      'y': 180
+  - id: task_sources
     label: |-
-      编写客观金融问题与答案
-      T2 直接检索且不做数据计算
-      T3 多来源推理与计算
+      T1 问题 + 可执行公共 API 动态答案
+      T2 官方直接事实，不做计算
+      T3 可靠表格 + 多源计算
     type: process
     size: xl
     position:
       x: 560
-      'y': 250
+      'y': 180
   - id: experts
     label: |-
-      邀请70位专业金融专家
-      50位熟练标注员 · 20位资深专家
-      约180 + 60专家小时监督
+      50 名标注专家 + 20 名资深专家 = 70
+      至少硕士学历，保持金融从业身份
+      约 180 + 60 个专家工时
     type: process
     size: xl
     position:
       x: 820
-      'y': 250
+      'y': 180
   - id: quality
     label: |-
-      选择可靠且可审计的来源
-      在问题中明确口径与参考日期
-      用范围/容差；避开易修订指标
+      交叉核验申报文件、权威网站与数据库
+      明确定义/日期，规避易变指标
+      设置答案范围或明确容差
     type: process
     size: xl
     position:
       x: 1080
-      'y': 250
+      'y': 180
   - id: blind_review
     label: |-
-      多专家盲审答案
-      1–2位专家不看答案独立求解
-      资深专家修改、仲裁或丢弃
+      另请 1-2 名专家在不见答案时盲解
+      资深专家编辑或仲裁分歧
+      模糊题被修订或丢弃
     type: process
     size: xl
     position:
       x: 1340
-      'y': 250
+      'y': 180
   - id: dataset
     label: |-
-      最终635道双语问题
-      Global 337：T1/2/3 = 134/119/84
-      大中华区298：110/100/88
+      发布 635 道双语问题
+      Global 337 → T1/T2/T3 134/119/84
+      大中华区 298 → 110/100/88
     type: database
     size: xl
     position:
       x: 1600
-      'y': 250
-  - id: agents
+      'y': 180
+  - id: paper_protocol
     label: |-
-      无固定上下文地运行端到端智能体
-      编排网页搜索、金融插件、API、SQL
-      T1 在当地市场收盘后统一评测
+      智能体可用任意搜索工具或来源
+      T1：市场收盘后执行动态 API
+      T2/T3：静态参考答案 + 标注评分规则
     type: process
     size: xl
     position:
       x: 1860
-      'y': 250
-  - id: scoring
+      'y': 180
+  - id: judge_prompt
     label: |-
-      LLM 按准则做二元判断
-      精确匹配21.4% · 范围匹配78.6%
-      专家抽查验证至少95%一致率
+      评分规则分布：21.4% 精确匹配
+      78.6% 范围 / 容差检查
+      LLM 评审为每个回答输出一个二元分数
     type: process
     size: xl
     position:
       x: 2120
-      'y': 250
-  - id: report
+      'y': 180
+  - id: paper_metric
     label: |-
-      报告总体及任务/市场准确率
-      比较网页产品、API和人类专家
-      保留时效性与来源依据
+      论文指标：0-1 平均准确率
+      J(回答, 规则) 只能为 0 或 1
+      人工审计报告至少 95% 一致率
     type: terminal
     size: xl
     position:
       x: 2380
-      'y': 250
+      'y': 180
+  - id: repo_release
+    label: |-
+      固定仓库：完整 635 · AkShare 子集 594
+      内置快照日期为 2025-10-17
+      属于论文后发布物，并非论文时状态
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 470
+  - id: parser_audit
+    label: |-
+      提示要求 answer_score 标量 0/1
+      解析器却索引 answer_score[0][0]
+      合法标量输出会退化为错误值 -100000
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 470
+  - id: metric_audit
+    label: |-
+      non_ts 计数器从未更新
+      公开脚本因此写出 accuracy = 0
+      original_accuracy 才是解析分数均值
+    type: terminal
+    size: xl
+    position:
+      x: 2380
+      'y': 470
 edges:
+  - from: evidence
+    to: task_design
+    type: primary
   - from: task_design
     to: task_sources
     type: primary
   - from: task_sources
-    to: task_answers
-    type: primary
-  - from: task_answers
     to: experts
     type: primary
   - from: experts
@@ -128,12 +159,21 @@ edges:
     to: dataset
     type: primary
   - from: dataset
-    to: agents
+    to: paper_protocol
     type: primary
-  - from: agents
-    to: scoring
+  - from: paper_protocol
+    to: judge_prompt
     type: primary
-  - from: scoring
-    to: report
+  - from: judge_prompt
+    to: paper_metric
     type: primary
+  - from: dataset
+    to: repo_release
+    type: secondary
+  - from: repo_release
+    to: parser_audit
+    type: secondary
+  - from: parser_audit
+    to: metric_audit
+    type: secondary
 modules: []

@@ -6,15 +6,19 @@ meta:
   routing: orthogonal
   title: FronTalk Build Process
   description: >-
-    Paper-aligned curation of multi-turn front-end dialogues with equivalent textual and visual feedback, followed by
-    web-agent instruction-following, forgetting, and first-time-user usability evaluation.
-  legend: Read the dialogue and test construction row left-to-right, then the conversational evaluation row right-to-left.
+    Paper-aligned curation of multi-turn front-end dialogues with equivalent textual and visual feedback. Final-turn
+    instruction following and first-time-user usability are primary evaluation branches; forgetting is supplementary,
+    while simulator and evaluator human checks remain validation studies outside the scoring path.
+  legend: >-
+    Read construction left-to-right, then evaluation right-to-left. Side branches mark disclosure boundaries,
+    supplementary analysis, or separate validation studies.
 nodes:
   - id: c4
     label: |-
       Real-World Website Pool
-      Sample 10,000 Webpages from C4
-      Exclude Low-Information Seeds Later
+      Sample 10,000 C4 Pages
+      Exclude Low-Information
+      Seeds Later
     type: database
     size: xl
     position:
@@ -22,9 +26,10 @@ nodes:
       'y': 100
   - id: cluster
     label: |-
-      Summarize and Cluster Websites
-      GPT-4o Content + Feature Summaries
-      BERTopic Finds Thematic Clusters
+      Summarize + Cluster
+      GPT-4o Content
+      + Feature Summaries
+      BERTopic Clusters
     type: process
     size: xl
     position:
@@ -32,9 +37,10 @@ nodes:
       'y': 100
   - id: sites
     label: |-
-      Manual Representative Selection
-      One Informative Site per Prominent Cluster
-      100 Diverse Seed Websites
+      Manual Site Selection
+      One Informative Site
+      per Prominent Cluster
+      100 Diverse Seeds
     type: user
     size: xl
     position:
@@ -42,9 +48,10 @@ nodes:
       'y': 100
   - id: intents
     label: |-
-      Ten-Turn Intent + Test Generation
-      GPT-4o Produces Functional or Design Intents
-      Pair Each Intent with Verifiable Test Cases
+      Ten-Turn Intent + Tests
+      GPT-4o Randomly Chooses
+      Functional / Design
+      Verifiable Tests per Intent
     type: process
     size: xl
     position:
@@ -52,19 +59,32 @@ nodes:
       'y': 100
   - id: refine
     label: |-
-      Manual Test-Case Refinement
-      Remove 66 Hallucinated Cases (1.7%)
-      Edit 2,783 (73.4%); Validity 90.1% -> 94.7%
+      Manual Refinement
+      All Tests Reviewed
+      Remove 66 (1.7%)
+      Edit 2,783 (73.4%)
+      Sample 224: 90.1% -> 94.7%
     type: process
     size: xl
     position:
       x: 1160
       'y': 100
+  - id: curation_boundary
+    label: |-
+      Curation Boundary
+      Initial Refiner Number
+      + Qualifications
+      Not Disclosed
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 270
   - id: dataset
     label: |-
       FronTalk Release
       100 Dialogues / 1,000 Turns
-      3,676 Manually Refined Test Cases
+      3,676 Refined Tests
     type: database
     size: xl
     position:
@@ -72,19 +92,35 @@ nodes:
       'y': 100
   - id: simulator
     label: |-
-      Equivalent User Feedback
-      Text Simulator Resolves Intent from History
-      Visual Simulator Annotates Current Screenshots
+      GPT-4o Simulators
+      Text: Current Code
+      + Original Intent
+      Resolve Ambiguity / Redundancy
+      Visual: Drawing Tools
     type: process
     size: xl
     position:
       x: 1440
       'y': 440
+  - id: sim_validation
+    label: |-
+      Simulator Validation
+      114 Instructions
+      411 Tests
+      Text: 98% / 96%
+      Visual: 76% / 97%
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 760
   - id: generation
     label: |-
-      Conversational Code Generation
-      Condition on Current Instruction + Full History
-      Produce Updated Front-End Code Every Turn
+      Conversational Generation
+      Current Instruction
+      + Full History
+      Update Front-End Code
+      Every Turn
     type: process
     size: xl
     position:
@@ -92,9 +128,10 @@ nodes:
       'y': 440
   - id: render
     label: |-
-      Render Conversation Outputs
-      Preserve Intermediate Turn Websites
-      Final Website Comes from Turn 10 Code
+      Conversation Outputs
+      Preserve Turn Websites
+      Turn 10 Code
+      = Final Website
     type: process
     size: xl
     position:
@@ -102,34 +139,61 @@ nodes:
       'y': 440
   - id: instruction
     label: |-
-      Agent-Based Instruction Following
-      Web Agent Explores and Executes Test Cases
-      Image Tools Support Visual Design Checks
+      Final-Turn Scoring
+      All Intents + Tests
+      on Final Output
+      Informed Web Agent
+      + Image Tools
     type: process
     size: xl
     position:
       x: 600
-      'y': 440
+      'y': 320
   - id: forgetting
     label: |-
-      Multi-Turn Forgetting Analysis
-      Evaluate Intermediate and Final Outputs
-      Detect Previously Passing Features that Regress
+      Forgetting Rate (Eq. 2)
+      First T-1 Turns (t < T)
+      FR = 1 - Σ(t<T) PC(o_T|i_t)
+      / Σ(t<T) PC(o_t|i_t)
     type: process
+    size: xl
+    position:
+      x: 880
+      'y': 760
+  - id: usability
+    label: |-
+      First-Time Usability
+      Naive Agent Trajectory
+      vs Curated Reference
+      Pairwise UX Win Rate
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 560
+  - id: report
+    label: |-
+      FronTalk Results
+      Pass Rate + UX Win Rate
+      Supplementary
+      Forgetting Rate
+    type: terminal
     size: xl
     position:
       x: 320
       'y': 440
-  - id: usability
+  - id: eval_validation
     label: |-
-      FronTalk Metrics
-      Pass Rate + Forgetting Rate
-      First-Time-User Trajectories -> Pairwise UX Win Rate
-    type: terminal
+      Human Validation
+      218 Pass Cases
+      82.0%; Kappa 62.7
+      50 UX Pairs
+      84.0%; Kappa 66.7
+    type: user
     size: xl
     position:
       x: 40
-      'y': 440
+      'y': 760
 edges:
   - from: c4
     to: cluster
@@ -146,22 +210,57 @@ edges:
   - from: refine
     to: dataset
     type: primary
+  - from: refine
+    to: curation_boundary
+    type: secondary
   - from: dataset
     to: simulator
     type: primary
   - from: simulator
     to: generation
     type: primary
+  - from: simulator
+    to: sim_validation
+    type: secondary
   - from: generation
     to: render
     type: primary
   - from: render
     to: instruction
     type: primary
-  - from: instruction
-    to: forgetting
-    type: primary
-  - from: forgetting
+  - from: render
     to: usability
     type: primary
+  - from: instruction
+    to: forgetting
+    type: secondary
+    waypoints:
+      - x: 744
+        'y': 322
+      - x: 744
+        'y': 762
+  - from: forgetting
+    to: report
+    type: secondary
+    waypoints:
+      - x: 884
+        'y': 868
+      - x: 464
+        'y': 868
+      - x: 464
+        'y': 442
+  - from: instruction
+    to: report
+    type: primary
+  - from: usability
+    to: report
+    type: primary
+  - from: report
+    to: eval_validation
+    type: secondary
+    waypoints:
+      - x: 420
+        'y': 700
+      - x: 140
+        'y': 700
 modules: []

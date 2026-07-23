@@ -1,180 +1,347 @@
 {
   "version": 1,
-  "title": "PACE-Bench 构建与评测流程",
+  "title": "PACE-Bench 构建、验证与发布流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 25,
+    "edges": 28,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "评测四个Agent目标\nGAIA · SWE-Bench Verified\nSWE-Bench Multimodal · SWT-Bench\n统一使用OpenHands Index框架",
+      "id": "evidence",
+      "label": "固定一手证据\narXiv 2607.02032v2 SHA256 0af39b8c953f\nGit dc2ef80e00ad · 筛选代码 a42cd03e0977\nHF ce177cfe25bc · 数据卡 c7fbf603d2d6",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "评测19个来源基准\n低成本非Agent原子实例\n覆盖11类能力\n使用lm-eval或官方代码",
+      "id": "targets",
+      "label": "评测四个智能体目标与 14 个模型\nGAIA 165 · SWE-Bench Verified 500\nSWE-Bench Multimodal 102\nSWT-Bench 430 · 使用 OpenHands Index",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "构建校准矩阵\n14个模型的来源得分矩阵X\n目标实例级得分\n聚合目标均值y",
+      "id": "sources",
+      "label": "评测 19 个非智能体基准\n覆盖 11 类能力的实例得分\n使用 lm-evaluation-harness 或官方代码\n提供低成本文本、代码与多模态信号",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "执行严格模型留一验证\n留出一个被测模型\n其余13个模型用于校准\n对14个模型依次重复",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_5",
-      "label": "自助采样目标实例\n有放回采样目标条目\n稳定目标均值估计\n重复筛选与拟合",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "计算X的薄SVD\n分解来源实例响应\n得到右奇异向量V\n表示全局几何结构",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_7",
-      "label": "计算两类信号\n由V得到杠杆分h\n与目标均值的绝对Spearman rho\n仅使用校准模型",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_8",
-      "label": "选择局部子集\n按绝对rho排序\n保留前C_L个Local候选\n强调目标相关性",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_9",
-      "label": "选择全局子集\n按h乘绝对rho排序\n保留前C_G个Global候选\n兼顾几何信息与相关性",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_10",
-      "label": "形成具体目标代理\n处理Local与Global重叠\n按固定比例继续扩展候选\n达到C=100个唯一实例后停止",
+      "id": "matrices",
+      "label": "构建来源与目标矩阵\nX：模型乘来源实例得分\nP：逐目标实例的智能体得分\n丢弃近零方差来源列",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "投影局部与全局得分\n使用各子集的SVD特征\n拟合两个互补视角\n只在校准模型上拟合",
+      "id": "protocol_gate",
+      "label": "选择协议\n留出验证\n或全模型发布",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "loocv",
+      "label": "执行严格模型留一验证\n14 个模型中留出 1 个\n其余 13 个用于筛选与拟合\n汇总 14 次留出预测",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "拟合两类预测目标\n线性最小二乘预测绝对得分\n逻辑回归预测成对排序\n预测留出模型的Agent能力",
+      "id": "global_basis",
+      "label": "形成论文全局 SVD 基\n仅对校准矩阵 X 做薄 SVD\n保留右奇异几何结构 V\n论文方法声明排除留出模型",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "集成两条路径\n混合Local与Global预测器\n调节混合系数lambda\n序列化来源ID指标权重与图像",
+      "id": "code_boundary",
+      "label": "论文与代码的 SVD 边界\n论文声明排除留出模型\ncli.py 用全部 14 行 X 构建 Vt_full\n目标 Y 仍只使用训练折",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "signals",
+      "label": "为每个候选实例打分\n相关性为绝对 Spearman rho\n杠杆度 h 为 V 载荷平方和\nrho 仅由校准模型计算",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_14",
-      "label": "验证代理质量\nMAE 3.80% · Spearman 0.81\n成对准确率84.37%\n目标评测成本低于1%",
+      "id": "selection_gate",
+      "label": "拆分严格预算 C\n局部预算 C_L\n全局预算 C_G",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "local",
+      "label": "选择局部子集 L\n按绝对 Spearman rho 排序\n在已选 X_L 上重新执行 SVD\n构建目标自适应局部基",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "global",
+      "label": "选择全局子集 G\n按 h 乘绝对 rho 排序\n使用全局来源池几何结构\n兼顾信息量与目标相关性",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "union",
+      "label": "保证 C 个唯一复合实例\n按 C_L:C_G 比例合并 L 与 G\n遇到重叠时继续扩展两侧排序\n每个目标达到 C = 100 后停止",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "embeddings",
+      "label": "嵌入校准模型与留出模型\nL 使用局部 SVD 坐标\nG 使用全局伪逆坐标\n始终保留两个独立视角",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "bootstrap",
+      "label": "筛选后自助采样目标实例\n对目标条目进行有放回采样\n复现设置 B = 300 且种子为 42\n汇集含噪目标均值用于拟合",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "goal_gate",
+      "label": "预测目标\n绝对得分\n或成对排序",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "absolute",
+      "label": "目标 A：发布代码实现\n以 Spearman 权重投影 SVD 坐标\n对自助采样目标均值拟合带截距 OLS\n论文正文描述原始 C 维向量预测器",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "pairwise",
+      "label": "目标 B：预测成对偏好\n构造有序模型得分差\n拟合带岭正则的逻辑回归\n复用目标 A 的实例筛选",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ensemble",
+      "label": "集成局部与全局路径\n用 lambda 混合两类留出预测\n按目标调节预算、秩与混合系数\n保持严格 100 实例并集",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "报告 C = 100 的留一代理质量\n平均 MAE 3.80% · Spearman 0.81\nPearson 0.74 · 成对准确率 84.37%\n目标成本低于 1%\n自动调参使用聚合后的留出标签",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "fit_all",
+      "label": "物化全模型 PACE-Bench\n使用固定超参数与全部 14 个模型\n此分支没有留出预测\n为四个目标拟合两条路径的权重",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "hf_release",
+      "label": "发布四个加权 JSONL 文件\nGAIA 100 · SWE 100\n多模态 105 · SWT 107 行\n含题面、答案、指标、权重、图像 · 来源 12 / 19",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "验证与身份边界\n留一指标不等于全模型发布评测\n每个文件有 100 个唯一复合键\n多模态 5 行、SWT 7 行为局部/全局重复",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "content_boundary",
+      "label": "发布内容边界\n412 行中 405 行内容已解析\n上游漂移导致 7 行仍未解析\n身份键为基准、子目录与实例 ID",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "license_boundary",
+      "label": "开放性与许可边界\nHF 声明 mixed-upstream\n每个实例保留各自上游条款\nGit 快照没有 LICENSE 或标签发布",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
-      "type": "primary"
+      "from": "evidence",
+      "to": "targets",
+      "type": "secondary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
-      "type": "primary"
+      "from": "evidence",
+      "to": "sources",
+      "type": "secondary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "targets",
+      "to": "matrices",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "from": "sources",
+      "to": "matrices",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "from": "matrices",
+      "to": "protocol_gate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
-      "type": "primary"
+      "from": "protocol_gate",
+      "to": "loocv",
+      "type": "primary",
+      "label": "验证"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
-      "type": "primary"
+      "from": "protocol_gate",
+      "to": "fit_all",
+      "type": "primary",
+      "label": "发布"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "loocv",
+      "to": "global_basis",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "global_basis",
+      "to": "signals",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
-      "type": "primary"
+      "from": "global_basis",
+      "to": "code_boundary",
+      "type": "secondary",
+      "label": "论文代码差异"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "signals",
+      "to": "selection_gate",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
-      "type": "primary"
+      "from": "selection_gate",
+      "to": "local",
+      "type": "primary",
+      "label": "局部"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
+      "from": "selection_gate",
+      "to": "global",
+      "type": "primary",
+      "label": "全局"
+    },
+    {
+      "id": "edge-14",
+      "from": "local",
+      "to": "union",
       "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "global",
+      "to": "union",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "union",
+      "to": "embeddings",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "embeddings",
+      "to": "bootstrap",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "bootstrap",
+      "to": "goal_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "goal_gate",
+      "to": "absolute",
+      "type": "primary",
+      "label": "目标 A"
+    },
+    {
+      "id": "edge-20",
+      "from": "goal_gate",
+      "to": "pairwise",
+      "type": "primary",
+      "label": "目标 B"
+    },
+    {
+      "id": "edge-21",
+      "from": "absolute",
+      "to": "ensemble",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "pairwise",
+      "to": "ensemble",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "ensemble",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "fit_all",
+      "to": "hf_release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "report",
+      "to": "release_boundary",
+      "type": "secondary",
+      "label": "留一验证证据"
+    },
+    {
+      "id": "edge-26",
+      "from": "hf_release",
+      "to": "release_boundary",
+      "type": "secondary",
+      "label": "快照"
+    },
+    {
+      "id": "edge-27",
+      "from": "release_boundary",
+      "to": "content_boundary",
+      "type": "secondary",
+      "label": "内容覆盖"
+    },
+    {
+      "id": "edge-28",
+      "from": "content_boundary",
+      "to": "license_boundary",
+      "type": "secondary",
+      "label": "许可条款"
     }
   ],
   "modules": []

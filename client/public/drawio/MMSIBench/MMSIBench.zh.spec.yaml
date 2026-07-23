@@ -1,151 +1,339 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMSI-Bench 构建流程
-  description: 按论文从超过 12 万张真实世界候选图像人工构建 1,000 道多图空间问题，经独立质检后，以精确匹配协议评测 37 个多模态大模型。
-  legend: 每道最终题都必须依赖多张图像；非多步推理题固定使用两张图像。
+  title: MMSI-Bench 证据对齐构建与评测流程
+  description: >-
+    依据 arXiv:2505.23764v3 与固定官方代码/数据版本，重建 ICLR 2026 定稿版构建、公开 Parquet schema、人工时长难度标注、
+    三类提示、论文与发布代码的答案抽取边界、全行准确率分母及推理错误分析。
+  legend: 实线表示构建和计分路径；带标签分支保留多图依赖排除、质检返修、提示策略、正则失败和 LLM 补救耗尽；CC BY 不覆盖上游图像权利。
 nodes:
-  - id: images
+  - id: evidence
     label: |-
-      检查候选图像池
-      超过 12 万张图像
-      来自八个真实世界数据集
+      固定一手证据
+      论文 · 2505.23764v3
+      代码 · 13e58a2b
+      数据 · ec7c92bf
+      ICLR 2026 定稿版
+    type: document
+    size: xl
+    position:
+      x: 160
+      'y': 40
+  - id: sources
+    label: |-
+      八个真实世界来源
+      Matterport 463 · ScanNet 280
+      Ego4D 67 · AgiBot 45 · DTU 72
+      nuScenes 39 · DAVIS 29 · Waymo 5
       不使用合成场景
     type: database
     size: xl
     position:
-      x: 20
+      x: 392
       'y': 40
-  - id: sources
+  - id: pool
     label: |-
-      覆盖多样数据来源
-      ScanNet · Matterport3D · DTU
-      nuScenes · Waymo · Ego4D
-      AgiBot-World · DAVIS 2017
-    type: document
-    size: xl
-    position:
-      x: 300
-      'y': 40
-  - id: taxonomy
-    label: |-
-      定义空间任务体系
-      相机 · 物体 · 区域
-      位置 · 属性 · 运动
-      十类基础任务加多步推理
+      检查图像数据库
+      超过 12 万张候选图
+      室内 · 室外 · 驾驶
+      视频 · 机器人 · 重建
+      选择相关图像组合
     type: process
     size: xl
     position:
-      x: 580
+      x: 624
+      'y': 40
+  - id: taxonomy
+    label: |-
+      定义十一类任务
+      六类位置关系
+      两类属性 · 两类运动
+      相机 · 物体 · 区域
+      加多步推理
+    type: process
+    size: xl
+    position:
+      x: 856
       'y': 40
   - id: annotate
     label: |-
       六名 3D 视觉研究者
       总投入超过 300 小时
-      使用自由形式标注
-      不套用问题模板
+      自由形式自然英文
+      不使用问题模板
+      追求新颖性与难度
     type: user
     size: xl
     position:
-      x: 860
+      x: 1088
       'y': 40
   - id: select
     label: |-
-      选择相关图像组合
-      必须整合跨图信息
-      排除单图即可回答的题
-      基础任务使用两张图像
+      整合多张图像
+      基础任务 · 固定两张
+      多步任务 · 最多十张
+      推断真实场景
+      人类可回答
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: question
+      x: 1088
+      'y': 360
+  - id: dependent
     label: |-
-      编写四选一问题
-      仅有一个正确答案
-      保持问题挑战性
-      同时确保人类可回答
-    type: document
+      必须跨图空间推理？
+      不能由单图
+      或常识回答
+    type: decision
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: rationale
+      x: 856
+      'y': 360
+  - id: reject_dependency
     label: |-
-      补充丰富标注
-      设计可信干扰选项
-      编写详细推理过程
-      按人类答题时长定难度
-    type: document
-    size: xl
-    position:
-      x: 1420
-      'y': 420
-  - id: qc
-    label: |-
-      三名独立审核者质检
-      移除歧义或答案错误题
-      排除常识即可回答的题
-      排除视觉证据不足的题
-    type: user
-    size: xl
-    position:
-      x: 1140
-      'y': 420
-  - id: release
-    label: |-
-      汇总最终 MMSI-Bench
-      1,000 题 · 1,990 张图像
-      每题平均 2.55 张图
-      单题最多十张图
-    type: database
-    size: xl
-    position:
-      x: 860
-      'y': 420
-  - id: evaluate
-    label: |-
-      评测 37 个多模态模型
-      温度为零 · 最长 2,048 词元
-      加入随机与盲测 GPT-4o
-      加入五人平均人类基线
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 420
-  - id: score
-    label: |-
-      抽取答案并计分
-      与标准选项精确匹配
-      格式失败时用 VLMEvalKit
-      报告准确率百分比
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 420
-  - id: analyze
-    label: |-
-      分析四类错误模式
-      视觉落地 · 重叠匹配
-      与场景重建
-      情境变换
-      空间逻辑
+      排除或重做
+      视觉证据不足
+      单图即可回答
+      常识即可回答
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 856
+      'y': 680
+  - id: question
+    label: |-
+      编写四选一问题
+      仅一个正确选项
+      可信干扰项
+      准确且无歧义
+      自然人类表达
+    type: document
+    size: xl
+    position:
+      x: 624
+      'y': 360
+  - id: rationale
+    label: |-
+      标注推理过程
+      详细逐步路径
+      多步题 · 3 至 11 步
+      平均 5.7 步
+      支持质检与分析
+    type: document
+    size: xl
+    position:
+      x: 392
+      'y': 360
+  - id: review
+    label: |-
+      三名独立专家
+      检查每个样本
+      答案 · 歧义 · 证据
+      推理完整性
+      记录拒绝原因
+    type: user
+    size: xl
+    position:
+      x: 160
+      'y': 360
+  - id: quality
+    label: |-
+      通过全部复核？
+      最终审计
+    type: decision
+    size: xl
+    position:
+      x: 160
+      'y': 680
+  - id: revise
+    label: |-
+      标注者返修循环
+      接收审核反馈
+      修改或替换样本
+      重新进入质检
+    type: process
+    size: xl
+    position:
+      x: 392
+      'y': 680
+  - id: final_set
+    label: |-
+      最终 MMSI-Bench
+      1,000 道题
+      1,990 张独立图像
+      每题平均 2.55 张
+      单题最多十张
+    type: database
+    size: xl
+    position:
+      x: 160
+      'y': 1000
+  - id: difficulty
+    label: |-
+      增加难度标签
+      每题两名新评测者
+      归一化完成时长
+      人类答错直接记困难
+      易 605 · 中 262 · 难 133
+    type: process
+    size: xl
+    position:
+      x: 392
+      'y': 1000
+  - id: release
+    label: |-
+      精确八字段 Parquet Schema
+      id · images · question_type
+      question · answer · thought
+      mean\_normed\_duration\_seconds
+      difficulty · CC BY + 上游权利
+    type: database
+    size: xl
+    position:
+      x: 624
+      'y': 1000
+  - id: strategy
+    label: |-
+      采用哪种提示？
+      论文实验
+      直接 · 语言 · 视觉
+    type: decision
+    size: xl
+    position:
+      x: 856
+      'y': 1000
+  - id: direct
+    label: |-
+      直接提示
+      图像 + 问题
+      要求输出选项字母
+      字母放在反引号内
+    type: process
+    size: xl
+    position:
+      x: 1088
+      'y': 760
+  - id: cot
+    label: |-
+      语言提示
+      加 Let's Think Step by Step
+      再要求选项字母
+      字母放在反引号内
+    type: process
+    size: xl
+    position:
+      x: 1088
+      'y': 1000
+  - id: visual
+    label: |-
+      视觉提示
+      用 PATS 标记图像
+      再直接要求字母
+      字母放在反引号内
+    type: process
+    size: xl
+    position:
+      x: 1088
+      'y': 1240
+  - id: generate
+    label: |-
+      评测 37 个 MLLM
+      温度为零
+      最长输出 2,048 词元
+      随机 · 盲测 GPT-4o
+      五人平均人类基线
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 1000
+  - id: regex
+    label: |-
+      抽取选项字母
+      先解双或单反引号
+      取首个独立 A 至 D
+      排除 A 后紧跟单词
+      发布代码正则路径
+    type: process
+    size: xl
+    position:
+      x: 1648
+      'y': 1000
+  - id: parsed
+    label: |-
+      找到有效 A 至 D？
+      必须符合输出格式
+    type: decision
+    size: xl
+    position:
+      x: 1880
+      'y': 1000
+  - id: fallback
+    label: |-
+      手动 LLM 抽取路径
+      仅供三类指定模型
+      chatgpt-0125 · 最多三试
+      输出 A 至 D 或 Z
+    type: process
+    size: xl
+    position:
+      x: 2016
+      'y': 1160
+  - id: fallback_valid
+    label: |-
+      补救返回 A 至 D？
+      Z 或 API 耗尽即失败
+    type: decision
+    size: xl
+    position:
+      x: 2248
+      'y': 1160
+  - id: fallback_fail
+    label: |-
+      保留抽取失败
+      默认正则未命中
+      或 LLM 返回 Z / 耗尽
+      该题得分为 0
+    type: process
+    size: xl
+    position:
+      x: 2248
+      'y': 1400
+  - id: score
+    label: |-
+      精确匹配准确率
+      正确为 1 · 否则 0
+      分母为输入文件行数
+      完整发布集运行为 1,000
+      缺失行不会自动补入
+    type: process
+    size: xl
+    position:
+      x: 2480
+      'y': 1000
+  - id: analyze
+    label: |-
+      自动推理分析
+      提供标准答案 + 参考推理
+      落地 · 重建
+      情境变换 · 空间逻辑
+      类别 5 表示完全正确
+    type: terminal
+    size: xl
+    position:
+      x: 2712
+      'y': 1000
 edges:
-  - from: images
+  - from: evidence
     to: sources
     type: primary
   - from: sources
+    to: pool
+    type: primary
+  - from: pool
     to: taxonomy
     type: primary
   - from: taxonomy
@@ -155,21 +343,97 @@ edges:
     to: select
     type: primary
   - from: select
+    to: dependent
+    type: primary
+  - from: dependent
     to: question
     type: primary
+    label: 是 · 保留
+  - from: dependent
+    to: reject_dependency
+    type: optional
+    label: 否 · 排除
   - from: question
     to: rationale
     type: primary
   - from: rationale
-    to: qc
+    to: review
     type: primary
-  - from: qc
+  - from: review
+    to: quality
+    type: primary
+  - from: quality
+    to: final_set
+    type: primary
+    label: 通过
+  - from: quality
+    to: revise
+    type: optional
+    label: 未通过 · 返修
+  - from: revise
+    to: question
+    type: primary
+  - from: final_set
+    to: difficulty
+    type: primary
+  - from: difficulty
     to: release
-    type: primary
+    type: data
   - from: release
-    to: evaluate
+    to: strategy
     type: primary
-  - from: evaluate
+  - from: strategy
+    to: direct
+    type: primary
+    label: 直接
+  - from: strategy
+    to: cot
+    type: primary
+    label: 语言
+  - from: strategy
+    to: visual
+    type: primary
+    label: 视觉 PATS
+  - from: direct
+    to: generate
+    type: primary
+  - from: cot
+    to: generate
+    type: primary
+  - from: visual
+    to: generate
+    type: primary
+  - from: generate
+    to: regex
+    type: primary
+    label: 默认发布路径
+  - from: generate
+    to: fallback
+    type: optional
+    label: 手动路径 · 三类模型
+  - from: regex
+    to: parsed
+    type: primary
+  - from: parsed
+    to: score
+    type: primary
+    label: 有效字母
+  - from: parsed
+    to: fallback_fail
+    type: optional
+    label: 默认未命中 · 得分 0
+  - from: fallback
+    to: fallback_valid
+    type: primary
+  - from: fallback_valid
+    to: score
+    type: primary
+    label: A 至 D
+  - from: fallback_valid
+    to: fallback_fail
+    type: optional
+    label: Z 或耗尽 · 得分 0
+  - from: fallback_fail
     to: score
     type: primary
   - from: score

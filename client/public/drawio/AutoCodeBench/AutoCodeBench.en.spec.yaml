@@ -4,11 +4,13 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AutoCodeBench Build Process
+  title: AutoCodeBench Construction and Evaluation
   description: >-
-    Paper-aligned AutoCodeGen workflow from Stack-Edu seeds through LLM-sandbox test synthesis, reverse-order problem
-    generation, three-stage filtering, and multilingual balancing.
-  legend: Read the generation row left-to-right, then the filtering and evaluation row right-to-left.
+    Paper-faithful AutoCodeGen flow separating public demonstration tests from private full hidden tests, followed by
+    three filters, post-hoc human audit, and official two-function Pass@1 evaluation.
+  legend: >-
+    Public demo tests appear in the problem; the official evaluator requires both demo_test_func and full_test_func to
+    pass.
 nodes:
   - id: seeds
     label: |-
@@ -23,127 +25,191 @@ nodes:
   - id: solution
     label: |-
       Refine Code Solutions
-      DeepSeek-V3-0324 + Language Few-Shot
-      Self-Contained, Verifiable, Commented
+      DeepSeek-V3-0324 + Few-Shot
+      Self-Contained and Verifiable
     type: process
     size: xl
     position:
       x: 320
       'y': 100
-  - id: inputs
+  - id: test_gate
     label: |-
-      Generate Test Inputs
-      Public: Up to 3 Basic Cases
-      Private: 7+ Cases Including Edges
+      Generate Both Test-Input Sets
+      Public Demo + Private Full
     type: process
     size: xl
     position:
       x: 600
       'y': 100
-  - id: outputs
+  - id: demo_tests
     label: |-
-      Execute in Multilingual Sandbox
-      Solution + Public / Private Inputs
-      Capture Corresponding Outputs
-    type: process
+      Public Demo Test Inputs
+      Up to 3 Basic Cases (≤3)
+      Embedded in Problem as Example
+    type: document
     size: xl
     position:
       x: 880
-      'y': 100
-  - id: tests
+      'y': 0
+  - id: full_tests
     label: |-
-      Integrate Executable Tests
-      LLM Combines Inputs + Outputs into Assertions
-      Re-run Solution and Both Test Functions
+      Private Full Hidden Test Inputs
+      7+ Cases Including Edges
+      Comprehensive Correctness Test
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 200
+  - id: execute_inputs
+    label: |-
+      Execute Solution + Both Inputs
+      Multilingual Sandbox
+      Capture Demo + Hidden Outputs
     type: process
     size: xl
     position:
       x: 1160
+      'y': 100
+  - id: integrate
+    label: |-
+      Build Executable Test Functions
+      DeepSeek-V3 Integrates I/O
+      demo_test_func + full_test_func
+      Re-run Both with Solution
+    type: process
+    size: xl
+    position:
+      x: 1440
       'y': 100
   - id: problem
     label: |-
       Reverse-Order Problem Generation
       Six Heuristic Specifications
-      Embed Public Tests; Do Not Leak Solution Hints
+      Embed Demo Tests • No Solution Hints
     type: document
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 100
   - id: translate
     label: |-
-      Route Language Coverage
-      Six Languages Use the Direct Workflow
-      Other 14 Translate Unused Data; All Enter Filtering
+      Language Coverage Routing
+      6 Direct-Workflow Languages
+      Translate Unused Data for Other 14
+      Then Apply the Same Filters
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: difficulty
+    label: |-
+      Difficulty Control
+      DeepSeek-Coder-V2-Lite
+      10 Attempts per Problem
+      Discard 10 / 10 Solved
     type: process
     size: xl
     position:
       x: 1440
       'y': 440
-  - id: difficulty
+  - id: quality
     label: |-
-      Difficulty Control
-      DeepSeek-Coder-V2-Lite: 10 Attempts
-      Discard Problems Solved 10/10
+      LLM-as-Critic Quality Control
+      DeepSeek-R1-0528
+      Seven Consistency Criteria
     type: process
     size: xl
     position:
       x: 1160
       'y': 440
-  - id: quality
+  - id: diversity
     label: |-
-      Quality Control
-      DeepSeek-R1-0528 Critiques 7 Criteria
-      Check Reproducibility and Problem-Test Alignment
+      Diversity Sampling
+      DeepSeek-V3 Category Labels
+      Cyclic Sampling across Pools
     type: process
     size: xl
     position:
       x: 880
       'y': 440
-  - id: diversity
+  - id: dataset
     label: |-
-      Diversity Sampling
-      DeepSeek-V3-0324 Category Labels
-      Cyclic Sampling Across Category Pools
-    type: process
+      AutoCodeBench Release
+      3,920 Problems • 37,777 Tests
+      20 Languages • 14 Categories
+    type: database
     size: xl
     position:
       x: 600
       'y': 440
-  - id: dataset
+  - id: model_output
     label: |-
-      AutoCodeBench
-      3,920 Problems / 37,777 Tests
-      20 Languages / 14 Categories
-    type: database
+      Generate Candidate Code
+      Required Single Fenced Code Block
+      Standard System Prompt
+    type: process
     size: xl
     position:
       x: 320
-      'y': 440
+      'y': 360
+  - id: sandbox_eval
+    label: |-
+      Sandbox Evaluation
+      Run full_test_func
+      + demo_test_func
+      Both Must Return PASSED
+      Pass@1
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: audit
+    label: |-
+      Post-Hoc Manual Audit
+      6 Professional Annotators
+      6 Languages • Binary Validity
+      87.6% Accuracy
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 600
   - id: report
     label: |-
-      Executable Evaluation
-      Sandbox Runs Hidden Full Tests
-      Pass@1 + Difficulty and Language Analysis
+      Report Multilingual Results
+      Pass@1 by Language / Difficulty
+      Retain the 87.6% Audit Caveat
     type: terminal
     size: xl
     position:
       x: 40
-      'y': 440
+      'y': 600
 edges:
   - from: seeds
     to: solution
     type: primary
   - from: solution
-    to: inputs
+    to: test_gate
     type: primary
-  - from: inputs
-    to: outputs
+  - from: test_gate
+    to: demo_tests
     type: primary
-  - from: outputs
-    to: tests
+  - from: test_gate
+    to: full_tests
     type: primary
-  - from: tests
+  - from: demo_tests
+    to: execute_inputs
+    type: primary
+  - from: full_tests
+    to: execute_inputs
+    type: primary
+  - from: execute_inputs
+    to: integrate
+    type: primary
+  - from: integrate
     to: problem
     type: primary
   - from: problem
@@ -162,6 +228,18 @@ edges:
     to: dataset
     type: primary
   - from: dataset
+    to: model_output
+    type: primary
+  - from: model_output
+    to: sandbox_eval
+    type: primary
+  - from: dataset
+    to: audit
+    type: data
+  - from: sandbox_eval
     to: report
     type: primary
+  - from: audit
+    to: report
+    type: secondary
 modules: []

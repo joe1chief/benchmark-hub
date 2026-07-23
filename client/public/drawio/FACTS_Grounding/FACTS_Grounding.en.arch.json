@@ -7,62 +7,80 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 12,
+    "edges": 12,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "Fixed evidence boundary\narXiv:2501.03200v1\nHF dataset @ 11b6961\nFACTS Grounding 1.0 public artifact",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "documents",
-      "label": "Collect web documents and reviews\nfinance · technology · retail · medical · legal\nmean 2.5k tokens; maximum 32k",
+      "label": "Collect web documents or review sets\nmedical · legal · internet/technology\nfinancial · retail/product\nmean 2.5k tokens · maximum 32k",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "authoring",
-      "label": "Third-party raters author context-only tasks\nQ&A · summarization · document rewriting\nnon-trivial requests with long-form answers",
+      "label": "Third-party raters author tasks\nQ&A · summarization · rewriting\nnon-trivial request from context\nsystem instruction\nforbids external knowledge",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "quality",
-      "label": "Manually verify every example\nexclude creative / expert-knowledge / math tasks\nremove OCR-unreadable PDFs and invalid contexts",
+      "label": "Manually verify every example\nremove creative / expert tasks\nremove math / logic / meta-analysis\nremove OCR-unreadable PDF contexts",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "splits",
-      "label": "Balanced random sampling by task attributes\nOpen public set: 860 examples\nBlind private set: 859 examples",
+      "label": "Balanced random sampling\nOpen public split: 860\nBlind private split: 859\ntotal: 1,719 examples",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "responses",
-      "label": "Generate long-form model responses\nanswer the request using only supplied context\nno external knowledge should be required",
+      "label": "Generate the model response\nsystem instruction + user request\n+ supplied context\nfulfill the request in long form\nground exclusively in supplied context",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "eligibility_setup",
+      "label": "Calibrate eligibility prompts\nseparate golden set N=450\nrequest only vs request + context\nbest Macro-F1 template per judge",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "eligibility",
-      "label": "Calibrate eligibility on N=450 golden labels\nchoose per-judge best of 2 prompts by Macro-F1\ndisqualify only when all 3 judges agree",
+      "label": "Three-judge eligibility verdict\nGemini 1.5 Pro · GPT-4o\nClaude 3.5 Sonnet\nsufficient response to user request\nineligible only if all three agree",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "factuality_setup",
-      "label": "Calibrate factuality on N=402 golden labels\ntest 7 prompt templates per judge\nselect each judge's highest Macro-F1 prompt",
-      "type": "process",
+      "label": "Calibrate factuality prompts\nseparate N=402 golden set\nclass ratio 87:13\ntest seven prompt templates\nbest Macro-F1 template per judge",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "factuality",
-      "label": "Gemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet\nmark accurate only if every informative claim\nis supported by the supplied document",
+      "label": "Three-judge factuality verdict\naccurate only if every\ninformative claim is grounded\nor requires no grounding\none unsupported claim means inaccurate",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "combine",
+      "label": "Combine the two stages\ndisqualify ineligible responses\ncount ineligible replies as inaccurate\naccurate % for each factuality judge",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "Count ineligible responses as inaccurate\naverage judges' percentages of accurate answers\nreport final FACTS Grounding factuality score",
+      "label": "FACTS Grounding factuality score\naverage accurate-response %\nfrom the three judges\nreport Open and Blind leaderboards\nmultiple providers\nmitigate self-preference",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,49 +88,73 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "documents",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
       "from": "documents",
       "to": "authoring",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-3",
       "from": "authoring",
       "to": "quality",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-4",
       "from": "quality",
       "to": "splits",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-5",
       "from": "splits",
       "to": "responses",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "responses",
       "to": "eligibility",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "eligibility",
-      "to": "factuality_setup",
-      "type": "primary"
+      "id": "edge-7",
+      "from": "eligibility_setup",
+      "to": "eligibility",
+      "type": "data"
     },
     {
-      "id": "edge-7",
-      "from": "factuality_setup",
+      "id": "edge-8",
+      "from": "responses",
       "to": "factuality",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-9",
+      "from": "factuality_setup",
+      "to": "factuality",
+      "type": "data"
+    },
+    {
+      "id": "edge-10",
+      "from": "eligibility",
+      "to": "combine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
       "from": "factuality",
+      "to": "combine",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "combine",
       "to": "score",
       "type": "primary"
     }

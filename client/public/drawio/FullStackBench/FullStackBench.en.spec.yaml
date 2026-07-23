@@ -5,138 +5,170 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FullStack Bench Build Process
-  description: Paper-aligned multilingual data construction, quality control, difficulty labeling, and SandboxFusion evaluation.
+  description: Pinned paper, repository, and dataset flow from multilingual construction through SandboxFusion Pass@1.
   legend: >-
-    Solid arrows follow arXiv:2412.00535 Sections 2–3 from source collection through 3,374 bilingual problems and
-    execution-based Pass@1; FullStack Bench here is the published ByteDance benchmark, not an internal model-report
-    eval.
+    Solid arrows follow arXiv:2412.00535v6, bytedance/FullStackBench revision a3c99a9e, and the Hugging Face dataset
+    revision 11e2e64d. The public release does not include the original authoring scripts or six-model vote outputs.
 nodes:
-  - id: sources
+  - id: evidence
     label: |-
-      Collect programming source material
-      GitHub snippets · code documents/books · XLCoST
-      plus expert-authored domain questions
-    type: database
+      Evidence: arXiv:2412.00535v6
+      repo @ a3c99a9e
+      HF data @ 11e2e64d
+      paper + pinned public-release audit
+    type: document
     size: xl
     position:
       x: 40
-      'y': 250
-  - id: annotation
+      'y': 120
+  - id: sources
     label: |-
-      LLM-assisted, human-verified annotation
-      create instruction + reference solution
-      create language-specific unit tests and labels
-    type: process
+      Collect programming source material
+      GitHub snippets · documents/books
+      XLCoST + expert-authored questions
+    type: database
     size: xl
     position:
       x: 300
-      'y': 250
-  - id: review
+      'y': 120
+  - id: annotation
     label: |-
-      Annotators assess every item
-      difficulty · ambiguity · solvability
-      cross-refine; consensus or senior adjudication
+      LLM-assisted, human-verified
+      create instructions + reference solutions
+      create language-specific unit tests
+      and labels
     type: process
     size: xl
     position:
       x: 560
-      'y': 250
-  - id: difficulty
+      'y': 120
+  - id: quality_control
     label: |-
-      Six-model voting sets difficulty
-      remove items solved by all six models
-      1 solver = hard · 5–6 = easy · else medium
+      Assess difficulty, ambiguity, solvability
+      exchange items for cross-refinement
+      resolve by consensus/senior annotator
     type: process
     size: xl
     position:
       x: 820
-      'y': 250
-  - id: domains
+      'y': 120
+  - id: difficulty_vote
     label: |-
-      Derive real-world domain taxonomy
-      label 500K Stack Overflow questions
-      keep 11 domains covering 88.1% + Others
+      Vote with six specified models
+      discard items all six answer correctly
+      1 = hard · 5 = easy · 2–4 = medium
     type: process
     size: xl
     position:
       x: 1080
-      'y': 250
-  - id: bilingual
+      'y': 120
+  - id: domain_taxonomy
     label: |-
-      Build bilingual, multilingual-code pairs
-      translate each Chinese/English prompt counterpart
-      16 languages from Bash and C++ to SQL/TypeScript
+      LLM-label 500K Stack Overflow items
+      top 11 cover 88.1% + Others
+      GPT labels constructed questions
     type: process
     size: xl
     position:
       x: 1340
-      'y': 250
+      'y': 120
+  - id: bilingual
+    label: |-
+      Translate each source prompt
+      into the other language
+      1,687 English + 1,687 Chinese
+      preserve code in 16 languages
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 120
   - id: release
     label: |-
-      FullStack Bench release
-      3,374 problems · 15,168 unit tests
-      question + tests + reference solution + labels
+      Release 3,374 records
+      15,168 unit tests
+      16 languages · 11 domains + Others
+      question + tests + solution + labels
     type: database
     size: xl
     position:
       x: 1600
-      'y': 250
-  - id: generation
+      'y': 420
+  - id: prompting
     label: |-
-      Generate model completion from benchmark prompt
-      SandboxFusion extracts code from the response
-      combine it with predefined unit tests
+      Use problem text as user prompt
+      model-default system · temperature 0
+      max 2,048 completion tokens
+      inference is external
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 250
-  - id: execute
+      x: 1340
+      'y': 420
+  - id: extraction
     label: |-
-      Execute synthesized program in SandboxFusion
-      language/dependency-aware environment
-      capture compiler, runtime, and test outcomes
+      Non-Java extraction priority
+      complete fenced > incomplete fenced
+      > heuristic; target language first
     type: process
     size: xl
     position:
-      x: 2120
-      'y': 250
-  - id: score
+      x: 1080
+      'y': 420
+  - id: execution
     label: |-
-      Judge execution and report Pass@1
-      passing unit-test execution means correct
-      analyze by language, domain, and difficulty
+      Java: split classes/enums/interfaces
+      into named files; run JUnit
+      others: append predefined tests
+      execute with language dependencies
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 420
+  - id: metric
+    label: |-
+      Official runner: English 1,687 only
+      accepted = successful sandbox result
+      Pass@1 = Σ accepted / len(results)
+      not fixed at bilingual 3,374
     type: terminal
     size: xl
     position:
-      x: 2380
-      'y': 250
+      x: 560
+      'y': 420
 edges:
+  - from: evidence
+    to: sources
+    type: primary
   - from: sources
     to: annotation
     type: primary
   - from: annotation
-    to: review
+    to: quality_control
     type: primary
-  - from: review
-    to: difficulty
+  - from: quality_control
+    to: difficulty_vote
     type: primary
-  - from: difficulty
-    to: domains
+  - from: difficulty_vote
+    to: domain_taxonomy
     type: primary
-  - from: domains
+  - from: domain_taxonomy
     to: bilingual
     type: primary
   - from: bilingual
     to: release
     type: primary
   - from: release
-    to: generation
+    to: prompting
     type: primary
-  - from: generation
-    to: execute
+  - from: prompting
+    to: extraction
     type: primary
-  - from: execute
-    to: score
+  - from: extraction
+    to: execution
+    type: primary
+  - from: execution
+    to: metric
     type: primary
 modules: []

@@ -6,111 +6,163 @@ meta:
   routing: orthogonal
   title: Global-MMLU Build Process
   description: >-
-    Paper-aligned cultural annotation, multilingual translation, subset construction, and evaluation flow for
-    Global-MMLU.
+    Paper-versioned cultural annotation, translation, full-set and Lite construction, with post-paper Lite expansion
+    shown as a separate release boundary.
   legend: >-
-    The two branches separately improve translation quality and annotate cultural sensitivity before merging into the
-    42-language release described in arXiv:2412.03304; Global-MMLU retains MMLU's original English-centric questions.
+    Solid arrows follow arXiv:2412.03304v2 and its paper-era datasets. The dashed branch records later Lite growth and
+    must not be used to reinterpret the paper's 15-language count.
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      Start from English MMLU
-      about 14K four-choice questions
-      57 exam subjects
-    type: database
+      Evidence boundary
+      paper 2412.03304v2
+      full data 0e619dbe
+      paper Lite b88e8867 · current 36c2fd75
+    type: document
     size: xl
     position:
       x: 40
-      'y': 300
-  - id: cultural_sample
+      'y': 320
+  - id: source
     label: |-
-      Uniformly sample 2,850 questions
-      50 from each subject
-      200 professional/community annotators
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 80
-  - id: cultural_labels
-    label: |-
-      At least 3 annotators per sample
-      tag cultural · geographic · dialect knowledge
-      derive Culturally Sensitive or Agnostic labels
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 80
-  - id: machine_translate
-    label: |-
-      Translate English MMLU into 41 languages
-      use Google Translate uniformly
-      avoid evaluator bias from self-translation
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 520
-  - id: human_improve
-    label: |-
-      Maximize human-verified translations
-      professional MMMLU + compensated Gold Set
-      native community post-edits; 25 languages improved
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 520
-  - id: full
-    label: |-
-      Assemble full Global-MMLU
-      589,764 samples across 42 languages
-      human, post-edited, machine, and English versions
+      English MMLU source
+      57 subjects · 14,042 test questions
+      285 dev examples for five-shot prompts
     type: database
     size: xl
     position:
-      x: 980
-      'y': 300
-  - id: lite
+      x: 340
+      'y': 320
+  - id: cultural_sample
     label: |-
-      Derive Global-MMLU Lite
-      15 human-translated/post-edited languages
-      200 CS + 200 CA each = 6,000 samples
+      Uniform cultural sample
+      50 per subject = 2,850 English items
+      200 professional + community annotators
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 80
+  - id: cultural_vote
+    label: |-
+      Aggregate annotations
+      ≥3 annotators each; half-or-more vote
+      culture · geography · dialect + temporal
+      CS if any first 3; otherwise CA
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 80
+  - id: machine_translate
+    label: |-
+      Translate into 41 target languages
+      use Google Translate for every language
+      avoid evaluator self-translation bias
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: human_improve
+    label: |-
+      Replace or post-edit where available
+      Gold Set: 4 paid languages
+      MMMLU: 10 remaining · community: 11
+      community inclusion requires ≥50 samples
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: full_release
+    label: |-
+      Paper full test release
+      42 × 14,042 = 589,764 test rows
+      CS 33,264 · CA 86,436
+      pin also stores 42 × 285 dev rows
     type: database
     size: xl
     position:
       x: 1280
-      'y': 300
-  - id: run
+      'y': 320
+  - id: lite_filter
     label: |-
-      Run multilingual multiple-choice evaluation
-      preserve original question and four options
-      choose one answer in each target language
+      Construct paper-era Lite
+      exclude 14 one-sided CS/CA subjects
+      sample 5 CS + 5 CA where available
+      upsample Business · Medical · General
     type: process
     size: xl
     position:
       x: 1580
-      'y': 300
-  - id: score
+      'y': 320
+  - id: paper_lite
     label: |-
-      Exact-match the selected option
-      report accuracy by language/resource level
-      compare full, CS, CA, and balanced Lite slices
-    type: terminal
+      Paper-era Lite release
+      15 human/post-edited languages
+      200 CS + 200 CA each = 6,000 test
+      pin also stores 3,225 dev rows
+    type: database
     size: xl
     position:
       x: 1880
-      'y': 300
+      'y': 320
+  - id: eval_prompt
+    label: |-
+      Paper evaluation protocol
+      five-shot; instruction in sample language
+      open: lm-eval choice log-probabilities
+      closed APIs: generate one answer option
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 320
+  - id: parser_boundary
+    label: |-
+      Closed-model boundary
+      system preamble requests option only
+      exact preamble and extractor not published
+      no canonical parser in HF data release
+    type: document
+    size: xl
+    position:
+      x: 2480
+      'y': 320
+  - id: metric
+    label: |-
+      Report accuracy
+      by language · CS/CA · resource level
+      full and balanced Lite slices
+    type: terminal
+    size: xl
+    position:
+      x: 2780
+      'y': 320
+  - id: current_lite
+    label: |-
+      Post-paper Lite drift
+      current 36c2fd75: 23 languages
+      9,200 test + 4,800 dev = 14,000 rows
+      not the paper's 15-language Lite
+    type: document
+    size: xl
+    position:
+      x: 2040
+      'y': 620
 edges:
+  - from: evidence
+    to: source
+    type: primary
   - from: source
     to: cultural_sample
     type: primary
   - from: cultural_sample
-    to: cultural_labels
+    to: cultural_vote
     type: primary
-  - from: cultural_labels
-    to: full
+  - from: cultural_vote
+    to: full_release
     type: primary
   - from: source
     to: machine_translate
@@ -119,15 +171,24 @@ edges:
     to: human_improve
     type: primary
   - from: human_improve
-    to: full
+    to: full_release
     type: primary
-  - from: full
-    to: lite
+  - from: full_release
+    to: lite_filter
     type: primary
-  - from: lite
-    to: run
+  - from: lite_filter
+    to: paper_lite
     type: primary
-  - from: run
-    to: score
+  - from: paper_lite
+    to: eval_prompt
     type: primary
+  - from: eval_prompt
+    to: parser_boundary
+    type: primary
+  - from: parser_boundary
+    to: metric
+    type: primary
+  - from: paper_lite
+    to: current_lite
+    type: data
 modules: []

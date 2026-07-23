@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CVBench 构建流程
-  description: 与论文对齐的跨视频筛选、关系问答生成、两阶段人工复核和准确率评测流程。
-  legend: 实线表示论文中的构建、人工复核与评测主流程。
+  description: 与论文对齐的跨视频筛选与四阶段问答生成，随后进行模型辅助校验、带修正回路的两阶段人工质检和准确率评测。
+  legend: 实线表示构建与通过质检的题目；虚线表示未通过题目返回修正。
 nodes:
   - id: candidates
     label: |-
@@ -20,7 +20,8 @@ nodes:
   - id: curate
     label: |-
       任务驱动筛选
-      内在关系 · 时长 · 720p · 24 fps
+      内在关系 · 时长 · 720p ·
+      24 fps
     type: process
     size: xl
     position:
@@ -29,7 +30,8 @@ nodes:
   - id: videos
     label: |-
       已筛选视频组
-      1,315 个视频 · 每组 2–4 个
+      1,315 个视频 · 每组
+      2–4 个
     type: database
     size: xl
     position:
@@ -65,38 +67,61 @@ nodes:
   - id: synthesize
     label: |-
       GPT-4o 生成
-      每组至少 2 题 · 1 正确 + 3 干扰项
+      每组至少 2 题 · 1 正确 +
+      3 干扰项
     type: process
     size: xl
     position:
       x: 1600
       'y': 210
-  - id: qc1
+  - id: model_gate
     label: |-
-      第一轮人工核查
-      8 名标注员 · 15 项准则 · 修题 / 重采视频
-    type: user
+      多模型一致性 + 难度校验
+      多模型幻觉检测
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 110
-  - id: qc2
+      'y': 210
+  - id: human_gate
     label: |-
-      独立复检
-      5 名新标注员 · 每人 200 题
-    type: user
+      8 名标注员第一轮复核
+      15 项任务专用标准
+      合规 · 正确 · 非平凡？
+    type: decision
     size: xl
     position:
       x: 2120
-      'y': 110
-  - id: benchmark
+      'y': 210
+  - id: repair
     label: |-
-      CVBench
-      1,000 题 · 3 个层级 · 15 个子任务
-    type: database
+      修正处理
+      修改低质量问题或干扰项
+      必要时重新采集视频
+    type: process
     size: xl
     position:
       x: 2380
+      'y': 430
+  - id: independent_audit
+    label: |-
+      5 名新标注员
+      每人复核 200 组问答
+      合规 · 正确 · 无幻觉？
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 210
+  - id: benchmark
+    label: |-
+      CVBench
+      1,000 题 · 3 个层级 ·
+      15 个子任务
+    type: database
+    size: xl
+    position:
+      x: 2900
       'y': 210
   - id: input
     label: |-
@@ -105,7 +130,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2640
+      x: 3160
       'y': 210
   - id: prompting
     label: |-
@@ -114,7 +139,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2900
+      x: 3420
       'y': 210
   - id: accuracy
     label: |-
@@ -123,7 +148,7 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 3160
+      x: 3680
       'y': 210
 edges:
   - from: candidates
@@ -145,14 +170,31 @@ edges:
     to: synthesize
     type: primary
   - from: synthesize
-    to: qc1
+    to: model_gate
     type: primary
-  - from: qc1
-    to: qc2
+  - from: model_gate
+    to: human_gate
     type: primary
-  - from: qc2
+  - from: human_gate
+    to: repair
+    type: optional
+    label: 修正
+  - from: repair
+    to: human_gate
+    type: optional
+    label: 复检
+  - from: human_gate
+    to: independent_audit
+    type: primary
+    label: 通过
+  - from: independent_audit
+    to: repair
+    type: optional
+    label: 修正
+  - from: independent_audit
     to: benchmark
     type: primary
+    label: 通过
   - from: benchmark
     to: input
     type: primary

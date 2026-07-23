@@ -4,132 +4,211 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DPG-Bench Build Process
-  description: ELLA-paper-aligned dense-prompt sourcing, GPT-4 graph annotation, human verification, and DSG-style VQA scoring.
-  legend: >-
-    Solid arrows trace prompt construction, question-graph annotation, four-image generation, and category-aware graph
+  title: DPG-Bench Build and Evaluation Process
+  description: >-
+    Paper-version prompt sourcing, GPT-4 dense expansion, DSG question-graph annotation, and dependency-aware four-image
     scoring.
+  legend: Solid arrows trace the paper pipeline; the evidence card pins the ELLA code revision and official CSV digest.
 nodes:
+  - id: evidence
+    label: |-
+      DPG-Bench · arXiv:2403.05135v1
+      ELLA repo @ 3c228f1
+      official dpg_bench.csv @ 68f5076
+      construction + evaluator
+      revisions pinned
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: sources
     label: |-
-      Four source datasets
-      COCO · PartiPrompts · DSG-1k · Object365
+      Four Prompt Sources
+      COCO · PartiPrompts
+      DSG-1k · Object365
+      source-specific adaptation follows
     type: database
     size: xl
     position:
       x: 40
-      'y': 210
-  - id: adapt
+      'y': 360
+  - id: route
+    label: Source-specific prompt adaptation
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 360
+  - id: short
     label: |-
-      Adapt source prompts
-      expand first three sources
-      sample 1–4 Object365 objects
+      COCO / PartiPrompts / DSG-1k
+      take prompts from
+      the first three sources
+      expand short prompts
+      into long, dense descriptions
     type: process
     size: xl
     position:
-      x: 300
-      'y': 210
+      x: 600
+      'y': 140
+  - id: object365
+    label: |-
+      Object365 Composition
+      sample 1–4 objects
+      cover main category and subcategory
+      form a multi-object prompt seed
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 580
   - id: expand
     label: |-
-      GPT-4 dense expansion
-      scene details · object attributes · relationships
+      First GPT-4 Pass: Dense Expansion
+      enrich scene context
+      add object attributes
+      specify spatial / semantic relationships
     type: process
     size: xl
     position:
-      x: 560
-      'y': 210
+      x: 880
+      'y': 360
   - id: verify
     label: |-
-      Human verification
-      validate long prompts and semantic requirements
+      Human Verification
+      inspect expanded prompts
+      correct unsupported
+      or incoherent details
+      retain valid dense requirements
     type: process
     size: xl
     position:
-      x: 820
-      'y': 210
-  - id: graph
+      x: 1160
+      'y': 360
+  - id: dsg
     label: |-
-      DSG pipeline with GPT-4
-      tuple categories · questions · dependency graphs
+      Second GPT-4 Pass via DSG
+      derive semantic tuples and categories
+      write yes / no questions
+      construct question dependency graphs
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 210
-  - id: benchmark
+      x: 1440
+      'y': 360
+  - id: artifact
     label: |-
-      DPG-Bench
-      1,065 prompts · mean 83.91 CLIP tokens
-      4,286 nouns · 5 level-1 / 13 level-2 categories
+      Pinned DPG-Bench @ 68f5076
+      1,065 prompts
+      mean 83.91 CLIP tokens
+      4,286 distinct nouns
+      5 level-1 · 13 level-2 categories
     type: database
     size: xl
     position:
-      x: 1340
-      'y': 210
+      x: 1720
+      'y': 360
   - id: generate
     label: |-
-      Text-to-image model
-      generate 4 images for each dense prompt
+      Candidate Image Generation
+      generate 4 images per prompt
       recommended 2×2 grid
+      filename must match its prompt
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 210
+      x: 2000
+      'y': 360
   - id: vqa
     label: |-
-      mPLUG-large adjudication
-      answer each designated semantic question
+      Official VQA Checkpoint
+      damo/mplug_visual-question-
+      answering_coco_large_en
+      answer yes / no for every question
+      score all four tiles independently
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 210
-  - id: dsg
+      x: 2280
+      'y': 360
+  - id: dependency
     label: |-
-      DSG graph scoring
-      question dependencies determine prompt score
+      Dependency-aware Question Score
+      yes = 1 · no = 0
+      if any parent question is no
+      its child question score becomes 0
     type: process
     size: xl
     position:
-      x: 2120
-      'y': 210
-  - id: metrics
+      x: 2560
+      'y': 360
+  - id: aggregate
     label: |-
-      DPG-Bench report
-      average graph score + Global / Entity
-      Attribute / Relation / Other question means
+      Three-level Aggregation
+      image = mean of pruned questions
+      prompt = mean of 4 image scores
+      benchmark score = mean across prompts
+    type: process
+    size: xl
+    position:
+      x: 2840
+      'y': 360
+  - id: report
+    label: |-
+      DPG-Bench Report
+      overall dependency-aware
+      graph score
+      Global · Entity · Attribute
+      Relation · Other + 13 level-2
+      category means use raw yes / no
+      before dependency pruning
     type: terminal
     size: xl
     position:
-      x: 2380
-      'y': 210
+      x: 3120
+      'y': 360
 edges:
+  - from: evidence
+    to: sources
+    type: data
   - from: sources
-    to: adapt
+    to: route
     type: primary
-  - from: adapt
+  - from: route
+    to: short
+    type: primary
+  - from: route
+    to: object365
+    type: primary
+  - from: short
+    to: expand
+    type: primary
+  - from: object365
     to: expand
     type: primary
   - from: expand
     to: verify
     type: primary
   - from: verify
-    to: graph
+    to: dsg
     type: primary
-  - from: graph
-    to: benchmark
+  - from: dsg
+    to: artifact
     type: primary
-  - from: benchmark
+  - from: artifact
     to: generate
     type: primary
   - from: generate
     to: vqa
     type: primary
   - from: vqa
-    to: dsg
+    to: dependency
     type: primary
-  - from: dsg
-    to: metrics
+  - from: dependency
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
 modules: []

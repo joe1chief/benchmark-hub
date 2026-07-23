@@ -5,201 +5,407 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: PixMo-Count 构建与评测流程
-  description: 依据 Molmo 与 PixMo 论文重绘 Detic 检测、置信度与多样性过滤、对象中心点、 人工核验评测划分、开放数据封装以及直接计数与先指点后计数评测。
-  legend: PixMo-Count 是 Ai2 的 PixMo 数据集而非 Gemini Robotics 基准；正式发布划分包含 36,916 条训练记录以及各 540 条验证与测试记录。
+  description: >-
+    依据论文v2重建检测器生成计数问答、人工核验评测划分、固定官方发布及论文与固定代码中的计数分支，并明确保留未公开构建细节。
+  legend: >-
+    实线表示已披露的构建或评测流程；虚线表示证据、发布、许可或复现边界，并非额外流程阶段。
 nodes:
-  - id: step_1
+  - id: source_evidence
     label: |-
-      获取多样网页图像
-      从网页托管图像开始
-      保留图像 URL
-      覆盖不同场景与对象类别
-    type: database
+      固定官方证据
+      arXiv 2409.17146v2 · PDF 54c5e78b4066
+      Git 793fa387edfd · HF ebf51cf70e45
+      论文定义构建，快照核验发布
+    type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: step_2
+  - id: web_images
     label: |-
-      运行 Detic 检测器
-      使用标准非 VLM 模型
-      检测候选对象实例
-      不使用 VLM 生成标注
+      从网页图像开始
+      论文仅说明使用网页图像
+      未公开确切来源语料库
+      不借用PixMo-Cap主题描述
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 40
+  - id: detic
+    label: |-
+      运行非VLM检测器
+      论文引用Detic工作
+      数据卡明确将检测器命名为Detic
+      生成候选对象检测结果
     type: process
     size: xl
     position:
-      x: 260
+      x: 540
       'y': 40
-  - id: step_3
+  - id: confidence
     label: |-
-      应用严格置信度过滤
-      移除低置信度检测
-      提高自动标签精度
-      保留合格实例框
+      执行严格置信度阈值过滤
+      仅保留高置信度检测
+      论文未公开阈值数值
+      将其保留为明确过滤门
     type: process
     size: xl
     position:
-      x: 500
+      x: 800
       'y': 40
-  - id: step_4
+  - id: dominant_class
     label: |-
-      为每张图选择一个类别
-      取检测实例最多的类别
-      使用一个明确计数目标
-      记录其对象标签
+      每图选择一个类别
+      按对象类别统计检测框
+      选择检测数量最多的类别
+      定义单一计数目标
     type: process
     size: xl
     position:
-      x: 740
+      x: 1060
       'y': 40
-  - id: step_5
+  - id: centers_qa
     label: |-
-      将检测框转为对象中心
-      存储 x 与 y 点坐标
-      统计所选对象实例数
-      保留 0 至 10 的候选计数
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 40
-  - id: step_6
-    label: |-
-      形成计数问答对
-      图像与目标对象类别配对
-      以总数作为答案
-      保留中心点供训练监督
+      派生中心点与计数问答
+      将检测框转换为对象中心
+      统计所选类别实例数
+      配对图像、标签、计数与点
     type: document
     size: xl
     position:
-      x: 1220
+      x: 1320
       'y': 40
-  - id: step_7
+  - id: diversity_filter
     label: |-
       过滤准确性与多样性
-      移除不可靠候选项
-      减少重复视觉样例
-      准备训练池与核验池
+      官方数据卡披露此处理
+      去除不准确或冗余的数据
+      具体规则仍未公开
     type: process
     size: xl
     position:
-      x: 1460
+      x: 1580
       'y': 40
-  - id: step_8
+  - id: candidate_pool
     label: |-
-      抽取评测候选项
-      覆盖 2 至 10 个对象
-      每个计数抽取 120 例
-      沿用 CountBenchQA 式验证
+      形成候选池
+      保留0至10的合格计数
+      预留2至10供人工核验
+      其余记录可用于计数训练
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: step_9
+      x: 1840
+      'y': 40
+  - id: eval_sample
     label: |-
-      人工核验评测样例
-      检查真实对象数量
-      剔除错误检测器标签
-      形成可信计数参考答案
+      抽取评测候选
+      沿用CountBenchQA方法
+      每个计数抽取120个样例
+      覆盖2至10个对象
+    type: database
+    size: xl
+    position:
+      x: 2100
+      'y': 40
+  - id: human_verify
+    label: |-
+      人工核验计数
+      检查每个抽取候选
+      确认对象身份与总数
+      九个计数共1,080个核验项
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: step_10
+      x: 2360
+      'y': 40
+  - id: eval_release
     label: |-
-      划分验证集与测试集
-      各 540 条人工核验记录
-      计数范围保持 2 至 10
-      评测记录不含点坐标字段
+      创建验证集与测试集
+      验证540条 · 测试540条
+      均覆盖2至10个对象
+      发布的评测记录不含点坐标
     type: database
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: step_11
+      x: 2620
+      'y': 40
+  - id: train_release
     label: |-
-      定稿训练集
-      发布剩余 36,916 条记录
-      计数范围为 0 至 10
-      包含对象中心点与类别标签
+      定稿训练划分
+      使用剩余0至10计数记录
+      论文报告约36k张图像
+      固定发布包含36,916条
     type: database
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: step_12
+      x: 2100
+      'y': 360
+  - id: fixed_release
     label: |-
-      发布开放数据集
-      ODC-BY-1.0 研究许可
+      封装固定官方数据集
+      训练36,916 · 验证540 · 测试540
       URL · SHA-256 · 计数 · 标签 · 点
-      按哈希核验下载图像
-    type: document
+      ODC-BY-1.0；图像URL可重复
+    type: database
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: step_13
+      x: 1840
+      'y': 360
+  - id: eval_setup
     label: |-
-      生成计数预测
-      提供图像与计数问题
-      比较仅输出计数策略
-      评估先指点后计数推理
+      执行论文计数评测
+      表1使用保留测试集
+      表4的PCQA使用验证集
+      计数任务保持12个裁剪
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: step_14
+      x: 1580
+      'y': 360
+  - id: strategy_gate
+    label: |-
+      选择计数策略
+      比较论文中的四个消融分支
+      使用同一个PCQA验证集
+      按论文规则分别评分
+    type: decision
+    size: xl
+    position:
+      x: 1320
+      'y': 360
+  - id: count_only
+    label: |-
+      仅生成计数
+      不输出对象中心解释
+      PCQA验证准确率80.2
+      论文对比支路
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 160
+  - id: point_then_count
+    label: |-
+      先指点再生成计数
+      先输出有序对象中心点
+      PCQA验证准确率86.3
+      论文默认且最佳支路
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 320
+  - id: count_then_point
+    label: |-
+      先计数再生成点
+      反转解释输出顺序
+      PCQA验证准确率77.6
+      论文对比支路
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 480
+  - id: pointing_regex
+    label: |-
+      为正则计数生成点
+      仅输出点坐标而不输出计数
+      保留该论文对比分支
+      与文本计数解析器分离
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 640
+  - id: parse_points
+    label: |-
+      用正则统计输出点
+      将论文正则直接用于点坐标
+      不调用PointCountEval文本解析
+      PCQA验证准确率85.4
+    type: process
+    size: xl
+    position:
+      x: 540
+      'y': 640
+  - id: parse_count
+    label: |-
+      解析显式输出计数的分支
+      固定代码读取末尾整数或数词
+      也接受“a total of N”形式
+      报告正确、接近、有效及分计数结果
+    type: process
+    size: xl
+    position:
+      x: 800
+      'y': 360
+  - id: accuracy
     label: |-
       报告计数准确率
-      比较预测计数与参考计数
-      使用验证集或保留测试集
-      分析点顺序策略影响
+      预测计数须与参考值精确相等
+      表1报告保留测试集结果
+      表4报告策略消融结果
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 540
+      'y': 360
+  - id: construction_boundary
+    label: |-
+      构建披露边界
+      未公开检测器检查点与配置
+      未公开阈值与多样性规则
+      未公开来源采样与划分种子
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 820
+  - id: release_boundary
+    label: |-
+      论文至发布边界
+      论文约36k，固定数据为36,916
+      评测点坐标按设计缺失
+      数据卡arXiv标签指向Detic而非Molmo
+    type: document
+    size: xl
+    position:
+      x: 1840
+      'y': 820
+  - id: evaluator_boundary
+    label: |-
+      评测器复现边界
+      Git公开加载器、模板与解析器
+      但未公开数据构建流程
+      VLMEvalKit不支持PixMo-Count
+    type: document
+    size: xl
+    position:
+      x: 1580
+      'y': 820
+  - id: license_boundary
+    label: |-
+      发布与许可边界
+      ODC-BY-1.0研究发布
+      图像仍由外部URL托管
+      使用已发布SHA-256核验下载
+    type: document
+    size: xl
+    position:
+      x: 2100
+      'y': 820
 edges:
-  - from: step_1
-    to: step_2
+  - from: source_evidence
+    to: web_images
+    type: secondary
+    style:
+      dashed: true
+  - from: web_images
+    to: detic
     type: primary
-  - from: step_2
-    to: step_3
+  - from: detic
+    to: confidence
     type: primary
-  - from: step_3
-    to: step_4
+  - from: confidence
+    to: dominant_class
     type: primary
-  - from: step_4
-    to: step_5
+  - from: dominant_class
+    to: centers_qa
     type: primary
-  - from: step_5
-    to: step_6
+  - from: centers_qa
+    to: diversity_filter
     type: primary
-  - from: step_6
-    to: step_7
+  - from: diversity_filter
+    to: candidate_pool
     type: primary
-  - from: step_7
-    to: step_8
+  - from: candidate_pool
+    to: eval_sample
     type: primary
-  - from: step_8
-    to: step_9
+  - from: eval_sample
+    to: human_verify
     type: primary
-  - from: step_9
-    to: step_10
+  - from: human_verify
+    to: eval_release
     type: primary
-  - from: step_10
-    to: step_11
+  - from: candidate_pool
+    to: train_release
     type: primary
-  - from: step_11
-    to: step_12
+  - from: eval_release
+    to: fixed_release
     type: primary
-  - from: step_12
-    to: step_13
+  - from: train_release
+    to: fixed_release
     type: primary
-  - from: step_13
-    to: step_14
+  - from: fixed_release
+    to: eval_setup
     type: primary
+  - from: eval_setup
+    to: strategy_gate
+    type: primary
+  - from: strategy_gate
+    to: count_only
+    type: primary
+  - from: strategy_gate
+    to: point_then_count
+    type: primary
+  - from: strategy_gate
+    to: count_then_point
+    type: primary
+  - from: strategy_gate
+    to: pointing_regex
+    type: primary
+    waypoints:
+      - x: 1300
+        'y': 410
+      - x: 1300
+        'y': 690
+  - from: count_only
+    to: parse_count
+    type: primary
+  - from: point_then_count
+    to: parse_count
+    type: primary
+  - from: count_then_point
+    to: parse_count
+    type: primary
+  - from: pointing_regex
+    to: parse_points
+    type: primary
+  - from: parse_points
+    to: accuracy
+    type: primary
+  - from: parse_count
+    to: accuracy
+    type: primary
+  - from: confidence
+    to: construction_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 780
+        'y': 160
+      - x: 400
+        'y': 160
+      - x: 400
+        'y': 740
+      - x: 370
+        'y': 740
+  - from: fixed_release
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: eval_setup
+    to: evaluator_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: fixed_release
+    to: license_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

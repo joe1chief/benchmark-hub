@@ -1,177 +1,662 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLongBench-Doc 构建流程
-  description: 按论文通过专家构建与三轮质检，在 135 份长篇 PDF 上形成 1,082 道题，再经答案抽取计算广义准确率与广义 F1。
-  legend: 最终基准包含 184 道保留的来源题目和 898 道新标注题目。
+  title: MMLongBench-Doc v3 构建与评测流程
+  description: >-
+    按论文 v3 与固定仓库快照复原 135 份长篇 PDF 和 1,082 道专家问题，包括来源题/新题两条标注路径、三轮质检、 视觉与 OCR 输入处理、GPT-4o 抽取提示词、解析失败行为、按格式评分规则，以及广义准确率/F1
+    的分母。
+  legend: >-
+    实线为执行路径，虚线为来源或版本漂移；判断结果采用中文标签。academic-color 主题默认节点字体为 11pt。 该独立基准不同于 MMLongBench 套件内经过预处理的 961 行 MMLongBench-Doc
+    子集。
 nodes:
-  - id: documents
+  - id: evidence
     label: |-
-      收集 135 份长篇 PDF
-      76 份已有 · 59 份新收集
-      覆盖七种文档类型
-      平均 47.5 页 · 21,214 词元
+      固定证据边界
+      arXiv 2407.01523v3 · 2024-11-12
+      Git + 数据 88b5f09 · 1,082 行
+      v3/数据 = 1,082；README 写 1,091
+      代码 Apache-2.0 · 数据 CC BY-NC 4.0
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 520
+  - id: document_route
+    label: 文档来源？
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 520
+  - id: existing_docs
+    label: |-
+      76 份已有数据集 PDF
+      DUDE · SlideVQA
+      ChartQA · FinanceBench
+      保留 >15 页；按来源下采样
+      排除许可受限文档
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: train
+      x: 600
+      'y': 380
+  - id: new_docs
     label: |-
-      培训十名专家标注员
-      均为医生或博士生
-      要求熟练使用英语
-      先标注三份文档
-    type: user
-    size: xl
-    position:
-      x: 300
-      'y': 40
-  - id: batches
-    label: |-
-      执行 54 批正式标注
-      每批分配两至四份 PDF
-      每文档投入 60–90 分钟
-      持续提供迭代反馈
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 40
-  - id: review
-    label: |-
-      复核 425 道已有问题
-      标记保留 · 修订 · 移除
-      检查六类质量问题
-      初步收集 211 道题
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 40
-  - id: author
-    label: |-
-      专家编写新问题
-      每份已有 PDF 约三题
-      每份新 PDF 约六题
-      记录答案与证据元数据
-    type: user
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: coverage
-    label: |-
-      保证问题多样性
-      单页与跨页证据并存
-      纳入不可回答问题
-      使用文本 · 表格 · 图表 · 图像
-    type: process
-    size: xl
-    position:
-      x: 1420
-      'y': 40
-  - id: relevance
-    label: |-
-      质检一：文档必要性
-      不提供 PDF 让 GPT-4o 作答
-      移除 94 道无需文档可答题
-      确保文档不可替代
-    type: process
-    size: xl
-    position:
-      x: 1420
-      'y': 420
-  - id: reflection
-    label: |-
-      质检二：自我反思
-      提供 PDF 让 GPT-4o 检查
-      将不一致项返回专家
-      修订 13.8% 的题目
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 420
-  - id: crosscheck
-    label: |-
-      质检三：专家交叉检查
-      标记 17.5% 不一致项
-      一致性 Kappa 为 0.42
-      由主要作者最终裁决
-    type: user
-    size: xl
-    position:
-      x: 860
-      'y': 420
-  - id: dataset
-    label: |-
-      汇总 1,082 道最终题目
-      184 道来源题 · 898 道新题
-      494 道单页 · 365 道跨页
-      223 道不可回答题
+      59 份新收集 PDF
+      24 篇 arXiv 论文
+      21 份指南 · 14 份宣传册
+      来源 ManualsLib + Google 搜索
+      人工检查学术使用可用性
     type: database
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: extract
+      x: 600
+      'y': 660
+  - id: annotators
     label: |-
-      生成并规范化答案
-      输入 PDF 页面或 OCR 文本
-      保留模型自由文本输出
-      GPT-4o 抽取简短答案
+      培训十名作者标注员
+      医生/博士生 · 三份练习 PDF
+      再执行 54 批 · 每批 2–4 份 PDF
+      每份 PDF 投入 60–90 分钟
+      每批复核并持续给出反馈
+    type: user
+    size: xl
+    position:
+      x: 1160
+      'y': 520
+  - id: question_route
+    label: 问题路径？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 520
+  - id: new_questions
+    label: |-
+      编写 965 道新题
+      每份已有 PDF 约 3 题 · 新 PDF 约 6 题
+      侧重跨页与不可回答问题
+      平衡文本 · 布局 · 表格
+      图表 · 图像及证据元数据
+    type: user
+    size: xl
+    position:
+      x: 2000
+      'y': 720
+  - id: source_outcome
+    label: |-
+      审核 425 道来源题
+      六类缺陷：证据 · 重复
+      歧义 · 需去语境化
+      低相关性 · 捷径
+      保留、修订还是移除？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 300
+  - id: retain_source
+    label: |-
+      保留
+      不含阻断性缺陷
+      保留答案与元数据
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: score
+      x: 2560
+      'y': 140
+  - id: revise_source
     label: |-
-      执行规则评分
-      广义准确率与广义 F1
-      处理不可回答结果
-      对比 LVLM 与 OCR+LLM 输入
+      修订 · 占 425 题的 32.2%
+      纠正答案 / 证据
+      去语境化或消除歧义
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 300
+  - id: remove_source
+    label: |-
+      移除 · 占 425 题的 46.1%
+      重复 / 捷径或
+      其他无法修复的缺陷
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 2560
+      'y': 460
+  - id: candidates
+    label: |-
+      合并 1,176 道候选题
+      211 道保留/修订题 + 965 道新题
+      问题 + 简短答案
+      证据页 / 来源 / 答案格式
+    type: database
+    size: xl
+    position:
+      x: 3120
+      'y': 520
+  - id: relevance_gate
+    label: |-
+      GPT-4o 不看 PDF
+      能否答对？
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 520
+  - id: relevance_remove
+    label: |-
+      质检一移除
+      94 道低文档相关性题
+      不纳入最终分母
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 360
+  - id: reflection_gate
+    label: |-
+      GPT-4o 查看 PDF 后
+      是否与参考答案不一致？
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 620
+  - id: reflection_revise
+    label: |-
+      质检二：专家自我反思
+      将不一致项返回原标注员
+      13.8% 被认定为有问题
+      必要时修订标注
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 500
+  - id: crosscheck_gate
+    label: |-
+      独立标注员是否
+      标记不一致？
+    type: decision
+    size: xl
+    position:
+      x: 4240
+      'y': 620
+  - id: adjudicate
+    label: |-
+      质检三：元标注
+      17.5% 不一致 · κ = 0.42
+      两名主要作者裁决
+      必要时修订
+    type: user
+    size: xl
+    position:
+      x: 4520
+      'y': 500
+  - id: dataset
+    label: |-
+      MMLongBench-Doc v3
+      135 份 PDF · 1,082 道题
+      184 道来源题 + 898 道新题
+      494 道单页 · 365 道跨页
+      223 道不可回答
+    type: database
+    size: xl
+    position:
+      x: 4800
+      'y': 620
+  - id: vision_input
+    label: |-
+      LVLM 视觉路径
+      每页以 144 DPI 渲染
+      GPT-4o/GPT-4V/Gemini：逐页图像
+      Claude：最多 20 张图
+      开源模型：拼接为 1 或 5 张图
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 920
+  - id: ocr_input
+    label: |-
+      OCR + LLM 路径
+      Tesseract 提取页面文本
+      超出模型上下文即截断
+      图表 / 图像信息仍有损
+      仅为对比路径，不是金标准输入
+    type: process
+    size: xl
+    position:
+      x: 4520
+      'y': 1160
+  - id: extraction
+    label: |-
+      先生成，再抽取
+      提示：文档 + 问题；尽量简洁
+      候选 T=0 · max_new_tokens=1024
+      GPT-4o 输出“Extracted answer:”
+      +“Answer format:”；T=0 · max_tokens=256
+    type: process
+    size: xl
+    position:
+      x: 3960
+      'y': 1040
+  - id: parse_gate
+    label: |-
+      两个标记切分后
+      是否得到答案？
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 1040
+  - id: local_zero
+    label: |-
+      解析 / 抽取失败
+      抽取器异常返回“Failed”
+      run_lvlm.py：“Failed to extract”→0
+      run_api.py：解析异常未捕获
+      API 评测中止
+    type: terminal
+    size: xl
+    position:
+      x: 3120
+      'y': 780
+  - id: answer_format
+    label: |-
+      参考答案格式？
+      忽略抽取器声明的格式
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 1300
+  - id: string_score
+    label: |-
+      Str / None
+      归一化大小写、单位、引号
+      正则敏感值 → 精确相等
+      否则 ANLS，阈值 τ = 0.5
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1080
+  - id: integer_score
+    label: |-
+      整数
+      预测先转 float 再转 int
+      精确相等，否则 0 分
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1240
+  - id: float_score
+    label: |-
+      浮点数
+      去除单位 / 百分号
+      接受 x/100、x 或 100x
+      相对容差为 1%
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1400
+  - id: list_score
+    label: |-
+      列表
+      对“[ … ]”预测执行 Python eval
+      长度不同 → 0；元素排序
+      数值/敏感值精确匹配，否则
+      取成对 ANLS 的最小值
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1560
+  - id: report
+    label: |-
+      广义指标
+      准确率 = 1,082 个已评分行的均值
+      正例召回率分母 = 859
+      精确率分母 = 预测为正的行数
+      F1 为调和平均；分组 494/365/223
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 1300
 edges:
-  - from: documents
-    to: train
+  - from: evidence
+    to: document_route
     type: primary
-  - from: train
-    to: batches
+  - from: document_route
+    to: existing_docs
     type: primary
-  - from: batches
-    to: review
+    label: 已有
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: document_route
+    to: new_docs
     type: primary
-  - from: review
-    to: author
+    label: 新收集
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: existing_docs
+    to: annotators
     type: primary
-  - from: author
-    to: coverage
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: new_docs
+    to: annotators
     type: primary
-  - from: coverage
-    to: relevance
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: annotators
+    to: question_route
     type: primary
-  - from: relevance
-    to: reflection
+  - from: question_route
+    to: source_outcome
     type: primary
-  - from: reflection
-    to: crosscheck
+    label: 来源题
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: question_route
+    to: new_questions
     type: primary
-  - from: crosscheck
+    label: 新题
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: source_outcome
+    to: retain_source
+    type: primary
+    label: 保留
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+  - from: source_outcome
+    to: revise_source
+    type: primary
+    label: 修订
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: source_outcome
+    to: remove_source
+    type: primary
+    label: 移除
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+  - from: retain_source
+    to: candidates
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: revise_source
+    to: candidates
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: new_questions
+    to: candidates
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.85
+  - from: candidates
+    to: relevance_gate
+    type: primary
+  - from: relevance_gate
+    to: relevance_remove
+    type: primary
+    label: 是
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: relevance_gate
+    to: reflection_gate
+    type: primary
+    label: 否
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.5
+  - from: reflection_gate
+    to: reflection_revise
+    type: primary
+    label: 是
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: reflection_gate
+    to: crosscheck_gate
+    type: primary
+    label: 否
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.7
+  - from: reflection_revise
+    to: crosscheck_gate
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: crosscheck_gate
+    to: adjudicate
+    type: primary
+    label: 是
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.3
+      entryX: 0
+      entryY: 0.5
+  - from: crosscheck_gate
     to: dataset
     type: primary
+    label: 否
+    style:
+      endArrow: block;noLabel=1
+      exitX: 1
+      exitY: 0.7
+      entryX: 0
+      entryY: 0.7
+  - from: adjudicate
+    to: dataset
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
   - from: dataset
-    to: extract
+    to: vision_input
     type: primary
-  - from: extract
-    to: score
+    label: 视觉
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0.25
+      exitY: 1
+      entryX: 1
+      entryY: 0.5
+  - from: dataset
+    to: ocr_input
     type: primary
+    label: OCR 文本
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0.75
+      exitY: 1
+      entryX: 1
+      entryY: 0.5
+  - from: vision_input
+    to: extraction
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.3
+  - from: ocr_input
+    to: extraction
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.7
+  - from: extraction
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: answer_format
+    type: primary
+    label: 有效
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.7
+      entryX: 1
+      entryY: 0.5
+  - from: parse_gate
+    to: local_zero
+    type: primary
+    label: 无效
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.3
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: string_score
+    type: primary
+    label: 字符串
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.15
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: integer_score
+    type: primary
+    label: 整数
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.38
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: float_score
+    type: primary
+    label: 浮点
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.62
+      entryX: 1
+      entryY: 0.5
+  - from: answer_format
+    to: list_score
+    type: primary
+    label: 列表
+    style:
+      endArrow: block;noLabel=1
+      exitX: 0
+      exitY: 0.85
+      entryX: 1
+      entryY: 0.5
+  - from: string_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.2
+  - from: integer_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.4
+  - from: float_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.6
+  - from: list_score
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.8
 modules: []

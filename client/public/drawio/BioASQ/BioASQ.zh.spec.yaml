@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BioASQ 构建流程
-  description: 严格对齐 2015 年 BMC Bioinformatics 开放论文，展示首届 BioASQ 生物医学语义索引与问答挑战的两类任务。
-  legend: 上支路为 Task 1a 在线 MeSH 索引，下支路为专家构建的 Task 1b 问答；虚线传递延迟到达的人工标签或金标准 Phase-A 证据。
+  description: 严格对齐 BMC Bioinformatics 16:138（PMC4450488），用双泳道展示首届 BioASQ 生物医学语义索引与问答协议。
+  legend: 上泳道为 Task 1a；下泳道把 Task 1b Phase A 仅问题输入与 Phase B 官方金标准证据分离，虚线表示可选复用自身 Phase-A 输出或重跑。
 nodes:
   - id: sources
     label: |-
@@ -30,8 +30,8 @@ nodes:
       'y': 40
   - id: task1a_test
     label: |-
-      创建每周未标注测试集
-      三批 × 每批六周 • 新文章不重复
+      选择后续 MEDLINE 记录
+      3 批 × 每批 6 周 • 新文章不重复
       选择预计 90 天内获 MeSH 的期刊
     type: process
     size: xl
@@ -77,17 +77,27 @@ nodes:
     size: xl
     position:
       x: 320
-      'y': 420
+      'y': 560
   - id: qa_gold
     label: |-
       构建 Task 1b 金标准基准
       29 道开发题 + 282 道测试题
-      概念 • 文档 • 片段 • 三元组 • 答案
+      类型 • 概念 • 论文 • 片段 • 三元组 • 答案
     type: database
     size: xl
     position:
       x: 600
-      'y': 420
+      'y': 560
+  - id: phase_a_input
+    label: |-
+      仅发布 Phase A 输入
+      问题文本 + 问题类型
+      隐藏官方金标证据与答案
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 400
   - id: phase_a
     label: |-
       运行 Task 1b Phase A 检索
@@ -96,48 +106,53 @@ nodes:
     type: process
     size: xl
     position:
-      x: 880
-      'y': 280
+      x: 1160
+      'y': 400
   - id: phase_a_metrics
     label: |-
       评分 Phase A 检索
-      MAP / GMAP • Precision • Recall • F Measure
+      MAP 为主指标
+      GMAP • Precision • Recall
+      F Measure 为附加指标
       片段使用 offset 感知匹配
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 260
+      x: 1440
+      'y': 400
   - id: phase_b
     label: |-
       运行 Task 1b Phase B 作答
-      提供金标准 Phase-A 证据
-      输出精确答案和不超过 200 词的理想摘要
+      官方金标概念 / 论文
+      片段 / 三元组为主输入
+      可用自身 Phase-A 输出或重跑
+      生成精确与理想答案
     type: process
     size: xl
     position:
-      x: 880
-      'y': 540
+      x: 1160
+      'y': 680
   - id: exact_metrics
     label: |-
       评分精确答案
-      是非准确率 • 事实严格/宽松准确率 + MRR
-      列表 Precision、Recall 与 F Measure
+      是非准确率 • 事实型 MRR 为主
+      列表平均 F 为主 • 摘要题无精确答案
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 460
+      x: 1440
+      'y': 620
   - id: ideal_metrics
     label: |-
       评分理想答案
-      自动 ROUGE 摘要指标
-      生物医学专家人工质量评估
+      专家四项维度按 1–5 分评分
+      召回 • 精确 • 重复 • 可读性
+      ROUGE 仅作探索
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 660
+      x: 1440
+      'y': 820
   - id: results
     label: |-
       发布 BioASQ 挑战结果
@@ -146,15 +161,28 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 1440
-      'y': 380
+      x: 1720
+      'y': 400
 edges:
   - from: sources
     to: task1a_train
     type: primary
-  - from: task1a_train
+  - from: sources
     to: task1a_test
     type: primary
+    waypoints:
+      - x: 160
+        'y': 180
+      - x: 600
+        'y': 180
+  - from: task1a_train
+    to: task1a_submit
+    type: data
+    waypoints:
+      - x: 320
+        'y': 240
+      - x: 880
+        'y': 240
   - from: task1a_test
     to: task1a_submit
     type: primary
@@ -173,7 +201,17 @@ edges:
   - from: experts
     to: qa_gold
     type: primary
-  - from: qa_gold
+  - from: experts
+    to: phase_a_input
+    type: primary
+    waypoints:
+      - x: 540
+        'y': 520
+      - x: 820
+        'y': 520
+      - x: 820
+        'y': 450
+  - from: phase_a_input
     to: phase_a
     type: primary
   - from: phase_a
@@ -197,7 +235,17 @@ edges:
   - from: exact_metrics
     to: results
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
   - from: ideal_metrics
     to: results
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.5
+      entryY: 1
 modules: []

@@ -5,201 +5,574 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: olmOCR-Bench 构建与评测流程
-  description: 按论文构建发布版1,403份PDF与7,010项单元测试，随后进行规范化二元测试并对文档来源宏平均。
-  legend: 论文一处正文写1,402份不同PDF，而v3发布表与公开benchmark采用1,403份；本图按发布版1,403份口径绘制。
+  description: >-
+    依据论文v3重建七类来源专用PDF流程、确定性单元测试评测和来源等权宏平均，并明确标出固定发布与现行代码漂移边界。
+  legend: >-
+    实线表示论文构建与评测协议；虚线连接固定证据或披露、发布、评测器及许可边界，并非额外基准阶段。
 nodes:
-  - id: step_1
+  - id: source_evidence
     label: |-
-      定义高难PDF基准
-      测试忠实文本线性化
-      覆盖结构与自然阅读顺序
-      避免依赖完整参考转录
+      固定官方证据
+      arXiv 2502.18443v3 · PDF d006f3f9100a
+      Git f7cfe4c22098 · HF 54a96a6fb6a2
+      论文定协议，快照审计代码与数据
     type: document
     size: xl
     position:
       x: 20
-      'y': 40
-  - id: step_2
+      'y': 460
+  - id: benchmark_goal
     label: |-
-      收集七类文档来源
-      arXiv数学 · 老扫描数学 · 表格
-      老扫描 · 页眉页脚
-      多栏 · 长篇微小文字
-    type: database
+      定义确定性OCR事实
+      测试忠实页面线性化
+      保留文本、结构与顺序
+      避免完整参考或大模型裁判
+    type: document
     size: xl
     position:
-      x: 260
-      'y': 40
-  - id: step_3
+      x: 280
+      'y': 460
+  - id: eligibility
     label: |-
-      应用发布资格过滤
-      移除包含个人信息的文档
-      移除不可公开传播文件
-      保留来源信息
+      执行论文资格过滤
+      仅移除同时满足两个条件的文档
+      含个人信息且并非为公开传播而准备
+      附录复用训练混合数据PII提示
     type: process
     size: xl
     position:
-      x: 500
-      'y': 40
-  - id: step_4
+      x: 540
+      'y': 460
+  - id: decontaminate
     label: |-
       与训练数据去污染
       对照olmOCR-mix-0225
-      按benchmark PDF URL去重
-      隔离评测文档
+      在PDF URL层面去重
+      保持基准文档隔离
     type: process
     size: xl
     position:
-      x: 740
-      'y': 40
-  - id: step_5
+      x: 800
+      'y': 460
+  - id: source_gate
     label: |-
-      按来源编写单元测试
-      人工标注公式与扫描件
-      LLM起草表格与版式检查
-      脚本编码阅读顺序检查
+      选择七类PDF来源之一
+      使用来源专用采集路径
+      创建简单可机器核验事实
+      所有结果均进入人工复核
+    type: decision
+    size: xl
+    position:
+      x: 1060
+      'y': 460
+  - id: arxiv_math
+    label: |-
+      构建arXiv数学测试
+      522份PDF · 2,927项公式测试
+      单一TeX源文件及渲染PDF
+      olmOCR · 动态对齐 · KaTeX · 复核
     type: process
     size: xl
     position:
-      x: 980
-      'y': 40
-  - id: step_6
+      x: 1600
+      'y': 20
+  - id: old_scans_math
     label: |-
-      人工核验每项测试
-      检查页面证据与触发条件
-      使用KaTeX验证公式
-      复核生成与拆分测试
+      构建老扫描数学测试
+      36份PDF · 458项公式测试
+      Internet Archive公版教材
+      随机页面 · olmOCR · 人工公式
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 40
-  - id: step_7
+      x: 1600
+      'y': 170
+  - id: tables
     label: |-
-      发布1,403份PDF与7,010项测试
-      存在721 · 缺失823
-      阅读顺序1,061 · 表格1,020
-      数学公式3,385
+      构建表格测试
+      188份PDF · 1,020项关系测试
+      内部爬取库 · Gemini Flash 2.0
+      随机单元格并人工复核
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 320
+  - id: old_scans
+    label: |-
+      构建老扫描文本测试
+      98份PDF · 526项LoC测试
+      人工转录驱动顺序脚本
+      人工缺失测试并二次复核
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 470
+  - id: headers_footers
+    label: |-
+      构建页眉页脚测试
+      266份PDF · 753项缺失测试
+      DocLayout-YOLO的abandon区域
+      遮罩 · Gemini Flash 2.0 · 人工边界
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 620
+  - id: multi_column
+    label: |-
+      构建多栏测试
+      231份PDF · 884项顺序测试
+      从内部爬取库目视抽样
+      Claude Sonnet 3.7 HTML · 人工复核
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 770
+  - id: long_tiny_text
+    label: |-
+      构建长篇微小文字测试
+      62份PDF · 442项存在测试
+      Internet Archive高密度页面
+      Gemini Flash 2.0 · 人工核验
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 920
+  - id: manual_review
+    label: |-
+      生成并复核各来源测试
+      人工设计与复核
+      GPT-4o提示生成 · 通常T=0.1
+      人工修正事实与关系
+      排除歧义或无效案例
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 460
+  - id: paper_scope
+    label: |-
+      冻结论文v3表格口径
+      表10：1,403份PDF · 7,010项核心测试
+      存在721 · 缺失823 · 顺序1,061
+      表格1,020 · 公式3,385
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 40
-  - id: step_8
+      x: 2400
+      'y': 460
+  - id: fixed_release
     label: |-
-      运行各OCR系统
-      处理全部benchmark PDF
-      输出Markdown或纯文本
+      封装固定HF发布
+      1,403份PDF · 七个来源JSONL
+      7,010项核心加9项显式基线
+      修订54a96a6fb6a2采用ODC-BY-1.0
+    type: database
+    size: xl
+    position:
+      x: 2660
+      'y': 460
+  - id: run_ocr
+    label: |-
+      逐PDF页面运行OCR系统
+      保留已发布的单页PDF
+      输出Markdown或Unicode纯文本
       保持自然阅读顺序
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: step_9
+      x: 2660
+      'y': 1400
+  - id: normalize
     label: |-
-      规范化OCR输出
-      规范空白与Markdown强调
-      规范引号与连字符
-      应用Unicode NFC
+      规范化可比较文本
+      合并空白并移除强调标记
+      将引号与连字符映射为ASCII
+      将Unicode规范化为NFC
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: step_10
+      x: 2400
+      'y': 1400
+  - id: test_gate
     label: |-
-      应用基线健全性测试
-      要求含字母或数字内容
-      拒绝结尾超过30的n-gram循环
-      拒绝未标记的中日韩字符或Emoji
+      路由至论文测试族
+      五类核心测试加基线
+      评估简单页面级属性
+      每项结果均为二元值
+    type: decision
+    size: xl
+    position:
+      x: 1900
+      'y': 1400
+  - id: baseline
+    label: |-
+      每份PDF执行一项基线
+      要求输出含字母数字
+      拒绝末尾重复超过30次的n元组
+      拒绝意外中文、日文或表情符号
+      除非该PDF已有例外配置
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: step_11
+      x: 1400
+      'y': 1120
+  - id: presence_absence
     label: |-
       测试文本存在与缺失
-      定位必须出现的文本片段
-      拒绝不应出现的页眉页脚
-      执行位置条件
+      必须存在721 · 必须缺失823
+      模糊匹配并可限制首尾N字符
+      存在测试默认区分大小写
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: step_12
+      x: 1400
+      'y': 1280
+  - id: reading_order
     label: |-
-      测试结构与关系
-      自然阅读顺序
-      表格单元格关系
-      公式符号与边界框关系
+      测试自然阅读顺序
+      1,061项先后关系
+      模糊搜索两个文本片段
+      要求有效的先后位置
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: step_13
+      x: 1400
+      'y': 1440
+  - id: table_accuracy
     label: |-
-      计算二元结果
-      每项单元测试通过或失败
-      按PDF来源计算通过率
-      保留来源级诊断
+      测试表格单元格关系
+      1,020项单元格与邻接事实
+      解析Markdown或HTML表格
+      复杂跨行列结构需要HTML
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: step_14
+      x: 1400
+      'y': 1600
+  - id: math_formula
     label: |-
-      报告最终基准分数
-      对文档来源做宏平均
-      Bootstrap 95%置信区间
+      测试数学公式版式
+      3,385个参考方程
+      使用KaTeX渲染LaTeX
+      匹配符号及相对边界框
+    type: process
+    size: xl
+    position:
+      x: 1400
+      'y': 1760
+  - id: source_rates
+    label: |-
+      按来源记录二元结果
+      每项事实确定性通过或失败
+      七个文档来源JSONL分组
+      基线为第八组并计算各组通过率
+    type: process
+    size: xl
+    position:
+      x: 900
+      'y': 1440
+  - id: macro_score
+    label: |-
+      宏平均来源分数
+      每个来源组权重相同
+      总分等于各组通过率均值
+      不对7,010项事实做微平均
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 1440
+  - id: confidence
+    label: |-
+      报告总分与95%置信区间
+      论文表4使用10,000次Bootstrap
+      论文未说明重采样单位
       一致比较各OCR系统
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 380
+      'y': 1440
+  - id: source_boundary
+    label: |-
+      构建披露边界
+      未标识内部来源语料库
+      未公开确切选择种子
+      已命名大模型无不可变检查点
+    type: document
+    size: xl
+    position:
+      x: 1060
+      'y': 940
+  - id: release_boundary
+    label: |-
+      论文至发布计数边界
+      正文写1,402，表10写1,403
+      固定JSONL有7,019条物理记录
+      即7,010项核心加9项基线
+    type: document
+    size: xl
+    position:
+      x: 2920
+      'y': 460
+  - id: evaluator_drift
+    label: |-
+      后续评测器漂移边界
+      九项基线仍归入其来源组
+      Git新增格式与脚注测试类型
+      多数重复通过 · 1,000而非论文10,000
+    type: document
+    size: xl
+    position:
+      x: 640
+      'y': 1960
+  - id: license_boundary
+    label: |-
+      发布与许可边界
+      固定数据集采用ODC-BY-1.0
+      PDF保留各自来源信息
+      原始上游权利仍然适用
+    type: document
+    size: xl
+    position:
+      x: 2920
+      'y': 880
 edges:
-  - from: step_1
-    to: step_2
+  - from: source_evidence
+    to: benchmark_goal
+    type: secondary
+    style:
+      dashed: true
+  - from: benchmark_goal
+    to: eligibility
     type: primary
-  - from: step_2
-    to: step_3
+  - from: eligibility
+    to: decontaminate
     type: primary
-  - from: step_3
-    to: step_4
+  - from: decontaminate
+    to: source_gate
     type: primary
-  - from: step_4
-    to: step_5
+  - from: source_gate
+    to: arxiv_math
     type: primary
-  - from: step_5
-    to: step_6
+    style:
+      exitX: 1
+      exitY: 0.47
+      entryX: 0
+      entryY: 0.5
+  - from: source_gate
+    to: old_scans_math
     type: primary
-  - from: step_6
-    to: step_7
+    style:
+      exitX: 1
+      exitY: 0.48
+      entryX: 0
+      entryY: 0.5
+  - from: source_gate
+    to: tables
     type: primary
-  - from: step_7
-    to: step_8
+    style:
+      exitX: 1
+      exitY: 0.49
+      entryX: 0
+      entryY: 0.5
+  - from: source_gate
+    to: old_scans
     type: primary
-  - from: step_8
-    to: step_9
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: source_gate
+    to: headers_footers
     type: primary
-  - from: step_9
-    to: step_10
+    style:
+      exitX: 1
+      exitY: 0.51
+      entryX: 0
+      entryY: 0.5
+  - from: source_gate
+    to: multi_column
     type: primary
-  - from: step_10
-    to: step_11
+    style:
+      exitX: 1
+      exitY: 0.52
+      entryX: 0
+      entryY: 0.5
+  - from: source_gate
+    to: long_tiny_text
     type: primary
-  - from: step_11
-    to: step_12
+    style:
+      exitX: 1
+      exitY: 0.53
+      entryX: 0
+      entryY: 0.5
+  - from: arxiv_math
+    to: manual_review
     type: primary
-  - from: step_12
-    to: step_13
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.47
+  - from: old_scans_math
+    to: manual_review
     type: primary
-  - from: step_13
-    to: step_14
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.48
+  - from: tables
+    to: manual_review
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.49
+  - from: old_scans
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: headers_footers
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.51
+  - from: multi_column
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.52
+  - from: long_tiny_text
+    to: manual_review
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.53
+  - from: manual_review
+    to: paper_scope
+    type: primary
+  - from: paper_scope
+    to: fixed_release
+    type: primary
+  - from: fixed_release
+    to: run_ocr
+    type: primary
+  - from: run_ocr
+    to: normalize
+    type: primary
+  - from: normalize
+    to: test_gate
+    type: primary
+  - from: test_gate
+    to: baseline
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.48
+      entryX: 1
+      entryY: 0.5
+  - from: test_gate
+    to: presence_absence
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.49
+      entryX: 1
+      entryY: 0.5
+  - from: test_gate
+    to: reading_order
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: test_gate
+    to: table_accuracy
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.51
+      entryX: 1
+      entryY: 0.5
+  - from: test_gate
+    to: math_formula
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.52
+      entryX: 1
+      entryY: 0.5
+  - from: baseline
+    to: source_rates
+    type: primary
+  - from: presence_absence
+    to: source_rates
+    type: primary
+  - from: reading_order
+    to: source_rates
+    type: primary
+  - from: table_accuracy
+    to: source_rates
+    type: primary
+  - from: math_formula
+    to: source_rates
+    type: primary
+  - from: source_rates
+    to: macro_score
+    type: primary
+  - from: macro_score
+    to: confidence
+    type: primary
+  - from: source_gate
+    to: source_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: paper_scope
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 2510
+        'y': 400
+      - x: 3030
+        'y': 400
+  - from: macro_score
+    to: evaluator_drift
+    type: secondary
+    style:
+      dashed: true
+  - from: fixed_release
+    to: license_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 2900
+        'y': 580
+      - x: 2900
+        'y': 930
 modules: []

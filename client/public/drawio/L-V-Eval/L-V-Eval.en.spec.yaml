@@ -4,192 +4,336 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LV-Eval Build Process
+  title: LV-Eval Build Process and Evaluation Contract
   description: >-
-    Paper-aligned construction of 11 bilingual long-context QA datasets through controlled context mixing, confusing
-    fact insertion, leakage-reducing replacements, human annotation, and keyword-aware two-stage scoring.
+    Paper-v3-aligned construction of 11 bilingual long-context QA datasets, with subset-specific CFI, KPR, and
+    answer-keyword branches, followed by the paper's three-route metric contract and explicit released-artifact
+    boundaries.
   legend: >-
-    The same 1,729 QA pairs are reused at five length levels, yielding 8,645 synthetic contexts from 16K to 256K words
-    or Chinese characters. Six datasets are English and five are Chinese.
+    The main solid path follows arXiv:2402.05136v3. There are 1,331 unique QA pairs, but FactRecall repeats one QA per
+    language at 200 evidence positions, so each length has 1,729 instances and all five lengths total 8,645. English
+    lengths count words and Chinese lengths count characters; the paper reports mean 102,380 and range 11,896–387,406.
+    Five on-site full-time master's annotators support CFI, KPR, and AK work. Dashed edges mark evidence, evaluator
+    drift, blacklist support, and public-artifact boundaries rather than primary data flow.
 nodes:
   - id: sources
     label: |-
-      Select Public QA and Text Sources
-      HotpotQA · 2Wiki · DuReader · LooGLE
-      LongBench · CMRC · MultiFieldQA
-      PG-19 · Journey to the West · LIC
+      Public QA and Text Sources
+      LIC · HotpotQA + 2Wiki · DuReader
+      LooGLE · CMRC · MFQA in LongBench
+      FactRecall: PG-19 + Journey to the West
     type: database
     size: xl
     position:
       x: 20
-      'y': 40
+      'y': 80
+  - id: evidence
+    label: |-
+      Evidence Boundary
+      Paper: arXiv:2402.05136v3
+      Git 63e7ae9 · HF 86a3b0e
+      Paper v3 Governs the Main Flow
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 320
   - id: qa
     label: |-
-      Construct 11 Bilingual QA Sets
-      9 Adapted Public QA Datasets
-      2 Synthetic Fact-recall Datasets
-      6 English · 5 Chinese
+      Assemble 11 Bilingual QA Sets
+      7 Single-hop · 4 Multi-hop · 6 EN / 5 ZH
+      1,329 Adapted + 2 Written Fact QAs
+      = 1,331 Unique QA Pairs
     type: process
     size: xl
     position:
       x: 300
-      'y': 40
-  - id: pool
+      'y': 80
+  - id: mix
     label: |-
-      Fix 1,729 QA Pairs
-      Single-hop and Multi-hop Tasks
-      One Fact QA per Fact-recall Language
-      Reuse Identical QA Across Lengths
-    type: database
+      Mix Supporting + Distractor Documents
+      Regular: Unselected Same-source Contexts
+      Hotpot / DuReader: Disperse Supports
+      Sample → Shuffle → Prefix Passage i
+    type: process
     size: xl
     position:
       x: 580
-      'y': 40
-  - id: mix
+      'y': 80
+  - id: lengths
     label: |-
-      Mix Supporting and Distractor Documents
-      Sample Distractors to Target Length
-      Disperse Multi-hop Supporting Passages
-      Shuffle and Prefix Passage Indices
+      Materialize Five Length Levels
+      16K · 32K · 64K · 128K · 256K
+      Regular: 1 Context per QA and Level
+      FactRecall: 200 Even Positions per Level
     type: process
     size: xl
     position:
       x: 860
-      'y': 40
-  - id: lengths
+      'y': 80
+  - id: cfi_route
     label: |-
-      Build Five Controlled Length Levels
-      16K · 32K · 64K · 128K · 256K
-      One Context per QA and Length
-      Average 102,380 Words or Characters
+      CFI Set?
+      Six Named Datasets
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 80
+  - id: cfi
+    label: |-
+      CFI · 6 Sets · 557 Instances
+      Hotpot · LIC · MFQA EN/ZH · FactRecall EN/ZH
+      GPT-4 Makes 2 Similar, Different Facts
+      Linguists Remove Conflicts; Random Insert
     type: process
     size: xl
     position:
       x: 1140
-      'y': 40
-  - id: cfi
+      'y': 320
+  - id: kpr_route
     label: |-
-      Insert Confusing Facts · 6 Datasets
-      GPT-4 Generates Two Similar Facts
-      Human Linguists Resolve Conflicts
-      Randomly Insert Non-contradictory Facts
+      KPR Set?
+      Six Named Datasets
+    type: decision
+    size: xl
+    position:
+      x: 1420
+      'y': 80
+  - id: kpr
+    label: |-
+      KPR · 6 Sets · 1,924 Rules
+      Hotpot · CMRC · MFQA EN/ZH
+      FactRecall EN/ZH
+      Counts: 232 + 786 + 476 + 424 + 3 + 3
+      Replace Context + QA; Review Consistency
     type: process
     size: xl
     position:
       x: 1420
-      'y': 40
-  - id: kpr
+      'y': 320
+  - id: ak_route
     label: |-
-      Apply Keyword and Phrase Replacement
-      Six Datasets · 1,924 Replaced Pairs
-      Human-authored Replacement Rules
-      Review Full Context for New Conflicts
-    type: process
+      AK Set?
+      All Except Two
+    type: decision
     size: xl
     position:
       x: 1700
-      'y': 40
-  - id: annotation
+      'y': 80
+  - id: ak
     label: |-
-      Complete Human Annotation
-      Five Full-time Master's Annotators
-      Review 557 Confusing-fact Instances
-      Mark 955 Answer-keyword Instances
+      AK · 9 Sets · 955 Instances
+      All Except CMRC and DuReader
+      Annotate Critical Answer Content
+      Two Annotators · One Working Day
     type: user
     size: xl
     position:
       x: 1700
-      'y': 380
+      'y': 320
   - id: dataset
     label: |-
-      Release LV-Eval · 8,645 Contexts
-      1,729 QA Pairs × Five Lengths
-      Context · Question · Ground Truth
-      Confusing Facts and Answer Keywords
+      Release LV-Eval Test Artifact
+      1,729 Instances per Level × 5 = 8,645
+      Context · Question · Answers
+      Length · Language
+      Conditional AK and Confusing-fact Fields
     type: database
     size: xl
     position:
       x: 1420
-      'y': 380
+      'y': 560
   - id: inference
     label: |-
-      Run Long-context Inference
-      Dataset-specific Zero-shot Prompts
-      Greedy Token Generation
-      Middle-truncate Unsupported Contexts
+      Run Dataset-specific Zero-shot Prompts
+      Direct Answer · No Universal Parser
+      Greedy: 64 Tokens; FactRecall 16
+      Over Window: Keep Head + Tail
     type: process
     size: xl
     position:
       x: 1140
-      'y': 380
-  - id: recall
+      'y': 560
+  - id: metric_route
     label: |-
-      Stage 1 · Answer-keyword Recall
-      Match Manually Marked Critical Content
-      Require the Dataset Threshold
-      Reject Missing-keyword Responses
-    type: process
+      Paper v3
+      Metric Route?
+    type: decision
     size: xl
     position:
       x: 860
-      'y': 380
-  - id: f1
+      'y': 560
+  - id: ak_metric
     label: |-
-      Stage 2 · Blacklist-aware Similarity
-      Remove Common Non-informative Words
-      Compute English or Chinese QA F1
-      Use Task-native Rouge Where Defined
-    type: process
+      Nine AK Datasets
+      R_AK = overlap(pred, AK) / |AK|
+      Thresholds: ZH 0.2 · EN 0.4
+      Fail → 0; Pass → Blacklist Token F1
+      Normalize English / Chinese Separately
+    type: formula
     size: xl
     position:
       x: 580
-      'y': 380
+      'y': 400
+  - id: cmrc_metric
+    label: |-
+      CMRC Only
+      No Answer-keyword Gate
+      Blacklist-aware Chinese Token F1
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 560
+  - id: dureader_metric
+    label: |-
+      DuReader Only
+      No Answer-keyword Gate
+      Blacklist-aware ROUGE-L
+    type: formula
+    size: xl
+    position:
+      x: 580
+      'y': 720
   - id: report
     label: |-
-      Report Controlled Long-context Scores
-      Eleven Dataset-level Metrics
-      Five Length-level Averages
-      Single-hop and Multi-hop Analysis
+      Report Paper Results
+      11 Datasets × 5 Length Levels
+      Score = 100 × Mean Sample Score
+      Length and Single / Multi-hop Analyses
     type: terminal
     size: xl
     position:
       x: 300
-      'y': 380
+      'y': 560
+  - id: blacklist
+    label: |-
+      Build Shared Word Blacklist
+      Llama2-7B + ChatGLM3 Generations
+      Top 100 Words Overlapping Ground Truth
+      Humans Retain Non-informative Words
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 820
+  - id: evaluator_drift
+    label: |-
+      Released Evaluator Drift
+      Repo Gate EN 0.2 / ZH 0.4; v3 Reverses
+      Final AK F1 Omits Full Blacklist Filtering
+      FactRecall: gold_ans Null · Plain F1
+      Paper loogle-MR → Artifact loogle_MIR
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 820
+  - id: artifact_boundary
+    label: |-
+      Public Artifact + License Boundary
+      Test-only Data · All Labels Public
+      Code + 9 Sets MIT
+      CMRC + LIC: CC BY-SA 4.0
+      Static README Board · Overfit Risk
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 820
 edges:
+  - from: evidence
+    to: sources
+    type: dependency
   - from: sources
     to: qa
     type: primary
   - from: qa
-    to: pool
-    type: primary
-  - from: pool
     to: mix
     type: primary
   - from: mix
     to: lengths
     type: primary
   - from: lengths
+    to: cfi_route
+    type: primary
+  - from: cfi_route
     to: cfi
     type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: cfi_route
+    to: kpr_route
+    type: optional
+    label: 'No'
+    labelPosition: end
   - from: cfi
+    to: kpr_route
+    type: primary
+  - from: kpr_route
     to: kpr
     type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: kpr_route
+    to: ak_route
+    type: optional
+    label: 'No'
+    labelPosition: end
   - from: kpr
-    to: annotation
+    to: ak_route
     type: primary
-  - from: annotation
+  - from: ak_route
+    to: ak
+    type: primary
+    label: 'Yes'
+    labelPosition: end
+  - from: ak_route
+    to: dataset
+    type: optional
+    label: 'No'
+    labelPosition: end
+  - from: ak
     to: dataset
     type: primary
   - from: dataset
     to: inference
     type: primary
   - from: inference
-    to: recall
+    to: metric_route
     type: primary
-  - from: recall
-    to: f1
+  - from: metric_route
+    to: ak_metric
     type: primary
-  - from: f1
+    label: Nine AK sets
+    labelPosition: end
+  - from: metric_route
+    to: cmrc_metric
+    type: primary
+    label: CMRC
+    labelPosition: end
+  - from: metric_route
+    to: dureader_metric
+    type: primary
+    label: DuReader
+    labelPosition: end
+  - from: ak_metric
     to: report
     type: primary
+  - from: cmrc_metric
+    to: report
+    type: primary
+  - from: dureader_metric
+    to: report
+    type: primary
+  - from: blacklist
+    to: metric_route
+    type: dependency
+  - from: inference
+    to: evaluator_drift
+    type: dependency
+  - from: dataset
+    to: artifact_boundary
+    type: dependency
 modules: []

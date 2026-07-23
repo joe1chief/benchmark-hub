@@ -5,201 +5,491 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MathVision 构建流程
-  description: 与论文及官方评测代码对齐地展示 MathVision 的竞赛题采集、四阶段人工策展与确定性数学答案评测。
-  legend: 实线箭头依次表示 19 项竞赛筛选、PDF 抽取、对齐去重、学科难度标注、3040 题发布、答案规范化和准确率汇总。
+  description: 对齐论文第 1 版与官方代码，展示 MATH-Vision 从真实竞赛题构建，到发布版确定性解析、数学等价判分及学科/难度准确率报告的完整流程。
+  legend: 实线表示保留的构建或评测路径；虚线表示排除、修复、备用解析或错误结果路径。来源：arXiv:2402.14804v1、Git a1f5cc3、HF 2837ddb3。
 nodes:
   - id: competitions
     label: |-
-      选择真实数学竞赛
-      覆盖 19 项视觉型赛事
-      横跨 12 个年级层次
-      保证可划分难度等级
+      汇总数学竞赛清单
+      国际与国内赛事
+      覆盖 1 至 12 年级
     type: database
     size: xl
     position:
       x: 20
       'y': 40
-  - id: copyright
+  - id: selection
     label: |-
-      控制授权与污染风险
-      遵守版权及许可要求
-      优先答案不易直接检索题
-      分离问题与答案来源页
+      竞赛是否适用？
+      经常使用视觉输入
+      可按层级划分题目
+    type: decision
+    size: xl
+    position:
+      x: 300
+      'y': 40
+  - id: excluded_source
+    label: |-
+      排除该竞赛
+      视觉题过少或难度过高
+      例如 IMO
+    type: loss
+    size: xl
+    position:
+      x: 300
+      'y': 220
+  - id: collect
+    label: |-
+      选定 19 项竞赛
+      在线筛选带图题目
+      遵守版权与许可
+      优先答案不易检索的题
     type: process
     size: xl
     position:
-      x: 260
+      x: 580
       'y': 40
   - id: extract
     label: |-
-      从竞赛 PDF 抽取题目
-      使用 Mathpix 解析文档
-      保留题干公式与配图
-      形成约 9K 道初始题
+      抽取 PDF 文字与图像
+      使用 Mathpix API
+      共 9,000 道题
+      其中 3,500 道带图
     type: process
     size: xl
     position:
-      x: 500
+      x: 860
       'y': 40
-  - id: stage1
+  - id: alignment
     label: |-
-      第一阶段：图文对齐
-      十名高年级理科生标注
-      移除缺文错图及不当内容
-      独立交叉核验结果
-    type: user
+      图文是否可用？
+      十名高年级理科生
+      标注结果交叉核验
+    type: decision
     size: xl
     position:
-      x: 740
+      x: 1140
       'y': 40
-  - id: stage1_result
+  - id: repair_image
     label: |-
-      完成内容质量筛选
-      检查题干与图像一致性
-      保留可独立作答问题
+      从原文件重新截取图像
+      修复不完整或错位
+      再次检查图文对齐
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 220
+  - id: stage1_keep
+    label: |-
+      保留质检合格样本
+      移除缺文或错图题
+      移除隐私或冒犯内容
       剩余 3,352 道题
     type: process
     size: xl
     position:
-      x: 980
+      x: 1700
       'y': 40
-  - id: stage2
+  - id: dedup_screen
     label: |-
-      第二阶段：去重
-      用词汇重叠初筛候选
-      结合 Levenshtein 距离
-      人工复核近重复题
+      筛查潜在重复题
+      词汇重叠
+      Levenshtein 距离
+      人工复核
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 40
-  - id: stage2_result
+      x: 1700
+      'y': 460
+  - id: duplicate
     label: |-
-      完成重复项清理
-      保留竞赛视觉难题
-      避免同题改写重复计数
-      得到 3,040 道题
-    type: process
+      是否确认重复？
+      同时复核题干与图像
+    type: decision
     size: xl
     position:
-      x: 1460
-      'y': 40
-  - id: stage3
+      x: 1140
+      'y': 460
+  - id: discard
     label: |-
-      第三阶段：学科标注
-      三组标注者独立分类
-      GPT-4V 与 Gemini Pro 辅助
-      聚合为 16 个数学学科
-    type: user
-    size: xl
+      移除样本
+      内容无效或重复
+    type: loss
+    size: lg
     position:
-      x: 1460
-      'y': 420
-  - id: stage4
+      x: 1140
+      'y': 660
+  - id: curated
     label: |-
-      第四阶段：难度标注
-      结合竞赛来源与年级
-      划分一至五级难度
-      由人工专家统一核验
-    type: user
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: release
-    label: |-
-      发布 MathVision
-      共 3,040 道视觉数学题
+      冻结策展后的 MATH-V
+      共 3,040 道题
       1,532 道选择题
       1,508 道自由回答题
     type: database
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: testmini
+      x: 860
+      'y': 460
+  - id: subjects
     label: |-
-      选择评测数据范围
-      完整测试集使用 3,040 题
-      轻量 testmini 使用 304 题
-      支持高成本模型与人工对比
-    type: process
+      标注 16 个数学学科
+      三组人员独立分类
+      GPT-4V · Gemini Pro 辅助
+      专家多数投票汇总
+    type: user
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: infer
+      x: 580
+      'y': 460
+  - id: difficulty
     label: |-
-      运行多模态模型
-      输入题干选项与配图
-      要求逐步解决问题
-      最终答案置于 boxed 中
-    type: document
+      标注五级难度
+      年级 1–2 / 3–6 / 7–8
+      年级 9–10 / 11 以上
+      再人工修正边界题
+    type: user
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: normalize
+      x: 300
+      'y': 460
+  - id: release
     label: |-
-      规范化模型最终答案
-      解析 boxed 与常见答案短语
-      兼容选项字母或选项文本
-      使用数学等价性判定
-    type: process
-    size: xl
-    position:
-      x: 260
-      'y': 420
-  - id: report
-    label: |-
-      汇总确定性准确率
-      对照标准答案判断正误
-      按总体学科与难度报告
-      比较模型与人工表现差距
-    type: terminal
+      发布 MATH-Vision
+      完整测试集：3,040 题
+      testmini：304 题（10%）
+      英文 · 16 学科 · 5 难度
+    type: database
     size: xl
     position:
       x: 20
-      'y': 420
+      'y': 460
+  - id: scope
+    label: 选择评测范围？
+    type: decision
+    size: lg
+    position:
+      x: 20
+      'y': 840
+  - id: full_set
+    label: |-
+      完整测试集
+      3,040 道题
+    type: document
+    size: lg
+    position:
+      x: 300
+      'y': 760
+  - id: mini_set
+    label: |-
+      testmini
+      304 道题
+    type: document
+    size: lg
+    position:
+      x: 300
+      'y': 920
+  - id: prompt
+    label: |-
+      构造模型输入
+      题干 · 选项 · 图像
+      要求逐步求解
+      将唯一终答放入 boxed
+    type: document
+    size: xl
+    position:
+      x: 580
+      'y': 840
+  - id: infer
+    label: |-
+      生成模型响应
+      解码配置取决于模型
+      按题目 ID 保存响应
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 840
+  - id: response_form
+    label: 检测到哪种响应形式？
+    type: decision
+    size: xl
+    position:
+      x: 1140
+      'y': 840
+  - id: direct_parse
+    label: |-
+      解析结尾选项或数字
+      使用选项结尾与“is …”规则
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 700
+  - id: box_parse
+    label: |-
+      解析 boxed 答案
+      多个 boxed 时取最后一个
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 840
+  - id: phrase_parse
+    label: |-
+      解析答案短语后备路径
+      匹配 final/correct/should-be
+      再运行 find_math_answer
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 980
+  - id: normalize
+    label: |-
+      规范化数学答案
+      小写化并移除单位与 LaTeX
+      求值元组及数学表达式
+      数值比较四舍五入至两位
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 1120
+  - id: compare
+    label: |-
+      是否等于标准答案？
+      答案字母或对应选项文本
+      空答案永不匹配
+    type: decision
+    size: xl
+    position:
+      x: 860
+      'y': 1120
+  - id: correct
+    label: 记录为正确
+    type: process
+    size: lg
+    position:
+      x: 580
+      'y': 1040
+  - id: incorrect
+    label: 记录为错误
+    type: loss
+    size: lg
+    position:
+      x: 580
+      'y': 1200
+  - id: report
+    label: |-
+      报告准确率
+      总体 · 16 学科 · 5 难度
+      正确数 / 全部评测行
+    type: terminal
+    size: xl
+    position:
+      x: 300
+      'y': 1120
 edges:
   - from: competitions
-    to: copyright
+    to: selection
     type: primary
-  - from: copyright
+    label: 候选清单
+    labelPosition: center
+  - from: selection
+    to: collect
+    type: primary
+    label: 是 · 两项均满足
+    labelPosition: center
+  - from: selection
+    to: excluded_source
+    type: optional
+    label: 否 · 不适用
+    labelPosition: center
+  - from: collect
     to: extract
     type: primary
+    label: 合规来源
+    labelPosition: center
   - from: extract
-    to: stage1
+    to: alignment
     type: primary
-  - from: stage1
-    to: stage1_result
+    label: 9K 道解析题
+    labelPosition: center
+  - from: alignment
+    to: stage1_keep
     type: primary
-  - from: stage1_result
-    to: stage2
+    label: 是 · 可用
+    labelPosition: center
+  - from: alignment
+    to: repair_image
+    type: optional
+    label: 图像可修复
+    labelPosition: center
+  - from: repair_image
+    to: alignment
+    type: optional
+    label: 已重截 · 复查
+    labelPosition: center
+    waypoints:
+      - x: 1520
+        'y': 360
+      - x: 1240
+        'y': 360
+  - from: alignment
+    to: discard
+    type: optional
+    label: 缺文 · 不安全
+    labelPosition: center
+    waypoints:
+      - x: 1100
+        'y': 300
+      - x: 1100
+        'y': 620
+  - from: stage1_keep
+    to: dedup_screen
     type: primary
-  - from: stage2
-    to: stage2_result
+    label: 保留 3,352 题
+    labelPosition: center
+  - from: dedup_screen
+    to: duplicate
     type: primary
-  - from: stage2_result
-    to: stage3
+    label: 人工复核候选
+    labelPosition: center
+  - from: duplicate
+    to: discard
+    type: optional
+    label: 是 · 移除
+    labelPosition: center
+  - from: duplicate
+    to: curated
     type: primary
-  - from: stage3
-    to: stage4
+    label: 否 · 保留
+    labelPosition: center
+  - from: curated
+    to: subjects
     type: primary
-  - from: stage4
+    label: 最终 3,040 题
+    labelPosition: center
+  - from: subjects
+    to: difficulty
+    type: primary
+    label: 学科标签
+    labelPosition: center
+  - from: difficulty
     to: release
     type: primary
+    label: 已核验难度
+    labelPosition: center
   - from: release
-    to: testmini
+    to: scope
     type: primary
-  - from: testmini
+    label: 开始评测
+    labelPosition: center
+  - from: scope
+    to: full_set
+    type: primary
+    label: 完整基准
+    labelPosition: center
+  - from: scope
+    to: mini_set
+    type: optional
+    label: 快速评测
+    labelPosition: center
+  - from: full_set
+    to: prompt
+    type: primary
+    label: 3,040 行
+    labelPosition: center
+  - from: mini_set
+    to: prompt
+    type: primary
+    label: 304 行
+    labelPosition: center
+  - from: prompt
     to: infer
     type: primary
+    label: 模型输入
+    labelPosition: center
   - from: infer
+    to: response_form
+    type: primary
+    label: 原始响应
+    labelPosition: center
+  - from: response_form
+    to: direct_parse
+    type: primary
+    label: 结尾字母/数字
+    labelPosition: center
+  - from: response_form
+    to: box_parse
+    type: primary
+    label: 存在 boxed
+    labelPosition: center
+  - from: response_form
+    to: phrase_parse
+    type: optional
+    label: 无 boxed 答案
+    labelPosition: center
+  - from: direct_parse
     to: normalize
     type: primary
+    label: 候选答案
+    labelPosition: center
+    waypoints:
+      - x: 1740
+        'y': 760
+      - x: 1740
+        'y': 1100
+      - x: 1200
+        'y': 1100
+  - from: box_parse
+    to: normalize
+    type: primary
+    label: 最后一个 boxed 值
+    labelPosition: center
+    waypoints:
+      - x: 1700
+        'y': 900
+      - x: 1700
+        'y': 1090
+      - x: 1240
+        'y': 1090
+  - from: phrase_parse
+    to: normalize
+    type: optional
+    label: 后备解析值
+    labelPosition: center
+    waypoints:
+      - x: 1680
+        'y': 1040
+      - x: 1680
+        'y': 1080
+      - x: 1280
+        'y': 1080
   - from: normalize
+    to: compare
+    type: primary
+    label: 规范化字符串
+    labelPosition: center
+  - from: compare
+    to: correct
+    type: primary
+    label: 是 · 数学等价
+    labelPosition: center
+  - from: compare
+    to: incorrect
+    type: optional
+    label: 否 · 不匹配
+    labelPosition: center
+  - from: correct
     to: report
     type: primary
+    label: 正确数加一
+    labelPosition: center
+  - from: incorrect
+    to: report
+    type: optional
+    label: 仅计入分母
+    labelPosition: center
 modules: []

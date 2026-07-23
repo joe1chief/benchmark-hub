@@ -5,9 +5,20 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: OpenAudioBench 构建与评测流程
-  description: 依据论文和官方数据卡，组装五个音频理解子集，并在语音转文本和语音转语音设置下使用GPT-4o评测。
-  legend: 五个公开组件分别含202、300、1,000、1,000和199条，共计2,701道音频问题。
+  description: 对齐论文与固定发布版本，并行构建五个音频理解组件，经两种推理设置后按组件进入对应的GPT-4o评分路径。
+  legend: 实线箭头表示论文支持的基准主流程；虚线箭头表示固定证据、公开评测工具行为、实现差异与开放性边界，不是额外基准阶段。
 nodes:
+  - id: source_evidence
+    label: |-
+      固定一手证据
+      arXiv 2502.17239v1 · 第4.3节
+      表8 · PDF 6afe8eff5e7e
+      Git 805d456433db · HF 98f8fa0d5fa7
+    type: document
+    size: xl
+    position:
+      x: 32
+      'y': 408
   - id: goal
     label: |-
       定义音频理解范围
@@ -17,8 +28,8 @@ nodes:
     type: document
     size: xl
     position:
-      x: 20
-      'y': 40
+      x: 272
+      'y': 408
   - id: reasoning
     label: |-
       自建Reasoning QA
@@ -28,19 +39,19 @@ nodes:
     type: database
     size: xl
     position:
-      x: 260
+      x: 640
       'y': 40
   - id: llama
     label: |-
       采用Spoken Llama Questions
-      通用知识
+      通用知识音频
       提供参考答案
       300条
     type: database
     size: xl
     position:
-      x: 500
-      'y': 40
+      x: 640
+      'y': 224
   - id: web
     label: |-
       抽样Web Questions
@@ -50,8 +61,8 @@ nodes:
     type: database
     size: xl
     position:
-      x: 740
-      'y': 40
+      x: 640
+      'y': 408
   - id: trivia
     label: |-
       抽样TriviaQA
@@ -61,8 +72,8 @@ nodes:
     type: database
     size: xl
     position:
-      x: 980
-      'y': 40
+      x: 640
+      'y': 592
   - id: alpaca
     label: |-
       筛选AlpacaEval
@@ -72,123 +83,242 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 40
+      x: 640
+      'y': 776
   - id: speech
     label: |-
-      生成语音指令
+      合成语音指令
       使用作者TTS模型
       转换Web、Trivia和Alpaca提示
-      保留Spoken Llama音频
+      按组件保留公开音频
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 40
+      x: 960
+      'y': 672
   - id: release
     label: |-
       组装OpenAudioBench
       五个音频组件
-      逻辑、通用与开放任务
+      202 + 300 + 1,000 + 1,000 + 199
       合计2,701条
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 420
+      x: 1240
+      'y': 408
   - id: st
     label: |-
-      运行语音转文本设置
+      运行语音转文本
       音频输入
       文本输出
-      用输出文本评测
+      使用输出文本评测
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 420
+      x: 1520
+      'y': 224
   - id: ss
     label: |-
-      运行语音转语音设置
+      运行非级联语音转语音
       音频输入
-      文本音频交错输出
-      非级联生成
+      文本与音频交错输出
+      合并输出文本后评测
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
+      x: 1520
+      'y': 592
   - id: normalize
     label: |-
-      归一化模型回答
-      合并SS交错输出中的文本
-      ST保留直接文本
-      形成评分输入
+      准备评分输入
+      语音转文本保留直接文本
+      语音转语音使用合并文本
+      将回答与任务上下文配对
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
+      x: 1800
+      'y': 408
   - id: judge_ref
     label: |-
       评判有参考答案任务
-      提供参考答案
-      GPT-4o判断正确性
-      覆盖Reasoning、Llama、Web、Trivia
+      GPT-4o使用参考答案
+      覆盖Reasoning、Llama、Web与Trivia
+      输出正确率或分数
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
+      x: 2080
+      'y': 224
   - id: judge_open
     label: |-
       评判开放式AlpacaEval
-      基于GPT-4o给分
-      论文未报告参考答案
-      使用公开评测工具
+      基于GPT-4o给质量分
+      固定工具不使用参考答案
+      考查帮助性相关性准确性和细节
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 2080
+      'y': 592
   - id: report
     label: |-
-      报告五项结果
-      按数据集给准确率或分数
-      分别报告ST与SS
-      分数越高越好
+      报告五项组件结果
+      分开报告语音转文本
+      与语音转语音
+      按数据集给正确率或分数
+      论文未报告单一总分公式
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 2360
+      'y': 408
+  - id: release_boundary
+    label: |-
+      固定官方发布与评测工具
+      Git 805d456433db · HF 98f8fa0d5fa7
+      CSV行数为202、300、1000、1000、199
+      2,701个音频 · 启动7项任务
+    type: document
+    size: xl
+    position:
+      x: 1240
+      'y': 960
+  - id: drift_boundary
+    label: |-
+      论文与工具差异
+      Reasoning使用1到5分且阈值为4
+      Llama报百分比 · Web与Trivia乘10
+      Alpaca使用1到10分 · 重复轮数不同
+    type: document
+    size: xl
+    position:
+      x: 1800
+      'y': 960
+  - id: openness_boundary
+    label: |-
+      公开发布边界
+      HF公开且无需门控
+      未声明数据集许可且无LICENSE文件
+      模型代码许可不覆盖HF数据
+    type: document
+    size: xl
+    position:
+      x: 2360
+      'y': 960
 edges:
+  - from: source_evidence
+    to: goal
+    type: secondary
+    style:
+      dashed: true
   - from: goal
     to: reasoning
     type: primary
-  - from: reasoning
+    style:
+      exitX: 1
+      exitY: 0.15
+      entryX: 0
+      entryY: 0.5
+  - from: goal
     to: llama
     type: primary
-  - from: llama
+    style:
+      exitX: 1
+      exitY: 0.33
+      entryX: 0
+      entryY: 0.5
+  - from: goal
     to: web
     type: primary
-  - from: web
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: goal
     to: trivia
     type: primary
-  - from: trivia
+    style:
+      exitX: 1
+      exitY: 0.66
+      entryX: 0
+      entryY: 0.5
+  - from: goal
     to: alpaca
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.85
+      entryX: 0
+      entryY: 0.5
+  - from: reasoning
+    to: release
+    type: primary
+    waypoints:
+      - x: 1168
+        'y': 90
+      - x: 1168
+        'y': 458
+  - from: llama
+    to: release
+    type: primary
+    waypoints:
+      - x: 1200
+        'y': 274
+      - x: 1200
+        'y': 458
+  - from: web
+    to: speech
+    type: primary
+    waypoints:
+      - x: 864
+        'y': 458
+      - x: 864
+        'y': 722
+  - from: trivia
+    to: speech
+    type: primary
+    waypoints:
+      - x: 896
+        'y': 642
+      - x: 896
+        'y': 722
   - from: alpaca
     to: speech
     type: primary
+    waypoints:
+      - x: 928
+        'y': 826
+      - x: 928
+        'y': 722
   - from: speech
     to: release
     type: primary
+    waypoints:
+      - x: 1200
+        'y': 722
+      - x: 1200
+        'y': 458
   - from: release
     to: st
     type: primary
-  - from: st
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: release
     to: ss
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: st
+    to: normalize
     type: primary
   - from: ss
     to: normalize
@@ -196,10 +326,38 @@ edges:
   - from: normalize
     to: judge_ref
     type: primary
-  - from: judge_ref
+  - from: normalize
     to: judge_open
+    type: primary
+  - from: judge_ref
+    to: report
     type: primary
   - from: judge_open
     to: report
     type: primary
+  - from: release
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: report
+    to: drift_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 2460
+        'y': 864
+      - x: 1900
+        'y': 864
+  - from: release_boundary
+    to: openness_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 1340
+        'y': 1104
+      - x: 2460
+        'y': 1104
 modules: []

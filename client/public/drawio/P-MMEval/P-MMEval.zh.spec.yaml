@@ -5,201 +5,288 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: P-MMEval 构建与评测流程
-  description: 与论文一致地展示 P-MMEval 的筛选、补译、人工本地化、平行组装、提示与多语言评分流程。
-  legend: 八个基准组成部分统一覆盖十种语言；GPT-4o 仅补齐缺失翻译，专业翻译团队负责复核与修订。
+  description: 依据最终论文重建八个来源的选择、论文规定的抽样、机器补译与专业团队穷尽复核、平行组装、三种提示设定、任务指标和 CACR 分析。
+  legend: 实线表示最终论文的构建与评测流程；虚线表示固定证据以及论文与数据卡、发布或推理边界，不是构建步骤。
 nodes:
-  - id: step_1
+  - id: source_evidence
     label: |-
-      统一语言覆盖范围
-      英文 中文 阿拉伯文 西班牙文
-      日文 韩文 泰文 法文
-      葡萄牙文 越南文 · 7个语系
+      固定官方证据
+      arXiv 2411.09116v2 · PDF 00f32884b4d5
+      EMNLP 2025 终稿 · PDF 17f87baa7ede
+      HF 47bb647f35fd
     type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: step_2
+  - id: language_scope
     label: |-
-      汇集11个候选数据集
-      基础理解任务
-      基础生成任务
-      多语言候选池
-    type: database
-    size: xl
-    position:
-      x: 260
-      'y': 40
-  - id: step_3
-    label: |-
-      使用三组模型对探测
-      Qwen2.5 7B 对 72B
-      LLaMA3.1 8B 对 70B
-      Mistral Nemo 对 Large
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 40
-  - id: step_4
-    label: |-
-      执行配对样本t检验
-      英文加四种受支持语言
-      每种语言最多250条
-      三组模型对均要求p小于0.01
-    type: process
-    size: xl
-    position:
-      x: 740
-      'y': 40
-  - id: step_5
-    label: |-
-      保留基础基准
-      XNLI · MHellaSwag
-      Flores-200
-      对模型规模差异显著
+      固定十种语言
+      英文 · 中文 · 阿拉伯文 · 西班牙文 · 日文
+      韩文 · 泰文 · 法文 · 葡萄牙文 · 越南文
+      论文认定覆盖七个语言家族
     type: document
     size: xl
     position:
-      x: 980
+      x: 280
       'y': 40
-  - id: step_6
+  - id: fundamental
     label: |-
-      加入五个专项数据集
+      选择三个基础组成部分
+      XNLI · MHellaSwag
+      语言理解
+      FLORES-200 · 语言生成
+    type: database
+    size: xl
+    position:
+      x: 540
+      'y': 40
+  - id: specialized
+    label: |-
+      选择五个专项组成部分
       HumanEval-XL · MGSM
       MLogiQA · MMMLU
       MIFEval
-    type: process
-    size: xl
-    position:
-      x: 1220
-      'y': 40
-  - id: step_7
-    label: |-
-      补齐缺失翻译
-      用GPT-4o生成未覆盖语言
-      每个组成部分扩展至十种语言
-      保持平行样本对齐
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: step_8
-    label: |-
-      专业翻译团队复核
-      修订并本地化措辞
-      移除文化上不可映射条目
-      验证跨语言语义等价
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: step_9
+      x: 540
+      'y': 360
+  - id: fundamental_sampling
     label: |-
-      形成平行P-MMEval
-      8个基准组成部分 · 7类任务
-      10种语言 · 7个语系
-      共21,580条分语言实例
-    type: database
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: step_10
-    label: |-
-      固定各组成部分样本数
-      1012 · 120 · 120 · 80
-      250 · 80 · 400 · 96
-      八个组成部分均按每种语言计
+      抽取基础任务测试数据
+      FLORES 完整测试集 · 1012 题
+      XNLI 按源顺序取前 120 题
+      MHellaSwag 按源顺序取前 120 题
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: step_11
+      x: 800
+      'y': 40
+  - id: specialized_sampling
+    label: |-
+      抽取专项任务测试数据
+      HumanEval-XL 80 · MGSM 250
+      MLogiQA 80 · MMMLU 简单200 + 困难200
+      MIFEval 先取110，删除14，最终96
+    type: process
+    size: xl
+    position:
+      x: 800
+      'y': 360
+  - id: translate
+    label: |-
+      补齐缺失语言
+      使用 gpt-4o-2024-05-13
+      保留已有人工标注
+      构造平行语言记录
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 200
+  - id: review
+    label: |-
+      专业翻译团队穷尽复核
+      纠正错误 · 本地化词汇
+      删除难以准确翻译的实例
+      最高修改率 82.50% · MHellaSwag 日文
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 200
+  - id: align
+    label: |-
+      组装平行样本
+      跨语言匹配相同问题
+      保持标准答案与任务语义
+      支持实例级迁移分析
+    type: process
+    size: xl
+    position:
+      x: 1580
+      'y': 200
+  - id: release
+    label: |-
+      八个组成部分 · 七类任务
+      十种语言 · FLORES 1012
+      XNLI 120 · MHellaSwag 120
+      HumanEval-XL 80×12·MGSM 250
+      MLogiQA 80·MMMLU 400·MIFEval 96
+    type: database
+    size: xl
+    position:
+      x: 1840
+      'y': 200
+  - id: prompt_sources
     label: |-
       统一评测提示
-      改编OpenCompass与lm-eval
-      约束答案输出格式
-      为母语提示翻译指令
+      改编 OpenCompass 与 LM Evaluation Harness
+      MMMLU 使用 OpenAI simple-evals
+      增加固定答案格式约束
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: step_12
+      x: 1840
+      'y': 600
+  - id: prompt_settings
     label: |-
-      运行三种提示设置
+      比较三种提示设定
       英文 · 母语 · 英文少样本
-      MGSM使用思维链
-      其余任务直接作答
+      从验证数据抽取示例
+      用 GPT-4o 补译缺失语言示例
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: step_13
+      x: 1580
+      'y': 600
+  - id: answer_policy
     label: |-
-      采用任务专用指标
-      分类任务使用准确率
-      Flores-200使用BLEU
-      HumanEval-XL使用Pass@1
+      采用任务专用作答方式
+      MGSM 使用思维链
+      其他任务直接作答
+      小于 7B 的模型统一直接作答
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: step_14
+      x: 1320
+      'y': 600
+  - id: metrics
     label: |-
-      报告多语言一致性
+      计算任务指标
+      准确率 · BLEU · Pass@1
+      HumanEval 取 Python · JavaScript
+      与 Java 的均值
+      COMET 仅为附录分析，不是主指标
+    type: process
+    size: xl
+    position:
+      x: 1060
+      'y': 600
+  - id: cacr
+    label: |-
+      计算 CACR 英文→目标语言
+      英文答对题中两种语言均答对的比例
+      使用平行对齐的实例
+      报告跨语言迁移一致性
+    type: process
+    size: xl
+    position:
+      x: 800
+      'y': 900
+  - id: report
+    label: |-
+      报告多语言表现
       按任务与语言汇总得分
-      以CACR衡量跨语言迁移
-      一致比较不同模型规模
+      汇总基础与专项任务均值
+      比较模型规模趋势与 CACR
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 540
+      'y': 600
+  - id: family_boundary
+    label: |-
+      语言家族数量边界
+      论文写明七个语言家族
+      Hugging Face 数据卡写八个
+      图中遵循论文
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 360
+  - id: release_boundary
+    label: |-
+      固定 HF 发布边界
+      FLORES：9 个文件 · 9,108 行
+      MHellaSwag：1,181 · 非 1,200
+      HumanEval-XL：26 × 12 个文件
+      论文范围：十种语言
+    type: document
+    size: xl
+    position:
+      x: 2100
+      'y': 200
+  - id: inference_boundary
+    label: |-
+      推理披露边界
+      未披露解码参数与随机种子
+      未披露各任务少样本示例数 k
+      数据卡不能复现论文全部设定
+    type: document
+    size: xl
+    position:
+      x: 1580
+      'y': 940
 edges:
-  - from: step_1
-    to: step_2
+  - from: source_evidence
+    to: language_scope
+    type: secondary
+    style:
+      dashed: true
+  - from: language_scope
+    to: fundamental
     type: primary
-  - from: step_2
-    to: step_3
+  - from: language_scope
+    to: specialized
     type: primary
-  - from: step_3
-    to: step_4
+  - from: fundamental
+    to: fundamental_sampling
     type: primary
-  - from: step_4
-    to: step_5
+  - from: specialized
+    to: specialized_sampling
     type: primary
-  - from: step_5
-    to: step_6
+  - from: fundamental_sampling
+    to: translate
     type: primary
-  - from: step_6
-    to: step_7
+  - from: specialized_sampling
+    to: translate
     type: primary
-  - from: step_7
-    to: step_8
+  - from: translate
+    to: review
     type: primary
-  - from: step_8
-    to: step_9
+  - from: review
+    to: align
     type: primary
-  - from: step_9
-    to: step_10
+  - from: align
+    to: release
     type: primary
-  - from: step_10
-    to: step_11
+  - from: release
+    to: prompt_sources
     type: primary
-  - from: step_11
-    to: step_12
+  - from: prompt_sources
+    to: prompt_settings
     type: primary
-  - from: step_12
-    to: step_13
+  - from: prompt_settings
+    to: answer_policy
     type: primary
-  - from: step_13
-    to: step_14
+  - from: answer_policy
+    to: metrics
     type: primary
+  - from: metrics
+    to: report
+    type: primary
+  - from: metrics
+    to: cacr
+    type: primary
+  - from: cacr
+    to: report
+    type: primary
+  - from: language_scope
+    to: family_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: release
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: prompt_settings
+    to: inference_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

@@ -10,6 +10,16 @@ meta:
     评测子集。
   legend: 实线表示采集、抽取、质检、合并、标注、子集抽样与准确率评测；两条并行数据分支精确相加为论文完整数据集。
 nodes:
+  - id: evidence
+    label: |-
+      一手证据与固定版本
+      arXiv:2411.19799v1
+      BASE d2e1f60 · LITE a027ccc
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: community
     label: |-
       母语者与地区协会
@@ -34,7 +44,7 @@ nodes:
     label: |-
       多格式选择题抽取
       PDF + JavaScript / HTML + 其他表单
-      题目 + 选项 + 正确答案
+      题干 + 选项 + 正确答案
     type: process
     size: xl
     position:
@@ -43,8 +53,9 @@ nodes:
   - id: native_qc
     label: |-
       母语者质量检查
-      对照原始文档
-      人工修正解析错误
+      对照原件并纠错
+      过滤依赖图像或表格的题
+      保留所需参考上下文
     type: user
     size: xl
     position:
@@ -65,6 +76,7 @@ nodes:
       新解析并核验的数据
       118,606 道选择题
       来自 1,926 个考试来源
+      占完整集 60.2%
     type: database
     size: xl
     position:
@@ -72,9 +84,9 @@ nodes:
       'y': 60
   - id: existing
     label: |-
-      合并既有基准
+      78,637 道既有基准题
       阿拉伯 / 中文 / 土耳其 / 波斯 MMLU
-      VNHSGE + EXAMS · 78,637 题
+      VNHSGE + EXAMS
     type: database
     size: xl
     position:
@@ -90,11 +102,11 @@ nodes:
     position:
       x: 1640
       'y': 240
-  - id: metadata
+  - id: taxonomy
     label: |-
-      标注考试级元数据
-      语言 + 主题 + 层级 + 国家
+      考试级而非样本级标签
       两级学科分类
+      语言 + 主题 + 层级 + 国家
     type: document
     size: xl
     position:
@@ -103,52 +115,64 @@ nodes:
   - id: regionality
     label: |-
       标注地域知识
-      地域无关 / 显式地域 / 文化
-      隐式地域
+      无关 34.4% · 显式 18.8%
+      文化 16.4% · 隐式 30.4%
     type: process
     size: xl
     position:
       x: 2200
+      'y': 240
+  - id: four_option
+    label: |-
+      统一为四个选项
+      少于四项：剔除题目
+      多于四项：裁减为四项
+    type: process
+    size: xl
+    position:
+      x: 2480
       'y': 240
   - id: base
     label: |-
       论文版 INCLUDE-BASE
       均匀抽样 22,635 道四选题
       每种语言最多 550 道
+      地域题 500 + STEM 50
     type: database
     size: xl
     position:
-      x: 2480
+      x: 2760
       'y': 60
   - id: lite
     label: |-
       论文版 INCLUDE-LITE
       10,770 道四选题
-      每语言最多 250 道 · 仅地域题
+      每语言最多 250 道 · 仅地区特定题
     type: database
     size: xl
     position:
-      x: 2480
+      x: 2760
       'y': 440
   - id: prompt
     label: |-
       多种提示设置评测
-      五样本或零样本思维链
+      温度 0 · 五样本：512 Tokens
+      零样本 CoT：1,024 Tokens
       原语言 / 英文 ± 地区前缀
     type: process
     size: xl
     position:
-      x: 2760
+      x: 3040
       'y': 240
   - id: parse
     label: |-
       抽取四个选项之一
-      单独统计格式失败
-      保留逐语言切片
+      格式失败按错误计
+      总体准确率与已抽取答案准确率
     type: process
     size: xl
     position:
-      x: 3040
+      x: 3320
       'y': 240
   - id: report
     label: |-
@@ -158,9 +182,24 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 3320
+      x: 3600
+      'y': 240
+  - id: artifact_boundary
+    label: |-
+      完整集与公开集边界
+      197,243 条完整集未公开
+      BASE d2e1f60
+      测试 23,741 + 验证 915
+      LITE a027ccc：公开 11,021 条
+    type: document
+    size: xl
+    position:
+      x: 3880
       'y': 240
 edges:
+  - from: evidence
+    to: community
+    type: data
   - from: community
     to: sources
     type: primary
@@ -186,15 +225,18 @@ edges:
     to: complete
     type: secondary
   - from: complete
-    to: metadata
+    to: taxonomy
     type: primary
-  - from: metadata
+  - from: taxonomy
     to: regionality
     type: primary
   - from: regionality
+    to: four_option
+    type: primary
+  - from: four_option
     to: base
     type: primary
-  - from: regionality
+  - from: four_option
     to: lite
     type: primary
   - from: base
@@ -209,4 +251,7 @@ edges:
   - from: parse
     to: report
     type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
 modules: []

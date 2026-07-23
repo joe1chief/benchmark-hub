@@ -5,14 +5,17 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CharXiv 构建流程
-  description: 对齐论文的 CharXiv 构建与评测流程：从八个 arXiv 学科提取并筛选 2,323 张科学图表，配套 9,292 道描述题和 2,323 道推理题，经专家核验后，使用带人工参考答案且经人工评分验证的 GPT-4o 裁判计分。
-  legend: 实线箭头表示图表筛选、两条并行问答构建、专家核验、发布和零样本评测流程。
+  description: >-
+    对齐 CharXiv v1 论文的构建与评测流程：从八个 arXiv 学科筛选 2,323 张自然科学图表，分别以人工流程构建描述题和推理题， 发布答案公开的验证集并隐藏测试集答案，最后用官方固定版本 GPT-4o
+    二元裁判评分零样本多模态模型回答。
+  legend: 实线箭头表示图表筛选、并行问答构建、专家核验、发布与评测。
 nodes:
   - id: papers
     label: |-
-      下载arXiv预印本
-      八个学科 • 2020年1月–2023年9月
-      保留论文与图表上下文
+      下载 arXiv 预印本
+      8 个学科
+      2020年1月–2023年9月
+      提取源文件图形
     type: database
     size: xl
     position:
@@ -20,9 +23,9 @@ nodes:
       'y': 220
   - id: render
     label: |-
-      提取并重新渲染图形
-      将科学图表规范为图像
-      保留自然标签、样式和复杂度
+      重新渲染高分辨率 JPEG
+      长边缩放至 1024 px
+      保留自然科学图表
     type: process
     size: xl
     position:
@@ -30,9 +33,10 @@ nodes:
       'y': 220
   - id: siglip
     label: |-
-      SigLIP相似度预筛
-      找出可能是图表的科学图形
-      降低人工筛选量
+      SigLIP 候选预筛
+      余弦相似度 ≥ 0.65
+      参照 MathVista 均值
+      找出可能的图表
     type: process
     size: xl
     position:
@@ -40,9 +44,9 @@ nodes:
       'y': 220
   - id: manual
     label: |-
-      研究生人工筛选
-      优先保证视觉与主题多样性
-      保留自然且有挑战的图表
+      研究生执行多样性筛选
+      每学科每年份 750 个
+      每 10 张选择 1 张
     type: user
     size: xl
     position:
@@ -50,19 +54,22 @@ nodes:
       'y': 220
   - id: quality
     label: |-
-      通过成对相似度去重
-      删除模糊或标签不清的图表
-      定稿2,323张高分辨率图表
-    type: decision
+      成对相似度 ≥ 0.95
+      去重近似图表
+      删除模糊/标签不清
+      保留 2,323 张图表
+    type: process
     size: xl
     position:
       x: 1240
       'y': 220
   - id: descriptive
     label: |-
-      描述题：每图四题
-      19个模板覆盖提取、枚举、
-      模式识别、计数和组合
+      描述题
+      19 个模板 • 每图 4 题
+      信息提取 • 枚举
+      模式识别 • 计数
+      组合
     type: document
     size: xl
     position:
@@ -70,9 +77,10 @@ nodes:
       'y': 40
   - id: answerability
     label: |-
-      三道可回答 + 一道不可回答
-      开放词表短答案
-      共9,292道描述题
+      每图 3 道可答
+      + 1 道不可答
+      共 9,292 道开放词表题
+      使用模板对应真值答案
     type: process
     size: xl
     position:
@@ -80,9 +88,10 @@ nodes:
       'y': 40
   - id: reasoning
     label: |-
-      推理题：每图一题
-      人工综合多个视觉元素
-      要求明确且可核验的短答案
+      推理题 • 每图 1 题
+      查看 10 个 GPT-4V
+      候选问答
+      选择/修改/自写问答
     type: document
     size: xl
     position:
@@ -90,9 +99,10 @@ nodes:
       'y': 400
   - id: reasoning_set
     label: |-
-      标注推理答案类别
-      图内/通用文本或数值
-      共2,323道唯一推理题
+      要求答案明确且无歧义
+      图内文本 / 通用文本
+      图内数值 / 通用数值
+      无需高级领域知识
     type: process
     size: xl
     position:
@@ -101,8 +111,9 @@ nodes:
   - id: verify
     label: |-
       人类专家核验
-      检查图表、问题和参考答案
-      保持清晰的自动评分目标
+      策划图表与问题
+      检查真值答案
+      确认准确性与可回答性
     type: user
     size: xl
     position:
@@ -110,9 +121,10 @@ nodes:
       'y': 220
   - id: release
     label: |-
-      发布CharXiv
-      2,323张图表 • 共11,615道题
-      验证集1,000图 • 测试集1,323图
+      发布 2,323 张图表
+      11,615 道问题
+      验证 1,000：答案公开
+      测试 1,323：真值私有
     type: database
     size: xl
     position:
@@ -121,8 +133,9 @@ nodes:
   - id: inference
     label: |-
       多模态模型零样本评测
-      自然指令 + 图表 + 问题
-      描述题与推理题分别计分
+      图表 + 问题
+      + 答案格式指令
+      分别评分描述/推理
     type: process
     size: xl
     position:
@@ -130,19 +143,21 @@ nodes:
       'y': 220
   - id: judge
     label: |-
-      GPT-4o结合人工参考答案裁判
-      接受等价答案形式
-      400题上与人工评分一致率98.5%
+      gpt-4o-2024-05-13
+      裁判
+      抽取答案 • 二元正确性
+      真值答案 + 类型专用规则
     type: process
     size: xl
     position:
       x: 3040
       'y': 220
-  - id: human
+  - id: report
     label: |-
-      相同指令下建立人类基线
-      推理80.5% • 描述92.1%
-      对比开源与闭源多模态模型
+      按类别报告准确率
+      人类推理：80.5%
+      人类描述：92.1%
+      比较开源与闭源多模态模型
     type: terminal
     size: xl
     position:
@@ -189,6 +204,6 @@ edges:
     to: judge
     type: primary
   - from: judge
-    to: human
+    to: report
     type: primary
 modules: []

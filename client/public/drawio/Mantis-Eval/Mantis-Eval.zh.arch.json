@@ -1,130 +1,324 @@
 {
   "version": 1,
-  "title": "Mantis-Eval 构建流程",
+  "title": "Mantis-Eval 证据对齐的构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 26,
+    "edges": 24,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "固定一手证据\n论文 · arXiv 2405.01483v3\n官方仓库 · f3a31920\nHF 数据集 · a3d92f9e\n审计精确修订版本",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "scope",
-      "label": "定义留出的多图评测\n面向推理与共指能力\n覆盖跨图像关系\n使用英文问题",
+      "label": "定义留出的 Mantis-Eval\n多图推理 + 共指\n英文测试问题\nMantis 训练期间未见",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "acquire",
-      "label": "获取候选图像\n标注者使用 Google 搜索\n选择必须联合理解的图像\n覆盖多样日常主题",
+      "label": "论文 · 标注者获取图像\n使用 Google 搜索\n组成多图组\n覆盖多样主题",
       "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "compose",
-      "label": "组成多图样本\n每条平均 2.5 张图\n最多 5 张图\n保留图像顺序",
-      "type": "process",
       "size": "xl"
     },
     {
       "id": "author",
-      "label": "人工编写问题\n要求联合理解多张图像\n包含多项选择题\n包含简答题",
+      "label": "人工编写适当问题\n要求联合理解多张图像\n覆盖大小 / 重量等关系\n包含多选题 + 简答题",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "curate",
-      "label": "完成人工整理\n主题包括大小感知\n重量比较及其他关系\n保留两种问题格式",
-      "type": "process",
-      "size": "xl"
-    },
-    {
       "id": "release",
-      "label": "发布 Mantis-Eval\n共 217 条测试样本\n包含多选题与简答题\n不进入 Mantis 训练数据",
+      "label": "发布论文版 Mantis-Eval\n217 条测试样本\n平均 2.5 张图 · 最多 5 张\n推理 + 共指",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "input",
-      "label": "准备模型专属输入\n原生多图模型接收图像序列\n单图基线水平拼接所有图像\n追加问题文本",
+      "id": "support_gate",
+      "label": "model.support_multi_image 标志？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "sequence_input",
+      "label": "True 路径 · 构建交错输入\n保留图像 / 文本交错顺序\n补齐缺失的图像占位符\n保留发布图像顺序",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "prompt",
-      "label": "要求输出简洁最终回答\n多选题 · 输出选项字母\n简答题 · 使用 “Final Answer:”\n每题生成一次回答",
+      "id": "flat_input",
+      "label": "False 路径 · 构建图像在前的输入\n从文本移除图像占位符\n全部图像置于拼接后的文本之前\nQwenVL 保留列表 · 其他封装器可拼图",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "type_gate",
+      "label": "发布样本题型？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "mc_prompt",
+      "label": "格式化多项选择提示\n按需追加带字母的选项\n直接要求输出选项字母\n运行所选模型封装器",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "按题型解析答案\n多选 · 首个字母或选项文本\n简答 · 解析最终答案提示语\n忽略大小写进行比较",
+      "id": "short_prompt",
+      "label": "格式化简答提示\n允许在最终回答前分析\n要求使用 Final Answer: 标记\n运行所选模型封装器",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "mc_parse",
+      "label": "规范化多选回答\n去除 Final Answer: / The Answer Is / Answer:\n然后选择首个英文字母\n将所选字符转为大写",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "letter_gate",
+      "label": "选项字母有效且未越界？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "letter_compare",
+      "label": "比较选项字母\n所选大写字母\n等于参考字母",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "text_fallback",
+      "label": "选项文本精确回退\n使用原始回答而非解析短语\n从标准选项去除 A. / A: / (A)\n区分大小写的精确相等",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "short_parse",
+      "label": "解析简答回答\n使用相同三类标记优先规则\n有标记则去空白 · 否则保留原文\n规范参考答案的括号 / 空白\n不区分大小写的精确相等",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "match_gate",
+      "label": "该行是否判为正确？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "correct",
+      "label": "计该行正确",
+      "type": "terminal",
+      "size": "m"
+    },
+    {
+      "id": "incorrect",
+      "label": "计该行错误",
+      "type": "terminal",
+      "size": "m"
+    },
+    {
+      "id": "aggregate",
+      "label": "聚合全部已评测行\n多选准确率 · 分母 200 行\n简答准确率 · 分母 17 行\n总体准确率 · 分母 217 行",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "报告准确率\n多选题准确率\n简答题准确率\n总体平均正确率",
+      "label": "报告 Mantis-Eval 结果\n多项选择准确率\n简答准确率\n总体逐行准确率",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "construction_boundary",
+      "label": "未披露的构建边界\n候选数量 / 淘汰规则\n质检复核 / 裁决\n多选选项 + 干扰项生成",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_snapshot",
+      "label": "固定的 HF 测试快照\n217 行 · 200 多选 + 17 简答\n图像数量 · 145 / 39 / 32 / 1\n分别对应 2 / 3 / 4 / 5 张图",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source_boundary",
+      "label": "论文到发布版的来源边界\n论文说明使用 Google 搜索\nHF 来源字段 · 人工 50 · ChatGPT 42\nImagenHub 28 + 混合网页 / 数据集",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "rights_boundary",
+      "label": "发布与权利边界\n仓库 + HF 卡片 · Apache-2.0\n内嵌第三方图像\n未披露逐图许可证映射",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "code_boundary",
+      "label": "评测器版本边界\n首次公开代码 · 44d20bf6\n解析器更新 · 33561424\n生成设置因模型封装器而异",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "scope",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
       "from": "scope",
       "to": "acquire",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "acquire",
-      "to": "compose",
-      "type": "primary"
-    },
-    {
       "id": "edge-3",
-      "from": "compose",
+      "from": "acquire",
       "to": "author",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "author",
-      "to": "curate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "curate",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-5",
       "from": "release",
-      "to": "input",
+      "to": "support_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "support_gate",
+      "to": "sequence_input",
+      "type": "primary",
+      "label": "True · 交错序列"
     },
     {
       "id": "edge-7",
-      "from": "input",
-      "to": "prompt",
-      "type": "primary"
+      "from": "support_gate",
+      "to": "flat_input",
+      "type": "primary",
+      "label": "False · 图像在前"
     },
     {
       "id": "edge-8",
-      "from": "prompt",
-      "to": "parse",
+      "from": "sequence_input",
+      "to": "type_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "parse",
+      "from": "flat_input",
+      "to": "type_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "type_gate",
+      "to": "mc_prompt",
+      "type": "primary",
+      "label": "多项选择"
+    },
+    {
+      "id": "edge-11",
+      "from": "type_gate",
+      "to": "short_prompt",
+      "type": "primary",
+      "label": "简答"
+    },
+    {
+      "id": "edge-12",
+      "from": "mc_prompt",
+      "to": "mc_parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "mc_parse",
+      "to": "letter_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "letter_gate",
+      "to": "letter_compare",
+      "type": "primary",
+      "label": "有效字母"
+    },
+    {
+      "id": "edge-15",
+      "from": "letter_gate",
+      "to": "text_fallback",
+      "type": "primary",
+      "label": "无效 / 缺失"
+    },
+    {
+      "id": "edge-16",
+      "from": "short_prompt",
+      "to": "short_parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "letter_compare",
+      "to": "match_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "text_fallback",
+      "to": "match_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "short_parse",
+      "to": "match_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "match_gate",
+      "to": "correct",
+      "type": "primary",
+      "label": "正确"
+    },
+    {
+      "id": "edge-21",
+      "from": "match_gate",
+      "to": "incorrect",
+      "type": "primary",
+      "label": "错误"
+    },
+    {
+      "id": "edge-22",
+      "from": "correct",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "incorrect",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "aggregate",
       "to": "report",
       "type": "primary"
     }

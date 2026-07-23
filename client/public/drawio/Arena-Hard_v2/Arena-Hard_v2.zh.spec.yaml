@@ -4,184 +4,214 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Arena-Hard v2.0 构建流程
-  description: 基于 arXiv:2406.11939 与官方 lmarena/arena-hard-auto 仓库对齐的 v2.0 提示集构成和自动偏好评测流程。
-  legend: Arena-Hard 论文定义实时数据基准管线；官方 v2.0 版本补充准确的新提示数量、创意写作拆分、评审配置与风格控制汇报方式。
+  title: Arena-Hard v2.0 构建与评测流程
+  description: Arena-Hard v2.0 将 500 条高难提示与 250 条创意提示放在不同官方评测路径中， 不把论文中的 v0.1 评判协议投射到后续仓库版本。
+  legend: 高难提示使用风格控制；创意写作使用两个独立评判的集成结果，不做风格控制。
 nodes:
-  - id: arena_data
+  - id: source
     label: |-
-      从 Chatbot Arena 数据出发
-      新鲜真实用户问题
-      保持开放式任务多样性
+      Chatbot Arena 查询池
+      全新真实用户提示
+      众包开放式数据
     type: database
     size: xl
     position:
       x: 40
-      'y': 170
+      'y': 270
+  - id: evidence_boundary
+    label: |-
+      证据边界
+      论文 v2：BenchBuilder 骨架
+      官方仓库：v2 子集与评测
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 270
   - id: hard_prompts
     label: |-
-      整理高难提示集
-      500 个新鲜高难问题
-      软件 • 数学 • 真实问题求解
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 40
-  - id: creative_prompts
-    label: |-
-      整理创意写作集
-      250 个 Arena 问题
-      单独进行创意能力评测
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 300
-  - id: release
-    label: |-
-      发布 Arena-Hard v2.0
-      共 750 个提示
-      保存类别标签与参考数据
-    type: database
+      高难提示子集
+      500 条全新高难查询
+      软件 • 数学 • 真实问题
+    type: document
     size: xl
     position:
       x: 600
-      'y': 170
-  - id: answers
+      'y': 60
+  - id: creative_prompts
     label: |-
-      生成模型回答
-      候选系统与参考系统
-      按提示和模型缓存回答
+      创意写作子集
+      250 条创意 Arena 查询
+      单独评测类别
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 480
+  - id: hard_answers
+    label: |-
+      生成并缓存高难回答
+      候选模型对 o3-mini 基线
+      成对 A/B 顺序
     type: process
     size: xl
     position:
       x: 880
-      'y': 170
+      'y': 60
+  - id: creative_answers
+    label: |-
+      生成并缓存创意回答
+      候选模型对 Gemini-2.0 基线
+      成对 A/B 顺序
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 480
   - id: hard_judge
     label: |-
-      成对评审高难提示
-      Gemini 2.5 官方配置
-      GPT-4.1 快速稳定替代配置
+      高难提示成对评判
+      Gemini-2.5 官方配置
+      GPT-4.1 备选配置
+      o3-mini 基线
     type: process
     size: xl
     position:
       x: 1160
-      'y': 40
+      'y': 60
   - id: creative_judge
     label: |-
-      评审创意写作
-      GPT-4.1 与 Gemini 2.5 独立判断
-      汇总评审器集成结果
+      创意写作集成评判
+      GPT-4.1 + Gemini-2.5
+      独立推理
+      Gemini-2.0 基线
     type: process
     size: xl
     position:
       x: 1160
-      'y': 300
-  - id: style_features
+      'y': 480
+  - id: hard_judgments
     label: |-
-      计算风格特征
-      回答长度 • Markdown 密度
-      将特征附加到模型回答
-    type: process
-    size: xl
-    position:
-      x: 1440
-      'y': 40
-  - id: judgments
-    label: |-
-      保存成对判断
-      候选更好 • 平局 • 参考更好
-      按提示、模型和评审器缓存
+      解析高难评判
+      A>>B • A>B • 平局
+      B>A • B>>A
+      按提示 / 模型 / 评判缓存
     type: database
     size: xl
     position:
       x: 1440
-      'y': 300
-  - id: aggregation
+      'y': 60
+  - id: creative_judgments
     label: |-
-      汇总评测结果
-      高难集使用风格控制
-      创意集使用评审器集成
+      汇集创意写作评判
+      GPT-4.1 + Gemini-2.5 记录
+      按提示 / 模型 / 评判缓存
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 480
+  - id: style_metadata
+    label: |-
+      仅高难回答的风格元数据
+      Token 长度 + Markdown 密度
+      标题 • 粗体 • 列表
     type: process
     size: xl
     position:
       x: 1440
-      'y': 600
-  - id: win_rate
+      'y': 270
+  - id: hard_aggregate
     label: |-
-      计算模型胜率
-      Bootstrap 置信区间
-      与参考模型比较
+      高难子集风格控制排名
+      Markdown + 长度特征
+      Bradley-Terry
+      100 次自助采样
+      第 5 / 95 百分位区间
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 600
-  - id: quality_metrics
+      x: 1720
+      'y': 60
+  - id: creative_aggregate
     label: |-
-      验证基准质量
-      置信可分性
-      与人类偏好的一致性
+      创意写作集成排名
+      汇集独立评判
+      不做风格控制
+      100 次自助采样与区间
     type: process
     size: xl
     position:
-      x: 880
-      'y': 600
+      x: 1720
+      'y': 480
+  - id: quality
+    label: |-
+      基准质量检查
+      可分性 + 人类偏好一致性
+      成对排名 Brier 分数
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 270
   - id: report
     label: |-
-      发布 Arena-Hard v2.0 排行榜
-      高难与创意写作结果
-      分数及置信区间
+      分别发布 v2 排行榜
+      高难：风格控制
+      创意：评判集成
+      胜率 + 自助置信区间
     type: terminal
     size: xl
     position:
-      x: 600
-      'y': 600
+      x: 2280
+      'y': 270
 edges:
-  - from: arena_data
+  - from: source
+    to: evidence_boundary
+    type: primary
+  - from: evidence_boundary
     to: hard_prompts
     type: primary
-  - from: arena_data
+  - from: evidence_boundary
     to: creative_prompts
-    type: data
+    type: primary
   - from: hard_prompts
-    to: release
+    to: hard_answers
     type: primary
   - from: creative_prompts
-    to: release
+    to: creative_answers
     type: primary
-  - from: release
-    to: answers
-    type: primary
-  - from: answers
+  - from: hard_answers
     to: hard_judge
     type: primary
-  - from: answers
+  - from: hard_answers
+    to: style_metadata
+    type: data
+  - from: creative_answers
     to: creative_judge
-    type: data
-  - from: hard_judge
-    to: style_features
     type: primary
   - from: hard_judge
-    to: judgments
-    type: data
+    to: hard_judgments
+    type: primary
   - from: creative_judge
-    to: judgments
+    to: creative_judgments
     type: primary
-  - from: style_features
-    to: aggregation
+  - from: hard_judgments
+    to: hard_aggregate
+    type: primary
+  - from: style_metadata
+    to: hard_aggregate
     type: data
-  - from: judgments
-    to: aggregation
+  - from: creative_judgments
+    to: creative_aggregate
     type: primary
-  - from: aggregation
-    to: win_rate
+  - from: hard_aggregate
+    to: quality
     type: primary
-  - from: win_rate
-    to: quality_metrics
+  - from: creative_aggregate
+    to: quality
     type: primary
-  - from: quality_metrics
+  - from: quality
     to: report
     type: primary
 modules: []

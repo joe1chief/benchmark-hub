@@ -5,74 +5,93 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Claw-Eval 构建流程
-  description: 与论文对齐的 Claw-Eval 流程：将原创与兼容任务实现为可审计环境及证据驱动 Rubric，经独立复核和模型试跑后， 在时间隔离的准备、执行、判分三阶段中评估完成度、安全性、鲁棒性与重复可靠性。
-  legend: 实线表示任务构建与评测主流程；分支表示三类任务和三个独立证据通道。
+  description: 与论文 v3 及固定官方发布对齐的 Claw-Eval 流程：原创与兼容任务先完成环境和评分项实现，再经第二位作者复核与前沿模型试跑，最后进入三阶段可审计评测协议。
+  legend: 实线表示构建与评测主流程；执行结束后，三类证据才汇入评审阶段。
 nodes:
-  - id: sources
+  - id: evidence_boundary
     label: |-
-      编写并适配候选任务
-      250 个原创任务 + 50 个兼容任务
-      保留适配任务的提示与评分语义
-    type: database
+      论文与固定官方发布
+      arXiv 2604.06132v3 §§3.1–3.3
+      GitHub d3f02d4
+      HF 数据集 ca978fd
+    type: document
     size: xl
     position:
       x: 40
       'y': 220
-  - id: groups
+  - id: original
     label: |-
-      覆盖三类任务
-      通用 161 • 多模态 101 • 多轮 38
-      合计九个细分类别
-    type: process
+      编写原创任务
+      300 项中的 250 项 • 83.3%
+      覆盖三类任务组
+      定义能力与提示
+    type: database
     size: xl
     position:
       x: 340
       'y': 40
-  - id: design
+  - id: compatibility
     label: |-
-      定义每个任务
-      目标能力 + 提示 + 工具／资产
-      草拟完成度、安全性与鲁棒性计划
-    type: document
+      改编 50 项兼容任务
+      OfficeQA 10 • PinchBench 14
+      FinanceQA 12 • OneMillion 5
+      Video-MME 5 • LongVideo 4
+      保留原提示与评分标准
+    type: database
     size: xl
     position:
       x: 340
       'y': 400
-  - id: environment
+  - id: task_design
     label: |-
-      实现运行环境
-      沙箱资产 + 模拟服务 + 模拟用户
-      支持工作流、媒体与对话任务
-    type: process
+      逐项定义任务
+      目标能力与提示
+      所需工具／资产
+      起草初始评分计划
+    type: document
     size: xl
     position:
       x: 640
       'y': 220
-  - id: rubrics
+  - id: environment
     label: |-
-      形式化细粒度 Rubric
-      确定性检查 + LLM／VLM 判断
-      每项都绑定可观察证据
-    type: document
+      实现运行环境
+      沙箱资产 • 模拟服务
+      按需配置模拟用户
+      接入三阶段生命周期
+    type: process
     size: xl
     position:
       x: 940
-      'y': 220
-  - id: review
+      'y': 80
+  - id: rubrics
     label: |-
-      独立复核与模型试跑
-      检查正确性、完整性和泄漏
-      修订或移除简单、损坏或不可行任务
+      形式化评分项
+      确定性检查
+      LLM／VLM 判断项
+      每项绑定可观测证据
     type: process
+    size: xl
+    position:
+      x: 940
+      'y': 360
+  - id: review_pilot
+    label: |-
+      第二位作者复核
+      正确性 • 完整性 • 泄漏
+      用多个前沿模型试跑
+      修订或移除未通过任务
+    type: user
     size: xl
     position:
       x: 1240
       'y': 220
   - id: release
     label: |-
-      发布 Claw-Eval
-      300 个经人工验证的任务
-      2,159 条 Rubric • 每题平均 7.2 条
+      发布 300 项人工核验任务
+      通用 161 • 多模态 101
+      多轮 38 • 9 个类别
+      2,159 项评分 • 均值 7.2
     type: database
     size: xl
     position:
@@ -80,9 +99,10 @@ nodes:
       'y': 220
   - id: setup
     label: |-
-      阶段一：准备
-      创建全新的 Docker 沙箱
-      只注入任务资源，不暴露评分材料
+      阶段 1：准备
+      每次运行使用全新 Docker 沙箱
+      注入任务资源
+      隐藏评分产物
     type: process
     size: xl
     position:
@@ -90,9 +110,10 @@ nodes:
       'y': 220
   - id: execute
     label: |-
-      阶段二：Agent 执行
-      使用系统工具与任务专属服务 API
-      可选择注入受控工具错误
+      阶段 2：执行
+      系统工具 + 任务专属工具
+      记录完整智能体上下文
+      可选受控工具错误
     type: terminal
     size: xl
     position:
@@ -100,19 +121,19 @@ nodes:
       'y': 220
   - id: trace
     label: |-
-      证据一：执行轨迹
-      记录工具调用、观察与完整轨迹
-      在 Agent 视野外收集
+      证据 1：执行轨迹
+      工具调用 + 观察结果
+      存在智能体视野之外
     type: document
     size: xl
     position:
       x: 2440
-      'y': 40
-  - id: logs
+      'y': 20
+  - id: audit_logs
     label: |-
-      证据二：服务审计日志
-      记录真实请求及其参数
-      检测禁止或缺失的副作用
+      证据 2：服务审计日志
+      真实请求 + 参数
+      检测缺失／禁止副作用
     type: document
     size: xl
     position:
@@ -120,19 +141,20 @@ nodes:
       'y': 220
   - id: snapshot
     label: |-
-      证据三：环境快照
-      捕获文件、服务状态与产物
-      保存执行后验证器输出
+      证据 3：环境快照
+      文件 • 服务状态 • 产物
+      执行后校验器输出
     type: document
     size: xl
     position:
       x: 2440
-      'y': 400
+      'y': 420
   - id: judge
     label: |-
-      阶段三：混合判分
-      时间防火墙此时才暴露评分器
-      执行确定性与语义 Rubric 检查
+      阶段 3：评审
+      终止后才注入评分器
+      执行确定性与语义检查
+      融合三类证据
     type: process
     size: xl
     position:
@@ -140,37 +162,43 @@ nodes:
       'y': 220
   - id: score
     label: |-
-      报告能力与可靠性
-      安全门控的完成度与鲁棒性得分
-      三次运行平均分 • 至少一次通过率
-      三次全部通过率
+      0.8 完成度 + 0.2 鲁棒性
+      再乘安全门控
+      通过阈值 ≥ 0.75 • 三次试验
+      平均分 • Pass@3 • Pass³
     type: terminal
     size: xl
     position:
       x: 3040
       'y': 220
 edges:
-  - from: sources
-    to: groups
+  - from: evidence_boundary
+    to: original
     type: primary
-  - from: sources
-    to: design
+  - from: evidence_boundary
+    to: compatibility
     type: primary
-  - from: groups
+  - from: original
+    to: task_design
+    type: primary
+  - from: compatibility
+    to: task_design
+    type: primary
+  - from: task_design
     to: environment
     type: primary
-  - from: design
-    to: environment
-    type: primary
-  - from: environment
+  - from: task_design
     to: rubrics
     type: primary
-  - from: rubrics
-    to: review
+  - from: environment
+    to: review_pilot
     type: primary
-  - from: review
+  - from: rubrics
+    to: review_pilot
+    type: primary
+  - from: review_pilot
     to: release
-    type: data
+    type: primary
   - from: release
     to: setup
     type: primary
@@ -181,7 +209,7 @@ edges:
     to: trace
     type: primary
   - from: execute
-    to: logs
+    to: audit_logs
     type: primary
   - from: execute
     to: snapshot
@@ -189,7 +217,7 @@ edges:
   - from: trace
     to: judge
     type: primary
-  - from: logs
+  - from: audit_logs
     to: judge
     type: primary
   - from: snapshot

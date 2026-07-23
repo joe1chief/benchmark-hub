@@ -5,16 +5,17 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BABILong Build Process
-  description: Paper-aligned generation and long-context evaluation workflow for BABILong, based on arXiv:2406.10149.
+  description: Paper-aligned generation and long-context evaluation workflow for BABILong, based on arXiv:2406.10149v2.
   legend: >-
-    Solid arrows show dataset generation and direct evaluation; dashed arrows distinguish retrieval and recurrent-memory
-    baselines.
+    Solid arrows build data and score each method. Dashed arrows select retrieval or recurrent-memory baselines; direct,
+    RAG, and recurrent evaluations retain their distinct paper-specified sample protocols.
 nodes:
   - id: babi_simulation
     label: |-
       Generate bAbI Simulations
-      Characters, Objects, Locations, and Events
-      Synthetic Facts plus Ground-Truth Answers
+      Characters • Objects • Places
+      Events • Synthetic Facts
+      Ground-Truth Answers
     type: database
     size: xl
     position:
@@ -34,7 +35,8 @@ nodes:
     label: |-
       Sample PG19 Books
       Natural Long-Form Narratives
-      Draw Background Sentences in Original Order
+      Draw Background Sentences
+      in Original Order
     type: database
     size: xl
     position:
@@ -43,8 +45,9 @@ nodes:
   - id: interleave
     label: |-
       Hide Task Facts in Background Text
-      Interleave Relevant and Distractor Sentences
-      Preserve Their Natural and Logical Order
+      Interleave Facts + Distractors
+      Preserve Natural Order
+      Preserve Task-Logical Order
     type: process
     size: xl
     position:
@@ -109,7 +112,7 @@ nodes:
     size: xl
     position:
       x: 1440
-      'y': 580
+      'y': 620
   - id: recurrent_eval
     label: |-
       Evaluate Recurrent Memory
@@ -119,47 +122,73 @@ nodes:
     size: xl
     position:
       x: 1720
-      'y': 580
+      'y': 620
   - id: score
     label: |-
-      Compute Exact Task Accuracy
-      Report Every QA Task and Context Length
-      Use 1,000 Samples to 32K and 100 Beyond
+      Direct QA1–QA5 Accuracy
+      1,000 per Task / Length
+      through 32K
+      100 Beyond 32K
     type: process
     size: xl
     position:
       x: 2000
-      'y': 400
+      'y': 40
+  - id: rag_score
+    label: |-
+      RAG Exact Accuracy
+      50 Examples
+      per Task and Length
+      Score RAG-C / RAG-S Separately
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 310
+  - id: recurrent_score
+    label: |-
+      Recurrent-Memory Accuracy
+      Full Test Set through 1M
+      100 Examples at 10M
+      Selected Runs to 50M
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 620
   - id: effective_context
     label: |-
-      Diagnose Effective Context Use
-      Compare One-, Two-, and Three-Fact Tasks
-      Track Accuracy Decay with Length
+      Diagnose Context Use
+      One / Two / Three-Fact Tasks
+      Accuracy Decay with Length
+      Retrieval Order / Missing Facts
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 760
+      x: 2280
+      'y': 550
   - id: method_compare
     label: |-
-      Compare Direct, RAG, and Memory Models
-      Analyze Retrieval Order and Missing Facts
-      Separate Refusals Where Reported
+      Compare Independent Protocols
+      Direct • RAG-C • RAG-S
+      RMT • ARMT • Mamba
+      Do Not Pool Sample Counts
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 760
+      x: 2280
+      'y': 310
   - id: report
     label: |-
       Publish BABILong Results
-      Accuracy by Task, Length, and Method
-      Predefined Splits plus 50M Extrapolation
+      Task / Length / Method Accuracy
+      Keep Protocol Sample Counts
+      Selected 50M Extrapolation
     type: terminal
     size: xl
     position:
-      x: 2000
-      'y': 980
+      x: 2560
+      'y': 430
 edges:
   - from: babi_simulation
     to: task_suite
@@ -188,6 +217,11 @@ edges:
   - from: release
     to: recurrent_train
     type: optional
+    waypoints:
+      - x: 1330
+        'y': 350
+      - x: 1330
+        'y': 670
   - from: recurrent_train
     to: recurrent_eval
     type: primary
@@ -195,24 +229,30 @@ edges:
     to: score
     type: primary
   - from: rag_chunks
-    to: score
+    to: rag_score
     type: data
   - from: rag_sentences
-    to: score
+    to: rag_score
     type: data
   - from: recurrent_eval
-    to: score
+    to: recurrent_score
     type: data
-  - from: score
-    to: effective_context
-    type: primary
   - from: score
     to: method_compare
+    type: primary
+  - from: rag_score
+    to: method_compare
     type: data
-  - from: effective_context
-    to: report
+  - from: recurrent_score
+    to: method_compare
+    type: data
+  - from: method_compare
+    to: effective_context
     type: primary
   - from: method_compare
     to: report
     type: data
+  - from: effective_context
+    to: report
+    type: primary
 modules: []

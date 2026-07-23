@@ -5,14 +5,15 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FronTalk 构建流程
-  description: 依据论文呈现带等价文本与视觉反馈的多轮前端对话构建，以及通过网页智能体评估指令遵循、 遗忘和首次用户可用性的协议。
-  legend: 上行从左到右阅读对话与测试构建，下行从右到左阅读对话式代码评测。
+  description: 依据论文呈现带等价文本与视觉反馈的多轮前端对话构建。最终轮指令遵循和首次用户可用性是主要评测分支，遗忘率为补充指标；模拟器与评估器人工检查是评分路径外的验证研究。
+  legend: 构建流程从左到右、评测流程从右到左；侧分支表示披露边界、补充分析或独立验证研究。
 nodes:
   - id: c4
     label: |-
       真实世界网站池
-      从 C4 抽样 10,000 个网页
-      后续排除低信息种子页面
+      抽样 10,000 个 C4 页面
+      后续排除低信息
+      种子页面
     type: database
     size: xl
     position:
@@ -21,8 +22,9 @@ nodes:
   - id: cluster
     label: |-
       网站摘要与聚类
-      GPT-4o 生成内容和功能摘要
-      BERTopic 识别主题簇
+      GPT-4o 生成内容
+      + 功能摘要
+      BERTopic 聚类
     type: process
     size: xl
     position:
@@ -30,9 +32,10 @@ nodes:
       'y': 100
   - id: sites
     label: |-
-      人工选择代表网站
-      每个主要主题簇选一个有效网站
-      得到 100 个多样化种子网站
+      人工选择网站
+      主要主题簇各选
+      一个有效网站
+      共 100 个多样化种子
     type: user
     size: xl
     position:
@@ -40,9 +43,10 @@ nodes:
       'y': 100
   - id: intents
     label: |-
-      十轮意图与测试生成
-      GPT-4o 生成功能类或设计类意图
-      每个意图配对可验证测试用例
+      十轮意图 + 测试
+      GPT-4o 每轮随机选择
+      功能类 / 设计类
+      每个意图配可验证测试
     type: process
     size: xl
     position:
@@ -50,19 +54,32 @@ nodes:
       'y': 100
   - id: refine
     label: |-
-      人工精炼测试用例
-      删除 66 个幻觉用例（1.7%）
-      编辑 2,783 个（73.4%）；有效率 90.1% -> 94.7%
+      人工精炼
+      全部测试均复核
+      删除 66 个（1.7%）
+      编辑 2,783 个（73.4%）
+      抽样 224 个：90.1% -> 94.7%
     type: process
     size: xl
     position:
       x: 1160
       'y': 100
+  - id: curation_boundary
+    label: |-
+      人工精炼边界
+      初始精炼人员
+      数量与资质
+      论文未披露
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 270
   - id: dataset
     label: |-
       FronTalk 发布集
       100 个对话 / 1,000 轮
-      3,676 个经人工精炼的测试用例
+      3,676 个精炼测试
     type: database
     size: xl
     position:
@@ -70,19 +87,35 @@ nodes:
       'y': 100
   - id: simulator
     label: |-
-      等价用户反馈
-      文本模拟器依据历史消解意图
-      视觉模拟器在当前截图上绘制标注
+      GPT-4o 模拟器
+      文本：当前代码
+      + 原始意图
+      消解歧义 / 冗余
+      视觉：绘图工具
     type: process
     size: xl
     position:
       x: 1440
       'y': 440
+  - id: sim_validation
+    label: |-
+      模拟器验证
+      114 条指令
+      411 个测试
+      文本：98% / 96%
+      视觉：76% / 97%
+    type: user
+    size: xl
+    position:
+      x: 1440
+      'y': 760
   - id: generation
     label: |-
       对话式代码生成
-      依据当前指令与完整历史
-      每轮生成更新后的前端代码
+      当前指令
+      + 完整历史
+      更新前端代码
+      每一轮
     type: process
     size: xl
     position:
@@ -90,9 +123,10 @@ nodes:
       'y': 440
   - id: render
     label: |-
-      渲染对话各轮输出
-      保留每轮中间网站
-      第 10 轮代码形成最终网站
+      对话输出
+      保留各轮网站
+      第 10 轮代码
+      = 最终网站
     type: process
     size: xl
     position:
@@ -100,34 +134,60 @@ nodes:
       'y': 440
   - id: instruction
     label: |-
-      基于智能体的指令遵循评测
-      网页智能体探索并执行测试用例
-      图像工具支持视觉设计检查
+      最终轮评分
+      全部意图 + 测试
+      均在最终输出评估
+      知情网页智能体
+      + 图像工具
     type: process
     size: xl
     position:
       x: 600
-      'y': 440
+      'y': 320
   - id: forgetting
     label: |-
-      多轮遗忘分析
-      同时评估中间输出和最终输出
-      检测此前通过但后来退化的功能
+      补充遗忘率（式 2）
+      聚合前 T-1 轮（t < T）
+      FR = 1 - Σ(t<T) PC(o_T|i_t)
+      / Σ(t<T) PC(o_t|i_t)
     type: process
+    size: xl
+    position:
+      x: 880
+      'y': 760
+  - id: usability
+    label: |-
+      首次用户可用性
+      朴素智能体轨迹
+      vs 精选参考网站
+      成对 UX 胜率
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 560
+  - id: report
+    label: |-
+      FronTalk 结果
+      通过率 + UX 胜率
+      补充遗忘率
+    type: terminal
     size: xl
     position:
       x: 320
       'y': 440
-  - id: usability
+  - id: eval_validation
     label: |-
-      FronTalk 指标
-      通过率与遗忘率
-      首次用户轨迹成对比较得到可用性胜率
-    type: terminal
+      人工评估验证
+      218 个通过判例
+      82.0%；Kappa 62.7
+      50 个 UX 对
+      84.0%；Kappa 66.7
+    type: user
     size: xl
     position:
       x: 40
-      'y': 440
+      'y': 760
 edges:
   - from: c4
     to: cluster
@@ -144,22 +204,57 @@ edges:
   - from: refine
     to: dataset
     type: primary
+  - from: refine
+    to: curation_boundary
+    type: secondary
   - from: dataset
     to: simulator
     type: primary
   - from: simulator
     to: generation
     type: primary
+  - from: simulator
+    to: sim_validation
+    type: secondary
   - from: generation
     to: render
     type: primary
   - from: render
     to: instruction
     type: primary
-  - from: instruction
-    to: forgetting
-    type: primary
-  - from: forgetting
+  - from: render
     to: usability
     type: primary
+  - from: instruction
+    to: forgetting
+    type: secondary
+    waypoints:
+      - x: 744
+        'y': 322
+      - x: 744
+        'y': 762
+  - from: forgetting
+    to: report
+    type: secondary
+    waypoints:
+      - x: 884
+        'y': 868
+      - x: 464
+        'y': 868
+      - x: 464
+        'y': 442
+  - from: instruction
+    to: report
+    type: primary
+  - from: usability
+    to: report
+    type: primary
+  - from: report
+    to: eval_validation
+    type: secondary
+    waypoints:
+      - x: 420
+        'y': 700
+      - x: 140
+        'y': 700
 modules: []

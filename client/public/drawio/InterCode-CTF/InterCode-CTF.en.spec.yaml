@@ -6,12 +6,23 @@ meta:
   routing: orthogonal
   title: InterCode-CTF Build Process
   description: >-
-    Paper-aligned InterCode-CTF construction from manually solved picoCTF challenges and exact task assets to a
-    task-specific Ubuntu Docker environment, verified flags, a ten-turn agent loop, and exact success scoring.
+    Paper-aligned InterCode-CTF construction from manually solved picoCTF challenges and exact task assets to a shared
+    Ubuntu Docker image with task-specific working directories, verified flags, a ten-interaction paper baseline, and
+    exact success scoring.
   legend: >-
     The workflow follows the dedicated NeurIPS 2023 Multi-Agent Security workshop paper, not later model-report subsets
     that remove unavailable or internet-dependent tasks.
 nodes:
+  - id: evidence
+    label: |-
+      Primary Evidence + Fixed Revision
+      OpenReview KOZwk7BFc3 · MASEC 2023
+      Git c2f8b82 · Dedicated CTF Release
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
   - id: source
     label: |-
       picoCTF Practice Platform
@@ -21,7 +32,7 @@ nodes:
     type: cloud
     size: xl
     position:
-      x: 20
+      x: 300
       'y': 40
   - id: solve
     label: |-
@@ -32,7 +43,7 @@ nodes:
     type: user
     size: xl
     position:
-      x: 300
+      x: 580
       'y': 40
   - id: package
     label: |-
@@ -43,18 +54,18 @@ nodes:
     type: process
     size: xl
     position:
-      x: 580
+      x: 860
       'y': 40
   - id: docker
     label: |-
-      Build InterCode-CTF Sandbox
-      Ubuntu + Bourne Shell in Docker
-      Python · GCC · GDB and Security Tools
-      Start in Task-specific Asset Directory
+      Build the Shared intercode-ctf Image
+      Ubuntu · Python · GCC · GDB Security Tools
+      All Assets under /ctf · Task-specific Start
+      Remove solution/ from Agent Image
     type: process
     size: xl
     position:
-      x: 860
+      x: 1140
       'y': 40
   - id: verify
     label: |-
@@ -65,7 +76,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1140
+      x: 1420
       'y': 40
   - id: suite
     label: |-
@@ -76,42 +87,67 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1140
+      x: 1420
       'y': 360
   - id: loop
     label: |-
-      Ten-turn Language-agent Evaluation
+      Paper Baseline: 10 Agent Interactions
       Instruction → Python / Bash Action
-      Return stdout or Error Observation
-      Stop on Correct Flag or Budget Exhaustion
+      stdout or Error Observation Returns
+      Not an Environment Termination Rule
     type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 360
+  - id: grade
+    label: |-
+      Submit Decision · submit ANSWER
+      Case-insensitive Match to Gold
+      Correct: r=1 · Wrong + Budget: r=0, Loop
+    type: decision
     size: xl
     position:
       x: 860
       'y': 360
-  - id: grade
-    label: |-
-      Exact Flag Submission
-      Action: submit picoCTF{...}
-      Case-insensitive Match to Gold
-      Reward 1 if Correct, Otherwise 0
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 360
   - id: report
     label: |-
-      Report Task Success Rate
+      Downstream Results + Web Leaderboard
       GPT-4 Baseline: 40 / 100 Solved
       3.9 Average Turns on Solved Tasks
       Break Down Success by Six Categories
     type: terminal
     size: xl
     position:
+      x: 580
+      'y': 360
+  - id: artifact_boundary
+    label: |-
+      Paper / Runtime Artifact Boundary
+      query + Assets → Agent; gold → Evaluator
+      Paper: Wrong Submit May Continue
+      Code: submit done; evaluator ignores done
+      Paper 10 · Current Script Default 15
+    type: document
+    size: xl
+    position:
       x: 300
       'y': 360
+  - id: scope_limit
+    label: |-
+      Collection Scope Limitation
+      No Browser → Only 2 Web Tasks
+      19 Queries Reference Remote Hosts
+      No Random Sample or Difficulty Field
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 360
 edges:
+  - from: evidence
+    to: source
+    type: data
   - from: source
     to: solve
     type: primary
@@ -130,10 +166,24 @@ edges:
   - from: suite
     to: loop
     type: primary
+  - from: suite
+    to: scope_limit
+    type: data
   - from: loop
     to: grade
     type: primary
   - from: grade
+    to: loop
+    type: optional
+    waypoints:
+      - x: 960
+        'y': 600
+      - x: 1240
+        'y': 600
+  - from: grade
     to: report
     type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
 modules: []

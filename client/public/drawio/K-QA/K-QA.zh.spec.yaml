@@ -5,153 +5,203 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: K-QA 构建流程
-  description: 对齐论文的 K-QA 构建流程：从去标识化 K Health 对话中筛选独立问题，由医生编写细粒度参考答案， 借助 GPT-4 拆分事实陈述，并使用经验证的 NLI 指标评测。
-  legend: K-QA 共 1,212 个问题；其中医生参考答案与 statement 级评测子集含 201 个答案，拆为 1,589 条必需或可选陈述。
+  description: 对齐论文的 K-QA 构建流程：从 K Health 的去标识化问题出发，经独立医学问题筛选、医生参考答案、 GPT-4 辅助陈述拆分，最终使用官方 GPT-4 NLI 指标评测。
+  legend: 实线表示构建与评分主链；虚线表示固定证据、可选 NLI 裁判验证，以及已发布 K-QA 制品与未发布原始对话语料的边界。
 nodes:
-  - id: interactions
+  - id: evidence
     label: |-
-      获取真实患者互动
-      去标识化 K Health 对话
-      来自 1,055 名独立用户
-      人工复核隐私泄露
-    type: database
+      主要证据与固定版本
+      arXiv:2401.14493v1
+      2024-01-25
+      官方 Git ef403d0
+      论文第 3–5 节与附录 A–B
+    type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: prefilter
+  - id: interactions
     label: |-
-      自动预筛问题
-      BERT 区分问题与陈述
-      正则排除账单和物流问题
-      保留候选患者问题
-    type: process
+      来源：K Health 对话
+      真实患者—医生文本互动
+      论文称问题已经去标识化
+      原始对话语料未发布
+    type: database
     size: xl
     position:
       x: 300
       'y': 40
-  - id: candidates
+  - id: prefilter
     label: |-
-      候选池 · 约 26K
-      真实消费者健康表达
-      含模糊术语与多种病情
-      潜在可独立回答问题
-    type: database
+      自动预筛问题
+      微调 BERT 区分问题与陈述
+      正则排除物流类问题
+      论文示例为账单与配送
+    type: process
     size: xl
     position:
       x: 580
+      'y': 40
+  - id: candidates
+    label: |-
+      候选问题池 · 约 26K
+      真实消费者健康表达
+      含模糊术语与多种病情
+      待复核为可独立回答问题
+    type: database
+    size: xl
+    position:
+      x: 860
       'y': 40
   - id: medical_review
     label: |-
       医疗专业人员复核
+      逐一检查每个候选问题
       要求问题可独立回答
-      不依赖患者既往病史
-      标注 ICD-10 病情类别
+      标注一个 ICD-10 病情
     type: user
-    size: xl
-    position:
-      x: 860
-      'y': 40
-  - id: questions
-    label: |-
-      发布 K-QA 问题 · 1,212 题
-      覆盖一百多种医疗状况
-      真实世界长答案医学问答
-      完整问题集并非都有标准答案
-    type: database
     size: xl
     position:
       x: 1140
       'y': 40
+  - id: questions
+    label: |-
+      K-QA 问题集 · 1,212 题
+      来自 1,055 名独立用户
+      172 种 ICD-10 病情
+      仅 201 题有医生参考答案
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
   - id: answers
     label: |-
-      编写 201 个医生答案
-      六位医生加资深复核医生
-      查阅 UpToDate 与 PubMed
+      为 201 题编写医生参考答案
+      六位医生回答不同问题子集
+      复核医生 · UpToDate / PubMed
+      面向普通读者
       禁用生成式 AI · 约 400 小时
     type: user
     size: xl
     position:
-      x: 1420
+      x: 1700
       'y': 40
   - id: decomposition
     label: |-
-      拆分为原子陈述
-      另六位医疗医生负责拆分
-      GPT-4 少样本建议
-      可修改删除或补充缺失事实
+      另六位医生拆分答案
+      GPT-4 提供少样本建议
+      可修改、删除或补充陈述
+      6.86% 的建议陈述被改动
     type: process
     size: xl
     position:
-      x: 1700
+      x: 1980
       'y': 40
   - id: statements
     label: |-
-      产出 1,589 条陈述
+      产出 1,589 条自包含陈述
       每个医生答案平均 7.9 条
-      简洁 · 准确 · 可独立判断
       892 条必需 + 697 条可选
+      每条表达一个独立事实
     type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 380
+  - id: importance
+    label: |-
+      标注临床重要性
+      与拆分阶段相同的六位医生
+      必需：临床关键 · 可选：补充信息
+      小组讨论达成共识 · 约 20 小时
+    type: user
     size: xl
     position:
       x: 1700
       'y': 380
-  - id: importance
+  - id: predict
     label: |-
-      临床重要性共识
-      必需：临床关键内容
-      可选：补充信息
-      医疗小组协作决策
-    type: user
+      生成或载入模型答案
+      匹配 201 个有参考答案的问题
+      可配置模型使用零温度
+      ICL 与医学 RAG 是实验变体
+    type: process
     size: xl
     position:
       x: 1420
       'y': 380
-  - id: predict
+  - id: nli
     label: |-
-      生成模型答案
-      评测 201 个有参考答案的问题
-      可配置模型使用零温度
-      可选 ICL 与医疗 RAG 变体
+      官方 GPT-4 少样本 CoT NLI
+      模型答案作为前提
+      每条标准陈述作为假设
+      分别检查蕴含与矛盾
     type: process
     size: xl
     position:
       x: 1140
       'y': 380
-  - id: nli
+  - id: comp
     label: |-
-      自动 NLI 比较
-      模型答案作为前提
-      每条标准陈述作为假设
-      GPT-4 少样本 CoT：蕴含或矛盾
+      Comp · 全面性
+      每题：已蕴含必需陈述 / 全部必需陈述
+      完整得分 = 各题比例之和 / 201
+      跳过“可选陈述”的蕴含检查
     type: process
     size: xl
     position:
       x: 860
-      'y': 380
-  - id: validate
+      'y': 260
+  - id: hall
     label: |-
-      验证 NLI 裁判
-      50 个问答对 · 402 条陈述
-      三位医生加多数投票
-      Fleiss Kappa 为 0.70
+      Hall · 幻觉率
+      统计与必需及可选陈述矛盾的数量
+      完整得分 = 矛盾总数 / 201
+      是每题平均数量，不是陈述占比
     type: process
+    size: xl
+    position:
+      x: 860
+      'y': 500
+  - id: report
+    label: |-
+      汇报 K-QA 答案质量
+      Comp 越高越好 · Hall 越低越好
+      官方完整基准分母固定为 201
+      其余 1,011 题不计分
+    type: terminal
     size: xl
     position:
       x: 580
       'y': 380
-  - id: metrics
+  - id: artifact_boundary
     label: |-
-      汇报医学答案质量
-      全面性：被蕴含的必需陈述
-      幻觉率：与标准事实矛盾的比例
-      全面性越高且幻觉率越低越好
-    type: terminal
+      部分公开的制品边界
+      已公开：1,212 题 · 201 个参考答案
+      陈述与评测代码 · NLI CSV 有 399 行
+      论文裁判验证使用 402 条陈述
+      原始患者对话语料未发布
+    type: document
     size: xl
     position:
       x: 300
       'y': 380
+  - id: validate
+    label: |-
+      可选 NLI 裁判验证
+      50 个问答对 · 402 条陈述
+      三位医生标注并多数投票
+      Fleiss Kappa = 0.70
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 700
 edges:
+  - from: evidence
+    to: interactions
+    type: data
   - from: interactions
     to: prefilter
     type: primary
@@ -183,9 +233,22 @@ edges:
     to: nli
     type: primary
   - from: nli
+    to: comp
+    type: primary
+  - from: nli
+    to: hall
+    type: primary
+  - from: comp
+    to: report
+    type: primary
+  - from: hall
+    to: report
+    type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
+  - from: nli
     to: validate
-    type: primary
-  - from: validate
-    to: metrics
-    type: primary
+    type: data
+    label: 可选裁判验证
 modules: []

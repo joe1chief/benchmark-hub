@@ -4,137 +4,214 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Arena-Hard-Auto v2.0 构建流程
-  description: 版本分层流程：论文提供 BenchBuilder 骨架，官方仓库补充 v2.0 困难题、创意写作题、裁判和风格控制汇总配置。
-  legend: 上方为 500 条困难提示流程，下方为 250 条创意写作提示流程。
+  title: Arena-Hard-Auto v2.0 构建与评测流程
+  description: 证据分层流程：论文只提供 BenchBuilder 骨架，官方仓库定义 v2.0 的两个类别及其不同评测路径。
+  legend: 高难提示使用风格控制；创意写作使用两个独立评判的集成结果，不做风格控制。
 nodes:
   - id: source
     label: |-
-      Chatbot Arena 新鲜查询
-      真实用户提示
+      Chatbot Arena 查询池
+      全新真实用户提示
+      众包开放式数据
     type: database
     size: xl
     position:
       x: 40
       'y': 270
-  - id: curate
+  - id: evidence_boundary
     label: |-
-      BenchBuilder 式筛选
-      清洗、聚类、质量过滤
-      选择新鲜困难查询
-    type: process
+      证据边界
+      论文 v2：BenchBuilder 骨架
+      官方仓库：v2 子集与评测
+    type: document
     size: xl
     position:
       x: 320
       'y': 270
-  - id: hard
+  - id: hard_prompts
     label: |-
-      困难提示集
-      500 条新鲜开放式查询
-      软件、数学等主题
+      高难提示子集
+      500 条全新高难查询
+      软件 • 数学 • 真实问题
     type: document
     size: xl
     position:
       x: 600
-      'y': 100
-  - id: creative
+      'y': 60
+  - id: creative_prompts
     label: |-
-      创意写作集
-      250 条 Arena 查询
+      创意写作子集
+      250 条创意 Arena 查询
+      单独评测类别
     type: document
     size: xl
     position:
       x: 600
-      'y': 440
+      'y': 480
   - id: hard_answers
     label: |-
-      困难集回答
-      被测模型对基线模型
-      成对 A/B 展示
+      生成并缓存高难回答
+      候选模型对 o3-mini 基线
+      成对 A/B 顺序
     type: process
     size: xl
     position:
       x: 880
-      'y': 100
+      'y': 60
   - id: creative_answers
     label: |-
-      创意写作回答
-      被测模型对基线模型
-      成对 A/B 展示
+      生成并缓存创意回答
+      候选模型对 Gemini-2.0 基线
+      成对 A/B 顺序
     type: process
     size: xl
     position:
       x: 880
-      'y': 440
+      'y': 480
   - id: hard_judge
     label: |-
-      困难题裁判
-      官方配置 Gemini-2.5
-      可选 GPT-4.1
+      高难提示成对评判
+      Gemini-2.5 官方配置
+      GPT-4.1 备选配置
+      o3-mini 基线
     type: process
     size: xl
     position:
       x: 1160
-      'y': 100
+      'y': 60
   - id: creative_judge
     label: |-
-      创意写作双裁判
+      创意写作集成评判
       GPT-4.1 + Gemini-2.5
-      各自独立判定
+      独立推理
+      Gemini-2.0 基线
     type: process
     size: xl
     position:
       x: 1160
-      'y': 440
-  - id: aggregate
+      'y': 480
+  - id: hard_judgments
     label: |-
-      按类别汇总
-      困难 / 创意写作胜率
-      Bootstrap 置信区间
+      解析高难评判
+      A>>B • A>B • 平局
+      B>A • B>>A
+      按提示 / 模型 / 评判缓存
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 60
+  - id: creative_judgments
+    label: |-
+      汇集创意写作评判
+      GPT-4.1 + Gemini-2.5 记录
+      按提示 / 模型 / 评判缓存
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 480
+  - id: style_metadata
+    label: |-
+      仅高难回答的风格元数据
+      Token 长度 + Markdown 密度
+      标题 • 粗体 • 列表
     type: process
     size: xl
     position:
       x: 1440
       'y': 270
-  - id: style
+  - id: hard_aggregate
     label: |-
-      风格控制得分
-      控制 Markdown 与长度
-      模型排名 / 榜单
-    type: terminal
+      高难子集风格控制排名
+      Markdown + 长度特征
+      Bradley-Terry
+      100 次自助采样
+      第 5 / 95 百分位区间
+    type: process
     size: xl
     position:
       x: 1720
+      'y': 60
+  - id: creative_aggregate
+    label: |-
+      创意写作集成排名
+      汇集独立评判
+      不做风格控制
+      100 次自助采样与区间
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 480
+  - id: quality
+    label: |-
+      基准质量检查
+      可分性 + 人类偏好一致性
+      成对排名 Brier 分数
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 270
+  - id: report
+    label: |-
+      分别发布 v2 排行榜
+      高难：风格控制
+      创意：评判集成
+      胜率 + 自助置信区间
+    type: terminal
+    size: xl
+    position:
+      x: 2280
       'y': 270
 edges:
   - from: source
-    to: curate
+    to: evidence_boundary
     type: primary
-  - from: curate
-    to: hard
+  - from: evidence_boundary
+    to: hard_prompts
     type: primary
-  - from: curate
-    to: creative
+  - from: evidence_boundary
+    to: creative_prompts
     type: primary
-  - from: hard
+  - from: hard_prompts
     to: hard_answers
     type: primary
-  - from: creative
+  - from: creative_prompts
     to: creative_answers
     type: primary
   - from: hard_answers
     to: hard_judge
     type: primary
+  - from: hard_answers
+    to: style_metadata
+    type: data
   - from: creative_answers
     to: creative_judge
     type: primary
   - from: hard_judge
-    to: aggregate
+    to: hard_judgments
     type: primary
   - from: creative_judge
-    to: aggregate
+    to: creative_judgments
     type: primary
-  - from: aggregate
-    to: style
+  - from: hard_judgments
+    to: hard_aggregate
+    type: primary
+  - from: style_metadata
+    to: hard_aggregate
+    type: data
+  - from: creative_judgments
+    to: creative_aggregate
+    type: primary
+  - from: hard_aggregate
+    to: quality
+    type: primary
+  - from: creative_aggregate
+    to: quality
+    type: primary
+  - from: quality
+    to: report
     type: primary
 modules: []

@@ -5,199 +5,178 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GaokaoBench 构建流程
-  description: >-
-    按论文对齐的 GaokaoBench 流程：把 2010–2022 年全国高考试卷从 PDF 转成 JSON 与 LaTeX，形成九科 2,811 题； 客观题与主观题使用各自的零样本提示，分别经过规则匹配、双教师评分或
-    GPT-4-turbo 裁判，再汇总得分率、750 分折算成绩和裁判一致性。
-  legend: 实线区分客观题自动评分与主观题人工/LLM 裁判路径。
+  description: 基于论文和固定版代码的试卷数字化、分题型答案解析、人工评分、仓库裁判与分数汇总流程。
+  legend: 虚线箭头表示固定版本证据或替代对比路径；实线箭头表示基准构建和评分主流程。
 nodes:
-  - id: exams
+  - id: evidence
     label: |-
-      2010–2022 年
-      全国高考 PDF
-    type: database
-    size: large
+      一手证据
+      arXiv:2305.12474v3
+      官方仓库 6dbb24f8
+    type: document
+    size: xl
     position:
       x: 40
-      'y': 240
-  - id: convert
+      'y': 260
+  - id: source_pdfs
     label: |-
-      脚本 + 人工
-      PDF 转 JSON
-    type: process
-    size: large
-    position:
-      x: 240
-      'y': 240
-  - id: latex
-    label: 数学公式转 LaTeX
-    type: process
-    size: large
-    position:
-      x: 440
-      'y': 240
-  - id: pool
-    label: |-
-      9 个科目
-      2,811 道题
+      全国高考试卷来源
+      2010–2022 年全部全国卷
+      文理科共 9 个学科
     type: database
-    size: large
+    size: xl
     position:
-      x: 640
-      'y': 240
-  - id: question_type
-    label: 是否需要人工评分
+      x: 300
+      'y': 260
+  - id: digitize
+    label: |-
+      脚本与人工联合数字化
+      PDF → 结构化 JSON
+      数学公式 → LaTeX
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 260
+  - id: release
+    label: |-
+      发布 2,811 道题
+      客观题 1,781：1,418/273/64/26
+      主观题 1,030：786/218/26
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 260
+  - id: prompt
+    label: |-
+      按题型/学科定制零样本提示
+      多数要求【解析】→ eoe
+      部分仅答案：七选五、改错
+      及多项语文阅读
+      全部要求【答案】→ eoa
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 260
+  - id: route
+    label: |-
+      按题型分流
+      客观题进入规则解析
+      主观题进入评分路径
     type: decision
-    size: large
+    size: xl
     position:
-      x: 840
-      'y': 240
-  - id: objective
+      x: 1340
+      'y': 260
+  - id: objective_parser
     label: |-
-      客观题 1,781 道
-      选择 + 填空
-    type: document
-    size: large
-    position:
-      x: 1040
-      'y': 80
-  - id: subjective
-    label: |-
-      主观题 1,030 道
-      开放题 + 改错题
-    type: document
-    size: large
-    position:
-      x: 1040
-      'y': 400
-  - id: objective_prompt
-    label: |-
-      零样本
-      客观题提示
+      解析客观题输出
+      单选：末个 A–D
+      多小题：标记匹配，否则前序字母
+      多选：标记位置 >0 时取其后
+      否则扫描末 10 字符
+      七选五：前 5 个 A–G
     type: process
-    size: large
+    size: xl
     position:
-      x: 1240
+      x: 1600
       'y': 80
-  - id: subjective_prompt
+  - id: objective_score
     label: |-
-      零样本
-      主观题提示
+      按题目分值加权精确匹配
+      物理多选：全对 6 分
+      正确子集 3 分 · 多选 0 分
     type: process
-    size: large
+    size: xl
     position:
-      x: 1240
-      'y': 400
-  - id: match
-    label: |-
-      规则匹配
-      标准答案
-    type: process
-    size: large
-    position:
-      x: 1440
+      x: 1860
       'y': 80
-  - id: grade_path
-    label: 主观题评分者
-    type: decision
-    size: large
-    position:
-      x: 1440
-      'y': 400
-  - id: teachers
+  - id: human_grade
     label: |-
-      2 名教师评分
-      取平均分
+      论文主路径：主观题人工评分
+      每份答案由两位教师评分
+      取两人平均分
     type: user
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 280
-  - id: llm_judge
+      x: 1600
+      'y': 300
+  - id: repo_judge
     label: |-
-      GPT-4-turbo 裁判
-      评分点 + 温度 0
+      固定版仓库替代裁判
+      GPT-4-1106-preview · T 0
+      调用侧 max_tokens=4,096
+      API请求未传；默认不含评分点
+      解析【总分】；非空分数均值
     type: process
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 500
-  - id: rates
+      x: 1600
+      'y': 520
+  - id: aggregate
     label: |-
-      各科客观 / 主观题
-      得分率
-    type: process
-    size: large
-    position:
-      x: 1840
-      'y': 160
-  - id: correlation
-    label: |-
-      裁判一致性
-      Spearman + Kendall
+      汇总得分率
+      实得分 / 满分
+      分学科客观与主观得分率
+      理科/文科折算总分 / 750
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 1840
-      'y': 440
-  - id: total
+      x: 2120
+      'y': 260
+  - id: agreement
     label: |-
-      理科 / 文科
-      折算总分 / 750
+      对比裁判与人工分数
+      Spearman ρ + Kendall τ
+      论文裁判输入人工评分点
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 2040
-      'y': 160
+      x: 2120
+      'y': 520
 edges:
-  - from: exams
-    to: convert
-    type: primary
-  - from: convert
-    to: latex
-    type: primary
-  - from: latex
-    to: pool
-    type: primary
-  - from: pool
-    to: question_type
-    type: primary
-  - from: question_type
-    to: objective
-    type: primary
-  - from: question_type
-    to: subjective
-    type: primary
-  - from: objective
-    to: objective_prompt
-    type: primary
-  - from: subjective
-    to: subjective_prompt
-    type: primary
-  - from: objective_prompt
-    to: match
-    type: primary
-  - from: subjective_prompt
-    to: grade_path
-    type: primary
-  - from: grade_path
-    to: teachers
-    type: primary
-  - from: grade_path
-    to: llm_judge
+  - from: evidence
+    to: source_pdfs
     type: data
-  - from: match
-    to: rates
+  - from: source_pdfs
+    to: digitize
     type: primary
-  - from: teachers
-    to: rates
+  - from: digitize
+    to: release
     type: primary
-  - from: teachers
-    to: correlation
+  - from: release
+    to: prompt
+    type: primary
+  - from: prompt
+    to: route
+    type: primary
+  - from: route
+    to: objective_parser
+    type: primary
+  - from: objective_parser
+    to: objective_score
+    type: primary
+  - from: objective_score
+    to: aggregate
+    type: primary
+  - from: route
+    to: human_grade
+    type: primary
+  - from: human_grade
+    to: aggregate
+    type: primary
+  - from: route
+    to: repo_judge
     type: data
-  - from: llm_judge
-    to: correlation
-    type: primary
-  - from: rates
-    to: total
+  - from: repo_judge
+    to: aggregate
+    type: data
+  - from: human_grade
+    to: agreement
+    type: data
+  - from: repo_judge
+    to: agreement
     type: primary
 modules: []

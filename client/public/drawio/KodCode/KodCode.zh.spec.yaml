@@ -5,175 +5,230 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: KodCode 构建流程
-  description: 对齐论文的 KodCode 合成流程：从十二类问题生成、语义去重、解答与测试自验证，到风格转换、 独立的 RL 与推理 SFT 路径，再通过下游代码基准验证数据效果。
-  legend: 第二阶段得到 279K 个已验证三元组，风格转换增加 168K，形成 447K 个 RL 就绪三元组； DeepSeek-R1 回答生成与基于测试的拒绝采样构成独立 SFT 路径，两类数据在后训练阶段汇合。
+  description: 对齐论文的 KodCode-V1 构建流程：十二类问题经子集内语义去重、解答与测试自验证、风格转换， 并由 DeepSeek-R1 加测试拒绝采样生成 SFT 数据。
+  legend: 实线表示数据构建；虚线把论文 SFT/RL 效用实验、仅用于评测的污染处理和后续固定公开制品，与论文 447K 数据集分开。
 nodes:
-  - id: sources
+  - id: evidence
     label: |-
-      合成十二类问题子集
-      Prefill · 五个编程评测来源
-      算法 · 数据结构 · 技术文档
-      Filter · Package · Evol
-    type: database
+      主要证据与版本边界
+      arXiv:2503.02951v2
+      Findings ACL 2025
+      论文数据集：KodCode-V1
+      Git 3a98720：后续 V2 发布代码
+      V1 时期 Git 35bcc3d：未证明精确对应
+    type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: dedup
+  - id: sources
     label: |-
-      语义去重
-      all-mpnet-base-v2 向量
-      FAISS 最近邻搜索
-      删除超过相似度阈值的问题
-    type: process
+      合成论文的十二类问题子集
+      Prefill · LeetCode
+      Codeforces · APPS · TACO
+      Code Contests · Algorithm
+      Data Structure · Docs · Filter
+      Package · Evol
+    type: database
     size: xl
     position:
       x: 300
       'y': 40
-  - id: synthesize
+  - id: dedup
     label: |-
-      生成解答与测试
-      GPT-4o-0513 每次同时重新生成
-      Python 解答 + Pytest 用例
-      启动自验证尝试
+      在每个子集内部语义去重
+      all-mpnet-base-v2 向量
+      FAISS 最近邻搜索
+      过滤超过预设相似度阈值的问题
     type: process
     size: xl
     position:
       x: 580
       'y': 40
-  - id: execute
+  - id: synthesize
     label: |-
-      执行单元测试
-      用生成测试运行解答
-      通过 pytest-cov 测量分支
-      拒绝运行或断言失败项
+      GPT-4o-0513 每次重新生成两者
+      Python 解答 + Pytest 单元测试
+      只有问题作为固定输入
+      启动自验证尝试
     type: process
     size: xl
     position:
       x: 860
       'y': 40
-  - id: verify
+  - id: execute
     label: |-
-      自验证与扩展重试
-      要求测试全过且分支覆盖率 100%
-      最多十次全新解答-测试尝试
-      只保留覆盖率不下降的尝试
+      执行生成的单元测试
+      用每组测试运行配套解答
+      通过 pytest-cov 测量分支
+      记录每次尝试的通过与覆盖率
     type: process
     size: xl
     position:
       x: 1140
       'y': 40
-  - id: verified
+  - id: verify
     label: |-
-      保留 279K 个已验证三元组
-      丢弃所有尝试均失败的问题
-      按尝试成功率标记难度
-      问题 + 解答 + 单元测试
-    type: database
+      自验证 · 最多十次尝试
+      重试时从头生成解答与测试
+      要求测试全过且分支覆盖率 100%
+      重试覆盖率不得下降
+    type: process
     size: xl
     position:
       x: 1420
       'y': 40
+  - id: difficulty
+    label: |-
+      难度标记与失败门禁
+      简单：成功率高于 2/3
+      中等：1/3 至 2/3 · 困难：低于 1/3
+      十次全部失败：丢弃该问题
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: verified
+    label: |-
+      论文第二步产出 · 279K
+      已验证问题—解答—测试三元组
+      至少一次尝试通过门禁
+      保留简单 · 中等 · 困难标签
+    type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 40
   - id: convert
     label: |-
-      转换问题风格
-      以解答和测试作为上下文
-      添加函数签名与示例
+      基于 LLM 的风格转换
+      输入问题 + 解答 + 测试
+      转为带函数签名与示例的 Python 补全题
       新增 168K 个三元组
     type: process
     size: xl
     position:
-      x: 1700
+      x: 2260
       'y': 40
-  - id: final
+  - id: paper_v1
     label: |-
-      发布 KodCode-V1 · 447K
-      已验证问题-解答-测试三元组
-      279K 原始 + 168K 转换
-      十二子集 · 简单 / 中等 / 困难
+      论文 KodCode-V1 · 447K
+      279K 已验证 + 168K 转换
+      问题—解答—测试三元组
+      十二子集 · 三种难度标签
+      配套测试使数据可用于 RL
     type: database
     size: xl
     position:
-      x: 1980
+      x: 2540
       'y': 40
-  - id: rl
-    label: |-
-      RL 就绪数据路径
-      使用配套单元测试作为可验证奖励
-      保留完整 447K 三元组
-      支持基于测试的强化学习
-    type: document
-    size: xl
-    position:
-      x: 2260
-      'y': 720
   - id: r1
     label: |-
-      生成推理回答
-      每题提示 DeepSeek-R1
+      DeepSeek-R1 回答合成
+      使用已验证三元组中的问题
       生成思维链与代码
-      每题采样三个回答
+      每个问题采样三个回答
     type: process
     size: xl
     position:
-      x: 1980
+      x: 2540
       'y': 380
   - id: reject
     label: |-
       基于测试的拒绝采样
-      在单元测试上执行每个 R1 回答
-      仅保留可验证正确输出
-      形成高质量 SFT 样本
+      在配套测试上执行每个 R1 代码
+      仅保留可验证正确的回答
+      被拒回答不作为 SFT 正样本
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 380
+  - id: sft_data
+    label: |-
+      构建论文 KodCode-SFT
+      问题 + 通过测试的 R1 思维链回答
+      三次采样并按测试筛选
+      与 447K 个 RL 三元组分开
+    type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 380
+  - id: artifact_boundary
+    label: |-
+      固定的后续 HF 公开制品
+      RL 97d81f0：训练 484,097
+      谨慎使用 3,335
+      SFT 26c8a11：训练 268,211
+      错误 210,787 + 谨慎使用 4,439
+      公开 v1.1 划分不等于论文 447K V1
+    type: document
+    size: xl
+    position:
+      x: 2820
+      'y': 40
+  - id: rl_experiment
+    label: |-
+      仅为论文 RL 效用实验
+      随机 9.5K 训练 + 0.5K 验证
+      GRPO · 测试全过得 1，否则得 0
+      两个 Qwen2.5 7B 模型 · 并非全部 447K
     type: process
     size: xl
     position:
       x: 1700
-      'y': 380
-  - id: sft
+      'y': 680
+  - id: sft_experiment
     label: |-
-      KodCode-SFT 路径
-      问题 + 通过测试的推理回答
-      可验证思维链代码数据
-      可用于监督微调
-    type: database
-    size: xl
-    position:
-      x: 1420
-      'y': 380
-  - id: train
-    label: |-
-      后训练代码模型
-      用通过测试的 R1 回答进行 SFT
-      直接用 447K 已验证三元组做 RL
-      分析中排除 94 个疑似重叠项
+      仅为论文 SFT 效用实验
+      过滤长度与类实现回答
+      50K 混合集 + 全部 18K 困难集
+      微调 Qwen2.5-Coder-32B
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 720
+      x: 1980
+      'y': 820
+  - id: contamination
+    label: |-
+      污染分析 · 仅用于评测
+      HumanEval · MBPP
+      BigCodeBench · LCB V5
+      余弦相似度高于 0.95 → 94 个重叠
+      仅从评测排除，不从训练数据删除
+    type: process
+    size: xl
+    position:
+      x: 2260
+      'y': 960
   - id: benchmark
     label: |-
-      评估数据效用
+      下游数据效用评测
       HumanEval 与 HumanEval+
       MBPP 与 MBPP+ · BigCodeBench
-      LiveCodeBench V5 · 贪心解码
+      LiveCodeBench V5 · 贪心 Pass@1
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 720
+      x: 1700
+      'y': 820
   - id: report
     label: |-
-      汇报代码正确性
-      标准基准上的 Pass@1
-      比较 SFT 与 RL 模型
-      自验证错误率低于 2.5%
+      汇报论文数据效用结果
+      按基准报告 Pass@1
+      分别比较 SFT 与 RL 模型
+      94 个重叠仅在此处排除
     type: terminal
     size: xl
     position:
-      x: 860
-      'y': 720
+      x: 1420
+      'y': 820
 edges:
+  - from: evidence
+    to: sources
+    type: data
   - from: sources
     to: dedup
     type: primary
@@ -187,35 +242,73 @@ edges:
     to: verify
     type: primary
   - from: verify
+    to: difficulty
+    type: primary
+  - from: difficulty
     to: verified
     type: primary
   - from: verified
     to: convert
     type: primary
   - from: convert
-    to: final
+    to: paper_v1
     type: primary
-  - from: final
-    to: rl
-    type: primary
-  - from: final
+  - from: paper_v1
     to: r1
     type: secondary
   - from: r1
     to: reject
     type: primary
   - from: reject
-    to: sft
+    to: sft_data
     type: primary
-  - from: rl
-    to: train
-    type: primary
-  - from: sft
-    to: train
-    type: primary
-  - from: train
+  - from: paper_v1
+    to: artifact_boundary
+    type: data
+  - from: sft_data
+    to: artifact_boundary
+    type: data
+  - from: paper_v1
+    to: rl_experiment
+    type: data
+    label: 论文 RL 实验
+    waypoints:
+      - x: 2460
+        'y': 240
+      - x: 1740
+        'y': 240
+      - x: 1740
+        'y': 620
+  - from: sft_data
+    to: sft_experiment
+    type: data
+    label: 论文 SFT 实验
+  - from: paper_v1
+    to: contamination
+    type: data
+    label: 仅评测分析
+    waypoints:
+      - x: 2820
+        'y': 240
+      - x: 2900
+        'y': 1080
+      - x: 2460
+        'y': 1080
+  - from: rl_experiment
     to: benchmark
     type: primary
+  - from: sft_experiment
+    to: benchmark
+    type: primary
+  - from: contamination
+    to: benchmark
+    type: data
+    label: 仅评测排除 94 个重叠
+    waypoints:
+      - x: 2180
+        'y': 940
+      - x: 1900
+        'y': 940
   - from: benchmark
     to: report
     type: primary

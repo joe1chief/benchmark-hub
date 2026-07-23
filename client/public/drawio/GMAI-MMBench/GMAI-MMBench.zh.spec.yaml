@@ -5,135 +5,211 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GMAI-MMBench 构建流程
-  description: 与论文一致的 GMAI-MMBench 医疗数据整合、VQA 生成、验证、平衡和评测流程。
-  legend: 实线箭头对应 arXiv:2408.03361。保留的 284 个数据源包含 268 个公开数据集和 16 个通过伦理审批的 医院数据集；测试答案不公开，需由组织方评测。
+  description: 论文版本化的医疗数据构建与评测流程；当前公开 runner 作为独立的可复现边界展示。
+  legend: 实线箭头对应 arXiv:2408.03361v7。虚线分支记录固定版本的公开 VLMEvalKit runner；它不替代论文的多选题协议。
 nodes:
-  - id: collect
+  - id: evidence
     label: |-
-      调研数百个医疗数据集
-      公开来源 + 获批医院数据
-      覆盖多种影像模态与临床专科
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 250
-  - id: retain
-    label: |-
-      按标签质量与可用性筛选
-      最终保留 284 个数据集
-      268 个公开集 + 16 个伦理审批医院集
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: standardize
-    label: |-
-      标准化图像与标签表述
-      转换异构医疗输入以统一呈现
-      归一化歧义或重复的标签措辞
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 250
-  - id: lexical
-    label: |-
-      组织可定制词汇树
-      38 种模态 · 18 项临床任务
-      18 个科室 · 4 个感知粒度
+      证据边界
+      论文 2408.03361v7
+      仓库 d8a6a326 · 数据 a8c7450a
+      VLMEvalKit 7055d301
     type: document
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: pools
+      x: 40
+      'y': 320
+  - id: collect
     label: |-
-      构建局部视角问题与选项池
-      按模态 × 任务 × 粒度分组
-      每个问题必须包含这三类线索
-    type: process
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: qa
-    label: |-
-      生成候选 VQA 对
-      随机选择一个问题和最多四个选项
-      将医疗图像与有依据的答案配对
-    type: process
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: validate
-    label: |-
-      人工删除无效问题
-      缺少关键线索或无需图像即可作答
-      答案错误 · 目标不清 · 图像质量差
-    type: process
-    size: xl
-    position:
-      x: 1600
-      'y': 250
-  - id: balance
-    label: |-
-      为每类答案选择多样实例
-      上限 30 个，并变化外观与来源
-      兼顾年龄、性别等相关因素
-    type: process
-    size: xl
-    position:
-      x: 1860
-      'y': 250
-  - id: release
-    label: |-
-      汇总 25,831 个 VQA 对
-      验证集 4,550 · 测试集 21,281
-      隐藏测试答案并交由组织方评测
+      收集 2D/3D 医疗数据集
+      保留 268 个公开集 + 16 个医院集
+      分类 · 检测 · 分割
     type: database
     size: xl
     position:
-      x: 2120
-      'y': 250
-  - id: evaluate
+      x: 340
+      'y': 320
+  - id: standardize
     label: |-
-      通过 VLMEvalKit 零样本运行 LVLM
-      提取模型选择的选项或答案
-      报告总体和词汇树切片准确率
+      标准化数据
+      按 SA-Med2D-20M 转为 2D RGB
+      MeSH：展开 · 统一 · 合并左右侧标签
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 320
+  - id: taxonomy
+    label: |-
+      构建词汇分类树
+      38 模态 · 18 任务 · 18 科室
+      4 粒度；每标签 3 人标注并投票合并
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 320
+  - id: question_templates
+    label: |-
+      生成问题模板
+      按模态 × 任务 × 粒度组合
+      10 个标签 × 10 个 GPT-4o 候选
+      人工审核；模态替换为占位符
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 100
+  - id: option_pools
+    label: |-
+      构建选项池
+      全局视角：同源数据集的其他标签
+      局部视角：按模态/任务/粒度共享
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 540
+  - id: assemble
+    label: |-
+      组装 VQA 候选
+      抽取模板并恢复具体模态
+      加入正确答案和最多 4 个选项
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 320
+  - id: validate
+    label: |-
+      人工验证
+      必须含 3 类线索且必须看图作答
+      删除错答 · 目标不清 · 图像质量差
+    type: process
+    size: xl
+    position:
+      x: 1840
+      'y': 320
+  - id: select
+    label: |-
+      平衡并保持多样性
+      每答案至多 30 例；不足则全部保留
+      变化外观 · 来源 · 年龄 · 性别
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 320
+  - id: release
+    label: |-
+      发布 25,831 个 VQA 对
+      验证 4,550 · 测试 21,281
+      测试答案隐藏；由组织方评分
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 320
+  - id: paper_prompt
+    label: |-
+      论文评测提示
+      单选：选择正确选项
+      多选：选全并以逗号分隔字母
+      零样本；不含示例
+    type: process
+    size: xl
+    position:
+      x: 2740
+      'y': 100
+  - id: paper_parser
+    label: |-
+      论文答案抽取
+      优先识别选项字母
+      否则用 ChatGPT-3.5-turbo-0613
+      无法抽取即记错
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 100
+  - id: paper_metric
+    label: |-
+      论文指标
+      单选 ACC = 答对数 / 题数
+      多选 ACC = 命中数 / 预测数
+      多选召回 = 命中数 / 标准答案数
     type: terminal
     size: xl
     position:
-      x: 2380
-      'y': 250
+      x: 3340
+      'y': 100
+  - id: runner_boundary
+    label: |-
+      固定 VLMEvalKit
+      GMAI 继承 ImageMCQDataset
+      Question + Options；精确后缀
+      Please select the correct answer
+      from the options above.
+      exact_matching / 可选 judge；无多选解析器
+    type: document
+    size: xl
+    position:
+      x: 2840
+      'y': 540
+  - id: muir_boundary
+    label: |-
+      相邻类纠错
+      直接字母提示仅属于 MUIRDataset
+      GMAIMMBenchDataset 不使用该提示
+    type: document
+    size: xl
+    position:
+      x: 3140
+      'y': 540
 edges:
-  - from: collect
-    to: retain
+  - from: evidence
+    to: collect
     type: primary
-  - from: retain
+  - from: collect
     to: standardize
     type: primary
   - from: standardize
-    to: lexical
+    to: taxonomy
     type: primary
-  - from: lexical
-    to: pools
+  - from: taxonomy
+    to: question_templates
     type: primary
-  - from: pools
-    to: qa
+  - from: taxonomy
+    to: option_pools
     type: primary
-  - from: qa
+  - from: question_templates
+    to: assemble
+    type: primary
+  - from: option_pools
+    to: assemble
+    type: primary
+  - from: assemble
     to: validate
     type: primary
   - from: validate
-    to: balance
+    to: select
     type: primary
-  - from: balance
+  - from: select
     to: release
     type: primary
   - from: release
-    to: evaluate
+    to: paper_prompt
     type: primary
+  - from: paper_prompt
+    to: paper_parser
+    type: primary
+  - from: paper_parser
+    to: paper_metric
+    type: primary
+  - from: release
+    to: runner_boundary
+    type: data
+  - from: runner_boundary
+    to: muir_boundary
+    type: data
 modules: []

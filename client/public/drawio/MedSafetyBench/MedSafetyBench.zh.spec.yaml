@@ -5,201 +5,306 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MedSafetyBench 构建与评测流程
-  description: 对齐论文展示从九项 AMA 医学伦理原则，经双模型生成有害请求、人工整理、安全回应编写、分层划分、 医生验证，到安全评测与对齐训练的完整流程。
-  legend: 1,800 条有害请求由 900 条 GPT-4 请求和 900 条经 GCG 越狱的 Llama-2 请求组成；Eval 与 Improve 各含每种来源 450 条，并在九项原则上分层。
+  description: 对齐论文展示从九项 AMA 医学伦理原则出发，经两条有害请求生成分支、人工整理、安全回应编写、分层划分、医生验证、安全裁判与对齐训练的全流程。
+  legend: 实线表示论文中的构建、验证与评测路径；虚线标记已发布代码与后续维护版本的边界，不应视为可直接执行的论文时期流程。
 nodes:
-  - id: ethics
+  - id: principles
     label: |-
-      定义医疗安全
-      采用九项 AMA 医学伦理原则
-      将违反原则的请求视为有害
-      覆盖医疗领域特有风险
+      定义医疗安全范围
+      九项 AMA 医学伦理原则
+      违反原则即有害请求
+      建立医疗特有风险分类
     type: document
     size: xl
     position:
       x: 20
-      'y': 40
-  - id: gpt4
+      'y': 180
+  - id: gpt4_prompt
     label: |-
-      按原则提示 GPT-4
-      每次提示生成 20 条请求
+      GPT-4 生成分支
+      每次针对一项原则提示
+      要求生成 20 条医疗请求
       要求包含医学术语
-      形成直接有害请求
     type: process
     size: xl
     position:
       x: 260
       'y': 40
-  - id: llama
+  - id: gpt4_filter
     label: |-
-      越狱 Llama-2-7b-chat
-      应用贪婪坐标梯度攻击
-      优化肯定式目标回答
-      生成另一来源的请求
+      筛选 GPT-4 请求
+      共 900 条
+      每项原则 100 条
+      删除重复与无关样本
+      保留直接伦理违规请求
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 500
       'y': 40
-  - id: curate
+  - id: llama_gcg
     label: |-
-      人工整理请求
-      删除重复样本
-      删除无关样本
-      保留确实违反原则者
+      Llama-2 生成分支
+      使用 Llama-2-7b-chat
+      贪婪坐标梯度攻击
+      优化肯定式目标回答
     type: process
     size: xl
     position:
-      x: 740
-      'y': 40
-  - id: harmful
+      x: 260
+      'y': 320
+  - id: llama_filter
     label: |-
-      汇总有害请求集
-      GPT-4：900 条
-      Llama-2：900 条
-      合计 1,800 条
+      筛选 GCG 请求
+      九项原则共 900 条
+      各原则数量
+      118/114/62/112/100
+      48/122/128/96
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 500
+      'y': 320
+  - id: merge
+    label: |-
+      合并并去重
+      得 1,800 条唯一请求
+      GPT-4 900 + Llama-2 900
+      覆盖九项原则
     type: database
     size: xl
     position:
-      x: 980
-      'y': 40
-  - id: safe
+      x: 740
+      'y': 180
+  - id: safe_response
     label: |-
       编写安全示范回应
-      GPT-4 拒绝每条有害请求
-      简述不安全或不道德原因
-      人工核验并编辑回应
-    type: process
-    size: xl
-    position:
-      x: 1220
-      'y': 40
-  - id: split
-    label: |-
-      分层随机划分
-      MedSafety-Eval：900 条
-      MedSafety-Improve：900 条
-      每来源 450 条 · 覆盖九项原则
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: validate
-    label: |-
-      由 25 名医生验证
-      每人随机评 25 条请求
-      判断是否违规及对应原则
-      确认危害性与覆盖度
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: eval_inputs
-    label: |-
-      准备安全评测输入
-      使用 MedSafety-Eval 有害请求
-      GenSafety-Eval：330 条
-      不向被测模型展示安全回应
-    type: document
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: responses
-    label: |-
-      查询通用与医疗大模型
-      收集自由文本回应
-      比较对齐模型与基础模型
-      保持相同提示协议
+      GPT-4 拒绝每条请求
+      简述伦理风险
+      人工验证并编辑
     type: process
     size: xl
     position:
       x: 980
-      'y': 420
-  - id: judge
+      'y': 180
+  - id: split
     label: |-
-      评定回应有害程度
-      GPT-3.5 按服从度打 1 至 5 分
-      1 为完全拒绝 · 5 为完全服从
-      越低越安全 · 医疗按 AMA 判断
+      按九项原则分层
+      MedSafety-Eval 900 条
+      MedSafety-Improve 900 条
+      每份均为 450 + 450 来源
     type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 180
+  - id: validation
+    label: |-
+      医生验证
+      25 名医生 × 每人 25 条
+      共 625 次评定·567/625 不道德
+      482/567 匹配至少两项原则
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1460
+      'y': 40
+  - id: release_boundary
+    label: |-
+      维护版本边界
+      当前仓库新增 74,374 条
+      论文后 Llama-3 请求
+      不纳入论文基准
+    type: document
     size: xl
     position:
       x: 740
       'y': 420
-  - id: improve
+  - id: eval_input
     label: |-
-      微调医疗大模型
-      通用安全示范：900 条
-      医疗安全：900 条 · 合并：1,800 条
-      Medalpaca 7b/13b · Meditron 7b
+      准备安全评测输入
+      MedSafety-Eval 900 条
+      GenSafety-Eval 330 条
+      仅提供有害请求
+      不展示安全参考回应
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 620
+  - id: inference
+    label: |-
+      生成自由文本回应
+      测试通用与医疗大模型
+      贪婪解码
+      OpenAI 温度为 0
+      最多 512 个词元
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: preserve
+      x: 1220
+      'y': 620
+  - id: judge
+    label: |-
+      GPT 安全裁判
+      gpt-3.5-turbo-0125
+      温度为 0
+      AMA 或通用安全政策
+      输出 #reason 与 #score
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 620
+  - id: score
+    label: |-
+      解释裁判分数
+      1 = 完全拒绝
+      5 = 完全服从
+      分数越低越安全
+      报告均值 + 标准误
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 620
+  - id: code_gap
+    label: |-
+      已发布评测器边界
+      仅保留 #reason 与 #score 原文
+      未提供分数解析或聚合器
+      复现时需自行实现
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 980
+      'y': 800
+  - id: improve_sets
+    label: |-
+      构建对齐数据混合
+      医疗安全 900 条
+      通用安全 900 条
+      合并安全 1,800 条
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 920
+  - id: finetune
+    label: |-
+      微调医疗大模型
+      Medalpaca 7B / 13B
+      Meditron 7B
+      比较三种安全数据混合
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 920
+  - id: capability
     label: |-
       检查医疗能力保持
       MedQA · MedMCQA
       PubMedQA · MMLU-Medical
-      三样本准确率
+      三样本上下文学习
+      从训练集随机抽取示例
+      取 10 个随机种子的平均准确率
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
-      x: 260
-      'y': 420
+      x: 740
+      'y': 920
   - id: report
     label: |-
       报告安全性与效用
-      汇总平均有害度分数
-      比较对齐前后变化
-      验证医疗表现是否保持
+      安全分数均值 + 标准误
+      比较对齐前后
+      报告能力准确率
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 500
+      'y': 920
 edges:
-  - from: ethics
-    to: gpt4
+  - from: principles
+    to: gpt4_prompt
     type: primary
-  - from: gpt4
-    to: llama
+  - from: gpt4_prompt
+    to: gpt4_filter
     type: primary
-  - from: llama
-    to: curate
+  - from: principles
+    to: llama_gcg
     type: primary
-  - from: curate
-    to: harmful
+  - from: llama_gcg
+    to: llama_filter
     type: primary
-  - from: harmful
-    to: safe
+  - from: gpt4_filter
+    to: merge
     type: primary
-  - from: safe
+  - from: llama_filter
+    to: merge
+    type: primary
+  - from: merge
+    to: safe_response
+    type: primary
+  - from: safe_response
     to: split
     type: primary
   - from: split
-    to: validate
+    to: validation
     type: primary
-  - from: validate
-    to: eval_inputs
+  - from: split
+    to: eval_input
     type: primary
-  - from: eval_inputs
-    to: responses
+  - from: eval_input
+    to: inference
     type: primary
-  - from: responses
+  - from: inference
     to: judge
     type: primary
   - from: judge
-    to: improve
+    to: score
     type: primary
-  - from: improve
-    to: preserve
-    type: primary
-  - from: preserve
+  - from: score
     to: report
     type: primary
+  - from: split
+    to: improve_sets
+    type: primary
+    waypoints:
+      - x: 1680
+        'y': 240
+      - x: 1680
+        'y': 980
+      - x: 1440
+        'y': 980
+  - from: improve_sets
+    to: finetune
+    type: primary
+  - from: finetune
+    to: capability
+    type: primary
+  - from: capability
+    to: report
+    type: primary
+  - from: judge
+    to: code_gap
+    type: secondary
+    style:
+      dashed: true
+  - from: llama_filter
+    to: release_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

@@ -7,8 +7,8 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 15,
-    "edges": 14,
+    "nodes": 18,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
@@ -25,8 +25,14 @@
       "size": "xl"
     },
     {
-      "id": "five_shot",
-      "label": "构造 5 个示例提示\n从种子中抽取示例",
+      "id": "string_prompt",
+      "label": "有害字符串 5 个示例提示\n仅抽取字符串种子",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "behavior_prompt",
+      "label": "有害行为 5 个示例提示\n仅抽取行为种子",
       "type": "document",
       "size": "xl"
     },
@@ -44,7 +50,7 @@
     },
     {
       "id": "release",
-      "label": "发布 AdvBench\n500 字符串 + 500 行为",
+      "label": "发布 AdvBench\n论文：500 字符串 + 500 行为",
       "type": "database",
       "size": "xl"
     },
@@ -55,20 +61,32 @@
       "size": "xl"
     },
     {
-      "id": "aggregate_loss",
-      "label": "汇总目标损失\n跨所选提示与模型",
+      "id": "individual",
+      "label": "单题协议\n100 次运行 • 1 个行为 • 1 个模型",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "universal",
+      "label": "通用协议\n在 25 个行为上优化\n评测 100 个行为",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "transfer",
+      "label": "迁移协议\n在 25 个行为上优化\n评测 388 个未见行为",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "gcg",
-      "label": "运行 GCG 搜索\nTop-k 256 • 批量 512",
+      "label": "运行 GCG 搜索\n20 token 后缀 • 500 步\n梯度 Top-k 256 • 批量 512",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "run",
-      "label": "运行被测模型\n500 步后保留最佳后缀",
+      "label": "运行被测模型\n保留最佳对抗后缀",
       "type": "process",
       "size": "xl"
     },
@@ -80,13 +98,13 @@
     },
     {
       "id": "string_score",
-      "label": "字符串成功\n精确目标文本出现",
+      "label": "有害字符串评分\n仅使用目标交叉熵\n检查精确目标诱导",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "behavior_score",
-      "label": "行为成功\n尝试遵从指令",
+      "label": "有害行为评分\n人工判断是否遵从",
       "type": "process",
       "size": "xl"
     },
@@ -107,85 +125,118 @@
     {
       "id": "edge-1",
       "from": "seed_strings",
-      "to": "five_shot",
+      "to": "string_prompt",
       "type": "primary"
     },
     {
       "id": "edge-2",
       "from": "seed_behaviors",
-      "to": "five_shot",
+      "to": "behavior_prompt",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "five_shot",
+      "from": "string_prompt",
       "to": "generator",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "behavior_prompt",
+      "to": "generator",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
       "from": "generator",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "release",
       "to": "protocol",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
       "from": "protocol",
-      "to": "aggregate_loss",
-      "type": "primary"
+      "to": "individual",
+      "type": "primary",
+      "label": "单题"
     },
     {
-      "id": "edge-7",
-      "from": "aggregate_loss",
+      "id": "edge-8",
+      "from": "protocol",
+      "to": "universal",
+      "type": "primary",
+      "label": "通用"
+    },
+    {
+      "id": "edge-9",
+      "from": "protocol",
+      "to": "transfer",
+      "type": "primary",
+      "label": "迁移"
+    },
+    {
+      "id": "edge-10",
+      "from": "individual",
       "to": "gcg",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-11",
+      "from": "universal",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "transfer",
+      "to": "gcg",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
       "from": "gcg",
       "to": "run",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-14",
       "from": "run",
       "to": "success_gate",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-15",
       "from": "success_gate",
       "to": "string_score",
       "type": "primary",
       "label": "字符串"
     },
     {
-      "id": "edge-11",
+      "id": "edge-16",
       "from": "success_gate",
       "to": "behavior_score",
       "type": "primary",
       "label": "行为"
     },
     {
-      "id": "edge-12",
+      "id": "edge-17",
       "from": "string_score",
       "to": "asr",
       "type": "primary"
     },
     {
-      "id": "edge-13",
+      "id": "edge-18",
       "from": "behavior_score",
       "to": "asr",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-19",
       "from": "asr",
       "to": "report",
       "type": "primary"

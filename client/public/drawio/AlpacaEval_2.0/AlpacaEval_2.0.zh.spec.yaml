@@ -4,117 +4,151 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AlpacaEval 2.0 构建流程
-  description: >-
-    论文对齐的 AlpacaEval 2.0 流程：805 条固定指令产生随机顺序的 GPT-4-Turbo 成对判断；标准胜率与带正则的 反对称 GLM 分别给出原始分和长度控制分，并验证胜率语义、降低长度可操纵性及提升与
-    Chatbot Arena 的一致性。
-  legend: 实线表示回复生成、评审与分数估计；虚线表示原始指标和长度控制指标与稳健性及人类偏好证据的对照。
+  title: AlpacaEval 2.0 评测流程
+  description: 固定 805 条指令的成对评测仅在送审前随机交换输出顺序，解析后恢复候选/基线方向，再计算加权胜率与长度控制胜率；并列证据节点分别披露论文 v2 的 L2 规范与固定版本 alpaca_eval 0.6.6 的 L1 实现。
+  legend: 实线表示共同评测语义；虚线证据分支记录不同来源的拟合细节与验证结果，任何一条都不会悄然替代另一条。
 nodes:
   - id: instructions
     label: |-
       固定指令集
-      805 条 Alpaca 提示
+      805 条 AlpacaEval 提示
     type: document
     size: large
     position:
       x: 40
-      'y': 220
+      'y': 250
   - id: baseline
     label: |-
       基线回复
-      GPT-4-1106-Preview
+      gpt-4-1106-preview
+      使用同一 805 条指令
     type: process
     size: large
     position:
-      x: 240
-      'y': 60
+      x: 280
+      'y': 70
   - id: candidate
     label: |-
       候选模型回复
-      同一 805 条提示
+      被测模型输出
+      使用同一 805 条指令
     type: process
     size: large
     position:
-      x: 240
-      'y': 380
+      x: 280
+      'y': 430
   - id: evaluator
     label: |-
-      weighted_alpaca_eval_
-      gpt4_turbo 评审器
-      随机顺序 • 单 token 输出
-      logprob → 连续偏好
+      weighted_alpaca_eval_gpt4_turbo
+      仅在送审前随机交换 A/B
+      单 token 评审 • token logprob
     type: process
-    size: large
+    size: xl
     position:
-      x: 440
-      'y': 220
+      x: 520
+      'y': 250
     style:
       fontSize: 10
-  - id: ratings
+  - id: restore_direction
     label: |-
-      连续成对偏好
-      每条指令的 logprob 概率
-    type: database
-    size: large
+      恢复候选/基线方向
+      仅在解析后执行
+      若已交换：偏好值 ← 3 − 偏好值
+      撤销 `output_1` / `output_2` 列交换
+    type: process
+    size: xl
     position:
-      x: 640
-      'y': 220
-  - id: raw_win
+      x: 800
+      'y': 250
+    style:
+      fontSize: 10
+  - id: preferences
+    label: |-
+      已恢复方向的成对偏好
+      基线 = `output_1`
+      候选 = `output_2`
+      候选获胜概率 = 偏好值 − 1
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 250
+    style:
+      fontSize: 10
+  - id: raw_weighted
     label: |-
       加权胜率
-      805 条连续偏好的均值
+      均值：偏好值 − 1
+      候选获胜语义 • 汇总 805 条指令
     type: terminal
     size: large
     position:
-      x: 840
-      'y': 40
+      x: 1360
+      'y': 60
   - id: glm
     label: |-
       反对称 GLM
       模型身份 + 输出长度
       指令难度
     type: formula
-    size: large
+    size: xl
     position:
-      x: 840
-      'y': 260
-  - id: regularize
+      x: 1360
+      'y': 300
+  - id: paper_l2
     label: |-
-      拟合与正则化
-      五折交叉验证 + L2
+      论文 v2 统计规范
+      五折交叉验证 • L2 正则化
+      来源：arXiv:2404.04475v2
+    type: document
+    size: xl
+    position:
+      x: 1640
+      'y': 110
+    style:
+      fontSize: 10
+  - id: official_l1
+    label: |-
+      官方 0.6.6 @ cd543a149df89434
+      五折交叉验证 • L1 • liblinear
+      固定版本 glm_winrate.py 实现
+    type: document
+    size: xl
+    position:
+      x: 1640
+      'y': 500
+    style:
+      fontSize: 10
+  - id: lc_counterfactual
+    label: |-
+      长度控制反事实
+      将长度项置零
+      保留模型与指令项
     type: process
-    size: large
+    size: xl
     position:
-      x: 1040
-      'y': 260
-  - id: lc_win
-    label: |-
-      长度控制胜率
-      长度项置零
-    type: terminal
-    size: large
-    position:
-      x: 1240
-      'y': 260
+      x: 1920
+      'y': 300
   - id: semantics
     label: |-
-      保持胜率语义
-      自比 50%；交换对称
+      候选获胜语义
+      自比结果 = 50%
+      恢复方向后保持交换对称
     type: document
     size: large
     position:
-      x: 1440
-      'y': 260
+      x: 2200
+      'y': 300
   - id: validation
     label: |-
-      外部验证
-      可操纵性 25% → 10%
+      论文验证结果
+      可操纵性：25% → 10%
       Arena ρ：.94 → .98
     type: terminal
     size: xl
     position:
-      x: 1700
-      'y': 140
+      x: 2460
+      'y': 170
 edges:
   - from: instructions
     to: baseline
@@ -129,26 +163,64 @@ edges:
     to: evaluator
     type: primary
   - from: evaluator
-    to: ratings
+    to: restore_direction
     type: primary
-  - from: ratings
-    to: raw_win
+  - from: restore_direction
+    to: preferences
     type: primary
-  - from: ratings
+  - from: preferences
+    to: raw_weighted
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: preferences
     to: glm
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: glm
-    to: regularize
+    to: paper_l2
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: glm
+    to: official_l1
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: glm
+    to: lc_counterfactual
     type: primary
-  - from: regularize
-    to: lc_win
-    type: primary
-  - from: lc_win
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: lc_counterfactual
     to: semantics
     type: primary
-  - from: raw_win
+  - from: raw_weighted
     to: validation
     type: optional
+    waypoints:
+      - x: 1540
+        'y': 20
+      - x: 2380
+        'y': 20
+      - x: 2380
+        'y': 190
   - from: semantics
     to: validation
     type: optional

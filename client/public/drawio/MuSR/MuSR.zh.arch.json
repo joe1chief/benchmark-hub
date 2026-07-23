@@ -7,80 +7,188 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 30,
+    "edges": 39,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "goal",
-      "label": "定义多步软推理任务\n使用自然自由文本叙事\n需要常识与社会推断\n形成长链多步解答",
+      "id": "evidence",
+      "label": "固定证据与任务约定\n论文 · arXiv 2310.16049v2 · 第 3–5 节\n附录 G.1/H.1/I · 仓库 b1f4d416\n输入叙事 x + 问题 qi + 候选答案\n通过多步推理预测 ai\n测试时隐藏 F 与 T",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "templates",
-      "label": "实例化三类领域模板\n谋杀：手段 · 动机 · 机会\n物体：移动 · 观察 · 干扰\n团队：技能 · 协作 · 效率",
+      "id": "domain_gate",
+      "label": "选择领域模板\n构建黄金事实 F\n模板化问题与答案\n添加多样性事实 G",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "murder_template",
+      "label": "谋杀谜案模板\n两名嫌疑人\n凶手 · 手段 + 动机 + 机会\n无辜者 · 两项有罪事实\n再加一项无关可疑事实\n论文最大树深度 · 4",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "facts",
-      "label": "创建结构化种子事实\n黄金事实 F 决定答案\n多样性事实 G 改变场景\n设定领域专属要求",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "trees",
-      "label": "递归补全推理树\nGPT-4 展开每个结论\n子节点共同蕴含父节点\n继续展开到场景级叶子",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "tree_validation",
-      "label": "应用推理树校验器 V\n拒绝空洞推导\n阻断推理捷径\n失败的展开重新生成",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "leaves",
-      "label": "划分推理树叶子\n场景事实 S(T) 写入故事\n常识事实 C(T) 保持隐含\n保留黄金推导链",
+      "id": "object_template",
+      "label": "物体放置模板\n三人 · 三次移动 · 两件物体\n一件物体移动两次\n非移动者以概率 0.33 观察\n答案 · 最后观察到的位置\n论文最大树深度 · 3",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "chapters",
-      "label": "按章节生成叙事\n把 S(T) 划成主题块\nGPT-4 为每块撰写章节\n拼接并润色各章节",
+      "id": "team_template",
+      "label": "团队分配模板\n三人 · 两项任务\n技能与配对分值 · 0 / 1 / 2\n优化技能 + 团队协作\n最优方案至少领先次优 2 分\n论文最大树深度 · 2",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "seed_facts",
+      "label": "实例化结构化输入\nF 决定每个黄金答案\nG 来自人工列表或大模型\nG 必须出现在叙事中\n第一阶段输出 · 二元组 (F, G)",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "story_validation",
-      "label": "校验故事事实一致性\n检查每条场景事实均被蕴含\n重写不一致章节\n保持自然叙事风格",
+      "id": "tree_expand",
+      "label": "补全推理树 T\nGPT-4 递归展开每个 fi\n子节点共同蕴含父节点\n以场景与 G 为条件\n展开到领域目标深度",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validator_gate",
+      "label": "此领域是否使用\n推理树校验器？\n谋杀 + 物体 · 使用\n团队分配 · 不使用",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "校验每一步推导\n强制满足预期结构\n阻止关键词与推理捷径\n拒绝空洞转换\n使用领域专属校验器集合 V",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validity_gate",
+      "label": "推导样本是否有效？\n记录当前推导的尝试次数",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "retry",
+      "label": "重试同一步推导\n附加校验器反馈\n让大模型重新采样\n最多重试提示三次",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prune",
+      "label": "无有效样本后剪枝\n停止展开当前分支\n当前推导变为叶节点\n继续生成其余推理树",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "leaf_split",
+      "label": "划分推理树叶节点\n场景事实 S(T) 写入故事\n常识事实 C(T) 保持隐含\n叶节点通过推导支持 F",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "story_gate",
+      "label": "把 S(T) 实现为叙事 x\n选择哪个领域专属路径？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "murder_story",
+      "label": "撰写谋杀谜案章节\n按嫌疑人 / 答案选项拆分事实\nGPT-4 撰写并校验章节\n打乱后拼接嫌疑人章节\n添加故事引入场景",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "object_story",
+      "label": "撰写物体放置章节\n开场 + 移动 + 观察片段\n每次携带此前故事继续生成\n检查事实并按需重写\n拼接所有章节",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "team_story",
+      "label": "单次生成团队故事\n写入技能与关系事实\n不分章节 · 不用树校验器\n仅重写故事引言\n不泄露最优分配方案",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "汇总官方发布数据\n564 篇叙事 · 756 道问题\n谋杀 250 · 物体 64 / 256\n团队分配 250 · 英文",
+      "label": "汇总官方发布数据\n564 篇叙事 · 756 道问题\n谋杀 · 250 篇 / 250 题\n物体 · 64 篇 / 256 题\n团队 · 250 篇 / 250 题",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "quality",
-      "label": "验证数据集质量\n测试规则启发式基线\n人工子集检查可解性\n确认叙事连贯与高准确率",
+      "label": "验证端到端可解性\n规则基线 · 50.0 / 35.9 / 无\n七名标注员 · 每题三人标注\n谋杀 34 · 物体 40 · 团队 34\n多数票 · 94.1 / 95.0 / 100.0",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "evaluate",
-      "label": "评测语言模型\n常规 · CoT · CoT+\n单样本与少样本 CoT+\n领域专属神经符号方法",
+      "id": "scope_boundary",
+      "label": "验证与公开发布边界\n人工只检查答案可推导性\n未正式评测流畅度 / 连贯性 / 常识合理性\n仓库根许可证 MIT · JSON 无许可证字段\n无发布标签 / 校验和 / 正式排行榜",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "eval_gate",
+      "label": "选择论文评测路径\n常规 · 思维链 · 增强思维链\n单样本 / 三示例少样本增强思维链\n主表 · 零样本增强思维链\n提示方法还是领域专属？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "prompting",
+      "label": "运行提示基线\n常规 · 直接回答\n思维链 · 分步推理\n增强思维链 · 领域推理提示\n提供一个 / 三个已解示例",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "neurosymbolic",
+      "label": "运行领域专属方法\n谋杀 · 分解式提示\n物体 · 符号心智理论\n团队 · 程序辅助语言模型\n不存在一个通用方法",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "为每个问题生成答案\n论文模型使用各自默认参数\n发布版 GPT-4 配置 · 温度 1\n核采样概率 1 · 最多 2400 词元\n可选自洽性投票",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "解析发布代码输出\n取最后一个非空答案行\n将文本转成小写\n任意位置含黄金数字即判正确\n否则取出现的首个选项数字",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse_gate",
+      "label": "解析文本是否包含\n任意有效选项数字？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "random_fallback",
+      "label": "应用发布版解析回退\n随机采样一个选项\n全局随机种子为 0\n按已解析答案参与计分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "accuracy",
+      "label": "计算准确率\n多次采样时使用多数选项\n正确问题数 / 问题总数\n三个领域分别报告",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "code_drift",
+      "label": "固定代码复现边界\n评测代码要求 murder_mysteries.json\n发布文件为 murder_mystery.json\n谋杀脚本深度 3 · 论文为 4\n原样脚本无法跑完三个领域",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "报告推理准确率\n分别统计三类领域\n比较提示与推理方法\n刻画人类与模型差距",
+      "label": "报告 MuSR 结果\n三个领域分别给出准确率\n比较提示和推理方法\n给出人类多数票上限\n引用精确论文与代码版本",
       "type": "terminal",
       "size": "xl"
     }
@@ -88,67 +196,256 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "goal",
-      "to": "templates",
+      "from": "evidence",
+      "to": "domain_gate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "templates",
-      "to": "facts",
-      "type": "primary"
+      "from": "domain_gate",
+      "to": "murder_template",
+      "type": "primary",
+      "label": "谋杀"
     },
     {
       "id": "edge-3",
-      "from": "facts",
-      "to": "trees",
-      "type": "primary"
+      "from": "domain_gate",
+      "to": "object_template",
+      "type": "primary",
+      "label": "物体"
     },
     {
       "id": "edge-4",
-      "from": "trees",
-      "to": "tree_validation",
-      "type": "primary"
+      "from": "domain_gate",
+      "to": "team_template",
+      "type": "primary",
+      "label": "团队"
     },
     {
       "id": "edge-5",
-      "from": "tree_validation",
-      "to": "leaves",
+      "from": "murder_template",
+      "to": "seed_facts",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "leaves",
-      "to": "chapters",
+      "from": "object_template",
+      "to": "seed_facts",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "chapters",
-      "to": "story_validation",
+      "from": "team_template",
+      "to": "seed_facts",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "story_validation",
-      "to": "release",
+      "from": "seed_facts",
+      "to": "tree_expand",
       "type": "primary"
     },
     {
       "id": "edge-9",
+      "from": "tree_expand",
+      "to": "validator_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "validator_gate",
+      "to": "validate",
+      "type": "primary",
+      "label": "谋杀 / 物体"
+    },
+    {
+      "id": "edge-11",
+      "from": "validator_gate",
+      "to": "leaf_split",
+      "type": "primary",
+      "label": "团队"
+    },
+    {
+      "id": "edge-12",
+      "from": "validate",
+      "to": "validity_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "validity_gate",
+      "to": "leaf_split",
+      "type": "primary",
+      "label": "有效"
+    },
+    {
+      "id": "edge-14",
+      "from": "validity_gate",
+      "to": "retry",
+      "type": "secondary",
+      "label": "无效 · 仍可重试"
+    },
+    {
+      "id": "edge-15",
+      "from": "retry",
+      "to": "validate",
+      "type": "secondary",
+      "label": "重新采样"
+    },
+    {
+      "id": "edge-16",
+      "from": "validity_gate",
+      "to": "prune",
+      "type": "secondary",
+      "label": "三次重试均失败"
+    },
+    {
+      "id": "edge-17",
+      "from": "prune",
+      "to": "leaf_split",
+      "type": "primary",
+      "label": "当前节点为叶节点"
+    },
+    {
+      "id": "edge-18",
+      "from": "leaf_split",
+      "to": "story_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "story_gate",
+      "to": "murder_story",
+      "type": "primary",
+      "label": "谋杀"
+    },
+    {
+      "id": "edge-20",
+      "from": "story_gate",
+      "to": "object_story",
+      "type": "primary",
+      "label": "物体"
+    },
+    {
+      "id": "edge-21",
+      "from": "story_gate",
+      "to": "team_story",
+      "type": "primary",
+      "label": "团队"
+    },
+    {
+      "id": "edge-22",
+      "from": "murder_story",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "object_story",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "team_story",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
       "from": "release",
       "to": "quality",
       "type": "primary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-26",
       "from": "quality",
-      "to": "evaluate",
+      "to": "eval_gate",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "evaluate",
+      "id": "edge-27",
+      "from": "quality",
+      "to": "scope_boundary",
+      "type": "secondary",
+      "label": "明确范围"
+    },
+    {
+      "id": "edge-28",
+      "from": "release",
+      "to": "scope_boundary",
+      "type": "secondary",
+      "label": "权利"
+    },
+    {
+      "id": "edge-29",
+      "from": "eval_gate",
+      "to": "prompting",
+      "type": "primary",
+      "label": "提示方法"
+    },
+    {
+      "id": "edge-30",
+      "from": "eval_gate",
+      "to": "neurosymbolic",
+      "type": "primary",
+      "label": "领域专属"
+    },
+    {
+      "id": "edge-31",
+      "from": "prompting",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-32",
+      "from": "neurosymbolic",
+      "to": "inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-33",
+      "from": "inference",
+      "to": "parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-34",
+      "from": "parse",
+      "to": "parse_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-35",
+      "from": "parse_gate",
+      "to": "accuracy",
+      "type": "primary",
+      "label": "已找到选项"
+    },
+    {
+      "id": "edge-36",
+      "from": "parse_gate",
+      "to": "random_fallback",
+      "type": "secondary",
+      "label": "无选项数字"
+    },
+    {
+      "id": "edge-37",
+      "from": "random_fallback",
+      "to": "accuracy",
+      "type": "primary",
+      "label": "随机选项"
+    },
+    {
+      "id": "edge-38",
+      "from": "parse",
+      "to": "code_drift",
+      "type": "secondary",
+      "label": "固定代码边界"
+    },
+    {
+      "id": "edge-39",
+      "from": "accuracy",
       "to": "report",
       "type": "primary"
     }

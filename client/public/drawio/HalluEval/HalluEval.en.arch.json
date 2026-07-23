@@ -7,138 +7,210 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 10,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "Evidence & fixed revision\nHaluEval · arXiv 2305.11747v3\nofficial repository b7b66e8",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "task_seeds",
-      "label": "Sample 30,000 task seeds\nHotpotQA · OpenDialKG · CNN/DailyMail\n10,000 each for QA · dialogue · summarization",
+      "label": "Sample 30,000 task seeds\nHotpotQA · OpenDialKG · CNN/DailyMail\n10,000 each: QA · dialogue · summary",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "Generate two hallucinated candidates\nChatGPT one-pass instruction\nplus conversational instruction learning",
+      "label": "ChatGPT one-pass + conversational\npatterns: QA 4 · dialogue 3 · summarization 3\ntemperature 1.0 · max 256 · top-p 1.0",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "filter",
-      "label": "Filter for difficult hallucinations\nground-truth-enhanced ChatGPT judge\nkeep the most plausible candidate",
+      "label": "Ground-truth-enhanced filtering\ncompare the two hallucinated candidates\nkeep the most plausible and difficult one",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "auto_set",
-      "label": "Finalize 30,000 task samples\nfactual/normal answer paired with\nits selected hallucinated counterpart",
+      "label": "Finalize 30,000 task records\nright output + selected hallucinated output\nstored as one pair",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "alpaca",
-      "label": "Start from Alpaca 52K queries\nsample three ChatGPT responses per query\ntarget general instruction-following use",
+      "label": "Start from Alpaca 52K queries\nsample three ChatGPT responses per query\ntarget general instruction following",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "divergence",
-      "label": "Rank response divergence\naverage pairwise BERTScore similarity\nretain 5,000 lowest-similarity queries",
+      "label": "Rank response divergence\naverage semantic similarity via BERTScore\nretain the 5,000 lowest-similarity queries",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "annotate",
-      "label": "Label each retained response three times\nYes/No plus hallucinated spans\nunverifiable · non-factual · irrelevant",
+      "label": "Three labelers judge three dimensions\nunverifiable · non-factual · irrelevant\nrecord Yes/No + hallucinated spans",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human_set",
-      "label": "Majority-vote human labels\n30 qualified labelers · Fleiss kappa 0.811\n5,000 responses · 977 hallucinated",
+      "label": "Apply max/majority vote\n30 selected labelers · Fleiss κ=0.811\npaper: 5,000 responses · 977 positive",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "merge",
-      "label": "Assemble HaluEval\n30,000 task-specific + 5,000 general\n35,000 hallucinated/normal samples",
+      "id": "release",
+      "label": "Paper-defined HaluEval · 35,000 samples\n30,000 task pairs + 5,000 general\ngeneral: hallucination Yes/No\n+ hallucination_spans",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "inference",
-      "label": "Build recognition instances\nrandomly present normal or hallucinated output\nask whether the content hallucinates",
+      "id": "eval_route",
+      "label": "Choose released subset\ntask pair or general response",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "task_eval",
+      "label": "Three task-specific evaluators\nQA · dialogue · summarization load own instruction\nrandomly show normal or hallucinated output\ntemperature 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "task_parser",
+      "label": "Remove periods from judge text\nboth Yes and No, or neither → incorrect\none substring match → normalize Yes or No",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "general_eval",
+      "label": "Classify annotated ChatGPT response\npaper reports General accuracy\nreleased evaluate.py has no general path",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "Report recognition accuracy\nQA · knowledge-grounded dialogue\nsummarization · general queries",
+      "label": "Report recognition accuracy\nQA · dialogue · summarization\ngeneral responses",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "artifact_boundary",
+      "label": "Official-artifact boundary at b7b66e8\npaper/README: 5,000 general\ngeneral_data.json: 4,507 lines\nthree task JSONL files: 10,000 each",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "task_seeds",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "evidence",
+      "to": "alpaca",
+      "type": "data"
+    },
+    {
+      "id": "edge-3",
       "from": "task_seeds",
       "to": "sample",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-4",
       "from": "sample",
       "to": "filter",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-5",
       "from": "filter",
       "to": "auto_set",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "auto_set",
-      "to": "merge",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "alpaca",
       "to": "divergence",
       "type": "secondary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
       "from": "divergence",
       "to": "annotate",
       "type": "secondary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-8",
       "from": "annotate",
       "to": "human_set",
       "type": "secondary"
     },
     {
-      "id": "edge-8",
-      "from": "human_set",
-      "to": "merge",
-      "type": "secondary"
-    },
-    {
       "id": "edge-9",
-      "from": "merge",
-      "to": "inference",
+      "from": "auto_set",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "inference",
+      "from": "human_set",
+      "to": "release",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-11",
+      "from": "release",
+      "to": "eval_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "eval_route",
+      "to": "task_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "eval_route",
+      "to": "general_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "task_eval",
+      "to": "task_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "task_parser",
       "to": "score",
       "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "general_eval",
+      "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "score",
+      "to": "artifact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

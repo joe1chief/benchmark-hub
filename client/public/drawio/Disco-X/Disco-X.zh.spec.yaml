@@ -4,30 +4,28 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DiscoX 构建流程
-  description: >-
-    DiscoX 由 133 人团队构建，包括 115 位领域专家和 18 位语言专家，共投入 1,330 人时。真实专业文本须超过 1,500 中文字符或英文词，并标注可验证的语法、术语、主题词和文化评分点，平均每题 9.38
-    条。665 个候选先经语言同行评审，且两个先进模型都必须至少失败八条评分点；领域专家再精修和平衡为 200 题，双向各 100 题，其中学术 121、非学术 79，覆盖七领域。Metric-S
-    将非翻译输出直接记零，再分别评估准确性、流畅性、得体性，分层去重根因错误，并采用 60/20/20 满分与 2/5/10/50 严重度扣分。
-  legend: >-
-    来源：DiscoX Sections 2.1-2.2 and 3.1-3.4, Figures 3-4; official ByteDance-Seed/DiscoX repository and
-    dataset。实线箭头表示论文或官方资料明确支持的主流程。
+  title: Disco-X 构建流程
+  description: 对齐论文与发布版本的专家策展、协议分支和 Metric-S 精确评分流程。
+  legend: 实线表示标准构建与有效翻译路径；虚线分支表示指令失败直接归零。
 nodes:
-  - id: team
+  - id: evidence_boundary
     label: |-
-      133 人策展团队
-      115 位领域专家 + 18 位语言专家
-      共投入 1,330 人时
-    type: process
+      证据边界
+      arXiv 2511.10984v2
+      OpenReview OTCfZ6h8Pe
+      仓库 fab17983
+      HF 数据 f6d3d51d
+    type: document
     size: xl
     position:
       x: 40
       'y': 250
-  - id: source
+  - id: source_team
     label: |-
-      真实专业文本
-      学术 + 非学术场景
-      中文至少 1,500 字或英文至少 1,500 词
+      真实文本与策展团队
+      115 位领域专家 + 18 位语言专家
+      1,330 人时
+      至少 1,500 汉字或英文词
     type: database
     size: xl
     position:
@@ -35,9 +33,10 @@ nodes:
       'y': 250
   - id: annotate
     label: |-
-      领域专家标注
-      语法 · 主题词 · 术语 · 文化负载词
-      平均 9.38 条可验证评分点
+      专家评分点标注
+      语法 · 主题词 · 术语
+      文化负载词
+      平均 9.38 个可验证评分点
     type: document
     size: xl
     position:
@@ -45,160 +44,213 @@ nodes:
       'y': 250
   - id: pool
     label: |-
-      初始候选池
-      665 个长文翻译任务
+      候选池
+      665 个语篇翻译任务
     type: database
     size: xl
     position:
       x: 820
       'y': 250
-  - id: peer
+  - id: review_gate
     label: |-
       语言专家同行评审
-      检查文本专业性与评分点清晰度
+      检查专业性与评分点清晰度
+      两个 SOTA 模型都须失败
+      至少 8 个预定义评分点
     type: process
     size: xl
     position:
       x: 1080
       'y': 250
-  - id: difficulty
+  - id: select
     label: |-
-      两个先进模型难度门
-      两个模型均须至少失败 8 条预设评分点
+      领域专家筛选与修订
+      依据模型错误修复任务
+      平衡方向、领域和场景
+      保留约 30% 候选
     type: process
     size: xl
     position:
       x: 1340
       'y': 250
-  - id: select
+  - id: benchmark
     label: |-
-      领域专家选择与精修
-      平衡领域 · 修正文稿和评分点
-    type: process
+      Disco-X 发布集 · 200 题
+      英译中 100 + 中译英 100
+      学术 121 + 非学术 79
+      7 领域 · 平均 1,712.17 Token
+    type: database
     size: xl
     position:
       x: 1600
       'y': 250
-  - id: benchmark
-    label: |-
-      DiscoX
-      200 题 · 英译中 100 + 中译英 100
-      学术 121 + 非学术 79 · 7 个领域
-    type: database
+  - id: protocol
+    label: 发布协议版本？
+    type: decision
     size: xl
     position:
       x: 1860
       'y': 250
-  - id: translate
+  - id: main_setting
     label: |-
-      候选系统翻译
-      保持篇章连贯与专业术语准确
-    type: process
+      论文主设置
+      简单翻译提示
+      Gemini-2.5-Pro Metric-S 裁判
+    type: document
     size: xl
     position:
       x: 2120
-      'y': 250
-  - id: instruction
+      'y': 90
+  - id: detailed_setting
     label: |-
-      输出是否遵循翻译指令？
-      必须生成翻译
-      非翻译 / 续写 / 摘要 = 0
-    type: decision
+      2025 年 12 月发布分支
+      详细提示 + Gemini-3-Pro
+      分数不可视作同一设置
+      不应直接比较
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 410
+  - id: translate
+    label: |-
+      候选翻译
+      保持语篇连贯
+      保持专家术语与原意
+    type: process
     size: xl
     position:
       x: 2380
       'y': 250
-  - id: route
+  - id: instruction
     label: |-
-      Metric-S 质量评估
-      同时运行准确性、流畅性与得体性评审
-    type: process
+      是有效翻译输出？
+      非翻译、续写或摘要
+      均直接记零分
+    type: decision
     size: xl
     position:
       x: 2640
       'y': 250
-  - id: accuracy
+  - id: instruction_zero
     label: |-
-      准确性裁判
-      遗漏 · 未翻译 · 误译
-      过度翻译 · 专家评分点
-    type: process
+      指令遵循失败
+      Disco-X 得分为零
+      停止质量评估
+    type: terminal
     size: xl
     position:
       x: 2900
-      'y': 10
-  - id: fluency
+      'y': 610
+  - id: route
     label: |-
-      流畅性裁判
-      措辞 · 语法 · 连贯性
-      术语一致性
+      Metric-S 质量评估
+      三类裁判并行运行
     type: process
     size: xl
     position:
       x: 2900
       'y': 250
-  - id: appropriateness
+  - id: accuracy
     label: |-
-      得体性裁判
-      风格 · 语气 · 文学性
-      文化适配
+      准确性裁判
+      遗漏 · 误译
+      未翻译 · 过度翻译
+      专家评分点归准确性
     type: process
     size: xl
     position:
-      x: 2900
-      'y': 490
-  - id: dedup
+      x: 3160
+      'y': 10
+  - id: fluency
     label: |-
-      分层错误去重
-      将每个表象错误归因到唯一根因
+      流畅性裁判
+      表达 · 语法 · 连贯性
+      术语一致性
     type: process
     size: xl
     position:
       x: 3160
       'y': 250
-  - id: score
+  - id: appropriateness
     label: |-
-      总分 = 准确性 + 流畅性 + 得体性
-      满分分别为 60 / 20 / 20
-      严重度扣分 2 / 5 / 10 / 50
-    type: terminal
+      适切性裁判
+      风格 · 语气 · 文学质量
+      文化适配
+    type: process
+    size: xl
+    position:
+      x: 3160
+      'y': 490
+  - id: dedup
+    label: |-
+      分层根因去重
+      1. 极严重准确性错误最高优先
+      2. 专家 checkpoint / 评分点次之
+      3. 其余重叠归因到因果根因
+    type: process
     size: xl
     position:
       x: 3420
       'y': 250
-  - id: instruction_zero
+  - id: score
     label: |-
-      指令遵循失败
-      非翻译 / 续写 / 摘要
-      Disco-X 得分 = 0
+      得分 = Acc + Flu + App
+      Acc = max(0, 60 − 扣分)
+      评分点/普通严重 −5 · 严重 −10
+      极严重 −50；Flu=max(0,20−2/项)
+      App=max(0,20−5/项)
     type: terminal
     size: xl
     position:
-      x: 2380
-      'y': 570
+      x: 3680
+      'y': 250
+  - id: validation
+    label: |-
+      指标验证分析
+      50 个案例 · 专家一致性 70.3%
+      3 次试验仅用于稳定性分析
+    type: terminal
+    size: xl
+    position:
+      x: 3940
+      'y': 250
 edges:
-  - from: team
-    to: source
+  - from: evidence_boundary
+    to: source_team
     type: primary
-  - from: source
+  - from: source_team
     to: annotate
     type: primary
   - from: annotate
     to: pool
     type: primary
   - from: pool
-    to: peer
+    to: review_gate
     type: primary
-  - from: peer
-    to: difficulty
-    type: primary
-  - from: difficulty
+  - from: review_gate
     to: select
     type: primary
   - from: select
     to: benchmark
     type: primary
   - from: benchmark
+    to: protocol
+    type: primary
+  - from: protocol
+    to: main_setting
+    type: primary
+    label: 论文主设置
+    labelPosition: center
+  - from: protocol
+    to: detailed_setting
+    type: primary
+    label: 详细发布分支
+    labelPosition: center
+  - from: main_setting
+    to: translate
+    type: primary
+  - from: detailed_setting
     to: translate
     type: primary
   - from: translate
@@ -207,7 +259,12 @@ edges:
   - from: instruction
     to: route
     type: primary
-    label: 翻译输出
+    label: 有效翻译
+    labelPosition: center
+  - from: instruction
+    to: instruction_zero
+    type: optional
+    label: 无效 · 归零
     labelPosition: center
   - from: route
     to: accuracy
@@ -230,9 +287,7 @@ edges:
   - from: dedup
     to: score
     type: primary
-  - from: instruction
-    to: instruction_zero
+  - from: score
+    to: validation
     type: optional
-    label: 无效输出 · 记零
-    labelPosition: center
 modules: []

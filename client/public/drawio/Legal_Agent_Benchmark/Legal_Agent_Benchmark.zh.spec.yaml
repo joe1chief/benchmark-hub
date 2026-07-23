@@ -1,157 +1,263 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: Legal Agent Benchmark 构建流程
-  description: 按官方当前快照，将真实客户事项转化为隔离的法律智能体任务、原子专家评分点、 逐评分点语义判断和严格的全评分点任务得分。
-  legend: 该基准没有配套研究论文。本图依据 Harvey 官方发布说明与仓库快照： 1,660 个任务、约 101,000 个评分点，覆盖 24 个执业领域及合同工作。
+  description: 按官方来源重建并分离基准构建与发布、公开框架运行与评测，以及使用私有留出集的独立 LAB-AA 排行榜。
+  legend: >-
+    未发现配套研究论文。实线表示公开 MIT 资产及本地评测路径；虚线分支表示按公开集分布构造的独立 120 题私有 LAB-AA 留出集。固定提交 845a088 的 README 标示 1,671 个任务，但同版本评测文档仍写
+    1,660 个任务和约 101,000 个评分点；本图不声称当前评分点的精确总数。
 nodes:
-  - id: matters
+  - id: source
     label: |-
-      从真实感客户事项出发
-      由执业律师模拟真实工作
-      覆盖 24 个法律执业领域
-      包含合同工作流
+      从真实客户事项抽象任务
+      起点为执业律师处理过的工作
+      人物、机构与事项事实均合成
+      覆盖 24 个代表性执业领域
     type: user
+    module: construction
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: decompose
+      x: 32
+      'y': 224
+  - id: task
     label: |-
-      将事项拆成初级律师任务
-      约 50 字的合伙人式指令
-      闭卷式材料范围
-      定义可审阅交付物
+      定义初级律师级委派任务
+      合伙人式指令 · 平均约 50 个英文单词
+      限定在封闭的事项材料范围
+      指定可供审阅的交付物
     type: process
+    module: construction
     size: xl
     position:
-      x: 300
-      'y': 40
+      x: 304
+      'y': 224
   - id: documents
     label: |-
-      构建合成客户材料
-      在律师指导下批量生成
-      同时包含关键与外围材料
-      律师审核 DOCX · XLSX · PPTX · PDF · 邮件
+      构建合成事项材料
+      在律师指导与审核下批量生成
+      混合关键与外围文档
+      在多个文件间嵌入待识别问题
     type: document
+    module: construction
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: criteria
+      x: 576
+      'y': 224
+  - id: rubric
     label: |-
-      编写原子专家评分点
-      二元 · 等权 · 限定到交付物
-      添加匹配规则与来源材料
-      不设置唯一标准交付物
+      编写原子化专家评分点
+      二元 · 等权 · 不设标准答案
+      match_criteria 定义通过与失败
+      限定交付物 · 来源文档可选
     type: user
+    module: construction
     size: xl
     position:
-      x: 860
-      'y': 40
+      x: 848
+      'y': 224
   - id: package
     label: |-
-      打包结构化任务记录
-      标题 · 指令 · 工作类型
-      交付物 · 评分点 · 标签
-      将文档与任务一同版本化
+      打包独立完整的任务
+      tasks/[领域]/[工作流]/[场景]/
+      task.json + documents/
+      标题 · 指令 · 工作类型 · 标签
+      交付物 · 评分点
     type: database
+    module: construction
     size: xl
     position:
-      x: 1140
-      'y': 40
+      x: 1120
+      'y': 224
+  - id: qc
+    label: |-
+      执行内容与完整性门禁
+      律师指导并审核合成材料
+      校验 JSON · 标题 · 评分点 · ID 唯一性
+      交付物列表 · 禁止旧版权重
+    type: process
+    module: construction
+    size: xl
+    position:
+      x: 1392
+      'y': 224
   - id: release
     label: |-
-      发布持续演进的基准
-      1,660 个任务 · 约 101,000 个评分点
+      发布持续演进的 MIT 仓库
+      固定 README：1,671 个任务
       24 个执业领域及合同工作
-      仓库采用 MIT 许可证开放
+      加入并购尽职调查扩展
     type: database
+    module: construction
     size: xl
     position:
-      x: 1420
-      'y': 40
+      x: 1664
+      'y': 224
+  - id: boundary
+    label: |-
+      区分公开与私有资产边界
+      公开任务 · 评分准则 · 运行框架
+      未发布 train/dev/test 切分
+      LAB-AA 私有留出集独立于仓库
+    type: document
+    module: construction
+    size: xl
+    position:
+      x: 1936
+      'y': 224
+  - id: load
+    label: |-
+      框架加载一个公开任务
+      task.json + 事项材料
+      系统提示 · 技能手册 · 任务指令
+      智能体访问评分准则即自动失败
+    type: process
+    module: public_eval
+    size: xl
+    position:
+      x: 32
+      'y': 544
   - id: sandbox
     label: |-
-      每个任务启动独立容器
-      Podman · 无网络与额外权限
-      来源文档只读
-      输出目录可写
+      为每个任务创建 Podman 沙箱
+      禁用网络 · 移除全部 capabilities
+      材料目录只读
+      工作区与输出目录可写
     type: process
+    module: public_eval
     size: xl
     position:
-      x: 1420
-      'y': 380
+      x: 304
+      'y': 544
   - id: agent
     label: |-
-      运行法律智能体工具循环
-      Bash · Read · Write · Edit · Glob · Grep
-      直到不再调用工具或达到轮数上限
-      保存要求的交付文件
+      运行模型—工具循环
+      Bash · Read · Write · Edit
+      Glob · Grep
+      无工具调用时停止 · 默认最多 200 轮
+      保存交付物 · 轨迹 · 运行指标
     type: process
+    module: public_eval
     size: xl
     position:
-      x: 1140
-      'y': 380
+      x: 576
+      'y': 544
+  - id: parse
+    label: |-
+      匹配并解析交付文件
+      精确 · 扩展名 · 模糊 · LLM 匹配
+      DOCX · XLSX · PPTX · PDF 转为文本
+      仅加载当前评分点关联文件
+    type: process
+    module: public_eval
+    size: xl
+    position:
+      x: 848
+      'y': 544
   - id: judge
     label: |-
-      每次评判一个评分点
-      默认 Claude Sonnet 4.6 · 温度 0
-      只检查相关交付文件
-      使用语义判断 · 不做关键词匹配
+      每次 LLM 调用评判一个评分点
+      标题 + 输出 + match_criteria 提示
+      默认 Sonnet 4.6 · 温度 0
+      Anthropic/Google
+      OpenAI/Mistral · 返回 JSON 判定与理由
     type: process
+    module: public_eval
     size: xl
     position:
-      x: 860
-      'y': 380
+      x: 1120
+      'y': 544
   - id: score
     label: |-
-      应用严格任务级计分
-      每个评分点二元通过
+      应用严格的全通过计分
+      每个评分点只能通过或失败
       仅当全部评分点通过时任务得 1 分
-      核心指标不给部分分
+      任务级不给部分分
     type: process
+    module: public_eval
     size: xl
     position:
-      x: 580
-      'y': 380
+      x: 1392
+      'y': 544
   - id: report
     label: |-
-      汇报法律智能体表现
-      核心为全评分点任务通过率
-      辅助为汇总评分点通过率
-      补充热图 · 覆盖率 · Token · 时延 · 成本
+      生成 scores.json 与 report.html
+      核心指标：任务全通过率
+      诊断指标：汇总评分点通过率
+      热图 · 覆盖率 · Token · 时间 · 成本
     type: terminal
+    module: public_eval
     size: xl
     position:
-      x: 300
-      'y': 380
+      x: 1664
+      'y': 544
+  - id: private_holdout
+    label: |-
+      使用独立的私有留出集
+      120 个任务 · 24 个执业领域
+      镜像公开任务的领域与分布
+      不随 MIT 仓库公开发布
+    type: database
+    module: partner_leaderboard
+    size: xl
+    position:
+      x: 1936
+      'y': 864
+  - id: lab_aa
+    label: |-
+      发布独立 LAB-AA 排行榜
+      Artificial Analysis Stirrup 框架
+      单一 LLM 逐评分点评判
+      全通过率 + 评分点通过率
+      成本 · Token · 速度 · 轮数
+    type: terminal
+    module: partner_leaderboard
+    size: xl
+    position:
+      x: 2208
+      'y': 864
 edges:
-  - from: matters
-    to: decompose
+  - from: source
+    to: task
     type: primary
-  - from: decompose
+  - from: task
     to: documents
     type: primary
   - from: documents
-    to: criteria
+    to: rubric
     type: primary
-  - from: criteria
+  - from: rubric
     to: package
     type: primary
   - from: package
+    to: qc
+    type: primary
+  - from: qc
     to: release
     type: primary
   - from: release
+    to: boundary
+    type: primary
+  - from: boundary
+    to: load
+    type: primary
+    waypoints:
+      - x: 1800
+        'y': 448
+      - x: 152
+        'y': 448
+  - from: load
     to: sandbox
     type: primary
   - from: sandbox
     to: agent
     type: primary
   - from: agent
+    to: parse
+    type: primary
+  - from: parse
     to: judge
     type: primary
   - from: judge
@@ -160,4 +266,30 @@ edges:
   - from: score
     to: report
     type: primary
-modules: []
+  - from: boundary
+    to: private_holdout
+    type: secondary
+    label: 私有分布镜像
+  - from: private_holdout
+    to: lab_aa
+    type: primary
+modules:
+  - id: construction
+    label: |-
+      1 ·
+      构建
+      发布
+    color: $primaryLight
+  - id: public_eval
+    label: |-
+      2 ·
+      公开
+      评测
+    color: $secondaryLight
+  - id: partner_leaderboard
+    label: |-
+      3 ·
+      私有
+      LAB-
+      AA
+    color: $accentLight

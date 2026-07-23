@@ -1,163 +1,364 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LMArena / Chatbot Arena 构建流程
-  description: 对齐论文的匿名多轮模型对战、人类众包偏好、投票质量控制、Bradley–Terry 估计、 不确定性感知排名与自适应模型对采样流程。
-  legend: 数量采用 arXiv:2403.04132 的 2024 年 1 月论文快照；在线 LMArena 持续增加模型和投票。 论文以 Bradley–Terry 系数取代早期在线 Elo 显示。
+  description: 上泳道重建 arXiv:2403.04132v1 的论文流程；独立论文核验不会进入排名。下泳道按日期展示改名后在线平台的方法更新， 不把后续实现倒灌为 2024 年论文方法。
+  legend: 实线表示论文排名数据流；虚线表示验证或主动采样反馈；点线表示在线方法的版本时间线。论文表 1 统计 243,329 段对话， 排名回放使用 213,576 张历史选票；公开数据只是完整在线语料的一部分。
 nodes:
-  - id: pool
+  - id: paper_input
     label: |-
-      维护在线模型池
-      包含开放与闭源聊天模型
-      论文快照超过 50 个模型
-      持续接入新模型
-    type: database
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: sample
-    label: |-
-      匿名采样两个模型
-      对用户隐藏模型身份
-      随机安排左右位置
-      主动采样优先选择高不确定性模型对
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 40
-  - id: prompt
-    label: |-
-      众包自由形式用户提示
+      接受条款并提交实时提示
+      同意数据发布条款
       不预设问题或固定评分量表
-      支持多轮对话
-      覆盖真实用法与百余种语言
+      开放式多轮输入
     type: user
+    module: paper_core
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: respond
+      x: 32
+      'y': 200
+  - id: paper_pair
     label: |-
-      生成并排模型回答
+      选择匿名模型对
+      论文采用非均匀采样
+      优先相近且高不确定的模型对
+      并非均匀随机基线
+    type: process
+    module: paper_core
+    size: xl
+    position:
+      x: 288
+      'y': 200
+  - id: paper_battle
+    label: |-
+      并排模型对战
       向两模型发送相同对话轮次
-      用户无法判断时可继续对话
-      保留完整对战轨迹
+      对战期间隐藏模型身份
+      用户无法判断时继续对话
     type: process
+    module: paper_core
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: vote
+      x: 544
+      'y': 200
+  - id: paper_vote
     label: |-
-      收集一条人工偏好
-      左侧更好 · 右侧更好
-      平局 · 两者都差
-      投票后才显示模型身份
-    type: user
+      记录一条人工偏好
+      模型 A · 模型 B · 平局 · 两者都差
+      投票后才揭示模型身份
+      保存两侧对话与选票
+    type: document
+    module: paper_core
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: controls
+      x: 800
+      'y': 200
+  - id: paper_filter
     label: |-
-      应用数据质量控制
-      过滤模型身份关键词
-      用内容审核标记不安全请求
-      检测异常投票用户
+      排除身份泄漏
+      过滤模型名与公司名关键词
+      保留匿名排名数据
+      论文明确的主数据过滤
     type: process
+    module: paper_core
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: corpus
+      x: 1056
+      'y': 200
+  - id: paper_corpus
     label: |-
-      构建论文快照投票语料
-      243,329 场对战 · 90,051 位用户
-      50 个模型 · 149 种语言
-      模型对结果与多轮轨迹
+      论文表 1 快照
+      2024-01-21 · 243,329 段对话
+      50 个模型 · 90,051 位用户
+      149 种语言 · 平均 1.3 轮
     type: database
+    module: paper_core
     size: xl
     position:
-      x: 1700
-      'y': 40
-  - id: validate
+      x: 1312
+      'y': 200
+  - id: paper_win_matrix
     label: |-
-      验证众包投票质量
-      专家盲标复核 160 场对战
-      允许使用外部资源核查事实
-      众包与专家一致率 72–83%
-    type: user
-    size: xl
-    position:
-      x: 1700
-      'y': 380
-  - id: win_matrix
-    label: |-
-      估计模型对获胜矩阵
+      IPW 获胜矩阵估计
+      θ̂_T(a) = T⁻¹ Σₜ Hₜ 1{Aₜ=a}/Pₜ(a)
       校正非均匀模型对采样
-      在成对反馈中处理平局
+      论文排名回放：213,576 张选票
+    type: formula
+    module: paper_core
+    size: xl
+    position:
+      x: 1568
+      'y': 200
+  - id: paper_bt
+    label: |-
+      重加权 Bradley-Terry 最大似然
+      P(i≻j)=e^ξⁱ/(e^ξⁱ+e^ξʲ)；ξ₁=0
+      ξ̂ = argmin Σₜ P(Aₜ)⁻¹ ℓ(Hₜ,pξ(Aₜ))
       目标为均匀模型对分布
-    type: process
+    type: formula
+    module: paper_core
     size: xl
     position:
-      x: 1420
-      'y': 380
-  - id: rank
+      x: 1824
+      'y': 200
+  - id: paper_rank
     label: |-
-      拟合 Bradley–Terry 得分
-      加权最大似然估计
-      稳健三明治置信区间
-      生成不确定性感知近似排名
-    type: process
+      三明治联合置信集合
+      多重性校正的近似排名
+      Rₘ = 1 + Σₘ′ 1{inf Cₘ′ > sup Cₘ}
+      不能只排序点估计
+    type: formula
+    module: paper_core
     size: xl
     position:
-      x: 1140
-      'y': 380
-  - id: report
+      x: 2080
+      'y': 200
+  - id: paper_output
     label: |-
-      发布在线 LMArena 排行榜
-      Bradley–Terry 得分 · 胜率 · 排名
-      置信区间与对战次数
-      随新人工投票持续刷新
+      发布论文时期排名
+      BT 系数 · 获胜矩阵
+      置信区间 · 近似排名
+      早期界面 Elo 并非该估计器
     type: terminal
+    module: paper_core
     size: xl
     position:
-      x: 860
-      'y': 380
+      x: 2336
+      'y': 200
+  - id: paper_active
+    label: |-
+      主动采样反馈
+      Pₜ(a) ∝ √(Σ̂ₜ,ₐₐ / nₜ(a))
+      − √(Σ̂ₜ,ₐₐ / (nₜ(a)+1))
+      按预期区间宽度下降采样
+    type: formula
+    module: paper_core
+    size: xl
+    position:
+      x: 336
+      'y': -64
+  - id: paper_unsafe
+    label: |-
+      仅标记不安全内容
+      使用 OpenAI Moderation API
+      3% 用户请求被标记
+      论文未说明因此排除排名
+    type: process
+    module: paper_checks
+    size: xl
+    position:
+      x: 544
+      'y': 400
+  - id: paper_expert
+    label: |-
+      仅用于专家验证
+      随机 160 场对战 · 盲标
+      研究生标注并可外部事实核查
+      众包与专家一致率 72.8–83.1%
+    type: user
+    module: paper_checks
+    size: xl
+    position:
+      x: 1312
+      'y': 400
+  - id: paper_anomaly
+    label: |-
+      仅为论文异常用户实验
+      25 个异常 + 25 个正常 IP
+      5 个随机检查点执行 Fisher 检验
+      不进入论文排名
+    type: process
+    module: paper_checks
+    size: xl
+    position:
+      x: 1568
+      'y': 400
+  - id: live_style
+    label: |-
+      2024-08-29 → 2025-05-16
+      风格控制成为文本榜默认方法
+      token 数 · 标题 · 粗体 · 列表
+      z_f = std((f_A−f_B)/(f_A+f_B))
+      上下文 BT：β_A−β_B+zᵀγ
+    type: formula
+    module: live_changes
+    size: xl
+    position:
+      x: 32
+      'y': 720
+  - id: live_ci_weight
+    label: |-
+      2025-07-23
+      在线 Bootstrap → CLT / M-估计区间
+      按模型对出现频率重加权
+      Arena-Rank 权重：max{n_ab, 50} 的倒数
+      不等同论文基于采样概率的 IPW
+    type: process
+    module: live_changes
+    size: xl
+    position:
+      x: 400
+      'y': 720
+  - id: live_cleaning
+    label: |-
+      2025-07-14 → 2025-10-04
+      加强去重与身份泄漏检查
+      增加统计异常用户过滤
+      移除模型与自身对战记录
+      精确去重 / 异常算法未公开
+    type: process
+    module: live_changes
+    size: xl
+    position:
+      x: 768
+      'y': 720
+  - id: live_direct
+    label: |-
+      2026-03 → 2026-05-12
+      10% 直接聊天会话转为对战
+      排除跳过票；仅保留明确 A/B 偏好
+      新增 is_direct_battle
+      + same_org_indicator
+      特征精确编码未公开
+    type: process
+    module: live_changes
+    size: xl
+    position:
+      x: 1504
+      'y': 720
+  - id: live_policy
+    label: |-
+      2026-04-30 上榜政策
+      仅展示已公开可用模型
+      排名稳定且至少收集 1,000 张选票
+      每场至少包含一个公开模型
+      至少 20% 为公开模型之间对战
+    type: process
+    module: live_changes
+    size: xl
+    position:
+      x: 1136
+      'y': 720
+  - id: live_current
+    label: |-
+      改名后的在线 Arena 排行榜
+      BT / 上下文 BT，而非 Elo 更新
+      Arena-Rank 尺度：1000 + 400β / ln(10)
+      后续方法不能改写论文 v1
+    type: terminal
+    module: live_changes
+    size: xl
+    position:
+      x: 1872
+      'y': 720
+  - id: paper_units
+    label: |-
+      不得混合论文统计单位
+      表 1：243,329 段对话
+      排名回放：213,576 张选票
+      范围与用途不同
+    type: document
+    module: artifact_boundary
+    size: xl
+    position:
+      x: 400
+      'y': 960
+  - id: public_artifacts
+    label: |-
+      部分公开制品
+      140K rev 6322995：135,634 条文本记录
+      排行榜 rev cc2d2cd：仅聚合快照
+      提示 CC-BY-4.0；输出遵循供应商条款
+      完整在线排名语料未公开
+    type: document
+    module: artifact_boundary
+    size: xl
+    position:
+      x: 1136
+      'y': 960
 edges:
-  - from: pool
-    to: sample
+  - from: paper_input
+    to: paper_pair
     type: primary
-  - from: sample
-    to: prompt
+  - from: paper_pair
+    to: paper_battle
     type: primary
-  - from: prompt
-    to: respond
+  - from: paper_battle
+    to: paper_vote
     type: primary
-  - from: respond
-    to: vote
+  - from: paper_vote
+    to: paper_filter
     type: primary
-  - from: vote
-    to: controls
+  - from: paper_filter
+    to: paper_corpus
     type: primary
-  - from: controls
-    to: corpus
+  - from: paper_corpus
+    to: paper_win_matrix
     type: primary
-  - from: corpus
-    to: validate
+  - from: paper_win_matrix
+    to: paper_bt
     type: primary
-  - from: validate
-    to: win_matrix
+  - from: paper_bt
+    to: paper_rank
     type: primary
-  - from: win_matrix
-    to: rank
+  - from: paper_rank
+    to: paper_output
     type: primary
-  - from: rank
-    to: report
-    type: primary
-modules: []
+  - from: paper_rank
+    to: paper_active
+    type: data
+    waypoints:
+      - x: 2080
+        'y': 112
+      - x: 464
+        'y': 112
+      - x: 464
+        'y': -64
+  - from: paper_active
+    to: paper_pair
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.74
+      entryY: 0
+  - from: paper_battle
+    to: paper_unsafe
+    type: optional
+  - from: paper_corpus
+    to: paper_expert
+    type: data
+  - from: paper_corpus
+    to: paper_anomaly
+    type: optional
+  - from: live_style
+    to: live_ci_weight
+    type: optional
+  - from: live_ci_weight
+    to: live_cleaning
+    type: optional
+  - from: live_cleaning
+    to: live_policy
+    type: optional
+  - from: live_policy
+    to: live_direct
+    type: optional
+  - from: live_direct
+    to: live_current
+    type: optional
+modules:
+  - id: paper_core
+    label: 论文
+    color: $primaryLight
+  - id: paper_checks
+    label: 核验
+    color: $secondaryLight
+  - id: live_changes
+    label: 在线
+    color: $accentLight
+  - id: artifact_boundary
+    label: 边界
+    color: $surface

@@ -7,62 +7,68 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 10,
+    "edges": 9,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "integrate",
-      "label": "Integrate 35 open generative models\ntext-to-image · image editing · text-to-video\nstandardize code, prompts, and fixed inference settings",
+      "id": "evidence",
+      "label": "Primary evidence\narXiv:2406.04485v4\nrepo f0b0334d · data 7981a194",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "arena_inputs",
+      "label": "Integrate 35 open models\nimage generation · editing · video\nlive + ImagenHub/VBench prompts",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompts",
-      "label": "Build prompt and output pool\nlive user prompts + ImagenHub/VBench samples\nprecompute model outputs in GenAI-Museum",
+      "id": "pair_vote",
+      "label": "Anonymous same-task pair battle\nleft / right / tie good / both bad\nrevealed identities discard the vote",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "battle",
-      "label": "Run anonymous same-task battles\nrandomly choose two model outputs\npresent them side-by-side without identities",
+      "id": "vote_qc",
+      "label": "Filter and expert-audit votes\nsample 350: 303 valid\n17 NSFW · 30 technical\n231 clear · 51 vague · 21 wrong\nreasonable: 93.07%",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "vote",
-      "label": "Collect four-way community votes\nleft better · right better\ntie good · both bad",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "audit",
-      "label": "Audit human-vote quality\nauthors review 350 sampled votes; 303 valid\n93.07% clearly or vaguely reasonable",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "clean",
-      "label": "Clean arena votes with Llama Guard\nremove NSFW and technical failures\nretain task, prompt, output pair, models, and vote",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "release",
-      "label": "Release GenAI-Bench preference pairs\nimage generation 1,735 · editing 919\nvideo generation 1,069 · total 3,723",
+      "id": "v1_release",
+      "label": "Release v1 split test_v1\nimage 1,735 · editing 919\nvideo 1,069 · total 3,723",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "Prompt an MLLM as the preference judge\nprovide prompt plus the two generated contents\nrequire one of the same four exact labels",
+      "id": "version_boundary",
+      "label": "Keep later test split separate\n3,192 + 983 + 1,911 = 6,086\nofficial code loads test_v1\ndo not merge the two versions",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "judge_input",
+      "label": "Assemble MLLM judge input\nprompt + output A + output B\nvideo maximum 8 frames\nvideo-capable: native video\nother MLLMs: sampled frames",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Exact-match MLLM vote to human vote\nreport accuracy for three tasks and average\nrandom four-class baseline is about 25%",
+      "id": "judge_prompt",
+      "label": "Apply task-specific criteria\nprompt following · naturalness\nartifacts · aesthetics · overediting\ntemporal coherence · dynamic video",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "Parse first greedy [[.*]] match\naccept A>>B/A>B and B>>A/B>A\ntie: A=B or A=B=Good\nboth bad: A=B or A=B=Bad",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric",
+      "label": "Mean boolean accuracy\neach task + three-task average\nBradley–Terry ranks are separate",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,50 +76,56 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "integrate",
-      "to": "prompts",
-      "type": "primary"
+      "from": "evidence",
+      "to": "arena_inputs",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "prompts",
-      "to": "battle",
+      "from": "arena_inputs",
+      "to": "pair_vote",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "battle",
-      "to": "vote",
+      "from": "pair_vote",
+      "to": "vote_qc",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "vote",
-      "to": "audit",
+      "from": "vote_qc",
+      "to": "v1_release",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "audit",
-      "to": "clean",
+      "from": "v1_release",
+      "to": "version_boundary",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "clean",
-      "to": "release",
+      "from": "version_boundary",
+      "to": "judge_input",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "release",
-      "to": "judge",
+      "from": "judge_input",
+      "to": "judge_prompt",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "judge",
-      "to": "score",
+      "from": "judge_prompt",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "parser",
+      "to": "metric",
       "type": "primary"
     }
   ],

@@ -5,63 +5,75 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: OneIG-Bench 构建与评测流程
-  description: 对齐论文构建双语文生图提示集合，并从五个细粒度生成维度执行自动评测。
-  legend: 发布集含 1,120 条英文提示、经人工核验的对应中文提示及 200 条额外多语种提示，共 2,440 条提示记录。
+  description: 对齐论文第三版的提示构建与五维评测，并区分固定公开数据、代码快照和论文协议。
+  legend: 英文发布集含 1,120 条提示；中文发布集含核验后的对应提示及 200 条多语种提示，共 2,440 条记录。虚线表示来源和发布边界，不表示主流程。
 nodes:
-  - id: scope
+  - id: evidence
     label: |-
-      定义五个评测维度
-      语义对齐 · 文本渲染
-      知识推理 · 风格
-      全部提示集合的多样性
+      固定的一手证据
+      arXiv 2506.07977v3 · PDF d23bb2e1d69d
+      Git 41b49831e79e · HF f80e6317806b
+      第 3.1–3.2、4.1 节 · 附录 A
     type: document
     size: xl
     position:
       x: 20
+      'y': 40
+  - id: scope
+    label: |-
+      定义五个评测维度
+      提示图像对齐 · 文本渲染
+      知识推理 · 风格
+      跨提示集合的多样性
+    type: document
+    size: xl
+    position:
+      x: 260
       'y': 40
   - id: sources
     label: |-
       整理真实需求提示
       公开互联网数据
       用户输入
-      既有公开数据集
+      既有数据集
     type: database
-    size: xl
-    position:
-      x: 260
-      'y': 40
-  - id: cluster
-    label: |-
-      平衡场景与语义
-      聚类提示嵌入
-      避免单一类别占优
-      维持五个维度的比例
-    type: process
     size: xl
     position:
       x: 500
       'y': 40
-  - id: dedupe
+  - id: cluster
     label: |-
-      去除语义重复
-      发现高度重叠提示
-      与聚类中心比较
-      按余弦相似度过滤
+      平衡提示分布
+      聚类场景与语义
+      避免单一类别占优
+      维持五个维度比例
     type: process
     size: xl
     position:
       x: 740
       'y': 40
-  - id: rewrite
+  - id: dedupe
     label: |-
-      改写提示长度
-      使用 GPT-4o
-      短于 30 · 中等 30 至 60
-      长于 60 · 比例约 1:2:1
+      去除语义重复
+      发现高度重叠提示
+      比较聚类中心嵌入
+      按余弦相似度过滤
     type: process
     size: xl
     position:
       x: 980
+      'y': 40
+  - id: rewrite
+    label: |-
+      改写提示长度
+      GPT-4o · Beta(2.37, 2.86)
+      短于 30 · 中等 30 至 60
+      长于 60 个词
+      比例约为 1:2:1
+    type: process
+    size: xl
+    position:
+      x: 1220
       'y': 40
   - id: review
     label: |-
@@ -72,97 +84,139 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1220
+      x: 1460
       'y': 40
   - id: bilingual
     label: |-
-      构建中文提示集合
-      翻译并人工核验 1,120 条
+      构建中文发布集
+      翻译并核验 1,120 条提示
       增加 200 条多语种提示
-      覆盖文化与人像主题
+      保留五个共享类别
     type: process
     size: xl
     position:
-      x: 1460
+      x: 1700
       'y': 40
   - id: release
     label: |-
       发布六个提示集合
-      动漫 245 · 人像 244
-      物体 206 · 文本 200 · 推理 225
+      动漫 245 · 人像 244 · 物体 206
+      文本 200 · 推理 225 · 多语种 200
       英文 1,120 · 中文 1,320
     type: database
     size: xl
     position:
-      x: 1460
+      x: 1940
+      'y': 40
+  - id: code_boundary
+    label: |-
+      固定代码边界
+      Git CSV 分别为 1,120 和 1,320 行
+      每条提示一个宫格文件 · 按 m×n 切分
+      image_grid 为 2 时表示四张图
+      问题图与推理答案预先生成
+    type: document
+    size: xl
+    position:
+      x: 1940
       'y': 420
   - id: generate
     label: |-
       生成评测图像
-      按所选维度运行提示子集
-      建议每条提示生成四张图
+      选择特定维度的提示子集
+      建议每条提示使用四个随机种子
       按类别与模型存储
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 420
+  - id: alignment
+    label: |-
+      评测语义对齐
+      论文：GPT-4o 构建 DSG 图
+      代码：加载固定问题图
+      Qwen2.5-VL-7B 回答问题
+      按父节点答案控制后代计分
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 420
+  - id: text
+    label: |-
+      评测文本渲染
+      Qwen2.5-VL 提取并清理文本
+      编辑距离 · 完成率 · 词准确率
+      三项合成文本分数
+      英文阈值 100 · 中文阈值 50
     type: process
     size: xl
     position:
       x: 1220
       'y': 420
-  - id: alignment
+  - id: reasoning
     label: |-
-      评测语义对齐
-      GPT-4o 构建 DSG 问题图
-      Qwen2.5-VL-7B 回答
-      仅根节点正确时计入叶节点
+      评测知识与推理
+      论文：GPT-4o 生成参考答案
+      代码：加载固定答案 JSON
+      计算 LLM2CLIP 文图相似度
     type: process
     size: xl
     position:
       x: 980
       'y': 420
-  - id: text
+  - id: style
     label: |-
-      评测文本渲染
-      VLM 提取并清理文字
-      编辑距离 · 完成率
-      词准确率复合分数
+      评测风格一致性
+      使用 CSD 与 OneIG 风格编码器
+      各自取最高参考图相似度
+      再平均两个编码器分数
     type: process
     size: xl
     position:
       x: 740
       'y': 420
-  - id: reason_style
+  - id: diversity
     label: |-
-      评测推理与风格
-      GPT-4o 答案对 LLM2CLIP 余弦
-      CSD 与 OneIG 风格编码器
-      取参考图最高相似度
+      评测输出多样性
+      配对同一提示的生成结果
+      论文：一减 DreamSim 相似度
+      代码：DreamSim 距离后求平均
     type: process
     size: xl
     position:
       x: 500
       'y': 420
-  - id: diversity
-    label: |-
-      评测输出多样性
-      配对同一提示生成图
-      计算 DreamSim 余弦相似度
-      先逐提示再全局平均
-    type: process
-    size: xl
-    position:
-      x: 260
-      'y': 420
   - id: report
     label: |-
       报告五项核心指标
       分别展示中英文结果
-      按类型和长度细分分析
-      逐子集比较模型
+      按类型与提示长度细分
+      逐提示子集比较模型
     type: terminal
+    size: xl
+    position:
+      x: 260
+      'y': 420
+  - id: license_boundary
+    label: |-
+      公开发布边界
+      HF f80e6317806b · CC BY-NC 4.0
+      数据 JSON 为 1,120 和 1,320 行
+      Git 树没有 LICENSE 文件
+      项目榜单在论文后继续更新
+    type: document
     size: xl
     position:
       x: 20
       'y': 420
 edges:
+  - from: evidence
+    to: scope
+    type: secondary
+    style:
+      dashed: true
   - from: scope
     to: sources
     type: primary
@@ -194,12 +248,25 @@ edges:
     to: text
     type: primary
   - from: text
-    to: reason_style
+    to: reasoning
     type: primary
-  - from: reason_style
+  - from: reasoning
+    to: style
+    type: primary
+  - from: style
     to: diversity
     type: primary
   - from: diversity
     to: report
     type: primary
+  - from: release
+    to: code_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: report
+    to: license_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

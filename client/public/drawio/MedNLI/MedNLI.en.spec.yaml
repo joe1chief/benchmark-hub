@@ -4,177 +4,351 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MedNLI Build and Evaluation Process
+  title: MedNLI Construction, Release, and Evaluation
   description: >-
-    Paper-aligned clinical NLI construction from de-identified MIMIC-III notes through section and sentence extraction,
-    clinician-authored hypotheses, pilot agreement, invalid-premise removal, leakage-safe splits, and accuracy
-    evaluation.
+    Paper- and release-aligned clinical NLI workflow from MIMIC-III notes through premise sampling, clinician-authored
+    hypotheses, the pilot validity and agreement checks, single-annotation scale-up, premise-disjoint splits, the
+    credentialed PhysioNet release, and label-aware accuracy evaluation.
   legend: >-
-    Four clinicians annotated 4,683 premises over six weeks; each retained premise receives one entailment, neutral, and
-    contradiction hypothesis, producing 14,049 unique pairs with no premise shared across splits.
+    Solid arrows are construction or scored evaluation paths. Dashed arrows expose evidence, access, implementation, and
+    paper-experiment boundaries. The paper uses MIMIC-III v1.3, whereas PhysioNet v1.0.0 names MIMIC-III v1.4 as its
+    parent; this version difference is preserved rather than silently reconciled. A redacted test label cannot be scored
+    by the released code path.
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      Source MIMIC-III v1.3
-      38,597 De-identified Patients
-      2,078,705 English Clinical Notes
-      Access via the Derived-data Repository
-    type: database
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: sections
-    label: |-
-      Segment Note Sections
-      Use Rule-based Header Formatting
-      Identify Clinical Note Structure
-      Select Past Medical History
-    type: process
-    size: xl
-    position:
-      x: 260
-      'y': 40
-  - id: sentences
-    label: |-
-      Create Candidate Premises
-      Apply Biomedical LingPipe Splitter
-      Form a Sentence Pool
-      Randomly Sample Premises
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 40
-  - id: prompt
-    label: |-
-      Present Premise Alone
-      Permit Medical Knowledge
-      Permit Common Sense
-      Do Not Expose Other Note Context
+      Pinned Evidence Snapshot
+      arXiv:1808.06752v2 · PDF SHA d328fab8b047
+      Code HEAD e1fe2531a9e9
+      PhysioNet v1.0.0 · DOI 10.13026/C2RS98
+      Supporting BigBIO Loader 21f3313de37d
     type: document
     size: xl
     position:
-      x: 740
-      'y': 40
+      x: 40
+      'y': 24
+  - id: paper_source
+    label: |-
+      Paper Construction Source
+      MIMIC-III v1.3
+      38,597 De-identified Patients
+      2,078,705 English Clinical Notes
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 264
+  - id: deceased_scope
+    label: |-
+      Restrict the Clinical-note Source
+      PhysioNet Methods Clarify
+      Notes Correspond to Deceased Patients
+      Minimize Patient-privacy Risk
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 264
+  - id: section_parse
+    label: |-
+      Segment Notes by Section Headers
+      Simple Rule-based Program
+      Select Past Medical History
+      Preserve De-identification Artifacts
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 264
+  - id: premise_pool
+    label: |-
+      Create Candidate Premises
+      Biomedical LingPipe Sentence Splitter
+      Pool Past-history Sentences
+      Randomly Sample a Subset
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 264
+  - id: prompt
+    label: |-
+      Show One Premise Sentence
+      Use Only That Sentence
+      Medical Knowledge + Common Sense
+      No Remaining Note Context
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 264
   - id: hypotheses
     label: |-
-      Clinicians Write Three Hypotheses
-      Definitely True: Entailment
-      Might Be True: Neutral
-      Definitely False: Contradiction
+      Clinician Writes Three Hypotheses
+      Definitely True → Entailment
+      Might Be True → Neutral
+      Definitely False → Contradiction
     type: user
     size: xl
     position:
-      x: 980
-      'y': 40
+      x: 1440
+      'y': 264
   - id: pilot
     label: |-
-      Run the Annotation Pilot
+      Pilot Annotation
       Two Board-certified Radiologists
       100 Unique Premises Each
-      Refine Clinician Guidelines
+      Apply Clinician Guidelines
     type: user
     size: xl
     position:
-      x: 1220
-      'y': 40
+      x: 1720
+      'y': 264
+  - id: validity_gate
+    label: |-
+      Does the Premise Support
+      Useful Clinical Inferences?
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 264
   - id: discard
     label: |-
-      Remove Invalid Premises
+      Discard Invalid Pilot Premises
       Clinician Judgment
-      Exclude Uninformative Artifacts
-      Pilot Removes 16 Premises
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: agreement
-    label: |-
-      Cross-label the Pilot Pairs
-      Compare 552 Generated Pairs
-      Definitely · Maybe · Definitely Not
-      Cohen Kappa: 0.78
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: annotate
-    label: |-
-      Complete Expert Annotation
-      Recruit Two Additional Clinicians
-      Four Clinicians Total
-      4,683 Premises over Six Weeks
-    type: user
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: dataset
-    label: |-
-      Form MedNLI
-      14,049 Unique Sentence Pairs
-      Balanced Three-way NLI Labels
-      Clinical Terminology and Reasoning
-    type: database
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: splits
-    label: |-
-      Split without Premise Overlap
-      Train: 11,232 Pairs
-      Development: 1,395 Pairs
-      Test: 1,422 Pairs
-    type: database
-    size: xl
-    position:
-      x: 740
-      'y': 420
-  - id: baselines
-    label: |-
-      Train Clinical NLI Baselines
-      Feature Model · Bag of Words
-      InferSent · ESIM
-      Keep Hyperparameters Comparable
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 420
-  - id: transfer
-    label: |-
-      Add Transfer and Domain Knowledge
-      Transfer from SNLI and MultiNLI
-      Use Biomedical and MIMIC Embeddings
-      Test UMLS-informed Methods
-    type: process
-    size: xl
-    position:
-      x: 260
-      'y': 420
-  - id: report
-    label: |-
-      Evaluate on the Held-out Test Set
-      Predict Three NLI Labels
-      Report Classification Accuracy
-      Compare Domain Adaptation Gains
+      Often De-identification Artifacts
+      16 Premises Removed
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 2000
+      'y': 24
+  - id: cross_label
+    label: |-
+      Cross-label Retained Pilot Pairs
+      One Clinician Reviews the Other's Pairs
+      184 Premises × Three Hypotheses
+      552 Sentence Pairs
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 264
+  - id: agreement
+    label: |-
+      Check Pilot Agreement
+      Definitely / Maybe / Definitely False
+      Cohen's Kappa = 0.78
+      Review True-versus-Maybe Disagreements
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 264
+  - id: scale_up
+    label: |-
+      Scale Up Expert Annotation
+      Recruit Two Additional Clinicians
+      Four Clinicians Total · Six Weeks
+      Annotate 4,683 Premises
+    type: user
+    size: xl
+    position:
+      x: 2840
+      'y': 264
+  - id: single_annotation
+    label: |-
+      Final-annotation Boundary
+      No Multiple Labels per Pair
+      Time and Funding Constraint
+      Pilot Agreement Is Not Majority Voting
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 264
+  - id: dataset
+    label: |-
+      Form MedNLI
+      4,683 Premises × Three Labels
+      14,049 Unique Sentence Pairs
+      Entailment · Neutral · Contradiction
+    type: database
+    size: xl
+    position:
+      x: 2840
+      'y': 624
+  - id: split
+    label: |-
+      Premise-disjoint Dataset Split
+      Train 11,232
+      Development 1,395
+      Test 1,422
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 624
+  - id: release
+    label: |-
+      PhysioNet MedNLI v1.0.0
+      Train / Dev / Test JSONL
+      SNLI / MultiNLI-style Records
+      Sentence Pair + Parses + Gold-label Field
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 624
+  - id: version_boundary
+    label: |-
+      Source-version Boundary
+      Paper: MIMIC-III v1.3
+      PhysioNet Parent: MIMIC-III v1.4
+      Do Not Treat Them as the Same Pin
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 624
+  - id: access_boundary
+    label: |-
+      Credentialed-data Boundary
+      CITI Training + Signed DUA Required
+      PhysioNet Health Data License 1.5.0
+      Code Repository Has No License File
+    type: document
+    size: xl
+    position:
+      x: 2000
+      'y': 944
+  - id: eval_input
+    label: |-
+      Evaluate Three-way Clinical NLI
+      Premise + Hypothesis → One Label
+      Hold Test Premises out of Training
+      Accuracy Is the Benchmark Metric
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 624
+  - id: paper_models
+    label: |-
+      Paper Experimental Protocol
+      Features · BOW · InferSent · ESIM
+      Adam · Select Lowest Validation Loss
+      Stop after Five Non-improving Epochs
+      Run Six Different Random Seeds
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 624
+  - id: label_gate
+    label: |-
+      Are Gold Labels Available
+      for the Evaluated Split?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 624
+  - id: unavailable
+    label: |-
+      Public Test Labels Are Redacted
+      PhysioNet Documents gold_label Hidden
+      Released Reader Drops Label '-'
+      No Test Accuracy from Those Rows Alone
+    type: terminal
+    size: xl
+    position:
+      x: 1160
+      'y': 944
+  - id: official_code
+    label: |-
+      Released Reproduction Code
+      read_nli_data Drops gold_label '-'
+      Legacy Python 3.4 / 3.6.3
+      PyTorch 0.2.0 + MetaMap / UMLS
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 624
+  - id: implementation_boundary
+    label: |-
+      Implementation Boundary
+      No Hosted Evaluator or Output Parser
+      No Invalid-output Policy
+      No Official Live Leaderboard
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 944
+  - id: argmax
+    label: |-
+      Score Label-bearing Rows
+      DataLoader shuffle=False
+      Argmax over Three Model Logits
+      Exact Predicted-label Comparison
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 624
+  - id: accuracy
+    label: |-
+      Compute Classification Accuracy
+      Correct Predictions / Dataset Length
+      No Partial Credit
+      One Score per Evaluated Run
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 624
+  - id: aggregate
+    label: |-
+      Aggregate the Paper Runs
+      Six Identical-hyperparameter Seeds
+      Mean Accuracy per Model / Setting
+      Keep Dev and Test Results Separate
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 624
+  - id: paper_results
+    label: |-
+      Report Paper Accuracy (%) · Dev / Test
+      Features 51.9 / 51.9 · BOW 71.9 / 70.2
+      InferSent 76.0 / 73.5 · ESIM 74.4 / 73.1
+      Transfer + Domain-knowledge Gains Separate
+      No Composite Score or Live Leaderboard
+    type: terminal
+    size: xl
+    position:
+      x: 40
+      'y': 944
 edges:
-  - from: source
-    to: sections
+  - from: evidence
+    to: paper_source
+    type: optional
+    label: Pinned paper + releases
+    labelPosition: start
+  - from: paper_source
+    to: deceased_scope
     type: primary
-  - from: sections
-    to: sentences
+  - from: deceased_scope
+    to: section_parse
     type: primary
-  - from: sentences
+  - from: section_parse
+    to: premise_pool
+    type: primary
+  - from: premise_pool
     to: prompt
     type: primary
   - from: prompt
@@ -184,27 +358,80 @@ edges:
     to: pilot
     type: primary
   - from: pilot
+    to: validity_gate
+    type: primary
+  - from: validity_gate
     to: discard
     type: primary
-  - from: discard
+    label: Invalid · 16
+    labelPosition: start
+  - from: validity_gate
+    to: cross_label
+    type: primary
+    label: Retained · 184
+    labelPosition: end
+  - from: cross_label
     to: agreement
     type: primary
   - from: agreement
-    to: annotate
+    to: scale_up
     type: primary
-  - from: annotate
+  - from: scale_up
+    to: single_annotation
+    type: optional
+    label: Final labeling rule
+    labelPosition: end
+  - from: scale_up
     to: dataset
     type: primary
   - from: dataset
-    to: splits
+    to: split
     type: primary
-  - from: splits
-    to: baselines
+  - from: split
+    to: release
     type: primary
-  - from: baselines
-    to: transfer
+  - from: release
+    to: version_boundary
     type: primary
-  - from: transfer
-    to: report
+  - from: release
+    to: access_boundary
+    type: optional
+    label: Access + license
+    labelPosition: end
+  - from: version_boundary
+    to: eval_input
+    type: primary
+  - from: eval_input
+    to: paper_models
+    type: primary
+  - from: paper_models
+    to: label_gate
+    type: primary
+  - from: label_gate
+    to: unavailable
+    type: primary
+    label: Redacted
+    labelPosition: end
+  - from: label_gate
+    to: official_code
+    type: primary
+    label: Gold available
+    labelPosition: start
+  - from: official_code
+    to: implementation_boundary
+    type: optional
+    label: Reproducibility limits
+    labelPosition: end
+  - from: official_code
+    to: argmax
+    type: primary
+  - from: argmax
+    to: accuracy
+    type: primary
+  - from: accuracy
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: paper_results
     type: primary
 modules: []

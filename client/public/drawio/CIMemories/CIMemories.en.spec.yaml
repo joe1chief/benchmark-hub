@@ -6,141 +6,151 @@ meta:
   routing: orthogonal
   title: CIMemories Build Process
   description: >-
-    Paper-aligned CIMemories flow: synthetic identities are expanded into event-derived personal memories, paired with
-    curated goal-recipient contexts, labeled under Westin privacy personas with strict agreement filtering, and used to
-    measure inappropriate disclosure and useful recall under repeated-task stress.
-  legend: Solid arrows show benchmark construction and evaluation; dashed arrows show the retained-label release path.
+    Paper-aligned synthetic-profile, context, persona-labeling, consensus-filtering, and memory evaluation path, with a
+    separate provenance branch for the pinned Hugging Face 71,883-row raw prompt artifact whose label column is blank or
+    null and which is not the paper's filtered labeled evaluation set.
+  legend: Solid arrows show the paper evaluation path; dashed data arrows lead to the separate public raw artifact.
 nodes:
   - id: identities
     label: |-
-      Create Synthetic User Identities
-      Faker-generated Demographic Profiles
+      Create Synthetic Adult Identities
+      Faker Profiles • Ages 21–70
       Use 10 Profiles in the Main Evaluation
     type: database
     size: xl
     position:
       x: 40
-      'y': 220
+      'y': 420
   - id: events
     label: |-
-      Sample Personal Life Events
-      Positive + Challenging Experiences
-      Cover Nine Information Domains
+      Sample Personal Events
+      Three Events × Nine Domains
+      Seven Attributes per Event at Most
     type: process
     size: xl
     position:
-      x: 340
-      'y': 220
+      x: 290
+      'y': 420
   - id: memories
     label: |-
-      Generate Attributes and Memories
-      GPT-OSS-120B Produces Memory Statements
-      About 147 Attributes per Profile on Average
+      Generate Personal Memories
+      GPT-OSS-120B Produces Statements
+      Main Profiles Average 147 Attributes
     type: document
     size: xl
     position:
-      x: 640
-      'y': 220
+      x: 540
+      'y': 420
   - id: contexts
     label: |-
-      Curate 49 Social Task Contexts
-      Specify Goal, Recipient, and Situation
+      Curate 49 Context Seeds
+      Specify Goal • Recipient • Situation
       Pair Contexts with Candidate Attributes
     type: process
     size: xl
     position:
-      x: 940
-      'y': 40
+      x: 790
+      'y': 180
   - id: personas
     label: |-
-      Apply Westin Privacy Personas
+      Apply Three Westin Personas
       Fundamentalist • Pragmatic • Unconcerned
-      Sample 10 GPT-5 Labels per Persona
+      GPT-5 Samples 10 Labels per Persona
     type: user
     size: xl
     position:
-      x: 940
-      'y': 400
+      x: 790
+      'y': 660
   - id: labels
     label: |-
-      Label Attribute Necessity and Risk
+      Label Attribute–Context Pairs
       Necessary for Task Completion?
-      Inappropriate to Reveal to This Recipient?
+      Inappropriate for This Recipient?
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 220
+      x: 1040
+      'y': 420
   - id: consensus
     label: |-
-      Enforce Zero-entropy Consensus
-      Mix Persona Votes with Westin Priors
-      Drop Ambiguous Attribute-context Pairs
+      Mix Persona Distributions with Westin Priors
+      Keep Only Zero-entropy Necessary / Inappropriate Pairs
+      Exclude Ambiguous Labels
+    type: process
+    size: xl
+    position:
+      x: 1290
+      'y': 420
+  - id: balance
+    label: |-
+      Filter Evaluation Contexts
+      Require Both Necessary + Inappropriate Examples
+      Drop Contexts Missing Either Label Type
     type: process
     size: xl
     position:
       x: 1540
-      'y': 220
-  - id: balance
+      'y': 420
+  - id: paper_eval
     label: |-
-      Require Both Label Types per Context
-      Keep Necessary and Inappropriate Examples
-      Remove Contexts Missing Either Category
-    type: process
-    size: xl
-    position:
-      x: 1840
-      'y': 220
-  - id: instances
-    label: |-
-      Release CIMemories Instances
-      71.9K Attribute-context Rows on Hub
-      Memories + Task + Recipient + Gold Labels
+      Paper's Filtered Labeled Evaluation Set
+      Gold Contextual-integrity Pairs
+      Exact Retained Row Count Is Not Disclosed
     type: database
     size: xl
     position:
-      x: 2140
-      'y': 220
+      x: 1790
+      'y': 420
+  - id: hf_raw
+    label: |-
+      Pinned Hugging Face Raw Artifact
+      test.csv: 71,883 Prompt Rows
+      label Is Blank / Null; Not the Gold Eval Set
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 800
   - id: runs
     label: |-
       Run Memory-augmented Models
-      Prefix Task with Stored User Memories
+      Prefix Tasks with Stored User Memories
       Sample Five Responses per Instance
     type: process
     size: xl
     position:
-      x: 2440
-      'y': 220
+      x: 2040
+      'y': 420
   - id: judge
     label: |-
       Detect Revealed Attributes
-      REVEAL Judge with DeepSeek-R1
-      Match Response Content to Gold Attributes
-    type: terminal
+      DeepSeek-R1 REVEAL Judge
+      Match Responses to Gold Attributes
+    type: process
     size: xl
     position:
-      x: 2740
-      'y': 220
+      x: 2290
+      'y': 420
   - id: metrics
     label: |-
-      Compute Privacy and Utility
+      Compute Privacy + Utility
       Violation@5 for Inappropriate Disclosure
       Completeness for Necessary Information
     type: process
     size: xl
     position:
-      x: 3040
-      'y': 220
+      x: 2540
+      'y': 420
   - id: stress
     label: |-
       Stress-test Persistent Memory
-      Scale from 1 to 40 Tasks per User
-      Repeat Each Task 1 to 5 Generations
+      Scale 1–40 Tasks per User
+      Repeat Each Task 1–5 Generations
     type: terminal
     size: xl
     position:
-      x: 3340
-      'y': 220
+      x: 2790
+      'y': 420
 edges:
   - from: identities
     to: events
@@ -167,9 +177,15 @@ edges:
     to: balance
     type: primary
   - from: balance
-    to: instances
+    to: paper_eval
+    type: primary
+  - from: memories
+    to: hf_raw
     type: data
-  - from: instances
+  - from: contexts
+    to: hf_raw
+    type: data
+  - from: paper_eval
     to: runs
     type: primary
   - from: runs

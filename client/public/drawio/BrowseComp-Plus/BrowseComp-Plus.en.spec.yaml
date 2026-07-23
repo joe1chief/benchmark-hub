@@ -6,177 +6,213 @@ meta:
   routing: orthogonal
   title: BrowseComp-Plus Build Process
   description: >-
-    Paper-aligned conversion of 1,266 BrowseComp questions into 830 human-verified queries over a fixed corpus of
-    100,195 deduplicated documents, with hard negatives, evidence and gold qrels, controlled retriever-agent runs,
-    answer and citation scoring, and standalone retrieval diagnostics.
-  legend: >-
-    Solid arrows show corpus construction and agent evaluation; dashed arrows carry corpus statistics and qrels into
-    diagnostic reports.
+    Paper-aligned 1,266 → 1,142 → 1,005 → 830 filtering funnel, hard-negative mining only after human verification,
+    fixed-corpus agent evaluation with GPT-4.1 judging, citation scoring, and a separate standalone retrieval contract.
+  legend: Solid arrows show construction or end-to-end evaluation; dashed data arrows feed independent diagnostics.
 nodes:
   - id: original
     label: |-
-      Start from Original BrowseComp
-      1,266 Complex Question-Answer Pairs
-      Replace Dynamic Black-Box Web Evaluation
+      Original BrowseComp
+      1,266 Question-answer Pairs
+      Start Evidence Collection
     type: database
     size: xl
     position:
       x: 40
-      'y': 220
-  - id: o3_mining
+      'y': 420
+  - id: o3_gate
     label: |-
-      Use OpenAI o3 with Web Search
-      Produce Clues, Candidate URLs, and Evidence Snippets
-      Scrape Candidate Pages
+      Run o3 with Web Search
+      124 Fail: Formatting or Abstention
+      Exclude Failed Responses
     type: process
     size: xl
     position:
-      x: 320
-      'y': 220
-  - id: initial_filter
+      x: 290
+      'y': 420
+  - id: after_o3
     label: |-
-      Filter Hallucinated URLs and Scraping Failures
-      Retain Initial Evidence for 1,142 Queries
-      Send Evidence Chains to Human Review
-    type: decision
+      Retain 1,142 Queries
+      Structured Clues • URLs • Snippets
+      Continue to Page Collection
+    type: database
     size: xl
     position:
-      x: 600
-      'y': 220
+      x: 540
+      'y': 420
+  - id: scrape
+    label: |-
+      Scrape Every Cited URL
+      Selenium + Trafilatura
+      Extract Candidate Evidence Text
+    type: process
+    size: xl
+    position:
+      x: 790
+      'y': 420
+  - id: scrape_gate
+    label: |-
+      Validate Retrieved Pages
+      137 Hallucinated URLs or Scrape Failures
+      Exclude Unusable Queries
+    type: process
+    size: xl
+    position:
+      x: 1040
+      'y': 420
+  - id: after_scrape
+    label: |-
+      Retain 1,005 Queries
+      Candidate Evidence Is Scrapeable
+      Send Every Query to Human Review
+    type: database
+    size: xl
+    position:
+      x: 1290
+      'y': 420
   - id: human_verify
     label: |-
-      Fourteen Student Annotators Verify Evidence
-      More than 400 Hours • Over 80% Agreement
-      Check Each Clue and Complete Answering Chain
+      Human-verify Clues and Answerability
+      14 Annotators • 400+ Hours • >80% Agreement
+      Revise or Search ≥20 Minutes When Needed
     type: user
     size: xl
     position:
-      x: 880
-      'y': 40
+      x: 1540
+      'y': 420
   - id: verified
     label: |-
-      Finalize 830 Verified Queries
-      Label Evidence Documents Needed for Reasoning
-      Label Gold Documents that Also Contain the Final Answer
+      Final 830 Verified Queries
+      Evidence Docs Support Reasoning
+      Gold Docs Also Contain the Final Answer
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 40
+      x: 1790
+      'y': 420
   - id: decompose
     label: |-
-      GPT-4o Decomposes Each Query
-      Average Seven Search Sub-Queries
-      Target Topically Related Distractors
+      GPT-4o Query Decomposition
+      About Seven Sub-queries per Query
+      Run Only on the Final 830
     type: process
     size: xl
     position:
-      x: 880
-      'y': 400
+      x: 2040
+      'y': 820
   - id: hard_negatives
     label: |-
-      Mine Hard Negatives with Google Search API
-      Related but Not Useful for the Final Answer
-      Add Challenging Retrieval Distractors
+      Mine Hard Negatives
+      SerpAPI: Up to 100 Results per Sub-query
+      Keep Related but Non-supporting Documents
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 400
+      x: 2290
+      'y': 820
   - id: corpus
     label: |-
-      Build the Fixed Deduplicated Corpus
-      100,195 Documents across 830 Queries
-      Average 6.1 Evidence • 76.28 Negatives • 2.9 Gold
+      Fixed Deduplicated Corpus
+      100,195 Documents for 830 Queries
+      Evidence + Gold Qrels + Hard Negatives
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 220
+      x: 2540
+      'y': 420
   - id: retrievers
     label: |-
-      Configure Controlled Retrieval
-      BM25 • Qwen3-Embedding 0.6B / 4B / 8B
-      ReasonIR 8B • Oracle Evidence Context
+      Configure Retrieval
+      BM25 • Qwen3 Embedding • ReasonIR
+      Oracle Evidence Context for Comparison
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 220
+      x: 2790
+      'y': 420
   - id: topk
     label: |-
-      Return Top-5 Search Results per Call
-      Truncate Each Result to 512 Tokens
-      Optional get-document Tool Opens Full Content
+      Agent Search Interface
+      Top 5 • 512 Tokens per Result
+      Optional Full-document Tool
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 220
+      x: 3040
+      'y': 420
   - id: agent
     label: |-
-      Deep-Research Agent Iterates
-      Plan Searches • Read Results • Cross-Check Evidence
-      Return Final Answer with Document Citations
+      Deep-research Agent
+      Iterative Search and Cross-checking
+      Final Answer with Document Citations
     type: process
     size: xl
     position:
-      x: 2280
-      'y': 220
-  - id: answer_score
+      x: 3290
+      'y': 420
+  - id: end_to_end
     label: |-
-      Score End-to-End Answering
-      Normalized Answer Accuracy and Recall
-      Count Search Calls and Agent Cost
+      End-to-end Answer Evaluation
+      GPT-4.1 Judge: Accuracy + Recall
+      Search Calls + Calibration Error
     type: process
     size: xl
     position:
-      x: 2560
-      'y': 40
+      x: 3540
+      'y': 20
   - id: citation_score
     label: |-
-      Score Citation Grounding
-      Precision and Recall against Positive Documents
-      Preserve Per-Query Metrics
+      End-to-end Citation Evaluation
+      Coverage + Count
+      Citation Precision + Recall
     type: process
     size: xl
     position:
-      x: 2560
-      'y': 220
+      x: 3540
+      'y': 420
   - id: retrieval_score
     label: |-
-      Score Standalone Retrieval
-      Evidence and Gold Recall@5 / 100 / 1000
-      NDCG@10 against Released Qrels
+      Standalone Retrieval Evaluation
+      Evidence / Gold Recall@5, 100, 1000
+      nDCG@10 against Released Qrels
     type: process
     size: xl
     position:
-      x: 2560
-      'y': 400
+      x: 3540
+      'y': 820
   - id: report
     label: |-
-      Report Controlled Agent and Retriever Results
-      Disentangle Retrieval, Reasoning, Citations, and Context
-      Compare BM25, Dense Retrieval, Oracle, and Ablations
+      Report Controlled Results
+      Separate Retrieval, Answering, and Citations
+      Compare Retrievers, Oracle, and Ablations
     type: terminal
     size: xl
     position:
-      x: 2840
-      'y': 220
+      x: 3790
+      'y': 420
 edges:
   - from: original
-    to: o3_mining
+    to: o3_gate
     type: primary
-  - from: o3_mining
-    to: initial_filter
+  - from: o3_gate
+    to: after_o3
     type: primary
-  - from: initial_filter
+  - from: after_o3
+    to: scrape
+    type: primary
+  - from: scrape
+    to: scrape_gate
+    type: primary
+  - from: scrape_gate
+    to: after_scrape
+    type: primary
+  - from: after_scrape
     to: human_verify
     type: primary
   - from: human_verify
     to: verified
     type: primary
-  - from: initial_filter
+  - from: verified
     to: decompose
     type: primary
   - from: decompose
@@ -198,15 +234,15 @@ edges:
     to: agent
     type: primary
   - from: agent
-    to: answer_score
+    to: end_to_end
     type: primary
   - from: agent
     to: citation_score
     type: primary
   - from: retrievers
     to: retrieval_score
-    type: primary
-  - from: answer_score
+    type: data
+  - from: end_to_end
     to: report
     type: primary
   - from: citation_score

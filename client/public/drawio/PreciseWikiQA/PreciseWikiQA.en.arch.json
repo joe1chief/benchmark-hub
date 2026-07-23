@@ -7,174 +7,282 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 22,
+    "edges": 23,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "Define the Evaluation Scope\nTest extrinsic hallucination\nUse presumed training-data knowledge\nRequire concise factual answers",
+      "id": "source_evidence",
+      "label": "Fixed Primary and Official Evidence\narXiv 2504.17550v1 · PDF 2257f8628da9\nGit 80307ac6bc9f · GoodWiki 7491f6da6439\nPaper, Code, and Source Data Are Separated",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "Start from GoodWiki\n44,754 good-quality Wikipedia pages\nBroad topics and factual content\nPublic reproducible source pool",
+      "id": "benchmark_scope",
+      "label": "Define Extrinsic Hallucination Evaluation\nAsk Short Fact-seeking Queries\nAssume Knowledge Could Be in Training Data\nUse No Context at Inference",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "goodwiki_release",
+      "label": "Pin the GoodWiki Source\n44,754 Pages · September 4, 2023\nHF Revision 7491f6da6439\nParquet LFS SHA 2b8b3edebede",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "Join WikiRank Importance\nUse harmonic centrality per page\nProxy training-data frequency\nOrder head to long-tail knowledge",
+      "id": "wikirank_join",
+      "label": "Join WikiRank 2024 Importance\nHarmonic Centrality per Wikipedia Page\nTitles SHA f83bc6ac3f3a\nScores SHA 2acf403c1f0e",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "Create Ten Difficulty Bins\nLabel levels 0 to 9\nHardest to easiest by centrality\nStabilize dynamic-set difficulty",
+      "id": "difficulty_bins",
+      "label": "Create 10 Bins\n0 Hardest · 9 Easiest\nCentrality Proxies Training-data Frequency\nKeep the Distribution Stable across Runs",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "Sample 5,000 Source Pages\nDraw 500 pages from every bin\nBalance all difficulty levels\nResample for each dynamic set",
+      "id": "page_sampling",
+      "label": "Sample the Source Pool\nDraw 500 Pages per Bin\nUse 5,000 Source Pages per Trial\nRegenerate the Dynamic Set Each Trial",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_6",
-      "label": "Select a Reference Section\nSplit each article into sections\nRandomly choose one section\nKeep the source hidden at inference",
+      "id": "section_sampling",
+      "label": "Select One Reference Section\nChunk Each Wikipedia Page into Sections\nDrop the Last Section when More than Two\nRandomly Select One Remaining Section",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_7",
-      "label": "Generate an Objective Question\nLlama 3.1 70B reads the section\nMake it specific and self-contained\nRequire no outside context",
+      "id": "question_generation",
+      "label": "Generate an Objective Question\nLlama-3.1-70B-Instruct\nConcise · Context-free · Single Answer\nQuestion Temperature 0.7 · Top-p 0.9",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_8",
-      "label": "Generate the Gold Answer Separately\nAnswer from the same reference\nSeparate question and answer stages\nReduce answer leakage into wording",
+      "id": "answer_generation",
+      "label": "Generate the Gold Answer Separately\nUse the Same Reference Section\nReturn One Word or a Short Phrase\nAnswerability Call Uses Temperature 0",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "Enforce QA Quality\nRequire a word or short phrase\nDrop answers longer than ten words\nRegenerate unanswerable questions",
-      "type": "process",
+      "id": "quality_gate",
+      "label": "Quality Gate\nUnanswerable: Regenerate\n>10 Words: Filter",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "Form the Dynamic Test Set\n5,000 question-answer pairs\nNo fixed public question list\nRepeatable difficulty distribution",
+      "id": "dynamic_set",
+      "label": "Form a Dynamic Test Set\n5,000 Question-answer Pairs per Trial\nNo Fixed Public Question List\nRun Three Independently Generated Trials",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "Query the Tested Model\nProvide the question without context\nAllow an answer or an abstention\nRecord the free-form response",
+      "id": "gold_audit",
+      "label": "Audit Generated Gold Answers\nHuman Annotation on 250 Generated Pairs\n97.2 Percent of Answers Are Correct\nJudge Accuracy Is Validated Separately",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "inference_config",
+      "label": "Run Tested-model Inference\nSend the Question Only · No Context\nTemperature 0 · Top-p 1\nUse Each Model's Default Chat Template\nThree Trials · Free-form Responses",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "Judge Refusal First\nDetect lack-of-knowledge abstention\nCorrections still count as attempts\nUse an LLM evaluator prompt",
+      "id": "model_response",
+      "label": "Collect a Free-form Response\nAllow a Direct Answer or Abstention\nAdd No Wikipedia Retrieval Context\nPreserve Full Text for Both Judges",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "Judge Attempted Answers\nCompare response with gold answer\nCorrect · incorrect · unverifiable\nTreat the latter two as hallucinated",
+      "id": "abstention_judge",
+      "label": "Llama-3.1-70B-Instruct\nAbstention JSON\nCorrection = Attempt",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "correctness_judge",
+      "label": "Judge Attempted-answer Correctness\nCompare Response with the Gold Answer\nCORRECT · INCORRECT · UNVERIFIABLE\nLast Two Classes Are Hallucinations",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_14",
-      "label": "Report Three Metrics\nFalse refusal rate\nHallucination among attempted answers\nOverall correct-answer rate · three trials",
+      "id": "score_metrics",
+      "label": "Report Three Trial-averaged Metrics\nFalse Refusal Rate\nHallucination Rate among Attempted Answers\nOverall Correct-answer Rate",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "data_boundary",
+      "label": "Data-version Boundary\nGoodWiki Revision 7491f6da6439 Is Fixed\nWikiRank Download URLs Are Not Versioned\nObserved Byte Hashes Pin This Review",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "regeneration_drift",
+      "label": "Paper-to-batch Regeneration Drift\nPaper Retries Unanswerable Questions\nBatch Code Drops Them with continue\nEach Bin Uses a 100-candidate Buffer",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "runner_boundary",
+      "label": "Fixed-runner Boundary\nModule Default N 5000 · Shell Passes N 1\nNo Sampling Seed Is Pinned\nTested-model Limit Defaults to 256 Tokens",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "judge_parser_drift",
+      "label": "Judge-prompt and Parser Drift\nPrompt Lists Three Labels, Then Says Yes or No\nParser Accepts Exact correct or yes\nEverything Else Is Marked Hallucinated",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "license_boundary",
+      "label": "License and Rights Boundary\nHalluLens: CC BY-NC 4.0\nGoodWiki Dataset: MIT\nWikiRank Rights Are Not Inferred",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
-      "type": "primary"
+      "from": "source_evidence",
+      "to": "benchmark_scope",
+      "type": "secondary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "benchmark_scope",
+      "to": "goodwiki_release",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "goodwiki_release",
+      "to": "wikirank_join",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "from": "wikirank_join",
+      "to": "difficulty_bins",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "from": "difficulty_bins",
+      "to": "page_sampling",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "page_sampling",
+      "to": "section_sampling",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "section_sampling",
+      "to": "question_generation",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "question_generation",
+      "to": "answer_generation",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "answer_generation",
+      "to": "quality_gate",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "from": "quality_gate",
+      "to": "question_generation",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "quality_gate",
+      "to": "dynamic_set",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
-      "type": "primary"
+      "from": "dynamic_set",
+      "to": "gold_audit",
+      "type": "secondary"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
+      "from": "dynamic_set",
+      "to": "inference_config",
       "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "inference_config",
+      "to": "model_response",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "model_response",
+      "to": "abstention_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "abstention_judge",
+      "to": "correctness_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "abstention_judge",
+      "to": "score_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "correctness_judge",
+      "to": "score_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "goodwiki_release",
+      "to": "data_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-20",
+      "from": "quality_gate",
+      "to": "regeneration_drift",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-21",
+      "from": "inference_config",
+      "to": "runner_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-22",
+      "from": "correctness_judge",
+      "to": "judge_parser_drift",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-23",
+      "from": "source_evidence",
+      "to": "license_boundary",
+      "type": "secondary"
     }
   ],
   "modules": []

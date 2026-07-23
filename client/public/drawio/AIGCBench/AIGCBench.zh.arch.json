@@ -1,98 +1,110 @@
 {
   "version": 1,
-  "title": "AIGCBench 构建与验证流程",
+  "title": "AIGCBench 构建与证据边界内的验证流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 14,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "webvid",
-      "label": "WebVid 验证集\n按视频子类型采样 1,000\n真实视频-文本对",
+      "label": "WebVid 验证集\n按子类型采样 • 1,000\n视频-文本对",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "laion",
-      "label": "LAION-Aesthetics\n美学子集采样 925\n真实图像-文本对",
+      "label": "LAION-Aesthetics\n925 个图像-文本对\n论文：随机 • README：精选",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompts",
-      "label": "组合 3,000 条提示词\n主体 • 行为\n背景 • 风格",
+      "id": "text_corpus",
+      "label": "提示文本词库\nCivitAI 高频词\n+ 其他候选词",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "compose",
+      "label": "随机组合 3,000 条\n主体 • 行为\n背景 • 风格",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "enrich",
-      "label": "GPT-4 扩写\n丰富四段式提示词\n保留语义结构",
+      "label": "GPT-4 扩写\n“让内容更生动\n且更丰富”",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "generate",
-      "label": "生成并筛选图像\nSDXL：1280 × 720\nT2I 筛至 2,003 条",
+      "label": "SDXL xl-base • 1280 × 720\nT2I-CompBench 过滤\n保留 Top 2,003 对",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "组装 AIGCBench\n1,000 + 925 + 2,003\n共 3,928 个样本",
+      "label": "汇成 AIGCBench\n1,000 + 925 + 2,003\n共 3,928 个样本",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "i2v",
-      "label": "生成图生视频输出\n图像 + 文本控制\n得到候选视频",
+      "label": "生成 I2V 输出\n五种受测方法\nPika 仅 60 个样本\n30 WebVid + 30 生成样本",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "normalize",
-      "label": "视频标准化\n使用前 16 帧\n必要时取 4 个参考关键帧",
+      "id": "frame_policy",
+      "label": "按指标选择帧策略\n默认使用前 16 帧\nDOVER 使用全部帧\n帧数指标不截断",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "自动评测\n4 个维度\n11 项指标",
+      "id": "metric_route",
+      "label": "评测数据类型？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "image_metrics",
+      "label": "图像-文本样本\n仅使用无参考视频指标\n没有参考视频",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "auto_report",
-      "label": "自动指标报告\n对齐 • 运动\n一致性 • 质量",
+      "id": "video_metrics",
+      "label": "视频-文本样本\n有参考 + 无参考指标\n论文：4 个关键帧\n代码默认：5 个关键帧",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "automatic",
+      "label": "自动指标报告\n4 维 • 11 个唯一指标\nFlow + DOVER 实现\n固定仓库代码中缺失",
       "type": "terminal",
       "size": "xl"
     },
     {
       "id": "human_sample",
-      "label": "人工研究采样\n每种方法 30 个视频\n5 种图生视频方法",
+      "label": "人工研究样本\n每种方法随机 30 个\n共五种方法",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human_vote",
-      "label": "42 名参与者\n对 4 个维度投票\n独立判断",
+      "label": "42 名参与者\n票选四个维度中\n表现最佳的方法",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "human_report",
-      "label": "人工研究报告\n四维排序\n汇总投票",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
       "id": "alignment",
-      "label": "验证一致性\n自动指标对比人工投票\n形成最终分析",
+      "label": "定性一致性\n票选结果相对一致\n未报告相关统计量",
       "type": "terminal",
       "size": "xl"
     }
@@ -112,75 +124,95 @@
     },
     {
       "id": "edge-3",
-      "from": "prompts",
-      "to": "enrich",
+      "from": "text_corpus",
+      "to": "compose",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "compose",
+      "to": "enrich",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
       "from": "enrich",
       "to": "generate",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "generate",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-7",
       "from": "release",
       "to": "i2v",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "i2v",
-      "to": "normalize",
-      "type": "primary"
-    },
-    {
       "id": "edge-8",
-      "from": "normalize",
-      "to": "metrics",
+      "from": "i2v",
+      "to": "frame_policy",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "metrics",
-      "to": "auto_report",
+      "from": "frame_policy",
+      "to": "metric_route",
       "type": "primary"
     },
     {
       "id": "edge-10",
+      "from": "metric_route",
+      "to": "image_metrics",
+      "type": "primary",
+      "label": "图像-文本"
+    },
+    {
+      "id": "edge-11",
+      "from": "metric_route",
+      "to": "video_metrics",
+      "type": "primary",
+      "label": "视频-文本"
+    },
+    {
+      "id": "edge-12",
+      "from": "image_metrics",
+      "to": "automatic",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "video_metrics",
+      "to": "automatic",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
       "from": "i2v",
       "to": "human_sample",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-15",
       "from": "human_sample",
       "to": "human_vote",
       "type": "primary"
     },
     {
-      "id": "edge-12",
+      "id": "edge-16",
+      "from": "automatic",
+      "to": "alignment",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
       "from": "human_vote",
-      "to": "human_report",
-      "type": "primary"
-    },
-    {
-      "id": "edge-13",
-      "from": "auto_report",
       "to": "alignment",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "human_report",
-      "to": "alignment",
-      "type": "primary"
+      "type": "data"
     }
   ],
   "modules": []

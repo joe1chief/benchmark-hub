@@ -5,21 +5,35 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HEAD-QA Build Process
-  description: Paper-aligned construction of the Spanish and English HEAD-QA releases and their official evaluation views.
+  description: >-
+    Version-pinned construction of the Spanish and English HEAD-QA views, followed by the exact official evaluator
+    contract from the public repository.
   legend: >-
-    HEAD-QA contains 6,765 questions in total; 2,742 is the test split, not the full dataset size. The two branches
-    preserve the same year-based split and differ only in language.
+    Solid arrows follow arXiv:1906.04701v1. Dashed arrows pin the official repository and Hugging Face release. No
+    canonical LLM prompt or generation configuration is published for this 2019 benchmark.
 nodes:
+  - id: evidence
+    label: |-
+      Fixed evidence boundary
+      arXiv:1906.04701v1
+      aghie/head-qa @ da54ff2
+      dvilares/head_qa @ d444ead
+      dataset script version 1.1.0
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: exams
     label: |-
-      Collect annual Spanish public-health exams
-      access to specialized healthcare positions
-      use official examinations from 2013 onward
+      Collect Spanish public-health exams
+      specialized healthcare positions
+      official examinations from 2013
     type: database
     size: xl
     position:
       x: 40
-      'y': 300
+      'y': 320
   - id: domains
     label: |-
       Retain six healthcare areas
@@ -28,99 +42,122 @@ nodes:
     type: process
     size: xl
     position:
-      x: 340
-      'y': 300
+      x: 320
+      'y': 320
   - id: clean
     label: |-
       Apply source-faithful exclusions
-      omit radiophysics because PDF equations resist parsing
-      remove items invalidated after the official exams
+      omit radiophysics: PDF equations
+      resist reliable parsing
+      remove officially invalidated items
     type: process
     size: xl
     position:
-      x: 640
-      'y': 300
+      x: 600
+      'y': 320
   - id: schema
     label: |-
-      Serialize each multiple-choice item
-      question ID/text · optional image path
-      answer IDs/text · correct-answer ID
+      Official record schema
+      name / year / category / qid
+      qtext / ra / optional image
+      answers contain aid + atext
     type: document
     size: xl
     position:
-      x: 940
-      'y': 300
+      x: 880
+      'y': 320
   - id: split
     label: |-
-      Keep chronological official splits
-      2013-14 train 2,657 · 2015 dev 1,366
-      later exams test 2,742 · total 6,765
+      Chronological official splits
+      2013-14 train: 2,657
+      2015 validation: 1,366
+      later test: 2,742 · total 6,765
     type: database
     size: xl
     position:
-      x: 1240
-      'y': 300
+      x: 1160
+      'y': 320
   - id: spanish
     label: |-
-      Preserve original Spanish HEAD-QA
-      2013-14 items have five choices
-      later items have four choices
+      Spanish view: same 6,765 rows
+      2013-14: five choices
+      later exams: four choices
+      ~14% medicine items cite images
     type: process
     size: xl
     position:
-      x: 1580
-      'y': 80
+      x: 1460
+      'y': 100
   - id: translate
     label: |-
-      Create HEAD-QA-EN with Google API
-      translate questions and answer choices
-      retain IDs, labels, images, and year splits
+      Google API English translation
+      translate question + answer text
+      retain IDs / labels / images / splits
     type: process
     size: xl
     position:
-      x: 1580
-      'y': 520
+      x: 1460
+      'y': 540
   - id: audit
     label: |-
       Audit 60 random translations
-      two bilingual reviewers score adequacy
-      one native speaker scores English fluency
+      bilingual adequacy: 4.35 / 5
+      second adequacy score: 4.71 / 5
+      native-English fluency: 4 / 5
     type: process
     size: xl
     position:
-      x: 1880
-      'y': 520
+      x: 1740
+      'y': 540
   - id: run_es
     label: |-
-      Run Spanish multiple-choice QA
-      paper baselines do not exploit images
-      select exactly one answer option
+      Paper Spanish baselines
+      Length / Random / Blind / IR
+      referenced images are not exploited
+      no canonical LLM prompt or config
     type: process
     size: xl
     position:
-      x: 2180
-      'y': 80
+      x: 2020
+      'y': 100
   - id: run_en
     label: |-
-      Run English/cross-lingual QA
-      use the translated question and options
-      select exactly one answer option
+      Paper English / cross-lingual runs
+      use translated questions + options
+      Length / Random / Blind / IR / DrQA
+      DrQA is English-only in official code
+      no canonical LLM prompt or config
     type: process
     size: xl
     position:
-      x: 2180
-      'y': 520
+      x: 2020
+      'y': 540
+  - id: parser
+    label: |-
+      Official eval.py contract
+      prediction line = qid + answer ID
+      gold line = qid + answer ID
+      "-" means unanswered
+    type: process
+    size: xl
+    position:
+      x: 2320
+      'y': 320
   - id: score
     label: |-
-      Compare with the official answer ID
-      report accuracy and POINTS
-      correct +3 · wrong -1
+      Accuracy + macro P/R/F1
+      official POINTS tally
+      right × 3 · wrong × -1
+      unanswered contributes 0
     type: terminal
     size: xl
     position:
-      x: 2480
-      'y': 300
+      x: 2620
+      'y': 320
 edges:
+  - from: evidence
+    to: exams
+    type: data
   - from: exams
     to: domains
     type: primary
@@ -136,9 +173,19 @@ edges:
   - from: split
     to: spanish
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
   - from: split
     to: translate
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: spanish
     to: run_es
     type: primary
@@ -149,9 +196,22 @@ edges:
     to: run_en
     type: primary
   - from: run_es
-    to: score
+    to: parser
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 0
   - from: run_en
+    to: parser
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.75
+      entryY: 1
+  - from: parser
     to: score
     type: primary
 modules: []

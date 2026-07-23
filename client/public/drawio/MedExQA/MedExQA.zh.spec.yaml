@@ -5,201 +5,404 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MedExQA 构建与评测流程
-  description: 对齐论文与官方仓库，在五个代表不足的医学专业中构建 965 道多选题，每题配两份人工核验解释， 再分别评估答案分类和解释生成。
-  legend: 每个专业抽取五条组成 25 条开发集，其余 940 条组成测试集；只要答案分类错误， 对应解释指标统一记为零。
+  description: 对齐论文 v2 与固定官方源码，展示五个代表不足医学专业中 965 道英文多选题及双解释的构建、发布与评测流程。
+  legend: 论文：arXiv:2406.06331v2。代码：knowlab/MedExQA@9a5b34af。数据： bluesky333/MedExQA@3a9f80d6。虚线分支用于显式标注未披露或实现特有的边界。
 nodes:
   - id: specialties
     label: |-
-      定义五个医学专业
-      生物医学工程
-      临床检验科学 · 临床心理学
-      作业治疗与言语语言病理学
+      确定五个代表不足的医学专业
+      生物医学工程 · 临床实验室科学
+      临床心理学 · 作业治疗
+      言语语言病理学
     type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: collect
+  - id: sources
     label: |-
-      收集公开考试题
-      免费在线模拟测试与考试
-      面向各专业资格需求
-      可用时保留原始解释
+      人工收集英文多选题
+      免费访问的模拟测验与在线考试
+      五类职业 · 来源解释用于构建
+      保留或改写方式未披露
+      60% 及格线仅作描述 · 不作筛选
     type: database
     size: xl
     position:
-      x: 260
+      x: 300
       'y': 40
-  - id: dedup
+  - id: source_boundary
     label: |-
-      移除完全重复项
+      来源溯源边界
+      论文未逐题列出来源网址
+      原始题量与来源构成未报告
+      未报告逐题上游权利审计
+    type: document
+    size: xl
+    position:
+      x: 580
+      'y': 40
+  - id: exact_dedup
+    label: |-
+      删除完全重复项
       对问题去重
       对解释去重
-      每项保留一条干净记录
+      各阶段剔除数量未报告
     type: process
     size: xl
     position:
-      x: 500
+      x: 860
       'y': 40
-  - id: semantic
+  - id: semantic_filter
     label: |-
-      过滤语义近似题
-      使用 BERT 编码问题
-      比较余弦相似度
-      移除近重复题目
+      删除语义相似问题
+      使用 BERT 表征与余弦相似度
+      检查语义近重复
+      模型版本与阈值未披露
     type: process
     size: xl
     position:
-      x: 740
+      x: 1140
       'y': 40
-  - id: legal
+  - id: legal_filter
     label: |-
-      排除法律法规题
-      使用人工定义关键词表
-      移除特定司法辖区内容
-      保留可迁移医学知识
+      排除法律法规类问题
+      使用人工整理的关键词表
+      词表与匹配规则未发布
+      本阶段剔除数量未报告
     type: process
     size: xl
     position:
-      x: 980
+      x: 1420
       'y': 40
   - id: shuffle
     label: |-
       打乱答案选项
-      改变原始选项位置
-      维护合理使用与测试完整性
-      同步保留正确标签映射
+      为合理使用调整原始选项位置
+      保持正确答案映射不变
+      算法与随机种子未披露
     type: process
     size: xl
     position:
-      x: 1220
+      x: 1700
       'y': 40
-  - id: explanations
+  - id: explanation_pair
     label: |-
-      每题提供两份解释
+      每个问答对附两份解释
       采用不同写作风格
-      说明正确答案
-      两份参考均需清晰可懂
+      对正确选项给出可理解的推理
+      全集解释对相似度为 78.7%
     type: document
     size: xl
     position:
-      x: 1460
-      'y': 40
-  - id: validation
+      x: 1700
+      'y': 420
+  - id: construction_validation
     label: |-
       人工核验每条记录
       检查问题与两份解释
       确认表达方式不同
-      确认医学推理正确
+      确认医学推理正确且可理解
     type: user
     size: xl
     position:
-      x: 1460
+      x: 1420
+      'y': 420
+  - id: construction_boundary
+    label: |-
+      构建审核边界
+      解释的撰写或选择方法未说明
+      核验人数与资质未报告
+      分工、裁决与一致性未报告
+    type: document
+    size: xl
+    position:
+      x: 1140
       'y': 420
   - id: corpus
     label: |-
       形成 965 道英文多选题
-      生医工 148 · 检验 377 · 心理 111
-      作业治疗 194
-      言语语言病理 135
+      生物医学工程 148 · 实验室科学 377
+      临床心理学 111 · 作业治疗 194
+      言语语言病理学 135
     type: database
     size: xl
     position:
-      x: 1220
+      x: 860
       'y': 420
   - id: split
     label: |-
-      划分开发集与测试集
-      每个专业取五条开发样本
-      开发集 = 25
-      测试集 = 940
+      在每个专业内划分数据
+      开发集：每类 5 道，共 25 道
+      测试集：143 + 372 + 106 + 189 + 130 = 940
+      除人工评测外，模型评测均使用测试集
     type: database
     size: xl
     position:
-      x: 980
+      x: 580
+      'y': 420
+  - id: release_rights
+    label: |-
+      发布数据集与研究资产
+      数据集采用 CC BY-NC-SA 4.0 · 仅限非商业
+      基于该数据训练的模型仅限研究用途
+      未验证可用于临床决策
+    type: terminal
+    size: xl
+    position:
+      x: 300
       'y': 420
   - id: models
     label: |-
-      评测 22 个模型
-      18 个开放基线 · 三个 GPT 模型
-      加入 MedPhi-2
-      零样本 · 批量一 · 温度零
+      评测 22 个模型条目
+      18 个开源基线 + MedPhi-2
+      GPT-3.5-1106 · GPT-4-1106 · GPT-4-0125
+      零样本 · 批大小 1 · 温度 0
     type: process
-    size: xl
-    position:
-      x: 740
-      'y': 420
-  - id: answer
-    label: |-
-      解析答案分类
-      基础模型使用下一词元 logits
-      聊天模型用正则与模糊匹配
-      将选项与标准答案比较
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 420
-  - id: metrics
-    label: |-
-      评估生成解释
-      BLEU · ROUGE-L · METEOR
-      SciBERT BERTScore
-      答案错误则解释得分为零
-    type: process
-    size: xl
-    position:
-      x: 260
-      'y': 420
-  - id: report
-    label: |-
-      人工验证并报告
-      三名健康相关硕士标注员
-      对 25 条开发样本评分 0 · 0.5 · 1
-      计算人工与自动指标相关性
-    type: terminal
     size: xl
     position:
       x: 20
       'y': 420
+  - id: evaluation_arm
+    label: |-
+      选择评测分支？
+      下一词元分类
+      或对话式答案加解释
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 820
+  - id: logits
+    label: |-
+      下一词元概率分类
+      无法取得概率的三个 GPT 接口不参与
+      汇集 A · B · C · D 的概率
+      选择概率最高的词元
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 660
+  - id: chat_generation
+    label: |-
+      生成对话式答案与解释
+      发布脚本采用贪心解码
+      不采样 · 最多生成 300 个新词元
+      将 generated_text 直接交给解析器
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 980
+  - id: chat_parser
+    label: |-
+      将对话答案解析为 A 至 D
+      替换选项文本 · 正则匹配答案句式
+      首个独立字母 · thefuzz 兜底
+      模糊匹配后不存在弃答状态
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 980
+  - id: chat_correct
+    label: |-
+      解析出的选项
+      是否等于标准答案？
+    type: decision
+    size: xl
+    position:
+      x: 860
+      'y': 980
+  - id: answer_accuracy
+    label: |-
+      计算答案准确率
+      逐题精确比较 A 至 D
+      分别报告各专业结果
+      论文报告五专业宏平均
+    type: process
+    size: xl
+    position:
+      x: 860
+      'y': 660
+  - id: explanation_metrics
+    label: |-
+      评价生成解释
+      BLEU · ROUGE-L · METEOR
+      通过 evaluate 计算 SciBERT BERTScore
+      与两份参考解释比较
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 880
+  - id: explanation_zero
+    label: |-
+      将全部解释指标强制置零
+      字符串匹配答案错误时必须执行
+      错误答案的推理不能获得部分分
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 1100
+  - id: human_evaluation
+    label: |-
+      25 道开发题人工评分规则
+      三名健康相关专业硕士评审
+      0 分：错误 / 缺失 / 无关
+      0.5 分：答案对 / 理由有缺陷
+      1 分：答案与理由均正确
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 1080
+  - id: human_boundary
+    label: |-
+      人工评审边界
+      未报告题目分配与每题评审人数
+      未报告分数聚合方式
+      未报告裁决与一致性
+    type: document
+    size: xl
+    position:
+      x: 1420
+      'y': 1440
+  - id: report
+    label: |-
+      报告评测结果
+      答案 · 解释 · 人工评价
+      五专业宏平均
+      与人工评分的相关系数
+      单参考 .9347 · 双参考 .9385
+    type: terminal
+    size: xl
+    position:
+      x: 1700
+      'y': 820
+  - id: implementation_boundary
+    label: |-
+      发布代码与分母边界
+      代码按专业写 CSV；已有 CSV 会直接复用
+      未发布解释、人工评测或宏平均流水线
+      未规定报错、缺行、版本或双参考归约策略
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 1160
 edges:
   - from: specialties
-    to: collect
+    to: sources
     type: primary
-  - from: collect
-    to: dedup
+  - from: sources
+    to: source_boundary
+    type: optional
+  - from: source_boundary
+    to: exact_dedup
     type: primary
-  - from: dedup
-    to: semantic
+  - from: exact_dedup
+    to: semantic_filter
     type: primary
-  - from: semantic
-    to: legal
+  - from: semantic_filter
+    to: legal_filter
     type: primary
-  - from: legal
+  - from: legal_filter
     to: shuffle
     type: primary
   - from: shuffle
-    to: explanations
+    to: explanation_pair
     type: primary
-  - from: explanations
-    to: validation
+  - from: explanation_pair
+    to: construction_validation
     type: primary
-  - from: validation
+  - from: construction_validation
+    to: construction_boundary
+    type: optional
+  - from: construction_boundary
     to: corpus
     type: primary
   - from: corpus
     to: split
     type: primary
   - from: split
+    to: release_rights
+    type: primary
+  - from: release_rights
     to: models
     type: primary
   - from: models
-    to: answer
+    to: evaluation_arm
     type: primary
-  - from: answer
-    to: metrics
+  - from: evaluation_arm
+    to: logits
     type: primary
-  - from: metrics
+    label: 概率分支 · 19 个非 GPT 条目
+    labelPosition: center
+  - from: evaluation_arm
+    to: chat_generation
+    type: primary
+    label: 对话分支 · 全部 22 个条目
+    labelPosition: center
+  - from: logits
+    to: answer_accuracy
+    type: primary
+  - from: chat_generation
+    to: chat_parser
+    type: primary
+  - from: chat_parser
+    to: answer_accuracy
+    type: primary
+    label: 对话准确率
+    labelPosition: center
+  - from: chat_parser
+    to: chat_correct
+    type: primary
+  - from: chat_correct
+    to: explanation_metrics
+    type: primary
+    label: 是 · 保留指标分数
+    labelPosition: center
+  - from: chat_correct
+    to: explanation_zero
+    type: optional
+    label: 否 · 全部指标置零
+    labelPosition: center
+  - from: chat_generation
+    to: human_evaluation
+    type: optional
+    label: 人工研究 · 仅开发集
+    labelPosition: center
+    waypoints:
+      - x: 440
+        'y': 1300
+      - x: 1420
+        'y': 1300
+  - from: answer_accuracy
     to: report
     type: primary
+  - from: explanation_metrics
+    to: report
+    type: primary
+  - from: explanation_zero
+    to: report
+    type: primary
+    waypoints:
+      - x: 1380
+        'y': 1020
+      - x: 1660
+        'y': 1020
+      - x: 1660
+        'y': 880
+  - from: human_evaluation
+    to: report
+    type: optional
+  - from: human_evaluation
+    to: human_boundary
+    type: optional
+  - from: report
+    to: implementation_boundary
+    type: optional
 modules: []

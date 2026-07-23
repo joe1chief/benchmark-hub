@@ -1,92 +1,170 @@
 {
   "version": 1,
-  "title": "MathCanvas-Bench Build Process",
+  "title": "MathCanvas-Bench Construction and Evaluation",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
+    "nodes": 26,
+    "edges": 28,
     "modules": 0
   },
   "nodes": [
     {
       "id": "collect",
-      "label": "Collect Multimodal Math Problems\nUse Textbooks · Exams · Websites\nCover Middle · High School\nStart with 632K Solutions",
+      "label": "Collect Multimodal Math Problems\nTextbooks · Exams · Websites\nMiddle + High School\nStart with about 632K Pairs",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "relevance_filter",
-      "label": "Run First GPT-5 Filter\nRemove Irrelevant Images\nNormalize Math into LaTeX\nRetain about 367K Items",
+      "id": "relevance_review",
+      "label": "First GPT-5 Review\nTest Whether Images Aid Reasoning\nNormalize Mathematical Formulas\ninto LaTeX",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "quality_filter",
-      "label": "Run Second GPT-5 Filter\nRemove Errors · Missing Answers\nRemove Bad Images · Drawing-only\nRetain about 303K Items",
+      "id": "relevance_gate",
+      "label": "Does the Image Contribute\nto the Reasoning Process?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "quality_review",
+      "label": "Second GPT-5 Review\nCheck Correctness + Explicit Answer\nCheck Image Clarity\nExclude Drawing-only Tasks",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality_gate",
+      "label": "Correct, Answered, Clear,\nand Not Drawing-only?",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "deduplicate",
-      "label": "Deduplicate Text and Images\nCompare Problem · Visual Content\nMerge or Remove Near Duplicates\nProduce about 222K Items",
+      "label": "Deduplicate Text and Images\nRetain Unique Problem–Solution Pairs\nAbout 303K → About 222K\nThreshold Not Reported",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "image_enhance",
-      "label": "Standardize Visual Inputs\nApply SwinIR Super-resolution\nResize Images to 512 × 512\nImprove Low-quality Figures",
+      "label": "Standardize All Images\nApply SwinIR Super-resolution\nResize to 512 × 512\nPreserve Problem–Solution Pairing",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "taxonomy",
-      "label": "Label Mathematical Categories\nClassify with GPT-4.1\nAssign Eight Major Categories\nAdd Fine-grained Subcategories",
+      "label": "Classify with GPT-4.1\nEight Major Knowledge Categories\nAdd Fine-grained Subcategories\nPrepare Category-aware Sampling",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "benchmark_sample",
-      "label": "Form the Benchmark Candidate Pool\nDraw Candidates from 222K Items\nExclude Every Multiple-choice Item\nKeep Open Visual-reasoning Tasks",
-      "type": "process",
+      "id": "quality_reject",
+      "label": "Exclude from Curated Corpus\nIrrelevant Image or Quality Failure",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "mcq_gate",
+      "label": "Multiple-choice Problem?\nBenchmark Eligibility Gate",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "weighted_sample",
-      "label": "Draw a Weighted 3K Sample\nRaise Each Category Share to 0.7\nRaise Rare Mathematical Types\nPreserve Natural Distribution",
+      "label": "Weighted Benchmark Sampling\nRaise Each Category Share to Power 0.7\nIncrease Rare-type Representation\nTarget about 3K Problems",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "leakage",
-      "label": "Control Train–Benchmark Leakage\nCompute 5-gram Jaccard Similarity\nIf Similarity Exceeds 0.4\nRemove the Training Question",
-      "type": "process",
+      "id": "sample_gate",
+      "label": "Selected for the Weighted\nBenchmark Sample?",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "release",
-      "label": "Release MathCanvas-Bench\n3,000 Open-ended Problems\nRequire Interleaved Visual · Text\nKeep about 219K Training Items",
+      "id": "benchmark_release",
+      "label": "Release MathCanvas-Bench\nPaper: 3K Problems\nPublic Snapshot: 3,079 Records\nEight Test Configurations",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "infer",
-      "label": "Run a Multimodal Model\nInput Problem and Original Image\nAllow Visual Intermediate Outputs\nGenerate Interleaved Solutions",
+      "id": "training_candidates",
+      "label": "Form Training Candidates\nBenchmark-ineligible MCQs\n+ Non-selected Open Problems\nApply Leakage Check Only Here",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "leakage_gate",
+      "label": "5-gram Jaccard Similarity > 0.4\nto Any Benchmark Question?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "training_release",
+      "label": "Release MathCanvas-Instruct\n218,604 Training Problems\nPaper Reports About 219K\nNo Detected Near-test Question",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "leakage_remove",
+      "label": "Remove from Training Set\nSimilarity Exceeds 0.4\nBenchmark Item Remains Unchanged",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "model_output",
+      "label": "Run the Evaluated LMM\nInput Question + Initial Images\nGenerate Interleaved Visual–Text\nReasoning and Final Answers",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "extract",
-      "label": "Extract Every Sub-answer\nUse GPT-4.1 for Final Answers\nCompare against Ground Truth\nRecord Each Subquestion Correctness",
+      "id": "judge_input",
+      "label": "Prepare Official Judge Input\nConcatenate Text Reasoning Steps Only\nAdd Question + Ground-truth Answer\nImages Are Not Sent to the Judge",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gpt_judge",
+      "label": "Judge with GPT-4.1-2025-04-14\nParse Tagged Ground-truth Parts\nExtract Matching Predicted Answers\nMissing Answer → null + Incorrect",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "valid_evaluation_gate",
+      "label": "API + Schema Successful\nand One to Four Parts?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "parts_gate",
+      "label": "How Many Ground-truth\nAnswer Parts?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "invalid_evaluation",
+      "label": "Exclude from Metric Denominator\nAPI/Schema Failure or Unsupported Count\nRecord Error or Skipped-item Count",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "single_score",
+      "label": "Score One Answer Part\nCorrect → 1 · Incorrect → 0\nWeighted Score Equals Binary Score",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "multi_score",
+      "label": "Score Two to Four Parts\nEach Later Part Gets 1.3× Weight\nNormalize Weights to Sum to 1\nSum Weights of Correct Parts",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "metrics",
-      "label": "Aggregate Two Metrics\nComplete: All Subanswers Correct\nWeighted: Increasing Item Weights\nReport Overall · Category Results",
+      "label": "Aggregate Official Metrics\nDenominator: valid_evaluations\nComplete: Mean All-parts-correct\nWeighted: Mean Per-problem Score",
       "type": "terminal",
       "size": "xl"
     }
@@ -95,72 +173,182 @@
     {
       "id": "edge-1",
       "from": "collect",
-      "to": "relevance_filter",
+      "to": "relevance_review",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "relevance_filter",
-      "to": "quality_filter",
+      "from": "relevance_review",
+      "to": "relevance_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "quality_filter",
-      "to": "deduplicate",
-      "type": "primary"
+      "from": "relevance_gate",
+      "to": "quality_review",
+      "type": "primary",
+      "label": "Yes · retain about 367K"
     },
     {
       "id": "edge-4",
+      "from": "relevance_gate",
+      "to": "quality_reject",
+      "type": "optional",
+      "label": "No · remove"
+    },
+    {
+      "id": "edge-5",
+      "from": "quality_review",
+      "to": "quality_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "quality_gate",
+      "to": "deduplicate",
+      "type": "primary",
+      "label": "Yes · retain about 303K"
+    },
+    {
+      "id": "edge-7",
+      "from": "quality_gate",
+      "to": "quality_reject",
+      "type": "optional",
+      "label": "No · remove"
+    },
+    {
+      "id": "edge-8",
       "from": "deduplicate",
       "to": "image_enhance",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-9",
       "from": "image_enhance",
       "to": "taxonomy",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "taxonomy",
-      "to": "benchmark_sample",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "benchmark_sample",
-      "to": "weighted_sample",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "weighted_sample",
-      "to": "leakage",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "leakage",
-      "to": "release",
-      "type": "primary"
-    },
-    {
       "id": "edge-10",
-      "from": "release",
-      "to": "infer",
+      "from": "taxonomy",
+      "to": "mcq_gate",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "infer",
-      "to": "extract",
-      "type": "primary"
+      "from": "mcq_gate",
+      "to": "training_candidates",
+      "type": "optional",
+      "label": "Yes · training only"
     },
     {
       "id": "edge-12",
-      "from": "extract",
+      "from": "mcq_gate",
+      "to": "weighted_sample",
+      "type": "primary",
+      "label": "No · benchmark candidate"
+    },
+    {
+      "id": "edge-13",
+      "from": "weighted_sample",
+      "to": "sample_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "sample_gate",
+      "to": "benchmark_release",
+      "type": "primary",
+      "label": "Selected · 3,079"
+    },
+    {
+      "id": "edge-15",
+      "from": "sample_gate",
+      "to": "training_candidates",
+      "type": "optional",
+      "label": "Not selected · train"
+    },
+    {
+      "id": "edge-16",
+      "from": "training_candidates",
+      "to": "leakage_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "leakage_gate",
+      "to": "leakage_remove",
+      "type": "optional",
+      "label": "Above 0.4 · remove"
+    },
+    {
+      "id": "edge-18",
+      "from": "leakage_gate",
+      "to": "training_release",
+      "type": "primary",
+      "label": "At most 0.4 · retain"
+    },
+    {
+      "id": "edge-19",
+      "from": "benchmark_release",
+      "to": "model_output",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "model_output",
+      "to": "judge_input",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "judge_input",
+      "to": "gpt_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "gpt_judge",
+      "to": "valid_evaluation_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "valid_evaluation_gate",
+      "to": "parts_gate",
+      "type": "primary",
+      "label": "Yes · valid evaluation"
+    },
+    {
+      "id": "edge-24",
+      "from": "valid_evaluation_gate",
+      "to": "invalid_evaluation",
+      "type": "optional",
+      "label": "No · exclude denominator"
+    },
+    {
+      "id": "edge-25",
+      "from": "parts_gate",
+      "to": "single_score",
+      "type": "primary",
+      "label": "One part"
+    },
+    {
+      "id": "edge-26",
+      "from": "parts_gate",
+      "to": "multi_score",
+      "type": "primary",
+      "label": "Two to four parts"
+    },
+    {
+      "id": "edge-27",
+      "from": "single_score",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "multi_score",
       "to": "metrics",
       "type": "primary"
     }

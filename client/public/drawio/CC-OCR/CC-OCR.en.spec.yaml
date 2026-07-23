@@ -2,16 +2,16 @@ meta:
   profile: academic-paper
   source: generated
   theme: academic-color
-  layout: horizontal
+  layout: vertical
   routing: orthogonal
   title: CC-OCR Build Process
   description: >-
     Paper-aligned construction and evaluation of 7,058 fully annotated images in 39 subsets across four OCR-centric
-    tracks, combining qualified public annotations, re-annotation, and newly collected application data with
-    task-specific output formats, metrics, and robustness diagnostics.
+    tracks, directly reusing qualified public annotations while applying the iterative annotation pipeline only to
+    re-annotated or newly collected data, with task-specific output formats, metrics, and robustness diagnostics.
   legend: >-
-    Solid arrows show benchmark construction and evaluation; dashed arrows carry source or annotation evidence into the
-    shared pipeline.
+    Solid arrows show benchmark construction and evaluation; dashed arrows carry already-qualified public annotations
+    directly into the merged pool.
 nodes:
   - id: qualified_sources
     label: |-
@@ -21,8 +21,8 @@ nodes:
     type: database
     size: xl
     position:
-      x: 40
-      'y': 40
+      x: 400
+      'y': 130
   - id: reannotated_sources
     label: |-
       Re-annotate Selected Public Data
@@ -31,8 +31,8 @@ nodes:
     type: database
     size: xl
     position:
-      x: 40
-      'y': 220
+      x: 850
+      'y': 130
   - id: new_sources
     label: |-
       Collect New Application Images
@@ -41,18 +41,18 @@ nodes:
     type: database
     size: xl
     position:
-      x: 40
-      'y': 400
+      x: 1300
+      'y': 130
   - id: source_pool
     label: |-
-      Assemble a Diverse Practical Source Pool
+      Merge Reused and Newly Reviewed Records
       Documents 52.5% • Natural Scenes 36.8% • Web 7.8%
       41% Real-application Images Newly Released
     type: process
     size: xl
     position:
-      x: 340
-      'y': 220
+      x: 850
+      'y': 805
   - id: scene_track
     label: |-
       Track 1: Multi-scene Text Reading
@@ -61,8 +61,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 640
-      'y': 0
+      x: 300
+      'y': 1030
   - id: multilingual_track
     label: |-
       Track 2: Multilingual Text Reading
@@ -71,8 +71,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 640
-      'y': 150
+      x: 675
+      'y': 1030
   - id: document_track
     label: |-
       Track 3: Document Parsing
@@ -81,8 +81,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 640
-      'y': 300
+      x: 1050
+      'y': 1030
   - id: kie_track
     label: |-
       Track 4: Key Information Extraction
@@ -91,18 +91,28 @@ nodes:
     type: process
     size: xl
     position:
-      x: 640
-      'y': 450
+      x: 1425
+      'y': 1030
   - id: annotation
     label: |-
-      Produce Task-specific Annotations
+      Annotate Only New or Re-annotated Data
       Model Pre-annotation • Cross-model Validation
-      Expert Manual Correction and Review
+      Manual Correction • Expert / LLM Review Where Reported
     type: user
     size: xl
     position:
-      x: 940
-      'y': 220
+      x: 1050
+      'y': 355
+  - id: annotated_pool
+    label: |-
+      Form the Reviewed New / Re-annotated Pool
+      Text • Documents • Tables • Information Extraction
+      Task-specific Labels Ready for Benchmark Assembly
+    type: database
+    size: xl
+    position:
+      x: 1050
+      'y': 580
   - id: formats
     label: |-
       Normalize Required Outputs
@@ -111,8 +121,8 @@ nodes:
     type: document
     size: xl
     position:
-      x: 1240
-      'y': 220
+      x: 850
+      'y': 1255
   - id: release
     label: |-
       Release the CC-OCR Test Suite
@@ -121,8 +131,8 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1540
-      'y': 220
+      x: 850
+      'y': 1480
   - id: inference
     label: |-
       Evaluate Representative LMMs
@@ -131,8 +141,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1840
-      'y': 220
+      x: 850
+      'y': 1705
   - id: task_metrics
     label: |-
       Apply Task-specific Metrics
@@ -141,8 +151,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2140
-      'y': 100
+      x: 550
+      'y': 1930
   - id: diagnostics
     label: |-
       Diagnose OCR Robustness
@@ -151,8 +161,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2140
-      'y': 340
+      x: 1150
+      'y': 1930
   - id: report
     label: |-
       Report Results by Track and Subset
@@ -161,18 +171,24 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 2440
-      'y': 220
+      x: 850
+      'y': 2155
 edges:
   - from: qualified_sources
     to: source_pool
     type: data
   - from: reannotated_sources
-    to: source_pool
-    type: data
+    to: annotation
+    type: primary
   - from: new_sources
+    to: annotation
+    type: primary
+  - from: annotation
+    to: annotated_pool
+    type: primary
+  - from: annotated_pool
     to: source_pool
-    type: data
+    type: primary
   - from: source_pool
     to: scene_track
     type: primary
@@ -186,18 +202,15 @@ edges:
     to: kie_track
     type: primary
   - from: scene_track
-    to: annotation
+    to: formats
     type: primary
   - from: multilingual_track
-    to: annotation
+    to: formats
     type: primary
   - from: document_track
-    to: annotation
+    to: formats
     type: primary
   - from: kie_track
-    to: annotation
-    type: primary
-  - from: annotation
     to: formats
     type: primary
   - from: formats

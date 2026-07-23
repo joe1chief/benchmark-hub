@@ -1,98 +1,194 @@
 {
   "version": 1,
-  "title": "MedHallu 构建与评测流程",
+  "title": "MedHallu 论文与发布代码流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 15,
+    "nodes": 30,
+    "edges": 33,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "获取 PubMedQA 记录\npqa_labeled：1,000 条专家样本\npqa_artificial：随机 9,000 条\n输入共 10,000 个问答对",
+      "id": "evidence",
+      "label": "证据与版本固定点\narXiv:2502.14302v1\n代码 3c49c8b · 数据 5150604\n审计日期 2026-07-21",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source_mix",
+      "label": "论文来源组合 · 共 10,000 条\npqa_labeled：1,000 条专家样本\npqa_artificial：随机 9,000 条\nPubMedQA 问题 + 上下文 + 标准答案",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "inputs",
-      "label": "组装生成输入\n医学问题\n相关知识上下文\n标准答案",
+      "label": "组装生成记录\n问题 · 相关知识\n标准答案",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "categories",
-      "label": "定义四类医学幻觉\n误解问题\n信息不完整\n机制错配 · 方法或证据捏造",
+      "label": "定义四类医学幻觉\n问题误解 · 信息不完整\n机制或路径错配\n方法或证据捏造",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "generate",
-      "label": "生成候选幻觉答案\nQwen2.5-14B 自选幻觉类型\n温度 0.3 至 0.7 · top-p 0.95\n最长 512 词元 · 答案长度 ±10%",
+      "label": "论文候选生成协议\nQwen2.5-14B · 温度 .3–.7\ntop-p .95 · 最长 512\n标答长度 ±10%\n标签化输出答案 + 理由",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "quality",
-      "label": "执行判别式质量检查\n比较候选答案与标准答案\nGPT-4o mini · Gemma2-9B\nQwen2.5-7B 独立投票",
+      "label": "论文质量过滤 · 多处矛盾\n共同：GPT-4o-mini\n主文：Gemma2-9B\n+ Qwen2.5-7B\n附录 E：Gemma2-2B\n+ Llama3.2-3B\n图 2/第 4 节 ≥1 · 第 3 节多数",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "correctness",
-      "label": "两层过滤是否均通过？\n质量：至少骗过一个模型\n正确性：不与标答语义等价\n双向 DeBERTa 阈值 0.75",
+      "label": "论文正确性过滤矛盾\n第 3 节：RoBERTa\n阈值未披露\n第 4 节：DeBERTa · 阈值 .75\n附录 C 加入 Llama-3.1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "initial_gate",
+      "label": "候选是否通过论文所述\n质量门与非等价门？",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "difficulty",
-      "label": "通过或重试合格：划分难度\n按骗过的判别模型数计\n一个：简单 · 两个：中等\n三个：困难",
+      "label": "按论文划分难度\n骗过 1 个：简单 · 2 个：中等\n3 个：困难",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "refine",
-      "label": "未通过：优化候选\n使用 GPT-4o mini 驱动 TextGrad\n应用质量与正确性反馈\n提升可信度与自然度",
+      "id": "textgrad",
+      "label": "优化失败候选\nGPT-4o-mini 驱动 TextGrad\n回传质量 + 正确性反馈",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "retry",
-      "label": "仅重试未通过候选\n根据 TextGrad 反馈重新生成\n重复两层过滤\n首次通过即停 · 最多五次尝试",
-      "type": "process",
+      "id": "retry_gate",
+      "label": "优化后的候选是否\n通过两项所述过滤？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "attempt_gate",
+      "label": "是否已耗尽五次\n总生成尝试？",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "fallback",
-      "label": "五次尝试耗尽：执行回退\n保留全部失败尝试\n选择与标准答案余弦相似度最高者\n将所选样本标为简单",
+      "label": "五次后执行论文回退\n取与标准答案余弦\n相似度最高者\n标记为简单",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "发布 MedHallu\n10,000 个医学问答对\n正确答案与幻觉答案\n简单 · 中等 · 困难三档",
+      "id": "release",
+      "label": "MedHallu 公开发布集\n10,000 个英文问答对\n正确答案 + 幻觉答案\n简单 · 中等 · 困难",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "settings",
-      "label": "运行两类检测设置\n无知识零样本\n提供标准知识的上下文设置\n比较通用与医学大模型",
+      "id": "repo_build_drift",
+      "label": "固定版生成器漂移\n前 9,000 条人工集 · 温度 .8\n2B + 3B · 主路径无 NLI\n解析器丢弃类别\n单行错误直接跳过\n5 轮最多生成 10 个候选\n无随机种子",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "rights",
+      "label": "发布边界\nUT Austin · UNC · Drexel\n代码/数据 MIT · 站点保留权利\n资产公开 · 仅结果页\n无提交排行榜",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "detect",
-      "label": "判断每个问题与答案\n幻觉或非幻觉\n分析可选的不确定类别\n按难度层级拆分结果",
+      "id": "eval_route",
+      "label": "当前审计哪一种\n评测合同？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "paper_settings",
+      "label": "论文检测设置\n无知识零样本\n上下文设置：\n提供 PubMedQA 知识\n仅输入输出；不确定类分开\n答案配对抽样未披露",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "paper_prompt",
+      "label": "论文二分类裁判提示\n输出 0：事实正确 · 1：存在幻觉\n仅输出整数\n解析失败处理未披露",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "paper_infer",
+      "label": "论文模型执行\n通用 + 医疗大模型\nOpenAI 接口或 HF 流水线 · 温度约 .2–.3\n随机种子与模型版本未披露",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "报告检测表现\nF1 与精确率\n总体及分难度成绩\n衡量知识与拒答带来的增益",
+      "id": "paper_metrics",
+      "label": "论文检测报告\n总体 F1 + 精确率\n简单 / 中等 / 困难 F1\n一万样本表\n各项分母未披露\n不确定类单独报告",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "repo_schema",
+      "label": "固定版运行器输入缺口\nHF 发布集：标题式列名\n运行器：小写列名\n仅生成器 CSV 可用\n无发布集适配器\n无纯二分类运行器",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "repo_pair",
+      "label": "固定版运行器组装评测对\n每行无种子随机选择\n标准答案或幻觉答案\n依据选择生成真实类别",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_infer",
+      "label": "已发布三分类 vLLM\n0 事实 · 1 幻觉\n2 不确定\n温度.3 · p.95 · 最长512 · 并行4\n半精度 · 显存 .85\n模型版本未固定",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_parser",
+      "label": "已发布解析器顺序\n1 / not / non → 类别 1\nnot sure / pass / skip / 2\n→ 类别 2\n其余 → 类别 0\n故 not sure → 类别 1",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_class",
+      "label": "解析后的类别\n是 0 或 1，还是 2？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "repo_scored",
+      "label": "对类别 0 与 1 计分\n从总体及难度层级\n分母中排除类别 2",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_abstain",
+      "label": "单独统计解析为类别 2 的样本\n报告拒答比例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "repo_failure",
+      "label": "评测子进程失败\n打印错误 · 不输出结果行",
+      "type": "loss",
+      "size": "xl"
+    },
+    {
+      "id": "repo_report",
+      "label": "固定版运行器报告\n总体精确率 · 召回率 · F1\n分难度准确率 · 精确率 · 召回率 · F1\n拒答比例",
       "type": "terminal",
       "size": "xl"
     }
@@ -100,93 +196,214 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "inputs",
+      "from": "evidence",
+      "to": "source_mix",
       "type": "primary"
     },
     {
       "id": "edge-2",
+      "from": "source_mix",
+      "to": "inputs",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
       "from": "inputs",
       "to": "categories",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-4",
       "from": "categories",
       "to": "generate",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-5",
       "from": "generate",
       "to": "quality",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "quality",
       "to": "correctness",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "correctness",
-      "to": "difficulty",
-      "type": "primary"
-    },
-    {
       "id": "edge-7",
       "from": "correctness",
-      "to": "refine",
+      "to": "initial_gate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "refine",
-      "to": "retry",
-      "type": "primary"
+      "from": "initial_gate",
+      "to": "difficulty",
+      "type": "primary",
+      "label": "是"
     },
     {
       "id": "edge-9",
-      "from": "retry",
-      "to": "difficulty",
-      "type": "primary"
+      "from": "initial_gate",
+      "to": "textgrad",
+      "type": "optional",
+      "label": "否"
     },
     {
       "id": "edge-10",
-      "from": "retry",
-      "to": "fallback",
+      "from": "textgrad",
+      "to": "retry_gate",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "fallback",
-      "to": "dataset",
-      "type": "primary"
+      "from": "retry_gate",
+      "to": "difficulty",
+      "type": "primary",
+      "label": "是"
     },
     {
       "id": "edge-12",
-      "from": "difficulty",
-      "to": "dataset",
-      "type": "primary"
+      "from": "retry_gate",
+      "to": "attempt_gate",
+      "type": "optional",
+      "label": "否"
     },
     {
       "id": "edge-13",
-      "from": "dataset",
-      "to": "settings",
-      "type": "primary"
+      "from": "attempt_gate",
+      "to": "generate",
+      "type": "optional",
+      "label": "否：重新生成新候选"
     },
     {
       "id": "edge-14",
-      "from": "settings",
-      "to": "detect",
-      "type": "primary"
+      "from": "attempt_gate",
+      "to": "fallback",
+      "type": "primary",
+      "label": "是"
     },
     {
       "id": "edge-15",
-      "from": "detect",
-      "to": "report",
+      "from": "difficulty",
+      "to": "release",
       "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "fallback",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "evidence",
+      "to": "repo_build_drift",
+      "type": "optional",
+      "label": "固定代码审计"
+    },
+    {
+      "id": "edge-18",
+      "from": "release",
+      "to": "rights",
+      "type": "optional"
+    },
+    {
+      "id": "edge-19",
+      "from": "release",
+      "to": "eval_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "eval_route",
+      "to": "paper_settings",
+      "type": "primary",
+      "label": "论文协议"
+    },
+    {
+      "id": "edge-21",
+      "from": "paper_settings",
+      "to": "paper_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "paper_prompt",
+      "to": "paper_infer",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "paper_infer",
+      "to": "paper_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "eval_route",
+      "to": "repo_schema",
+      "type": "optional",
+      "label": "固定版运行器"
+    },
+    {
+      "id": "edge-25",
+      "from": "repo_schema",
+      "to": "repo_pair",
+      "type": "optional",
+      "label": "生成器格式 CSV"
+    },
+    {
+      "id": "edge-26",
+      "from": "repo_pair",
+      "to": "repo_infer",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "repo_infer",
+      "to": "repo_parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "repo_parser",
+      "to": "repo_class",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "repo_class",
+      "to": "repo_scored",
+      "type": "primary",
+      "label": "类别 0 或 1"
+    },
+    {
+      "id": "edge-30",
+      "from": "repo_class",
+      "to": "repo_abstain",
+      "type": "optional",
+      "label": "类别 2"
+    },
+    {
+      "id": "edge-31",
+      "from": "repo_scored",
+      "to": "repo_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-32",
+      "from": "repo_abstain",
+      "to": "repo_report",
+      "type": "optional"
+    },
+    {
+      "id": "edge-33",
+      "from": "repo_infer",
+      "to": "repo_failure",
+      "type": "optional",
+      "label": "子进程错误"
     }
   ],
   "modules": []

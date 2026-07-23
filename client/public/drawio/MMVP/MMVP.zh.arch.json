@@ -1,156 +1,256 @@
 {
   "version": 1,
-  "title": "MMVP 构建流程",
+  "title": "MMVP 论文 v2 构建与配对计分流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 19,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "corpus",
-      "label": "收集图像语料\nImageNet-1K\nLAION-Aesthetics\n形成候选图像对",
+      "id": "corpora",
+      "label": "图像源语料\nImageNet-1K\nLAION-Aesthetics\n论文 §2.1",
       "type": "database",
       "size": "xl"
     },
     {
+      "id": "candidate_pairs",
+      "label": "形成候选图像对\n候选来自 ImageNet 与\nLAION-Aesthetics",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "clip",
-      "label": "使用 CLIP 编码\nCLIP ViT-L-14\n计算成对图像嵌入\n度量余弦相似度",
+      "label": "CLIP 分支\nCLIP ViT-L-14\n计算成对余弦相似度",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dino",
-      "label": "使用 DINOv2 编码\nDINOv2 ViT-L-14\n作为纯视觉参照\n度量余弦相似度",
+      "label": "纯视觉分支\nDINOv2 ViT-L-14\n计算成对余弦相似度",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "应用盲点对筛选\nCLIP 相似度高于 0.95\nDINOv2 相似度低于 0.6\n保留两种表征分歧对",
-      "type": "process",
+      "id": "blind_gate",
+      "label": "同时满足两项 CLIP 盲点条件？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "not_blind",
+      "label": "丢弃候选对\nCLIP 相似度不高于 0.95\n或 DINOv2 相似度不低于 0.6",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "inspect",
-      "label": "人工检查图像对\n定位明显视觉差异\n识别 CLIP 忽略的细节\n选择有诊断价值的内容",
+      "label": "人工检查盲点对\n定位显著视觉差异\n识别 CLIP 忽略的细节",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "questions",
-      "label": "编写配对问题\n每张图像对应一道问题\n探测被忽略的视觉细节\n保持直接且无歧义",
+      "label": "编写两道配对问题\n每张图像对应一道问题\n保持直接且无歧义\n探测同一视觉差异",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "汇总 MMVP-MLLM\n150 个图像对\n300 道问题\n每对包含两道问题",
+      "label": "MMVP-MLLM 快照\n150 个图像对 • 300 道问题\n每项输入一张图像与一道问题\narXiv:2401.06209v2",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "categorize",
-      "label": "归纳系统性失败模式\n向 GPT-4 提供问题与选项\n按视觉特征执行分类\n得到九类模式",
+      "id": "pattern_analysis",
+      "label": "GPT-4 模式分析\n输入问题与选项\n归纳通用视觉特征",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "patterns",
-      "label": "覆盖九类视觉模式\n方向 · 存在 · 状态\n数量 · 位置 · 外观\n结构 · 文本 · 视角",
-      "type": "document",
+      "label": "九类视觉模式\n方向 • 存在 • 状态 • 数量\n位置 • 外观 • 结构\n文本 • 视角",
+      "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "inference",
-      "label": "独立询问每道题\n输入一张图像与问题\n消除聊天历史偏差\n每题记录一个回答",
+      "id": "model_runner",
+      "label": "官方 LLaVA 推理脚本\n每道题独立询问\n图像 + 问题 + 选项\n温度 0.2 • 最多 1,024 Tokens",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "执行人类研究\n随机呈现全部 300 道题\n检查问题是否简单直观\n平均单题准确率 95.7%",
+      "id": "gpt_grader",
+      "label": "仓库 GPT-4 判题器\n模型 gpt-4-0314 • 温度 0.2\n系统要求仅回答 yes 或 no\nAPI 异常无限重试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "grade_gate",
+      "label": "连续两项判定都严格为“yes”？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "pair_credit",
+      "label": "该图像对计一分\n两项回答均被判为正确",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "pair_zero",
+      "label": "该图像对计零分\n任一 no 或非 yes/no 输出\n无法解析的判定不算正确",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paired_accuracy",
+      "label": "配对准确率\n正确连续图像对数 / 150\n随机猜测参照：25%",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "human_study",
+      "label": "独立人类研究\n4 名志愿者 • 300 道题\n随机顺序呈现\n平均单题准确率：95.7%",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "计算配对准确率\n要求同一对两题全对\n否则该图像对记零分\n报告模型与人类差距",
-      "type": "terminal",
+      "id": "release_boundary",
+      "label": "公开发布边界\nHF 版本 37eafecab8a3\n300 张图像 + Questions.csv • MIT 卡片\n仓库 763500597e65：根 LICENSE 缺失",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "corpus",
-      "to": "clip",
+      "from": "corpora",
+      "to": "candidate_pairs",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "clip",
-      "to": "dino",
+      "from": "candidate_pairs",
+      "to": "clip",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "dino",
-      "to": "filter",
+      "from": "candidate_pairs",
+      "to": "dino",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "filter",
-      "to": "inspect",
+      "from": "clip",
+      "to": "blind_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
+      "from": "dino",
+      "to": "blind_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "blind_gate",
+      "to": "inspect",
+      "type": "primary",
+      "label": "CLIP > 0.95 且 DINOv2 < 0.6"
+    },
+    {
+      "id": "edge-7",
+      "from": "blind_gate",
+      "to": "not_blind",
+      "type": "primary",
+      "label": "任一条件失败"
+    },
+    {
+      "id": "edge-8",
       "from": "inspect",
       "to": "questions",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-9",
       "from": "questions",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "release",
-      "to": "categorize",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "categorize",
-      "to": "patterns",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "patterns",
-      "to": "inference",
-      "type": "primary"
-    },
-    {
       "id": "edge-10",
-      "from": "inference",
-      "to": "human",
-      "type": "primary"
+      "from": "release",
+      "to": "pattern_analysis",
+      "type": "data"
     },
     {
       "id": "edge-11",
-      "from": "human",
-      "to": "score",
+      "from": "pattern_analysis",
+      "to": "patterns",
+      "type": "data"
+    },
+    {
+      "id": "edge-12",
+      "from": "release",
+      "to": "model_runner",
       "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "model_runner",
+      "to": "gpt_grader",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "gpt_grader",
+      "to": "grade_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "grade_gate",
+      "to": "pair_credit",
+      "type": "primary",
+      "label": "两项均严格为 yes"
+    },
+    {
+      "id": "edge-16",
+      "from": "grade_gate",
+      "to": "pair_zero",
+      "type": "primary",
+      "label": "任一项为 no 或其他输出"
+    },
+    {
+      "id": "edge-17",
+      "from": "pair_credit",
+      "to": "paired_accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "pair_zero",
+      "to": "paired_accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "release",
+      "to": "human_study",
+      "type": "data"
+    },
+    {
+      "id": "edge-20",
+      "from": "release",
+      "to": "release_boundary",
+      "type": "data"
     }
   ],
   "modules": []

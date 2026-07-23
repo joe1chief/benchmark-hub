@@ -5,14 +5,26 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HMMT-25 构建流程
-  description: 与论文一致的 MathArena HMMT 2025 年 2 月终答题基准构建与评测流程。
-  legend: HMMT-25 包含 2025 年 2 月 15 日发布的 30 道终答题。每题四次作答用于估计 pass@1 准确率， 不通过多数投票合并答案。
+  description: 与论文一致的 MathArena HMMT 2025 年 2 月锦标赛答案型基准构建和评测流程。
+  legend: 实线表示论文流程；虚线表示证据、时序控制和官方产物边界。每题四次独立回答用于估计 pass@1， 不做多数投票合并。
 nodes:
+  - id: evidence
+    label: |-
+      证据与固定版本
+      MathArena · arXiv 2505.23281v3
+      代码 462e6f4 · 数据集 6fdc427
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: release
     label: |-
-      选择 HMMT 2025 年 2 月赛
-      信誉良好且高难度的数学竞赛
-      官方发布日期 · 2025 年 2 月 15 日
+      选择 HMMT 2025 年 2 月锦标赛
+      仅限个人赛题
+      不含邀请赛/HMIC
+      高难度且声誉可靠的数学竞赛
+      发布于 2025 年 2 月 15 日
     type: database
     size: xl
     position:
@@ -20,9 +32,9 @@ nodes:
       'y': 300
   - id: extract
     label: |-
-      抽取 30 道终答题
-      将题面与答案转换为 LaTeX
-      保留题号和数学主题标签
+      提取 3 场个人赛 × 每场 10 道题
+      代数 · 几何 · 组合
+      按标准模板统一格式
     type: process
     size: xl
     position:
@@ -31,8 +43,8 @@ nodes:
   - id: verify
     label: |-
       逐题人工核验
-      对照官方来源检查错字、不一致
-      以及格式问题
+      对照官方来源检查错别字与不一致
+      检查题面和答案格式
     type: process
     size: xl
     position:
@@ -40,9 +52,9 @@ nodes:
       'y': 300
   - id: dataset
     label: |-
-      发布 30 行基准数据
-      problem_idx · problem · answer
-      problem_type · CC BY-NC-SA 4.0
+      发布 30 行数据集
+      problem · answer · problem_type
+      CC BY-NC-SA 4.0
     type: database
     size: xl
     position:
@@ -50,9 +62,9 @@ nodes:
       'y': 300
   - id: prompt
     label: |-
-      使用终答题提示词
+      使用最终答案提示
       要求逐步推理
-      最终答案放入 boxed 花括号
+      最终答案写入 \boxed{}
     type: document
     size: xl
     position:
@@ -60,8 +72,8 @@ nodes:
       'y': 300
   - id: runs
     label: |-
-      每题生成四次回答
-      使用模型提供方推荐超参数
+      每题生成 4 个独立回答
+      使用模型提供商推荐超参数
       不针对基准额外调参
     type: process
     size: xl
@@ -70,39 +82,49 @@ nodes:
       'y': 300
   - id: parse
     label: |-
-      解析 boxed 最终答案
-      将任意 LaTeX 转为 SymPy 结构
-      与标准答案做等价性检验
+      规则式最终答案解析器
+      任意 LaTeX → SymPy 结构
+      与标准答案做等价检查
     type: process
     size: xl
     position:
       x: 1840
-      'y': 80
-  - id: judge
+      'y': 140
+  - id: flags
     label: |-
-      复核语义等价性
-      Gemini-2.5-Flash 评判器
-      比较评判器与规则解析结果
+      GUI 标记待复核输出
+      过短或截断 · 解析器错误
+      推理轨迹有答案但未成功提取
     type: process
     size: xl
     position:
       x: 2140
-      'y': 80
-  - id: manual
+      'y': 40
+  - id: judge
     label: |-
-      人工检查歧义或告警输出
-      过短/截断 · 解析错误 · 推理中含正确答案
-      解决分歧并更新解析器
+      Gemini-2.5-Flash 评判器
+      审计语义等价性
+      与规则解析器结论对比
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 260
+  - id: reconcile
+    label: |-
+      处理被标记样本
+      人工检查每个评判分歧
+      更新解析器并做回归测试
     type: process
     size: xl
     position:
       x: 2440
-      'y': 80
+      'y': 140
   - id: timing
     label: |-
-      跟踪数据污染风险
-      尽量在竞赛发布附近评测
-      标记 2025 年 2 月 15 日后发布的模型
+      控制数据污染风险
+      临近比赛日期进行评测
+      标记赛后发布的模型
     type: process
     size: xl
     position:
@@ -111,14 +133,28 @@ nodes:
   - id: score
     label: |-
       报告 HMMT-25 结果
-      四次运行平均的 pass@1 准确率
-      分数/排名置信区间与公开回答轨迹
+      pass@1 = 4 次运行均值 · 不做多数投票
+      95% 准确率/排名区间 · 公开回答轨迹
     type: terminal
     size: xl
     position:
       x: 2740
-      'y': 300
+      'y': 140
+  - id: artifact_boundary
+    label: |-
+      官方产物边界
+      配置：T=0.6 · 最多 16,000 token
+      strict_parsing=false
+      数据集版本晚于代码固定点
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 520
 edges:
+  - from: evidence
+    to: release
+    type: data
   - from: release
     to: extract
     type: primary
@@ -137,19 +173,68 @@ edges:
   - from: runs
     to: parse
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: parse
+    to: flags
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
   - from: parse
     to: judge
     type: primary
-  - from: judge
-    to: manual
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: flags
+    to: reconcile
     type: primary
-  - from: manual
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: judge
+    to: reconcile
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: reconcile
     to: score
     type: primary
   - from: runs
     to: timing
     type: secondary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: timing
     to: score
     type: secondary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 1
+  - from: score
+    to: artifact_boundary
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
 modules: []

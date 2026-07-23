@@ -8,9 +8,19 @@ meta:
   description: 对齐论文的 HiPhO 构建流程：从具有选手成绩的 2024-2025 年高影响力物理奥赛出发，经 OCR、全量专家核验、 官方评分细则结构化、多模态标注、答案与步骤评分，最终与奖牌线比较。
   legend: 13 套考试中 7 套提供官方评分细则，4 套允许多种官方解法；其余 6 套走仅答案级评分路径。每个抽取的题解对均经人工核验。
 nodes:
+  - id: evidence
+    label: |-
+      一手证据与固定快照
+      arXiv:2509.07894v4 · 第 3.1-4 节 · 附录 A.1-A.2
+      论文期公开树 b7f4814 · data/*.json
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 80
   - id: select
     label: |-
-      选择最新物理奥赛
+      选择 13 套最新考试试卷
       2024-2025 年 7 项高影响力竞赛
       要求存在可用人类选手成绩
     type: process
@@ -112,7 +122,7 @@ nodes:
     label: |-
       执行答案级评分
       先用规则数学验证器
-      失败的等价表达式交强模型复核
+      失败的等价表达式交 Gemini-2.5-Flash 复核
     type: process
     size: xl
     position:
@@ -131,7 +141,7 @@ nodes:
   - id: step_grade
     label: |-
       授予步骤级部分分
-      强模型逐条核对官方评分点
+      Gemini-2.5-Flash 逐条核对官方评分点
       4 套多解考试取最高方案分
     type: process
     size: xl
@@ -151,8 +161,8 @@ nodes:
   - id: problem_score
     label: |-
       计算每题分数
-      最终答案正确 = 满分
-      否则保留已完成中间步骤得分
+      取答案级与步骤级分数的较高值
+      最终答案正确得满分；否则保留部分步骤分
     type: process
     size: xl
     position:
@@ -168,7 +178,21 @@ nodes:
     position:
       x: 3640
       'y': 420
+  - id: artifact_boundary
+    label: |-
+      公开发布 / 未披露边界
+      论文期 b7f4814：13 个公开考试 JSON 文件
+      当前 8db13ae + HF 8e196c0 已加入 CPhO 2025
+      OCR 中间件 / 专家复核日志未发布
+    type: document
+    size: xl
+    position:
+      x: 3940
+      'y': 420
 edges:
+  - from: evidence
+    to: select
+    type: data
   - from: select
     to: source
     type: primary
@@ -223,4 +247,7 @@ edges:
   - from: problem_score
     to: medal
     type: primary
+  - from: medal
+    to: artifact_boundary
+    type: data
 modules: []

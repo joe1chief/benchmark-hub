@@ -5,16 +5,14 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CharacterEval 构建流程
-  description: >-
-    按 ACL 论文构建并评测 77 个角色的 1,785 段中文角色扮演对话和 11,376 个样本：用 GPT-4 切分剧情并抽取对话， 经 ABAB 与轮数过滤、人工质检、角色档案补全，再用 12 项主观指标和 MBTI
-    人格回测评估。
-  legend: 实线表示数据构建与评测，虚线表示人类标签进入 CharacterRM。
+  description: 对齐 ACL 论文的中文角色扮演对话构建与评测：GPT-4 剧情切分和抽取、结构过滤、人工质检、角色档案与 MBTI 补全、 论文版本数据划分、由 CharacterRM 判断的十二项主观指标，以及独立的 MBTI 人格回测。
+  legend: 实线表示构建与评测；虚线表示角色档案和人类标签的数据输入。
 nodes:
   - id: sources
     label: |-
       收集中文小说与剧本
-      覆盖多种体裁、场景和主要角色
-      保持对原始作品的忠实性
+      选择 77 个主要角色
+      覆盖多体裁与多场景
     type: database
     size: xl
     position:
@@ -24,7 +22,7 @@ nodes:
     label: |-
       遵循四项采集原则
       原作忠实 • 分布多样
-      多轮对话 • 人在回路
+      多轮特征 • 人工在环
     type: document
     size: xl
     position:
@@ -32,9 +30,9 @@ nodes:
       'y': 220
   - id: plot_division
     label: |-
-      用 GPT-4 识别剧情转折
-      在语义边界切分叙事文本
-      保证每个片段包含完整剧情
+      GPT-4 识别剧情转折
+      在连续剧情终点切分
+      保持叙事片段完整
     type: process
     size: xl
     position:
@@ -42,9 +40,10 @@ nodes:
       'y': 220
   - id: extract
     label: |-
-      用 GPT-4 抽取角色扮演对话
-      保留台词、行为与场景
-      把回复表示为行为加台词
+      GPT-4 抽取
+      角色扮演对话
+      保留台词 • 行为 • 场景
+      回复 = 行为 + 台词
     type: process
     size: xl
     position:
@@ -52,9 +51,10 @@ nodes:
       'y': 220
   - id: filter
     label: |-
-      过滤对话结构与长度
-      保留两角色 ABAB 对话直到第三人加入
-      仅保留超过五轮的对话
+      保留 ABAB
+      直到第三人加入
+      仅保留超过 5 轮的对话
+      过滤短/破损结构
     type: process
     size: xl
     position:
@@ -63,8 +63,8 @@ nodes:
   - id: human_qc
     label: |-
       人工审查连贯性与质量
-      移除损坏或低质量样本
-      保留真实多轮角色互动
+      移除有问题的样本
+      保留真实多轮互动
     type: user
     size: xl
     position:
@@ -73,53 +73,57 @@ nodes:
   - id: profiles
     label: |-
       补全角色档案
-      从百度百科获取知识、行为和说话风格
-      收集角色 MBTI 标签用于回测
+      档案来自百度百科
+      知识 • 行为
+      说话风格
     type: database
     size: xl
     position:
       x: 1840
-      'y': 80
+      'y': 220
   - id: release
     label: |-
-      发布论文版本 CharacterEval
-      77 个角色 • 1,785 段对话
-      11,376 个样本 • 按样本而非对话划分
+      论文版 CharacterEval
+      77 角色 • 1,785 对话
+      标题总数 11,376
+      训练 6,811 • 测试 4,564
     type: database
-    size: xl
-    position:
-      x: 1840
-      'y': 340
-  - id: model
-    label: |-
-      运行角色扮演对话 Agent
-      输入角色档案与多轮上下文
-      生成行为与台词
-    type: process
     size: xl
     position:
       x: 2140
       'y': 220
-  - id: human_labels
+  - id: model
     label: |-
-      12 位标注员评价模型回答
-      稀疏主观指标矩阵 • 五分量表
-      人类判断用于训练 CharacterRM
-    type: user
+      角色档案 + 上下文
+      运行 RPCA
+      生成行为 + 台词
+      收集待评模型回复
+    type: process
     size: xl
     position:
       x: 2440
-      'y': 0
-  - id: rm
+      'y': 220
+  - id: human_labels
     label: |-
-      训练 CharacterRM
-      以 Baichuan2-13B-base 为骨干
-      判断 12 项主观指标
-    type: process
+      12 位标注员
+      稀疏指标矩阵
+      所选指标五分制评分
+      供 CharacterRM 使用
+    type: user
     size: xl
     position:
       x: 2740
       'y': 0
+  - id: rm
+    label: |-
+      训练 CharacterRM
+      Baichuan2-13B-base
+      判断 12 项主观指标
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 160
   - id: conversation
     label: |-
       对话能力
@@ -127,7 +131,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 3040
+      x: 3340
       'y': 0
   - id: character
     label: |-
@@ -137,7 +141,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 3040
+      x: 3340
       'y': 160
   - id: attractiveness
     label: |-
@@ -147,28 +151,40 @@ nodes:
     type: process
     size: xl
     position:
-      x: 3040
+      x: 3340
       'y': 320
   - id: personality
     label: |-
-      人格回测
-      心理访谈与 MBTI 分类
-      对照角色标签报告 MBTI 准确率
+      MBTI 回测
+      覆盖 54 个角色
+      以角色身份回答人格问卷
+      对比预测与真值 MBTI
     type: process
     size: xl
     position:
-      x: 2740
+      x: 3040
       'y': 480
+  - id: mbti_labels
+    label: |-
+      Personality Database
+      54 个 MBTI 真值标签
+      仅用于人格回测
+    type: database
+    size: xl
+    position:
+      x: 2740
+      'y': 600
   - id: report
     label: |-
-      报告四维 13 项指标
-      比较通用与角色扮演专用 LLM
-      分析不同对话轮次的质量
+      12 项主观 + 1 项 MBTI
+      共 13 项指标 • 四个维度
+      CharacterRM 相关性
+      高于 GPT-4
     type: terminal
     size: xl
     position:
-      x: 3340
-      'y': 220
+      x: 3640
+      'y': 160
 edges:
   - from: sources
     to: principles
@@ -188,18 +204,32 @@ edges:
   - from: human_qc
     to: profiles
     type: primary
-  - from: human_qc
+  - from: profiles
     to: release
+    type: primary
+  - from: release
+    to: model
     type: primary
   - from: profiles
     to: model
     type: data
-  - from: release
-    to: model
-    type: primary
+    waypoints:
+      - x: 1992
+        'y': 218
+      - x: 1992
+        'y': 120
+      - x: 2288
+        'y': 120
+      - x: 2288
+        'y': 218
   - from: model
     to: human_labels
     type: primary
+    waypoints:
+      - x: 2840
+        'y': 270
+      - x: 2840
+        'y': 150
   - from: human_labels
     to: rm
     type: data
@@ -215,6 +245,9 @@ edges:
   - from: model
     to: personality
     type: primary
+  - from: mbti_labels
+    to: personality
+    type: data
   - from: conversation
     to: report
     type: primary
@@ -227,4 +260,11 @@ edges:
   - from: personality
     to: report
     type: primary
+    waypoints:
+      - x: 3580
+        'y': 530
+      - x: 3740
+        'y': 530
+      - x: 3740
+        'y': 300
 modules: []

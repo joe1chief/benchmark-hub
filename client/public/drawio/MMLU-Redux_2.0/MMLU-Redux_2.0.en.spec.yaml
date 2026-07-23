@@ -1,181 +1,557 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMLU-Redux 2.0 Build Process
+  title: MMLU-Redux 2.0 Build and Evaluation Process
   description: >-
-    Paper-aligned expert re-annotation of 5,700 MMLU test questions, spanning all 57 subjects and supporting error-aware
-    comparison of all-item and correct-only exact-match scores.
+    Paper-v3 and release-snapshot aligned expansion from 30 to all 57 MMLU subjects, with 5,700 expert annotations,
+    hierarchical error labels, agreement audit, full-MMLU weighted error estimation, HELM re-scoring, and automatic
+    error-detection prompts and parsers.
   legend: >-
-    Suggested correct answers are annotation metadata; the paper does not replace original MMLU labels with them for its
-    evaluation.
+    MMLU-Redux 2.0 adds 100 questions from each of the 27 subjects missing from the original 30-subject release and
+    normalizes or re-annotates rows where needed. The original MMLU answer remains the evaluation label; suggested
+    correct_answer values are metadata. Dashed failure paths describe the public implementation rather than the ideal
+    paper protocol.
 nodes:
-  - id: sample
+  - id: mmlu_source
     label: |-
-      Sample the MMLU Test Set
-      Select 100 Questions
-      From Each of 57 Subjects
-      Total 5,700 Questions
+      Original MMLU Test Set
+      57 Subjects • 14,042 Test Rows
+      Preserve Question, Choices,
+      and Original 0–3 Answer Index
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: taxonomy
+      x: 40
+      'y': 120
+  - id: expansion
     label: |-
-      Define Error Taxonomy
-      Bad Question or Options
-      No or Multiple Correct Answers
-      Wrong Ground Truth · OK · Expert
-    type: document
+      Expand the Original Redux Scope
+      Start: 30 × 100 = 3,000 Rows
+      Add Remaining 27 × 100 = 2,700
+      for MMLU-Redux 2.0
+    type: process
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: assign
+      x: 320
+      'y': 120
+  - id: sample_union
+    label: |-
+      Form the 2.0 Audit Set
+      30 + 27 = All 57 Subjects
+      100 Rows per Subject • 5,700 Total
+      Normalize / Re-annotate as Needed
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 120
+  - id: experts
     label: |-
       Assign 14 Human Experts
       Match Subject Expertise
-      Review Questions and Choices
-      Inspect Original Answers
+      Inspect Question, Choices,
+      and Original Ground Truth
     type: user
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: source
+      x: 880
+      'y': 120
+  - id: source_route
     label: |-
-      Trace Supporting Sources
-      Find the Original When Possible
-      Otherwise Use Trusted Sources
-      Prefer Official or Textbook Evidence
+      Exact Question + Choices
+      Found in a Source?
+    type: decision
+    size: xl
+    position:
+      x: 1160
+      'y': 120
+  - id: original_source
+    label: |-
+      Inspect Matched Source
+      Check Its Answer and Context
+      Still Apply Subject Expertise
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: annotate
+      x: 1440
+      'y': 20
+  - id: trusted_source
     label: |-
-      Annotate Every Sampled Row
-      Record Error Type and Source
-      Suggest a Correct Answer
-      Add Supporting Explanation
+      Search Trusted Evidence
+      Government • Textbooks • WHO
+      Other Authoritative Sources
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: uncertain
+      x: 1440
+      'y': 220
+  - id: confidence
     label: |-
-      Escalate Uncertain Cases
-      Mark Them as Expert
-      Avoid Unsupported Decisions
-      Preserve Auditability
+      Enough Evidence and Expertise
+      to Classify the Row?
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 120
+  - id: question_clear
+    label: |-
+      Question Clear,
+      Unambiguous, and Complete?
+    type: decision
+    size: xl
+    position:
+      x: 2000
+      'y': 120
+  - id: options_clear
+    label: |-
+      Choices Clear,
+      Distinct, and Well Formed?
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 220
+  - id: valid_answers
+    label: |-
+      How Many Choices Are
+      Actually Correct?
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 320
+  - id: gt_match
+    label: |-
+      Exactly One Correct Choice
+      Does Original MMLU
+      Ground Truth Match It?
+    type: decision
+    size: xl
+    position:
+      x: 2840
+      'y': 520
+  - id: label_merge
+    label: |-
+      Emit Error / Expert Label
+      Expert • BQC • BOC
+      NCA • MCA • WGT
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: agreement
+      x: 3120
+      'y': 300
+  - id: record
     label: |-
-      Check Inter-annotator Agreement
-      Triple-annotate Five Subjects
-      Focus on Error-rich Subjects
-      Cohen's Kappa Exceeds 0.6
-    type: user
+      Write Seven-field Row
+      question • choices • answer
+      error_type • source
+      correct_answer • potential_reason
+    type: document
     size: xl
     position:
-      x: 1420
-      'y': 420
+      x: 3400
+      'y': 300
   - id: release
     label: |-
-      Assemble Redux 2.0 Metadata
-      Question · Choices · Original Answer
-      Error Type · Source · Suggested Answer
-      Cover All 57 MMLU Subjects
+      MMLU-Redux 2.0 Release
+      All 57 Subjects × 100 Rows
+      5,700 Expert Annotations
+      Public • CC BY 4.0
     type: database
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: estimate
+      x: 3680
+      'y': 300
+  - id: source_pin
     label: |-
-      Estimate Full-MMLU Error Rate
-      Aggregate Subject Samples
-      Weight the Observed Errors
-      Report 6.49 Percent
-    type: process
+      Scope and Version Pin
+      arXiv v3 • 2025-01-10
+      Dataset snapshot 63f54eb
+      DOI 10.57967/hf/3469
+      HF = 57 × 100 • CC BY 4.0
+      Appendix / repo retain stale “30”
+      Current 372ea: two Feb 2025 fixes
+    type: document
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: original
+      x: 3960
+      'y': 300
+  - id: agreement_audit
     label: |-
-      Score Model Predictions
-      Use Original Exact Match
-      Report Results on All Items
-      Preserve the Paper's Protocol
-    type: process
+      Triple-annotate Five Subjects
+      Virology • Logical Fallacies
+      College Chemistry • Formal Logic
+      Human Sexuality
+      Both Cohen's Kappa Views > 0.6
+    type: user
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: filter
+      x: 3680
+      'y': 720
+  - id: weighted_estimate
     label: |-
-      Build the Correct-only View
-      Filter by Error-type Metadata
-      Exclude Erroneous and Expert Rows
-      Recompute Exact Match
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 420
-  - id: compare
-    label: |-
-      Compare Scores and Rankings
-      All Items versus Correct Only
-      Quantify Annotation Effects
-      Report Accuracy Changes
+      Stratified Full-MMLU Estimate
+      Per-subject Sample Error Rates
+      Weighted by Original Subject Sizes
+      Denominator = 14,042 Test Rows
+      OK 93.51% • Five Errors 6.49%
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 3680
+      'y': 900
+  - id: experiment_route
+    label: |-
+      Paper Experiment Route
+      HELM Re-scoring or
+      Automatic Error Detection?
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 1180
+  - id: helm_archive
+    label: |-
+      Archived HELM Predictions
+      Leaderboard v1.3.0
+      No New Candidate Prompting
+    type: database
+    size: xl
+    position:
+      x: 3400
+      'y': 1080
+  - id: align
+    label: |-
+      Align and Exact-match Score
+      Exact Question + Choices First
+      Duplicate → First; Fuzzy 90, −5
+      HELM Answer vs Original A–D Label
+      Suggested correction is not substituted
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1080
+  - id: score_report
+    label: |-
+      Partition + Mean Exact Match
+      All • OK • Erroneous
+      Denominator = Actual Group Rows
+      Five Highest-error Subject Tables
+      30-subject Plot in Public Code
+    type: terminal
+    size: xl
+    position:
+      x: 2560
+      'y': 1080
+  - id: prompt_route
+    label: |-
+      Detection Method Route
+      Zero/Few-shot, CoT/RAG,
+      or Instruction Tuning?
+    type: decision
+    size: xl
+    position:
+      x: 3400
+      'y': 1420
+  - id: plain_prompt
+    label: |-
+      Plain Zero/Few-shot + Parser
+      Output only “ok” or “not ok”
+      Few-shot: 2 Examples per Error Type
+      temp 0 • top_p 1 • max_tokens 600
+      Default Random Seed
+      trim + lowercase full response
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 1320
+  - id: cot_rag_prompt
+    label: |-
+      CoT / RAG Prompt + Parser
+      Test Clarity → Answer Count → GT
+      RAG: top-5 BM25 Wiki / MS MARCO
+      Same Generation Settings as Plain
+      Last-line JSON; require Classification
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 1520
+  - id: tune_protocol
+    label: |-
+      Instruction-tuning Route
+      Llama3-8B on LabelChaos
+      Classify “ok” / “not ok”
+      Apply the Same Binary Label Check
+    type: process
+    size: xl
+    position:
+      x: 3120
+      'y': 1720
+  - id: parse_gate
+    label: |-
+      Canonical Parsed Label
+      “ok” or “not ok”?
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 1420
+  - id: coerce_non_ok
+    label: |-
+      Repository Failure Mapping
+      Verbose / Invalid Prediction
+      Becomes Non-OK in Binary Conversion
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1520
+  - id: api_abort
+    label: |-
+      Request / File Failure
+      Public Scripts Have No Retry Path
+      Exception Aborts the Run
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 1960
+  - id: detection_metrics
+    label: |-
+      Paper Detection Metrics
+      Models: GPT-4 Turbo / GPT-4o
+      Claude 3 Opus / Llama3-70B
+      “not ok” Positive • Recall / F1 / F2
+      Drift: Non-RAG Code Sets OK = 1
+      Invalid Output Maps to Non-OK
+    type: terminal
+    size: xl
+    position:
+      x: 2000
+      'y': 1320
 edges:
-  - from: sample
-    to: taxonomy
+  - from: mmlu_source
+    to: expansion
     type: primary
-  - from: taxonomy
-    to: assign
+  - from: expansion
+    to: sample_union
     type: primary
-  - from: assign
-    to: source
+  - from: sample_union
+    to: experts
     type: primary
-  - from: source
-    to: annotate
+  - from: experts
+    to: source_route
     type: primary
-  - from: annotate
-    to: uncertain
+  - from: source_route
+    to: original_source
     type: primary
-  - from: uncertain
-    to: agreement
+    label: Found
+  - from: source_route
+    to: trusted_source
     type: primary
-  - from: agreement
+    label: Not found
+  - from: original_source
+    to: confidence
+    type: primary
+  - from: trusted_source
+    to: confidence
+    type: primary
+  - from: confidence
+    to: question_clear
+    type: primary
+    label: 'Yes'
+  - from: confidence
+    to: label_merge
+    type: primary
+    label: No → Expert
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.1
+  - from: question_clear
+    to: label_merge
+    type: primary
+    label: No → BQC
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.25
+  - from: question_clear
+    to: options_clear
+    type: primary
+    label: 'Yes'
+  - from: options_clear
+    to: label_merge
+    type: primary
+    label: No → BOC
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.4
+  - from: options_clear
+    to: valid_answers
+    type: primary
+    label: 'Yes'
+  - from: valid_answers
+    to: label_merge
+    type: primary
+    label: None → NCA
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.55
+  - from: valid_answers
+    to: label_merge
+    type: primary
+    label: Multiple → MCA
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.7
+  - from: valid_answers
+    to: gt_match
+    type: primary
+    label: One
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: gt_match
+    to: label_merge
+    type: primary
+    label: No → WGT
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.85
+  - from: gt_match
+    to: record
+    type: primary
+    label: Yes → OK
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.2
+  - from: label_merge
+    to: record
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+  - from: record
     to: release
     type: primary
   - from: release
-    to: estimate
+    to: source_pin
+    type: dependency
+  - from: release
+    to: agreement_audit
+    type: data
+  - from: release
+    to: weighted_estimate
+    type: data
+  - from: release
+    to: experiment_route
     type: primary
-  - from: estimate
-    to: original
+  - from: experiment_route
+    to: helm_archive
     type: primary
-  - from: original
-    to: filter
+    label: HELM
+  - from: helm_archive
+    to: align
     type: primary
-  - from: filter
-    to: compare
+  - from: align
+    to: score_report
     type: primary
+  - from: experiment_route
+    to: prompt_route
+    type: primary
+    label: Detection
+  - from: prompt_route
+    to: plain_prompt
+    type: primary
+    label: Zero / Few
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.5
+  - from: prompt_route
+    to: cot_rag_prompt
+    type: primary
+    label: CoT / RAG
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: prompt_route
+    to: tune_protocol
+    type: primary
+    label: Tune
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.5
+  - from: plain_prompt
+    to: parse_gate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.25
+  - from: cot_rag_prompt
+    to: parse_gate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: tune_protocol
+    to: parse_gate
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.75
+  - from: parse_gate
+    to: detection_metrics
+    type: primary
+    label: Valid
+  - from: parse_gate
+    to: coerce_non_ok
+    type: primary
+    label: Invalid / verbose
+  - from: coerce_non_ok
+    to: detection_metrics
+    type: primary
+  - from: plain_prompt
+    to: api_abort
+    type: optional
+    label: Exception
+  - from: cot_rag_prompt
+    to: api_abort
+    type: optional
+    label: Exception
 modules: []

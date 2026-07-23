@@ -5,207 +5,584 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MotionBench 构建与评测流程
-  description: 对齐论文展示三路视频整理、细粒度运动问答生成、纯图像捷径过滤、人工复核、划分与准确率评测。
-  legend: 最终基准含 5,385 个视频与 8,052 道选择题，覆盖运动识别、位置、动作顺序、重复计数、运动对象和相机运动。
+  description: 对齐论文 v2 与发布数据，展示三路视频整理、动态字幕问答构建、首帧捷径门槛、数据实际划分，以及论文、公开代码与私有 Space 的不同评分语义。
+  legend: 证据固定为 arXiv:2501.02955v2、代码 dcc9b071、数据 f099db892 与 Space a4033176。实线为已披露流程，虚线为旁支发布或审计边界；官方数据开发集为 4,018 题。
 nodes:
-  - id: goal
+  - id: evidence
     label: |-
-      定义细粒度运动评测
-      关注动态而非静态感知
-      六类运动导向任务
-      多项选择视频问答
+      固定一手证据
+      论文 · arXiv 2501.02955v2
+      第 3 节 · 表 2–3
+      补充材料第 9–10 节
+      代码 dcc9b071 · 数据 f099db892
+      Space a4033176
     type: document
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 20
-      'y': 230
-  - id: intricate
+      'y': 720
+  - id: stream_gate
     label: |-
-      收集复杂交互视频
-      Panda-70M · Pexels
-      自行收集的电影片段
-      用 PySceneDetect 划分事件
+      路由细粒度动态多选视频问答
+      六类任务 · 三路数据
+      复杂交互 · Pexels / Panda / 电影
+      特定领域 · Unity 合成
+    type: decision
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 500
+      'y': 720
+  - id: pexels
+    label: |-
+      收集 Pexels 视频
+      自行收集的网络来源
+      表 2 · 直接采用
+      不执行场景切分
     type: database
     size: xl
     position:
-      x: 260
-      'y': 40
-  - id: fields
+      x: 1020
+      'y': 20
+  - id: segment
     label: |-
-      收集特定领域视频
-      MedVid · SportsSloMo · Ha-ViD
-      最小边大于 448
-      时长 3 至 60 秒
-    type: database
+      收集并切分其他复杂交互视频
+      Panda-70M + 电影片段
+      切分事件级片段
+      论文引用 PySceneDetect
+      参数未披露
+    type: process
     size: xl
     position:
-      x: 260
-      'y': 230
-  - id: synthetic
-    label: |-
-      在 Unity 中渲染合成视频
-      20 种动作 · 6 个角色 · 5 个场景
-      从 15 个视角中采样
-      人工移除遮挡样本
-    type: database
-    size: xl
-    position:
-      x: 260
-      'y': 420
+      x: 1020
+      'y': 360
   - id: captions
     label: |-
-      标注动态字幕
-      15 名本科以上标注员
+      标注 2,355 个复杂交互视频
+      Pexels 直接采用 + 其他来源切分
+      15 名成年标注员
+      至少具备本科学历
       持续 20 个工作日
-      二次复核
+      每条字幕都经过二次复核
     type: process
     size: xl
     position:
-      x: 500
-      'y': 40
-  - id: generate
+      x: 1740
+      'y': 220
+  - id: caption_release
+    label: |-
+      发布 MotionBenchCaption-train
+      独立的字幕数据资产
+      5,000 个视频 · 5,000 条字幕
+      人工标注 + 双重检查
+      论文 · 每秒 12.63 个词
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1740
+      'y': 0
+  - id: gpt4o
     label: |-
       生成复杂交互问答
-      GPT-4o 每视频生成 6 题
-      问题依据动态字幕
-      覆盖运动专属推理
+      GPT-4o 读取动态字幕
+      每视频约生成六道问题
+      问题聚焦动态信息
+      生成时分配任务类别
     type: process
     size: xl
     position:
-      x: 740
-      'y': 40
-  - id: shortcut
+      x: 1980
+      'y': 220
+  - id: first_frame_gate
     label: |-
-      删除静态捷径题
-      仅看首帧的 GPT-4o
-      Qwen2-VL · GLM-4V-plus
-      三者全答对则丢弃
-    type: process
+      三个图像模型是否都能
+      仅凭首帧回答正确？
+      GPT-4o · Qwen2-VL
+      GLM-4V-plus
+    type: decision
     size: xl
     position:
-      x: 980
-      'y': 40
-  - id: review
+      x: 2220
+      'y': 220
+  - id: discard
     label: |-
-      人工复核复杂交互问答
-      10 名标注员持续 5 天
-      删除歧义或错误题
-      分类并二次复核
-    type: process
-    size: xl
-    position:
-      x: 1220
-      'y': 40
-  - id: direct
-    label: |-
-      构建另外两路问答
-      直接标注特定领域问答
-      按真值自动生成合成问答
-      2,530 加 600 道
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 420
-  - id: combine
-    label: |-
-      合并三路问答
-      复杂：2,355 视频 · 4,922 问答
-      特定：2,430 视频 · 2,530 问答
-      合成：600 视频 · 600 问答
-    type: database
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: categories
-    label: |-
-      标注六类运动任务
-      MR 识别 · LM 位置
-      AO 顺序 · RC 计数 · MO 对象
-      CM 相机运动
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: split
-    label: |-
-      发布并随机划分
-      5,385 视频 · 8,052 问答
-      开发集 4,020 · 测试集 4,034
-      测试标签通过在线提交评测
-    type: database
-    size: xl
-    position:
-      x: 1460
-      'y': 650
-  - id: evaluate
-    label: |-
-      评测视频语言模型
-      追加仅回复最佳选项指令
-      用正则解析首个大写字母
-      保留随机基线
-    type: process
-    size: xl
-    position:
-      x: 1220
-      'y': 650
-  - id: report
-    label: |-
-      报告运动理解表现
-      总体选择题准确率
-      六个类别分别的准确率
-      标注密度 68.4
+      淘汰静态捷径题
+      三个模型均回答正确
+      默认不会重新生成
     type: terminal
     size: xl
     position:
-      x: 980
-      'y': 650
+      x: 2460
+      'y': 0
+  - id: manual_review
+    label: |-
+      检查并固化保留的复杂交互问答
+      10 名标注员 · 5 天
+      题意 / 类别 / 视频相关性
+      选项 / 唯一正确答案
+      每条标注都经过二次复核
+      2,355 个视频 · 4,922 道问答
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 2460
+      'y': 300
+  - id: field_sources
+    label: |-
+      收集并提取领域片段
+      MedVid · SportsSloMo · HA-ViD
+      论文筛选 · min(H,W) > 448 · [3,60] 秒
+      映射来源 + 应用起止时间
+      选择规则 · 不保证最终时长
+      发布片段包含短于 3 秒者
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1020
+      'y': 720
+  - id: field_qa
+    label: |-
+      直接标注并固化领域问答
+      按预设任务类型构题 · 分配类别
+      医疗 · 431 个视频 / 449 道问答
+      体育 · 805 / 851
+      工业 · 1,194 / 1,230
+      合计 · 2,430 个视频 / 2,530 道问答
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1500
+      'y': 720
+  - id: synthetic_recipe
+    label: |-
+      渲染并固化 Unity 问答
+      Mixamo · 20 种动作 · 6 个角色 · 5 个场景
+      15 视角池 · 人工移除遮挡
+      场景真值 -> 自动问答与选项 · 分配类别
+      参数未披露 · 600 个视频 / 600 道问答
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 760
+      'y': 1200
+  - id: merge
+    label: |-
+      合并并固化发布数据 · f099db892
+      三路数据 · 5,385 个不同视频
+      8,052 行多项选择问答
+      字段 · video_uid / question / options
+      category / answer 或 NA
+      两个划分间无视频重叠
+    type: database
+    size: xl
+    position:
+      x: 2940
+      'y': 720
+  - id: data_stats
+    label: |-
+      发布元数据审计 · 不是构建步骤
+      识别 2,944 · 对象 1,415 · 位置 1,143
+      顺序 1,001 · 相机 775 · 计数 774
+      选项 · 四项 7,610 · 三项 363
+      两项 75 · 单项 4
+      论文报告标注密度 · 68.4
+    type: document
+    size: xl
+    style:
+      fontSize: 8
+    position:
+      x: 2940
+      'y': 1120
+  - id: build_boundary
+    label: |-
+      构建复现边界
+      缺少来源标识 / 筛选日志
+      场景检测参数
+      Unity 工程 / 资产 / 随机种子
+      模型版本 / 门槛提示词
+      划分脚本 / 随机种子
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 2700
+      'y': 1440
+  - id: rights_boundary
+    label: |-
+      发布与权利边界
+      代码 · Apache-2.0
+      HF 数据 · CC-BY-NC-SA-4.0
+      仅研究使用 + 上游条款
+      不拥有原始视频版权
+      适用再分发限制
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 3180
+      'y': 1120
+  - id: split_release
+    label: |-
+      发布数据实际开发集 / 测试集划分
+      没有显式 split 字段
+      答案存在 -> 开发集 · 4,018 题 / 2,706 视频
+      答案为 NA -> 测试集 · 4,034 题 / 2,679 视频
+      测试集标签隐藏
+    type: database
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 3420
+      'y': 720
+  - id: split_drift
+    label: |-
+      论文与数据的划分偏差
+      表 3 写 4,020 + 4,034
+      两者合计 8,054 而非 8,052
+      固定数据为 4,018 + 4,034
+      随机划分种子未发布
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 3420
+      'y': 1200
+  - id: paper_protocol
+    label: |-
+      应用论文 v2 回答协议
+      追加 · 仅回复最佳选项
+      用正则取首个大写字母
+      用于每道多项选择问答
+    type: process
+    size: xl
+    position:
+      x: 3900
+      'y': 720
+  - id: protocol_boundary
+    label: |-
+      论文 / 发布代码边界
+      固定仓库无推理运行器
+      未实现追加提示与正则
+      answer_util 切分后取首字符
+      test_acc 未调用 answer_util
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 3900
+      'y': 1160
+  - id: predictions
+    label: |-
+      生成预测 JSON
+      将每个问答标识映射到选项
+      预期值 · A / B / C / D
+      保留提交标识覆盖率
+    type: process
+    size: xl
+    position:
+      x: 4140
+      'y': 720
+  - id: scorer_gate
+    label: |-
+      使用哪种已披露评分语义？
+      论文合同
+      公开 GitHub 代码
+      私有标签 HF Space
+    type: decision
+    size: xl
+    position:
+      x: 4380
+      'y': 720
+  - id: paper_accuracy
+    label: |-
+      计算论文预期准确率
+      使用完整预期问题集合
+      精确判断选择题是否正确
+      总体 + 六类任务准确率
+      随机基线 · 0.25
+    type: process
+    size: xl
+    position:
+      x: 4620
+      'y': 340
+  - id: github_scorer
+    label: |-
+      运行固定 GitHub 计分器
+      混合开发集 + 测试集元数据
+      按标识精确比较字符串
+      计入总数后跳过 NA
+      acc = 正确数 / 8,052
+      answered_acc = 正确数 / 已提交标识数
+    type: process
+    size: xl
+    style:
+      fontSize: 8
+    position:
+      x: 4620
+      'y': 720
+  - id: space_scorer
+    label: |-
+      运行固定 HF Space 计分器
+      私有且分开的开发 / 测试标签
+      按标识精确比较字符串
+      报告已回答准确率
+      缺失标识不进入分母
+    type: process
+    size: xl
+    position:
+      x: 4620
+      'y': 1080
+  - id: scorer_boundary
+    label: |-
+      提交覆盖率边界
+      上游计分器没有完整标识门槛
+      部分提交可抬高已回答准确率
+      测试标签仍为私有
+      任何分数都应同时报告覆盖率
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 4860
+      'y': 1320
+  - id: report
+    label: |-
+      报告 MotionBench 结果
+      区分预期指标与实现指标
+      总体 + 识别 / 位置 / 相机 / 对象 / 顺序 / 计数
+      给出已提交 / 预期覆盖率
+      引用精确论文、数据与计分器版本
+    type: terminal
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 4860
+      'y': 720
+  - id: leaderboard
+    label: |-
+      发布可比较结果
+      静态项目页排行榜存在
+      HF Space 是测试集投稿路径
+      has_leaderboard · true
+    type: terminal
+    size: xl
+    position:
+      x: 5100
+      'y': 720
+  - id: availability
+    label: |-
+      当前服务边界
+      HF Space 版本 · a4033176
+      Space 当前发生构建错误
+      不宣称投稿服务现在可用
+    type: document
+    size: xl
+    position:
+      x: 5100
+      'y': 1080
 edges:
-  - from: goal
-    to: intricate
+  - from: evidence
+    to: stream_gate
     type: primary
-  - from: goal
-    to: fields
+  - from: stream_gate
+    to: pexels
     type: primary
-  - from: goal
-    to: synthetic
+    label: 复杂交互 · Pexels
+    labelPosition: center
+  - from: stream_gate
+    to: segment
     type: primary
-  - from: intricate
+    label: 复杂交互 · Panda / 电影
+    labelPosition: center
+  - from: stream_gate
+    to: field_sources
+    type: primary
+    label: 特定领域
+    labelPosition: center
+  - from: stream_gate
+    to: synthetic_recipe
+    type: primary
+    label: 合成视频
+    labelPosition: center
+  - from: pexels
+    to: captions
+    type: primary
+    waypoints:
+      - x: 1400
+        'y': 120
+      - x: 1400
+        'y': 200
+  - from: segment
     to: captions
     type: primary
   - from: captions
-    to: generate
+    to: caption_release
+    type: secondary
+    style:
+      dashed: true
+    label: 独立资产
+    labelPosition: center
+  - from: captions
+    to: gpt4o
     type: primary
-  - from: generate
-    to: shortcut
+  - from: gpt4o
+    to: first_frame_gate
     type: primary
-  - from: shortcut
-    to: review
+  - from: first_frame_gate
+    to: discard
     type: primary
-  - from: fields
-    to: direct
+    label: 是 · 全部正确
+    labelPosition: center
+  - from: first_frame_gate
+    to: manual_review
     type: primary
-  - from: synthetic
-    to: direct
+    label: 否 · 至少一个答错
+    labelPosition: center
+  - from: manual_review
+    to: merge
     type: primary
-  - from: review
-    to: combine
+    waypoints:
+      - x: 2860
+        'y': 400
+      - x: 2860
+        'y': 700
+  - from: field_sources
+    to: field_qa
     type: primary
-  - from: direct
-    to: combine
+  - from: field_qa
+    to: merge
     type: primary
-  - from: combine
-    to: categories
+  - from: synthetic_recipe
+    to: merge
     type: primary
-  - from: categories
-    to: split
+    waypoints:
+      - x: 2860
+        'y': 1300
+      - x: 2860
+        'y': 840
+  - from: merge
+    to: data_stats
+    type: secondary
+    style:
+      dashed: true
+    label: 元数据审计
+    labelPosition: center
+  - from: merge
+    to: build_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 未披露输入
+    labelPosition: center
+  - from: merge
+    to: rights_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 权利
+    labelPosition: center
+  - from: merge
+    to: split_release
     type: primary
-  - from: split
-    to: evaluate
+  - from: split_release
+    to: split_drift
+    type: secondary
+    style:
+      dashed: true
+    label: 计数偏差
+    labelPosition: center
+  - from: split_release
+    to: paper_protocol
     type: primary
-  - from: evaluate
+  - from: paper_protocol
+    to: protocol_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 上游未实现
+    labelPosition: center
+  - from: paper_protocol
+    to: predictions
+    type: primary
+  - from: predictions
+    to: scorer_gate
+    type: primary
+  - from: scorer_gate
+    to: paper_accuracy
+    type: primary
+    label: 论文
+    labelPosition: center
+  - from: scorer_gate
+    to: github_scorer
+    type: primary
+    label: 公开 GitHub 代码
+    labelPosition: center
+  - from: scorer_gate
+    to: space_scorer
+    type: primary
+    label: HF Space 投稿页
+    labelPosition: center
+  - from: paper_accuracy
     to: report
     type: primary
+    waypoints:
+      - x: 4780
+        'y': 440
+      - x: 4780
+        'y': 700
+  - from: github_scorer
+    to: report
+    type: primary
+  - from: space_scorer
+    to: report
+    type: primary
+    waypoints:
+      - x: 4780
+        'y': 1180
+      - x: 4780
+        'y': 840
+  - from: github_scorer
+    to: scorer_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 覆盖率语义
+    labelPosition: center
+  - from: space_scorer
+    to: scorer_boundary
+    type: secondary
+    style:
+      dashed: true
+    label: 接受缺失标识
+    labelPosition: center
+  - from: report
+    to: leaderboard
+    type: primary
+  - from: leaderboard
+    to: availability
+    type: secondary
+    style:
+      dashed: true
+    label: 在线状态
+    labelPosition: center
 modules: []

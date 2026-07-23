@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BigO(Bench) 构建流程
-  description: 对齐论文的经验时空复杂度标注流程：从 Code Contests 正确 Python 解答出发，经 dataclass 解析、 沙箱性能分析、非负曲线拟合、框架验证与三类评测任务形成基准。
-  legend: 先从左到右阅读性能分析流水线，再从右到左阅读数据发布与评测流水线。
+  description: 对齐论文的经验时空复杂度标注流程：从 Code Contests 正确 Python 解答出发，经 dataclass 解析、沙箱性能分析与非负曲线拟合，形成数据集、验证旁支和三项并行评测。
+  legend: 上方实线主链构建发布集；数据集与整理后的测试集共同进入验证审计，下方三个任务是并行评测而非串行流水线。
 nodes:
   - id: source
     label: |-
@@ -76,38 +76,49 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 440
+      x: 1720
+      'y': 100
   - id: validate
     label: |-
       框架验证
       与人工标注匹配：时间92% / 空间84%
-      检查覆盖率与多次运行自洽性
+      审计数据覆盖率与测试集标签
     type: process
     size: xl
     position:
-      x: 1160
+      x: 1720
       'y': 440
   - id: tests
     label: |-
       整理复杂度测试集
       时间：311题 / 640解答 / 11类
-      空间：308题 / 636解答 / 5类
+      空间：308题 / 636解答 / 5类 • 重叠63题
     type: document
     size: xl
     position:
-      x: 880
+      x: 1440
       'y': 440
   - id: predict
     label: |-
       任务一：复杂度预测
       输入题目 + 人类解答
+      采样20次模型输出
       预测时间与空间Big-O类别
     type: process
     size: xl
     position:
-      x: 600
-      'y': 440
+      x: 1160
+      'y': 280
+  - id: prediction_metric
+    label: |-
+      任务一：20次采样无偏估计
+      Pass@k • Best@k • All@k
+      时间与空间类别准确率
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 280
   - id: generate
     label: |-
       任务二：约束代码生成
@@ -116,18 +127,49 @@ nodes:
     type: process
     size: xl
     position:
-      x: 320
-      'y': 440
+      x: 1160
+      'y': 480
+  - id: generation_metric
+    label: |-
+      任务二指标：每题20次采样
+      Pass@k • Best@k • All@k
+      同时检查正确性与复杂度约束
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 480
+  - id: rank
+    label: |-
+      任务三：系数排序
+      生成20个候选解答
+      在同一Big-O类取最佳正确系数
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 680
+  - id: ranking_metric
+    label: |-
+      任务三系数分数
+      20次尝试取最佳值
+      无正确解记0
+      对人类解答计算系数百分位
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 680
   - id: report
     label: |-
-      任务三与指标
-      同类人类解答中的系数百分位
-      Pass@k / Best@k / All@k
+      汇报三项并行评测
+      预测准确率 • 生成指标
+      系数百分位排序
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 440
+      x: 600
+      'y': 480
 edges:
   - from: source
     to: dataclass
@@ -148,18 +190,69 @@ edges:
     to: dataset
     type: primary
   - from: dataset
-    to: validate
-    type: primary
-  - from: validate
     to: tests
     type: primary
+  - from: dataset
+    to: validate
+    type: data
+  - from: tests
+    to: validate
+    type: data
   - from: tests
     to: predict
     type: primary
-  - from: predict
+    style:
+      exitX: 0
+      exitY: 0.25
+      entryX: 1
+      entryY: 0.5
+  - from: tests
     to: generate
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: tests
+    to: rank
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.75
+      entryX: 1
+      entryY: 0.5
+  - from: predict
+    to: prediction_metric
+    type: primary
   - from: generate
+    to: generation_metric
+    type: primary
+  - from: rank
+    to: ranking_metric
+    type: primary
+  - from: prediction_metric
     to: report
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.25
+  - from: generation_metric
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: ranking_metric
+    to: report
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.75
 modules: []

@@ -4,209 +4,172 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HarmBench Build Process
+  title: HarmBench Build and Evaluation Process
   description: >-
-    Paper-aligned curation of 510 harmful behaviors and standardized attack, target-model, classifier, and ASR
-    evaluation.
-  legend: >-
-    HarmBench contains 200 standard, 100 copyright, 100 contextual, and 110 multimodal behaviors. The canonical
-    validation/test split is 100/410; test behaviors and the held-out test classifier are evaluation-only.
+    Paper- and repository-aligned HarmBench workflow from policy-guided manual behavior curation through the official
+    validation/test split, standardized red-team generation, category-specific classifiers, and attack success rate.
+  legend: Solid arrows are the main benchmark pipeline; dashed arrows show taxonomy or release-artifact boundaries.
 nodes:
-  - id: policies
+  - id: evidence
     label: |-
-      Collect major-lab use policies
-      OpenAI · Anthropic · Meta · Inflection
-      GPT-4 distills a combined safety summary
+      Primary Evidence
+      arXiv 2402.04249v2 · §4 / App. B.5
+      Repo 8e1604d
+      data/behavior_datasets
     type: document
     size: xl
     position:
-      x: 40
-      'y': 300
-  - id: curate
+      x: 20
+      'y': 260
+  - id: policies
     label: |-
-      Authors manually design behaviors
-      violate laws or widely held norms
-      emphasize realistic differential harm
+      Acceptable-use Policies
+      OpenAI · Anthropic
+      Meta · Inflection
+    type: document
+    size: xl
+    position:
+      x: 260
+      'y': 260
+  - id: distill
+    label: |-
+      GPT-4 Distillation
+      Create combined policy summary
+      Use as curation guide
     type: process
     size: xl
     position:
-      x: 340
-      'y': 300
-  - id: filter
+      x: 500
+      'y': 260
+  - id: manual
     label: |-
-      Run repeated curation passes
-      remove or rewrite dual-intent requests
-      retain clear undesirable objectives
-    type: process
+      Authors Manually Curate
+      Violations of laws / norms
+      Filter dual-intent cases
+      Check differential searchability
+    type: user
     size: xl
     position:
-      x: 640
-      'y': 300
-  - id: route
+      x: 740
+      'y': 260
+  - id: functional
     label: |-
-      Assign functional category
-      preserve seven semantic harm categories
-      attach context or image when required
-    type: decision
-    size: xl
-    position:
-      x: 940
-      'y': 300
-  - id: standard
-    label: |-
-      Standard · 200
-      self-contained harmful request
-      no external context or image
+      510 Behaviors
+      200 standard · 100 copyright
+      100 contextual · 110 multimodal
     type: database
     size: xl
     position:
-      x: 1240
-      'y': 0
-  - id: copyright
+      x: 980
+      'y': 100
+  - id: semantic
     label: |-
-      Copyright · 100
-      request protected passages or lyrics
-      retain content hashes for judging
-    type: database
+      7 Semantic Categories
+      Cyber · chemical / biological
+      Copyright · misinformation
+      Harassment · illegal · general harm
+    type: document
     size: xl
     position:
-      x: 1240
-      'y': 200
-  - id: contextual
-    label: |-
-      Contextual · 100
-      behavior string plus specific context
-      difficult to reproduce by web search
-    type: database
-    size: xl
-    position:
-      x: 1240
-      'y': 400
-  - id: multimodal
-    label: |-
-      Multimodal · 110
-      behavior string references an image
-      tests image-conditioned attacks
-    type: database
-    size: xl
-    position:
-      x: 1240
-      'y': 600
-  - id: dataset
-    label: |-
-      Assemble 510 HarmBench behaviors
-      four functional · seven semantic categories
-      behavior IDs and category metadata
-    type: database
-    size: xl
-    position:
-      x: 1540
-      'y': 300
+      x: 980
+      'y': 420
   - id: split
     label: |-
-      Create canonical held-out split
-      validation 100 · test 410
-      stratify intersections then adjust manually
-    type: process
+      Official Behavior Split
+      100 validation · 410 test
+      No tuning on test behaviors
+    type: database
     size: xl
     position:
-      x: 1840
-      'y': 300
+      x: 1220
+      'y': 100
   - id: attack
     label: |-
-      Generate attack test cases
-      red-team method receives each behavior
-      do not tune on test or semantic duplicates
+      Generate Test Cases
+      Red-team method receives behavior
+      N = 512 test cases per behavior
     type: process
     size: xl
     position:
-      x: 2140
-      'y': 300
+      x: 1460
+      'y': 100
   - id: target
     label: |-
-      Run the target model or defense
-      standardized generation parameters
-      greedy completion for comparability
+      Target Model + Defense
+      Greedy decoding
     type: process
     size: xl
     position:
-      x: 2440
-      'y': 300
-  - id: judge_route
+      x: 1700
+      'y': 100
+  - id: route
     label: |-
-      Classify behavior success
-      exhibited or clearly attempted behavior
-      use held-out validation/test classifiers
+      Functional Route
+      Copyright behavior?
     type: decision
     size: xl
     position:
-      x: 2740
-      'y': 300
-  - id: open_judge
-    label: |-
-      Non-copyright classifier
-      open Llama-2-13B-chat classifier
-      trained on human-labeled completions
-    type: process
-    size: xl
-    position:
-      x: 3040
+      x: 1940
       'y': 100
-  - id: hash_judge
+  - id: llm_classifier
     label: |-
-      Copyright classifier
-      compare completion against stored hashes
-      directly detect protected text generation
+      Non-copyright Classifier
+      Open Llama 2 13B classifier
+      Behavior + completion → yes/no
     type: process
     size: xl
     position:
-      x: 3040
-      'y': 500
+      x: 2180
+      'y': 20
+  - id: hash_classifier
+    label: |-
+      Copyright Classifier
+      MinHash over overlapping chunks
+      Jaccard threshold > 0.6
+      Actual copied text required
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 300
   - id: score
     label: |-
-      Report attack success rate
-      successful test cases divided by all cases
-      break down attack · target · category
+      Attack Success Rate (ASR)
+      Fraction of successful test cases
+      per behavior; averaged for reports
     type: terminal
     size: xl
     position:
-      x: 3340
-      'y': 300
+      x: 2420
+      'y': 140
+  - id: artifact_boundary
+    label: |-
+      Current Release Boundary
+      Text CSV split: 80/320
+      Multimodal all: 110
+      No separate 20/90 CSV
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 500
 edges:
+  - from: evidence
+    to: policies
+    type: primary
   - from: policies
-    to: curate
+    to: distill
     type: primary
-  - from: curate
-    to: filter
+  - from: distill
+    to: manual
     type: primary
-  - from: filter
-    to: route
+  - from: manual
+    to: functional
     type: primary
-  - from: route
-    to: standard
-    type: primary
-  - from: route
-    to: copyright
-    type: primary
-  - from: route
-    to: contextual
-    type: primary
-  - from: route
-    to: multimodal
+  - from: manual
+    to: semantic
     type: secondary
-  - from: standard
-    to: dataset
-    type: primary
-  - from: copyright
-    to: dataset
-    type: primary
-  - from: contextual
-    to: dataset
-    type: primary
-  - from: multimodal
-    to: dataset
-    type: secondary
-  - from: dataset
+  - from: functional
     to: split
     type: primary
   - from: split
@@ -216,18 +179,21 @@ edges:
     to: target
     type: primary
   - from: target
-    to: judge_route
+    to: route
     type: primary
-  - from: judge_route
-    to: open_judge
+  - from: route
+    to: llm_classifier
     type: primary
-  - from: judge_route
-    to: hash_judge
+  - from: route
+    to: hash_classifier
     type: secondary
-  - from: open_judge
+  - from: llm_classifier
     to: score
     type: primary
-  - from: hash_judge
+  - from: hash_classifier
     to: score
-    type: secondary
+    type: primary
+  - from: split
+    to: artifact_boundary
+    type: data
 modules: []

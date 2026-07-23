@@ -9,7 +9,9 @@ meta:
     Paper-aligned BBQ workflow: authors hand-write sourced bias templates across nine categories, expand each into
     ambiguous/disambiguated and negative/non-negative conditions with balanced label order and UNKNOWN choices, validate
     every template at a four-of-five threshold, and report accuracy plus context-specific bias scores.
-  legend: Solid arrows show template construction, four-condition expansion, validation, and two-context evaluation.
+  legend: >-
+    Every template is checked with one question from each of four conditions and five raters per question; all four must
+    reach at least 4/5. Dashed arrows repeat all four checks after revision.
 nodes:
   - id: bias_sources
     label: |-
@@ -20,17 +22,18 @@ nodes:
     size: xl
     position:
       x: 40
-      'y': 240
+      'y': 220
   - id: templates
     label: |-
-      Author-written Templates
+      Author Templates
       Nine Bias Categories
-      + Two Intersectional Categories
+      Two Intersectional Categories
+      ≥25 per Category
     type: user
     size: xl
     position:
       x: 320
-      'y': 240
+      'y': 220
   - id: conditions
     label: |-
       Four-condition Cluster
@@ -40,38 +43,57 @@ nodes:
     size: xl
     position:
       x: 600
-      'y': 240
+      'y': 220
   - id: expansion
     label: |-
       Slot + Order Expansion
       Target / Non-target Labels Balanced
-      Two People + UNKNOWN Choice
+      Two People per Instance
+      1 of 10 UNKNOWN Phrases
     type: process
     size: xl
     position:
       x: 880
-      'y': 240
-  - id: dataset
-    label: |-
-      BBQ Candidate Set
-      58,492 Unique Examples
-      25+ Templates per Category
-    type: database
-    size: xl
-    position:
-      x: 1160
-      'y': 240
+      'y': 220
   - id: validation
     label: |-
-      Template Validation
-      Sample One Item per Condition
-      Five Raters; Require ≥4/5
-      Otherwise Edit + Revalidate All Four
+      Validate All Four Conditions
+      One Question per Condition
+      5 Raters per Question
     type: user
     size: xl
     position:
+      x: 1160
+      'y': 220
+  - id: agreement
+    label: |-
+      All Four ≥4/5?
+      Pass / Revise
+    type: decision
+    size: xl
+    position:
       x: 1440
-      'y': 240
+      'y': 220
+  - id: revise
+    label: |-
+      Revise Failed Template
+      Regenerate All Four Conditions
+      Resample and Rerate Four Questions
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 20
+  - id: dataset
+    label: |-
+      Release BBQ
+      58,492 Unique Three-Choice Questions
+      Balanced Four-Condition Expansions
+    type: database
+    size: xl
+    position:
+      x: 1720
+      'y': 220
   - id: model
     label: |-
       QA Model
@@ -80,8 +102,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1740
-      'y': 240
+      x: 1720
+      'y': 520
   - id: ambiguous
     label: |-
       Ambiguous Context
@@ -90,8 +112,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2020
-      'y': 60
+      x: 1440
+      'y': 420
   - id: disambiguated
     label: |-
       Disambiguated Context
@@ -100,8 +122,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2020
-      'y': 420
+      x: 1440
+      'y': 620
   - id: responses
     label: |-
       Response Groups
@@ -110,8 +132,8 @@ nodes:
     type: document
     size: xl
     position:
-      x: 2300
-      'y': 240
+      x: 1160
+      'y': 520
   - id: accuracy
     label: |-
       Accuracy
@@ -120,8 +142,8 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 2580
-      'y': 60
+      x: 880
+      'y': 420
   - id: bias_score
     label: |-
       Bias Scores
@@ -130,8 +152,18 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 2580
-      'y': 420
+      x: 880
+      'y': 620
+  - id: report
+    label: |-
+      Report BBQ Evaluation
+      Accuracy by Context and Category
+      sDIS and sAMB Bias Scores
+    type: terminal
+    size: xl
+    position:
+      x: 600
+      'y': 520
 edges:
   - from: bias_sources
     to: templates
@@ -143,12 +175,28 @@ edges:
     to: expansion
     type: primary
   - from: expansion
-    to: dataset
-    type: primary
-  - from: dataset
     to: validation
     type: primary
   - from: validation
+    to: agreement
+    type: primary
+  - from: agreement
+    to: dataset
+    type: primary
+    label: pass
+  - from: agreement
+    to: revise
+    type: optional
+    label: fail
+  - from: revise
+    to: conditions
+    type: optional
+    waypoints:
+      - x: 1440
+        'y': 100
+      - x: 600
+        'y': 100
+  - from: dataset
     to: model
     type: primary
   - from: model
@@ -168,5 +216,11 @@ edges:
     type: primary
   - from: responses
     to: bias_score
+    type: primary
+  - from: accuracy
+    to: report
+    type: primary
+  - from: bias_score
+    to: report
     type: primary
 modules: []

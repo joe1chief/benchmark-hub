@@ -7,209 +7,167 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 16,
-    "edges": 17,
+    "nodes": 12,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "exams",
-      "label": "2010–2022 年\n全国高考 PDF",
-      "type": "database",
-      "size": "large"
-    },
-    {
-      "id": "convert",
-      "label": "脚本 + 人工\nPDF 转 JSON",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "latex",
-      "label": "数学公式转 LaTeX",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "pool",
-      "label": "9 个科目\n2,811 道题",
-      "type": "database",
-      "size": "large"
-    },
-    {
-      "id": "question_type",
-      "label": "是否需要人工评分",
-      "type": "decision",
-      "size": "large"
-    },
-    {
-      "id": "objective",
-      "label": "客观题 1,781 道\n选择 + 填空",
+      "id": "evidence",
+      "label": "一手证据\narXiv:2305.12474v3\n官方仓库 6dbb24f8",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "subjective",
-      "label": "主观题 1,030 道\n开放题 + 改错题",
-      "type": "document",
-      "size": "large"
+      "id": "source_pdfs",
+      "label": "全国高考试卷来源\n2010–2022 年全部全国卷\n文理科共 9 个学科",
+      "type": "database",
+      "size": "xl"
     },
     {
-      "id": "objective_prompt",
-      "label": "零样本\n客观题提示",
+      "id": "digitize",
+      "label": "脚本与人工联合数字化\nPDF → 结构化 JSON\n数学公式 → LaTeX",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "subjective_prompt",
-      "label": "零样本\n主观题提示",
+      "id": "release",
+      "label": "发布 2,811 道题\n客观题 1,781：1,418/273/64/26\n主观题 1,030：786/218/26",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "按题型/学科定制零样本提示\n多数要求【解析】→ eoe\n部分仅答案：七选五、改错\n及多项语文阅读\n全部要求【答案】→ eoa",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "match",
-      "label": "规则匹配\n标准答案",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "grade_path",
-      "label": "主观题评分者",
+      "id": "route",
+      "label": "按题型分流\n客观题进入规则解析\n主观题进入评分路径",
       "type": "decision",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "teachers",
-      "label": "2 名教师评分\n取平均分",
+      "id": "objective_parser",
+      "label": "解析客观题输出\n单选：末个 A–D\n多小题：标记匹配，否则前序字母\n多选：标记位置 >0 时取其后\n否则扫描末 10 字符\n七选五：前 5 个 A–G",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "objective_score",
+      "label": "按题目分值加权精确匹配\n物理多选：全对 6 分\n正确子集 3 分 · 多选 0 分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_grade",
+      "label": "论文主路径：主观题人工评分\n每份答案由两位教师评分\n取两人平均分",
       "type": "user",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "llm_judge",
-      "label": "GPT-4-turbo 裁判\n评分点 + 温度 0",
+      "id": "repo_judge",
+      "label": "固定版仓库替代裁判\nGPT-4-1106-preview · T 0\n调用侧 max_tokens=4,096\nAPI请求未传；默认不含评分点\n解析【总分】；非空分数均值",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "rates",
-      "label": "各科客观 / 主观题\n得分率",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "correlation",
-      "label": "裁判一致性\nSpearman + Kendall",
+      "id": "aggregate",
+      "label": "汇总得分率\n实得分 / 满分\n分学科客观与主观得分率\n理科/文科折算总分 / 750",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "total",
-      "label": "理科 / 文科\n折算总分 / 750",
+      "id": "agreement",
+      "label": "对比裁判与人工分数\nSpearman ρ + Kendall τ\n论文裁判输入人工评分点",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "exams",
-      "to": "convert",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source_pdfs",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "convert",
-      "to": "latex",
+      "from": "source_pdfs",
+      "to": "digitize",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "latex",
-      "to": "pool",
+      "from": "digitize",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "pool",
-      "to": "question_type",
+      "from": "release",
+      "to": "prompt",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "question_type",
-      "to": "objective",
+      "from": "prompt",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "question_type",
-      "to": "subjective",
+      "from": "route",
+      "to": "objective_parser",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "objective",
-      "to": "objective_prompt",
+      "from": "objective_parser",
+      "to": "objective_score",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "subjective",
-      "to": "subjective_prompt",
+      "from": "objective_score",
+      "to": "aggregate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "objective_prompt",
-      "to": "match",
+      "from": "route",
+      "to": "human_grade",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "subjective_prompt",
-      "to": "grade_path",
+      "from": "human_grade",
+      "to": "aggregate",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "grade_path",
-      "to": "teachers",
-      "type": "primary"
+      "from": "route",
+      "to": "repo_judge",
+      "type": "data"
     },
     {
       "id": "edge-12",
-      "from": "grade_path",
-      "to": "llm_judge",
+      "from": "repo_judge",
+      "to": "aggregate",
       "type": "data"
     },
     {
       "id": "edge-13",
-      "from": "match",
-      "to": "rates",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "teachers",
-      "to": "rates",
-      "type": "primary"
-    },
-    {
-      "id": "edge-15",
-      "from": "teachers",
-      "to": "correlation",
+      "from": "human_grade",
+      "to": "agreement",
       "type": "data"
     },
     {
-      "id": "edge-16",
-      "from": "llm_judge",
-      "to": "correlation",
-      "type": "primary"
-    },
-    {
-      "id": "edge-17",
-      "from": "rates",
-      "to": "total",
+      "id": "edge-14",
+      "from": "repo_judge",
+      "to": "agreement",
       "type": "primary"
     }
   ],

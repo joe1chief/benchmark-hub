@@ -4,6 +4,7 @@ import {
   mkdtempSync,
   mkdirSync,
   readFileSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -93,6 +94,34 @@ function explicitGraphEntry(overrides = {}) {
       ],
     },
     ...overrides,
+  };
+}
+
+function checkedInAssetContent(assetPath) {
+  if (assetPath.endsWith('.svg')) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>\n';
+  }
+  if (assetPath.endsWith('.drawio')) {
+    return '<mxfile><diagram id="page-1" name="Page-1"></diagram></mxfile>\n';
+  }
+  if (assetPath.endsWith('.spec.yaml')) {
+    return 'meta:\n  title: Checked In\nnodes: []\nedges: []\n';
+  }
+  if (assetPath.endsWith('.arch.json')) {
+    return '{"nodes":[],"edges":[]}\n';
+  }
+  throw new Error(`unexpected checked-in asset path: ${assetPath}`);
+}
+
+function passedPaperReview({
+  sourceUrl = 'https://example.com/paper',
+  sourceLocator = 'Section 3.2',
+} = {}) {
+  return {
+    status: 'passed',
+    reviewed_at: '2026-07-18',
+    source_url: sourceUrl,
+    source_locator: sourceLocator,
   };
 }
 
@@ -387,6 +416,10 @@ test('rejects a path-unsafe benchmark id before creating output files', () => {
 
 test('rejects incomplete asset metadata before sync or spec writes', () => {
   const entry = explicitGraphEntry();
+  entry.source_url = 'https://example.com/paper';
+  entry.paper_alignment_review = passedPaperReview({
+    sourceLocator: entry.source_locator,
+  });
   entry.assets = {
     drawio_flowchart_en: 'drawio/BranchBench/BranchBench.en.svg',
     drawio_flowchart_zh: 'drawio/BranchBench/BranchBench.zh.svg',
@@ -431,6 +464,10 @@ test('rejects incomplete asset metadata before sync or spec writes', () => {
 
 test('rejects an absolute asset path even when it is inside the public directory', () => {
   const entry = explicitGraphEntry();
+  entry.source_url = 'https://example.com/paper';
+  entry.paper_alignment_review = passedPaperReview({
+    sourceLocator: entry.source_locator,
+  });
   entry.assets = {
     drawio_flowchart_en: 'drawio/BranchBench/BranchBench.en.svg',
     drawio_flowchart_zh: 'drawio/BranchBench/BranchBench.zh.svg',
@@ -602,7 +639,11 @@ test('syncs manifest asset paths into list and detail records when requested', (
     id: 'AlphaBench',
     evidence_summary_en: 'Paper-aligned construction and evaluation.',
     evidence_summary_zh: '与论文对齐的构建与评测流程。',
+    source_url: 'https://example.com/paper',
     source_locator: 'Section 3 and Appendix A',
+    paper_alignment_review: passedPaperReview({
+      sourceLocator: 'Section 3 and Appendix A',
+    }),
     construction_steps_en: ['Collect source records'],
     construction_steps_zh: ['收集原始记录'],
     evaluation_steps_en: ['Report accuracy'],
@@ -646,6 +687,200 @@ test('syncs manifest asset paths into list and detail records when requested', (
   assert.equal(listRecord.drawio_flowchart_en, entry.assets.drawio_flowchart_en);
   assert.equal(detailRecord.drawio_arch_zh, entry.assets.drawio_arch_zh);
   assert.match(detailRecord.drawio_review_note, /Section 3 and Appendix A/u);
+  assert.equal(
+    detailRecord.drawio_review_note,
+    'Paper-alignment review passed on 2026-07-18. Section 3 and Appendix A.',
+  );
+});
+
+test('rejects sync when paper-alignment approval is missing, failed, or has an invalid date', () => {
+  for (const [caseName, paperAlignmentReview, expected] of [
+    [
+      'missing',
+      undefined,
+      /BranchBench: sync requires paper_alignment_review\.status "passed"/u,
+    ],
+    [
+      'failed',
+      { status: 'failed', reviewed_at: '2026-07-18' },
+      /BranchBench: sync requires paper_alignment_review\.status "passed"/u,
+    ],
+    [
+      'invalid-date',
+      { status: 'passed', reviewed_at: '2026-02-30' },
+      /BranchBench: paper_alignment_review\.reviewed_at must be a valid YYYY-MM-DD date/u,
+    ],
+  ]) {
+    const root = mkdtempSync(join(tmpdir(), `build-process-generator-review-${caseName}-`));
+    const publicDir = join(root, 'client/public');
+    const detailDir = join(publicDir, 'benchmarks_detail');
+    mkdirSync(detailDir, { recursive: true });
+    const entry = explicitGraphEntry({
+      paper_alignment_review: paperAlignmentReview,
+      assets: {
+        drawio_flowchart_en: 'drawio/BranchBench/BranchBench.en.svg',
+        drawio_flowchart_zh: 'drawio/BranchBench/BranchBench.zh.svg',
+        drawio_source_en: 'drawio/BranchBench/BranchBench.en.drawio',
+        drawio_source_zh: 'drawio/BranchBench/BranchBench.zh.drawio',
+        drawio_spec_en: 'drawio/BranchBench/BranchBench.en.spec.yaml',
+        drawio_spec_zh: 'drawio/BranchBench/BranchBench.zh.spec.yaml',
+        drawio_arch_en: 'drawio/BranchBench/BranchBench.en.arch.json',
+        drawio_arch_zh: 'drawio/BranchBench/BranchBench.zh.arch.json',
+      },
+    });
+    writeFileSync(
+      join(publicDir, 'benchmarks_build_process_manifest.json'),
+      `${JSON.stringify([entry], null, 2)}\n`,
+    );
+    const listPath = join(publicDir, 'benchmarks.json');
+    const originalList = `${JSON.stringify([{ id: 'BranchBench' }], null, 2)}\n`;
+    writeFileSync(listPath, originalList);
+    writeFileSync(
+      join(detailDir, 'BranchBench.json'),
+      `${JSON.stringify({ id: 'BranchBench' }, null, 2)}\n`,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [generatorScript.pathname, '--root', root, '--id', 'BranchBench', '--sync-data'],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1, caseName);
+    assert.match(result.stderr, expected, caseName);
+    assert.equal(readFileSync(listPath, 'utf8'), originalList, caseName);
+    assert.equal(existsSync(join(publicDir, 'drawio/BranchBench')), false, caseName);
+  }
+});
+
+test('rejects ordinary sync when reviewed source provenance is missing or mismatched', () => {
+  const sourceUrl = 'https://example.com/paper';
+  const sourceLocator = 'Section 3.2 and Figure 2';
+  for (const [caseName, paperAlignmentReview, expected] of [
+    [
+      'missing-url',
+      { status: 'passed', reviewed_at: '2026-07-18', source_locator: sourceLocator },
+      /BranchBench: paper_alignment_review\.source_url must be non-empty/u,
+    ],
+    [
+      'missing-locator',
+      { status: 'passed', reviewed_at: '2026-07-18', source_url: sourceUrl },
+      /BranchBench: paper_alignment_review\.source_locator must be non-empty/u,
+    ],
+    [
+      'mismatched-url',
+      passedPaperReview({ sourceUrl: 'https://example.com/other', sourceLocator }),
+      /BranchBench: paper_alignment_review\.source_url must exactly match source_url/u,
+    ],
+    [
+      'mismatched-locator',
+      passedPaperReview({ sourceUrl, sourceLocator: 'Appendix A' }),
+      /BranchBench: paper_alignment_review\.source_locator must exactly match source_locator/u,
+    ],
+  ]) {
+    const root = mkdtempSync(join(tmpdir(), `build-process-generator-ordinary-source-${caseName}-`));
+    const publicDir = join(root, 'client/public');
+    const detailDir = join(publicDir, 'benchmarks_detail');
+    mkdirSync(detailDir, { recursive: true });
+    const entry = explicitGraphEntry({
+      source_url: sourceUrl,
+      paper_alignment_review: paperAlignmentReview,
+      assets: {
+        drawio_flowchart_en: 'drawio/BranchBench/BranchBench.en.svg',
+        drawio_flowchart_zh: 'drawio/BranchBench/BranchBench.zh.svg',
+        drawio_source_en: 'drawio/BranchBench/BranchBench.en.drawio',
+        drawio_source_zh: 'drawio/BranchBench/BranchBench.zh.drawio',
+        drawio_spec_en: 'drawio/BranchBench/BranchBench.en.spec.yaml',
+        drawio_spec_zh: 'drawio/BranchBench/BranchBench.zh.spec.yaml',
+        drawio_arch_en: 'drawio/BranchBench/BranchBench.en.arch.json',
+        drawio_arch_zh: 'drawio/BranchBench/BranchBench.zh.arch.json',
+      },
+    });
+    writeFileSync(
+      join(publicDir, 'benchmarks_build_process_manifest.json'),
+      `${JSON.stringify([entry], null, 2)}\n`,
+    );
+    const listPath = join(publicDir, 'benchmarks.json');
+    const originalList = `${JSON.stringify([{ id: 'BranchBench' }], null, 2)}\n`;
+    writeFileSync(listPath, originalList);
+    writeFileSync(
+      join(detailDir, 'BranchBench.json'),
+      `${JSON.stringify({ id: 'BranchBench' }, null, 2)}\n`,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [generatorScript.pathname, '--root', root, '--id', 'BranchBench', '--sync-data-only'],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1, caseName);
+    assert.match(result.stderr, expected, caseName);
+    assert.equal(readFileSync(listPath, 'utf8'), originalList, caseName);
+  }
+});
+
+test('rejects checked-in sync when reviewed source provenance is missing or mismatched', () => {
+  const sourceUrl = 'https://example.com/paper';
+  const sourceLocator = 'Section 3.2';
+  for (const [caseName, paperAlignmentReview, expected] of [
+    [
+      'missing-url',
+      { status: 'passed', reviewed_at: '2026-07-18', source_locator: sourceLocator },
+      /CheckedBench: paper_alignment_review\.source_url must be non-empty/u,
+    ],
+    [
+      'missing-locator',
+      { status: 'passed', reviewed_at: '2026-07-18', source_url: sourceUrl },
+      /CheckedBench: paper_alignment_review\.source_locator must be non-empty/u,
+    ],
+    [
+      'mismatched-url',
+      passedPaperReview({ sourceUrl: 'https://example.com/other', sourceLocator }),
+      /CheckedBench: paper_alignment_review\.source_url must exactly match source_url/u,
+    ],
+    [
+      'mismatched-locator',
+      passedPaperReview({ sourceUrl, sourceLocator: 'Appendix A' }),
+      /CheckedBench: paper_alignment_review\.source_locator must exactly match source_locator/u,
+    ],
+  ]) {
+    const root = mkdtempSync(join(tmpdir(), `build-process-generator-source-${caseName}-`));
+    const publicDir = join(root, 'client/public');
+    const detailDir = join(publicDir, 'benchmarks_detail');
+    mkdirSync(detailDir, { recursive: true });
+    const entry = {
+      id: 'CheckedBench',
+      spec_authority: 'checked_in',
+      evidence_summary_en: 'Paper-aligned process.',
+      evidence_summary_zh: '与论文对齐的流程。',
+      source_url: sourceUrl,
+      source_locator: sourceLocator,
+      paper_alignment_review: paperAlignmentReview,
+      assets: {},
+    };
+    writeFileSync(
+      join(publicDir, 'benchmarks_build_process_manifest.json'),
+      `${JSON.stringify([entry], null, 2)}\n`,
+    );
+    const listPath = join(publicDir, 'benchmarks.json');
+    const originalList = `${JSON.stringify([{ id: 'CheckedBench' }], null, 2)}\n`;
+    writeFileSync(listPath, originalList);
+    writeFileSync(
+      join(detailDir, 'CheckedBench.json'),
+      `${JSON.stringify({ id: 'CheckedBench' }, null, 2)}\n`,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [generatorScript.pathname, '--root', root, '--id', 'CheckedBench', '--sync-data-only'],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1, caseName);
+    assert.match(result.stderr, expected, caseName);
+    assert.equal(readFileSync(listPath, 'utf8'), originalList, caseName);
+  }
 });
 
 test('syncs benchmark data without overwriting hand-authored specs', () => {
@@ -671,7 +906,9 @@ test('syncs benchmark data without overwriting hand-authored specs', () => {
       id: 'AlphaBench',
       evidence_summary_en: 'Paper-aligned process.',
       evidence_summary_zh: '与论文对齐的流程。',
+      source_url: 'https://example.com/paper',
       source_locator: 'Section 3',
+      paper_alignment_review: passedPaperReview({ sourceLocator: 'Section 3' }),
       assets,
     }], null, 2)}\n`,
   );
@@ -715,6 +952,316 @@ test('syncs benchmark data without overwriting hand-authored specs', () => {
   assert.equal(detailRecord.drawio_arch_zh, assets.drawio_arch_zh);
 });
 
+test('sync-data-only preserves checked-in specs after validating every declared asset', () => {
+  const root = mkdtempSync(join(tmpdir(), 'build-process-generator-checked-in-sync-'));
+  const publicDir = join(root, 'client/public');
+  const detailDir = join(publicDir, 'benchmarks_detail');
+  const drawioDir = join(publicDir, 'drawio/CheckedBench');
+  mkdirSync(detailDir, { recursive: true });
+  mkdirSync(drawioDir, { recursive: true });
+  const assets = {
+    drawio_flowchart_en: 'drawio/CheckedBench/CheckedBench.en.svg',
+    drawio_flowchart_zh: 'drawio/CheckedBench/CheckedBench.zh.svg',
+    drawio_source_en: 'drawio/CheckedBench/CheckedBench.en.drawio',
+    drawio_source_zh: 'drawio/CheckedBench/CheckedBench.zh.drawio',
+    drawio_spec_en: 'drawio/CheckedBench/CheckedBench.en.spec.yaml',
+    drawio_spec_zh: 'drawio/CheckedBench/CheckedBench.zh.spec.yaml',
+    drawio_arch_en: 'drawio/CheckedBench/CheckedBench.en.arch.json',
+    drawio_arch_zh: 'drawio/CheckedBench/CheckedBench.zh.arch.json',
+  };
+  const entry = {
+    id: 'CheckedBench',
+    spec_authority: 'checked_in',
+    evidence_summary_en: 'Paper-aligned process.',
+    evidence_summary_zh: '与论文对齐的流程。',
+    source_url: 'https://example.com/paper',
+    source_locator: 'Section 3.2.',
+    paper_alignment_review: passedPaperReview({ sourceLocator: 'Section 3.2.' }),
+    construction_steps_en: ['Checked-in step without legacy labels'],
+    construction_steps_zh: ['无旧式短标签的已审核步骤'],
+    evaluation_steps_en: [],
+    evaluation_steps_zh: [],
+    assets,
+  };
+  writeFileSync(
+    join(publicDir, 'benchmarks_build_process_manifest.json'),
+    `${JSON.stringify([entry], null, 2)}\n`,
+  );
+  writeFileSync(
+    join(publicDir, 'benchmarks.json'),
+    `${JSON.stringify([{ id: 'CheckedBench' }], null, 2)}\n`,
+  );
+  writeFileSync(
+    join(detailDir, 'CheckedBench.json'),
+    `${JSON.stringify({ id: 'CheckedBench' }, null, 2)}\n`,
+  );
+  const handAuthored = 'meta:\n  title: Hand Authored\nnodes: []\nedges: []\n';
+  for (const assetPath of Object.values(assets)) {
+    const absolutePath = join(publicDir, assetPath);
+    writeFileSync(
+      absolutePath,
+      assetPath.endsWith('.spec.yaml') ? handAuthored : checkedInAssetContent(assetPath),
+    );
+  }
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      generatorScript.pathname,
+      '--root',
+      root,
+      '--id',
+      'CheckedBench',
+      '--sync-data-only',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(
+    readFileSync(join(drawioDir, 'CheckedBench.en.spec.yaml'), 'utf8'),
+    handAuthored,
+  );
+  const detailRecord = JSON.parse(readFileSync(join(detailDir, 'CheckedBench.json')));
+  assert.equal(detailRecord.drawio_arch_zh, assets.drawio_arch_zh);
+  assert.equal(
+    detailRecord.drawio_review_note,
+    'Paper-alignment review passed on 2026-07-18. Section 3.2.',
+  );
+  assert.doesNotMatch(detailRecord.drawio_review_note, /\.\./u);
+});
+
+test('rejects ordinary generation and any sync-data mode for checked-in specs before mutation', () => {
+  for (const mode of [[], ['--sync-data'], ['--sync-data', '--sync-data-only']]) {
+    const { root, publicDir } = createRootWithManifest(
+      'build-process-generator-checked-in-refuse-',
+      [{
+        id: 'CheckedBench',
+        spec_authority: 'checked_in',
+        evidence_summary_en: 'Paper-aligned process.',
+        evidence_summary_zh: '与论文对齐的流程。',
+        source_url: 'https://example.com/paper',
+        source_locator: 'Section 3.2',
+        assets: {},
+      }],
+    );
+    const listPath = join(publicDir, 'benchmarks.json');
+    const originalList = `${JSON.stringify([{ id: 'CheckedBench' }], null, 2)}\n`;
+    writeFileSync(listPath, originalList);
+
+    const result = spawnSync(
+      process.execPath,
+      [generatorScript.pathname, '--root', root, '--id', 'CheckedBench', ...mode],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1);
+    assert.match(
+      result.stderr,
+      /CheckedBench: spec_authority "checked_in" cannot be regenerated; use --sync-data-only/u,
+    );
+    assert.equal(readFileSync(listPath, 'utf8'), originalList);
+    assert.equal(existsSync(join(publicDir, 'drawio/CheckedBench')), false);
+  }
+});
+
+test('rejects sync-data-only when a checked-in declared asset is missing', () => {
+  const { root, publicDir } = createRootWithManifest(
+    'build-process-generator-checked-in-missing-',
+    [{
+      id: 'CheckedBench',
+      spec_authority: 'checked_in',
+      evidence_summary_en: 'Paper-aligned process.',
+      evidence_summary_zh: '与论文对齐的流程。',
+      source_url: 'https://example.com/paper',
+      source_locator: 'Section 3.2',
+      paper_alignment_review: passedPaperReview(),
+      assets: {
+        drawio_flowchart_en: 'drawio/CheckedBench/CheckedBench.en.svg',
+        drawio_flowchart_zh: 'drawio/CheckedBench/CheckedBench.zh.svg',
+        drawio_source_en: 'drawio/CheckedBench/CheckedBench.en.drawio',
+        drawio_source_zh: 'drawio/CheckedBench/CheckedBench.zh.drawio',
+        drawio_spec_en: 'drawio/CheckedBench/CheckedBench.en.spec.yaml',
+        drawio_spec_zh: 'drawio/CheckedBench/CheckedBench.zh.spec.yaml',
+        drawio_arch_en: 'drawio/CheckedBench/CheckedBench.en.arch.json',
+        drawio_arch_zh: 'drawio/CheckedBench/CheckedBench.zh.arch.json',
+      },
+    }],
+  );
+  const detailDir = join(publicDir, 'benchmarks_detail');
+  mkdirSync(detailDir, { recursive: true });
+  const listPath = join(publicDir, 'benchmarks.json');
+  const originalList = `${JSON.stringify([{ id: 'CheckedBench' }], null, 2)}\n`;
+  writeFileSync(listPath, originalList);
+  writeFileSync(
+    join(detailDir, 'CheckedBench.json'),
+    `${JSON.stringify({ id: 'CheckedBench' }, null, 2)}\n`,
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      generatorScript.pathname,
+      '--root',
+      root,
+      '--id',
+      'CheckedBench',
+      '--sync-data-only',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /CheckedBench: checked-in asset drawio_flowchart_en does not exist/u,
+  );
+  assert.equal(readFileSync(listPath, 'utf8'), originalList);
+});
+
+test('rejects checked-in assets reached through a parent symlink outside drawio', () => {
+  const root = mkdtempSync(join(tmpdir(), 'build-process-generator-realpath-'));
+  const externalDir = mkdtempSync(join(tmpdir(), 'build-process-generator-external-'));
+  const publicDir = join(root, 'client/public');
+  const detailDir = join(publicDir, 'benchmarks_detail');
+  const drawioRoot = join(publicDir, 'drawio');
+  const linkedBenchmarkDir = join(drawioRoot, 'CheckedBench');
+  mkdirSync(detailDir, { recursive: true });
+  mkdirSync(drawioRoot, { recursive: true });
+  symlinkSync(externalDir, linkedBenchmarkDir, 'dir');
+  const assets = {
+    drawio_flowchart_en: 'drawio/CheckedBench/CheckedBench.en.svg',
+    drawio_flowchart_zh: 'drawio/CheckedBench/CheckedBench.zh.svg',
+    drawio_source_en: 'drawio/CheckedBench/CheckedBench.en.drawio',
+    drawio_source_zh: 'drawio/CheckedBench/CheckedBench.zh.drawio',
+    drawio_spec_en: 'drawio/CheckedBench/CheckedBench.en.spec.yaml',
+    drawio_spec_zh: 'drawio/CheckedBench/CheckedBench.zh.spec.yaml',
+    drawio_arch_en: 'drawio/CheckedBench/CheckedBench.en.arch.json',
+    drawio_arch_zh: 'drawio/CheckedBench/CheckedBench.zh.arch.json',
+  };
+  const entry = {
+    id: 'CheckedBench',
+    spec_authority: 'checked_in',
+    evidence_summary_en: 'Paper-aligned process.',
+    evidence_summary_zh: '与论文对齐的流程。',
+    source_url: 'https://example.com/paper',
+    source_locator: 'Section 3.2',
+    paper_alignment_review: passedPaperReview(),
+    assets,
+  };
+  writeFileSync(
+    join(publicDir, 'benchmarks_build_process_manifest.json'),
+    `${JSON.stringify([entry], null, 2)}\n`,
+  );
+  const listPath = join(publicDir, 'benchmarks.json');
+  const originalList = `${JSON.stringify([{ id: 'CheckedBench' }], null, 2)}\n`;
+  writeFileSync(listPath, originalList);
+  writeFileSync(
+    join(detailDir, 'CheckedBench.json'),
+    `${JSON.stringify({ id: 'CheckedBench' }, null, 2)}\n`,
+  );
+  for (const assetPath of Object.values(assets)) {
+    writeFileSync(join(publicDir, assetPath), checkedInAssetContent(assetPath));
+  }
+
+  const result = spawnSync(
+    process.execPath,
+    [generatorScript.pathname, '--root', root, '--id', 'CheckedBench', '--sync-data-only'],
+    { encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /CheckedBench: checked-in asset drawio_flowchart_en parent real path escapes drawio directory/u,
+  );
+  assert.equal(readFileSync(listPath, 'utf8'), originalList);
+});
+
+test('rejects checked-in assets that are directories, empty, or malformed', () => {
+  for (const [caseName, invalidField, invalidContent, expected] of [
+    ['directory', 'drawio_flowchart_en', null, /must be a regular file/u],
+    ['empty', 'drawio_flowchart_en', '', /is empty/u],
+    ['malformed-svg', 'drawio_flowchart_en', '<svg><g></svg>\n', /is not valid SVG/u],
+    ['wrong-svg-root', 'drawio_flowchart_en', '<mxfile></mxfile>\n', /is not valid SVG/u],
+    ['multiple-svg-roots', 'drawio_flowchart_en', '<svg/><svg/>', /is not valid SVG/u],
+    ['malformed-drawio', 'drawio_source_en', '<mxfile><diagram></mxfile>\n', /is not valid Draw\.io XML/u],
+    ['wrong-drawio-root', 'drawio_source_en', '<svg></svg>\n', /is not valid Draw\.io XML/u],
+    ['multiple-drawio-roots', 'drawio_source_en', '<mxfile/><mxfile/>', /is not valid Draw\.io XML/u],
+    ['malformed-spec', 'drawio_spec_en', 'meta:\n  title: Broken\nnodes:\n  - id: [\nedges: []\n', /is not valid spec YAML/u],
+    ['invalid-spec-schema', 'drawio_spec_en', 'meta: []\nnodes: []\nedges: []\n', /is not valid spec YAML/u],
+    ['malformed-arch', 'drawio_arch_en', '{"nodes":[]}\n', /is not valid architecture JSON/u],
+  ]) {
+    const root = mkdtempSync(join(tmpdir(), `build-process-generator-checked-in-${caseName}-`));
+    const publicDir = join(root, 'client/public');
+    const detailDir = join(publicDir, 'benchmarks_detail');
+    const drawioDir = join(publicDir, 'drawio/CheckedBench');
+    mkdirSync(detailDir, { recursive: true });
+    mkdirSync(drawioDir, { recursive: true });
+    const assets = {
+      drawio_flowchart_en: 'drawio/CheckedBench/CheckedBench.en.svg',
+      drawio_flowchart_zh: 'drawio/CheckedBench/CheckedBench.zh.svg',
+      drawio_source_en: 'drawio/CheckedBench/CheckedBench.en.drawio',
+      drawio_source_zh: 'drawio/CheckedBench/CheckedBench.zh.drawio',
+      drawio_spec_en: 'drawio/CheckedBench/CheckedBench.en.spec.yaml',
+      drawio_spec_zh: 'drawio/CheckedBench/CheckedBench.zh.spec.yaml',
+      drawio_arch_en: 'drawio/CheckedBench/CheckedBench.en.arch.json',
+      drawio_arch_zh: 'drawio/CheckedBench/CheckedBench.zh.arch.json',
+    };
+    const entry = {
+      id: 'CheckedBench',
+      spec_authority: 'checked_in',
+      evidence_summary_en: 'Paper-aligned process.',
+      evidence_summary_zh: '与论文对齐的流程。',
+      source_url: 'https://example.com/paper',
+      source_locator: 'Section 3.2',
+      paper_alignment_review: passedPaperReview(),
+      assets,
+    };
+    writeFileSync(
+      join(publicDir, 'benchmarks_build_process_manifest.json'),
+      `${JSON.stringify([entry], null, 2)}\n`,
+    );
+    writeFileSync(
+      join(publicDir, 'benchmarks.json'),
+      `${JSON.stringify([{ id: 'CheckedBench' }], null, 2)}\n`,
+    );
+    writeFileSync(
+      join(detailDir, 'CheckedBench.json'),
+      `${JSON.stringify({ id: 'CheckedBench' }, null, 2)}\n`,
+    );
+    for (const assetPath of Object.values(assets)) {
+      const absolutePath = join(publicDir, assetPath);
+      if (assetPath === assets[invalidField]) {
+        if (invalidContent == null) mkdirSync(absolutePath);
+        else writeFileSync(absolutePath, invalidContent);
+      } else {
+        writeFileSync(absolutePath, checkedInAssetContent(assetPath));
+      }
+    }
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        generatorScript.pathname,
+        '--root',
+        root,
+        '--id',
+        'CheckedBench',
+        '--sync-data-only',
+      ],
+      { encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 1, caseName);
+    assert.match(
+      result.stderr,
+      new RegExp(`CheckedBench: checked-in asset ${invalidField} ${expected.source}`, 'u'),
+      caseName,
+    );
+  }
+});
+
 test('validates explicit topology before sync-data-only mutates benchmark data', () => {
   const root = mkdtempSync(join(tmpdir(), 'build-process-generator-sync-only-invalid-'));
   const publicDir = join(root, 'client/public');
@@ -723,6 +1270,10 @@ test('validates explicit topology before sync-data-only mutates benchmark data',
   mkdirSync(detailDir, { recursive: true });
   mkdirSync(drawioDir, { recursive: true });
   const entry = explicitGraphEntry({
+    source_url: 'https://example.com/paper',
+    paper_alignment_review: passedPaperReview({
+      sourceLocator: 'Section 3.2 and Figure 2',
+    }),
     assets: {
       drawio_flowchart_en: 'drawio/BranchBench/BranchBench.en.svg',
       drawio_flowchart_zh: 'drawio/BranchBench/BranchBench.zh.svg',

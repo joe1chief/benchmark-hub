@@ -9,14 +9,15 @@ meta:
     Paper-aligned PDDL generation, top-quality planning, plan/state sampling, eight open-ended task families, template
     translation, grammar parsing, and task-specific symbolic validation.
   legend: >-
-    The top row follows the paper's six-step generation workflow; the bottom row branches between stored/simulated
-    checks and planner-backed validators before strict accuracy reporting.
+    The top row follows the six-step generation workflow; the bottom row separates direct validators from cache-first
+    tasks whose unresolved candidates require a planner.
 nodes:
   - id: pddl
     label: |-
-      Generate PDDL Domain + Problem
-      13 ACPBench planning domains
-      Reuse ALFWorld PDDL
+      PDDL Source Preparation
+      Generator when available
+      ALFWorld: reuse official PDDL
+      13 planning domains
     type: database
     size: xl
     position:
@@ -24,9 +25,10 @@ nodes:
       'y': 100
   - id: planner
     label: |-
-      Run Top-K / Top-Quality Planner
-      Produce multiple valid plans
-      Keep task, current state, and goal
+      Plan Production
+      Top-quality planner first
+      Diverse planner as backup
+      Retain multiple valid plans
     type: process
     size: xl
     position:
@@ -34,9 +36,9 @@ nodes:
       'y': 100
   - id: sample
     label: |-
-      Sample Plan / Intermediate State
-      Choose artifact per task
-      Skip uncertain reachability states
+      Task-Scoped Sampling
+      Sample plans or intermediate states
+      according to the target task
     type: process
     size: xl
     position:
@@ -44,11 +46,11 @@ nodes:
       'y': 100
   - id: symbolic
     label: |-
-      Generate Symbolic QA
-      Applicability • progression
-      Reachability • action reachability
-      Validation • justification
-      Landmarks • next action
+      Task-Specific Symbolic QA
+      App • Prog • Reach • AReach
+      Val • Just • Land • NextA
+      Reach / AReach: skip uncertain states
+      Retain validator artifacts
     type: process
     size: xl
     position:
@@ -88,54 +90,79 @@ nodes:
       'y': 440
   - id: parse
     label: |-
-      Task-Specific Grammar Parser
-      Extract actions, facts, plans, or index
-      Reject invalid / unparseable symbols
+      Lenient Grammar Parser
+      Discard out-of-grammar tokens
+      Extract actions, facts, lists, or index
+      Then run symbolic validators
     type: process
     size: xl
     position:
       x: 1160
       'y': 440
   - id: route
-    label: Validator Path?
+    label: Validator Family?
     type: decision
     size: xl
     position:
       x: 880
       'y': 440
-  - id: stored
+  - id: deterministic
     label: |-
-      Stored / Simulation Checks
-      Exact sets: applicability, progression
-      First invalid index
-      Subsequence justification
+      Direct / Simulation Validators
+      App, Prog: exact complete sets
+      Val: first invalid index
+      Just: proper subsequence + valid plan
     type: process
     size: xl
     position:
-      x: 400
+      x: 600
       'y': 350
+  - id: known_fast
+    label: |-
+      Known-Answer Fast Path
+      Reach • AReach • Land • NextA
+      Check None / cached positive-negative sets
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 610
+  - id: unresolved
+    label: Unresolved Candidate?
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 610
   - id: solve
     label: |-
-      Planner-Backed Checks
-      Reachability • action reachability
-      Landmarks
-      Next action: optimal distance −1
+      Planner Fallback
+      Reach / AReach / Land
+      NextA: optimal cost drops by 1
     type: process
     size: xl
     position:
-      x: 400
-      'y': 530
+      x: 80
+      'y': 700
   - id: report
     label: |-
-      ACPBench Hard Results
+      Strict ACPBench Hard Accuracy
       Binary accuracy per task / domain
-      Strict answers
-      Optional applicability Jaccard
+      Final answers only
     type: terminal
     size: xl
     position:
-      x: 40
+      x: 80
       'y': 440
+  - id: jaccard
+    label: |-
+      Applicability-Only Add-on
+      Optional Jaccard similarity
+    type: terminal
+    size: xl
+    position:
+      x: 80
+      'y': 260
 edges:
   - from: pddl
     to: planner
@@ -162,19 +189,34 @@ edges:
     to: route
     type: primary
   - from: route
-    to: stored
+    to: deterministic
     type: primary
     label: |-
-      Stored: Applicability • Progression
-      Validation • Justification
+      App • Prog
+      Val • Just
   - from: route
-    to: solve
+    to: known_fast
     type: primary
-    label: Solve • 4 checks
-  - from: stored
+    label: Reach • AReach • Land • NextA
+  - from: deterministic
     to: report
     type: primary
+  - from: known_fast
+    to: unresolved
+    type: primary
+  - from: unresolved
+    to: report
+    type: primary
+    label: Known result
+  - from: unresolved
+    to: solve
+    type: primary
+    label: Planner needed
   - from: solve
     to: report
     type: primary
+  - from: report
+    to: jaccard
+    type: secondary
+    label: Less-strict analysis
 modules: []

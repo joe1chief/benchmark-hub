@@ -6,150 +6,162 @@ meta:
   routing: orthogonal
   title: CheXGenBench Build Process
   description: >-
-    Paper-aligned CheXGenBench flow: eleven chest-radiograph text-to-image models receive identical MIMIC-CXR data,
-    enhanced prompts, and training budgets; generated images are evaluated on fidelity, privacy, and clinical utility;
-    the leading Sana 0.6B pipeline is extended and filtered to release SynthCheX-75K.
-  legend: Solid arrows show standardized training and the three evaluation axes; dashed arrows show the dataset-release path.
+    Current TMLR/arXiv v4 CheXGenBench flow: eleven T2I systems follow model-specific training branches, generate a
+    fixed held-out MIMIC-CXR split, and undergo fidelity, privacy, classification, segmentation, and report-generation
+    evaluation with the paper's current system and metric contract.
+  legend: Solid arrows show model preparation and evaluation; dashed arrows carry the fixed data split to generation.
 nodes:
   - id: models
     label: |-
-      Select 11 Text-to-image Architectures
-      Established + Recent Diffusion/Transformer Models
-      Compare Small and >1B-parameter Systems
+      Select 11 T2I Architectures
+      Established + Recent Diffusion/Transformer
+      Include Domain-specific + Foundation Models
     type: document
     size: xl
     position:
       x: 40
-      'y': 40
-  - id: data
+      'y': 120
+  - id: model_route
     label: |-
-      Standardize MIMIC-CXR Data
-      237,388 Training Samples + Fixed Splits
-      Preserve Radiographs and Reports
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 400
-  - id: captions
-    label: |-
-      Build Enhanced Generation Prompts
-      LLaVA-Rad Expands Abbreviated Report Text
-      Add Richer Clinical and Visual Descriptions
-    type: process
+      Model Preparation Route
+      Existing Domain Model or Foundation Model?
+    type: decision
     size: xl
     position:
       x: 340
-      'y': 220
-  - id: training
+      'y': 120
+  - id: domain_models
     label: |-
-      Apply a Common 20-epoch Training Protocol
-      <1B Parameters: Full Fine-tuning
-      >1B Parameters: LoRA Rank 32
+      Domain-specific Baselines
+      RadEdit + LLM-CXR
+      Evaluate Out-of-the-box without Modification
+      Skip the Common Fine-tuning Path
     type: process
     size: xl
     position:
       x: 640
-      'y': 220
+      'y': 40
+  - id: training
+    label: |-
+      Fine-tune 9 Foundation Architectures
+      Same 237,388 Samples for 20 Epochs
+      <1B: Full Fine-tuning
+      >1B: LoRA Rank 32 on QKV
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 280
+  - id: data
+    label: |-
+      MIMIC-CXR Standard Splits
+      Training Split: 237,388
+      Held-out Test Prompts: 5,034
+      Enhanced LLaVA-Rad Captions
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 520
   - id: generate
     label: |-
-      Generate Synthetic Chest Radiographs
-      Use the Same Held-out Prompt/Data Protocol
-      Retain Per-model Outputs for All Evaluations
+      Generate on Fixed Test Prompts
+      Save Prompt + Synthetic Image Metadata
+      Use the Identical 5,034-image Test Split
     type: process
     size: xl
     position:
       x: 940
-      'y': 220
+      'y': 280
   - id: fidelity
     label: |-
       Fidelity + Mode Coverage
-      RadDino FID/KID • BioViL-T Alignment
-      Precision/Recall/Density/Coverage + Pathology Analysis
+      RadDino FID/KID + PRDC
+      BioViL-T Image–Text Alignment
+      Overall + Pathology-conditional Analysis
     type: process
     size: xl
     position:
       x: 1240
-      'y': 40
+      'y': 0
   - id: privacy
     label: |-
-      Privacy + Re-identification Risk
-      Pixel Nearest-neighbor Distance
-      RadDino Latent Distance + Siamese Re-ID Score
+      Privacy + Patient Re-identification
+      Nearest Training Image: Pixel Distance
+      RadDino Latent Distance
+      Siamese Re-ID: Average • Max • Count
     type: process
     size: xl
     position:
       x: 1240
-      'y': 220
-  - id: utility
+      'y': 160
+  - id: classification
     label: |-
-      Downstream Clinical Utility
-      Train Image Classifiers on Synthetic Data
-      Evaluate Accuracy/AUROC on Real Test Data
+      Classification Utility
+      20K Real + 20K Synthetic; ResNet-50
+      Train 20 Epochs; Test on 5,034 Real
+      Accuracy • F1 • AUROC
     type: process
     size: xl
     position:
       x: 1240
-      'y': 400
-  - id: reports
+      'y': 320
+  - id: segmentation
     label: |-
-      Report-generation Utility
-      Generate Findings from Synthetic Radiographs
-      BLEU • ROUGE-L • F1-RadGraph • Clinical F1
+      Segmentation Utility
+      3,000 Real + 3,000 Synthetic Pairs
+      Clavicle Masks from a 159-region Model
+      Train U-Net; Report Held-out DICE
     type: process
     size: xl
     position:
-      x: 1540
-      'y': 400
+      x: 1240
+      'y': 480
+  - id: rrg
+    label: |-
+      Radiology Report Generation Utility
+      50K Real + 20K Synthetic
+      Train LLaVA-Rad from Scratch
+      BLEU • ROUGE-L • F1-RadGraph
+      GREENScore • RaTEScore
+    type: process
+    size: xl
+    position:
+      x: 1240
+      'y': 640
   - id: scorecard
     label: |-
-      Unified 20+ Metric Scorecard
-      Compare Fidelity, Coverage, Privacy, and Utility
-      Expose Metric Disagreement and Model Trade-offs
+      CheXGenBench 20+ Metric Scorecard
+      Compare Fidelity • Privacy • Utility
+      Expose Metric Disagreement + Model Trade-offs
     type: terminal
     size: xl
     position:
       x: 1840
-      'y': 220
-  - id: select
-    label: |-
-      Select Leading Sana 0.6B
-      Extend Fine-tuning beyond Benchmark Budget
-      Generate a Larger Synthetic Candidate Pool
-    type: process
-    size: xl
-    position:
-      x: 2140
-      'y': 220
-  - id: filter
-    label: |-
-      HealthGPT Quality Filtering
-      Remove Low-quality or Clinically Implausible Images
-      Retain High-quality Synthetic Radiographs
-    type: process
-    size: xl
-    position:
-      x: 2440
-      'y': 220
-  - id: release
-    label: |-
-      Release SynthCheX-75K
-      75,000 Synthetic Chest Radiographs
-      Publish Benchmark, Models, and Dataset
-    type: database
-    size: xl
-    position:
-      x: 2740
-      'y': 220
+      'y': 320
 edges:
   - from: models
-    to: captions
+    to: model_route
+    type: primary
+  - from: model_route
+    to: domain_models
+    type: primary
+  - from: model_route
+    to: training
     type: primary
   - from: data
-    to: captions
-    type: primary
-  - from: captions
     to: training
+    type: primary
+  - from: data
+    to: generate
+    type: data
+    waypoints:
+      - x: 800
+        'y': 560
+      - x: 800
+        'y': 300
+  - from: domain_models
+    to: generate
     type: primary
   - from: training
     to: generate
@@ -161,27 +173,32 @@ edges:
     to: privacy
     type: primary
   - from: generate
-    to: utility
+    to: classification
     type: primary
-  - from: utility
-    to: reports
+  - from: generate
+    to: segmentation
     type: primary
+  - from: generate
+    to: rrg
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0
+      entryY: 0.5
   - from: fidelity
     to: scorecard
     type: primary
   - from: privacy
     to: scorecard
     type: primary
-  - from: reports
+  - from: classification
     to: scorecard
     type: primary
-  - from: scorecard
-    to: select
-    type: data
-  - from: select
-    to: filter
+  - from: segmentation
+    to: scorecard
     type: primary
-  - from: filter
-    to: release
+  - from: rrg
+    to: scorecard
     type: primary
 modules: []

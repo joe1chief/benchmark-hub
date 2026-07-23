@@ -30,7 +30,8 @@ nodes:
   - id: types
     label: |-
       控制问题覆盖
-      1 动作 + 1 空间 + 1 时间 + 7 自由
+      覆盖动作 + 空间 + 时间问题
+      其余问题自由、不限题型
     type: process
     size: xl
     position:
@@ -56,7 +57,8 @@ nodes:
       'y': 100
   - id: quality
     label: |-
-      独立答案复核
+      双重检查每条答案
+      由另一名标注员独立复核
       不可回答问题返工
     type: process
     size: xl
@@ -76,20 +78,48 @@ nodes:
   - id: translate
     label: |-
       中译英质检
-      四引擎 + CIDEr 检查
+      生成四个翻译引擎结果
     type: process
     size: xl
     position:
       x: 1720
       'y': 100
-  - id: release
+  - id: translation_gate
     label: |-
-      ActivityNet-QA
-      58,000 对双语问答
-    type: database
+      CIDEr 共识门控
+      平均相似度是否超过阈值？
+    type: decision
     size: xl
     position:
       x: 1960
+      'y': 100
+  - id: baidu_translation
+    label: |-
+      保留百度翻译
+      共识通过阈值
+    type: process
+    size: xl
+    position:
+      x: 2200
+      'y': 0
+  - id: manual_translation
+    label: |-
+      人工翻译
+      处理低共识问答
+    type: user
+    size: xl
+    position:
+      x: 2200
+      'y': 240
+  - id: release
+    label: |-
+      ActivityNet-QA
+      问答：32,000 / 18,000 / 8,000
+      视频：3,200 / 1,800 / 800
+    type: database
+    size: xl
+    position:
+      x: 2440
       'y': 100
   - id: prediction
     label: |-
@@ -98,7 +128,7 @@ nodes:
     type: document
     size: xl
     position:
-      x: 1960
+      x: 2440
       'y': 660
   - id: exact
     label: |-
@@ -113,14 +143,15 @@ nodes:
     label: |-
       WUPS 相似度
       阈值 0.9 与 0.0
+      仅报告总体分数
     type: process
     size: xl
     position:
-      x: 1640
-      'y': 760
+      x: 1080
+      'y': 860
   - id: aggregate
     label: |-
-      按题型汇总
+      按题型汇总精确匹配
       动作 • 空间 • 时间 • 自由
     type: process
     size: xl
@@ -130,7 +161,8 @@ nodes:
   - id: report
     label: |-
       报告结果
-      总体与分题型分数
+      精确匹配：总体 + 分题型
+      WUPS：仅总体
     type: terminal
     size: xl
     position:
@@ -163,6 +195,20 @@ edges:
     to: translate
     type: optional
   - from: translate
+    to: translation_gate
+    type: primary
+  - from: translation_gate
+    to: baidu_translation
+    type: primary
+    label: 超过阈值
+  - from: translation_gate
+    to: manual_translation
+    type: optional
+    label: 未过阈值
+  - from: baidu_translation
+    to: release
+    type: primary
+  - from: manual_translation
     to: release
     type: primary
   - from: release
@@ -174,11 +220,16 @@ edges:
   - from: prediction
     to: wups
     type: primary
+    waypoints:
+      - x: 2320
+        'y': 900
+      - x: 1320
+        'y': 900
   - from: exact
     to: aggregate
     type: primary
   - from: wups
-    to: aggregate
+    to: report
     type: primary
   - from: aggregate
     to: report

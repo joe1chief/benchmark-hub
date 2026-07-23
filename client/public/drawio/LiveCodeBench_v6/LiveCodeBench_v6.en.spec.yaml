@@ -1,181 +1,260 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LiveCodeBench v6 Build Process
   description: >-
-    Traces the official contest-problem curation into release_v6 and the current official code-generation evaluation
-    path.
+    Combines the paper-v2 curation method with the pinned release_v6 data and current official code-generation and
+    self-repair runners, while preserving version, full-test, and leaderboard drift boundaries.
   legend: >-
-    release_v6 contains 1,055 problems dated May 2023 through April 2025. The official runner defaults to the pruned
-    code_generation_lite tests; --not_fast selects the original full tests.
+    Solid arrows show official data or evaluation flow. The lower branch is the separate self-repair scenario; the
+    right-hand card records why --not_fast is not a version-pinned v6 full-test snapshot.
 nodes:
   - id: platforms
     label: |-
       Monitor Public Programming Contests
-      LeetCode Weekly and Biweekly
-      AtCoder Beginner Contests
-      Selected CodeForces Divisions 3 and 4
+      LeetCode Weekly / Biweekly
+      AtCoder ABC
+      Selected CodeForces Division 3 / 4
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: collect
+      x: 64
+      'y': 96
+  - id: scrape
     label: |-
-      Collect Each New Problem
-      Statement · Release Date · Difficulty
-      Ground-truth Solution
-      Tests and Starter Code when Available
+      Scrape Public Problem Records
+      Statement · Contest Date · Difficulty
+      Solution · Tests · Starter Code
+      Only Publicly Visible Content
     type: process
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: curate
+      x: 336
+      'y': 96
+  - id: filter
     label: |-
-      Curate Difficulty and Tests
-      Exclude Excessively Difficult Problems
-      Use Platform Tests where Complete
-      Generate or Repair Missing Test Coverage
+      Apply Paper Quality Filters
+      Parse Math · Exclude Images
+      Remove Non-I/O-gradable Problems
+      Remove Excessively Hard Problems
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: format
-    label: |-
-      Standardize Code-generation Instances
-      Natural-language Statement and Examples
-      Functional or Standard-input Contract
-      Unseen Tests for Functional Correctness
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 40
-  - id: extend
-    label: |-
-      Extend the Continuous Benchmark
-      Include Problems from May 2023
-      Continue through April 2025
-      Preserve Dates for Time-window Scoring
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: release
-    label: |-
-      Publish release_v6
-      1,055 Programming Problems
-      Easy · Medium · Hard Labels
-      Public LiveCodeBench Release
-    type: database
-    size: xl
-    position:
-      x: 1420
-      'y': 40
+      x: 608
+      'y': 96
   - id: tests
     label: |-
-      Select the Test Suite
-      Default · Pruned code_generation_lite
-      Faster with Similar Performance Estimate
-      --not_fast · Original Full Tests
+      Curate Functional Tests
+      Use Platform Tests when Available
+      Else Generate Random + Adversarial Inputs
+      Validate with Correct Solutions · Cap 100
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 420
+      x: 880
+      'y': 96
+  - id: format
+    label: |-
+      Standardize Code-generation Tasks
+      LeetCode · Functional + Starter Code
+      AtCoder / CodeForces · Standard Input
+      Keep Date · Platform · Difficulty
+    type: process
+    size: xl
+    position:
+      x: 1152
+      'y': 96
+  - id: release
+    label: |-
+      Freeze release_v6
+      1,055 Problems · May 2023–Apr 2025
+      Public code_generation_lite Artifact
+      Later than the Paper's 511-task Snapshot
+    type: database
+    size: xl
+    position:
+      x: 1424
+      'y': 96
+  - id: select
+    label: |-
+      Load the Official Test Split
+      version_tag = release_v6
+      Optional Start / End Date Filters
+      Single Hugging Face test Split
+    type: process
+    size: xl
+    position:
+      x: 1424
+      'y': 416
   - id: prompt
     label: |-
-      Build the Model-specific Prompt
-      Route Functional vs Standard-input Format
-      Apply the Configured Model Style
-      Request Only a Complete Solution
+      Build the Model-style Prompt
+      Functional vs Standard-input Contract
+      Paper · Instruction Models Zero-shot
+      Paper · Base Models One-shot
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: generate
+      x: 1152
+      'y': 416
+  - id: sample
     label: |-
-      Sample Candidate Programs
-      n = 10 · Temperature = 0.2
-      top_p = 0.95 · Max Tokens = 2,000
-      Cache or Resume Outputs when Requested
+      Apply Current CLI Defaults
+      n=10 · Temperature=0.2 · top_p=0.95
+      max_tokens=2,000
+      Configuration · Not a Data Property
     type: process
     size: xl
     position:
-      x: 860
-      'y': 420
+      x: 880
+      'y': 416
   - id: parse
     label: |-
-      Extract Executable Code
-      Apply Model-style Output Parsing
-      Keep Ten Candidates per Problem
-      Send Each Candidate to the Checker
+      Parse Model-specific Output
+      Extract Executable Python Code
+      Preserve n Candidates · Default 10
     type: process
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: check
+      x: 608
+      'y': 416
+  - id: checker
     label: |-
       Run the Modified APPS Checker
-      Compile and Execute on All Tests
-      Handle Fixed Edge Cases and Timeouts
-      Record Pass / Failure per Candidate
+      Compile / Execute Public + Private Tests
+      Candidate Must Pass Every Test
+      Timeout Variation Can Be under 0.5 Points
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: report
+      x: 336
+      'y': 416
+  - id: metrics
     label: |-
-      Report Code-generation Scores
-      Estimate Pass@1 and Pass@5
+      Report Code-generation Metrics
+      Official Docs · Pass@1 + Pass@5
       Slice by Date · Platform · Difficulty
-      Retain release_v6 for Reproducibility
+    type: formula
+    size: xl
+    position:
+      x: 64
+      'y': 416
+  - id: leaderboard
+    label: |-
+      Mutable Official Leaderboard
+      Current Snapshot · v6 · Pass@1
+      Code-generation PR Submissions Only
+      Previous release_v5 Page Retained
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 64
+      'y': 736
+  - id: repair_seed
+    label: |-
+      Start the Separate Self-repair Run
+      Read Prior Code-generation Eval File
+      Keep Already-correct Outputs Unchanged
+    type: document
+    size: xl
+    position:
+      x: 336
+      'y': 736
+  - id: repair_feedback
+    label: |-
+      For Each Failed Candidate
+      Give Syntax / Runtime / Wrong-answer
+      or Time-limit Feedback
+      Ask for the Entire Fixed Program
+    type: process
+    size: xl
+    position:
+      x: 608
+      'y': 736
+  - id: repair_check
+    label: |-
+      Generate One Repair per Failure
+      Current Self-repair Command Uses n=1
+      Extract Code · Rerun Functional Tests
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 736
+  - id: repair_metric
+    label: |-
+      Self-repair Combined Pass@1
+      Original Successes + Successful Repairs
+      Separate Scenario · Not Pass@5
+    type: terminal
+    size: xl
+    position:
+      x: 1152
+      'y': 736
+  - id: full_boundary
+    label: |-
+      Full-test Version Boundary
+      Default · Pruned code_generation_lite
+      --not_fast Loads code_generation
+      Current Full Loader Ignores release_version
+    type: document
+    size: xl
+    position:
+      x: 1424
+      'y': 736
 edges:
   - from: platforms
-    to: collect
+    to: scrape
     type: primary
-  - from: collect
-    to: curate
+  - from: scrape
+    to: filter
     type: primary
-  - from: curate
-    to: format
-    type: primary
-  - from: format
-    to: extend
-    type: primary
-  - from: extend
-    to: release
-    type: primary
-  - from: release
+  - from: filter
     to: tests
     type: primary
   - from: tests
+    to: format
+    type: primary
+  - from: format
+    to: release
+    type: primary
+  - from: release
+    to: select
+    type: primary
+  - from: select
     to: prompt
     type: primary
   - from: prompt
-    to: generate
+    to: sample
     type: primary
-  - from: generate
+  - from: sample
     to: parse
     type: primary
   - from: parse
-    to: check
+    to: checker
     type: primary
-  - from: check
-    to: report
+  - from: checker
+    to: metrics
     type: primary
+  - from: metrics
+    to: leaderboard
+    type: primary
+  - from: checker
+    to: repair_seed
+    type: data
+  - from: repair_seed
+    to: repair_feedback
+    type: primary
+  - from: repair_feedback
+    to: repair_check
+    type: primary
+  - from: repair_check
+    to: repair_metric
+    type: primary
+  - from: select
+    to: full_boundary
+    type: optional
 modules: []

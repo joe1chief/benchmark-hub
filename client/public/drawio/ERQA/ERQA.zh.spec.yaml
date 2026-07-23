@@ -5,109 +5,260 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ERQA 构建流程
-  description: 对齐论文与官方发布：组织人工策展的具身推理 VQA、公开序列化、可选思维链推理并报告准确率。
-  legend: Gemini Robotics 报告明确给出能力分类、规模、多图占比和评测方法，但未公开图像采集或问题编写协议，因此图中不作推断。
+  description: 固定 ERQA 的来源、人工标注、TFRecord 精确提示后缀，以及论文与发布脚本评测边界。
+  legend: 发布问题已包含直接回答后缀；CoT 仅由论文追加；API 参数与规范化遵循固定代码。
 nodes:
-  - id: scope
+  - id: evidence
     label: |-
-      定义具身智能体能力范围
-      超越识别 / 计数 / 定位等原子能力
-      关注物理世界可供性与三维关系
+      固定证据边界
+      arXiv:2503.20020v1
+      ERQA 仓库 @ 5bba488
+      TFRecord SHA256 1974f5e5…
     type: document
     size: xl
     position:
       x: 40
-      'y': 250
-  - id: curate
+      'y': 20
+  - id: scope
     label: |-
-      策展多模态 VQA 题目
-      一张或多张图像与文本交错输入
-      四选一问题，答案为 A / B / C / D
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 250
-  - id: taxonomy
-    label: |-
-      标注 8 类问题
-      空间 84 · 动作 72 · 轨迹 66 · 状态 55
-      任务 38 · 多视角 37 · 指向 34 · 其他 14
+      定义具身推理范围
+      超越识别、计数与定位
+      可供性 · 三维关系
+      跨帧配准
     type: document
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: multi_image
+      x: 40
+      'y': 350
+  - id: images
     label: |-
-      保留单图与多图推理
-      共 400 题 · 28% 为多图题
-      跨帧物体配准与概念对应
+      图像：作者 · OXE · UMI · MECCANO
+      HoloAssist · EGTEA Gaze+
+      样本筛选与出题细节
+      未披露
     type: database
+    size: xl
+    position:
+      x: 300
+      'y': 350
+  - id: curate
+    label: |-
+      策展图文交错的多模态 VQA
+      一张或多张图像加文本
+      A / B / C / D 四选一
+    type: process
+    size: xl
+    position:
+      x: 560
+      'y': 350
+  - id: manual_qc
+    label: |-
+      人工质量控制
+      400 道问题全部人工标注
+      检查正确性与质量
+    type: process
     size: xl
     position:
       x: 820
-      'y': 250
-  - id: release
+      'y': 350
+  - id: taxonomy
     label: |-
-      序列化 ERQA 公开版本
-      TFRecord：question · image/encoded · answer
-      问题类型 · 视觉索引 · CC BY 4.0
-    type: database
+      八类问题
+      空间 84 · 动作 72 · 轨迹 66 · 状态估计 55
+      任务 38 · 多视角 37
+      指向 34 · 其他 14
+    type: document
     size: xl
     position:
       x: 1080
-      'y': 250
-  - id: prompt
+      'y': 350
+  - id: dataset
     label: |-
-      进行零样本多模态推理
-      直接回答或附加论文原始思维链指令
-      先逐步推理，再输出最终选项
-    type: process
+      ERQA 基准 · 400 道四选一问题
+      28% 为多图题
+      论文未报告训练 / 开发 / 测试划分
+    type: database
     size: xl
     position:
       x: 1340
-      'y': 250
-  - id: parse
+      'y': 350
+  - id: artifact
     label: |-
-      解析最终选项字母
-      将 A / B / C / D 与标准答案比对
-      保留问题类型用于诊断
-    type: process
+      公开 TFRecord · 400 条
+      91,402,921 字节 · CC BY 4.0
+      question · image/encoded · answer
+      question_type · visual_indices
+    type: database
     size: xl
     position:
       x: 1600
-      'y': 250
-  - id: metrics
+      'y': 350
+  - id: direct_suffix
     label: |-
-      报告选择题准确率
-      总体与各推理类别准确率
-      比较直接提示和思维链提示
-    type: terminal
+      TFRecord 直接回答后缀 · 400/400
+      “Please answer directly with only
+      the letter of the correct option
+      and nothing else.”
+    type: document
     size: xl
     position:
       x: 1860
-      'y': 250
+      'y': 350
+  - id: protocol
+    label: |-
+      评测协议边界
+      论文提示
+      与固定发布脚本分开
+    type: decision
+    size: xl
+    position:
+      x: 2140
+      'y': 350
+  - id: paper_direct
+    label: |-
+      论文无 CoT 条件
+      原样使用原始 TFRecord 问题
+      不另造直接提示
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 80
+  - id: paper_cot
+    label: |-
+      论文在原问题后精确追加
+      “Reason step by step about the answer,
+      and show your work, for each step.
+      Only after that,
+      proceed to the final answer.”
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 300
+  - id: release_harness
+    label: |-
+      发布脚本 @ 5bba488
+      原样使用原始 TFRecord 问题
+      不自动注入论文 CoT
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 600
+  - id: openai_settings
+    label: |-
+      OpenAI API 参数
+      温度 0
+      max_tokens=300
+    type: document
+    size: xl
+    position:
+      x: 2700
+      'y': 520
+  - id: gemini_settings
+    label: |-
+      Gemini API 参数
+      温度 0
+      max_output_tokens=500
+    type: document
+    size: xl
+    position:
+      x: 2700
+      'y': 700
+  - id: normalize
+    label: |-
+      精确匹配规范化
+      对完整响应移除句点
+      去首尾空白 · 转小写
+      再与标准答案精确匹配
+    type: process
+    size: xl
+    position:
+      x: 2980
+      'y': 610
+  - id: metrics
+    label: |-
+      多项选择准确率
+      总体 · 单图 · 多图
+      按问题类型
+      论文比较无 CoT 与 CoT
+    type: terminal
+    size: xl
+    position:
+      x: 3280
+      'y': 350
 edges:
+  - from: evidence
+    to: images
+    type: data
   - from: scope
+    to: images
+    type: data
+  - from: images
     to: curate
     type: primary
   - from: curate
+    to: manual_qc
+    type: primary
+  - from: manual_qc
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: multi_image
+    to: dataset
     type: primary
-  - from: multi_image
-    to: release
+  - from: dataset
+    to: artifact
     type: primary
-  - from: release
-    to: prompt
+  - from: artifact
+    to: direct_suffix
     type: primary
-  - from: prompt
-    to: parse
+  - from: direct_suffix
+    to: protocol
     type: primary
-  - from: parse
+  - from: protocol
+    to: paper_direct
+    type: primary
+  - from: protocol
+    to: paper_cot
+    type: primary
+  - from: protocol
+    to: release_harness
+    type: primary
+  - from: release_harness
+    to: openai_settings
+    type: primary
+  - from: release_harness
+    to: gemini_settings
+    type: primary
+  - from: openai_settings
+    to: normalize
+    type: primary
+  - from: gemini_settings
+    to: normalize
+    type: primary
+  - from: paper_direct
     to: metrics
     type: primary
+    waypoints:
+      - x: 3220
+        'y': 130
+      - x: 3220
+        'y': 400
+  - from: paper_cot
+    to: metrics
+    type: primary
+    waypoints:
+      - x: 3240
+        'y': 350
+      - x: 3240
+        'y': 400
+  - from: normalize
+    to: metrics
+    type: primary
+    waypoints:
+      - x: 3260
+        'y': 660
+      - x: 3260
+        'y': 400
 modules: []

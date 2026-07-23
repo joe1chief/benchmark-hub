@@ -1,149 +1,299 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Arena-Hard Build Process
-  description: Paper-aligned BenchBuilder construction and evaluation pipeline for the 500-prompt Arena-Hard-Auto benchmark.
-  legend: Read the top row left-to-right, then the lower row right-to-left through evaluation and quality review.
+  title: Arena-Hard v0.1 Build and Evaluation
+  description: >-
+    Arena-Hard is the construction-pipeline page for the same 500-prompt Arena-Hard-Auto-v0.1 release. The diagram
+    follows arXiv:2406.11939v2 construction and pinned v0.1 evaluation through post-sampling safety cleanup, judge
+    parsing, battle weights, Bradley-Terry fitting, and the default baseline win-rate report.
+  legend: >-
+    Solid arrows follow paper-v2 construction and the pinned v0.1 evaluator. The dashed note isolates the conflicting
+    April-blog/repository history from the paper-v2 main chain.
 nodes:
   - id: source
     label: |-
-      Chatbot Arena Logs
+      Chatbot Arena Query Pool
       200,000 Crowdsourced Prompts
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
-  - id: clean
+      'y': 120
+  - id: cleanup
     label: |-
-      Clean Prompt Pool
-      Remove Duplicates, Multi-turn
-      and Non-English Content
+      Paper-v2 Prompt Cleanup
+      Deduplicate • Single-Turn • English
+      Exact Snapshot / Rules Not Released
     type: process
     size: xl
     position:
       x: 320
-      'y': 100
+      'y': 120
   - id: topics
     label: |-
-      Hierarchical Topic Modeling
-      text-embedding-3-small + UMAP
-      HDBSCAN -> 4,000 Topics
+      Paper-v2 Topic Modeling
+      text-embedding-3-small • UMAP • HDBSCAN
+      4,000 Distinct Topics
+      Summarized and Named by an LLM
     type: process
     size: xl
     position:
       x: 600
-      'y': 100
+      'y': 120
+    style:
+      fontSize: 10
   - id: quality
     label: |-
-      GPT-4-Turbo Quality Annotator
-      Seven Required Skills (0-7)
-      Keep Prompt >=6 / Topic Mean >=5
+      Paper-v2 Quality Annotation
+      GPT-4-Turbo • Seven Criteria
+      Each Prompt Scored 0–7
     type: process
     size: xl
     position:
       x: 880
-      'y': 100
-  - id: safety
+      'y': 120
+  - id: v2_gate
     label: |-
-      High-quality Topic Pool
-      More than 500 Clusters
+      Paper-v2 Quality Gates
+      Keep Prompt Score ≥ 6
+      Keep Cluster Mean ≥ 5
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 120
+  - id: cluster_pool
+    label: |-
+      High-Quality Cluster Pool
+      More Than 500 Clusters
+      After the Paper-v2 Gates
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 120
+  - id: sample
+    label: |-
+      Diverse Random Sampling
+      Randomly Select 250 Clusters
+      2 Prompts Each = 500
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 120
+  - id: safety_cleanup
+    label: |-
+      Post-Sampling Safety Cleanup
       Remove PII / Offensive Content
+      Applied After 250 × 2 Sampling
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 360
+  - id: release
+    label: |-
+      Arena-Hard Pipeline Page
+      Same Arena-Hard-Auto-v0.1 Release
+      500 Prompts • No Separate Dataset
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 100
-  - id: sample
+      x: 1720
+      'y': 600
+    style:
+      fontSize: 10
+  - id: responses
     label: |-
-      Stratified Prompt Sampling
-      Randomly Select 250 Clusters
-      2 Prompts per Cluster
+      Candidate + Baseline Responses
+      Baseline: gpt-4-0314
+      Open-Ended Generation on 500 Prompts
     type: process
     size: xl
     position:
       x: 1440
-      'y': 100
-  - id: dataset
+      'y': 600
+    style:
+      fontSize: 10
+  - id: two_games
     label: |-
-      Arena-Hard-Auto
-      500 Diverse Hard Prompts
+      Two Judge Games per Prompt
+      Swap A/B Positions
+      500 × 2 = 1,000 Judgments per Model
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 600
+    style:
+      fontSize: 10
+  - id: judge_prompt
+    label: |-
+      gpt-4-1106-preview • T = 0
+      max_tokens = 4,096
+      First Produce Own Answer, Then Compare
     type: document
     size: xl
     position:
-      x: 1440
-      'y': 440
-  - id: responses
-    label: |-
-      Evaluated + Baseline Responses
-      Open-ended Model Generation
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 440
-  - id: judge
-    label: |-
-      GPT-4-Turbo Pairwise Judge
-      Swap A/B Positions per Prompt
-      1,000 Judgments per Model
-    type: process
-    size: xl
-    position:
       x: 880
-      'y': 440
-  - id: score
+      'y': 600
+    style:
+      fontSize: 10
+  - id: raw_judgment
     label: |-
-      Bradley-Terry Aggregation
-      Win Rate + Bootstrap CI
-      Optional Style Controls
+      Five Allowed Verdict Labels
+      [[A>>B]] • [[A>B]] • [[A=B]]
+      [[B>A]] • [[B>>A]]
     type: process
     size: xl
     position:
       x: 600
-      'y': 440
-  - id: metrics
+      'y': 600
+    style:
+      fontSize: 10
+  - id: parser
     label: |-
-      Benchmark Quality Review
-      Separability / Human Agreement
-      Pair Rank Brier Score
-    type: terminal
+      Pinned Verdict Parser
+      No Label → Continue; At Most 2 Attempts
+      Single / Repeated Same Label → Accept
+      Conflicting Labels → Invalid; No Retry
+    type: process
     size: xl
     position:
       x: 320
-      'y': 440
+      'y': 600
+  - id: normalized_battles
+    label: |-
+      Normalize Second-Game Position
+      Strong Win/Loss ×3 • Slight ×1
+      Tie Preserved • Invalid Dropped
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 600
+  - id: bt_elo
+    label: |-
+      Bradley-Terry / Elo-Scale Logistic Fit
+      Unregularized Estimation
+      Anchor gpt-4-0314 = 1,000
+    type: formula
+    size: xl
+    position:
+      x: 40
+      'y': 880
+    style:
+      fontSize: 10
+  - id: baseline_winrate
+    label: |-
+      Convert Fit to Win Rate
+      Against gpt-4-0314
+      Default Report Is Not Elo Rating
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 880
+  - id: bootstrap
+    label: |-
+      Bootstrap Uncertainty
+      100 Rounds • 2.5 / 97.5 Percentiles
+      95% Confidence Interval
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 880
+  - id: report
+    label: |-
+      Arena-Hard-Auto-v0.1 Report
+      Win Rate vs Baseline • 95% CI
+      Auditable Pairwise-to-BT Chain
+    type: terminal
+    size: xl
+    position:
+      x: 880
+      'y': 880
+  - id: version_boundary
+    label: |-
+      Source-Version Evidence Only
+      April Blog / Repo: Mean ≥ 6 • v1: GPT-3.5
+      Pinned Topic Naming: gpt-4o-mini
+      Not the Paper-v2 Main Chain
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 880
+    style:
+      fontSize: 10
 edges:
   - from: source
-    to: clean
+    to: cleanup
     type: primary
-  - from: clean
+  - from: cleanup
     to: topics
     type: primary
   - from: topics
     to: quality
     type: primary
   - from: quality
-    to: safety
+    to: v2_gate
     type: primary
-  - from: safety
+  - from: v2_gate
+    to: cluster_pool
+    type: primary
+  - from: cluster_pool
     to: sample
     type: primary
   - from: sample
-    to: dataset
+    to: safety_cleanup
     type: primary
-  - from: dataset
+  - from: safety_cleanup
+    to: release
+    type: primary
+  - from: release
     to: responses
     type: primary
   - from: responses
-    to: judge
+    to: two_games
     type: primary
-  - from: judge
-    to: score
+  - from: two_games
+    to: judge_prompt
     type: primary
-  - from: score
-    to: metrics
+  - from: judge_prompt
+    to: raw_judgment
     type: primary
+  - from: raw_judgment
+    to: parser
+    type: primary
+  - from: parser
+    to: normalized_battles
+    type: primary
+  - from: normalized_battles
+    to: bt_elo
+    type: primary
+  - from: bt_elo
+    to: baseline_winrate
+    type: primary
+  - from: baseline_winrate
+    to: bootstrap
+    type: primary
+  - from: bootstrap
+    to: report
+    type: primary
+  - from: v2_gate
+    to: version_boundary
+    type: optional
+    waypoints:
+      - x: 1280
+        'y': 60
+      - x: 2000
+        'y': 60
+      - x: 2000
+        'y': 930
 modules: []

@@ -6,16 +6,17 @@ meta:
   routing: orthogonal
   title: ChartQA Build Process
   description: >-
-    Paper-aligned construction and evaluation of 20,882 real-world charts with 9,608 human-written and 23,111
-    T5-generated questions, combining a two-worker AMT quality path with summary-based answer-aware generation,
-    answer-in-table filtering, manual test cleaning, and exact or 5-percent-relaxed answer scoring.
-  legend: Solid arrows show the human and machine QA pipelines; dashed arrows carry chart metadata into annotation.
+    Paper-aligned ChartQA construction and evaluation: source-specific chart artifacts, qualified AMT author-verifier
+    annotation, T5 answer-aware augmentation from Statista summaries, quality filters and split counts, followed by the
+    benchmark's single hybrid relaxed-accuracy rule for numeric and text answers.
+  legend: Solid arrows show the human and machine QA pipelines; dashed arrows carry chart artifacts into augmentation.
 nodes:
   - id: sources
     label: |-
-      Crawl 20,882 Real-world Charts
-      Statista • Pew Research • Our World in Data • OECD
-      Diverse Topics, Styles, Bar, Line, and Pie Charts
+      Curate 20,882 Charts
+      Statista • Pew • OWID • OECD
+      Bar / Line / Pie
+      Diverse Topics and Styles
     type: database
     size: xl
     position:
@@ -23,9 +24,11 @@ nodes:
       'y': 220
   - id: artifacts
     label: |-
-      Preserve Available Chart Artifacts
-      Images • Tables • Metadata • SVG • Descriptions
-      Extract Chart-element Bounding Boxes from SVG
+      Preserve Source Artifacts
+      Pew: Image Only
+      Other 3: Tables/Metadata
+      SVG • Descriptions
+      Derive Element Boxes from SVG
     type: process
     size: xl
     position:
@@ -33,79 +36,98 @@ nodes:
       'y': 220
   - id: human_author
     label: |-
-      ChartQA-H: AMT Worker Authors Two QA Pairs
-      Emphasize Visual and Compositional Reasoning
-      Use Chart Images and Available Context
+      Qualify AMT Workers
+      Acceptance ≥95% • ≥5,000 HITs
+      Pass Pretest
+      Per HIT: Answer 2 Prior QAs
+      Write 2 New QA Pairs
     type: user
     size: xl
     position:
       x: 640
-      'y': 40
+      'y': 20
   - id: human_verify
     label: |-
-      Second Worker Independently Answers
-      Accept Exact Agreement
-      Manually Resolve Disagreements
-    type: process
+      Independent Second Answers
+      Exact Match Accepted • 61.04%
+      Mismatches Manually Adjudicated
+      Select Final Correct Answer
+    type: user
     size: xl
     position:
       x: 940
-      'y': 40
+      'y': 20
+  - id: human_audit
+    label: |-
+      Quality Audit Only
+      500 Random QA Pairs
+      Include Typos/Lexical Variants
+      Agreement Estimate: 78.55%
+    type: document
+    size: xl
+    position:
+      x: 940
+      'y': 220
   - id: human_set
     label: |-
-      Finalize 9,608 Human Questions
-      Train 7,398 • Validation 960 • Test 1,250
-      4,804 Associated Charts
+      Finalize 9,608 Human Qs
+      Train 7,398 • Validation 960
+      Test 1,250
+      4,804 Charts
     type: database
     size: xl
     position:
       x: 1240
-      'y': 40
+      'y': 20
   - id: summaries
     label: |-
-      ChartQA-M: Use Human-written Statista Summaries
-      Preserve Natural Language Variation
-      Pair Summaries with Chart Tables
+      ChartQA-M • Statista Summaries
+      Pair Human Summaries + Tables
+      Keep Natural Language Variation
     type: document
     size: xl
     position:
       x: 640
-      'y': 400
+      'y': 420
   - id: t5
     label: |-
       Two SQuAD-tuned T5 Models
-      Extract Candidate Answers from Summaries
-      Generate Answer-aware Questions
+      Extract Answers from Summaries
+      Generate Answer-aware Qs
     type: process
     size: xl
     position:
       x: 940
-      'y': 400
+      'y': 420
   - id: machine_filter
     label: |-
-      Filter Invalid Generated Questions
-      Require the Answer to Appear in the Chart Table
-      Audit 1,250 Pairs: 86.64% Complete and Correct
+      Remove Answers Missing
+      from Chart Table
+      Audit 1,250: 86.64%
+      Complete / Correct
+      Clean Machine Test Set
     type: process
     size: xl
     position:
       x: 1240
-      'y': 400
+      'y': 420
   - id: machine_set
     label: |-
-      Manually Clean the Machine Test Set
-      Finalize 23,111 Machine Questions
-      Train 20,901 • Validation 960 • Test 1,250
+      Finalize 23,111 Machine Qs
+      Train 20,901 • Validation 960
+      Test 1,250
+      17,141 Charts
     type: database
     size: xl
     position:
       x: 1540
-      'y': 400
+      'y': 420
   - id: release
     label: |-
-      Release ChartQA
-      20,882 Charts • 32,719 Total Questions
-      Human and Machine Splits Kept Separately
+      Release 20,882 Charts
+      32,719 Questions
+      Keep ChartQA-H / M Separate
+      Preserve Original Splits
     type: database
     size: xl
     position:
@@ -113,9 +135,10 @@ nodes:
       'y': 220
   - id: input
     label: |-
-      Evaluate Open-vocabulary Chart QA
-      Input Chart Image plus Question
-      Cover Retrieval, Visual, Compositional, and Mixed Types
+      Open-vocabulary Chart QA
+      Chart + Question
+      + Gold / Extracted Table
+      Optional Visual Features
     type: process
     size: xl
     position:
@@ -123,10 +146,11 @@ nodes:
       'y': 220
   - id: answer
     label: |-
-      Generate the Answer
-      Model May Combine Visual Features and Extracted Table
-      Return Numeric or Non-numeric Text
-    type: process
+      Generate Answer
+      Numeric or Text
+      Visual + Logical Reasoning
+      Route by Gold Type
+    type: decision
     size: xl
     position:
       x: 2440
@@ -134,8 +158,8 @@ nodes:
   - id: numeric
     label: |-
       Numeric Answer
-      Correct within 5% of Gold
-      Relaxed Accuracy Handles Extraction Noise
+      Correct when within 5% of Gold
+      Tolerate Data-extraction Noise
     type: process
     size: xl
     position:
@@ -145,7 +169,7 @@ nodes:
     label: |-
       Non-numeric Answer
       Require Exact Match with Gold
-      No Relaxed Tolerance
+      Apply No Numeric Tolerance
     type: process
     size: xl
     position:
@@ -153,9 +177,10 @@ nodes:
       'y': 360
   - id: report
     label: |-
-      Report Accuracy and Relaxed Accuracy
-      Separate ChartQA-H and ChartQA-M
-      Analyze Visual versus Logical Reasoning Gaps
+      Single Hybrid Relaxed Accuracy
+      Numeric: 5% Tolerance
+      Text: Exact Match
+      Report H / M / Overall
     type: terminal
     size: xl
     position:
@@ -177,6 +202,9 @@ edges:
   - from: human_verify
     to: human_set
     type: primary
+  - from: human_verify
+    to: human_audit
+    type: data
   - from: summaries
     to: t5
     type: primary

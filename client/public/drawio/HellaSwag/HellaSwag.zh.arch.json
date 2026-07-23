@@ -7,74 +7,68 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 11,
+    "nodes": 10,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "一手证据\narXiv:1905.07830v1\n官方仓库 a29ff8e9",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "activity",
-      "label": "ActivityNet字幕\n上下文与真实结尾\n活动类别标签",
+      "label": "ActivityNet Captions\n时序描述 + 活动标签",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "wikihow",
-      "label": "抓取WikiHow\n80K组上下文\n与后续段落",
+      "label": "WikiHow 抓取 · 80K 对\n上下文 + 后续段落\n最多三个句子",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "candidates",
-      "label": "微调GPT\n过量生成错误结尾\nWikiHow采用两句结尾",
+      "label": "GPT 候选生成\nActivityNet 训练 5 轮\nWikiHow 训练 2 轮\n随机采样 · nucleus p=0.98\n选择两句 WikiHow 输出",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "af",
-      "label": "BERT-Large对抗过滤\n随机虚拟划分\n每轮重新初始化",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "replace",
-      "label": "用困难候选\n替换易判负例",
+      "label": "迭代对抗过滤\nBERT-Large 每轮重置\n随机 80/20 · 四选一\n采样 3 个负例 · 替换直到收敛",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human",
-      "label": "众包验证\n1个真实+5个过滤结尾\n替换看似真实的负例",
+      "label": "人工验证\n六选一 · 1 真 + 5 个 AF\n替换显得真实的负例\n保留最少选择 3 个 · 25K + 45K",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "curated",
-      "label": "高一致上下文\nActivityNet 25K\nWikiHow 45K",
+      "id": "paper_release",
+      "label": "论文目标发布 · 70K\ntrain 50K · val 10K · test 10K\nval/test：5K 域内 + 5K 零样本",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "split",
-      "label": "共70K\n训练50K\n验证10K+测试10K",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "categories",
-      "label": "每个验证/测试集\n域内类别5K\n留出类别5K",
-      "type": "process",
+      "id": "artifact_boundary",
+      "label": "官方仓库快照 a29ff8e9\ntrain 39,905 · val 10,042\ntest 10,003 · test 无标签\n原始 WikiHow/生成器资产缺失",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "model",
-      "label": "四选一\n1个真实+3个负例",
+      "label": "四选一补全输入\nctx · ctx_a + ctx_b · 4 个结尾\ntrain/val 含 label · test 概率",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "准确率\n总体/域内/零样本\n与分来源结果",
+      "label": "官方评测\n准确率：总体 · 域内\n零样本 · 来源分解\ntest 提交：概率 CSV",
       "type": "terminal",
       "size": "xl"
     }
@@ -82,33 +76,33 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "activity",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
+      "from": "evidence",
+      "to": "wikihow",
+      "type": "data"
+    },
+    {
+      "id": "edge-3",
       "from": "activity",
       "to": "candidates",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-4",
       "from": "wikihow",
       "to": "candidates",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-5",
       "from": "candidates",
       "to": "af",
       "type": "primary"
-    },
-    {
-      "id": "edge-4",
-      "from": "af",
-      "to": "replace",
-      "type": "optional"
-    },
-    {
-      "id": "edge-5",
-      "from": "replace",
-      "to": "candidates",
-      "type": "optional"
     },
     {
       "id": "edge-6",
@@ -119,29 +113,23 @@
     {
       "id": "edge-7",
       "from": "human",
-      "to": "curated",
+      "to": "paper_release",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "curated",
-      "to": "split",
-      "type": "primary"
+      "from": "paper_release",
+      "to": "artifact_boundary",
+      "type": "data"
     },
     {
       "id": "edge-9",
-      "from": "split",
-      "to": "categories",
-      "type": "primary"
-    },
-    {
-      "id": "edge-10",
-      "from": "categories",
+      "from": "artifact_boundary",
       "to": "model",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-10",
       "from": "model",
       "to": "score",
       "type": "primary"

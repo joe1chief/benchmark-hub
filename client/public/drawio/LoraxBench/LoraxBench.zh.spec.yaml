@@ -1,205 +1,619 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LoraxBench 构建流程
-  description: 按论文与官方发布复原 LoraxBench：将六类印尼语 NLP 任务扩展到印尼语和 19 种本地语言及语域变体， 经母语者翻译复核后，以任务专属方法评测，并明确记录不同数据量口径。
-  legend: arXiv:2508.12459 表 3 相加为 84,711 条测试数据，但正文写作 84,895；官方 Hugging Face 发布共 87,011 行，因为还包含 2,300 条 TyDi-QA 训练样本。
+  description: >-
+    按论文 v1 与固定官方发布版复原 LoraxBench：并行构造六类印尼语源任务，五类非翻译任务保留印尼语 发布记录，由专业母语者翻译出 22 个本地变体并组装各任务配置，再按论文规定的评测流程执行并标出公开缺口。 机器翻译以这
+    22 个本地变体为源语言、以印尼语为目标语言。
+  legend: 实线表示论文支持的构建或评测主流程；虚线数据箭头表示来源、保留的印尼语支路、错误修正支路、 数量核对、附录分析及公开限制。所有数量均已对固定 revision 下的七个 Parquet 文件独立复算。
 nodes:
-  - id: languages
+  - id: evidence
     label: |-
-      定义语言覆盖范围
-      印尼语 + 19 种本地语言
-      增加正式与日常语域
-      共 23 个语言/语域子集
-    type: process
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: sources
-    label: |-
-      汇集印尼语源任务
-      TyDi-QA · IndoNLI · COPAL-ID
-      IndoCulture
-      保留本土文化语境
-    type: database
-    size: xl
-    position:
-      x: 300
-      'y': 40
-  - id: tydi
-    label: |-
-      改造 TyDi-QA
-      阅读理解保留文章
-      开放问答移除文章
-      各子集保留测试集及 100 条训练题
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 40
-  - id: other_tasks
-    label: |-
-      形成另外四类任务
-      NLI 来自专家编写的 IndoNLI 测试集
-      翻译取自 IndoNLI 前提句
-      因果推理与文化问答采用多选题
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 40
-  - id: cleanup
-    label: |-
-      按数据源执行清洗
-      删除 6 道不可回答的开放问答
-      删除偏向雅加达的 COPAL-ID 题
-      将 IndoCulture 整理为 510 题
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: translate
-    label: |-
-      由母语者翻译
-      每种语言使用专业译者
-      按任务要求连接本地语言与印尼语
-      采用统一任务指南
-    type: user
-    size: xl
-    position:
-      x: 1420
-      'y': 40
-  - id: review
-    label: |-
-      由第二位母语者复核
-      检查语言和文化有效性
-      通过团队会议对齐判断
-      每种语言 8–31 位标注者
-    type: user
-    size: xl
-    position:
-      x: 1700
-      'y': 40
-  - id: checks
-    label: |-
-      运行翻译自动检查
-      标记异常文本长度
-      标记数字不一致
-      将可疑项送回修正
-    type: process
-    size: xl
-    position:
-      x: 1700
-      'y': 420
-  - id: retranslate
-    label: |-
-      修正被标记的翻译
-      重译已确认的错误
-      重新检查修正记录
-      保留语言与语域标签
-    type: process
-    size: xl
-    position:
-      x: 1420
-      'y': 420
-  - id: release
-    label: |-
-      发布官方数据
-      Hugging Face 共 87,011 行
-      含 2,300 条 TyDi-QA 训练数据
-      测试表合计 · 84,711
-    type: database
-    size: xl
-    position:
-      x: 1140
-      'y': 420
-  - id: formats
-    label: |-
-      构造六类任务输入
-      分类与多项选择
-      抽取式及开放式生成
-      本地语言到印尼语翻译
+      固定主要证据
+      arXiv 2508.12459v1 · 2025-08-17
+      google/LoraxBench @ 1ebe2dac
+      七个 Parquet 文件 · CC BY 4.0
     type: document
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: evaluate
+      x: 40
+      'y': 448
+  - id: coverage
     label: |-
-      运行模型评测
-      五类任务使用零样本设置
-      阅读理解使用少样本示例
-      比较标准、语言与词典提示
+      定义 20 种语言 · 23 个子集
+      印尼语 + 19 种本地语言 · 三种各分为两个语域
+      爪哇语 · Krama / Ngoko
+      巽他语 · Lemes / Loma
+      马都拉语 · Engghi Ethen / Enja’Iya
+    type: database
+    size: xl
+    position:
+      x: 352
+      'y': 448
+    style:
+      fontSize: 9
+  - id: route
+    label: 将六类印尼语源任务并行分流
+    type: decision
+    size: xl
+    position:
+      x: 664
+      'y': 448
+  - id: reading
+    label: |-
+      阅读理解 · TyDi-QA
+      印尼语 Secondary Task
+      保留文章 + 问题 + 文中答案片段
+      每子集 564 条测试 + 100 条训练
     type: process
     size: xl
     position:
-      x: 580
-      'y': 420
+      x: 976
+      'y': 0
+    style:
+      fontSize: 9
+  - id: open_qa
+    label: |-
+      开放域问答 · 来自阅读理解测试集
+      移除文章 · 逐题人工验证
+      删除 6 道不可回答问题
+      每子集 558 条测试题
+    type: process
+    size: xl
+    position:
+      x: 976
+      'y': 176
+    style:
+      fontSize: 9
+  - id: nli
+    label: |-
+      自然语言推断 · IndoNLI
+      专家编写测试集 · 单句子集
+      前提 + 假设 · 三分类标签
+      每子集 1,446 条测试题
+    type: process
+    size: xl
+    position:
+      x: 976
+      'y': 352
+    style:
+      fontSize: 9
+  - id: translation
+    label: |-
+      机器翻译 · IndoNLI
+      复用 251 条印尼语前提句
+      翻译成 22 个源语言/语域版本
+      评测方向：本地语言 → 印尼语
+    type: process
+    size: xl
+    position:
+      x: 976
+      'y': 528
+    style:
+      fontSize: 9
+  - id: causal
+    label: |-
+      因果推理 · COPAL-ID
+      曾居雅加达的母语者
+      过滤雅加达特有题
+      原因 / 结果 · 两个选项
+      每子集 365 条测试题
+    type: process
+    size: xl
+    position:
+      x: 976
+      'y': 704
+    style:
+      fontSize: 9
+  - id: cultural
+    label: |-
+      文化问答 · IndoCulture
+      选择非省份特定题
+      删除 61 · 修正错字 12 · 改进干扰项 13
+      每子集 510 道三选一题
+    type: process
+    size: xl
+    position:
+      x: 976
+      'y': 880
+    style:
+      fontSize: 9
+  - id: task_records
+    label: |-
+      整理印尼语主记录
+      保留任务专属字段与标准答案
+      按任务保留上下文和选项
+      MCQA 训练集与测试集分开
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 448
+    style:
+      fontSize: 9
+  - id: indonesian
+    label: |-
+      保留印尼语原始记录
+      仅适用于五类非翻译任务
+      这些记录不经过翻译
+      发布时与 22 个本地变体配套组装
+    type: database
+    size: xl
+    position:
+      x: 1640
+      'y': 176
+  - id: guidelines
+    label: |-
+      执行翻译指南
+      保持语义 · 不增删上下文
+      只选一个自然译法 · 不用“/”或括号
+      数字形式与印尼语原文一致
+      严格采用指定正式/日常语域
+    type: document
+    size: xl
+    position:
+      x: 1640
+      'y': 448
+    style:
+      fontSize: 9
+  - id: translate
+    label: |-
+      专业母语者翻译
+      供应商聘用双语母语标注者
+      同时掌握印尼语与对应本地语言
+      翻译方向：印尼语 → 本地语言
+    type: user
+    size: xl
+    position:
+      x: 1960
+      'y': 448
+    style:
+      fontSize: 9
+  - id: review
+    label: |-
+      人工 + 脚本辅助验证
+      第二位母语者复核每条记录
+      Sheets 标记长度 / 数字异常
+      每种语言聘用 8–31 名标注者
+    type: user
+    size: xl
+    position:
+      x: 2280
+      'y': 448
+    style:
+      fontSize: 9
+  - id: retranslate
+    label: |-
+      修正确认错误
+      重译被标记的错误项
+      团队会议解决不一致
+      将修正版本纳入发布
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 736
+    style:
+      fontSize: 9
+  - id: release
+    label: |-
+      组装 23 个子集 · 机器翻译仅含 22 个源变体
+      发布六个 Hugging Face 配置
+      测试 84,711 + MCQA 训练 2,300
+      官方总量 · 87,011 行
+      数据 revision · 1ebe2dac
+    type: database
+    size: xl
+    position:
+      x: 2600
+      'y': 448
+    style:
+      fontSize: 9
+  - id: count_drift
+    label: |-
+      保留数量口径证据
+      论文表 3 合计 · 84,711 条测试
+      论文 §3.5 正文 · 84,895（多 184）
+      HF · 84,711 测试 + 2,300 训练
+    type: document
+    size: xl
+    position:
+      x: 2600
+      'y': 176
+    style:
+      fontSize: 9
+  - id: public_boundary
+    label: |-
+      公开发布边界
+      CC BY 4.0 数据与 README
+      未公开构建或评测代码
+      未固定上游 revision / 选择随机种子
+    type: document
+    size: xl
+    position:
+      x: 2920
+      'y': 176
+    style:
+      fontSize: 9
+  - id: eval_scope
+    label: |-
+      选择评测设置
+      六类任务均做零样本评测
+      阅读理解另外做少样本实验
+      使用其 100 条训练样本池
+    type: process
+    size: xl
+    position:
+      x: 2920
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: prompts
+    label: |-
+      构造附录中的任务提示
+      基础提示 · 直接作答
+      语言提示 · 说明与印尼语相似
+      GATITOS 词典 · 仅覆盖支持语言
+    type: process
+    size: xl
+    position:
+      x: 2600
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: inference
+    label: |-
+      运行已选择的推理模式
+      使用论文列出的模型检查点
+      多语言 · 东南亚 · 印尼专用模型
+      按适用范围调用闭源或开源模型
+    type: process
+    size: xl
+    position:
+      x: 1960
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: answer_mode
+    label: |-
+      配置答案 / 推理模式
+      生成文本 + 答案抽取
+      NLI / 文化 / 因果 · 选项对数概率
+      文化 / 因果 · 完形对数概率
+      概率模式仅适用于开源模型
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 1120
+    style:
+      fontSize: 9
   - id: metrics
     label: |-
-      使用任务专属指标
-      非翻译任务采用准确率
-      开放问答 · 答案子串匹配
-      翻译 · ChrF++
+      计算任务指标
+      五类非翻译任务 · 准确率
+      机器翻译 · ChrF++
+      开放问答 · 标准答案是输出子串
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
+      x: 1640
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: judge
+    label: |-
+      附录敏感性分析
+      Gemini-2.5-Flash 评审 · 1–5 分
+      得分除以 5 归一化
+      论文提醒低资源语言评审可靠性风险
+    type: document
+    size: xl
+    position:
+      x: 1640
+      'y': 1400
+    style:
+      fontSize: 9
+  - id: best_prompt
+    label: |-
+      选择表现最佳设置
+      报告各提示中的最大表现
+      包含适用的答案选择模式
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 1120
   - id: report
     label: |-
-      报告多语言结果
-      按任务与语言分解
-      比较正式与日常语域
-      分析不同提示策略差距
+      报告 LoraxBench 结果
+      任务 × 模型 × 语言
+      印尼语与本地语言对比
+      正式与日常语域对比
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1000
+      'y': 1120
+  - id: eval_gap
+    label: |-
+      评测可复现性边界
+      未公开解码配置
+      未公开少样本 k / 抽样规则 / 随机种子
+      未发布超出论文描述的精确解析器代码
+    type: document
+    size: xl
+    position:
+      x: 2600
+      'y': 1400
+    style:
+      fontSize: 9
 edges:
-  - from: languages
-    to: sources
+  - from: evidence
+    to: coverage
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: coverage
+    to: route
     type: primary
-  - from: sources
-    to: tydi
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: reading
     type: primary
-  - from: tydi
-    to: other_tasks
+    style:
+      exitX: 1
+      exitY: 0.1
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: open_qa
     type: primary
-  - from: other_tasks
-    to: cleanup
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: nli
     type: primary
-  - from: cleanup
+    style:
+      exitX: 1
+      exitY: 0.4
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: translation
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.6
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: causal
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: route
+    to: cultural
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.9
+      entryX: 0
+      entryY: 0.5
+  - from: reading
+    to: task_records
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: open_qa
+    to: task_records
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: nli
+    to: task_records
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+  - from: translation
+    to: task_records
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+  - from: causal
+    to: task_records
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: cultural
+    to: task_records
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.9
+  - from: task_records
+    to: indonesian
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: task_records
+    to: guidelines
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: indonesian
+    to: release
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: guidelines
     to: translate
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
   - from: translate
     to: review
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
   - from: review
-    to: checks
-    type: primary
-  - from: checks
-    to: retranslate
-    type: primary
-  - from: retranslate
     to: release
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: review
+    to: retranslate
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: retranslate
+    to: release
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
   - from: release
-    to: formats
+    to: count_drift
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
+  - from: count_drift
+    to: public_boundary
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: release
+    to: eval_scope
     type: primary
-  - from: formats
-    to: evaluate
+    waypoints:
+      - x: 2924
+        'y': 544
+      - x: 2924
+        'y': 1032
+  - from: eval_scope
+    to: prompts
     type: primary
-  - from: evaluate
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: prompts
+    to: answer_mode
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: answer_mode
+    to: inference
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: inference
     to: metrics
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
   - from: metrics
+    to: judge
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: metrics
+    to: best_prompt
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: best_prompt
     to: report
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+  - from: eval_scope
+    to: eval_gap
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 1
+      entryY: 0.5
 modules: []

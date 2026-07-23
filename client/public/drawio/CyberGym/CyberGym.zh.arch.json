@@ -1,98 +1,116 @@
 {
   "version": 1,
-  "title": "CyberGym 构建流程",
+  "title": "CyberGym 构建与评估流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 17,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "ossfuzz",
-      "label": "OSS-Fuzz / ARVO\n真实历史漏洞",
+      "id": "evidence",
+      "label": "论文 arXiv:2506.02548v3\n代码 @ cd123ad · HF @ bde190d\ntasks.json SHA256 9cea452…",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source",
+      "label": "OSS-Fuzz 经 ARVO 获取\n历史内存安全漏洞\n主要为 C/C++ 项目\n以 sanitizer 作为崩溃判定器",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "patch",
-      "label": "定位精确补丁提交\n对修复前最后一天二分搜索",
+      "label": "定位精确补丁提交\nOSS-Fuzz 项目每日更新\n搜索修复前最后一天\n二分查找标准 PoC\n首个不再崩溃的提交",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "elements",
-      "label": "样例元素\n修复前后代码 · 标准 PoC · 补丁",
+      "label": "恢复实例要素\n补丁前 + 补丁后代码\n标准 PoC + 补丁差异\n构建启用 sanitizer 的可执行文件",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "describe",
-      "label": "GPT-4.1 漏洞描述\n改写信息充分的补丁消息",
+      "id": "filter_prompt",
+      "label": "GPT-4.1 质量评判提示\n满足任一条件即可：\n至少 1 个完整句子描述漏洞或修复\n或给出漏洞位置\n拒绝多问题消息\n加入人工少样本示例",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "quality",
-      "label": "质量保证\n信息充分 · 可复现 · 去重",
+      "id": "rephrase_prompt",
+      "label": "GPT-4.1 改写提示\n保留含义、函数名 + 文件名\n移除交叉引用 + 修补说明\n不得推测 · 只用现在时",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "qa",
+      "label": "可复现性 + 去重质检\n在双版本重跑标准 PoC\n按同一补丁 / 相似崩溃栈去重\n审计 300 = 保留 150 + 剔除 150\n96 个项目 · κ=0.82±0.03 · 精度 96%",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "benchmark",
-      "label": "CyberGym\n1,507 个漏洞 · 188 个项目",
+      "label": "CyberGym 发布集\n1,368 个 ARVO（≤2024-07-31）+ 139 个新增\n1,507 个漏洞 · 188 个项目\n披露日期 2017-01-01–2025-04-21\n固定 HF tasks.json @ bde190d",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "levels",
-      "label": "难度等级 0–3\n逐级增加描述 · 堆栈 · 补丁上下文",
+      "label": "信息级别",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "level0",
+      "label": "Level 0 · 探索式\n仅补丁前代码\n无漏洞描述",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "task",
-      "label": "主要 Level-1 输入\n修复前代码 + 漏洞描述",
+      "id": "level1",
+      "label": "Level 1 · 主任务\n补丁前代码\n+ 漏洞描述",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "level2",
+      "label": "Level 2\nLevel 1 输入\n+ 标准崩溃栈",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "level3",
+      "label": "Level 3 · 一日漏洞语境\nLevel 2 + 标准补丁差异\n+ 补丁后代码",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "agent",
-      "label": "智能体编写 PoC\n提交、观察并迭代改进",
+      "label": "智能体生成 PoC\n使用 submit.sh 提交\n观察退出码 + 输出\n迭代改进 PoC",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "pre",
-      "label": "修复前版本执行\n必须触发 sanitizer 崩溃",
+      "id": "oracle",
+      "label": "双版本执行判定\n补丁前：必须 sanitizer 崩溃\n补丁后：必须无 sanitizer 崩溃\n两条件共同锁定被修复漏洞",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "post",
-      "label": "修复后版本执行\n必须不触发 sanitizer 崩溃",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "verdict",
-      "label": "同时满足两项条件？",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "success",
-      "label": "成功率\n成功 PoC 数 / 1,507 个样例",
+      "id": "metric",
+      "label": "基准指标\n成功 PoC / 1,507 个实例\n基于执行的成功率\n论文未报告训练 / 开发 / 测试划分",
       "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "impact",
-      "label": "独立安全影响分析\n17 个不完整补丁 · 共确认 35 个零日漏洞",
+      "id": "impact_boundary",
+      "label": "独立影响边界 · 论文 v3 内部冲突\n摘要：34 个零日 + 18 个不完整补丁\n正文：17 个不充分补丁 + 10 + 25 = 35 个零日\n作为版本化论文漂移报告，\n不作为基准指标",
       "type": "document",
       "size": "xl"
     }
@@ -100,81 +118,117 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "ossfuzz",
-      "to": "patch",
+      "from": "evidence",
+      "to": "source",
       "type": "primary"
     },
     {
       "id": "edge-2",
+      "from": "source",
+      "to": "patch",
+      "type": "primary"
+    },
+    {
+      "id": "edge-3",
       "from": "patch",
       "to": "elements",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "elements",
-      "to": "describe",
-      "type": "primary"
-    },
-    {
       "id": "edge-4",
-      "from": "describe",
-      "to": "quality",
+      "from": "elements",
+      "to": "filter_prompt",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "quality",
-      "to": "benchmark",
+      "from": "filter_prompt",
+      "to": "rephrase_prompt",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "rephrase_prompt",
+      "to": "qa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "qa",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "benchmark",
       "to": "levels",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "levels",
-      "to": "task",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "task",
-      "to": "agent",
-      "type": "primary"
-    },
-    {
       "id": "edge-9",
-      "from": "agent",
-      "to": "pre",
+      "from": "levels",
+      "to": "level0",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "pre",
-      "to": "post",
+      "from": "levels",
+      "to": "level1",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "post",
-      "to": "verdict",
+      "from": "levels",
+      "to": "level2",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "verdict",
-      "to": "success",
+      "from": "levels",
+      "to": "level3",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "verdict",
-      "to": "impact",
-      "type": "optional"
+      "from": "level0",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "level1",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "level2",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "level3",
+      "to": "agent",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "agent",
+      "to": "oracle",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "oracle",
+      "to": "metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "metric",
+      "to": "impact_boundary",
+      "type": "data"
     }
   ],
   "modules": []

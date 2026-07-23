@@ -7,32 +7,32 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 12,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
       "id": "pddl",
-      "label": "生成 PDDL 领域与问题\nACPBench 的 13 个规划领域\n复用 ALFWorld PDDL",
+      "label": "准备 PDDL 信源\n有生成器时生成领域 / 问题\nALFWorld：复用官方 PDDL\n13 个规划领域",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "planner",
-      "label": "运行 Top-K / Top-Quality 规划器\n产生多条有效计划\n保留任务、当前状态与目标",
+      "label": "生成计划\n优先最高质量规划器\n多样化规划器作为后备\n保留多条有效计划",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "采样计划 / 中间状态\n按任务选择所需材料\n跳过可达性不确定的状态",
+      "label": "按任务采样\n根据目标任务采样\n计划或中间状态",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "symbolic",
-      "label": "生成符号化问答\n适用性 • 状态演进\n可达性 • 动作可达性\n验证 • 论证\n地标 • 下一动作",
+      "label": "生成任务专用符号问答\nApp • Prog • Reach • AReach\nVal • Just • Land • NextA\nReach / AReach：存疑状态跳过\n保留验证所需材料",
       "type": "process",
       "size": "xl"
     },
@@ -56,31 +56,49 @@
     },
     {
       "id": "parse",
-      "label": "任务专用语法解析器\n提取动作、事实、计划或序号\n拒绝非法 / 无法解析的符号",
+      "label": "宽松语法解析器\n丢弃不合语法的 token\n提取动作、事实、列表或序号\n再运行符号验证器",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "route",
-      "label": "选择验证路径？",
+      "label": "选择验证器类别？",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "stored",
-      "label": "存储值 / 模拟检查\n精确集合：适用性、状态演进\n首个无效序号\n子序列论证",
+      "id": "deterministic",
+      "label": "直接 / 模拟验证\nApp、Prog：完整集合精确匹配\nVal：首个无效序号\nJust：真子序列且仍为有效计划",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "known_fast",
+      "label": "已知答案快速路径\nReach • AReach • Land • NextA\n检查 None / 缓存正负集合",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "unresolved",
+      "label": "是否为未决候选？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
       "id": "solve",
-      "label": "规划器支撑的检查\n可达性 • 动作可达性\n地标\n下一动作令最优距离减 1",
+      "label": "规划器后备验证\nReach / AReach / Land\nNextA：最优代价减 1",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "ACPBench Hard 结果\n按任务 / 领域统计二元准确率\n严格答案\n适用性可附加 Jaccard",
+      "label": "ACPBench Hard 严格准确率\n按任务 / 领域统计二元准确率\n只评最终答案",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "jaccard",
+      "label": "仅适用性任务的附加分析\n可选 Jaccard 相似度",
       "type": "terminal",
       "size": "xl"
     }
@@ -137,28 +155,55 @@
     {
       "id": "edge-9",
       "from": "route",
-      "to": "stored",
+      "to": "deterministic",
       "type": "primary",
-      "label": "存储：适用性 • 状态演进\n验证 • 论证"
+      "label": "直接 / 模拟类\nApp • Prog • Val • Just"
     },
     {
       "id": "edge-10",
       "from": "route",
-      "to": "solve",
+      "to": "known_fast",
       "type": "primary",
-      "label": "求解：可达性 • 动作可达性\n地标 • 下一动作"
+      "label": "可达类：Reach • AReach • Land • NextA"
     },
     {
       "id": "edge-11",
-      "from": "stored",
+      "from": "deterministic",
       "to": "report",
       "type": "primary"
     },
     {
       "id": "edge-12",
+      "from": "known_fast",
+      "to": "unresolved",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "unresolved",
+      "to": "report",
+      "type": "primary",
+      "label": "已知结果"
+    },
+    {
+      "id": "edge-14",
+      "from": "unresolved",
+      "to": "solve",
+      "type": "primary",
+      "label": "需要规划器"
+    },
+    {
+      "id": "edge-15",
       "from": "solve",
       "to": "report",
       "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "report",
+      "to": "jaccard",
+      "type": "secondary",
+      "label": "宽松附加分析"
     }
   ],
   "modules": []

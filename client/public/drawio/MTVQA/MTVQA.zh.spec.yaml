@@ -1,205 +1,515 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MTVQA 构建流程
-  description: 与论文对齐地展示原生多语言文本中心视觉问答数据的收集、专家标注、质检和评测流程。
-  legend: 实线箭头依次表示图像收集、多语言 OCR 与清洗、经培训的制定者-审核者标注、10% 抽检、数据划分及精确答案准确率。
+  title: MTVQA 证据对齐的构建与评测流程
+  description: >-
+    依据 arXiv:2405.11985v5 及固定版本的官方代码和数据重建 MTVQA，覆盖三类图像来源比例、 多语言 OCR 与合规过滤、母语标注员的制定者—审核者流程、10% 抽检返工、发布字段和划分，
+    并准确呈现论文提示词及已发布评测器的子串匹配规则和失败边界。
+  legend: 实线箭头表示构建与计分主流程；带标签的分支保留来源选择、淘汰、修正、返工、输入失败和计分结果。 虚线分支表示独立的人类基线。
 nodes:
-  - id: collect
+  - id: evidence
     label: |-
-      收集富文本图像
-      30% 来自公开数据集
-      20% 网络与 50% 人工采集
-      覆盖文档与自然场景
+      固定一手证据
+      论文 2405.11985v5 · 评测器 96590634
+      代码 efc6a78a · 数据 7cdca63e
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 312
+    style:
+      fontSize: 10
+  - id: source_route
+    label: |-
+      图像来源？
+      公开数据集
+      网络采集
+      人工拍摄
+    type: decision
+    size: xl
+    position:
+      x: 408
+      'y': 312
+    style:
+      fontSize: 10
+  - id: public_source
+    label: |-
+      公开富文本图像 · 30%
+      ICDAR MLT19 等数据
+      文档与自然场景
+      保留原始来源权利
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
+      x: 728
+      'y': 104
+    style:
+      fontSize: 10
+  - id: web_source
+    label: |-
+      网络图像 · 20%
+      LAION-OCR
+      从 Common Crawl 筛选
+      菜单 · 标识 · 地图 · 账单
+    type: database
+    size: xl
+    position:
+      x: 728
+      'y': 312
+    style:
+      fontSize: 10
+  - id: manual_source
+    label: |-
+      人工拍摄 · 50%
+      前往各语言对应国家
+      母语真实场景
+      高质量本地文字
+    type: user
+    size: xl
+    position:
+      x: 728
+      'y': 520
+    style:
+      fontSize: 10
   - id: ocr
     label: |-
-      提取多语言文字
-      使用字节跳动 OCR API
+      提取并筛选文字
+      字节跳动多语言 OCR API
       按语言类型筛选
       按文字数量筛选
     type: process
     size: xl
     position:
-      x: 260
-      'y': 40
-  - id: clean
+      x: 1056
+      'y': 312
+    style:
+      fontSize: 10
+  - id: eligibility_gate
     label: |-
-      清洗候选图像
-      移除敏感与不安全内容
-      丢弃无文字图像
-      从 8,980 减至 8,895 张
-    type: process
+      富文本图像合格吗？
+      合规性审查
+      OCR 检出文字
+      属于可用语言组
+    type: decision
     size: xl
     position:
-      x: 500
-      'y': 40
-  - id: train
+      x: 1376
+      'y': 312
+    style:
+      fontSize: 10
+  - id: drop_image
     label: |-
-      培训母语标注员
-      使用对应语言至少十年
-      本科或更高学历
-      指南讲解与问答及试标
-    type: user
-    size: xl
-    position:
-      x: 740
-      'y': 40
-  - id: round_one
-    label: |-
-      首轮制定者标注
-      每种语言三名标注员
-      前三题直接读取文字
-      后两题需要文字推理
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 40
-  - id: initial_qa
-    label: |-
-      生成初始问答对
-      每图五个不同问答
-      答案必须简洁
-      共 28,906 个问答对
-    type: document
-    size: xl
-    position:
-      x: 1220
-      'y': 40
-  - id: round_two
-    label: |-
-      二轮审核者复核
-      两名标注员独立检查
-      修正相关性与正确性
-      删除冗余和伦理风险
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: audit
-    label: |-
-      按语言执行抽检
-      质检员抽查 10%
-      不合格项退回重标
-      实施最终质量控制
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: release
-    label: |-
-      定稿九语言数据集
-      8,794 张图像
-      28,607 个问答对
-      覆盖 20 余种场景
-    type: database
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: splits
-    label: |-
-      划分训练集与测试集
-      训练 6,678 图与 21,829 问答
-      测试 2,116 图与 6,778 问答
-      保留原生语言文字
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: inference
-    label: |-
-      执行零样本评测
-      使用统一提示
-      输入图像与问题
-      收集模型答案
-    type: process
-    size: xl
-    position:
-      x: 740
-      'y': 420
-  - id: score
-    label: |-
-      使用准确率评分
-      匹配任一目标答案
-      强调文字精确正确
-      分语言与总体汇总
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 420
-  - id: human
-    label: |-
-      建立人类基线
-      每种语言十名母语者
-      回答相同问题
-      平均准确率约 80%
-    type: user
-    size: xl
-    position:
-      x: 260
-      'y': 420
-  - id: report
-    label: |-
-      报告 MTVQA 结果
-      模型与人类差距
-      九语言分类结果
-      OCR 与推理失败分析
+      标注前淘汰
+      OCR 无文字，或含政治 / 色情 /
+      暴力 / 其他不安全内容
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1544
+      'y': 624
+    style:
+      fontSize: 10
+  - id: language_pool
+    label: |-
+      汇总九种母语图像
+      AR · DE · FR · IT · JA
+      KO · RU · TH · VI
+      8,980 原始图 → 8,895 候选图
+    type: database
+    size: xl
+    position:
+      x: 1704
+      'y': 312
+    style:
+      fontSize: 10
+  - id: annotator_train
+    label: |-
+      招募并培训标注员
+      母语使用 10 年以上 · 大学学历
+      指南 · 问答 · 试标
+    type: user
+    size: xl
+    position:
+      x: 2032
+      'y': 312
+    style:
+      fontSize: 10
+  - id: maker_round
+    label: |-
+      首轮制定者标注
+      每语言 3 人 · 每图 5 个问答
+      前 3 题读取 · 后 2 题推理
+      答案简洁
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 312
+    style:
+      fontSize: 10
+  - id: initial_pool
+    label: |-
+      初始标注池
+      8,895 张图像
+      28,906 个问答对
+      母语问题与答案
+    type: database
+    size: xl
+    position:
+      x: 2680
+      'y': 312
+    style:
+      fontSize: 10
+  - id: checker_gate
+    label: |-
+      二轮审核结果？
+      两名审核员独立检查
+      相关性 · 正确性
+      冗余性 · 伦理性
+    type: decision
+    size: xl
+    position:
+      x: 3000
+      'y': 312
+    style:
+      fontSize: 10
+  - id: keep_qa
+    label: |-
+      保留问答对
+      相关且正确
+      简洁且不重复
+    type: process
+    size: xl
+    position:
+      x: 3328
+      'y': 104
+    style:
+      fontSize: 10
+  - id: correct_qa
+    label: |-
+      修正问答对
+      修复答案或措辞
+      删除重复内容
+    type: process
+    size: xl
+    position:
+      x: 3328
+      'y': 312
+    style:
+      fontSize: 10
+  - id: remove_qa
+    label: |-
+      删除问答对
+      无关或不合伦理
+      不进入最终语料
+    type: terminal
+    size: xl
+    position:
+      x: 3328
+      'y': 624
+    style:
+      fontSize: 10
+  - id: audit_gate
+    label: |-
+      10% 语言抽检通过吗？
+      质检员按语言抽样
+      核对标注规范
+    type: decision
+    size: xl
+    position:
+      x: 3656
+      'y': 312
+    style:
+      fontSize: 10
+  - id: reannotate
+    label: |-
+      退回重新标注
+      修正未通过的问答对
+      重新进入质量抽检
+    type: process
+    size: xl
+    position:
+      x: 3656
+      'y': 624
+    style:
+      fontSize: 10
+  - id: release
+    label: |-
+      MTVQA 最终语料
+      8,794 张图像
+      28,607 个问答对
+      20 余种场景
+      数据许可 CC BY-NC 4.0
+    type: database
+    size: xl
+    position:
+      x: 3976
+      'y': 312
+    style:
+      fontSize: 10
+  - id: split
+    label: |-
+      发布固定版数据
+      image · id · qa_pairs · lang
+      qa_pairs：Python 字面量 · KO → KR
+      训练 6,678 / 21,829
+      测试 2,116 / 6,778 · 无适配器
+    type: document
+    size: xl
+    position:
+      x: 3976
+      'y': 832
+    style:
+      fontSize: 10
+  - id: prompt
+    label: |-
+      论文零样本提示词
+      “用问题语言中的词或短语回答”
+      附加问题 · 模型默认设置
+    type: process
+    size: xl
+    position:
+      x: 3328
+      'y': 936
+    style:
+      fontSize: 10
+  - id: eval_input_gate
+    label: |-
+      官方 acc.py 输入状态？
+      按语言组织的 JSON 文件目录
+      每项含 annotation 与 answer
+    type: decision
+    size: xl
+    position:
+      x: 3000
+      'y': 936
+    style:
+      fontSize: 10
+  - id: eval_abort
+    label: |-
+      评测器中止
+      目录缺失或 JSON 格式错误
+      键缺失或目标列表为空
+      不做逐项容错
+    type: terminal
+    size: xl
+    position:
+      x: 3000
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: empty_nan
+    label: |-
+      空目录结果
+      没有语言得分
+      NumPy 均值产生 NaN
+      不存在有效分母
+    type: terminal
+    size: xl
+    position:
+      x: 2680
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: match_gate
+    label: |-
+      任一目标是答案子串吗？
+      双方转小写并去首尾空白
+      从模型答案中删除句点
+      并非严格完全相等
+    type: decision
+    size: xl
+    position:
+      x: 2680
+      'y': 936
+    style:
+      fontSize: 10
+  - id: score_one
+    label: |-
+      单项得分 = 1
+      至少一个目标匹配
+      纳入该文件分母
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 728
+    style:
+      fontSize: 10
+  - id: score_zero
+    label: |-
+      单项得分 = 0
+      没有目标子串匹配
+      纳入该文件分母
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 1040
+    style:
+      fontSize: 10
+  - id: aggregate
+    label: |-
+      汇总已发布准确率
+      先求每个文件的项目均值
+      再对文件做无权平均
+      不检查 9 文件 · 缺失会缩小宏平均
+    type: process
+    size: xl
+    position:
+      x: 2032
+      'y': 936
+    style:
+      fontSize: 10
+  - id: human
+    label: |-
+      人类基线
+      每种语言十名受教育母语者
+      随机选择
+      论文 v5 平均值 = 79.7%
+    type: user
+    size: xl
+    position:
+      x: 2032
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: report
+    label: |-
+      报告 MTVQA 结果
+      各语言准确率与宏平均
+      模型 / 人类差距
+      OCR · 推理 · 偏差 · 幻觉
+    type: terminal
+    size: xl
+    position:
+      x: 1704
+      'y': 936
+    style:
+      fontSize: 10
 edges:
-  - from: collect
+  - from: evidence
+    to: source_route
+    type: primary
+  - from: source_route
+    to: public_source
+    type: primary
+    label: 公开数据集 · 30%
+  - from: source_route
+    to: web_source
+    type: primary
+    label: 网络采集 · 20%
+  - from: source_route
+    to: manual_source
+    type: primary
+    label: 人工拍摄 · 50%
+  - from: public_source
+    to: ocr
+    type: primary
+  - from: web_source
+    to: ocr
+    type: primary
+  - from: manual_source
     to: ocr
     type: primary
   - from: ocr
-    to: clean
+    to: eligibility_gate
     type: primary
-  - from: clean
-    to: train
+  - from: eligibility_gate
+    to: language_pool
     type: primary
-  - from: train
-    to: round_one
+    label: 合规且含文字
+  - from: eligibility_gate
+    to: drop_image
+    type: optional
+    label: 无文字或不安全
+  - from: language_pool
+    to: annotator_train
     type: primary
-  - from: round_one
-    to: initial_qa
+  - from: annotator_train
+    to: maker_round
     type: primary
-  - from: initial_qa
-    to: round_two
+  - from: maker_round
+    to: initial_pool
     type: primary
-  - from: round_two
-    to: audit
+  - from: initial_pool
+    to: checker_gate
     type: primary
-  - from: audit
+  - from: checker_gate
+    to: keep_qa
+    type: primary
+    label: 相关且正确
+  - from: checker_gate
+    to: correct_qa
+    type: primary
+    label: 可以修正
+  - from: checker_gate
+    to: remove_qa
+    type: optional
+    label: 无关或不合伦理
+  - from: keep_qa
+    to: audit_gate
+    type: primary
+  - from: correct_qa
+    to: audit_gate
+    type: primary
+  - from: audit_gate
     to: release
     type: primary
+    label: 抽检通过
+  - from: audit_gate
+    to: reannotate
+    type: optional
+    label: 抽检未通过
+  - from: reannotate
+    to: audit_gate
+    type: primary
   - from: release
-    to: splits
+    to: split
     type: primary
-  - from: splits
-    to: inference
+  - from: split
+    to: prompt
     type: primary
-  - from: inference
-    to: score
-    type: primary
-  - from: score
+  - from: split
     to: human
+    type: optional
+    label: 人类基线
+  - from: prompt
+    to: eval_input_gate
+    type: primary
+  - from: eval_input_gate
+    to: match_gate
+    type: primary
+    label: 语言文件有效
+  - from: eval_input_gate
+    to: eval_abort
+    type: optional
+    label: 缺失或格式错误
+  - from: eval_input_gate
+    to: empty_nan
+    type: optional
+    label: 目录为空
+  - from: match_gate
+    to: score_one
+    type: primary
+    label: 子串匹配
+  - from: match_gate
+    to: score_zero
+    type: primary
+    label: 没有匹配
+  - from: score_one
+    to: aggregate
+    type: primary
+  - from: score_zero
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: report
     type: primary
   - from: human
     to: report
-    type: primary
+    type: optional
 modules: []

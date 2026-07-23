@@ -13,6 +13,16 @@ meta:
     Solid arrows show collection, extraction, quality control, consolidation, labeling, subset sampling, and accuracy
     evaluation; the two parallel data branches sum exactly to the complete paper dataset.
 nodes:
+  - id: evidence
+    label: |-
+      Primary Evidence + Fixed Releases
+      arXiv:2411.19799v1
+      BASE d2e1f60 · LITE a027ccc
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: community
     label: |-
       Native Speakers + Regional Associations
@@ -46,8 +56,9 @@ nodes:
   - id: native_qc
     label: |-
       Native-speaker Quality Control
-      Compare with Original Documents
-      Manually Correct Parsing Errors
+      Compare with Originals + Correct Errors
+      Filter Image / Table Dependence
+      Preserve Required Reference Context
     type: user
     size: xl
     position:
@@ -68,6 +79,7 @@ nodes:
       Newly Parsed and Verified Data
       118,606 MCQA Pairs
       From 1,926 Exam Sources
+      60.2% of Complete INCLUDE
     type: database
     size: xl
     position:
@@ -75,9 +87,9 @@ nodes:
       'y': 60
   - id: existing
     label: |-
-      Consolidate Existing Benchmarks
+      78,637 Existing Benchmark Pairs
       Arabic / Chinese / Turkish / Persian MMLU
-      VNHSGE + EXAMS · 78,637 Pairs
+      VNHSGE + EXAMS
     type: database
     size: xl
     position:
@@ -93,11 +105,11 @@ nodes:
     position:
       x: 1640
       'y': 240
-  - id: metadata
+  - id: taxonomy
     label: |-
-      Annotate Exam-level Metadata
-      Language + Topic + Level + Country
+      Exam-level, Not Sample-level Labels
       Two-level Academic Taxonomy
+      Language + Topic + Level + Country
     type: document
     size: xl
     position:
@@ -106,52 +118,64 @@ nodes:
   - id: regionality
     label: |-
       Label Regional Knowledge
-      Agnostic / Explicit / Cultural
-      Implicit Regional
+      Agnostic 34.4% · Explicit 18.8%
+      Cultural 16.4% · Implicit 30.4%
     type: process
     size: xl
     position:
       x: 2200
+      'y': 240
+  - id: four_option
+    label: |-
+      Standardize to Four Options
+      Fewer than Four: Omit Question
+      More than Four: Prune to Four
+    type: process
+    size: xl
+    position:
+      x: 2480
       'y': 240
   - id: base
     label: |-
       INCLUDE-BASE Paper Subset
       Uniform 22,635 Four-option MCQAs
       Max 550 per Language
+      500 Regional + 50 STEM
     type: database
     size: xl
     position:
-      x: 2480
+      x: 2760
       'y': 60
   - id: lite
     label: |-
       INCLUDE-LITE Paper Subset
       10,770 Four-option MCQAs
-      Max 250 per Language · Regional Only
+      Max 250 · Region-specific Subjects Only
     type: database
     size: xl
     position:
-      x: 2480
+      x: 2760
       'y': 440
   - id: prompt
     label: |-
       Evaluate Multiple Prompt Settings
-      5-shot or Zero-shot Chain of Thought
+      Temperature 0 · 5-shot: 512 Tokens
+      Zero-shot CoT: 1,024 Tokens
       In-language / English ± Region Prefix
     type: process
     size: xl
     position:
-      x: 2760
+      x: 3040
       'y': 240
   - id: parse
     label: |-
       Extract One of Four Options
-      Separate Formatting Failures
-      Preserve Language-level Slices
+      Format Failures Count as Incorrect
+      Total vs Answer Accuracy
     type: process
     size: xl
     position:
-      x: 3040
+      x: 3320
       'y': 240
   - id: report
     label: |-
@@ -161,9 +185,23 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 3320
+      x: 3600
+      'y': 240
+  - id: artifact_boundary
+    label: |-
+      Full / Public Release Boundary
+      197,243 Complete Set Held Back
+      BASE d2e1f60: 23,741 Test + 915 Val
+      LITE a027ccc: 11,021 Public Rows
+    type: document
+    size: xl
+    position:
+      x: 3880
       'y': 240
 edges:
+  - from: evidence
+    to: community
+    type: data
   - from: community
     to: sources
     type: primary
@@ -189,15 +227,18 @@ edges:
     to: complete
     type: secondary
   - from: complete
-    to: metadata
+    to: taxonomy
     type: primary
-  - from: metadata
+  - from: taxonomy
     to: regionality
     type: primary
   - from: regionality
+    to: four_option
+    type: primary
+  - from: four_option
     to: base
     type: primary
-  - from: regionality
+  - from: four_option
     to: lite
     type: primary
   - from: base
@@ -212,4 +253,7 @@ edges:
   - from: parse
     to: report
     type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
 modules: []

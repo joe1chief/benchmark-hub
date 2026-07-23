@@ -7,68 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "tasks",
-      "label": "定义六类组合任务\n单/双对象 · 计数 · 颜色\n位置 · 颜色属性绑定",
-      "type": "process",
+      "id": "evidence",
+      "label": "一手证据\narXiv:2310.11513v1\n官方仓库 af4902f2\n无独立官方数据集",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "vocabulary",
-      "label": "建立模板词表\n80 个 MS-COCO 对象类别\n10 种生成颜色 · 3 个数量 · 4 种位置",
+      "id": "templates",
+      "label": "定义六类任务模板\n80 个 COCO 类 · 10 色\n数量 2–4 · 4 方位",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompts",
-      "label": "每类随机生成 100 条提示\n均匀填充任务专用模板\n去重后共 553 条提示",
+      "id": "sampling",
+      "label": "使用种子 43 采样\n单物体覆盖全部 80 类\n其余五类各采样 100\n按 YAML 表示去重",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "prompt_set",
+      "label": "发布 553 个结构化提示\n分项：80/99/80/94/100/100\n附带包含/排除约束元数据",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "generate",
-      "label": "运行每个文生图模型\n每条提示生成 4 张图\n保留提示元数据供后续验证",
+      "label": "每个提示生成 4 张图\n保留各模型默认生成参数\n保存评测元数据",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "detect",
-      "label": "检测并分割对象\nCOCO Mask2Former 阈值 0.3\n仅计数任务使用 0.9",
+      "label": "COCO Mask2Former 检测\n阈值 0.3 · 计数任务 0.9\n每类最多保留 16 个物体",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "geometry",
-      "label": "验证对象要求\n对象存在性与精确数量\n用框中心几何关系判断相对位置",
+      "label": "检查包含/排除约束\n计数 + 基于中心的相对位置\n偏移 0.1 尺寸 · 方向分量 >0.5",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "color",
-      "label": "验证颜色与属性绑定\n按检测框裁剪 · 将背景遮为灰色\nCLIP ViT-L/14 零样本分类候选颜色",
+      "id": "color_binding",
+      "label": "CLIP ViT-L/14 颜色分类\n边界框裁剪 + 分割掩码\n#999 背景 · 10 个候选色",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "binary",
-      "label": "为每张图判定二值正确性\n仅当全部指定元素、属性\n与关系均正确时通过",
+      "label": "逐图二值正确性\n全部要求通过才计为正确\n同时保留失败原因",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "aggregate",
-      "label": "对四次生成取平均\n报告六类任务各自得分\n再平均为总体 GenEval 分数",
+      "label": "对图像正确性取均值\n报告六类任务得分\n六类等权均值为总分",
       "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "与人工判断验证一致性\n1,200 张图共 6,000 条标注\n一致率 83% · 人间 88% · 全同意样本 91%",
+      "id": "human_validation",
+      "label": "人工验证：6,000 条标注\n1,200 张图 · 每图 5 人\n83% 对 88%；860 条全同意为 91%",
       "type": "terminal",
       "size": "xl"
     }
@@ -76,56 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "tasks",
-      "to": "vocabulary",
-      "type": "primary"
+      "from": "evidence",
+      "to": "templates",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "vocabulary",
-      "to": "prompts",
+      "from": "templates",
+      "to": "sampling",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "prompts",
-      "to": "generate",
+      "from": "sampling",
+      "to": "prompt_set",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "prompt_set",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
       "from": "generate",
       "to": "detect",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "detect",
       "to": "geometry",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "geometry",
-      "to": "color",
-      "type": "primary"
-    },
-    {
       "id": "edge-7",
-      "from": "color",
-      "to": "binary",
+      "from": "geometry",
+      "to": "color_binding",
       "type": "primary"
     },
     {
       "id": "edge-8",
+      "from": "color_binding",
+      "to": "binary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
       "from": "binary",
       "to": "aggregate",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-10",
       "from": "aggregate",
-      "to": "human",
+      "to": "human_validation",
       "type": "primary"
     }
   ],

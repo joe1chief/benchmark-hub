@@ -5,176 +5,296 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DreamBench++ 构建流程
-  description: 对齐论文的多样化个性化生成数据集构建流程与人类偏好对齐 GPT-4o 评测协议。
-  legend: 实线箭头依次展示数据集整理、个性化图像生成、两阶段 GPT-4o 评分以及独立人工评分验证。
+  description: 对齐论文与发布版本的图像策展、GPT-4o 提示生成、个性化生成和人类对齐评测流程。
+  legend: 实线表示核心数据与裁判流程；虚线把发布边界和独立人工评分与 GPT 评分分开。
 nodes:
-  - id: sources
+  - id: evidence_boundary
     label: |-
-      参考图像来源
-      作者自有 · Unsplash · Rawpixel · Google 图片搜索
-      逐图核验学术使用版权
-    type: database
+      证据边界
+      arXiv 2406.16855v2
+      仓库 66ca27e5
+      HF 版本 459b0649
+      data.zip 提交 d5b0c8a2
+    type: document
     size: xl
     position:
       x: 40
       'y': 250
-  - id: images
+  - id: keywords
     label: |-
-      整理 150 张多样参考图
-      生物主体 · 物体 · 风格
-      120 张写实 + 30 张非写实
+      候选主体关键词
+      GPT-4o 生成 200
+      Unsplash 热词 200
+      去重后由 7 位标注员扩展
+      扩展后约 300 个关键词
     type: process
     size: xl
     position:
       x: 300
       'y': 250
-  - id: prompts
+  - id: sources
     label: |-
-      每张图编写 9 个提示
-      4 个写实 · 3 个非写实
-      2 个复杂或想象内容
-    type: document
+      获取候选参考图
+      Unsplash · Rawpixel
+      Google 搜索
+      获授权个人贡献
+      核验学术使用版权状态
+    type: database
     size: xl
     position:
       x: 560
       'y': 250
-  - id: benchmark
+  - id: sam
     label: |-
-      DreamBench++ 评测集
-      150 张参考图 · 1,350 个提示
-      覆盖主体、物体、风格及难度
-    type: database
+      SAM 自动筛选
+      移除主体面积过小的图像
+    type: process
     size: xl
     position:
       x: 820
       'y': 250
-  - id: generation
+  - id: human_qc
     label: |-
-      生成个性化图像
-      论文比较 7 种现代方法
-      尽量采用官方实现并调优参数
+      7 位标注员质量控制
+      移除噪声背景和 NSFW
+      裁剪并居中主体
+      每个关键词保留两张图
+      丢弃无合适图像的关键词
     type: process
     size: xl
     position:
       x: 1080
       'y': 250
-  - id: meta
+  - id: balance
     label: |-
-      人工编写评测元提示
-      任务 · 准则 · 0—4 分范围 · 输出格式
-      输入参考图、生成图和文本提示
-    type: document
+      补强非写实风格
+      动漫 · 素描 · 国画
+      艺术作品 · 游戏卡通
+      平衡主体类别与图像风格
+    type: process
     size: xl
     position:
       x: 1340
       'y': 250
-  - id: think
+  - id: prompts
     label: |-
-      第一步 · 内部思考
-      GPT-4o 确认理解任务
-      自对齐总结并制定评分计划
-    type: process
+      GPT-4o 每图生成 9 个提示
+      PartiPrompts 少样本 · 人工校准
+      写实 4 + 非写实 3 + 想象 2
+      600 + 450 + 300 = 1,350 个提示
+    type: document
     size: xl
     position:
       x: 1600
       'y': 250
-  - id: dimensions
+  - id: release
     label: |-
-      第二步 · 两维度评分
-      任务强化使评委持续遵循准则
-    type: decision
+      核心发布集 · 150 张图
+      动物 45 · 人物 20 · 物体 65
+      风格 20 · 写实 120 + 非写实 30
+      150 个说明文件 · 每图 9 个提示
+    type: database
     size: xl
     position:
       x: 1860
       'y': 250
-  - id: concept
+  - id: release_boundary
     label: |-
-      概念保持
-      图像 ↔ 图像
-      形状 · 颜色 · 纹理 · 面部特征
-    type: document
-    size: xl
-    position:
-      x: 2120
-      'y': 90
-  - id: following
-    label: |-
-      提示遵循
-      文本 ↔ 生成图像
-      相关性 · 准确性 · 完整性 · 上下文
-    type: document
-    size: xl
-    position:
-      x: 2120
-      'y': 410
-  - id: gpt_score
-    label: |-
-      GPT-4o 评分输出
-      两个维度分别给出 0—4 分
-      聚合基准结果
+      发布边界
+      无训练、验证或测试划分
+      输出与评分存于未版本化 Drive
+      不属于固定 HF 核心集
     type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 650
+  - id: methods
+    label: |-
+      论文评测的七种方法
+      TI · DB · DB-LoRA
+      BLIP-Diffusion · Emu2
+      IP-Adapter Plus-H · ViT-G
+      SD1.5 / SDXL
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: generation
+    label: |-
+      1,350 × 7 = 9,450 张目标输出
+      默认 100 步 · 引导系数 7.5
+      Emu2：50 步 · 引导系数 3
+      IP-Adapter 比例 0.6 · 种子 42
+    type: process
     size: xl
     position:
       x: 2380
       'y': 250
-  - id: human
+  - id: meta
     label: |-
-      独立人工真值
-      7 位受训标注员
-      每个实例至少由两人评分
-    type: process
+      人工编写 CP / PF 元提示
+      任务 · 量表 · 原始 0–4 · 格式
+      GPT-4o-2024-05-13
+      温度 1 · 最多重试 3 次
+    type: document
     size: xl
     position:
       x: 2640
       'y': 250
-  - id: report
+  - id: prefill
     label: |-
-      人类对齐报告
-      Krippendorff 一致性分析
-      比较 GPT-4o、DINO、CLIP-I、CLIP-T
-    type: terminal
+      静态总结规划 assistant prefill
+      每个实例一次评分调用
+      非动态两次调用规划
+    type: process
     size: xl
     position:
       x: 2900
       'y': 250
+  - id: dimensions
+    label: |-
+      两个独立评分维度
+      CP：参考图 + 生成图
+      PF：文本 + 生成图
+    type: decision
+    size: xl
+    position:
+      x: 3160
+      'y': 250
+  - id: concept
+    label: |-
+      概念保持
+      主体：形状 · 颜色 · 纹理 · 面部
+      风格：色调 · 笔触 · 纹理
+      风格表现
+    type: document
+    size: xl
+    position:
+      x: 3420
+      'y': 90
+  - id: following
+    label: |-
+      提示遵循
+      相关性 · 准确性
+      完整性 · 上下文
+      不输入参考图
+    type: document
+    size: xl
+    position:
+      x: 3420
+      'y': 410
+  - id: gpt_score
+    label: |-
+      每个维度原始 0–4 分
+      报告均值 / 4，映射到 0–1
+      full / full2 / full3 三次运行
+      汇总均值 ± 标准差
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 250
+  - id: human
+    label: |-
+      独立人工评分
+      7 位受训标注员 · 同一量表
+      GPT 与人工评分隔离
+      每个实例至少 2 个人工评分
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 650
+  - id: agreement
+    label: |-
+      区间 Krippendorff alpha
+      H-H 按方法及 CP / PF 计算
+      G-H = 各人工组结果均值
+      Pearson 分开报告
+    type: process
+    size: xl
+    position:
+      x: 3940
+      'y': 330
+  - id: report
+    label: |-
+      指标对齐报告
+      比较 GPT-4o、DINO、CLIP-I/T
+      alpha / Pearson 属于验证分析
+      不是逐图基准得分
+    type: terminal
+    size: xl
+    position:
+      x: 4200
+      'y': 330
 edges:
-  - from: sources
-    to: images
+  - from: evidence_boundary
+    to: keywords
     type: primary
-  - from: images
+  - from: keywords
+    to: sources
+    type: primary
+  - from: sources
+    to: sam
+    type: primary
+  - from: sam
+    to: human_qc
+    type: primary
+  - from: human_qc
+    to: balance
+    type: primary
+  - from: balance
     to: prompts
     type: primary
   - from: prompts
-    to: benchmark
+    to: release
     type: primary
-  - from: benchmark
+  - from: release
+    to: release_boundary
+    type: optional
+  - from: release
+    to: methods
+    type: primary
+  - from: methods
     to: generation
     type: primary
   - from: generation
     to: meta
     type: primary
   - from: meta
-    to: think
+    to: prefill
     type: primary
-  - from: think
+  - from: prefill
     to: dimensions
     type: primary
   - from: dimensions
     to: concept
     type: primary
+    label: 概念保持
+    labelPosition: center
   - from: dimensions
     to: following
     type: primary
+    label: 提示遵循
+    labelPosition: center
   - from: concept
     to: gpt_score
     type: primary
   - from: following
     to: gpt_score
     type: primary
-  - from: gpt_score
+  - from: generation
     to: human
+    type: optional
+  - from: gpt_score
+    to: agreement
     type: primary
   - from: human
+    to: agreement
+    type: primary
+  - from: agreement
     to: report
     type: primary
 modules: []

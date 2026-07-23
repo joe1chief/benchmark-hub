@@ -1,193 +1,544 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MuirBench Build Process
-  description: Paper-aligned construction and robust paired evaluation of multi-image understanding in MuirBench.
+  title: MuirBench Evidence-aligned Build and Evaluation Process
+  description: >-
+    Reconstructs MuirBench from arXiv:2406.09411v2 and pinned official code/data: taxonomy-driven answerable collection,
+    balanced minimal-change unanswerable counterparts, metadata and two-stage quality control, exact release schema,
+    VLMEvalKit-style prompting, the released parser's fallback behavior, and the paper-versus-code candidate-order
+    drift.
   legend: >-
-    Solid arrows trace three answerable-data sources, minimal-change unanswerable pairing, automatic and expert quality
-    control, and deterministic multiple-choice evaluation.
+    Solid arrows trace dataset construction and released-code scoring. Labeled branches preserve source and transform
+    proportions, rejection paths, model-input handling, coverage limits, parser outcomes, and correct/incorrect scores.
+    The dashed path is the separate human evaluation protocol.
 nodes:
-  - id: taxonomy
+  - id: evidence
     label: |-
-      Define Multi-image Coverage
-      12 Understanding Tasks
-      10 Relation Categories
-      Add Fine-grained Labels
-    type: process
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: sources
-    label: |-
-      Collect Answerable Data
-      Existing 40.8%
-      Derived 21.7%
-      Newly Collected 37.5%
-    type: database
-    size: xl
-    position:
-      x: 260
-      'y': 40
-  - id: harmonize
-    label: |-
-      Harmonize into MCQA
-      Reuse Existing Questions
-      Generate or Rewrite Derived Items
-      Author New Undercovered Tasks
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 40
-  - id: annotate
-    label: |-
-      Annotate Data Attributes
-      Task and Relation Category
-      Image Type and Position
-      Two to Nine Images per Instance
+      Freeze Evidence
+      Paper 2406.09411v2 · Code 840b85fe
+      Data 4c393cff · Pre/Post SHA256 Pinned
+      12 Tasks · 10 Relations
+      Labels: Task · Type · Position · Count
     type: document
     size: xl
     position:
-      x: 740
-      'y': 40
-  - id: pair
+      x: 80
+      'y': 296
+    style:
+      fontSize: 10
+  - id: source_route
     label: |-
-      Create Unanswerable Counterparts
-      Replace or Reorder Images 24.2%
-      Modify Questions 35.3%
-      Replace Options 40.5%
-    type: process
+      Answerable Data Source?
+      Existing Dataset
+      Derived Dataset
+      Newly Collected Data
+    type: decision
     size: xl
     position:
-      x: 980
-      'y': 40
-  - id: automatic_qc
+      x: 728
+      'y': 296
+    style:
+      fontSize: 10
+  - id: existing_source
     label: |-
-      Run Automatic Quality Checks
-      Validate Format and Answers
-      Verify Metadata and Coreference
-      Check Image Accessibility
-    type: process
-    size: xl
-    position:
-      x: 1220
-      'y': 40
-  - id: expert_qc
-    label: |-
-      Review with Four Experts
-      Remove Ambiguous Queries
-      Remove Unclear Images
-      Retain 86.3% after QC
-    type: user
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: release
-    label: |-
-      Finalize Paired Benchmark
-      2,600 MCQs · 11,264 Images
-      Average 4.3 Images per Item
-      Answerable · Unanswerable Pairs
+      Existing · 531 · 40.8%
+      GeneCIS · SeedBench · IconQA
+      ≤200 per Dataset · Reuse MCQA
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: setup
+      x: 1056
+      'y': 104
+    style:
+      fontSize: 10
+  - id: derived_source
     label: |-
-      Configure Model Evaluation
-      Follow VLMEvalKit
-      Temperature 0 · Retry 10
-      Concatenate for Single-image Models
+      Derived Data · 282 · 21.7%
+      NLVR2 · HallusionBench
+      ISVQA · MMBench
+      Reformat Binary/Open/Single-image QA
+    type: database
+    size: xl
+    position:
+      x: 1056
+      'y': 296
+    style:
+      fontSize: 10
+  - id: new_source
+    label: |-
+      New Data · 487 · 37.5%
+      HistoricalMap · UnivBuilding
+      PubMedMQA · SciSlides
+      Fill Missing Tasks and Image Types
+    type: user
+    size: xl
+    position:
+      x: 1056
+      'y': 488
+    style:
+      fontSize: 10
+  - id: answerable_pool
+    label: |-
+      Harmonize MCQA
+      Reuse / Generate / Rewrite / Combine
+      Author Missing Coverage
+      1,300 Answerable · 2–9 Ordered Images
+    type: database
+    size: xl
+    position:
+      x: 1376
+      'y': 296
+    style:
+      fontSize: 10
+  - id: transform_route
+    label: |-
+      Minimal-change Strategy?
+      Change Images
+      Change Question
+      Change Options
+    type: decision
+    size: xl
+    position:
+      x: 2032
+      'y': 296
+    style:
+      fontSize: 10
+  - id: image_transform
+    label: |-
+      Replace or Reorder Images
+      315 Counterparts · 24.2%
+      Break Question-image or
+      Image-image Relations
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: extract
+      x: 2352
+      'y': 104
+    style:
+      fontSize: 10
+  - id: question_transform
     label: |-
-      Extract Predicted Choice
-      Use Predefined Rules
-      Compare with Gold Option
-      Keep Deterministic Outcomes
+      Modify the Question
+      459 Counterparts · 35.3%
+      Make Question Incompatible
+      with Images and Options
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: accuracy
+      x: 2352
+      'y': 296
+    style:
+      fontSize: 10
+  - id: option_transform
     label: |-
-      Compute Accuracy
-      Overall and per Task
-      Break Down by Relation
-      Compare 20 Multimodal LLMs
+      Replace the Options
+      526 Counterparts · 40.5%
+      Remove Any Correct Answer
+      Preserve Minimal Difference
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: robustness
+      x: 2352
+      'y': 488
+    style:
+      fontSize: 10
+  - id: paired_pool
     label: |-
-      Analyze Pair Robustness
-      Answerable Accuracy
-      Unanswerable Accuracy
-      Measure the Performance Gap
-    type: process
+      Pair + Metadata
+      counterpart_idx: 1,300 + 1,300
+      One Transform per Counterpart
+      Relation Manual · Task/Type Aligned
+      Count/Position Auto · Keep Image Order
+    type: database
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: report
+      x: 2680
+      'y': 296
+    style:
+      fontSize: 10
+  - id: quality_gate
     label: |-
-      Report MuirBench Results
-      Task · Relation · Image Position
-      Human and Model Comparison
-      Abstention Failure Analysis
+      Two-stage QC Passes?
+      Rules: Format · Gold · Metadata
+      Coreference · Redundancy · Access
+      4 Experts: Ambiguity · Image Clarity
+      Retention · 86.3%
+    type: decision
+    size: xl
+    position:
+      x: 3328
+      'y': 296
+    style:
+      fontSize: 10
+  - id: quality_reject
+    label: |-
+      Reject QC Failure
+      Invalid Format / Gold / Reference / Image
+      Ambiguous Query or Unclear Image
     type: terminal
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 3496
+      'y': 584
+    style:
+      fontSize: 10
+  - id: release
+    label: |-
+      Release MuirBench
+      2,600 MCQs · 11,264 Images
+      1,300 Pairs · Mean 4.3 · Range 2–9
+      Data · CC BY 4.0
+    type: database
+    size: xl
+    position:
+      x: 3976
+      'y': 296
+    style:
+      fontSize: 10
+  - id: schema
+    label: |-
+      Pinned HF Schema
+      idx · task · image_relation · image_type
+      question · options · answer · image_list
+      counterpart_idx · 3–5 Choices
+      Paper images → Release image_list
+    type: document
+    size: xl
+    position:
+      x: 3976
+      'y': 728
+    style:
+      fontSize: 10
+  - id: modality_gate
+    label: |-
+      Configure Input?
+      VLMEvalKit · T=0 · Retry=10
+      No Full Runner
+      Native Multi-image or Concatenated Single-image
+      Keep Order + Position
+    type: decision
+    size: xl
+    position:
+      x: 3328
+      'y': 920
+    style:
+      fontSize: 10
+  - id: concatenate
+    label: |-
+      Concatenate Ordered Images
+      Build One Visual Input
+      Path for Single-image Models
+    type: process
+    size: xl
+    position:
+      x: 3000
+      'y': 1112
+    style:
+      fontSize: 10
+  - id: prompt
+    label: |-
+      Prompt + Response
+      Question · Dynamic A…E Choices
+      Hint Lists A–D · End with “Answer:”
+      Coherent Image Placement
+      T=0 · Retry=10 · Keep Raw
+    type: process
+    size: xl
+    position:
+      x: 2352
+      'y': 920
+    style:
+      fontSize: 10
+  - id: coverage_gate
+    label: |-
+      Prediction Coverage Complete?
+      Expected Full Set · 2,600 Items
+      One Prediction per Released Row
+    type: decision
+    size: xl
+    position:
+      x: 2032
+      'y': 920
+    style:
+      fontSize: 10
+  - id: candidate_gate
+    label: |-
+      Parser Candidate Count?
+      First Search (A), Then Bare A
+      If >5 Tokens, Match Option Text
+    type: decision
+    size: xl
+    position:
+      x: 1704
+      'y': 920
+    style:
+      fontSize: 10
+  - id: random_fallback
+    label: |-
+      Seeded Random Fallback
+      No Candidate Was Found
+      random.seed(42)
+      Choose from Available Labels
+    type: process
+    size: xl
+    position:
+      x: 1376
+      'y': 680
+    style:
+      fontSize: 10
+  - id: drift_gate
+    label: |-
+      Multiple-candidate Rule?
+      Paper Protocol
+      Released postprocess.py
+    type: decision
+    size: xl
+    position:
+      x: 1376
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: paper_first
+    label: |-
+      Paper Says First Occurrence
+      Appendix C.2 Protocol
+      Does Not Match Released Code
+      Record as Specification Drift
+    type: terminal
+    size: xl
+    position:
+      x: 1056
+      'y': 1240
+    style:
+      fontSize: 10
+  - id: code_last
+    label: |-
+      Released Code Uses Last Occurrence
+      rfind Each Candidate
+      argmax Selects Latest Position
+      This Is the Executable Path
+    type: process
+    size: xl
+    position:
+      x: 1056
+      'y': 1160
+    style:
+      fontSize: 10
+  - id: score_gate
+    label: |-
+      Parsed Label Equals Gold?
+      Compare Extracted Choice Index
+      Accuracy per Released Row
+    type: decision
+    size: xl
+    position:
+      x: 1056
+      'y': 920
+    style:
+      fontSize: 10
+  - id: correct
+    label: |-
+      Correct Item · 1
+      Predicted Option Equals Gold
+      Include in Complete Denominator
+    type: process
+    size: xl
+    position:
+      x: 728
+      'y': 728
+    style:
+      fontSize: 10
+  - id: incorrect
+    label: |-
+      Incorrect Item · 0
+      Predicted Option Differs
+      Include in Complete Denominator
+    type: process
+    size: xl
+    position:
+      x: 728
+      'y': 1016
+    style:
+      fontSize: 10
+  - id: aggregate
+    label: |-
+      Aggregate Accuracy
+      Full-set Denominator · 2,600
+      Compare Answerable vs Unanswerable
+      Preserve Pair and Subset Labels
+    type: process
+    size: xl
+    position:
+      x: 408
+      'y': 920
+    style:
+      fontSize: 10
+  - id: human
+    label: |-
+      Human Evaluation Protocol
+      Two Domain Experts
+      Pair Members Go to Different Experts
+      Paper Overall Accuracy · 93.15%
+    type: user
+    size: xl
+    position:
+      x: 408
+      'y': 1240
+    style:
+      fontSize: 10
+  - id: report
+    label: |-
+      Report Robustness
+      Overall + 12-task Accuracy
+      Relation · Position · Answerability
+      Transform-type Error Rates
+      Missing Rows → Incomplete · No Full-set Claim
+    type: terminal
+    size: xl
+    position:
+      x: 80
+      'y': 920
+    style:
+      fontSize: 10
 edges:
-  - from: taxonomy
-    to: sources
+  - from: evidence
+    to: source_route
     type: primary
-  - from: sources
-    to: harmonize
+  - from: source_route
+    to: existing_source
     type: primary
-  - from: harmonize
-    to: annotate
+    label: Existing · 40.8%
+  - from: source_route
+    to: derived_source
     type: primary
-  - from: annotate
-    to: pair
+    label: Derived · 21.7%
+  - from: source_route
+    to: new_source
     type: primary
-  - from: pair
-    to: automatic_qc
+    label: New · 37.5%
+  - from: existing_source
+    to: answerable_pool
     type: primary
-  - from: automatic_qc
-    to: expert_qc
+  - from: derived_source
+    to: answerable_pool
     type: primary
-  - from: expert_qc
+  - from: new_source
+    to: answerable_pool
+    type: primary
+  - from: answerable_pool
+    to: transform_route
+    type: primary
+  - from: transform_route
+    to: image_transform
+    type: primary
+    label: Images · 315 · 24.2%
+  - from: transform_route
+    to: question_transform
+    type: primary
+    label: Question · 459 · 35.3%
+  - from: transform_route
+    to: option_transform
+    type: primary
+    label: Options · 526 · 40.5%
+  - from: image_transform
+    to: paired_pool
+    type: primary
+  - from: question_transform
+    to: paired_pool
+    type: primary
+  - from: option_transform
+    to: paired_pool
+    type: primary
+  - from: paired_pool
+    to: quality_gate
+    type: primary
+  - from: quality_gate
     to: release
     type: primary
+    label: Both stages pass
+  - from: quality_gate
+    to: quality_reject
+    type: optional
+    label: Automatic / expert failure
   - from: release
-    to: setup
+    to: schema
     type: primary
-  - from: setup
-    to: extract
+  - from: schema
+    to: human
+    type: optional
+    label: Human protocol
+  - from: schema
+    to: modality_gate
     type: primary
-  - from: extract
-    to: accuracy
+  - from: modality_gate
+    to: prompt
     type: primary
-  - from: accuracy
-    to: robustness
+    label: Native multi-image
+  - from: modality_gate
+    to: concatenate
     type: primary
-  - from: robustness
+    label: Single-image only
+  - from: concatenate
+    to: prompt
+    type: primary
+  - from: prompt
+    to: coverage_gate
+    type: primary
+  - from: coverage_gate
+    to: candidate_gate
+    type: primary
+    label: Complete · 2,600
+  - from: coverage_gate
+    to: report
+    type: optional
+    label: Missing rows · incomplete
+  - from: candidate_gate
+    to: score_gate
+    type: primary
+    label: Exactly one candidate
+  - from: candidate_gate
+    to: random_fallback
+    type: optional
+    label: No candidate
+  - from: candidate_gate
+    to: drift_gate
+    type: optional
+    label: Multiple candidates
+  - from: random_fallback
+    to: score_gate
+    type: primary
+  - from: drift_gate
+    to: paper_first
+    type: optional
+    label: Paper · first
+  - from: drift_gate
+    to: code_last
+    type: primary
+    label: Code · last
+  - from: code_last
+    to: score_gate
+    type: primary
+  - from: score_gate
+    to: correct
+    type: primary
+    label: Matches gold
+  - from: score_gate
+    to: incorrect
+    type: primary
+    label: Does not match
+  - from: correct
+    to: aggregate
+    type: primary
+  - from: incorrect
+    to: aggregate
+    type: primary
+  - from: aggregate
     to: report
     type: primary
+  - from: human
+    to: report
+    type: optional
 modules: []

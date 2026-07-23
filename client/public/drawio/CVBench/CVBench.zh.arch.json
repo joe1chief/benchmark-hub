@@ -7,8 +7,8 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
@@ -20,13 +20,13 @@
     },
     {
       "id": "curate",
-      "label": "任务驱动筛选\n内在关系 · 时长 · 720p · 24 fps",
+      "label": "任务驱动筛选\n内在关系 · 时长 · 720p ·\n24 fps",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "videos",
-      "label": "已筛选视频组\n1,315 个视频 · 每组 2–4 个",
+      "label": "已筛选视频组\n1,315 个视频 · 每组\n2–4 个",
       "type": "database",
       "size": "xl"
     },
@@ -50,25 +50,37 @@
     },
     {
       "id": "synthesize",
-      "label": "GPT-4o 生成\n每组至少 2 题 · 1 正确 + 3 干扰项",
+      "label": "GPT-4o 生成\n每组至少 2 题 · 1 正确 +\n3 干扰项",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "qc1",
-      "label": "第一轮人工核查\n8 名标注员 · 15 项准则 · 修题 / 重采视频",
-      "type": "user",
+      "id": "model_gate",
+      "label": "多模型一致性 + 难度校验\n多模型幻觉检测",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "qc2",
-      "label": "独立复检\n5 名新标注员 · 每人 200 题",
-      "type": "user",
+      "id": "human_gate",
+      "label": "8 名标注员第一轮复核\n15 项任务专用标准\n合规 · 正确 · 非平凡？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "repair",
+      "label": "修正处理\n修改低质量问题或干扰项\n必要时重新采集视频",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "independent_audit",
+      "label": "5 名新标注员\n每人复核 200 组问答\n合规 · 正确 · 无幻觉？",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "benchmark",
-      "label": "CVBench\n1,000 题 · 3 个层级 · 15 个子任务",
+      "label": "CVBench\n1,000 题 · 3 个层级 ·\n15 个子任务",
       "type": "database",
       "size": "xl"
     },
@@ -131,35 +143,64 @@
     {
       "id": "edge-7",
       "from": "synthesize",
-      "to": "qc1",
+      "to": "model_gate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "qc1",
-      "to": "qc2",
+      "from": "model_gate",
+      "to": "human_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "qc2",
-      "to": "benchmark",
-      "type": "primary"
+      "from": "human_gate",
+      "to": "repair",
+      "type": "optional",
+      "label": "修正"
     },
     {
       "id": "edge-10",
+      "from": "repair",
+      "to": "human_gate",
+      "type": "optional",
+      "label": "复检"
+    },
+    {
+      "id": "edge-11",
+      "from": "human_gate",
+      "to": "independent_audit",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-12",
+      "from": "independent_audit",
+      "to": "repair",
+      "type": "optional",
+      "label": "修正"
+    },
+    {
+      "id": "edge-13",
+      "from": "independent_audit",
+      "to": "benchmark",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-14",
       "from": "benchmark",
       "to": "input",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-15",
       "from": "input",
       "to": "prompting",
       "type": "primary"
     },
     {
-      "id": "edge-12",
+      "id": "edge-16",
       "from": "prompting",
       "to": "accuracy",
       "type": "primary"

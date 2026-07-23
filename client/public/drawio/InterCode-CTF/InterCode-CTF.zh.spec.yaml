@@ -5,9 +5,20 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: InterCode-CTF 构建流程
-  description: 对齐 InterCode-CTF 专项论文：从人工解答 picoCTF 题目并还原完整数字资源，到任务级 Ubuntu Docker 环境、 flag 复验、十轮智能体交互与严格成功判分。
+  description: 对齐 InterCode-CTF 专项论文：从人工解答 picoCTF 题目并还原完整数字资源，到共享 Ubuntu Docker 镜像与任务级工作目录、flag 复验、论文十次交互基线及严格成功判分。
   legend: 本流程依据 NeurIPS 2023 Multi-Agent Security 工作坊独立论文，不采用后续模型报告因联网或可用性而删减的子集。
 nodes:
+  - id: evidence
+    label: |-
+      主要证据与固定版本
+      OpenReview KOZwk7BFc3
+      MASEC 2023 · Git c2f8b82
+      CTF 专项发布
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 40
   - id: source
     label: |-
       picoCTF 练习平台
@@ -17,7 +28,7 @@ nodes:
     type: cloud
     size: xl
     position:
-      x: 20
+      x: 300
       'y': 40
   - id: solve
     label: |-
@@ -28,7 +39,7 @@ nodes:
     type: user
     size: xl
     position:
-      x: 300
+      x: 580
       'y': 40
   - id: package
     label: |-
@@ -39,18 +50,18 @@ nodes:
     type: process
     size: xl
     position:
-      x: 580
+      x: 860
       'y': 40
   - id: docker
     label: |-
-      构建 InterCode-CTF 沙箱
-      Docker 中的 Ubuntu + Bourne Shell
-      Python · GCC · GDB 与安全工具
-      从任务专属资源目录启动
+      构建共享 intercode-ctf 镜像
+      Ubuntu · Python · GCC · GDB 工具
+      资源置于 /ctf · 从任务目录启动
+      从智能体镜像删除 solution/
     type: process
     size: xl
     position:
-      x: 860
+      x: 1140
       'y': 40
   - id: verify
     label: |-
@@ -61,7 +72,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1140
+      x: 1420
       'y': 40
   - id: suite
     label: |-
@@ -72,42 +83,67 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1140
+      x: 1420
       'y': 360
   - id: loop
     label: |-
-      十轮语言智能体评测
+      论文基线：10 次智能体交互
       指令 → Python / Bash 动作
       返回 stdout 或错误观察
-      flag 正确或预算耗尽时停止
+      非环境内部终止规则
     type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 360
+  - id: grade
+    label: |-
+      提交判定 · submit ANSWER
+      忽略大小写精确匹配 gold
+      正确 r=1 · 错误且有预算则 r=0 并继续
+    type: decision
     size: xl
     position:
       x: 860
       'y': 360
-  - id: grade
-    label: |-
-      严格 flag 提交
-      动作：submit picoCTF{...}
-      与 gold 忽略大小写精确匹配
-      正确奖励 1，否则为 0
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 360
   - id: report
     label: |-
-      汇报任务成功率
+      下游结果与网页排行榜
       GPT-4 基线：解出 40 / 100
       已解任务平均 3.9 轮
       按六类安全技能拆分结果
     type: terminal
     size: xl
     position:
+      x: 580
+      'y': 360
+  - id: artifact_boundary
+    label: |-
+      论文 / 运行时制品边界
+      query + 资源 → 智能体；gold → 评测器
+      论文允许错误提交后继续
+      代码 submit 即 done；评测器忽略 done
+      论文 10 轮 · 当前脚本默认 15 轮
+    type: document
+    size: xl
+    position:
       x: 300
       'y': 360
+  - id: scope_limit
+    label: |-
+      收集范围限制
+      无浏览器 → Web 题仅 2 道
+      19 道题依赖远程主机
+      未披露随机抽样或难度字段
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 360
 edges:
+  - from: evidence
+    to: source
+    type: data
   - from: source
     to: solve
     type: primary
@@ -126,10 +162,24 @@ edges:
   - from: suite
     to: loop
     type: primary
+  - from: suite
+    to: scope_limit
+    type: data
   - from: loop
     to: grade
     type: primary
   - from: grade
+    to: loop
+    type: optional
+    waypoints:
+      - x: 960
+        'y': 600
+      - x: 1240
+        'y': 600
+  - from: grade
     to: report
     type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
 modules: []

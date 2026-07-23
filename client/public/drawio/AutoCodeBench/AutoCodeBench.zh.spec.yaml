@@ -4,15 +4,15 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: AutoCodeBench 构建流程
-  description: 对齐论文的 AutoCodeGen 流程：从 Stack-Edu 种子，经 LLM-沙箱测试合成、逆向题目生成、 三阶段过滤与多语言平衡，形成可执行基准。
-  legend: 先从左到右阅读生成行，再从右到左阅读过滤与评测行。
+  title: AutoCodeBench 构建与评测流程
+  description: 按论文区分公开演示测试与私有完整隐藏测试，再经过三阶段过滤、后验人工核验和官方双测试函数 Pass@1 评测。
+  legend: 公开演示测试嵌入题面；官方评测要求 demo_test_func 与 full_test_func 均通过。
 nodes:
   - id: seeds
     label: |-
-      Stack-Edu 种子代码
+      Stack-Edu 种子代码片段
       来自 The Stack v2 的教育代码
-      函数 / 类 / 文件级片段
+      函数 / 类 / 文件级
     type: database
     size: xl
     position:
@@ -21,127 +21,192 @@ nodes:
   - id: solution
     label: |-
       精炼代码解答
-      DeepSeek-V3-0324 + 语言 Few-Shot
-      自包含、可验证、带清晰注释
+      DeepSeek-V3-0324 + 少样本
+      自包含且可验证
     type: process
     size: xl
     position:
       x: 320
       'y': 100
-  - id: inputs
+  - id: test_gate
     label: |-
-      生成测试输入
-      公开：不超过 3 个基础用例
-      私有：7 个以上且覆盖边界
+      生成两类测试输入
+      公开演示 + 私有完整
     type: process
     size: xl
     position:
       x: 600
       'y': 100
-  - id: outputs
+  - id: demo_tests
     label: |-
-      多语言沙箱执行
-      解答 + 公开 / 私有输入
-      获取对应测试输出
-    type: process
+      公开演示测试输入
+      不超过 3 个基础用例
+      嵌入题面作为示例
+    type: document
     size: xl
     position:
       x: 880
-      'y': 100
-  - id: tests
+      'y': 0
+  - id: full_tests
     label: |-
-      整合可执行测试
-      LLM 将输入输出组合为断言
-      重跑解答与两类测试函数
+      私有完整隐藏测试输入
+      7+ 个用例，含边界情况
+      综合正确性测试
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 200
+  - id: execute_inputs
+    label: |-
+      执行解答与两类输入
+      多语言沙箱
+      获取演示与隐藏输出
     type: process
     size: xl
     position:
       x: 1160
+      'y': 100
+  - id: integrate
+    label: |-
+      构建可执行测试函数
+      DeepSeek-V3 整合输入输出
+      demo_test_func
+      full_test_func
+      与解答一起重跑两类测试
+    type: process
+    size: xl
+    position:
+      x: 1440
       'y': 100
   - id: problem
     label: |-
       逆向生成编程题
-      遵循六项启发式规范
-      嵌入公开测试且不泄露解题提示
+      六项启发式规范
+      嵌入演示测试 • 不泄露解法
     type: document
     size: xl
     position:
-      x: 1440
+      x: 1720
       'y': 100
   - id: translate
     label: |-
-      路由语言覆盖
-      6 种语言直接使用生成流程
-      其余14种翻译未用数据；全部进入过滤
+      语言覆盖路由
+      6 种语言走直接流程
+      其余 14 种翻译未使用数据
+      再应用相同过滤
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 440
+  - id: difficulty
+    label: |-
+      难度控制
+      DeepSeek-Coder-V2-Lite
+      每题尝试 10 次
+      丢弃 10 / 10 解出的题
     type: process
     size: xl
     position:
       x: 1440
       'y': 440
-  - id: difficulty
+  - id: quality
     label: |-
-      难度控制
-      DeepSeek-Coder-V2-Lite 尝试 10 次
-      删除 10/10 全部解出的题目
+      LLM-as-Critic 质量控制
+      DeepSeek-R1-0528
+      七项一致性准则
     type: process
     size: xl
     position:
       x: 1160
       'y': 440
-  - id: quality
+  - id: diversity
     label: |-
-      质量控制
-      DeepSeek-R1-0528 按 7 项标准批评
-      检查可复现性与题目-测试一致性
+      多样性采样
+      DeepSeek-V3 类别标签
+      跨类别池循环采样
     type: process
     size: xl
     position:
       x: 880
       'y': 440
-  - id: diversity
+  - id: dataset
     label: |-
-      多样性采样
-      DeepSeek-V3-0324 标注类别
-      在各类别池间循环采样
-    type: process
+      发布 AutoCodeBench
+      3,920 题 • 37,777 个测试
+      20 种语言 • 14 个类别
+    type: database
     size: xl
     position:
       x: 600
       'y': 440
-  - id: dataset
+  - id: model_output
     label: |-
-      AutoCodeBench
-      3,920 题 / 37,777 个测试
-      20 种语言 / 14 类场景
-    type: database
+      生成候选代码
+      必须使用单个围栏代码块
+      统一系统提示
+    type: process
     size: xl
     position:
       x: 320
-      'y': 440
+      'y': 360
+  - id: sandbox_eval
+    label: |-
+      沙箱评测
+      运行 full_test_func
+      + demo_test_func
+      两者均须返回 PASSED
+      Pass@1
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 360
+  - id: audit
+    label: |-
+      后验人工核验
+      6 位专业标注员
+      6 种语言 • 二元有效性
+      准确率 87.6%
+    type: user
+    size: xl
+    position:
+      x: 320
+      'y': 600
   - id: report
     label: |-
-      可执行评测
-      沙箱运行隐藏完整测试
-      Pass@1 + 难度与语言分析
+      报告多语言结果
+      按语言 / 难度报告 Pass@1
+      保留 87.6% 核验限制
     type: terminal
     size: xl
     position:
       x: 40
-      'y': 440
+      'y': 600
 edges:
   - from: seeds
     to: solution
     type: primary
   - from: solution
-    to: inputs
+    to: test_gate
     type: primary
-  - from: inputs
-    to: outputs
+  - from: test_gate
+    to: demo_tests
     type: primary
-  - from: outputs
-    to: tests
+  - from: test_gate
+    to: full_tests
     type: primary
-  - from: tests
+  - from: demo_tests
+    to: execute_inputs
+    type: primary
+  - from: full_tests
+    to: execute_inputs
+    type: primary
+  - from: execute_inputs
+    to: integrate
+    type: primary
+  - from: integrate
     to: problem
     type: primary
   - from: problem
@@ -160,6 +225,18 @@ edges:
     to: dataset
     type: primary
   - from: dataset
+    to: model_output
+    type: primary
+  - from: model_output
+    to: sandbox_eval
+    type: primary
+  - from: dataset
+    to: audit
+    type: data
+  - from: sandbox_eval
     to: report
     type: primary
+  - from: audit
+    to: report
+    type: secondary
 modules: []

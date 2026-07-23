@@ -5,130 +5,157 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ClinicalBench 构建流程
-  description: >-
-    与论文对齐的 ClinicalBench 流程：从两个 MIMIC 数据库筛选并划分三类预测任务，仅对训练标签欠采样，结构化特征与 代码转文本输入分别进入 11 个传统模型和 22 个 LLM，再以任务专属 F1 与 AUROC
-    比较直接提示、提示工程和微调策略。
-  legend: 实线表示队列构建与比较主流程；分支分别表示传统机器学习和 LLM 评测路径。
+  description: 与论文 v2 对齐的 ClinicalBench 流程：固定 MIMIC 版本，筛选首次就诊队列，分层划分并仅平衡训练集，再在三项预测任务上公平比较传统机器学习与开源 LLM。
+  legend: 实线遵循论文实验；虚线分支记录当前 README 的 MIMIC-IV 版本漂移。
 nodes:
-  - id: data
+  - id: evidence_boundary
     label: |-
-      使用两个需授权的临床数据库
-      MIMIC-III v1.4 + MIMIC-IV v2.2
-      所有模型共享同一队列合同
-    type: database
+      论文与固定仓库边界
+      arXiv 2411.06469v2 • §2
+      §§3–5 • 附录 A–D
+      官方仓库 e7828b1
+    type: document
     size: xl
     position:
       x: 40
+      'y': 220
+  - id: release_drift
+    label: |-
+      当前仓库 README 漂移
+      MIMIC-IV 3.0 下载入口
+      论文合同仍为 v2.2
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 440
+  - id: data
+    label: |-
+      论文数据版本
+      MIMIC-III v1.4
+      MIMIC-IV v2.2
+      需授权临床数据库
+    type: database
+    size: xl
+    position:
+      x: 340
       'y': 220
   - id: tasks
     label: |-
       定义三类预测任务
       住院时长：三分类
-      死亡与再入院：二分类
+      死亡：本次就诊二分类
+      再入院：两周内二分类
     type: document
-    size: xl
-    position:
-      x: 340
-      'y': 220
-  - id: cohort
-    label: |-
-      筛选患者队列
-      仅保留首次就诊
-      排除未满 18 岁和有缺失值的记录
-    type: process
     size: xl
     position:
       x: 640
       'y': 220
-  - id: split
+  - id: cohort
     label: |-
-      创建分层数据划分
-      训练 • 验证 • 测试
-      各模型家族使用完全相同划分
+      筛选患者队列
+      仅保留每位患者首次就诊
+      年龄 ≥18 • 无缺失值
     type: process
     size: xl
     position:
       x: 940
       'y': 220
-  - id: balance
+  - id: split
     label: |-
-      仅平衡训练标签
-      对训练集执行欠采样
-      验证集和测试集保持不变
-    type: decision
+      分层划分训练／验证／测试集
+      提示法使用同一测试集
+      ML 与微调使用同一划分
+    type: process
     size: xl
     position:
       x: 1240
       'y': 220
-  - id: structured
+  - id: balance
     label: |-
-      准备结构化机器学习特征
-      诊断 • 操作 • 用药 • 药物
-      保留编码后的临床变量
+      通过欠采样重平衡标签
+      仅处理训练集
+      验证集与测试集保持不变
     type: process
     size: xl
     position:
       x: 1540
+      'y': 220
+  - id: structured
+    label: |-
+      准备结构化 ML 特征
+      人口统计 • 诊断
+      操作 • 用药／药物
+    type: process
+    size: xl
+    position:
+      x: 1840
       'y': 40
   - id: text
     label: |-
-      将代码转换为 LLM 可读文本
-      ICD-9/10 诊断与操作描述
-      ATC 用药与药物描述
+      将代码转换为文本
+      ICD-9/10 诊断 + 操作
+      ATC 用药／药物名称
     type: process
     size: xl
     position:
-      x: 1540
+      x: 1840
       'y': 400
   - id: ml
     label: |-
-      训练 11 个传统模型
-      LR • SVM • 决策树 • XGBoost • KNN
-      MLP • Transformer • RNN 等
+      训练 11 个传统 ML 模型
+      LR • SVM • 树模型 • XGBoost
+      KNN • MLP
+      Transformer • RNN
+      标准监督训练
     type: terminal
     size: xl
     position:
-      x: 1840
+      x: 2140
       'y': 40
   - id: llms
     label: |-
-      评测 22 个语言模型
-      14 个通用 LLM + 8 个医疗 LLM
-      比较模型规模与解码温度
+      评测 22 个开源 LLM
+      14 个通用 + 8 个医疗模型
+      排除闭源模型
+      遵循 MIMIC 数据政策
     type: terminal
     size: xl
     position:
-      x: 1840
+      x: 2140
       'y': 400
   - id: prompt
     label: |-
-      测试 LLM 提示策略
-      直接提示 • 思维链 • 自我反思
-      角色扮演 • 上下文学习
-    type: process
-    size: xl
-    position:
-      x: 2140
-      'y': 320
-  - id: finetune
-    label: |-
-      测试任务专属微调
-      完整与部分 LoRA 变体
-      评估训练数据规模影响
-    type: process
-    size: xl
-    position:
-      x: 2140
-      'y': 480
-  - id: predictions
-    label: |-
-      收集保留集预测
-      使用相同验证／测试病例
-      直接比较 ML 与 LLM 输出
+      比较提示策略
+      直接提示 + 思维链
+      自我反思 • 角色扮演
+      上下文学习
     type: process
     size: xl
     position:
       x: 2440
+      'y': 300
+  - id: finetune
+    label: |-
+      任务专属微调
+      LoRA Full + LoRA Last Layer
+      训练 20 轮
+      按验证集选择检查点
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 500
+  - id: predictions
+    label: |-
+      收集保留集预测
+      ML 与 LLM 同场比较
+      使用相同评测病例
+      同时比较规模与温度
+    type: process
+    size: xl
+    position:
+      x: 2740
       'y': 220
   - id: metrics
     label: |-
@@ -138,19 +165,26 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 2740
+      x: 3040
       'y': 220
   - id: report
     label: |-
-      报告重复实验比较
-      五次运行的 95% 置信区间
-      混淆矩阵 + 损失曲线 + 结论
+      报告五次运行 + 95% 置信区间
+      混淆矩阵
+      微调损失曲线
+      跨策略结论
     type: terminal
     size: xl
     position:
-      x: 3040
+      x: 3340
       'y': 220
 edges:
+  - from: evidence_boundary
+    to: data
+    type: primary
+  - from: evidence_boundary
+    to: release_drift
+    type: data
   - from: data
     to: tasks
     type: primary

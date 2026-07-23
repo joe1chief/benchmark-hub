@@ -7,80 +7,104 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "source",
-      "label": "CSAW CTF 源档案\n初始池：568 个挑战\n档案覆盖：2011-2023",
+      "label": "CSAW CTF 源档案\n568 个挑战 • 2011–2023",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "manual_gate",
-      "label": "人工可解性门\n软件包变化后重验部署\n恢复维护中缺失的工件",
+      "label": "人工可解性门控\n仅识别维护相关缺失文件\n重验配置与可解性",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "validation_route",
+      "label": "选择验证路径\n服务端还是文件型挑战？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
       "id": "server_gate",
-      "label": "服务型挑战验证\n启动容器并暴露端口\n测试内部 + 外部连通性",
+      "label": "服务端验证\n启动容器并暴露端口\n测试 Docker 网络内外连通性",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "file_gate",
-      "label": "文件型挑战验证\n检查配置与源文件\n确保必要信息完整",
+      "label": "文件型验证\n检查配置与源文件\n确认必要信息齐全",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "standardize",
-      "label": "可复现打包\nCompose 加载 Docker Hub 镜像\n集成源码 + 元数据 + 资产",
+      "label": "标准化挑战包\nDocker Hub 镜像 + Compose\n源资产 + challenge.json",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "验证后的 NYU CTF 数据集\n2017-2023 共 200 个挑战\n6 类：密码 / 取证 / Pwn / 逆向 / Web / 其他",
+      "label": "验证后的 NYU CTF Bench\n200 个挑战 • 2017–2023\n6 类挑战\n密码 / 取证 / 二进制利用\n逆向 / Web / 杂项",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "visibility",
-      "label": "挑战合同\n模型可见描述 + 指定文件 + 主机\n真实 Flag 保持隐藏",
+      "id": "contract",
+      "label": "challenge.json 契约\n描述 • 列出的文件\n主机与端口可见\n真实 Flag 隐藏",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "loader",
-      "label": "自动数据加载器\nDocker Compose 启动服务\n或在玩家容器挂载本地文件",
+      "id": "load_route",
+      "label": "选择加载路径\n服务端还是本地文件？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "server_load",
+      "label": "加载服务端挑战\n用 Compose 拉取镜像\n启动容器\n按主机与端口连接",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "agent",
-      "label": "自主 LLM 解题循环\n从 challenge.json 构造提示\n观察工具输出并继续",
+      "id": "file_load",
+      "label": "加载文件型挑战\n复制到临时目录\n挂载进玩家容器",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prompt",
+      "label": "每次运行的提示与求解循环\n从 challenge.json 构造提示\n读取工具结果直至停止",
+      "type": "document",
       "size": "xl"
     },
     {
       "id": "tools",
-      "label": "6 个函数调用工具\n运行 / 建文件 / 反汇编 / 反编译\n检查 Flag / 放弃",
+      "label": "每次运行的工具交互\n至多 6 个按类别配置的工具\n命令 • 创建 / 检查文件\n反汇编 • 反编译 • 放弃",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judge",
-      "label": "精确成功判定与清理\ncheck_flag 匹配隐藏真值\n停止容器并删除临时资源",
+      "id": "protocol",
+      "label": "五次运行评测协议\n每个挑战执行 5 次独立运行\n每次均执行完整求解循环\n每个 LLM 限时 48 小时",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "自动 CTF 结果\n分类别已解挑战率\n5 个受评 LLM 的失败原因",
+      "id": "exact_judge",
+      "label": "每次运行的 Flag 精确检查\ncheck_flag 做相等比较\n随后停止容器并清理文件",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "success",
+      "label": "五次运行聚合\n至少 1 次返回精确隐藏 Flag\n即判定挑战求解成功\n报告类别与失败率",
       "type": "terminal",
       "size": "xl"
     }
@@ -95,61 +119,101 @@
     {
       "id": "edge-2",
       "from": "manual_gate",
-      "to": "server_gate",
+      "to": "validation_route",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "server_gate",
-      "to": "file_gate",
-      "type": "primary"
+      "from": "validation_route",
+      "to": "server_gate",
+      "type": "primary",
+      "label": "服务端"
     },
     {
       "id": "edge-4",
+      "from": "validation_route",
+      "to": "file_gate",
+      "type": "primary",
+      "label": "文件型"
+    },
+    {
+      "id": "edge-5",
+      "from": "server_gate",
+      "to": "standardize",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
       "from": "file_gate",
       "to": "standardize",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-7",
       "from": "standardize",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "release",
-      "to": "visibility",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "visibility",
-      "to": "loader",
-      "type": "primary"
-    },
-    {
       "id": "edge-8",
-      "from": "loader",
-      "to": "agent",
+      "from": "release",
+      "to": "contract",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "agent",
-      "to": "tools",
+      "from": "contract",
+      "to": "load_route",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "tools",
-      "to": "judge",
-      "type": "primary"
+      "from": "load_route",
+      "to": "server_load",
+      "type": "primary",
+      "label": "服务端"
     },
     {
       "id": "edge-11",
-      "from": "judge",
-      "to": "report",
+      "from": "load_route",
+      "to": "file_load",
+      "type": "primary",
+      "label": "文件型"
+    },
+    {
+      "id": "edge-12",
+      "from": "server_load",
+      "to": "protocol",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "file_load",
+      "to": "protocol",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "protocol",
+      "to": "prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "prompt",
+      "to": "tools",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "tools",
+      "to": "exact_judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "exact_judge",
+      "to": "success",
       "type": "primary"
     }
   ],

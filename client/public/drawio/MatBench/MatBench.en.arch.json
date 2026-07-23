@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "title": "MatBench Build Process",
+  "title": "MatBench Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
@@ -20,67 +20,91 @@
     },
     {
       "id": "clean",
-      "label": "Standardize and Clean Each Source\nKeep Material Input + One Target\nRemove Auxiliary Metadata\nDrop Unphysical / Rare / Irrelevant Rows",
+      "label": "Recreate Each MatBench v0.1 Task\nApply Methods Table 2 Items 1–11\nTask-specific Data Modifications\nItems 7/8 Remove Auxiliary Columns",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "tasks",
-      "label": "Define 13 MatBench Tasks\n10 Regression · 3 Classification\nComposition or Crystal-structure Input\n312–132,752 Samples per Task",
-      "type": "process",
+      "label": "Freeze 13 Supervised Tasks\n10 Regression · 3 Classification\nComposition or Crystal-structure Input\nPhonons: Paper 1,296 · v0.6 1,265",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "folds",
-      "label": "Fix Five Outer Folds\nSeed · 18012019\n80% Train/Validation · 20% Test\nStratify Classification Tasks",
+      "label": "Fix Five Outer Test Folds\nKFold · Seed 18012019\nClassification Uses StratifiedKFold\n80% Train/Validation · 20% Test",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "fit",
-      "label": "Tune Only inside Each Training Fold\nUse Nested Cross-validation\nFit on the Outer Training Partition\nPredict Its Held-out Test Partition",
+      "label": "Tune Only within Outer Training Data\nFit One Model per Outer Fold\nPredict Every Held-out Sample\nMissing / Extra Predictions Are Rejected",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "original_metrics",
-      "label": "Apply Original Task Metrics\nRegression · Mean Absolute Error\nClassification · ROC-AUC\nAverage Scores across Five Folds",
+      "id": "original_type",
+      "label": "Original Task Type?\nRegression or Classification",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "regression_metric",
+      "label": "Regression Route\nCompute MAE on Each Test Fold\nAverage MAE across Five Folds\nLower Is Better",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "baselines",
-      "label": "Publish Reproducible References\nDummy · Random Forest\nAutomatminer · CGCNN · MEGNet\nCompare under Identical Outer Folds",
+      "id": "classification_metric",
+      "label": "Classification Route\nCompute ROC-AUC on Each Test Fold\nAverage ROC-AUC across Five Folds\nHigher Is Better",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "original_report",
+      "label": "Publish Comparable References\nAutomatminer Express · Dummy · RF\nCGCNN / MEGNet where Applicable\nIdentical Outer Folds for Every Method",
       "type": "terminal",
       "size": "xl"
     },
     {
       "id": "select_four",
-      "label": "Intern-S1 Adapter Selects 4 Tasks\nSteels · Experimental Band Gap\nExperimental Is-metal · Glass\nUse OpenCompass Task Files",
+      "label": "Later OpenCompass Adapter · 34da831\nLoad Fold 0 Test Files Only\nSteels · Experimental Band Gap\nIs-metal · Glass Formation",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "prompt",
-      "label": "Build Zero-shot Generative Prompts\nInsert Each Material Problem\nRequest a Free-form Model Response\nPreserve Numeric or Class Ground Truth",
+      "label": "Run Zero-shot Generative Inference\nInsert the Material Problem\nCollect a Free-form Model Response\nDo Not Recreate Five-fold NCV",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "Judge Responses by Target Type\nNumeric · LLM Extracts a Float\nClassification · LLM Judges Correctness\nAggregate Task-level Predictions",
+      "id": "adapter_type",
+      "label": "Adapter Target Type?\nNumeric or Binary Class",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "numeric_parse",
+      "label": "Numeric Judge Route\nJudge Must Return One Float\nIncomplete / Undetermined → 0\nRegex Takes First Number · None → 0",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "adapter_metrics",
-      "label": "Compute Adapter Task Scores\nNumeric Tasks · MAE\nClassification Tasks · Accuracy\nKeep the Four Results Separate",
+      "id": "class_judge",
+      "label": "Classification Judge Route\nPrompt Conflicts: A/B vs CORRECT/INCORRECT\nParser Searches the First A or B Only\nNo A/B → “unknown” → Not Correct",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "adapter_scores",
+      "label": "Score Four Adapter Tasks\nGap + Steels · MAE\nIs-metal + Glass · Accuracy (%)\nPreserve One Score per Task",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "aggregate",
-      "label": "Form the Intern-S1 Aggregate\nGap · (2 − MAE) / 2 × 100\nSteels · (2000 − MAE) / 2000 × 100\nCombine with Two Accuracy Scores",
+      "label": "Compute Intern-S1 Aggregate\nGap · (2 − MAE) / 2 × 100\nSteels · (2000 − MAE) / 2000 × 100\nArithmetic Mean with Two Accuracies",
       "type": "terminal",
       "size": "xl"
     }
@@ -113,42 +137,83 @@
     {
       "id": "edge-5",
       "from": "fit",
-      "to": "original_metrics",
+      "to": "original_type",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "original_metrics",
-      "to": "baselines",
-      "type": "primary"
+      "from": "original_type",
+      "to": "regression_metric",
+      "type": "primary",
+      "label": "Regression · 10 tasks"
     },
     {
       "id": "edge-7",
-      "from": "tasks",
-      "to": "select_four",
-      "type": "secondary"
+      "from": "original_type",
+      "to": "classification_metric",
+      "type": "primary",
+      "label": "Classification · 3 tasks"
     },
     {
       "id": "edge-8",
+      "from": "regression_metric",
+      "to": "original_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "classification_metric",
+      "to": "original_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "tasks",
+      "to": "select_four",
+      "type": "secondary",
+      "label": "Later LLM adapter"
+    },
+    {
+      "id": "edge-11",
       "from": "select_four",
       "to": "prompt",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-12",
       "from": "prompt",
-      "to": "parse",
+      "to": "adapter_type",
       "type": "primary"
     },
     {
-      "id": "edge-10",
-      "from": "parse",
-      "to": "adapter_metrics",
+      "id": "edge-13",
+      "from": "adapter_type",
+      "to": "numeric_parse",
+      "type": "primary",
+      "label": "Gap + steels"
+    },
+    {
+      "id": "edge-14",
+      "from": "adapter_type",
+      "to": "class_judge",
+      "type": "primary",
+      "label": "Is-metal + glass"
+    },
+    {
+      "id": "edge-15",
+      "from": "numeric_parse",
+      "to": "adapter_scores",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "adapter_metrics",
+      "id": "edge-16",
+      "from": "class_judge",
+      "to": "adapter_scores",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "adapter_scores",
       "to": "aggregate",
       "type": "primary"
     }

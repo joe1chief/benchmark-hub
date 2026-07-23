@@ -5,122 +5,141 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GraphWalks Build Process
-  description: Official-release construction, prompt packaging, corrected labels, answer extraction, and set-based grading flow.
+  description: >-
+    Official-record operation semantics, prompt packaging, corrected labels, published extractor boundary, and intended
+    set grading.
   legend: >-
-    GraphWalks has no accompanying construction paper. This figure uses only the official OpenAI dataset card, released
-    records, and changelog; the unpublished random-graph sampling algorithm is intentionally not inferred.
+    No construction paper or graph-generation code is public. Dashed arrow marks pinned dataset evidence; solid arrows
+    use only the current released records and README at revision f338bb26.
 nodes:
-  - id: graphs
+  - id: evidence
     label: |-
-      Package directed graphs as edge lists
-      hashed node identifiers · every node degree ≥1
-      sampling algorithm is not documented publicly
-    type: database
+      Primary evidence · no paper
+      HF card/data f338bb26
+      README + released Parquet records
+    type: document
     size: xl
     position:
       x: 40
-      'y': 300
+      'y': 320
+  - id: graphs
+    label: |-
+      Use released directed edge-list graphs
+      10-char node IDs · every node degree ≥1
+      sampling algorithm not published
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 320
   - id: bfs
     label: |-
-      Create BFS operations
-      choose a start node and target depth
-      answer nodes reachable at exactly that depth
+      BFS operation definition
+      exactly the target depth
+      exclude start/intermediate/revisited nodes
     type: process
     size: xl
     position:
-      x: 360
+      x: 560
       'y': 80
   - id: parents
     label: |-
-      Create parent operations
-      choose one target node
-      answer nodes with an incoming edge to it
+      Parents operation definition
+      incoming neighbors only
+      exclude the target itself
     type: process
     size: xl
     position:
-      x: 360
-      'y': 520
-  - id: targets
+      x: 560
+      'y': 560
+  - id: gold
     label: |-
-      Compute gold answer sets
-      exclude the BFS start node
-      exclude the target from its own parent answer
+      Use released answer_nodes sets
+      label-generation/validation code
+      is not published
     type: process
     size: xl
     position:
-      x: 720
-      'y': 300
+      x: 820
+      'y': 320
   - id: prompt
     label: |-
-      Serialize a long-context user prompt
-      operation rules + fixed worked examples
-      full edge list + target operation + output contract
+      Serialize each user prompt
+      rules + four worked examples
+      edge list + operation + output contract
     type: process
     size: xl
     position:
-      x: 1020
-      'y': 300
+      x: 1080
+      'y': 320
   - id: schema
     label: |-
-      Store five official fields
+      Pinned actual schema
       prompt · answer_nodes · prompt_chars
-      problem_type (bfs/parents) · date_added
+      problem_type · date_added
+      README table says stale answer / 3-shot
     type: database
     size: xl
     position:
-      x: 1320
-      'y': 300
+      x: 1340
+      'y': 320
   - id: release
     label: |-
-      Release two context-length parquet groups
-      1,150 rows in one train split
-      current data: 550 BFS + 600 parents
+      Release two Parquet context groups
+      1,150 train: 550 BFS + 600 parents
+      shorter file 750 · long file 400
     type: database
     size: xl
     position:
-      x: 1620
-      'y': 300
+      x: 1600
+      'y': 320
   - id: repair
     label: |-
-      Apply the 2026 correctness repair
-      fix 24/400 short-set parent labels
-      clarify BFS as exact depth without revisits
+      Apply 2026 correctness repair
+      fix 24/400 short-file parent labels
+      clarify BFS as exact depth
+      24 rows dated 02-27-2026
     type: process
     size: xl
     position:
-      x: 1920
-      'y': 300
+      x: 1860
+      'y': 320
   - id: run
     label: |-
-      Ask the model to reason step by step
-      require the very last line to be
+      Ask model to reason step by step
+      last line must be
       Final Answer: [node1, node2, ...]
     type: process
     size: xl
     position:
-      x: 2220
-      'y': 300
-  - id: parse
+      x: 1860
+      'y': 640
+  - id: parser
     label: |-
-      Parse only the response's last line
-      require the Final Answer list pattern
-      malformed output becomes an empty prediction
+      Published extractor uses last line
+      regex Final Answer: [...]
+      strip("[]") keeps prefix in first item
+      no corrected official parser is published
     type: process
     size: xl
     position:
-      x: 2520
-      'y': 300
-  - id: score
+      x: 1600
+      'y': 640
+  - id: metric
     label: |-
-      Compare predicted and gold node sets
-      compute precision · recall · F1
-      perfect empty/empty receives F1 = 1
+      Published intended set grading
+      precision · recall · F1
+      empty/empty gives F1 = 1
+      extractor bug affects executable scores
     type: terminal
     size: xl
     position:
-      x: 2820
-      'y': 300
+      x: 1340
+      'y': 640
 edges:
+  - from: evidence
+    to: graphs
+    type: data
   - from: graphs
     to: bfs
     type: primary
@@ -128,12 +147,12 @@ edges:
     to: parents
     type: primary
   - from: bfs
-    to: targets
+    to: gold
     type: primary
   - from: parents
-    to: targets
+    to: gold
     type: primary
-  - from: targets
+  - from: gold
     to: prompt
     type: primary
   - from: prompt
@@ -149,9 +168,9 @@ edges:
     to: run
     type: primary
   - from: run
-    to: parse
+    to: parser
     type: primary
-  - from: parse
-    to: score
+  - from: parser
+    to: metric
     type: primary
 modules: []

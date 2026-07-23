@@ -6,164 +6,224 @@ meta:
   routing: orthogonal
   title: MultiPL-E Build and Evaluation Process
   description: >-
-    Paper-aligned normalization of HumanEval and MBPP, compilation into 18 target languages, containerized functional
-    judging, and pass@k reporting across the 19-language parallel benchmark suite.
+    Paper-aligned normalization of HumanEval and MBPP, translation through 18 benchmark-specific little compilers, and
+    execution-based Pass@k evaluation across the paper's fixed 19-language scope.
   legend: >-
-    Read benchmark translation left-to-right, then model evaluation right-to-left; 18 means target languages, while the
-    parallel suite contains 19 languages when the Python source version is included.
+    The main path is the v4 paper protocol. The current repository's additional translators are shown only as a dotted
+    implementation note and do not enlarge the paper's reported language scope.
 nodes:
-  - id: sources
+  - id: human_eval
     label: |-
-      Python Source Benchmarks
-      HumanEval: 164 Problems
-      MBPP: Description + Assertions
+      HumanEval Source
+      164 Python Problems
+      Prompts + Hidden Unit Tests
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
-  - id: normalize
+      'y': 80
+  - id: he_normalize
     label: |-
-      Benchmark Normalization
-      HumanEval: Exclude 3, Modify 2
-      MBPP: Hide Assertions + Infer Signature
+      HumanEval Normalization
+      Exclude 3; Convert 2 Randomized Tasks
+      Up to 5 Typed Tasks May Not Translate
     type: process
     size: xl
     position:
-      x: 320
-      'y': 100
-  - id: compilers
+      x: 360
+      'y': 80
+  - id: mbpp
     label: |-
-      18 Little Compilers
-      Benchmark-Specific, Not Full Compilers
-      Roughly 200 LOC per Target Language
+      MBPP Source
+      Natural-Language Description
+      Assertions Initially in the Prompt
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: mbpp_normalize
+    label: |-
+      MBPP Normalization
+      Hide Prompt Assertions as Tests
+      Infer Function Signature Mechanically
     type: process
     size: xl
     position:
-      x: 600
-      'y': 100
-  - id: prompt_translation
+      x: 360
+      'y': 300
+  - id: canonical
     label: |-
-      Translate Model Prompt
-      Function Signature + Description + Doctests
-      Replace Python-Specific Terminology
+      Normalized Python Contracts
+      Function Prompt + Hidden Tests
+      No Function-Body Translation
     type: document
     size: xl
     position:
-      x: 880
-      'y': 100
+      x: 680
+      'y': 190
+  - id: paper_scope
+    label: |-
+      Paper v4 Fixed Scope
+      18 Little Compilers
+      19 Languages Including Python
+    type: database
+    size: xl
+    position:
+      x: 1000
+      'y': 190
+  - id: translation
+    label: |-
+      Translate Model-Facing Prompt
+      Signature + Description + Terminology
+      Doctests / Examples
+    type: process
+    size: xl
+    position:
+      x: 1320
+      'y': 80
   - id: test_translation
     label: |-
       Translate Executable Contract
       Unit Tests + Typed Values
-      Type Annotations + Local Type Inference
+      Type Annotations + Local Inference
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 100
-  - id: release
+      x: 1320
+      'y': 300
+  - id: parallel_suite
     label: |-
-      Parallel Benchmark Suite
+      Parallel Benchmark Suites
       MultiPL-HumanEval + MultiPL-MBPP
-      18 Targets; 19 Languages incl. Python
+      Target-Language Prompts and Tests
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 100
-  - id: model_prompt
+      x: 1640
+      'y': 190
+  - id: generation
     label: |-
-      Target-Language Prompt
-      Syntax / Terms / Doctests Cue Language
-      Hidden Unit Tests Withheld
-    type: document
-    size: xl
-    position:
-      x: 1440
-      'y': 440
-  - id: sample
-    label: |-
-      Sample Code Completions
-      Codex + CodeGen + InCoder
-      Language-Specific Stop Sequences
+      200 Completions per Problem
+      T=0.2 for Pass@1
+      T=0.8 for Pass@10 and Pass@100
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 440
+      x: 1640
+      'y': 540
   - id: sandbox
     label: |-
       Containerized Sandbox
-      Compile When Required
-      Run With Language Timeouts
+      Compile + Language-Specific Timeout
+      Run Hidden Tests
     type: process
     size: xl
     position:
-      x: 880
-      'y': 440
-  - id: unit_tests
-    label: |-
-      Functional Correctness Gate
-      Pass Every Translated Hidden Unit Test
-      Text Similarity Is Not the Judge
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 440
-  - id: classify
+      x: 1320
+      'y': 540
+  - id: verdict
     label: |-
       Classify Each Completion
-      Success / Syntax / Runtime / Type
-      Language and Model Error Analysis
+      Success / Compile / Runtime / Timeout
+      Test-Failure Taxonomy
     type: process
     size: xl
     position:
-      x: 320
-      'y': 440
+      x: 1000
+      'y': 540
+  - id: passk
+    label: |-
+      Unbiased Pass@k Estimator
+      Pass@1 / Pass@10 / Pass@100
+      1 - C(n-c,k) / C(n,k)
+    type: process
+    size: xl
+    position:
+      x: 680
+      'y': 540
+  - id: repo_extensions
+    label: |-
+      Current Repo: Additional Languages
+      Later Translators and Evaluators
+      Outside Paper Scope; Do Not Inflate It
+    type: document
+    size: xl
+    position:
+      x: 1000
+      'y': 800
   - id: report
     label: |-
       MultiPL-E Results
-      Pass@1 / Pass@10 / Pass@100
-      200 Samples per Problem and Temperature
+      Execution-Based Cross-Language Accuracy
+      Paper Scope Kept at 19 Languages
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 440
+      x: 360
+      'y': 540
 edges:
-  - from: sources
-    to: normalize
+  - from: human_eval
+    to: he_normalize
     type: primary
-  - from: normalize
-    to: compilers
+  - from: he_normalize
+    to: canonical
     type: primary
-  - from: compilers
-    to: prompt_translation
+  - from: mbpp
+    to: mbpp_normalize
     type: primary
-  - from: prompt_translation
+  - from: mbpp_normalize
+    to: canonical
+    type: primary
+  - from: canonical
+    to: paper_scope
+    type: primary
+  - from: paper_scope
+    to: translation
+    type: primary
+  - from: paper_scope
     to: test_translation
     type: primary
+  - from: translation
+    to: parallel_suite
+    type: primary
   - from: test_translation
-    to: release
+    to: parallel_suite
     type: primary
-  - from: release
-    to: model_prompt
+  - from: parallel_suite
+    to: generation
     type: primary
-  - from: model_prompt
-    to: sample
-    type: primary
-  - from: sample
+  - from: generation
     to: sandbox
     type: primary
+  - from: test_translation
+    to: sandbox
+    type: data
   - from: sandbox
-    to: unit_tests
+    to: verdict
     type: primary
-  - from: unit_tests
-    to: classify
+  - from: verdict
+    to: passk
     type: primary
-  - from: classify
+  - from: passk
     to: report
     type: primary
+  - from: paper_scope
+    to: repo_extensions
+    type: data
+    waypoints:
+      - x: 1220
+        'y': 240
+      - x: 1220
+        'y': 850
+      - x: 1200
+        'y': 850
+  - from: repo_extensions
+    to: report
+    type: optional
+    waypoints:
+      - x: 1100
+        'y': 930
+      - x: 460
+        'y': 930
 modules: []

@@ -6,205 +6,350 @@ meta:
   routing: orthogonal
   title: MedXpertQA Build and Evaluation Process
   description: >-
-    Paper-aligned construction from 37,543 authoritative medical exam questions through calibrated human and AI
-    difficulty filtering, duplicate removal, leakage-oriented augmentation, licensed-physician review, and evaluation.
+    Paper-aligned construction from 37,543 authoritative medical questions through calibrated human and AI difficulty
+    filters, duplicate removal, leakage-oriented rewriting, licensed-physician review, public splits, and exact scoring.
   legend: >-
-    Final 4,460 items comprise 2,455 Text and 2,005 MM questions; each subset reserves five development examples,
-    leaving 2,450 Text and 2,000 MM test questions. The main overview reports 2,839 MM images, whereas Table 2 reports
-    2,852 images for the 2,000-question MM test set.
+    Solid arrows show construction and evaluation paths. Dashed arrows isolate paper-ordering, image-count, source-code,
+    and model-count discrepancies so that conflicting evidence remains visible without altering the executable path.
 nodes:
-  - id: collect
+  - id: pool
     label: |-
-      Collect Authoritative Questions
-      Licensing and Specialty Board Exams
-      Radiology Exams · NEJM Images
-      Total Input: 37,543
+      Collect Authoritative Pool
+      37,543 Questions
+      Text 26,675 · MM 10,868
+      Exams and NEJM Images
+      Response Distributions
+      Explanations + Difficulty Annotations
     type: database
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 20
       'y': 40
-  - id: annotations
+  - id: human_filter
     label: |-
-      Preserve Source Annotations
-      Human Response Distributions
-      Expert Explanations
-      Prior Difficulty Ratings
-    type: document
+      Human-difficulty Filter
+      Retain 10,146
+      Adaptive Brier Thresholds
+      Three Levels · 3rd–25th Percentiles
+      16.78% Without Annotations Unfiltered
+    type: process
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 260
       'y': 40
-  - id: difficulty
+  - id: ai_filter
     label: |-
-      Filter for Expert Difficulty
-      Adaptive Brier Score by Prior Rating
-      Eight AI Experts · 14 Sample Votes
-      37,543 → 10,146 → 4,737
+      AI-difficulty Filter
+      Retain 4,737
+      Four Attempts per Basic Expert
+      Fourteen Votes per Question
+      Eight-model Expert Pool
+      All-experts-wrong Items Retained
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 500
       'y': 40
-  - id: edit
+  - id: edit_filter
     label: |-
-      Remove Exact-like Duplicates
-      Apply Edit-distance Filtering
-      Retain Harder Question in a Pair
+      Edit-distance Deduplication
+      Remove Exact-like Pairs
+      Retain the Harder Item
       4,737 → 4,713
     type: process
     size: xl
     position:
       x: 740
       'y': 40
-  - id: semantic
+  - id: semantic_filter
     label: |-
-      Remove Semantic Near-duplicates
+      Semantic Deduplication
       MedCPT Query Encoder
-      Cosine Similarity · IQR Outliers
-      Keep Harder Item · 4,713 → 4,683
+      Cosine Similarity + IQR
+      Remove the Easier Pair
+      4,713 → 4,683
     type: process
     size: xl
     position:
       x: 980
       'y': 40
-  - id: question_aug
+  - id: rewrite
     label: |-
-      Rephrase Public Questions
-      GPT-4o and Claude 3.5 Sonnet
-      Preserve All Clinical Information
+      Rewrite Public Questions
+      GPT-4o-2024-11-20
+      Claude-3.5-Sonnet-20241022
+      Preserve Clinical Content
       Reduce Memorization Leakage
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 1220
       'y': 40
-  - id: option_aug
+  - id: option_count
     label: |-
-      Strengthen Answer Options
+      Rebuild Answer Choices
+      Keep Gold + ≥2 Distractors
       Drop Low-response Distractors
-      Keep Correct and at Least Two Distractors
-      Expand Text to 10 · MM to 5 Options
+      Text = 10 Options
+      MM = 5 Options
     type: process
     size: xl
     position:
       x: 1460
       'y': 40
-  - id: expert_review
+  - id: physician_review
     label: |-
-      Run Multi-round Expert Review
-      Licensed Physicians Check Every Item
-      Correct Facts, Narratives, and Options
-      Delete Remaining Failures · 4,460
+      Licensed-physician Review
+      Review Every Item in Rounds
+      Correct Facts / Narrative / Options
+      Delete 223 Failed Items
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
-      x: 1460
-      'y': 420
+      x: 1700
+      'y': 40
   - id: release
     label: |-
-      Form Text and MM Subsets
-      Text: 2,455 · MM: 2,005
-      Main Overview: 2,839 MM Images
-      17 Specialties · 11 Body Systems
+      Release MedXpertQA
+      4,460 Questions
+      Text 2,455
+      MM 2,005
+      17 Specialties · 11 Systems
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: split
+      x: 1700
+      'y': 360
+  - id: public_split
     label: |-
-      Reserve Few-shot Development Items
-      Five Text and Five MM Examples
-      Test: 2,450 Text · 2,000 MM
-      Table 2: 2,852 Test Images
+      Publish Development and Test
+      Text: 5 Dev + 2,450 Test
+      MM: 5 Dev + 2,000 Test
+      Images Released with MM
     type: process
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: labels
+      x: 1460
+      'y': 360
+  - id: label_review
     label: |-
       Add Analysis Labels
-      Three Tasks and Fine-grained Subtasks
-      Reasoning versus Understanding
-      Human Review on a Random 10 Percent
+      Diagnosis / Treatment / Basic Medicine
+      Reasoning / Understanding
+      Claimed Random 10%
+      490 + 400 = 890
+      39/890 = 4.3%
     type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1220
+      'y': 360
+  - id: image_drift
+    label: |-
+      Image-count Drift
+      Section 3.1: 2,839 Images
+      across 2,005 MM Questions
+      Table 2: 2,852 Images
+      across 2,000 Test Questions
+      Plus 6 Dev Images in Release
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1700
+      'y': 560
+  - id: source_gap
+    label: |-
+      Source-code Boundary
+      Construction and Augmentation
+      Code Is Not Public
+      Evaluator / Data / Images / Leaderboard
+      Are Public under MIT
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1220
+      'y': 220
+  - id: order_boundary
+    label: |-
+      Paper Ordering Conflict
+      Section 3.2 Says AI Step 1
+      and Human Step 2
+      Counts Reconcile Only as
+      37,543 → 10,146 → 4,737
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 500
+      'y': 220
+  - id: standard_inference
+    label: |-
+      Standard-model Inference
+      Medical-assistant System Prompt
+      Zero-shot Chain of Thought
+      Second Answer-trigger Prompt
+      Greedy Decoding
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1460
+      'y': 680
+  - id: parser
+    label: |-
+      Standard-model Parser
+      Try Exact Answer Trigger
+      Else Try " answer is "
+      Else Scan Whole Second Reply
+      Match A–J or A–E
+      First Match · Empty = Wrong
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1220
+      'y': 680
+  - id: special_models
+    label: |-
+      Special-model Sampling
+      o1/o3-mini: 10% per Subset
+      and Type · Seed 42
+      QVQ and DeepSeek Paths
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 940
+  - id: special_parser
+    label: |-
+      Special-model Parsers
+      QVQ: Split at Final Answer
+      Use First/Last Letter
+      DeepSeek: Read boxed Answer
+      Require A–J or A–E
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 940
+  - id: accuracy
+    label: |-
+      Compute Exact Accuracy
+      Assert ID and Output Length
+      Every Source ID Has an Output
+      Empty / Invalid Is Wrong
+      Correct ÷ All Retained Outputs
+    type: terminal
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 980
+      'y': 800
+  - id: model_count_boundary
+    label: |-
+      Model-count Drift
+      Paper Evaluates 18 Models
+      README Says 17
+      Report Pinned-paper Scope
+    type: document
     size: xl
     position:
       x: 740
-      'y': 420
-  - id: evaluate
-    label: |-
-      Evaluate 18 Leading Models
-      LLMs on Text · LMMs on Both Subsets
-      Zero-shot Chain of Thought
-      Greedy Decoding and Answer Cleansing
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 420
-  - id: human
-    label: |-
-      Establish Human Baseline
-      Aggregate Pre-licensed Expert Responses
-      Reuse Source Response Distributions
-      Compare Reasoning and Understanding
-    type: process
-    size: xl
-    position:
-      x: 260
-      'y': 420
-  - id: report
-    label: |-
-      Report MedXpertQA Accuracy
-      Overall · Text · MM
-      Specialty and Task Breakdowns
-      Reasoning-oriented Model Analysis
-    type: terminal
-    size: xl
-    position:
-      x: 20
-      'y': 420
+      'y': 800
 edges:
-  - from: collect
-    to: annotations
+  - from: pool
+    to: human_filter
     type: primary
-  - from: annotations
-    to: difficulty
+  - from: human_filter
+    to: ai_filter
     type: primary
-  - from: difficulty
-    to: edit
+  - from: ai_filter
+    to: edit_filter
     type: primary
-  - from: edit
-    to: semantic
+  - from: edit_filter
+    to: semantic_filter
     type: primary
-  - from: semantic
-    to: question_aug
+  - from: semantic_filter
+    to: rewrite
     type: primary
-  - from: question_aug
-    to: option_aug
+  - from: rewrite
+    to: option_count
     type: primary
-  - from: option_aug
-    to: expert_review
+  - from: option_count
+    to: physician_review
     type: primary
-  - from: expert_review
+  - from: physician_review
     to: release
     type: primary
   - from: release
-    to: split
+    to: public_split
     type: primary
-  - from: split
-    to: labels
+  - from: public_split
+    to: label_review
     type: primary
-  - from: labels
-    to: evaluate
+  - from: public_split
+    to: standard_inference
     type: primary
-  - from: evaluate
-    to: human
+  - from: standard_inference
+    to: parser
     type: primary
-  - from: human
-    to: report
+  - from: parser
+    to: accuracy
     type: primary
+  - from: public_split
+    to: special_models
+    type: primary
+    waypoints:
+      - x: 1920
+        'y': 500
+      - x: 1920
+        'y': 1000
+      - x: 1680
+        'y': 1000
+  - from: special_models
+    to: special_parser
+    type: primary
+  - from: special_parser
+    to: accuracy
+    type: primary
+  - from: release
+    to: image_drift
+    type: secondary
+    style:
+      dashed: true
+  - from: rewrite
+    to: source_gap
+    type: secondary
+    style:
+      dashed: true
+  - from: ai_filter
+    to: order_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: accuracy
+    to: model_count_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

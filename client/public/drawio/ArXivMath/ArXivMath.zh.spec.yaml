@@ -4,201 +4,201 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ArXivMath 构建流程
-  description: 基于 arXiv:2605.00674 对齐的月度构建与最终答案评测流程。
-  legend: ArXivMath 是动态基准；每个月从上月新发布的数学论文构建新版本，在降低污染风险的同时维持研究级难度。
+  title: ArXivMath 论文对齐构建流程
+  description: 依据 ArXivMath v2 附录 A.1、A.2、A.6.1 与 A.6.2，展示月度构建及解析器与裁判并行评测。
+  legend: 格式修复是条件分支：仅解析格式失败时重述并重试；解析器与裁判不足 1% 的分歧进入人工复核。
 nodes:
   - id: monthly_papers
     label: |-
-      收集近期 arXiv 数学论文
-      使用上月新提交论文
-      覆盖多样研究领域
+      收集上月论文
+      近期 arXiv 数学研究
+      覆盖多样领域
     type: database
     size: xl
     position:
       x: 40
-      'y': 170
-  - id: abstracts
+      'y': 180
+  - id: candidate_pool
     label: |-
-      阅读标题与摘要
-      聚焦论文核心研究结果
-      拒绝不适合的摘要
-    type: document
+      生成约 200 道候选题
+      聚焦核心研究结果
+      一个可验证最终答案
+    type: database
     size: xl
     position:
       x: 320
-      'y': 170
-  - id: candidate_generation
+      'y': 180
+  - id: screening
     label: |-
-      生成候选问题
-      Gemini 3.1 Pro Preview
-      从摘要以中等推理强度生成
+      筛选并修订问题
+      补齐论文全文上下文
+      删除存疑候选题
     type: process
     size: xl
     position:
       x: 600
-      'y': 170
-  - id: candidate_contract
+      'y': 180
+  - id: final_review
     label: |-
-      强制最终答案合同
-      定义明确且自包含
-      只有一个无歧义可验证答案
-    type: document
-    size: xl
-    position:
-      x: 880
-      'y': 170
-  - id: candidate_pool
-    label: |-
-      形成月度候选池
-      约 200 道问题
-      数值 • 公式 • 特定数学对象
-    type: database
-    size: xl
-    position:
-      x: 1160
-      'y': 170
-  - id: full_paper
-    label: |-
-      补齐缺失上下文
-      用 DeepSeek-OCR-2 转换全文
-      加入必要假设
-    type: process
-    size: xl
-    position:
-      x: 1440
-      'y': 170
-  - id: automatic_filters
-    label: |-
-      运行自动筛选
-      自包含 • 无法由已有工作猜出
-      未使用 AI • 核验作者专业性
-    type: process
-    size: xl
-    position:
-      x: 1440
-      'y': 500
-  - id: author_review
-    label: |-
-      作者人工复核
-      定义明确 • 非平凡 • 有研究价值
-      删除所有存疑问题
+      MathArena 团队最终审核
+      核验清晰性与正确性
+      批准标准答案
     type: user
     size: xl
     position:
-      x: 1160
-      'y': 500
+      x: 880
+      'y': 180
   - id: release
     label: |-
-      发布月度 ArXivMath
-      复核后约保留 30 题
-      保存最终答案标准值
+      发布约 30 道问题
+      月度动态基准
+      保存最终标准答案
     type: database
     size: xl
     position:
-      x: 880
-      'y': 500
-  - id: model_runs
+      x: 1160
+      'y': 180
+  - id: model_outputs
     label: |-
-      使用默认参数运行模型
-      每个基准运行四次
+      生成模型输出
+      使用默认参数
       不启用搜索或代码工具
     type: process
     size: xl
     position:
-      x: 600
-      'y': 500
+      x: 1440
+      'y': 180
   - id: parser
     label: |-
-      解析并验证最终答案
-      基于 SymPy 判断精确等价
+      运行精确答案解析器
+      符号等价判断
       与标准答案比较
     type: process
     size: xl
     position:
-      x: 320
+      x: 1160
       'y': 500
-  - id: format_repair
+  - id: llm_judge
     label: |-
-      修复格式失败
-      要求模型重新表述
+      并行运行 LLM 裁判
+      独立检查答案正确性
+      比较最终判定
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 760
+  - id: format_gate
+    label: |-
+      解析格式失败？
+      有效解析不做修复
+      仅路由格式失败
+    type: decision
+    size: xl
+    position:
+      x: 880
+      'y': 500
+  - id: restate
+    label: |-
+      要求模型重述答案
       使用预期答案格式
+      不修改答案内容
     type: process
     size: xl
     position:
-      x: 40
-      'y': 500
-  - id: judge
+      x: 600
+      'y': 390
+  - id: parser_retry
     label: |-
-      使用 LLM 正确性评审
-      交叉检查解析器结论
-      标记所有分歧
+      重试一次解析器
+      解析重述后的最终答案
+      保留新的判定
     type: process
     size: xl
     position:
-      x: 40
-      'y': 790
-  - id: manual_disagreement
+      x: 600
+      'y': 610
+  - id: agreement_gate
     label: |-
-      人工解决分歧
-      占答案不到 1%
-      运行后复核可移除歧义题
+      解析器与裁判一致？
+      分歧少于 1%
+      仅路由例外情况
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 610
+  - id: manual_review
+    label: |-
+      人工复核少于 1% 的分歧
+      仅解决不一致结果
+      记录最终判定
     type: user
     size: xl
     position:
       x: 320
-      'y': 790
+      'y': 850
   - id: report
     label: |-
-      汇报 ArXivMath 表现
-      多次运行平均最终答案准确率
-      跟踪成本与月度版本
+      报告最终准确率
+      汇总重复运行结果
+      跟踪月度版本
     type: terminal
     size: xl
     position:
-      x: 600
-      'y': 790
+      x: 40
+      'y': 610
 edges:
   - from: monthly_papers
-    to: abstracts
-    type: primary
-  - from: abstracts
-    to: candidate_generation
-    type: primary
-  - from: candidate_generation
-    to: candidate_contract
-    type: primary
-  - from: candidate_contract
     to: candidate_pool
     type: primary
   - from: candidate_pool
-    to: full_paper
+    to: screening
     type: primary
-  - from: full_paper
-    to: automatic_filters
+  - from: screening
+    to: final_review
     type: primary
-  - from: automatic_filters
-    to: author_review
-    type: primary
-  - from: author_review
+  - from: final_review
     to: release
     type: primary
   - from: release
-    to: model_runs
+    to: model_outputs
     type: primary
-  - from: model_runs
+  - from: model_outputs
     to: parser
     type: primary
+  - from: model_outputs
+    to: llm_judge
+    type: data
   - from: parser
-    to: format_repair
+    to: format_gate
     type: primary
-  - from: format_repair
-    to: judge
+  - from: format_gate
+    to: restate
+    type: optional
+    label: 格式失败
+  - from: restate
+    to: parser_retry
     type: primary
-  - from: judge
-    to: manual_disagreement
+  - from: format_gate
+    to: agreement_gate
     type: primary
-  - from: manual_disagreement
+    label: 解析成功
+  - from: parser_retry
+    to: agreement_gate
+    type: primary
+  - from: llm_judge
+    to: agreement_gate
+    type: data
+  - from: agreement_gate
+    to: manual_review
+    type: optional
+    label: 分歧 < 1%
+  - from: agreement_gate
+    to: report
+    type: primary
+    label: 一致
+  - from: manual_review
     to: report
     type: primary
 modules: []

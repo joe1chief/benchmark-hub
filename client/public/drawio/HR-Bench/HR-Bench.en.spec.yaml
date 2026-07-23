@@ -5,16 +5,27 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HR-Bench Build Process
-  description: Paper-aligned curation of the 200-question HR-Bench and its 8K/4K cyclic-permutation evaluation views.
+  description: Paper-aligned curation plus an explicit comparison of the HR-Bench paper protocol and pinned release evaluator.
   legend: >-
-    HR-Bench has 200 unique image questions: 100 FSP and 100 FCP. HR-Bench 8K and 4K reuse those questions with
-    different image resolutions; cyclic option rotations are evaluation passes, not additional unique questions.
+    The paper prescribes circular shifts of the full option sequence. In the pinned Hugging Face release, each four-row
+    group moves the gold answer through A-D but the full distractor sequence is not a circular rotation. The dashed
+    branch records that release and the evaluator implemented at repository commit 5ad1177.
 nodes:
+  - id: evidence
+    label: |-
+      Evidence & fixed revisions
+      arXiv 2408.15556v1 · repo 5ad1177
+      Hugging Face dataset 83b9013
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: images
     label: |-
-      Collect 200 high-resolution images
+      Collect 200 8K images
       open DIV8K plus Internet sources
-      average source resolution around 8K
+      preserve full-resolution originals
     type: database
     size: xl
     position:
@@ -22,9 +33,9 @@ nodes:
       'y': 300
   - id: boxes
     label: |-
-      Manually mark relevant objects
-      annotate bounding boxes in each 8K image
-      preserve original object coordinates
+      Manually annotate bounding boxes
+      mark question-relevant objects
+      retain coordinates in each 8K image
     type: process
     size: xl
     position:
@@ -32,9 +43,9 @@ nodes:
       'y': 300
   - id: generate
     label: |-
-      Crop within annotated boxes
-      ask GPT-4o to generate query-answer pairs
-      target details that require visual grounding
+      Crop inside each bounding box
+      GPT-4o generates query-answer pairs
+      focus on grounded fine detail
     type: process
     size: xl
     position:
@@ -42,9 +53,9 @@ nodes:
       'y': 300
   - id: review
     label: |-
-      Human experts review generated pairs
+      Human experts review every pair
       remove incorrect or ambiguous queries
-      retain questions resistant to blind guessing
+      keep items difficult to answer by guessing
     type: process
     size: xl
     position:
@@ -52,9 +63,9 @@ nodes:
       'y': 300
   - id: route
     label: |-
-      Assign the fine-grained task
-      single-instance attributes or text
-      versus cross-instance relations
+      Assign perception task
+      single-instance fine detail
+      or cross-instance relations
     type: decision
     size: xl
     position:
@@ -83,8 +94,8 @@ nodes:
   - id: versions
     label: |-
       Build two resolution views
-      HR-Bench 8K keeps the source image
-      HR-Bench 4K crops around relevant objects
+      8K keeps the source image
+      4K crops relevant objects, same aspect ratio
     type: database
     size: xl
     position:
@@ -92,35 +103,104 @@ nodes:
       'y': 300
   - id: options
     label: |-
-      Create multiple-choice options
-      bind the same gold answer to each view
+      Create four choices A-D
+      bind the same gold answer to both views
       preserve question-object grounding
     type: document
     size: xl
     position:
       x: 2140
       'y': 300
-  - id: rotate
+  - id: paper_protocol
     label: |-
-      Apply cyclic permutation
-      rotate all answer-option positions
-      run once per option order
-    type: process
+      Paper protocol
+      circularly shift the full A-D sequence
+      each option moves to the next position
+      four passes; report mean ACC
+    type: document
     size: xl
     position:
       x: 2440
-      'y': 300
-  - id: score
+      'y': 80
+  - id: release_rows
     label: |-
-      Aggregate HR-Bench results
-      average accuracy across rotations
-      pilot analysis also reports uncertainty score
-    type: terminal
+      Pinned HF release drift · 83b9013
+      four-row group: gold A → B → C → D
+      full option order is not a circular shift
+    type: database
+    size: xl
+    position:
+      x: 2440
+      'y': 520
+  - id: eval_prompt
+    label: |-
+      Candidate MLLM prompt and output
+      Question + Options A-D + select instruction
+      pass candidate prediction to evaluator
+    type: document
     size: xl
     position:
       x: 2740
-      'y': 300
+      'y': 520
+  - id: aux_judge
+    label: |-
+      Repository auxiliary Yes/No judge
+      llm_path required; model not pinned
+      correct answer + candidate prediction
+      top_p 0.8 · top_k 40 · temperature 0.2
+    type: process
+    size: xl
+    position:
+      x: 3040
+      'y': 520
+  - id: yn_parser
+    label: |-
+      Lowercase response; match yes/no prefix
+      yes → 1
+      no or any other prefix → 0
+    type: process
+    size: xl
+    position:
+      x: 3340
+      'y': 520
+  - id: repo_score
+    label: |-
+      Repository aggregate
+      group by cycle_category
+      mean gpt_score for category + all
+      average groups; report 4K and 8K separately
+    type: terminal
+    size: xl
+    position:
+      x: 3640
+      'y': 520
+  - id: pilot
+    label: |-
+      Pilot resolution study
+      accuracy + resolution-dependent
+      next-token uncertainty score
+      separate from benchmark evaluation
+    type: document
+    size: xl
+    position:
+      x: 2140
+      'y': 780
+  - id: artifact_boundary
+    label: |-
+      Official-artifact boundary at 5ad1177
+      800 rows for 4K + 800 rows for 8K
+      200 questions × 4 rows per view
+      paper/release permutation drift is explicit
+      DC² is an inference method, not curation
+    type: document
+    size: xl
+    position:
+      x: 3640
+      'y': 80
 edges:
+  - from: evidence
+    to: images
+    type: data
   - from: images
     to: boxes
     type: primary
@@ -136,22 +216,83 @@ edges:
   - from: route
     to: fsp
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
   - from: route
     to: fcp
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: fsp
     to: versions
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 0
   - from: fcp
     to: versions
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.25
+      entryY: 1
   - from: versions
     to: options
     type: primary
   - from: options
-    to: rotate
+    to: paper_protocol
     type: primary
-  - from: rotate
-    to: score
-    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: options
+    to: release_rows
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: release_rows
+    to: eval_prompt
+    type: secondary
+  - from: eval_prompt
+    to: aux_judge
+    type: secondary
+  - from: aux_judge
+    to: yn_parser
+    type: secondary
+  - from: yn_parser
+    to: repo_score
+    type: secondary
+  - from: versions
+    to: pilot
+    type: secondary
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0
+      entryY: 0.5
+  - from: paper_protocol
+    to: artifact_boundary
+    type: data
+  - from: repo_score
+    to: artifact_boundary
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 0
+      entryX: 0.5
+      entryY: 1
 modules: []

@@ -4,139 +4,215 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Arena-Hard-Auto v2.0 Build Process
+  title: Arena-Hard-Auto v2.0 Build and Evaluation
   description: >-
-    Version-aware pipeline: the paper supplies the BenchBuilder backbone, while the official repository defines the v2.0
-    hard-prompt and creative-writing sets, judges, and style-controlled reporting.
-  legend: The upper lane is the 500-prompt hard set; the lower lane is the 250-prompt creative-writing set.
+    Evidence-bounded workflow: the paper supplies only the BenchBuilder backbone, while the official repository defines
+    the two v2.0 categories and their distinct evaluation paths.
+  legend: Hard prompts use style control; creative writing uses an independent two-judge ensemble without style control.
 nodes:
   - id: source
     label: |-
-      Fresh Chatbot Arena Queries
-      Real-world User Prompts
+      Chatbot Arena Query Pool
+      Fresh Real-World User Prompts
+      Crowdsourced Open-Ended Data
     type: database
     size: xl
     position:
       x: 40
       'y': 270
-  - id: curate
+  - id: evidence_boundary
     label: |-
-      BenchBuilder-style Curation
-      Clean, Cluster, Quality-filter
-      Select Fresh Challenging Queries
-    type: process
+      Evidence Boundary
+      Paper v2: BenchBuilder Backbone
+      Official Repo: v2 Sets + Evaluation
+    type: document
     size: xl
     position:
       x: 320
       'y': 270
-  - id: hard
+  - id: hard_prompts
     label: |-
-      Hard Prompt Set
-      500 Fresh Open-ended Queries
-      Software, Math, and More
+      Hard-Prompt Split
+      500 Fresh Challenging Queries
+      Software • Math • Real-World
     type: document
     size: xl
     position:
       x: 600
-      'y': 100
-  - id: creative
+      'y': 60
+  - id: creative_prompts
     label: |-
-      Creative-writing Set
-      250 Arena Queries
+      Creative-Writing Split
+      250 Creative Arena Queries
+      Separate Evaluation Category
     type: document
     size: xl
     position:
       x: 600
-      'y': 440
+      'y': 480
   - id: hard_answers
     label: |-
-      Hard-set Responses
-      Evaluated Model vs Baseline
-      Pairwise A/B Presentation
+      Generate + Cache Hard Answers
+      Candidate vs o3-mini Baseline
+      Pairwise A/B Order
     type: process
     size: xl
     position:
       x: 880
-      'y': 100
+      'y': 60
   - id: creative_answers
     label: |-
-      Creative-writing Responses
-      Evaluated Model vs Baseline
-      Pairwise A/B Presentation
+      Generate + Cache Creative Answers
+      Candidate vs Gemini-2.0 Baseline
+      Pairwise A/B Order
     type: process
     size: xl
     position:
       x: 880
-      'y': 440
+      'y': 480
   - id: hard_judge
     label: |-
-      Hard-prompt Judge
+      Hard Pairwise Judge
       Gemini-2.5 Official
       GPT-4.1 Alternative
+      o3-mini Baseline
     type: process
     size: xl
     position:
       x: 1160
-      'y': 100
+      'y': 60
   - id: creative_judge
     label: |-
-      Creative-writing Ensemble
+      Creative Ensemble Judges
       GPT-4.1 + Gemini-2.5
-      Independent Judgments
+      Independent Inference
+      Gemini-2.0 Baseline
     type: process
     size: xl
     position:
       x: 1160
-      'y': 440
-  - id: aggregate
+      'y': 480
+  - id: hard_judgments
     label: |-
-      Category-aware Aggregation
-      Hard / Creative Win Rates
-      Bootstrap Confidence Intervals
+      Parse Hard Judgments
+      A>>B • A>B • Tie
+      B>A • B>>A
+      Cache by Prompt / Model / Judge
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 60
+  - id: creative_judgments
+    label: |-
+      Pool Creative Judgments
+      GPT-4.1 + Gemini-2.5 Records
+      Cache by Prompt / Model / Judge
+    type: database
+    size: xl
+    position:
+      x: 1440
+      'y': 480
+  - id: style_metadata
+    label: |-
+      Hard Answers: Style Metadata
+      Token Length + Markdown Density
+      Headers • Bold • Lists
     type: process
     size: xl
     position:
       x: 1440
       'y': 270
-  - id: style
+  - id: hard_aggregate
     label: |-
-      Style-controlled Scores
-      Control Markdown + Length
-      Model Ranking / Leaderboard
-    type: terminal
+      Hard Style-Controlled Ranking
+      Markdown + Length Features
+      Bradley-Terry + 100 Bootstraps
+      5th / 95th Percentile CI
+    type: process
     size: xl
     position:
       x: 1720
+      'y': 60
+  - id: creative_aggregate
+    label: |-
+      Creative Ensemble Ranking
+      Pool Independent Judges
+      No Style Control
+      100 Bootstraps + 5th / 95th CI
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 480
+  - id: quality
+    label: |-
+      Benchmark Quality Checks
+      Separability + Agreement
+      Pair Rank Brier Score
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 270
+  - id: report
+    label: |-
+      Publish Separate v2 Leaderboards
+      Hard: Style-Controlled
+      Creative: Judge Ensemble
+      Win Rates + Bootstrap CIs
+    type: terminal
+    size: xl
+    position:
+      x: 2280
       'y': 270
 edges:
   - from: source
-    to: curate
+    to: evidence_boundary
     type: primary
-  - from: curate
-    to: hard
+  - from: evidence_boundary
+    to: hard_prompts
     type: primary
-  - from: curate
-    to: creative
+  - from: evidence_boundary
+    to: creative_prompts
     type: primary
-  - from: hard
+  - from: hard_prompts
     to: hard_answers
     type: primary
-  - from: creative
+  - from: creative_prompts
     to: creative_answers
     type: primary
   - from: hard_answers
     to: hard_judge
     type: primary
+  - from: hard_answers
+    to: style_metadata
+    type: data
   - from: creative_answers
     to: creative_judge
     type: primary
   - from: hard_judge
-    to: aggregate
+    to: hard_judgments
     type: primary
   - from: creative_judge
-    to: aggregate
+    to: creative_judgments
     type: primary
-  - from: aggregate
-    to: style
+  - from: hard_judgments
+    to: hard_aggregate
+    type: primary
+  - from: style_metadata
+    to: hard_aggregate
+    type: data
+  - from: creative_judgments
+    to: creative_aggregate
+    type: primary
+  - from: hard_aggregate
+    to: quality
+    type: primary
+  - from: creative_aggregate
+    to: quality
+    type: primary
+  - from: quality
+    to: report
     type: primary
 modules: []

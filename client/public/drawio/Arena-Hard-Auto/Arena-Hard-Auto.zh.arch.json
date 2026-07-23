@@ -1,93 +1,135 @@
 {
   "version": 1,
-  "title": "Arena-Hard-Auto 构建流程",
+  "title": "Arena-Hard-Auto-v0.1 构建与评测",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
+    "nodes": 20,
+    "edges": 19,
     "modules": 0
   },
   "nodes": [
     {
       "id": "source",
-      "label": "Chatbot Arena 题池\n200,000 条提示",
+      "label": "Chatbot Arena 查询池\n200,000 条众包提示",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "cleanup",
-      "label": "初始过滤\n去重 / 单轮 / 英文",
+      "label": "论文 v2 提示清理\n去重 • 单轮 • 英文\n精确快照与过滤规则未公开",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "topics",
-      "label": "BERTopic 流程\n嵌入 → UMAP → HDBSCAN\n4,000 个主题",
+      "label": "论文 v2 主题建模\ntext-embedding-3-small • UMAP • HDBSCAN\n4,000 个不同主题\n由 LLM 总结并命名",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "quality",
-      "label": "GPT-4-Turbo 标注\n七项质量指标",
+      "label": "论文 v2 质量标注\nGPT-4-Turbo • 七项标准\n逐条提示评分 0–7",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "gate",
-      "label": "质量门控\n提示分 ≥ 6\n主题均分 ≥ 5",
+      "id": "v2_gate",
+      "label": "论文 v2 质量门槛\n保留提示得分 ≥ 6\n保留簇均分 ≥ 5",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "label_audit",
-      "label": "标签抽检：200 题\n三模型多数票\n一致率 85.6%",
-      "type": "document",
+      "id": "cluster_pool",
+      "label": "高质量主题簇池\n超过 500 个簇\n由论文 v2 门槛筛得",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "多样化抽样\n250 主题 × 2 题",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "safety",
-      "label": "安全清洗\n删除隐私与冒犯内容",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "dataset",
-      "label": "Arena-Hard-Auto\n500 条困难提示",
-      "type": "database",
-      "size": "large"
-    },
-    {
-      "id": "responses",
-      "label": "候选模型对基线\n500 题回复",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "judge",
-      "label": "成对 LLM 评审\n思维链 + 交换位置\n每模型 1,000 次判断",
+      "label": "多样性随机采样\n随机选择 250 个簇\n每簇 2 条 = 500 条",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "bt",
-      "label": "Bradley-Terry 拟合\n胜率 + 95% 置信区间\n可选风格控制",
+      "id": "safety_cleanup",
+      "label": "采样后安全清理\n移除 PII / 冒犯性内容\n在 250 × 2 采样之后执行",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "Arena-Hard-Auto-v0.1\n官方 500 题发布\n250 个主题簇 × 每簇 2 题",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "responses",
+      "label": "候选模型与基线回复\n基线：gpt-4-0314\n在 500 条开放提示上生成",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "two_games",
+      "label": "每题执行两局裁判\n交换 A/B 位置\n500 × 2 = 每模型 1,000 次判断",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge_prompt",
+      "label": "gpt-4-1106-preview • T = 0\nmax_tokens = 4,096\n先生成自己的答案，再比较回复",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "raw_judgment",
+      "label": "五个允许的裁判标签\n[[A>>B]] • [[A>B]] • [[A=B]]\n[[B>A]] • [[B>>A]]",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "固定版本裁判解析器\n无标签 → continuation；最多 2 次\n单一 / 重复同标签 → 接受\n冲突标签 → 立即无效；不重试",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "normalized_battles",
+      "label": "归一化第二局位置\n明显胜负 ×3 • 轻微胜负 ×1\n保留平局 • 丢弃无效结果",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "bt_elo",
+      "label": "Bradley-Terry / Elo 尺度逻辑回归\n无正则估计\n锚定 gpt-4-0314 = 1,000",
       "type": "formula",
       "size": "xl"
     },
     {
+      "id": "baseline_winrate",
+      "label": "转换为相对基线胜率\n相对 gpt-4-0314\n默认报告并非 Elo rating",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "bootstrap",
+      "label": "Bootstrap 不确定性\n100 轮 • 2.5 / 97.5 百分位\n得到 95% 置信区间",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "report",
-      "label": "基准有效性验证\n可分性 / 一致性\nBrier + 人类偏好对齐",
+      "label": "Arena-Hard-Auto-v0.1 报告\n相对基线胜率 • 95% 置信区间\n可审计的成对判断到 BT 链",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "version_boundary",
+      "label": "仅作来源版本证据\nApril blog / 仓库：均分 ≥ 6 • v1：GPT-3.5\n固定实现主题命名：gpt-4o-mini\n非论文 v2 主链",
+      "type": "document",
       "size": "xl"
     }
   ],
@@ -113,56 +155,98 @@
     {
       "id": "edge-4",
       "from": "quality",
-      "to": "gate",
+      "to": "v2_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "quality",
-      "to": "label_audit",
-      "type": "optional"
+      "from": "v2_gate",
+      "to": "cluster_pool",
+      "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "gate",
+      "from": "cluster_pool",
       "to": "sample",
       "type": "primary"
     },
     {
       "id": "edge-7",
       "from": "sample",
-      "to": "safety",
+      "to": "safety_cleanup",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "safety",
-      "to": "dataset",
+      "from": "safety_cleanup",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "dataset",
+      "from": "release",
       "to": "responses",
       "type": "primary"
     },
     {
       "id": "edge-10",
       "from": "responses",
-      "to": "judge",
+      "to": "two_games",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "judge",
-      "to": "bt",
+      "from": "two_games",
+      "to": "judge_prompt",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "bt",
+      "from": "judge_prompt",
+      "to": "raw_judgment",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "raw_judgment",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "parser",
+      "to": "normalized_battles",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "normalized_battles",
+      "to": "bt_elo",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "bt_elo",
+      "to": "baseline_winrate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "baseline_winrate",
+      "to": "bootstrap",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "bootstrap",
       "to": "report",
       "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "v2_gate",
+      "to": "version_boundary",
+      "type": "optional"
     }
   ],
   "modules": []

@@ -1,205 +1,659 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: LongVideoBench 构建流程
-  description: 按论文复原 LongVideoBench：收集多样长视频与时间对齐字幕，经 Q-Align 和人工过滤，以三角色流程标注引用推理题， 构造交错多模态输入，并按时长与题型报告准确率。
-  legend: 数量依据 arXiv:2407.15754：119 个频道、10 个内容类别、四个非连续时长区间，共 3,763 个视频； 6,678 道题覆盖 17 个细类，其中验证集 1,337 题、测试集 5,341 题。
+  canvas: auto
+  grid:
+    size: 8
+    snap: true
+  title: LongVideoBench 构建、发布与评测流程
+  description: >-
+    基于 NeurIPS 2024 Datasets and Benchmarks 正式论文、官方加载器提交 fc3c553250cfee6853a722f9b181f1b69f478426、主数据快照
+    60d1c89c1919a198b73be39c2babb213b29d6a5c，以及公开元数据快照 cdf3444602208c95f453e7683583a077ce38ddbf 的证据边界复原。
+  legend: 实线表示构建、发布、推理和评分主流程；点线或虚线表示访问及可复现性边界。论文视频数量与固定公开元数据中的 实际计数分开呈现；测试标签和原生测试评分器仍未公开。
 nodes:
-  - id: groups
+  - id: b1
     label: |-
-      定义视频采样分组
-      时长 · (8秒,15秒] · (15秒,60秒]
-      (180秒,600秒] · (900秒,3,600秒]
-      覆盖 10 个多样内容类别
+      B1 · 定义覆盖网格
+      4 个不连续时长区间
+      (8,15] · (15,60] 秒
+      (180,600] · (900,3600] 秒
+      10 个内容类别
     type: process
+    module: build
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: channels
+      x: 40
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b2
     label: |-
-      选择 119 个网络视频频道
-      横屏 99 个 · 竖屏 20 个
-      电影、生活、新闻、知识四大组
-      在各组内均匀采样主题
+      B2 · 下载网页视频
+      119 个频道 · 横屏 99 + 竖屏 20
+      官方平台 API · 2024 年 4 月
+      接受分辨率 ≥ 720P
     type: database
+    module: build
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: download
+      x: 320
+      'y': 192
+    style:
+      fontSize: 9
+  - id: d1
+    label: 平台提供转录字幕？
+    type: decision
+    module: build
+    size: xl
+    position:
+      x: 600
+      'y': 192
+  - id: b3
     label: |-
-      下载候选视频
-      要求分辨率至少为 720P
-      保留版式、主题与时长元数据
-      分配至四个时长组
+      已有转录字幕路径
+      剔除缺失字幕的视频
+      剔除非英语字幕的视频
+      保留带时间戳英语文本
     type: process
+    module: build
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: subtitles
+      x: 880
+      'y': 64
+    style:
+      fontSize: 9
+  - id: b4
     label: |-
-      确保具备英文字幕
-      对提供字幕的平台删除缺失或非英文视频
-      其余平台用 Whisper-V3-Large 生成
-      保留带时间戳的字幕片段
+      无转录字幕路径
+      生成英语字幕
+      Whisper-V3-Large
+      保留时间戳
     type: process
+    module: build
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: quality
+      x: 880
+      'y': 320
+    style:
+      fontSize: 9
+  - id: b5
     label: |-
-      过滤视觉与内容质量
-      使用 Q-Align 评估视频质量
-      删除质量特别低的候选项
-      人工剔除无法标注的视频
+      B3 · 采样与质量过滤
+      均匀覆盖主题 / 10 个类别
+      Q-Align 分数范围 [0,1]
+      仅保留分数 > 0.25
     type: process
+    module: build
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: video_set
+      x: 1160
+      'y': 192
+    style:
+      fontSize: 9
+  - id: b6
     label: |-
-      确定 3,763 个最终视频
-      保留全部 10 个内容类别
-      覆盖四个目标时长区间
-      视频与字幕均完整可用
+      B4 · 人工过滤视频
+      剔除静帧 / 字幕不完整视频
+      论文最终数量 · 3,763 个视频
+      视频 + 英语字幕
     type: database
+    module: build
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: train_annotators
+      x: 1440
+      'y': 192
+    style:
+      fontSize: 9
+  - id: a1
     label: |-
-      培训有经验的标注者
-      讲解每一种问题类别
-      在视频上显示时间对齐字幕
-      要求先完整观看视频
+      B5 · 培训有经验的合同标注者
+      受控实验室 · 按题型培训
+      显示时间对齐字幕
+      标注前完整观看视频
     type: user
+    module: build
     size: xl
     position:
-      x: 1700
-      'y': 40
-  - id: questions
+      x: 1440
+      'y': 688
+    style:
+      fontSize: 9
+  - id: a2
     label: |-
-      编写引用推理多选题
-      L1 感知 · L2 关系
-      覆盖 17 个细粒度问题类别
-      加入 3–4 个相关干扰选项
+      B6 · 编写引用推理多选题
+      L1 感知 + L2 关系
+      17 个细粒度题型
+      4–5 个选项 · 3–4 个相关干扰项
     type: document
+    module: build
     size: xl
     position:
-      x: 1700
-      'y': 420
-  - id: grounding
+      x: 1160
+      'y': 688
+    style:
+      fontSize: 9
+  - id: a3
     label: |-
-      定位每道题的引用上下文
-      在问题中突出引用查询
-      标注所有引用时刻的帧索引
-      覆盖单个或多个视频时刻
+      B7 · 定位被引用上下文
+      包含并突出引用查询
+      为每个引用时刻标注帧索引
+      覆盖单个或多个时刻
     type: process
+    module: build
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: qc
+      x: 880
+      'y': 688
+    style:
+      fontSize: 9
+  - id: a4
     label: |-
-      执行三角色标注质检
-      主标注者创建问题并过滤视频
-      检查者核对类别与要求
-      修订者修正约 20% 的问题标注
+      B8 · 三角色质量控制
+      主标注者命题并剔除视频
+      检查者核对题型 / 规则
+      修订者修复被标记条目
+      20% 被判有问题并修订
     type: user
+    module: build
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: release
+      x: 600
+      'y': 688
+    style:
+      fontSize: 9
+  - id: r1
     label: |-
-      发布 6,678 道人工多选题
-      验证集 · 752 视频 / 1,337 题
-      测试集 · 3,011 视频 / 5,341 题
-      保留时长组与题型标签
+      R1 · 论文拆分合同
+      无训练集 · 验证 20% / 测试 80%
+      验证 · 1,337 题 / 752 视频
+      测试 · 5,341 题 / 3,011 视频
+      测试标签隐藏
     type: database
+    module: release
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: interleave
+      x: 320
+      'y': 688
+    style:
+      fontSize: 9
+  - id: r2
     label: |-
-      构造交错多模态输入
-      沿时间轴采样视频帧
-      将字幕插入其前后相邻帧之间
-      以字幕中点时间戳对齐
+      R2 · 固定 Meta · cdf34446
+      6,678 行 · 验证 1,337 / 测试 5,341
+      唯一视频 ID · 验证 753 / 测试 3,008
+      论文视频数 · 752 / 3,011
+      明确标示数据发布漂移
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 40
+      'y': 688
+    style:
+      fontSize: 8
+  - id: r3
+    label: |-
+      R3 · 主数据集 · 60d1c89c
+      需同意访问 · CC BY-NC-SA 4.0
+      视频 / 字幕归档 + JSON
+      验证标签公开 · 测试标签 = −1
+      仅限非商业使用
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 40
+      'y': 944
+    style:
+      fontSize: 8
+  - id: r4
+    label: |-
+      发布 / 评测边界
+      GitHub 加载器 · fc3c5532
+      固定仓库没有原生评分器
+      README 指向可变的 LMMs-Eval main
+      测试经邮件提交 · 隐藏评分
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 320
+      'y': 944
+    style:
+      fontSize: 8
+  - id: e1
+    label: |-
+      E1 · 载入一个拆分
+      原始 MP4 + 字幕 JSON + 元数据
+      问题 + 4–5 个选项
+      验证 correct_choice 为 0–4 · 测试为 −1
+    type: database
+    module: evaluate
+    size: xl
+    position:
+      x: 40
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: e2
+    label: |-
+      E2 · 均匀采样视频帧
+      num_frames = min(预算, int(时长))
+      每秒最多 1 帧
+      论文在验证集比较 1–256 帧
     type: process
+    module: evaluate
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: evaluate
+      x: 320
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: e3
     label: |-
-      运行零样本多模态模型评测
-      在验证集上选择帧采样设置
-      每道题输出一个多选答案
-      以选定设置运行测试集
+      E3 · 交错视频帧与文本
+      按字幕中点时间戳排序
+      固定加载器仅在采样帧覆盖
+      字幕时段时保留该字幕
     type: process
+    module: evaluate
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: report
+      x: 600
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: e4
     label: |-
-      报告多项选择准确率
-      验证集与测试集总体准确率
-      分解四个时长组
-      分解 17 个问题类别
+      E4 · 追加多选提示
+      问题 + 带字母选项
+      要求直接返回选项字母
+      不要求思维链
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 880
+      'y': 1280
+    style:
+      fontSize: 9
+  - id: d2
+    label: 评测拆分？
+    type: decision
+    module: evaluate
+    size: xl
+    position:
+      x: 1160
+      'y': 1280
+  - id: e5
+    label: |-
+      验证集 · 选择设置
+      零样本 · 比较不同帧预算
+      为每个模型选择最优设置
+      标签公开
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1440
+      'y': 1120
+    style:
+      fontSize: 9
+  - id: e6
+    label: |-
+      测试集 · 固定已选设置
+      对 5,341 题做零样本评测
+      返回 A / B / C / D / E
+      提交 JSON · 测试标签隐藏
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1440
+      'y': 1440
+    style:
+      fontSize: 9
+  - id: m1
+    label: |-
+      M1 · 多项选择准确率
+      正确预测数 / 总题数
+      不使用辅助裁判模型
+      提交可接受字母开头字符串
+      精确测试评分器未公开
+    type: formula
+    module: evaluate
+    size: xl
+    position:
+      x: 1720
+      'y': 1280
+    style:
+      fontSize: 8
+  - id: m2
+    label: |-
+      M2 · 报告与排行榜
+      验证总分 + 测试总分
+      4 个时长区间准确率
+      17 个题型准确率
+      引用查询深度分析
     type: terminal
+    module: evaluate
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 2000
+      'y': 1280
+    style:
+      fontSize: 9
 edges:
-  - from: groups
-    to: channels
+  - from: b1
+    to: b2
     type: primary
-  - from: channels
-    to: download
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b2
+    to: d1
     type: primary
-  - from: download
-    to: subtitles
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d1
+    to: b3
     type: primary
-  - from: subtitles
-    to: quality
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d1
+    to: b4
     type: primary
-  - from: quality
-    to: video_set
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b3
+    to: b5
     type: primary
-  - from: video_set
-    to: train_annotators
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b4
+    to: b5
     type: primary
-  - from: train_annotators
-    to: questions
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b5
+    to: b6
     type: primary
-  - from: questions
-    to: grounding
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: b6
+    to: a1
     type: primary
-  - from: grounding
-    to: qc
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a1
+    to: a2
     type: primary
-  - from: qc
-    to: release
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a2
+    to: a3
     type: primary
-  - from: release
-    to: interleave
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a3
+    to: a4
     type: primary
-  - from: interleave
-    to: evaluate
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: a4
+    to: r1
     type: primary
-  - from: evaluate
-    to: report
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r1
+    to: r2
     type: primary
-modules: []
+    style:
+      exitX: 0
+      exitY: 0.5
+      entryX: 1
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r2
+    to: r3
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r3
+    to: r4
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: r3
+    to: e1
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e1
+    to: e2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e2
+    to: e3
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e3
+    to: e4
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e4
+    to: d2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d2
+    to: e5
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: d2
+    to: e6
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e5
+    to: m1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.25
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: e6
+    to: m1
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.75
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: m1
+    to: m2
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+modules:
+  - id: build
+    label: 构建
+    color: $primaryLight
+  - id: release
+    label: 发布
+    color: $secondaryLight
+  - id: evaluate
+    label: 评测
+    color: $accentLight

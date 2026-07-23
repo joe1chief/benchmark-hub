@@ -5,201 +5,396 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: PreciseWikiQA 构建与评测流程
-  description: 按HalluLens论文动态构建按百科重要度分层的短事实问答并分别判断拒答与正确性以评估外在幻觉。
-  legend: 每次动态运行从十个WikiRank难度桶各抽500页，并从GoodWiki生成5,000组短事实问答。
+  description: 按HalluLens论文重建动态短问答生成、标准答案人工验证、被测模型推理、两阶段评审及固定代码差异。
+  legend: 实线表示论文构建或固定实现流程；虚线表示证据、验证、数据、运行器、解析器与权利边界，这些说明卡不是额外阶段。
 nodes:
-  - id: step_1
+  - id: source_evidence
     label: |-
-      定义评测范围
-      评估外在幻觉
-      使用假定已见的训练知识
-      要求简短事实答案
+      固定论文与官方证据
+      arXiv 2504.17550v1 · PDF 2257f8628da9
+      Git 80307ac6bc9f
+      GoodWiki 7491f6da6439 · 各来源分开
     type: document
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: step_2
+      x: 80
+      'y': 80
+  - id: benchmark_scope
     label: |-
-      从GoodWiki开始
-      44,754个高质量维基页面
-      覆盖广泛主题与事实内容
-      使用公开可复现来源池
+      定义外在幻觉评测
+      提出简短事实查询
+      假设知识可能存在于训练语料
+      推理时不提供维基百科上下文
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 80
+  - id: goodwiki_release
+    label: |-
+      固定GoodWiki来源
+      44,754页 · 采集于2023年9月4日
+      HF版本7491f6da6439
+      Parquet LFS哈希2b8b3edebede
     type: database
     size: xl
     position:
-      x: 260
-      'y': 40
-  - id: step_3
+      x: 600
+      'y': 80
+  - id: wikirank_join
     label: |-
-      关联WikiRank重要度
-      使用每页调和中心性
-      代理训练语料出现频率
-      排列头部到长尾知识
+      关联WikiRank 2024重要度
+      使用每个维基页面的调和中心性
+      标题哈希f83bc6ac3f3a
+      分数哈希2acf403c1f0e
     type: process
     size: xl
     position:
-      x: 500
-      'y': 40
-  - id: step_4
+      x: 860
+      'y': 80
+  - id: difficulty_bins
     label: |-
-      创建十个难度桶
-      标记为0至9级
-      按中心性由难到易
-      稳定动态集难度
+      创建10个档位
+      0最难 · 9最易
+      中心性代理训练数据出现频率
+      保持不同运行的难度分布稳定
     type: process
     size: xl
     position:
-      x: 740
-      'y': 40
-  - id: step_5
+      x: 1120
+      'y': 80
+  - id: page_sampling
     label: |-
-      抽取5,000个源页面
-      每个难度桶抽500页
-      平衡全部难度层级
-      每个动态集重新采样
+      抽取来源页面池
+      每档抽取500页
+      每次试验使用5,000个来源页
+      每次试验重新生成动态集合
     type: database
     size: xl
     position:
-      x: 980
-      'y': 40
-  - id: step_6
+      x: 1380
+      'y': 80
+  - id: section_sampling
     label: |-
-      选择参考章节
-      把百科页面切为章节
-      随机选取一个章节
-      推理时不提供该来源
+      选择一个参考章节
+      将每个维基页面切分为章节
+      超过两节时去掉最后一节
+      从剩余章节随机选择一个
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 40
-  - id: step_7
+      x: 1640
+      'y': 80
+  - id: question_generation
     label: |-
       生成客观问题
-      Llama 3.1 70B阅读章节
-      问题具体且自包含
-      无需额外上下文
+      使用Llama-3.1-70B-Instruct
+      简洁 · 无需上下文 · 唯一答案
+      问题温度0.7 · Top-p 0.9
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 40
-  - id: step_8
+      x: 1900
+      'y': 80
+  - id: answer_generation
     label: |-
       独立生成标准答案
-      基于同一参考章节作答
-      分开问题与答案生成阶段
-      减少答案对问题措辞泄露
+      使用同一参考章节
+      仅返回一个词或短语
+      可回答性调用温度为0
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: step_9
+      x: 1900
+      'y': 400
+  - id: quality_gate
     label: |-
-      执行问答质量约束
-      答案为词或短语
-      删除超过十词的答案
-      无法回答则重新生成问题
-    type: process
+      质量门
+      不可回答：重新生成
+      超过10词：过滤
+    type: decision
     size: xl
+    style:
+      fontSize: 10
     position:
-      x: 1220
-      'y': 420
-  - id: step_10
+      x: 1640
+      'y': 400
+  - id: dynamic_set
     label: |-
       形成动态测试集
-      5,000组问答
-      不发布固定问题列表
-      保持可复现难度分布
+      每次试验5,000组问答
+      不提供固定公开问题列表
+      独立生成并执行三次试验
     type: database
     size: xl
     position:
-      x: 980
-      'y': 420
-  - id: step_11
+      x: 1380
+      'y': 400
+  - id: gold_audit
     label: |-
-      查询被测模型
-      只提供问题不提供上下文
-      允许回答或拒答
-      记录自由文本响应
+      审核生成的标准答案
+      人工标注250组生成问答
+      97.2%的答案正确
+      另行验证评审模型准确率
+    type: document
+    size: xl
+    position:
+      x: 1380
+      'y': 680
+  - id: inference_config
+    label: |-
+      执行被测模型推理
+      只发送问题 · 不附上下文
+      温度0 · Top-p 1
+      使用各模型默认聊天模板
+      三次试验 · 自由文本响应
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: step_12
+      x: 1120
+      'y': 400
+  - id: model_response
     label: |-
-      先判断是否拒答
-      识别因知识不足而放弃
-      纠正问题仍视为尝试回答
-      使用LLM评判提示词
+      收集自由文本响应
+      允许直接回答或拒答
+      不添加维基百科检索上下文
+      为两类评审保留完整文本
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: step_13
+      x: 860
+      'y': 400
+  - id: abstention_judge
     label: |-
-      判断已尝试答案
-      响应与标准答案比较
+      使用Llama-3.1-70B-Instruct
+      拒答JSON
+      纠正答案 = 尝试
+    type: decision
+    size: xl
+    style:
+      fontSize: 10
+    position:
+      x: 600
+      'y': 400
+  - id: correctness_judge
+    label: |-
+      判断已尝试答案是否正确
+      将响应与标准答案比较
       正确 · 错误 · 不可验证
-      后两类均视为幻觉
+      后两类都计为幻觉
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: step_14
+      x: 340
+      'y': 240
+  - id: score_metrics
     label: |-
-      报告三项指标
+      报告三次试验平均指标
       错误拒答率
-      已尝试答案中的幻觉率
-      总体正确率 · 三次运行平均
+      尝试回答中的幻觉率
+      总体正确回答率
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 80
+      'y': 400
+  - id: data_boundary
+    label: |-
+      数据版本边界
+      固定GoodWiki版本7491f6da6439
+      WikiRank下载地址没有版本号
+      本次审查以观测字节哈希固定
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 240
+  - id: regeneration_drift
+    label: |-
+      论文与批处理重生成差异
+      论文重试不可回答的问题
+      批处理以continue直接丢弃
+      每个桶使用100个候选缓冲
+    type: document
+    size: xl
+    position:
+      x: 1640
+      'y': 680
+  - id: runner_boundary
+    label: |-
+      固定运行器边界
+      模块默认N为5000 · 脚本传入N为1
+      未固定抽样随机种子
+      被测模型默认最多生成256词元
+    type: document
+    size: xl
+    position:
+      x: 1120
+      'y': 680
+  - id: judge_parser_drift
+    label: |-
+      评审提示与解析器差异
+      提示先列三类又要求Yes或No
+      解析器接受精确的correct或yes
+      其余结果全部标为幻觉
+    type: document
+    size: xl
+    position:
+      x: 340
+      'y': 680
+  - id: license_boundary
+    label: |-
+      许可证与权利边界
+      HalluLens：CC BY-NC 4.0
+      GoodWiki数据集：MIT
+      不推断WikiRank未声明的权利
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 240
 edges:
-  - from: step_1
-    to: step_2
+  - from: source_evidence
+    to: benchmark_scope
+    type: secondary
+    style:
+      dashed: true
+  - from: benchmark_scope
+    to: goodwiki_release
     type: primary
-  - from: step_2
-    to: step_3
+  - from: goodwiki_release
+    to: wikirank_join
     type: primary
-  - from: step_3
-    to: step_4
+  - from: wikirank_join
+    to: difficulty_bins
     type: primary
-  - from: step_4
-    to: step_5
+  - from: difficulty_bins
+    to: page_sampling
     type: primary
-  - from: step_5
-    to: step_6
+  - from: page_sampling
+    to: section_sampling
     type: primary
-  - from: step_6
-    to: step_7
+  - from: section_sampling
+    to: question_generation
     type: primary
-  - from: step_7
-    to: step_8
+  - from: question_generation
+    to: answer_generation
     type: primary
-  - from: step_8
-    to: step_9
+  - from: answer_generation
+    to: quality_gate
     type: primary
-  - from: step_9
-    to: step_10
+    style:
+      exitX: 0
+      exitY: 0.2
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.2
+      entryDx: 0
+      entryDy: 0
+  - from: quality_gate
+    to: question_generation
     type: primary
-  - from: step_10
-    to: step_11
+    waypoints:
+      - x: 1744
+        'y': 560
+      - x: 2160
+        'y': 560
+      - x: 2160
+        'y': 128
+  - from: quality_gate
+    to: dynamic_set
     type: primary
-  - from: step_11
-    to: step_12
+    style:
+      exitX: 0
+      exitY: 0.2
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.2
+      entryDx: 0
+      entryDy: 0
+  - from: dynamic_set
+    to: gold_audit
+    type: secondary
+    style:
+      dashed: true
+  - from: dynamic_set
+    to: inference_config
     type: primary
-  - from: step_12
-    to: step_13
+  - from: inference_config
+    to: model_response
     type: primary
-  - from: step_13
-    to: step_14
+  - from: model_response
+    to: abstention_judge
     type: primary
+    style:
+      exitX: 0
+      exitY: 0.2
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.2
+      entryDx: 0
+      entryDy: 0
+  - from: abstention_judge
+    to: correctness_judge
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.2
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: abstention_judge
+    to: score_metrics
+    type: primary
+    style:
+      exitX: 0
+      exitY: 0.8
+      exitDx: 0
+      exitDy: 0
+      entryX: 1
+      entryY: 0.5
+      entryDx: 0
+      entryDy: 0
+  - from: correctness_judge
+    to: score_metrics
+    type: primary
+  - from: goodwiki_release
+    to: data_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: quality_gate
+    to: regeneration_drift
+    type: secondary
+    style:
+      dashed: true
+      exitX: 0.5
+      exitY: 1
+      exitDx: 0
+      exitDy: 0
+      entryX: 0.5
+      entryY: 0
+      entryDx: 0
+      entryDy: 0
+  - from: inference_config
+    to: runner_boundary
+    type: secondary
+    style:
+      dashed: true
+  - from: correctness_judge
+    to: judge_parser_drift
+    type: secondary
+    style:
+      dashed: true
+  - from: source_evidence
+    to: license_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

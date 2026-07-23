@@ -1,98 +1,140 @@
 {
   "version": 1,
-  "title": "MedAgentsBench 构建流程",
+  "title": "MedicalAgentsBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 21,
+    "edges": 22,
     "modules": 0
   },
   "nodes": [
     {
       "id": "sources",
-      "label": "汇集八个医学问答数据集\nMedQA、PubMedQA、MedMCQA\nMedBullets、MMLU、MMLU-Pro\nMedExQA 与 MedXpertQA",
+      "label": "汇集八个医学问答源集\nMedQA · PubMedQA · MedMCQA · MedBullets\nMMLU · MMLU-Pro · MedExQA · MedXpertQA\nMedXpertQA 再分为 R 与 U",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "standardize",
-      "label": "统一多项选择题合同\n保留问题选项和正确答案\n统一数据集与题目标识\nMedXpert 分 R 与 U 子集",
+      "label": "统一多项选择题记录\n问题 · 选项映射 · 标准答案索引\n保留数据集与真实题目标识\n每题三至十个选项",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "probe",
-      "label": "用多架构模型探测难度\n对每个候选题运行代表模型\n统计模型正确作答比例\n避免单一架构定义难度",
+      "label": "用多模型探测每道候选题\n覆盖多种模型架构\n统计 N 个模型中答对的 k 个\n避免单模型难度偏差",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "hardgate",
-      "label": "执行困难候选门槛\n仅保留模型正确率低于 50%\n聚焦尚未饱和的临床推理\n排除明显简单题目",
-      "type": "process",
+      "id": "hard_gate",
+      "label": "答对模型比例 k / N\n是否严格低于 50%？",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "平衡九个评测子集\n七个子集各取 100 题\nMedBullets 取 89 题\nMMLU 取 73 题",
+      "label": "按子集抽取困难候选题\n每个子集最多 100 题\n平衡九个评测子集\n保持源数据多样性",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "depth",
-      "label": "核验多步推理深度\n四名临床阶段医学生\n使用五级推理深度量表\n记录离散推理和判断步骤",
+      "label": "标注推理深度\n四名临床阶段医学生\n五级最少推理步骤量表\n先校准再重叠标注估计一致性",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "validity",
-      "label": "审核问题临床有效性\n标记错答案和上下文不足\n排除陈旧或临床无关知识\n共移除 21 个问题",
+      "id": "human_review",
+      "label": "审查题目有效性\n标记错答案与上下文不足\n标记陈旧或临床无关知识\n任一标记都会触发小组复核",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validity_gate",
+      "label": "是否少于两名标注员\n认定该问题确实成立？",
+      "type": "decision",
       "size": "xl"
     },
     {
       "id": "meld",
-      "label": "使用 MELD 筛查污染\n问题文本去掉答案选项\n前半提示生成后半内容\n按 Levenshtein 相似度识别记忆",
+      "label": "执行 MELD 污染筛查\n去掉选项并将问题一分为二\n让模型续写未见的后半段\n计算 Levenshtein 相似度",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "verification_merge",
+      "label": "汇合两类核验证据\n人工有效性 + MELD 证据\nMELD 阈值与剔除量未披露\n最终计数对账方式未披露",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "excluded",
+      "label": "从论文困难集剔除\n简单候选或有效性失败\n人工审核共剔除 21 题\n错答案 5 · 上下文 5 · 无关 11",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "发布 MedicalAgentsBench\n最终包含 862 道困难题\n平均长度 147.4 tokens\n覆盖八源集九个子集",
+      "label": "发布论文 v3 MedicalAgentsBench\n共 862 题 · 平均 147.4 Tokens\n七个子集各 100 题 + MedBullets 89\n+ MMLU 73，合计九个子集",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "basemodels",
-      "label": "评测十个基础模型\n七个非推理基础模型\n三个内化推理模型\n使用统一提示和选择解析",
+      "id": "release_drift",
+      "label": "已锁定公开发布包的漂移\nGit v1.0 与 HF/Zenodo 多出 32 题 AfriMedQA\nREADME 任务表合计 894，而非 862\n论文未给出对账说明",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "evaluation",
+      "label": "执行标准化评测\n七个基础模型 + 三个内化推理模型\n九种外化方法，覆盖范围不一\nSPO/AFlow：仅 GPT-4o-mini / GPT-4o\nAgent 仅评困难集 · 独立运行三次",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "methods",
-      "label": "评测九种外化推理方法\nCoT 与 Self-Consistency\n三种高级提示方法\n四种协作或搜索型 Agent",
+      "id": "parser",
+      "label": "抽取单个选项标签\n各方法使用 JSON 或 LLM 解析器\n必要时重新实现 Agent 选择题解析\n发布包没有单一通用解析器",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "accuracy",
-      "label": "计算选择题准确率\n比较预测选项与答案索引\n按九个子集汇总结果\n再计算跨数据集平均值",
+      "id": "emitted_gate",
+      "label": "运行器是否输出同时含 realidx\n与 predicted_answer 的结果行？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "missing_boundary",
+      "label": "方法专属失败或省略\n全局计分器不会补回缺失 ID\n因而不强制使用固定 862 分母",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "exact_score",
+      "label": "按选项精确相等计分\n标准答案优先 answer_idx，否则 answer\n仅预测与标准值相等才正确\n单题得分为一或零",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "cost",
-      "label": "统计推理成本与耗时\n商业模型按 token 定价\n开源模型按托管价格估算\n记录样本完整交互耗时",
+      "id": "aggregate",
+      "label": "先按 realidx 去重\n准确率为保留结果行的均值\n对论文九个子集做宏平均\n报告三次运行的均值与标准差",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "cost_time",
+      "label": "在保留结果行平均成本与耗时\n成本按 API Tokens 或托管费率\n原始时间为完整周期墙钟均值\nPareto 笔记本调整 DeepSeek-V3\n绘图时间 = 原始均值 / 10",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "发布能力成本联合分析\n对比内化与外化推理\n绘制准确率成本 Pareto 前沿\n报告模型方法互补效果",
+      "label": "发布准确率与成本结果\nPass@1 与各子集准确率\n推理成本与调整后时间标记\n经验准确率成本 Pareto 前沿",
       "type": "terminal",
       "size": "xl"
     }
@@ -113,66 +155,127 @@
     {
       "id": "edge-3",
       "from": "probe",
-      "to": "hardgate",
+      "to": "hard_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "hardgate",
+      "from": "hard_gate",
       "to": "sample",
-      "type": "primary"
+      "type": "primary",
+      "label": "是 · k/N < 0.5"
     },
     {
       "id": "edge-5",
+      "from": "hard_gate",
+      "to": "excluded",
+      "type": "optional",
+      "label": "否 · 至少 50% 模型答对"
+    },
+    {
+      "id": "edge-6",
       "from": "sample",
       "to": "depth",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "depth",
-      "to": "validity",
-      "type": "primary"
-    },
-    {
       "id": "edge-7",
-      "from": "validity",
-      "to": "meld",
+      "from": "depth",
+      "to": "human_review",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "meld",
-      "to": "release",
+      "from": "human_review",
+      "to": "validity_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "release",
-      "to": "basemodels",
-      "type": "primary"
+      "from": "validity_gate",
+      "to": "verification_merge",
+      "type": "primary",
+      "label": "是 · 保留"
     },
     {
       "id": "edge-10",
-      "from": "basemodels",
-      "to": "methods",
-      "type": "primary"
+      "from": "validity_gate",
+      "to": "excluded",
+      "type": "optional",
+      "label": "否 · 至少两人认可问题"
     },
     {
       "id": "edge-11",
-      "from": "methods",
-      "to": "accuracy",
+      "from": "depth",
+      "to": "meld",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "accuracy",
-      "to": "cost",
+      "from": "meld",
+      "to": "verification_merge",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "cost",
+      "from": "verification_merge",
+      "to": "release",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "release",
+      "to": "release_drift",
+      "type": "optional",
+      "label": "当前公开包不一致"
+    },
+    {
+      "id": "edge-15",
+      "from": "release",
+      "to": "evaluation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "evaluation",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "parser",
+      "to": "emitted_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "emitted_gate",
+      "to": "exact_score",
+      "type": "primary",
+      "label": "是 · 保留结果行"
+    },
+    {
+      "id": "edge-19",
+      "from": "emitted_gate",
+      "to": "missing_boundary",
+      "type": "optional",
+      "label": "否 · 不进入计分器输入"
+    },
+    {
+      "id": "edge-20",
+      "from": "exact_score",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "aggregate",
+      "to": "cost_time",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "cost_time",
       "to": "report",
       "type": "primary"
     }

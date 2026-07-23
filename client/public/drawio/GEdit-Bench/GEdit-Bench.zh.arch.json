@@ -7,62 +7,68 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 10,
+    "edges": 9,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "证据快照 · 论文 2504.17761v5\n仓库 4cca05df · 数据 50766778\n论文 GPT-4o/GPT-4.1 冲突\n固定评测器 GPT-4.1",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "collect",
-      "label": "收集超过 1,000 个真实编辑实例\n来源包括 Reddit 类互联网用户请求\n保留真实用户图像与编辑意图",
+      "label": "收集 >1,000 个真实编辑实例\n来源为公开互联网\n包括 Reddit 类用户请求\n保留真实编辑意图",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "taxonomy",
-      "label": "人工整理编辑指令\n划分为 11 类真实编辑任务\n过滤用途相似的指令以保持多样性",
+      "label": "人工划分 11 类任务\n过滤相同目的的指令\n保持任务多样性\n留下 606 组图像与请求",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "privacy",
-      "label": "对用户上传图像去标识化\n在多个公开搜索引擎执行反向搜图\n用视觉和语义一致的公开图像替换",
+      "id": "deidentify",
+      "label": "对用户图像去标识化\n在公开引擎中反向搜图\n替换为匹配的公开图像\n无替代图时改指令但保留意图",
       "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "fallback",
-      "label": "无替代图像时保留原始意图\n改为最小幅度修改编辑指令\n维持图像与指令的忠实对应",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "bilingual",
-      "label": "每张图像配两种语言指令\n分别提供英文与中文表述\n人工筛查措辞与图像适用性",
-      "type": "document",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "汇总 606 个真实测试实例\n参考图像 + 真实编辑请求\n公开基准覆盖 11 类编辑任务",
+      "label": "每组配一条英文和中文指令\n606 组发布为 1,212 行\n图像/原图/任务/语言字段\n包含 Intersection_exist 标记",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "edit",
-      "label": "运行开源与闭源编辑模型\n输入源图像和英文或中文指令\n保留成功生成的编辑结果",
+      "id": "generation",
+      "label": "生成编辑后图像\n输入原图 + 英文或中文请求\n覆盖开源与闭源编辑器\n缺失输出文件会被跳过",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "subsets",
-      "label": "区分完整集与有效输出视图\n完整基准：606 个实例\n共同有效输出交集：英文 434 · 中文 422",
+      "id": "views",
+      "label": "形成两类报告视图\n完整集：每种语言最多 606 例\n失败或缺失输出不计入\n共同交集：英文 434 · 中文 422",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "使用两个 VLM 评委执行 VIEScore\nGPT-4.1 与 Qwen2.5-VL-72B\n语义一致性 · 感知质量 · 综合得分",
+      "id": "viescore",
+      "label": "评判原图 + 编辑图 + 请求\nGPT-4.1 与 Qwen2.5-VL-72B\n输出 0–10 的 SC 与 PQ 数组\n任务模式：tie",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "解析分数数组\n重试一次，随后回退或猜测\nSC=列表最小值 · PQ=列表最小值\nO=sqrt(SC × PQ)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "先计算每类均值\n总体为 11 个类别均值\n的非加权平均\n共同交集采用相同规则",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,50 +76,56 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "collect",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
       "from": "collect",
       "to": "taxonomy",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "taxonomy",
-      "to": "privacy",
-      "type": "primary"
-    },
-    {
       "id": "edge-3",
-      "from": "privacy",
-      "to": "fallback",
+      "from": "taxonomy",
+      "to": "deidentify",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "fallback",
-      "to": "bilingual",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "bilingual",
+      "from": "deidentify",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-5",
       "from": "release",
-      "to": "edit",
+      "to": "generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "generation",
+      "to": "views",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "edit",
-      "to": "subsets",
+      "from": "views",
+      "to": "viescore",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "subsets",
-      "to": "score",
+      "from": "viescore",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "parser",
+      "to": "aggregate",
       "type": "primary"
     }
   ],

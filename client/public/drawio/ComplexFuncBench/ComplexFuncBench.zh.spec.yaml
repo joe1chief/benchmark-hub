@@ -4,94 +4,111 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: ComplexFuncBench 构建与评测流程
-  description: 按论文还原 1,000 条复杂旅行函数调用样本的三阶段构建流程，以及用于调用级和最终回答评分的完整 ComplexEval。
-  legend: 实线依次表示 API 整理、粗粒度生成、人工精标、十倍泛化和自动评测。
+  title: ComplexFuncBench 构建与 ComplexEval 流程
+  description: 对 1,000 条旅行函数调用样本的三阶段构建进行版本钉住，并展示官方 ComplexEval 的迭代反馈、匹配和计分流程。
+  legend: 实线表示构建与评测；虚线回边将评分器反馈送入模型下一轮。
 nodes:
-  - id: apis
+  - id: evidence
     label: |-
-      Booking.com（经 RapidAPI）
-      五个领域的 43 个实时 API
-      人工修正函数描述
-    type: database
+      arXiv:2501.10132v1
+      代码 c37b284 / 数据 5dc7739
+      JSONL SHA256 be1e0f5…
+    type: document
     size: xl
     position:
       x: 40
       'y': 100
-  - id: coarse
+  - id: apis
     label: |-
-      阶段一：GPT-4o 粗粒度生成
-      采样函数并生成 1,000 个问题
-      以及初始函数调用路径
-    type: process
+      Booking.com 经 RapidAPI
+      5 个领域的 43 个实时 API
+      人工修正错误函数描述
+    type: database
     size: xl
     position:
       x: 320
       'y': 100
-  - id: select
+  - id: coarse
     label: |-
-      选择 100 个相对完整样本
-      覆盖不同步数与调用路径
+      阶段 1：GPT-4o 粗生成
+      抽样函数并生成 1,000 条查询
+      通过函数调用接口生成初步路径
     type: process
     size: xl
     position:
       x: 600
       'y': 100
-  - id: correct
+  - id: select
     label: |-
-      阶段二：资深标注
-      改写问题并修正参数
-      构造最短且完整的调用路径
-    type: user
+      选出 100 条相对完整样本
+      覆盖多样步骤数和调用路径
+    type: process
     size: xl
     position:
       x: 880
       'y': 100
-  - id: disambiguate
+  - id: correct
     label: |-
-      消除歧义
-      排除功能重叠函数并删除
-      产生多个有效参数的 API 结果
-    type: process
+      阶段 2：资深标注员修正
+      重写查询；补充 / 删除 / 重排调用
+      构建最短完整路径；修正类型 / 取值
+      修正参数幻觉与缺失
+    type: user
     size: xl
     position:
       x: 1160
       'y': 100
-  - id: templates
+  - id: disambiguate
     label: |-
-      质检后的模板集
-      100 条无错误复杂调用路径
-    type: database
+      消除每条路径歧义
+      移除重叠函数
+      删除歧义 API 响应
+    type: process
     size: xl
     position:
       x: 1440
       'y': 100
-  - id: generalize
+  - id: quality
     label: |-
-      阶段三：十倍泛化
-      GPT-4o 修改地点与约束
-      初级标注员填写参数
-    type: user
+      质检全部 100 条模板
+      反复复核直至无错误
+    type: process
     size: xl
     position:
       x: 1720
       'y': 100
-  - id: dataset
+  - id: generalize
     label: |-
-      ComplexFuncBench
-      1,000 条样本
-      600 单域 + 400 跨域
-    type: database
+      阶段 3：每模板扩为 10 条
+      GPT-4o 生成 9 条新变体 + 原始样本
+      初级标注员填参并消歧
+    type: user
     size: xl
     position:
       x: 2000
       'y': 100
+  - id: dataset
+    label: |-
+      1,000 条：600 单域 + 400 跨域
+      酒店 / 航班 / 租车 / 景点各 150 条
+      出租车仅用于跨域样本
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 100
   - id: model
     label: |-
-      模型迭代预测函数调用
-      接收已标注的 API 响应
-      直至生成最终回答
+      模型生成下一步输出
+      输入查询、函数与对话历史
     type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 440
+  - id: output_kind
+    label: 调用列表还是最终回答？
+    type: decision
     size: xl
     position:
       x: 2000
@@ -99,54 +116,67 @@ nodes:
   - id: format
     label: |-
       格式检查
-      有效函数 / 必需参数 / 参数类型
-      返回具体错误供模型自我修正
+      函数 / 必需参数 / 类型
+      具体错误支持自我纠正
     type: process
     size: xl
     position:
       x: 1720
-      'y': 440
+      'y': 300
   - id: mapping
     label: |-
-      将预测调用映射到标准调用
-      bge-large-en 向量
-      余弦相似度 + 匈牙利算法
+      预测调用与标准调用映射
+      bge-large-en-v1.5 余弦相似度
+      匈牙利匹配
     type: process
     size: xl
     position:
       x: 1440
-      'y': 440
+      'y': 300
   - id: matching
     label: |-
       多维等价判断
       精确规则 / 相同 API 响应
-      GPT-4o 参数语义匹配
+      GPT-4o 语义参数匹配
     type: process
     size: xl
     position:
       x: 1160
-      'y': 440
+      'y': 300
+  - id: feedback
+    label: |-
+      匹配 → 返回标准标注响应
+      移除匹配项；加入下一步标准调用
+      未匹配 → 返回固定错误
+      将历史反馈给模型
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 580
   - id: call_metrics
     label: |-
-      函数调用指标
-      任务成功率
-      调用准确率
+      成功率 = 成功样本数 / 1,000
+      调用准确率 = 正确调用总数 / 调用总数
     type: terminal
     size: xl
     position:
       x: 880
-      'y': 330
-  - id: response
+      'y': 580
+  - id: response_judge
     label: |-
-      GPT-4o 最终回答评审
-      完整性与正确性
-      评分范围 0 到 2
+      GPT-4o 最终回答裁判
+      完整性与正确性取 {0, 1, 2}
+      对有效样本得分取均值
     type: terminal
     size: xl
     position:
-      x: 880
-      'y': 550
+      x: 1720
+      'y': 580
 edges:
+  - from: evidence
+    to: apis
+    type: primary
   - from: apis
     to: coarse
     type: primary
@@ -160,9 +190,9 @@ edges:
     to: disambiguate
     type: primary
   - from: disambiguate
-    to: templates
+    to: quality
     type: primary
-  - from: templates
+  - from: quality
     to: generalize
     type: primary
   - from: generalize
@@ -172,6 +202,9 @@ edges:
     to: model
     type: primary
   - from: model
+    to: output_kind
+    type: primary
+  - from: output_kind
     to: format
     type: primary
   - from: format
@@ -181,9 +214,22 @@ edges:
     to: matching
     type: primary
   - from: matching
-    to: call_metrics
+    to: feedback
     type: primary
-  - from: matching
-    to: response
+  - from: feedback
+    to: model
+    type: data
+    waypoints:
+      - x: 1260
+        'y': 760
+      - x: 2520
+        'y': 760
+      - x: 2520
+        'y': 490
+  - from: feedback
+    to: call_metrics
+    type: data
+  - from: output_kind
+    to: response_judge
     type: primary
 modules: []

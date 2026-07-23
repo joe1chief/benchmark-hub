@@ -7,98 +7,122 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 15,
-    "edges": 15,
+    "nodes": 19,
+    "edges": 21,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "主要证据与版本边界\narXiv:2503.02951v2\nFindings ACL 2025\n论文数据集：KodCode-V1\nGit 3a98720：后续 V2 发布代码\nV1 时期 Git 35bcc3d：未证明精确对应",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "sources",
-      "label": "合成十二类问题子集\nPrefill · 五个编程评测来源\n算法 · 数据结构 · 技术文档\nFilter · Package · Evol",
+      "label": "合成论文的十二类问题子集\nPrefill · LeetCode\nCodeforces · APPS · TACO\nCode Contests · Algorithm\nData Structure · Docs · Filter\nPackage · Evol",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "dedup",
-      "label": "语义去重\nall-mpnet-base-v2 向量\nFAISS 最近邻搜索\n删除超过相似度阈值的问题",
+      "label": "在每个子集内部语义去重\nall-mpnet-base-v2 向量\nFAISS 最近邻搜索\n过滤超过预设相似度阈值的问题",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "synthesize",
-      "label": "生成解答与测试\nGPT-4o-0513 每次同时重新生成\nPython 解答 + Pytest 用例\n启动自验证尝试",
+      "label": "GPT-4o-0513 每次重新生成两者\nPython 解答 + Pytest 单元测试\n只有问题作为固定输入\n启动自验证尝试",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "execute",
-      "label": "执行单元测试\n用生成测试运行解答\n通过 pytest-cov 测量分支\n拒绝运行或断言失败项",
+      "label": "执行生成的单元测试\n用每组测试运行配套解答\n通过 pytest-cov 测量分支\n记录每次尝试的通过与覆盖率",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "verify",
-      "label": "自验证与扩展重试\n要求测试全过且分支覆盖率 100%\n最多十次全新解答-测试尝试\n只保留覆盖率不下降的尝试",
+      "label": "自验证 · 最多十次尝试\n重试时从头生成解答与测试\n要求测试全过且分支覆盖率 100%\n重试覆盖率不得下降",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "difficulty",
+      "label": "难度标记与失败门禁\n简单：成功率高于 2/3\n中等：1/3 至 2/3 · 困难：低于 1/3\n十次全部失败：丢弃该问题",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "verified",
-      "label": "保留 279K 个已验证三元组\n丢弃所有尝试均失败的问题\n按尝试成功率标记难度\n问题 + 解答 + 单元测试",
+      "label": "论文第二步产出 · 279K\n已验证问题—解答—测试三元组\n至少一次尝试通过门禁\n保留简单 · 中等 · 困难标签",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "convert",
-      "label": "转换问题风格\n以解答和测试作为上下文\n添加函数签名与示例\n新增 168K 个三元组",
+      "label": "基于 LLM 的风格转换\n输入问题 + 解答 + 测试\n转为带函数签名与示例的 Python 补全题\n新增 168K 个三元组",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "final",
-      "label": "发布 KodCode-V1 · 447K\n已验证问题-解答-测试三元组\n279K 原始 + 168K 转换\n十二子集 · 简单 / 中等 / 困难",
+      "id": "paper_v1",
+      "label": "论文 KodCode-V1 · 447K\n279K 已验证 + 168K 转换\n问题—解答—测试三元组\n十二子集 · 三种难度标签\n配套测试使数据可用于 RL",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "rl",
-      "label": "RL 就绪数据路径\n使用配套单元测试作为可验证奖励\n保留完整 447K 三元组\n支持基于测试的强化学习",
-      "type": "document",
-      "size": "xl"
-    },
-    {
       "id": "r1",
-      "label": "生成推理回答\n每题提示 DeepSeek-R1\n生成思维链与代码\n每题采样三个回答",
+      "label": "DeepSeek-R1 回答合成\n使用已验证三元组中的问题\n生成思维链与代码\n每个问题采样三个回答",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "reject",
-      "label": "基于测试的拒绝采样\n在单元测试上执行每个 R1 回答\n仅保留可验证正确输出\n形成高质量 SFT 样本",
+      "label": "基于测试的拒绝采样\n在配套测试上执行每个 R1 代码\n仅保留可验证正确的回答\n被拒回答不作为 SFT 正样本",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "sft",
-      "label": "KodCode-SFT 路径\n问题 + 通过测试的推理回答\n可验证思维链代码数据\n可用于监督微调",
+      "id": "sft_data",
+      "label": "构建论文 KodCode-SFT\n问题 + 通过测试的 R1 思维链回答\n三次采样并按测试筛选\n与 447K 个 RL 三元组分开",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "train",
-      "label": "后训练代码模型\n用通过测试的 R1 回答进行 SFT\n直接用 447K 已验证三元组做 RL\n分析中排除 94 个疑似重叠项",
+      "id": "artifact_boundary",
+      "label": "固定的后续 HF 公开制品\nRL 97d81f0：训练 484,097\n谨慎使用 3,335\nSFT 26c8a11：训练 268,211\n错误 210,787 + 谨慎使用 4,439\n公开 v1.1 划分不等于论文 447K V1",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "rl_experiment",
+      "label": "仅为论文 RL 效用实验\n随机 9.5K 训练 + 0.5K 验证\nGRPO · 测试全过得 1，否则得 0\n两个 Qwen2.5 7B 模型 · 并非全部 447K",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sft_experiment",
+      "label": "仅为论文 SFT 效用实验\n过滤长度与类实现回答\n50K 混合集 + 全部 18K 困难集\n微调 Qwen2.5-Coder-32B",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "contamination",
+      "label": "污染分析 · 仅用于评测\nHumanEval · MBPP\nBigCodeBench · LCB V5\n余弦相似度高于 0.95 → 94 个重叠\n仅从评测排除，不从训练数据删除",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "benchmark",
-      "label": "评估数据效用\nHumanEval 与 HumanEval+\nMBPP 与 MBPP+ · BigCodeBench\nLiveCodeBench V5 · 贪心解码",
+      "label": "下游数据效用评测\nHumanEval 与 HumanEval+\nMBPP 与 MBPP+ · BigCodeBench\nLiveCodeBench V5 · 贪心 Pass@1",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "汇报代码正确性\n标准基准上的 Pass@1\n比较 SFT 与 RL 模型\n自验证错误率低于 2.5%",
+      "label": "汇报论文数据效用结果\n按基准报告 Pass@1\n分别比较 SFT 与 RL 模型\n94 个重叠仅在此处排除",
       "type": "terminal",
       "size": "xl"
     }
@@ -106,90 +130,130 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "sources",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
       "from": "sources",
       "to": "dedup",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-3",
       "from": "dedup",
       "to": "synthesize",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-4",
       "from": "synthesize",
       "to": "execute",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-5",
       "from": "execute",
       "to": "verify",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "verify",
+      "to": "difficulty",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "difficulty",
       "to": "verified",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-8",
       "from": "verified",
       "to": "convert",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "convert",
-      "to": "final",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "final",
-      "to": "rl",
-      "type": "primary"
-    },
-    {
       "id": "edge-9",
-      "from": "final",
+      "from": "convert",
+      "to": "paper_v1",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "paper_v1",
       "to": "r1",
       "type": "secondary"
     },
     {
-      "id": "edge-10",
+      "id": "edge-11",
       "from": "r1",
       "to": "reject",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "reject",
-      "to": "sft",
-      "type": "primary"
-    },
-    {
       "id": "edge-12",
-      "from": "rl",
-      "to": "train",
+      "from": "reject",
+      "to": "sft_data",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "sft",
-      "to": "train",
-      "type": "primary"
+      "from": "paper_v1",
+      "to": "artifact_boundary",
+      "type": "data"
     },
     {
       "id": "edge-14",
-      "from": "train",
+      "from": "sft_data",
+      "to": "artifact_boundary",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "paper_v1",
+      "to": "rl_experiment",
+      "type": "data",
+      "label": "论文 RL 实验"
+    },
+    {
+      "id": "edge-16",
+      "from": "sft_data",
+      "to": "sft_experiment",
+      "type": "data",
+      "label": "论文 SFT 实验"
+    },
+    {
+      "id": "edge-17",
+      "from": "paper_v1",
+      "to": "contamination",
+      "type": "data",
+      "label": "仅评测分析"
+    },
+    {
+      "id": "edge-18",
+      "from": "rl_experiment",
       "to": "benchmark",
       "type": "primary"
     },
     {
-      "id": "edge-15",
+      "id": "edge-19",
+      "from": "sft_experiment",
+      "to": "benchmark",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "contamination",
+      "to": "benchmark",
+      "type": "data",
+      "label": "仅评测排除 94 个重叠"
+    },
+    {
+      "id": "edge-21",
       "from": "benchmark",
       "to": "report",
       "type": "primary"

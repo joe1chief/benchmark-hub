@@ -5,122 +5,141 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GenAI-Bench 构建流程
-  description: 与论文一致的 GenAI-Bench 社区偏好收集、清洗、发布和 MLLM 裁判评测流程。
-  legend: 本图对应 arXiv:2406.04485 的 GenAI-Arena 偏好基准，而不是另一个含 1,600 提示词的同名组合式文生视觉基准。 Arena 的 Elo 排生成模型，GenAI-Bench 的准确率则评估裁判模型。
+  description: 固定版本的 GenAI-Arena 偏好采集、过滤、v1 发布、多模态裁判、解析器和准确率流程。
+  legend: 虚线箭头表示固定版本证据；实线箭头表示采集与评测。v1 的 test_v1 不与后续 test 或同名 1,600 提示基准混合。
 nodes:
-  - id: integrate
+  - id: evidence
     label: |-
-      集成 35 个开源生成模型
-      文生图 · 图像编辑 · 文生视频
-      统一代码、提示和固定推理设置
-    type: database
+      一手证据
+      arXiv:2406.04485v4
+      仓库 f0b0334d · 数据 7981a194
+    type: document
     size: xl
     position:
       x: 40
-      'y': 250
-  - id: prompts
+      'y': 100
+  - id: arena_inputs
     label: |-
-      构建提示与输出池
-      实时用户提示 + ImagenHub/VBench 样本
-      在 GenAI-Museum 预计算模型输出
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 250
-  - id: battle
-    label: |-
-      运行同任务匿名对战
-      随机选择两个模型输出
-      隐藏模型身份并排展示
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 250
-  - id: vote
-    label: |-
-      收集四类社区投票
-      左侧更好 · 右侧更好
-      同样好 · 两者都差
-    type: process
-    size: xl
-    position:
-      x: 940
-      'y': 250
-  - id: audit
-    label: |-
-      审核人工投票质量
-      作者复核 350 个样本，303 个有效
-      93.07% 明显合理或基本合理
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 250
-  - id: clean
-    label: |-
-      使用 Llama Guard 清洗 Arena 投票
-      删除 NSFW 和技术失败样本
-      保留任务、提示、输出对、模型和投票
-    type: process
-    size: xl
-    position:
-      x: 1540
-      'y': 250
-  - id: release
-    label: |-
-      发布 GenAI-Bench 偏好对
-      图像生成 1,735 · 图像编辑 919
-      视频生成 1,069 · 合计 3,723
+      集成 35 个开源生成模型
+      图像生成 · 编辑 · 视频生成
+      实时 + ImagenHub/VBench 提示
     type: database
     size: xl
     position:
-      x: 1840
-      'y': 250
-  - id: judge
+      x: 300
+      'y': 100
+  - id: pair_vote
     label: |-
-      提示 MLLM 充当偏好裁判
-      输入提示和两个生成内容
-      必须返回相同四类标签之一
+      匿名同任务成对对战
+      左优 / 右优 / 同好 / 均差
+      身份被揭示则该票作废
     type: process
     size: xl
     position:
-      x: 2140
-      'y': 250
-  - id: score
+      x: 560
+      'y': 100
+  - id: vote_qc
     label: |-
-      将 MLLM 投票与人工投票精确匹配
-      报告三项任务准确率及平均值
-      四分类随机基线约为 25%
+      过滤并由专家抽检
+      抽样 350：有效 303
+      NSFW 17 · 技术问题 30
+      明确合理231 · 模糊51 · 错误21
+      合理或模糊：93.07%
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 100
+  - id: v1_release
+    label: |-
+      发布 v1 分片 test_v1
+      图像 1,735 · 编辑 919
+      视频 1,069 · 合计 3,723
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 100
+  - id: version_boundary
+    label: |-
+      后续 test 分片单独处理
+      3,192 + 983 + 1,911 = 6,086
+      官方代码固定加载 test_v1
+      两个版本不可合并
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 100
+  - id: judge_input
+    label: |-
+      组装多模态裁判输入
+      提示 + 输出 A + 输出 B
+      视频最多取 8 帧
+      视频原生输入或采样帧输入
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 400
+  - id: judge_prompt
+    label: |-
+      使用分任务评分准则
+      提示遵循 · 自然度
+      伪影 · 美学 · 过度编辑
+      时序一致性 · 视频动态性
+    type: process
+    size: xl
+    position:
+      x: 1080
+      'y': 400
+  - id: parser
+    label: |-
+      解析首个贪婪 [[.*]] 匹配
+      接受 A>>B/A>B 与 B>>A/B>A
+      同好：A=B 或 A=B=Good
+      均差：A=B 或 A=B=Bad
+    type: process
+    size: xl
+    position:
+      x: 820
+      'y': 400
+  - id: metric
+    label: |-
+      布尔准确率均值
+      分任务 + 三任务平均
+      Bradley–Terry 排名另行计算
     type: terminal
     size: xl
     position:
-      x: 2440
-      'y': 250
+      x: 560
+      'y': 400
 edges:
-  - from: integrate
-    to: prompts
+  - from: evidence
+    to: arena_inputs
+    type: data
+  - from: arena_inputs
+    to: pair_vote
     type: primary
-  - from: prompts
-    to: battle
+  - from: pair_vote
+    to: vote_qc
     type: primary
-  - from: battle
-    to: vote
+  - from: vote_qc
+    to: v1_release
     type: primary
-  - from: vote
-    to: audit
+  - from: v1_release
+    to: version_boundary
     type: primary
-  - from: audit
-    to: clean
+  - from: version_boundary
+    to: judge_input
     type: primary
-  - from: clean
-    to: release
+  - from: judge_input
+    to: judge_prompt
     type: primary
-  - from: release
-    to: judge
+  - from: judge_prompt
+    to: parser
     type: primary
-  - from: judge
-    to: score
+  - from: parser
+    to: metric
     type: primary
 modules: []

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "title": "ClassBench（AWM 环境）构建流程",
+  "title": "ClassBench（AgentWorldModel-1K 环境）构建流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
@@ -8,85 +8,85 @@
   "layout": "horizontal",
   "counts": {
     "nodes": 13,
-    "edges": 13,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "identity",
-      "label": "明确对象身份\nClassBench = 音乐学校排课与考勤\n它是 AWM 场景，不是独立基准",
-      "type": "document",
-      "size": "xl"
-    },
-    {
       "id": "seeds",
-      "label": "从 100 个领域名称种子开始\n聚焦有状态应用\n要求数据库支持 CRUD 操作",
+      "label": "100 个常见领域名称\n作为有状态应用领域种子\n用于 Self-Instruct 扩展",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "scenarios",
-      "label": "合成场景描述\nLLM 将名称扩展为应用概念\n包含 ClassBench 音乐学校工作流",
+      "label": "Self-Instruct 场景扩展\n领域名称 → 应用描述\n有状态 CRUD 工作流",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "filter",
-      "label": "筛选场景并去重\nCRUD 分类器 + 嵌入去重\n限制过度集中的类别",
+      "label": "场景筛选 + 去重\nCRUD 分类器 • 嵌入余弦阈值 0.85\n通过类别上限保证多样性",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "classbench",
+      "label": "ClassBench：音乐学校排课与考勤\n发布场景 ID：scheduling&#95;2\n单个 AWM 环境，不是独立基准",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "tasks",
-      "label": "每个场景生成 10 个用户任务\n可通过 API 完成且默认已登录\n任务决定后端所需功能",
+      "label": "10 个 API 可解用户任务\n登录后场景 • 自包含\n任务定义后端所需行为",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "database",
-      "label": "构建 SQLite 状态与初始数据\n推断实体、关系与约束\n满足每个任务的执行前提",
+      "label": "最小 SQLite Schema + 样例数据\n满足每个任务的执行前提\n不含认证字段",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "tools",
-      "label": "生成 MCP 工具接口\n设计最小化的类型化工具 Schema\n实现 Python 读写操作",
+      "id": "interface",
+      "label": "两阶段接口合成\nAPI 规格 → Python 实现\n暴露 MCP 工具 + FastAPI 服务",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "verifier",
-      "label": "生成任务专属验证逻辑\n比较执行前后的数据库状态\n代码增强 LLM-as-a-Judge 奖励",
+      "label": "每个任务一个验证器\n比较初始与最终数据库状态\n结构化信号 + 成功准则\n代码增强 LLM 判分器",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "execute",
-      "label": "执行每个生成组件\n测试数据库、工具与验证逻辑\n在隔离环境中捕获运行错误",
+      "id": "quality_gate",
+      "label": "隔离执行每个组件\nSchema / 数据错误率须低于 10%\n须达到 0% 环境启动错误率\n测试数据库 • 接口 • 验证器",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "repair",
-      "label": "自我修复生成失败\n将错误和代码反馈给 LLM\n最多重试五轮",
+      "label": "错误摘要 + 已生成代码\n反馈给 LLM • 最多 5 次重试\n耗尽后保留最佳尝试",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "随 AgentWorldModel-1K 发布\n属于 1,000 个环境与 10,000 个任务\n数据库 + 工具 + 任务 + 验证逻辑",
+      "label": "AgentWorldModel-1K 发布\n1,000 个环境 • 10,000 个任务\nClassBench = 1 个环境 • 10 个任务",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "run",
-      "label": "运行多轮工具使用 Agent\n可重置的隔离 MCP 环境\nAgent 修改音乐学校工作流状态",
-      "type": "terminal",
+      "label": "运行多轮工具使用 Agent\n可重置的隔离 MCP 环境\n记录 Agent 轨迹 + 最终状态",
+      "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "验证任务完成情况\n检查前后状态与判分结果\n报告成功或环境错误",
+      "label": "轨迹 + 验证结果\n完成 • 部分完成\nAgent 错误 • 环境错误",
       "type": "terminal",
       "size": "xl"
     }
@@ -94,25 +94,25 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "identity",
-      "to": "seeds",
-      "type": "primary"
-    },
-    {
-      "id": "edge-2",
       "from": "seeds",
       "to": "scenarios",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-2",
       "from": "scenarios",
       "to": "filter",
       "type": "primary"
     },
     {
-      "id": "edge-4",
+      "id": "edge-3",
       "from": "filter",
+      "to": "classbench",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "classbench",
       "to": "tasks",
       "type": "primary"
     },
@@ -125,47 +125,74 @@
     {
       "id": "edge-6",
       "from": "tasks",
-      "to": "tools",
+      "to": "interface",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "database",
+      "from": "tasks",
       "to": "verifier",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "tools",
-      "to": "verifier",
-      "type": "primary"
+      "from": "database",
+      "to": "interface",
+      "type": "data"
     },
     {
       "id": "edge-9",
-      "from": "verifier",
-      "to": "execute",
-      "type": "primary"
+      "from": "database",
+      "to": "verifier",
+      "type": "data"
     },
     {
       "id": "edge-10",
-      "from": "execute",
-      "to": "repair",
+      "from": "database",
+      "to": "quality_gate",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "repair",
-      "to": "release",
-      "type": "data"
+      "from": "interface",
+      "to": "quality_gate",
+      "type": "primary"
     },
     {
       "id": "edge-12",
+      "from": "verifier",
+      "to": "quality_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "quality_gate",
+      "to": "repair",
+      "type": "primary",
+      "label": "未通过"
+    },
+    {
+      "id": "edge-14",
+      "from": "repair",
+      "to": "quality_gate",
+      "type": "data",
+      "label": "重新测试"
+    },
+    {
+      "id": "edge-15",
+      "from": "quality_gate",
+      "to": "release",
+      "type": "primary",
+      "label": "通过"
+    },
+    {
+      "id": "edge-16",
       "from": "release",
       "to": "run",
       "type": "primary"
     },
     {
-      "id": "edge-13",
+      "id": "edge-17",
       "from": "run",
       "to": "score",
       "type": "primary"

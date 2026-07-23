@@ -5,117 +5,132 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GenEval 构建流程
-  description: 按论文呈现 GenEval 的提示构造、图像生成、面向对象验证与评分流程。
-  legend: GenEval 使用结构化提示与判别式视觉模型检验精确组合对齐，而非整体美学；计数和阈值均对应 arXiv:2310.11513。
+  description: 固定版本的提示生成、图像生成、检测与颜色校验、二值评分和人工验证流程。
+  legend: 虚线箭头表示固定版本论文与仓库证据；实线箭头表示基准构建和评测。提示与元数据在仓库内，无独立官方数据集。
 nodes:
-  - id: tasks
+  - id: evidence
     label: |-
-      定义六类组合任务
-      单/双对象 · 计数 · 颜色
-      位置 · 颜色属性绑定
-    type: process
+      一手证据
+      arXiv:2310.11513v1
+      官方仓库 af4902f2
+      无独立官方数据集
+    type: document
     size: xl
     position:
       x: 40
-      'y': 300
-  - id: vocabulary
+      'y': 100
+  - id: templates
     label: |-
-      建立模板词表
-      80 个 MS-COCO 对象类别
-      10 种生成颜色 · 3 个数量 · 4 种位置
+      定义六类任务模板
+      80 个 COCO 类 · 10 色
+      数量 2–4 · 4 方位
     type: database
     size: xl
     position:
-      x: 340
-      'y': 300
-  - id: prompts
+      x: 300
+      'y': 100
+  - id: sampling
     label: |-
-      每类随机生成 100 条提示
-      均匀填充任务专用模板
-      去重后共 553 条提示
+      使用种子 43 采样
+      单物体覆盖全部 80 类
+      其余五类各采样 100
+      按 YAML 表示去重
     type: process
     size: xl
     position:
-      x: 640
-      'y': 300
+      x: 560
+      'y': 100
+  - id: prompt_set
+    label: |-
+      发布 553 个结构化提示
+      分项：80/99/80/94/100/100
+      附带包含/排除约束元数据
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 100
   - id: generate
     label: |-
-      运行每个文生图模型
-      每条提示生成 4 张图
-      保留提示元数据供后续验证
+      每个提示生成 4 张图
+      保留各模型默认生成参数
+      保存评测元数据
     type: process
     size: xl
     position:
-      x: 940
-      'y': 300
+      x: 1080
+      'y': 100
   - id: detect
     label: |-
-      检测并分割对象
-      COCO Mask2Former 阈值 0.3
-      仅计数任务使用 0.9
+      COCO Mask2Former 检测
+      阈值 0.3 · 计数任务 0.9
+      每类最多保留 16 个物体
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 300
+      x: 1340
+      'y': 100
   - id: geometry
     label: |-
-      验证对象要求
-      对象存在性与精确数量
-      用框中心几何关系判断相对位置
+      检查包含/排除约束
+      计数 + 基于中心的相对位置
+      偏移 0.1 尺寸 · 方向分量 >0.5
     type: process
     size: xl
     position:
-      x: 1540
-      'y': 300
-  - id: color
+      x: 1340
+      'y': 390
+  - id: color_binding
     label: |-
-      验证颜色与属性绑定
-      按检测框裁剪 · 将背景遮为灰色
-      CLIP ViT-L/14 零样本分类候选颜色
+      CLIP ViT-L/14 颜色分类
+      边界框裁剪 + 分割掩码
+      #999 背景 · 10 个候选色
     type: process
     size: xl
     position:
-      x: 1840
-      'y': 300
+      x: 1080
+      'y': 390
   - id: binary
     label: |-
-      为每张图判定二值正确性
-      仅当全部指定元素、属性
-      与关系均正确时通过
+      逐图二值正确性
+      全部要求通过才计为正确
+      同时保留失败原因
     type: process
     size: xl
     position:
-      x: 2140
-      'y': 300
+      x: 820
+      'y': 390
   - id: aggregate
     label: |-
-      对四次生成取平均
-      报告六类任务各自得分
-      再平均为总体 GenEval 分数
+      对图像正确性取均值
+      报告六类任务得分
+      六类等权均值为总分
     type: terminal
     size: xl
     position:
-      x: 2440
-      'y': 300
-  - id: human
+      x: 560
+      'y': 390
+  - id: human_validation
     label: |-
-      与人工判断验证一致性
-      1,200 张图共 6,000 条标注
-      一致率 83% · 人间 88% · 全同意样本 91%
+      人工验证：6,000 条标注
+      1,200 张图 · 每图 5 人
+      83% 对 88%；860 条全同意为 91%
     type: terminal
     size: xl
     position:
-      x: 2740
-      'y': 300
+      x: 300
+      'y': 390
 edges:
-  - from: tasks
-    to: vocabulary
+  - from: evidence
+    to: templates
+    type: data
+  - from: templates
+    to: sampling
     type: primary
-  - from: vocabulary
-    to: prompts
+  - from: sampling
+    to: prompt_set
     type: primary
-  - from: prompts
+  - from: prompt_set
     to: generate
     type: primary
   - from: generate
@@ -125,15 +140,15 @@ edges:
     to: geometry
     type: primary
   - from: geometry
-    to: color
+    to: color_binding
     type: primary
-  - from: color
+  - from: color_binding
     to: binary
     type: primary
   - from: binary
     to: aggregate
     type: primary
   - from: aggregate
-    to: human
+    to: human_validation
     type: primary
 modules: []

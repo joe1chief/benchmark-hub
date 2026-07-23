@@ -7,62 +7,68 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 10,
+    "edges": 9,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "Evidence snapshot\npaper 2504.17761v5\nrepo 4cca05df · data 50766778\npaper GPT-4o/GPT-4.1 conflict\nfixed eval GPT-4.1",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "collect",
-      "label": "Collect more than 1K real editing instances\nInternet sources including Reddit-style requests\npreserve genuine user images and intentions",
+      "label": "Collect >1K real edit cases\npublic Internet sources\ninclude Reddit-style requests\nretain genuine editing intent",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "taxonomy",
-      "label": "Manually organize instructions\nassign 11 real-world editing categories\nfilter similar-purpose requests for diversity",
+      "label": "Manually assign 11 categories\nfilter same-purpose instructions\npreserve task diversity\nretain 606 image-request pairs",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "privacy",
-      "label": "De-identify user-uploaded images\nreverse-search multiple public search engines\nreplace with a public visual/semantic match",
+      "id": "deidentify",
+      "label": "De-identify user images\nreverse-search public engines\nsubstitute a public matching image\nelse modify instruction, keep intent",
       "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "fallback",
-      "label": "Preserve intent when no substitute exists\nminimally modify the instruction instead\nmaintain image–instruction fidelity",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "bilingual",
-      "label": "Pair every image with two instructions\none English and one Chinese formulation\nhuman-filter wording and image suitability",
-      "type": "document",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "Assemble 606 real-world test examples\nreference image + genuine editing request\npublic benchmark spanning 11 categories",
+      "label": "Pair one EN + one ZH instruction\nrelease 1,212 rows from 606 pairs\nimage/raw image/task/language fields\nIntersection_exist flag included",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "edit",
-      "label": "Run open and proprietary editors\nsubmit source image plus EN or ZH instruction\nretain successfully generated edited images",
+      "id": "generation",
+      "label": "Generate edited images\nsource image + EN or ZH request\nopen and proprietary editors\nmissing output files are skipped",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "subsets",
-      "label": "Separate full-set and valid-output views\nfull benchmark: 606 examples\ncommon valid-output intersections: EN 434 · ZH 422",
+      "id": "views",
+      "label": "Form reporting views\nfull: up to 606 per language\nfailed/missing outputs excluded\ncommon: EN 434 · ZH 422",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "Apply VIEScore with two VLM judges\nGPT-4.1 and Qwen2.5-VL-72B\nSemantic Consistency · Perceptual Quality · Overall",
+      "id": "viescore",
+      "label": "Judge original + edit + request\nGPT-4.1 and Qwen2.5-VL-72B\noutput SC and PQ arrays, 0–10\ntask mode: tie",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser",
+      "label": "Parse score arrays\nretry once; then fallback/guess\nSC=min list · PQ=min list\nO=sqrt(SC × PQ)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "Mean within each category\noverall = unweighted mean\nacross all 11 category means\napply same rule to common subset",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,50 +76,56 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "collect",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
       "from": "collect",
       "to": "taxonomy",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "taxonomy",
-      "to": "privacy",
-      "type": "primary"
-    },
-    {
       "id": "edge-3",
-      "from": "privacy",
-      "to": "fallback",
+      "from": "taxonomy",
+      "to": "deidentify",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "fallback",
-      "to": "bilingual",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "bilingual",
+      "from": "deidentify",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-5",
       "from": "release",
-      "to": "edit",
+      "to": "generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "generation",
+      "to": "views",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "edit",
-      "to": "subsets",
+      "from": "views",
+      "to": "viescore",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "subsets",
-      "to": "score",
+      "from": "viescore",
+      "to": "parser",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "parser",
+      "to": "aggregate",
       "type": "primary"
     }
   ],

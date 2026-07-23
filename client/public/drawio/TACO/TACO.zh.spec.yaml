@@ -5,14 +5,17 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: TACO 构建与评测流程
-  description: 对齐论文的竞赛编程问题采集、可执行解答筛选、语义去重、单元测试增强、多维标注与 Pass@k 评测流程。
-  legend: 上排从左到右为基准构建，下排从右到左为模型评测；发布集包含 25,443 个训练问题、 1,000 个测试问题与 1,539,152 个经验证的 Python 3 解答。
+  description: 对齐论文与官方仓库的多源收集、按来源限定的数据清洗、代码去重、仅测试集增强、算法标签归并、分评测器生成、 仓库 EOF 截断、全测试执行与 Pass@k 计算流程。
+  legend: >-
+    上方明确区分来源：仅新爬取数据经过平台解析与单元测试验证，仅 Description2code 经过 2to3，APPS 与 CodeContest
+    绕过这些限定步骤。三路汇合后做全局去重；仅测试集执行增强，再与原样保留的训练集汇入最终发布集。正文与表格写 25,443 个训练题，摘要写 25,433。
 nodes:
   - id: sources
     label: |-
-      七个问题来源
-      四个直接爬取的竞赛平台
-      APPS + CodeContest + Description2code
+      直接：CodeChef • CodeForces
+      HackerRank • GeeksforGeeks
+      导入：APPS • CodeContest
+      + Description2code
     type: database
     size: xl
     position:
@@ -20,137 +23,283 @@ nodes:
       'y': 100
   - id: parsers
     label: |-
-      平台专用解析
-      人工抽查解析器输出
-      少量 SVG 数学公式 OCR + 抓取标签
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 100
-  - id: solution_gate
-    label: |-
-      可执行解答门控
-      在测试上运行新爬取解答
-      用 2to3 转换 Python 2；排除失败项
+      仅新直接爬取数据
+      平台解析器 + 人工抽样
+      HackerRank SVG → OCR
+      人工验证修正 • 抓取标签
     type: process
     size: xl
     position:
       x: 600
-      'y': 100
-  - id: normalize
+      'y': 20
+  - id: source_route
     label: |-
-      规范化与去重
-      MinHash + Jaccard 阈值 0.85
-      AST 去注释并格式化
+      选择来源限定清洗
+      新爬取、Description2code
+      还是导入语料？
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 140
+  - id: solution_gate
+    label: |-
+      单元测试验证
+      仅新爬取数据
+      执行已提交解答
+      丢弃失败项
     type: process
     size: xl
     position:
       x: 880
-      'y': 100
-  - id: tests
+      'y': 20
+  - id: py2_conversion
     label: |-
-      单元测试增强
-      GPT-4 生成输入 + 30 个验证正确的解答
-      仅保留共识输出，直至至少 200 个测试
+      Python 2 → Python 3
+      仅 Description2code
+      运行 2to3
+      丢弃转换失败项
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 140
+  - id: imports
+    label: |-
+      导入语料
+      APPS + CodeContest
+      绕过爬取解析与验证
+      绕过 Description2code 2to3
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 260
+  - id: dedupe
+    label: |-
+      2,045,502 个代码样本
+      全局 MinHash + Jaccard 0.85
+      AST 去注释并格式化
+      保留 1,539,152 个解答
     type: process
     size: xl
     position:
       x: 1160
-      'y': 100
-  - id: release
+      'y': 140
+  - id: tests
     label: |-
-      TACO 发布集
-      25,443 个训练 + 1,000 个测试问题
-      1,539,152 个解答；36 类算法 + 8 项技能
-    type: database
+      仅测试集：增加测试
+      GPT-4 提议输入
+      30 个验证解答投票
+      重复至至少 200 个测试
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 260
+  - id: labels
+    label: |-
+      归并题目标签
+      968 个原始标签
+      → 36 类算法标签
+      其中包含 8 项技能
+    type: user
     size: xl
     position:
       x: 1440
-      'y': 100
+      'y': 140
+  - id: release
+    label: |-
+      TACO 发布集
+      25,443 训练题 + 1,000 测试题
+      摘要写 25,433 道训练题
+      正文与表格采用 25,443
+    type: database
+    size: xl
+    position:
+      x: 2560
+      'y': 140
+  - id: split_route
+    label: |-
+      选择已发布数据分区
+      训练集还是测试集？
+    type: decision
+    size: xl
+    position:
+      x: 1720
+      'y': 140
+  - id: train_split
+    label: |-
+      训练集资产
+      25,443 道题
+      不执行测试增强
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 20
+  - id: test_release
+    label: |-
+      增强后的测试集
+      1,000 道题
+      每题至少 200 个测试
+    type: database
+    size: xl
+    position:
+      x: 2280
+      'y': 260
   - id: prompt
     label: |-
-      测试问题输入
-      题面 + 约束 + 示例
+      测试题输入
+      题面 • 约束 • 样例
       标准输入或函数调用格式
     type: document
     size: xl
     position:
-      x: 1440
-      'y': 440
-  - id: sample
+      x: 2560
+      'y': 680
+  - id: evaluator_route
     label: |-
-      每题采样 200 次
-      top_p = 0.95
-      按难度使用温度 0.2 / 0.6 / 0.8
+      选择评测器变体
+      代码模型还是 GPT-4？
+    type: decision
+    size: xl
+    position:
+      x: 2280
+      'y': 680
+  - id: code_models
+    label: |-
+      代码模型协议
+      每题使用 200 seeds（随机种子）
+      top_p 0.95
+      温度 0.2 / 0.6 / 0.8
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 600
+  - id: gpt4
+    label: |-
+      GPT-4 协议
+      单样本 • 温度 0.7
+      追加 Python 指令
+      提取 Python 代码块 • Pass@1
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 760
+  - id: postprocess
+    label: |-
+      仓库后处理
+      仅 EOF 截断
+      在四个已发布标记处截断
+      不推断缺失代码
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 680
+  - id: execute
+    label: |-
+      执行全部单元测试
+      标准输入或函数调用格式
+      捕获运行与输出失败
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 680
+  - id: correctness
+    label: |-
+      精确正确性门控
+      每个测试都必须通过
+      任一失败即拒绝候选
     type: process
     size: xl
     position:
       x: 1160
-      'y': 440
-  - id: postprocess
+      'y': 680
+  - id: metric
     label: |-
-      补全结果后处理
-      截断为完整程序
-      保留所需接口
-    type: process
-    size: xl
-    position:
-      x: 880
-      'y': 440
-  - id: execute
-    label: |-
-      执行全部单元测试
-      按所需输入输出模式运行
-      捕获编译、运行与输出错误
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 440
-  - id: correctness
-    label: |-
-      精确正确性门控
-      每个单元测试都必须通过
-      任一失败即拒绝该补全
-    type: process
-    size: xl
-    position:
-      x: 320
-      'y': 440
-  - id: report
-    label: |-
-      TACO 结果
-      Pass@1 / Pass@10 / Pass@100
-      按难度与编程技能分组
+      无偏 Pass@k
+      代码模型：k = 1、10、100
+      GPT-4：Pass@1
+      按难度与技能汇总
     type: terminal
     size: xl
     position:
-      x: 40
-      'y': 440
+      x: 880
+      'y': 680
 edges:
   - from: sources
+    to: source_route
+    type: primary
+  - from: source_route
     to: parsers
     type: primary
+    label: 仅新爬取数据
   - from: parsers
     to: solution_gate
     type: primary
   - from: solution_gate
-    to: normalize
+    to: dedupe
     type: primary
-  - from: normalize
+  - from: source_route
+    to: py2_conversion
+    type: primary
+    label: 仅 Description2code
+  - from: py2_conversion
+    to: dedupe
+    type: primary
+  - from: source_route
+    to: imports
+    type: primary
+    label: APPS + CodeContest（绕过）
+  - from: imports
+    to: dedupe
+    type: primary
+  - from: dedupe
+    to: labels
+    type: primary
+  - from: labels
+    to: split_route
+    type: primary
+  - from: split_route
+    to: train_split
+    type: primary
+    label: 训练集 • 不增强
+  - from: split_route
     to: tests
     type: primary
+    label: 仅测试集
   - from: tests
+    to: test_release
+    type: primary
+  - from: train_split
+    to: release
+    type: primary
+  - from: test_release
     to: release
     type: primary
   - from: release
     to: prompt
     type: primary
   - from: prompt
-    to: sample
+    to: evaluator_route
     type: primary
-  - from: sample
+  - from: evaluator_route
+    to: code_models
+    type: primary
+    label: 代码模型
+  - from: evaluator_route
+    to: gpt4
+    type: primary
+    label: GPT-4 评测
+  - from: code_models
+    to: postprocess
+    type: primary
+  - from: gpt4
     to: postprocess
     type: primary
   - from: postprocess
@@ -160,6 +309,6 @@ edges:
     to: correctness
     type: primary
   - from: correctness
-    to: report
+    to: metric
     type: primary
 modules: []

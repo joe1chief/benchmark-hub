@@ -5,144 +5,219 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: C-Eval 构建流程
-  description: >-
-    按论文对齐的 C-Eval 流程：考试题被组织为 52 个学科、四个层级与四大领域，从 PDF、Word 和网页解析， 规范为四选一并校正
-    LaTeX，去重清洗且经过多轮人工复核，再按学科切分，最终以正则抽取答案并按准确率评测，测试标签不公开。
-  legend: 实线表示构建与评测主流程；上下分支表示官方数据切分的不同用途。
+  description: 与论文一致地构建 13,948 道中文考试选择题；由 GPT-4 为开发集生成解释并经人工修订；分别执行零样本仅答案、 五样本仅答案与五样本思维链协议；明确区分论文中的私有测试标签与仓库在 2025 年公开完整测试集的版本边界。
+  legend: 实线表示构建与评测；虚线数据箭头提供样例或版本背景。
 nodes:
   - id: sources
     label: |-
-      模拟 / 地方 / 高校
-      职业考试
+      收集中文考试题
+      模拟 • 地方 • 大学 • 职业考试
+      包含获授权的维普题目
     type: database
-    size: large
+    size: xl
     position:
       x: 40
-      'y': 240
+      'y': 420
   - id: taxonomy
     label: |-
-      52 个学科
-      4 层级 + 4 领域
+      组织为 52 个学科
+      四个层级 + 四个领域
+      每学科至少 200 题
     type: process
-    size: large
+    size: xl
     position:
-      x: 240
-      'y': 240
+      x: 290
+      'y': 420
   - id: parse
     label: |-
-      解析 PDF / Word
-      与网页
+      解析来源格式
+      PDF • Word • 网页
+      恢复题干与选项
     type: document
-    size: large
+    size: xl
     position:
-      x: 440
-      'y': 240
+      x: 540
+      'y': 420
   - id: format
     label: |-
-      统一为四选一
-      规范 LaTeX
+      统一每道题格式
+      恰好四个选项
+      数学内容转换为 LaTeX
     type: process
-    size: large
+    size: xl
     position:
-      x: 640
-      'y': 240
+      x: 790
+      'y': 420
   - id: clean
     label: |-
-      去重
-      与清洗
+      去重与清洗
+      删除无效或损坏题目
+      保留学科元数据
     type: process
-    size: large
-    position:
-      x: 840
-      'y': 240
-  - id: validate
-    label: |-
-      多轮
-      人工复核
-    type: process
-    size: large
+    size: xl
     position:
       x: 1040
-      'y': 240
+      'y': 420
+  - id: validate
+    label: |-
+      多轮人工验证
+      检查题目、选项与答案
+      修正剩余错误
+    type: user
+    size: xl
+    position:
+      x: 1290
+      'y': 420
   - id: pool
     label: |-
-      C-Eval
-      13,948 道题
+      C-Eval 题库
+      13,948 道多项选择题
+      覆盖 52 个学科
     type: database
-    size: large
+    size: xl
     position:
-      x: 1240
-      'y': 240
+      x: 1540
+      'y': 420
   - id: split
-    label: 按学科切分
+    label: |-
+      在每个学科内切分
+      开发集：5 个样例
+      验证集 : 测试集 = 1 : 9
     type: decision
-    size: large
+    size: xl
     position:
-      x: 1440
-      'y': 240
+      x: 1790
+      'y': 420
   - id: dev
     label: |-
-      开发集：每科 5 题
-      含解题说明
+      开发集
+      每学科 5 个示例
+      提供标准答案
     type: document
-    size: large
+    size: xl
     position:
-      x: 1640
+      x: 2040
       'y': 40
-  - id: val
+  - id: validation
     label: |-
-      验证集：占 1/10
-      标签公开
+      验证集
+      非开发集题目的十分之一
+      公开答案标签
     type: document
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 240
-  - id: test
+      x: 2040
+      'y': 420
+  - id: test_set
     label: |-
-      测试集：占 9/10
-      标签保密
+      论文测试集
+      非开发集题目的十分之九
+      2023 年协议中标签私有
     type: document
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 440
+      x: 2040
+      'y': 800
   - id: hard
     label: |-
       C-Eval Hard
-      8 个数理化学科
+      八个高难 STEM 学科
+      作为附加子集报告
     type: document
-    size: large
+    size: xl
     position:
-      x: 1840
+      x: 1790
       'y': 40
-  - id: prompt
+  - id: gpt4_explanations
     label: |-
-      零样本 / 五样本
-      仅答案 + 思维链
+      GPT-4 生成逐步解释
+      输入开发集题目
+      条件中包含标准答案
     type: process
-    size: large
+    size: xl
     position:
-      x: 1840
-      'y': 280
+      x: 2290
+      'y': 40
+  - id: human_revision
+    label: |-
+      人工修订
+      纠正并完善 GPT-4 解释
+      与开发集示例一起发布
+    type: user
+    size: xl
+    position:
+      x: 2540
+      'y': 40
+  - id: release_boundary
+    label: |-
+      版本边界
+      论文：测试标签私有
+      仓库自 2025-07-27 起完整测试集公开
+    type: document
+    size: xl
+    position:
+      x: 2290
+      'y': 800
+  - id: evaluation_sets
+    label: |-
+      选择评测切分
+      验证集 • 测试集 • C-Eval Hard
+      保留论文时期的报告协议
+    type: database
+    size: xl
+    position:
+      x: 2540
+      'y': 420
+  - id: zero_answer
+    label: |-
+      零样本仅答案
+      要求输出选项字母
+      不提供演示样例
+    type: process
+    size: xl
+    position:
+      x: 2790
+      'y': 40
+  - id: five_answer
+    label: |-
+      五样本仅答案
+      使用开发集题目与答案
+      上下文过长时减少样例数
+    type: process
+    size: xl
+    position:
+      x: 2790
+      'y': 420
+  - id: five_cot
+    label: |-
+      五样本思维链
+      使用人工修订的开发集解释
+      上下文过长时减少样例数
+    type: process
+    size: xl
+    position:
+      x: 2790
+      'y': 800
   - id: extract
     label: |-
-      正则抽取
-      答案选项
+      正则抽取选项
+      解析模型预测的选项
+      应用官方答案规则
     type: process
-    size: large
+    size: xl
     position:
-      x: 2040
-      'y': 280
+      x: 3040
+      'y': 420
   - id: score
     label: |-
-      准确率
-      私有测试榜单
+      报告准确率
+      学科与总体平均
+      对比三种提示模式
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 2240
-      'y': 280
+      x: 3290
+      'y': 420
 edges:
   - from: sources
     to: taxonomy
@@ -168,33 +243,55 @@ edges:
   - from: pool
     to: hard
     type: data
-    waypoints:
-      - x: 1340
-        'y': 120
-      - x: 1740
-        'y': 120
   - from: split
     to: dev
     type: primary
   - from: split
-    to: val
+    to: validation
     type: primary
   - from: split
-    to: test
+    to: test_set
     type: primary
   - from: dev
-    to: prompt
+    to: gpt4_explanations
     type: primary
-  - from: val
-    to: prompt
+  - from: gpt4_explanations
+    to: human_revision
     type: primary
-  - from: test
-    to: prompt
+  - from: test_set
+    to: release_boundary
+    type: data
+  - from: validation
+    to: evaluation_sets
+    type: primary
+  - from: test_set
+    to: evaluation_sets
     type: primary
   - from: hard
-    to: prompt
+    to: evaluation_sets
+    type: data
+  - from: evaluation_sets
+    to: zero_answer
     type: primary
-  - from: prompt
+  - from: evaluation_sets
+    to: five_answer
+    type: primary
+  - from: evaluation_sets
+    to: five_cot
+    type: primary
+  - from: dev
+    to: five_answer
+    type: data
+  - from: human_revision
+    to: five_cot
+    type: data
+  - from: zero_answer
+    to: extract
+    type: primary
+  - from: five_answer
+    to: extract
+    type: primary
+  - from: five_cot
     to: extract
     type: primary
   - from: extract

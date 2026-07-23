@@ -5,153 +5,269 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: JointAVBench 构建流程
-  description: 对齐论文的 JointAVBench 构建流程：从 SF20K 影片生成场景级全模态描述，合成严格音视频相关问题， 经自动与人工质检、标签复审后，以确定性选择题准确率评测。
-  legend: 三阶段自动流程生成 3,974 道选择题；专业人工复核与事后标签审计保留 2,853 题，标签精修不改变样本数。
+  description: 与论文 v2 对齐的构建流程：从 SF20K 的 1,046 部可用影片出发，经视觉与音频双通道描述、按任务合成问答、 四项通用检查与三类专项检查、人类标注评分和纠错、答案标签审计，最终进入官方选择题评测协议。
+  legend: 实线箭头表示构建与评测主链，虚线数据箭头表示证据、发布与漂移边界；协议以论文 v2 为准， 固定 Git 与 Hugging Face 版本只界定公开制品。
 nodes:
-  - id: taxonomy
+  - id: evidence
     label: |-
-      定义联合音视频要求
-      15 个任务 · 5 个认知维度
-      4 类音频 · 3 类场景跨度
-      每题必须同时依赖音频与视频
+      主要证据与固定版本
+      arXiv:2512.12772v2 · 2026-05
+      ICLR 2026 · OR Zg1YH8R5GG
+      Git dbd84e1 · HF ae27ad8
+      协议以论文 v2 为准
     type: document
     size: xl
     position:
       x: 20
-      'y': 40
-  - id: films
+      'y': 20
+  - id: taxonomy
     label: |-
-      筛选高质量影片来源
-      Short-Films 20K：1,072 部影片
-      去除不可用或灰度视频
-      保留 1,046 部专业影片
-    type: database
+      定义严格联合音视频分类体系
+      15 个任务 · 5 个认知维度
+      4 类音频 · 3 类场景跨度
+      每个答案必须同时依赖音频与视频
+    type: document
     size: xl
     position:
       x: 300
-      'y': 40
+      'y': 20
+  - id: films
+    label: |-
+      筛选 SF20K 影片来源
+      1,072 部专业制作短片
+      去除不可用或灰度视频
+      保留 1,046 部可用影片
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 20
   - id: scenes
     label: |-
       识别语义一致场景
-      用 PySceneDetect 切分长视频
+      PySceneDetect 切分长视频
       合并高度相似的相邻场景
       保留丰富的场景内上下文
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
+      x: 860
+      'y': 20
   - id: visual
     label: |-
-      生成视觉描述
-      Qwen2.5-VL 每秒采一帧
+      视觉描述通道
+      Qwen2.5-VL · 1 fps · 覆盖全部场景
       描述静态物体与人物
       描述运动与镜头转换
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: audio
+      x: 1140
+      'y': 0
+  - id: audio_base
     label: |-
-      生成并精修音频描述
-      语音 · 声纹特征 · 声音事件 · 音乐
-      降低描述幻觉
-      分离声音事件与音乐内容
+      音频描述通道
+      Whisper-v3 语音转写 + 精确时间戳
+      Qwen2.5-Omni：人声 / 声音 / 音乐
+      声音事件与音乐先一并生成
     type: process
     size: xl
     position:
       x: 1140
-      'y': 40
-  - id: qa
+      'y': 340
+  - id: audio_refine
     label: |-
-      合成严格相关问答
-      时序与情节任务使用模板
-      通用任务由大模型策划
-      仅提供指定场景与所需模态
+      Qwen2.5 音频描述精修
+      分离背景音乐与声音事件
+      将嗓音特征与转写对齐
+      去除幻觉和重复内容
     type: process
     size: xl
     position:
       x: 1420
-      'y': 40
-  - id: checks
+      'y': 340
+  - id: qa
     label: |-
-      从通用到专项的质量控制
-      模态依赖与逻辑可推导检查
-      顺序 · 歧义 · 音频类型检查
-      排除单模态捷径
+      Qwen2.5 按任务合成问答
+      时序 / 情节关系使用模板
+      通用任务由大模型策划
+      生成问题 + 答案 + 简短解释
     type: process
     size: xl
     position:
       x: 1700
-      'y': 40
+      'y': 170
+  - id: scope
+    label: |-
+      约束任务输入与场景跨度
+      只给所需场景和模态描述
+      单 / 多场景：仅高质量场景
+      全场景：使用全部场景描述
+      核验多场景信息区间
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 170
+  - id: qa_pool
+    label: |-
+      收集问答候选池
+      9,109 组问答
+      问题 · 答案 · 解释
+    type: database
+    size: xl
+    position:
+      x: 2260
+      'y': 170
+  - id: general_qc
+    label: |-
+      通用质检 · Qwen2.5 思维链
+      输入仅含问答与解释
+      模态 · 格式 · 内容 · 臆测
+      排除单模态或证据不足的答案
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 20
+  - id: specific_qc
+    label: |-
+      任务专项质检
+      顺序检查：VSSR / MPO
+      歧义检查：SPL / SOER
+      音频信号类型检查：声音事件 / 音乐
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 340
   - id: distractors
     label: |-
-      生成三个可信干扰项
-      错误来源或混淆细节
-      保留一个已验证正确答案
+      过滤问答后生成干扰项
+      三个可信但错误的干扰项
+      错误细节 · 时间 / 空间错位
       形成四选一问题
     type: process
     size: xl
     position:
-      x: 1700
-      'y': 380
-  - id: generated
+      x: 2820
+      'y': 170
+  - id: automated
     label: |-
-      自动候选集
-      3,974 道选择题
-      问题 · 解释 · 四个选项
-      视频与片段元数据
+      三阶段自动流程输出
+      3,974 道四选一问题
+      问题 · 解释 · 视频 / 片段
     type: database
     size: xl
     position:
-      x: 1420
-      'y': 380
-  - id: human
+      x: 3100
+      'y': 170
+  - id: human_rating
     label: |-
-      专业人工复核
-      答案与信息正确性
-      音视频依赖性与难度
-      接受 · 待审 · 丢弃
+      人类标注员评分与纠错
+      答案正确性 + 信息正确性
+      音视频依赖性 + 问题难度
+      正确答案在干扰项中时修正标签
     type: user
     size: xl
     position:
-      x: 1140
-      'y': 380
-  - id: audit
+      x: 3100
+      'y': 650
+  - id: human_filter
     label: |-
-      事后答案标签精修
-      外部强模型独立选择答案
-      与人工标签通过多数投票合并
-      只修标签不删除样本
+      人工决定样本去留
+      接受：直接保留
+      待审：按评分进一步筛选
+      先剔除错答，再按其余标准筛选
+      因答案错误剔除 17.4%
     type: process
     size: xl
     position:
-      x: 860
-      'y': 380
+      x: 2820
+      'y': 650
+  - id: label_audit
+    label: |-
+      事后答案标签精修
+      外部强模型独立选择答案
+      与原人工标注进行多数投票
+      无多数结论 → 保留人工标签
+      不删样本；重新计算论文结果
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 650
   - id: dataset
     label: |-
-      发布 JointAVBench · 2,853 题
-      人工复核选择题 · 保留率 71.8%
+      审计后的 JointAVBench
+      2,853 题 · 保留率 71.8%
       平均视频时长 97.2 秒
-      含任务音频类型与场景元数据
+      15 任务 · 音频类型 · 场景跨度
     type: database
     size: xl
     position:
-      x: 580
-      'y': 380
-  - id: evaluate
+      x: 2260
+      'y': 650
+  - id: eval_setup
     label: |-
-      评测联合音视频推理
-      随机打乱选项 · 统一 32 帧
-      精确比较正确选项
-      汇报总体与 15 任务准确率
+      论文评测协议
+      随机打乱四个选项
+      仅输入问题文本 · 统一 32 帧
+      适用时使用模型官方默认配置
+    type: process
+    size: xl
+    position:
+      x: 1980
+      'y': 650
+  - id: parser
+    label: |-
+      Git dbd84e1 输出解析器
+      汇集正则 / 前缀 / 选项文本匹配
+      单词输出兜底 · 仅接受唯一 A–D
+      与打乱后的正确前缀精确比较
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 650
+  - id: report
+    label: |-
+      汇报准确率
+      总体 + 各任务
+      各音频类型 + 场景跨度
     type: terminal
     size: xl
     position:
-      x: 300
-      'y': 380
+      x: 1420
+      'y': 650
+  - id: artifact_boundary
+    label: |-
+      受限数据集 / 视频边界
+      HF ae27ad：仅研究或教育用途
+      低清片段 + YouTube 原始链接
+      不得将视频片段作为独立媒体再分发
+      HF 卡片元数据：CC BY-SA 4.0
+    type: document
+    size: xl
+    position:
+      x: 860
+      'y': 650
+  - id: drift
+    label: |-
+      论文 / 代码 / 元数据漂移
+      论文附录 H：CC BY-NC-SA 4.0
+      Git dbd84e1 代码：Apache 2.0
+      README 的最高 56.2% 已过时
+      论文 v2 报告 65.3% · 以论文为准
+    type: document
+    size: xl
+    position:
+      x: 580
+      'y': 650
 edges:
+  - from: evidence
+    to: taxonomy
+    type: data
   - from: taxonomy
     to: films
     type: primary
@@ -161,31 +277,61 @@ edges:
   - from: scenes
     to: visual
     type: primary
-  - from: visual
-    to: audio
+  - from: scenes
+    to: audio_base
     type: primary
-  - from: audio
+  - from: audio_base
+    to: audio_refine
+    type: primary
+  - from: visual
+    to: qa
+    type: primary
+  - from: audio_refine
     to: qa
     type: primary
   - from: qa
-    to: checks
+    to: scope
     type: primary
-  - from: checks
+  - from: scope
+    to: qa_pool
+    type: primary
+  - from: qa_pool
+    to: general_qc
+    type: primary
+  - from: general_qc
+    to: specific_qc
+    type: primary
+  - from: specific_qc
     to: distractors
     type: primary
   - from: distractors
-    to: generated
+    to: automated
     type: primary
-  - from: generated
-    to: human
+  - from: automated
+    to: human_rating
     type: primary
-  - from: human
-    to: audit
+  - from: human_rating
+    to: human_filter
     type: primary
-  - from: audit
+  - from: human_filter
+    to: label_audit
+    type: primary
+  - from: label_audit
     to: dataset
     type: primary
   - from: dataset
-    to: evaluate
+    to: eval_setup
     type: primary
+  - from: eval_setup
+    to: parser
+    type: primary
+  - from: parser
+    to: report
+    type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
+  - from: artifact_boundary
+    to: drift
+    type: data
 modules: []

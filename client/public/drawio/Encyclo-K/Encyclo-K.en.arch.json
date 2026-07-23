@@ -7,62 +7,80 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 9,
-    "edges": 8,
+    "nodes": 12,
+    "edges": 11,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "Fixed evidence boundary\narXiv:2512.24867v2\nrepo @ 5549c73\nHF dataset @ 0f81da9",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "books",
-      "label": "Select 62 university / graduate textbooks\n11 disciplines · 43 source subfields (§3.1.1)\nauthoritative bilingual knowledge sources",
+      "label": "Select 62 textbooks\nuniversity / graduate level\n11 disciplines\n43 source subfields (§3.1.1)\nauthoritative sources",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "screenshots",
-      "label": "Manually capture textbook screenshots\nmask irrelevant content with mosaics\nretain grounded source context",
+      "label": "Manually capture\ntextbook screenshots\nmask irrelevant content\nwith mosaics\npreserve page grounding",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "extract",
-      "label": "Extract correct standalone statements\ndoubao-1.5-vision-pro-32k + titles\nindependence · clarity · conciseness rules",
+      "label": "Extract correct statements\nand titles from screenshots\ndoubao-1.5-vision-pro-32k\nindependence / completeness\nclarity / conciseness",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "correct_qc",
-      "label": "Filter and review correct statements\nremove images / references / ambiguous items\n3 annotators review 21,525 qualified statements",
+      "id": "correct_filter",
+      "label": "Sequential correct-statement QC\nimages: remove 3,269\nreferences / formula numbers /\nchemical equations: remove 642\nambiguity: remove 127\nretain 21,525",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "false_stmts",
-      "label": "Generate deceptive incorrect counterparts\nDeepSeek-R1 with six error patterns\nfilter short items → 21,494 false statements",
+      "id": "correct_review",
+      "label": "3 annotators review all 21,525\nno significant issue found\nformat compliance only\nno domain-expert\nquestion writing",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "false_generate",
+      "label": "DeepSeek-R1 false counterparts\nconcept substitution\ncausal inversion\ndetail falsification\ntemporal dislocation\nlogical paradox\nscope modification\ngenerate an error rationale",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "false_review",
+      "label": "Remove overly short samples\n→ 21,494 false statements\nmanually audit 200\n5 rationale mismatches\nstatements remain false\nno additional processing",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "pool",
-      "label": "Build the statement collection\n21,525 correct + 21,494 incorrect\n43,019 total · 44 fields / 62 subfields (Table 1)",
+      "label": "Statement pool: 43,019\n21,525 correct + 21,494 false\n28,045 English + 14,974 Chinese\n11 disciplines · 44 fields\n62 final subfields",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "assemble",
-      "label": "Dynamically sample and assemble questions\n8–10 statements · 4–8 options\neach option combines 2–4 statements",
+      "label": "Programmatic random assembly\n8–10 statements\n4–8 lettered options\n2–4 statements per option\nrepo omits builder code\nand standard seed",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dataset",
-      "label": "Encyclo-K standard configuration\n5,038 questions: 3,286 EN + 1,752 ZH\ndiscipline-proportional allocation",
+      "label": "Encyclo-K standard set\n5,038 questions\n3,286 English + 1,752 Chinese\ndiscipline-proportional\nstatements: i, ii, …\noptions: A, B, …",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "evaluate",
-      "label": "Parse option letters by regex tiers\nfallback to matching option content\nmisses count wrong · report accuracy",
+      "label": "Three regex groups\nsearch last line first\nthen full response\nfallback: exact\noption-content matching\nmiss = incorrect · accuracy",
       "type": "terminal",
       "size": "xl"
     }
@@ -70,48 +88,66 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "books",
+      "type": "data"
+    },
+    {
+      "id": "edge-2",
       "from": "books",
       "to": "screenshots",
       "type": "primary"
     },
     {
-      "id": "edge-2",
+      "id": "edge-3",
       "from": "screenshots",
       "to": "extract",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "extract",
-      "to": "correct_qc",
-      "type": "primary"
-    },
-    {
       "id": "edge-4",
-      "from": "correct_qc",
-      "to": "false_stmts",
+      "from": "extract",
+      "to": "correct_filter",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "false_stmts",
-      "to": "pool",
+      "from": "correct_filter",
+      "to": "correct_review",
       "type": "primary"
     },
     {
       "id": "edge-6",
+      "from": "correct_review",
+      "to": "false_generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "false_generate",
+      "to": "false_review",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "false_review",
+      "to": "pool",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
       "from": "pool",
       "to": "assemble",
       "type": "primary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-10",
       "from": "assemble",
       "to": "dataset",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-11",
       "from": "dataset",
       "to": "evaluate",
       "type": "primary"

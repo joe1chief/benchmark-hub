@@ -5,100 +5,146 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Finance Agent Benchmark 构建流程
-  description: 按论文还原专家构题、评分准则开发、工具型智能体评测和类别平衡计分流程。
-  legend: 实线箭头遵循 arXiv:2508.00828；评分准则由专家答案生成并经人工复核，全部准则通过且无矛盾才判为正确。
+  description: 与论文对齐的专家构建、评分规则、智能体协议及明确的公开/私有发布边界。
+  legend: 实线按 arXiv:2508.00828v1 展示；虚线把 50 行公开数据与固定的 2026 仓库执行器同论文协议分开。受限评分实现未在公开仓库发布。
 nodes:
-  - id: taxonomy
+  - id: evidence
     label: |-
-      咨询7位金融行业专家
-      银行 · 对冲基金 · 私募股权 / 初创公司
-      定义9类实务任务及难度
-    type: process
-    size: xl
-    position:
-      x: 40
-      'y': 250
-  - id: questions
-    label: |-
-      专家编写537道真实研究问题
-      要求查阅多份公开文档 / SEC申报文件
-      聚焦2024年及以后发布的文档
+      证据边界：arXiv:2508.00828v1
+      finance-agent @ 82337852
+      公开集 SHA 901e8cff
+      论文协议 + 固定 2026 仓库审计
     type: document
     size: xl
     position:
-      x: 300
-      'y': 250
-  - id: annotations
+      x: 40
+      'y': 180
+  - id: taxonomy
     label: |-
-      为每题附加专家监督信息
-      标准答案 · 必需来源文档
-      分步解法 / 计算推理轨迹
-    type: database
-    size: xl
-    position:
-      x: 560
-      'y': 250
-  - id: review
-    label: |-
-      每题由另一位专家交叉复核
-      修正或移除计算与内容错误
-      论文作者终审并统一格式
+      咨询 7 位金融行业从业者
+      定义 9 类真实分析师任务
+      从简单检索到困难市场分析
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: rubrics
+      x: 300
+      'y': 180
+  - id: questions
     label: |-
-      GPT-4o 抽取原子答案准则
-      作者人工核验每一条生成准则
-      另加入整段答案矛盾检查
+      专家编写 537 道多文档问题
+      使用 2024 年起的开放网页 / SEC 来源
+      覆盖检索、推理、建模与分析
+    type: document
+    size: xl
+    position:
+      x: 560
+      'y': 180
+  - id: annotations
+    label: |-
+      附上专家答案与必要来源
+      记录逐步求解轨迹
+      问题必须可由公开数据回答
+    type: database
+    size: xl
+    position:
+      x: 820
+      'y': 180
+  - id: peer_review
+    label: |-
+      异人专家检查每个样例
+      纠正或移除计算/内容错误
+      作者最后统一格式
     type: process
     size: xl
     position:
       x: 1080
-      'y': 250
-  - id: splits
+      'y': 180
+  - id: rubric_generation
     label: |-
-      各划分保持任务类别分布
-      公开验证集50 · 私有验证集150
-      完全私有测试集337
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: harness
-    label: |-
-      统一运行 ReAct 风格智能体框架
-      Google搜索 · EDGAR搜索 · HTML解析
-      通过键值存储检索信息
+      GPT-4o 提示返回 JSON 数组
+      从答案抽取原子 operator/criteria 检查
+      作者人工复核并加入矛盾项
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: judge
+      x: 1340
+      'y': 180
+  - id: splits
     label: |-
-      LLM 评委逐条判断评分准则
-      所有必需检查采用合取规则
-      与专家答案有任一矛盾即判错
+      保持 9 类任务的分布
+      公开验证 50 · 私有验证 150
+      完全私有测试 337 · 指标使用全部 537
+    type: database
+    size: xl
+    position:
+      x: 1600
+      'y': 180
+  - id: paper_prompt
+    label: |-
+      论文运行：相同用户提示，无系统提示
+      以 FINAL ANSWER 和来源结束
+      temperature 0 · 支持时最多 16,384
     type: process
     size: xl
     position:
       x: 1860
-      'y': 250
-  - id: metrics
+      'y': 180
+  - id: tools
     label: |-
-      报告带不确定性的准确率
-      主指标为9类准确率的等权平均
-      另报普通准确率、耗时、工具使用与成本
-    type: terminal
+      ReAct 风格智能体使用四个工具
+      GoogleSearch · EdgarSearch
+      ParseHTML · RetrieveInformation
+      后者访问键值存储
+    type: process
     size: xl
     position:
       x: 2120
-      'y': 250
+      'y': 180
+  - id: judge
+    label: |-
+      LLM 评审逐项评分原子规则
+      仅当全部正确性检查通过
+      且与专家答案无矛盾时才正确
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 180
+  - id: metrics
+    label: |-
+      主指标：9 类准确率等权平均
+      同时报告朴素逐题准确率
+      以及时间、工具使用与单题成本
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 180
+  - id: public_release
+    label: |-
+      公开仓库仅给出 50 行
+      public.csv：200 条正确性 + 50 条矛盾
+      私有样例与 Vals 评分均受限
+    type: database
+    size: xl
+    position:
+      x: 1860
+      'y': 470
+  - id: repo_protocol
+    label: |-
+      固定 2026 仓库的日期为 2025-04-07
+      submit_final_result · 32,000
+      最多 50 轮
+      评分实现与解析器均缺失
+    type: document
+    size: xl
+    position:
+      x: 2120
+      'y': 470
 edges:
+  - from: evidence
+    to: taxonomy
+    type: primary
   - from: taxonomy
     to: questions
     type: primary
@@ -106,21 +152,30 @@ edges:
     to: annotations
     type: primary
   - from: annotations
-    to: review
+    to: peer_review
     type: primary
-  - from: review
-    to: rubrics
+  - from: peer_review
+    to: rubric_generation
     type: primary
-  - from: rubrics
+  - from: rubric_generation
     to: splits
     type: primary
   - from: splits
-    to: harness
+    to: paper_prompt
     type: primary
-  - from: harness
+  - from: paper_prompt
+    to: tools
+    type: primary
+  - from: tools
     to: judge
     type: primary
   - from: judge
     to: metrics
     type: primary
+  - from: splits
+    to: public_release
+    type: secondary
+  - from: public_release
+    to: repo_protocol
+    type: secondary
 modules: []

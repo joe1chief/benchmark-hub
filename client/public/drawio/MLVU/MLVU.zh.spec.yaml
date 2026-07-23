@@ -1,177 +1,510 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
-  layout: horizontal
+  layout: vertical
   routing: orthogonal
-  title: MLVU 构建流程
-  description: 按论文重建通用长视频集合、九类任务的人工/数据集改编/合成标注流程、精确开发与测试集发布，以及选择题和生成题的独立评测。
-  legend: MLVU 包含 1,730 个视频和 3,102 个问题，其中开发集 2,593 题、测试集 509 题；开发集选择题为四选一、测试集为六选一， 生成题由 GPT-4 按每类任务两个维度评分。
+  canvas: auto
+  grid:
+    size: 8
+    snap: true
+  title: MLVU 构建、发布、推理与评分流程
+  description: 依据 arXiv:2406.04264v3、论文同期仓库数据和当前官方发布做有证据边界的重建；将论文九任务、3,102 题口径与后来十一任务测试集扩展分开，并区分公开字段与未披露的构建元数据。
+  legend: >-
+    实线表示论文 v3
+    生命周期，包括并行的任务构建以及相互独立的选择题/生成题评分分支。虚线仅连接发布或评测器审计背景，不表示下游处理；后续官方测试集漂移不计入论文九任务总量。图中分别标明论文事实、发布代码事实、可复算推断和未披露细节。
 nodes:
-  - id: ulvc
+  - id: b1
     label: |-
-      构建通用长视频集合
-      电影 · 电视剧 · 纪录片
-      监控 · 第一视角 · 动画
-      游戏及其他长视频来源
-    type: database
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: prepare
-    label: |-
-      选择 · 编辑 · 合成视频
-      使用完整视频或长片段
-      按需降分辨率或裁剪
-      形成 1,730 个基准视频
-    type: process
-    size: xl
-    position:
-      x: 300
-      'y': 40
-  - id: framework
-    label: |-
-      定义三类长视频理解层级
-      整体 · 使用全局信息
-      单细节 · 一个关键情节
-      多细节 · 联合多处证据
+      B1 · 锁定论文 v3
+      arXiv 2406.04264v3 · 2025-01-01
+      九类任务 · 23 个 MLLM
+      PDF SHA-256 653b5ca6…
+      v1/v2：1,334 视频 · 2,593 问题
     type: document
+    module: build
     size: xl
     position:
-      x: 580
+      x: 200
       'y': 40
-  - id: holistic
+    style:
+      fontSize: 10
+  - id: b2
     label: |-
-      创建整体理解任务
-      主题推理 · 355
-      异常识别 · 239
-      视频摘要 · 257
+      B2 · 构建 ULVC · 986 个视频
+      电影 168 · 纪录 60 · 游戏 65
+      监控 239 · 第一视角 100
+      卡通 72 · 电视剧 92
+      教程 60 · 体育 60 · 生活记录 70
+    type: database
+    module: build
+    size: xl
+    position:
+      x: 480
+      'y': 40
+    style:
+      fontSize: 10
+  - id: b3
+    label: |-
+      B3 · 转换 ULVC
+      选择 · 编辑 · 合成
+      SSC 整片 · VS 约 10 分钟片段
+      针式/动作任务使用 ULVC 背景
+      主集 3 分钟至 2+ 小时 · 时间阶梯 3/6/10 分钟
     type: process
+    module: build
     size: xl
     position:
-      x: 860
+      x: 760
       'y': 40
-  - id: single
+    style:
+      fontSize: 10
+  - id: b4
     label: |-
-      创建单细节任务
-      针式问答 · 415 · 第一视角推理 · 405
-      情节问答 · 589
-      子场景描述 · 247
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: multi
-    label: |-
-      创建多细节任务
-      动作排序 · 329
-      动作计数 · 266
-      合成探针片段与背景视频
-    type: process
-    size: xl
-    position:
-      x: 1420
-      'y': 40
-  - id: annotation
-    label: |-
-      组合多种标注策略
-      人工问题 · 摘要 · 描述
-      改编 UCF-Crime 与 Ego4D
-      GPT-4 辅助针式问答 · 合成动作
+      B4 · 整体理解任务
+      TR 355 · 人工主题选择题
+      AR 239 · UCF-Crime 标签改选择题
+      VS 257 · 人工纯视觉摘要
+      任务级质检见 R1
     type: user
+    module: build
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: quality
+      x: 480
+      'y': 240
+    style:
+      fontSize: 10
+  - id: b5
     label: |-
-      执行任务专用质量门禁
-      避免答案泄露和音频依赖
-      确认背景中无探针或目标动作
-      使用唯一线索与评分点
+      B5 · 单细节任务
+      NQA 415 · GPT-4 针式问答
+      ER 405 · Ego4D NLQ 改选择题
+      PQA 589 · 人工唯一情节问答
+      SSC 247 · 提示/描述/评分点
+    type: user
+    module: build
+    size: xl
+    position:
+      x: 760
+      'y': 240
+    style:
+      fontSize: 10
+  - id: b6
+    label: |-
+      B6 · 多细节任务
+      AO 329 · 动作探针排序
+      AC 266 · 重复探针计数
+      Kinetics/ActivityNet + ULVC
+      合成视频/问题/答案
     type: process
+    module: build
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: dataset
+      x: 1040
+      'y': 240
+    style:
+      fontSize: 10
+  - id: r1
     label: |-
-      汇总 MLVU
-      3,102 个问题 · 九类任务
-      选择题与生成题格式
-      片段级标注
+      R1 · 任务级质量控制
+      VS：纯视觉/按时序/无角色名
+      NQA/AO/AC：背景中无目标内容
+      PQA/SSC：唯一线索/无直接提示
+      SSC：非重复评分点
+    type: process
+    module: release
+    size: xl
+    position:
+      x: 760
+      'y': 440
+    style:
+      fontSize: 10
+  - id: r2
+    label: |-
+      R2 · 论文 v3 数据口径
+      1,730 个视频 · 3,102 个问题
+      开发集 2,593 · 测试集 509
+      7 类选择题 + 2 类生成题
+      开发集 4 选项 · 测试集 6 选项
     type: database
+    module: release
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: split
+      x: 760
+      'y': 600
+    style:
+      fontSize: 10
+  - id: r3
     label: |-
-      拆分开发集与测试集
-      开发集 · 2,593 · 四选一
-      测试集 · 509 · 六选一
-      保留每类任务
+      R3 · 公开开发集结构
+      选择题：video/duration/question
+      candidates/answer/question_type
+      SSC 加 scoring_points · VS 无 candidates
+      无 question_id/来源/质检字段
     type: document
+    module: release
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: multiple_choice
+      x: 40
+      'y': 560
+    style:
+      fontSize: 10
+  - id: r4
     label: |-
-      评测多项选择任务
-      模型零样本推理
-      均匀抽帧或帧率抽样
-      选项准确率 · M-Avg
+      R4 · 标签与访问边界
+      开发集答案公开
+      ee8ac098：测试答案隐藏
+      当前答案：2025-03-18 已发布
+      HF 视频/测试需通过门控
+      CC BY-NC-SA 4.0 · 视频可变
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 320
+      'y': 760
+    style:
+      fontSize: 10
+  - id: r5
+    label: |-
+      R5 · 可复现版本锁定
+      论文数据提交 4bcc3c0…
+      开发 4a16523… · 评测 10b31fa…
+      HEAD bc1a68d… · 无 Release
+      HF 开发 06ddc388… · 测试 dc6616b2…
+    type: database
+    module: release
+    size: xl
+    position:
+      x: 1040
+      'y': 560
+    style:
+      fontSize: 10
+  - id: r6
+    label: |-
+      R6 · 论文未披露构建细节
+      无 986→1,730 的逐项转换清单
+      无划分方法/互斥性声明
+      无标注一致性/拒绝率
+      无去重或训练污染扫描
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 1320
+      'y': 760
+    style:
+      fontSize: 10
+  - id: d1
+    label: |-
+      D1 · 后续测试集漂移
+      论文 v3：9 类任务 · 测试 509 题
+      当前增加体育/教程问答
+      11 类任务 · 测试 588 · 总计 3,181
+      不计入论文口径
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 760
+      'y': 800
+    style:
+      fontSize: 10
+  - id: e1
+    label: |-
+      E1 · 零样本评测
+      使用官方实现/API
+      图像 MLLM：多图帧序列
+      视频 MLLM：各自官方采样
+      不在 MLVU 上微调
     type: process
+    module: evaluate
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: generation
+      x: 1040
+      'y': 960
+    style:
+      fontSize: 10
+  - id: e2
     label: |-
-      用 GPT-4 评测生成任务
-      描述 · 准确性与相关性
-      摘要 · 完整性与可靠性
-      平均 0 至 10 分 · G-Avg
-    type: terminal
+      E2 · 按模型采样
+      均匀 N 帧或固定 N fps
+      VideoChat2 16 · LLaMA-VID 1 fps
+      GPT-4o 0.5 fps · Claude/Qwen 16
+      无统一帧数预算
+    type: process
+    module: evaluate
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1040
+      'y': 1120
+    style:
+      fontSize: 10
+  - id: e3
+    label: |-
+      E3 · 选择题提示
+      视频/图像模型系统提示
+      问题 + 候选选项
+      答案提示：
+      “Only choose the best option.
+      Best option: (”
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 760
+      'y': 1280
+    style:
+      fontSize: 10
+  - id: e4
+    label: |-
+      E4 · 生成任务提示
+      不加入选择题答案提示
+      VS：固定摘要问题
+      SSC：唯一 “Please describe…” 提示
+      输出自由文本
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1320
+      'y': 1280
+    style:
+      fontSize: 10
+  - id: e5
+    label: |-
+      E5 · GPT-4 裁判
+      论文未说明版本/解码参数
+      代码：gpt-4-turbo · temperature 0
+      SSC：准确性 + 相关性
+      VS：完整性 + 可靠性
+    type: process
+    module: evaluate
+    size: xl
+    position:
+      x: 1320
+      'y': 1440
+    style:
+      fontSize: 10
+  - id: e6
+    label: |-
+      E6 · 任务级输出
+      选择题：预测 + 正确选项
+      SSC：准确性 + 相关性
+      VS：完整性 + 可靠性
+      开发/测试结果分开报告
+    type: document
+    module: evaluate
+    size: xl
+    position:
+      x: 1040
+      'y': 1600
+    style:
+      fontSize: 10
+  - id: s1
+    label: |-
+      S1 · 选择题准确率
+      预测与正确选项精确匹配
+      Accuracy_t = Correct_t / Items_t
+      TR · AR · NQA · ER · PQA · AO · AC
+      不给部分分
+    type: formula
+    module: score
+    size: xl
+    position:
+      x: 480
+      'y': 1760
+    style:
+      fontSize: 10
+  - id: s2
+    label: |-
+      S2 · M-Avg
+      七类任务准确率的平均值
+      不按题量加权的宏平均
+      由论文表格复算和代码支持
+      论文未直接打印此公式
+    type: formula
+    module: score
+    size: xl
+    position:
+      x: 480
+      'y': 1920
+    style:
+      fontSize: 10
+  - id: s3
+    label: |-
+      S3 · SSC 分数
+      准确性：按评分点给 1–5 分
+      相关性：1–5 分
+      SSC = 平均准确性 + 平均相关性
+      有效范围：2–10
+    type: formula
+    module: score
+    size: xl
+    position:
+      x: 1040
+      'y': 1760
+    style:
+      fontSize: 10
+  - id: s4
+    label: |-
+      S4 · VS 分数
+      完整性 1–5 · 可靠性 1–5
+      VS = 平均完整性 + 平均可靠性
+      有效范围：2–10
+      Figure 8 写 “Correctness”；代码用可靠性
+    type: formula
+    module: score
+    size: xl
+    position:
+      x: 1600
+      'y': 1760
+    style:
+      fontSize: 10
+  - id: s5
+    label: |-
+      S5 · G-Avg
+      (SSC 任务分 + VS 任务分) / 2
+      两类任务不加权宏平均
+      可由论文表格复算
+      论文未直接打印此公式
+    type: terminal
+    module: score
+    size: xl
+    position:
+      x: 1320
+      'y': 1920
+    style:
+      fontSize: 10
+  - id: s6
+    label: |-
+      S6 · 评测器缺口
+      无种子/解码参数/重复次数/方差
+      choice_bench.py 的 pred 未定义
+      裁判脚本依赖脆弱文本查找
+      无合并 G-Avg 的脚本
+    type: document
+    module: score
+    size: xl
+    position:
+      x: 1600
+      'y': 1560
+    style:
+      fontSize: 10
 edges:
-  - from: ulvc
-    to: prepare
+  - from: b1
+    to: b2
     type: primary
-  - from: prepare
-    to: framework
+  - from: b2
+    to: b3
     type: primary
-  - from: framework
-    to: holistic
+  - from: b3
+    to: b4
     type: primary
-  - from: holistic
-    to: single
+  - from: b3
+    to: b5
     type: primary
-  - from: single
-    to: multi
+  - from: b3
+    to: b6
     type: primary
-  - from: multi
-    to: annotation
+  - from: b4
+    to: r1
     type: primary
-  - from: annotation
-    to: quality
+  - from: b5
+    to: r1
     type: primary
-  - from: quality
-    to: dataset
+  - from: b6
+    to: r1
     type: primary
-  - from: dataset
-    to: split
+  - from: r1
+    to: r2
     type: primary
-  - from: split
-    to: multiple_choice
+  - from: r2
+    to: r3
+    type: secondary
+    style:
+      dashed: true
+  - from: r2
+    to: r4
+    type: secondary
+    style:
+      dashed: true
+  - from: r2
+    to: r5
+    type: secondary
+    style:
+      dashed: true
+  - from: r2
+    to: r6
+    type: secondary
+    style:
+      dashed: true
+  - from: r2
+    to: d1
+    type: secondary
+    style:
+      dashed: true
+  - from: r2
+    to: e1
     type: primary
-  - from: multiple_choice
-    to: generation
+    waypoints:
+      - x: 1000
+        'y': 720
+      - x: 1000
+        'y': 912
+      - x: 1144
+        'y': 912
+  - from: e1
+    to: e2
     type: primary
-modules: []
+  - from: e2
+    to: e3
+    type: primary
+  - from: e2
+    to: e4
+    type: primary
+  - from: e4
+    to: e5
+    type: primary
+  - from: e3
+    to: e6
+    type: primary
+  - from: e5
+    to: e6
+    type: primary
+  - from: e6
+    to: s1
+    type: primary
+  - from: s1
+    to: s2
+    type: primary
+  - from: e6
+    to: s3
+    type: primary
+  - from: e6
+    to: s4
+    type: primary
+  - from: s3
+    to: s5
+    type: primary
+  - from: s4
+    to: s5
+    type: primary
+  - from: e6
+    to: s6
+    type: secondary
+    style:
+      dashed: true
+modules:
+  - id: build
+    label: 构建
+    color: $primaryLight
+  - id: release
+    label: 发布与审计
+    color: $secondaryLight
+  - id: evaluate
+    label: 推理
+    color: $accentLight
+  - id: score
+    label: 评分
+    color: $primaryLight

@@ -1,177 +1,444 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MILU 构建流程
-  description: 按论文重建 MILU 的印度本土考试题收集、多层清洗、学科归并、低资源缺口补齐、数据发布以及零样本与少样本准确率评测流程。
-  legend: MILU 包含覆盖 11 种语言、41 个学科和八大领域的 79,617 道测试题及独立 8,933 道验证题；GPT-4o 用于补齐学科-语言缺口， IndicTrans2 仅用于恢复主题标签。
+  title: MILU 构建与评测流程
+  description: 按论文 v3 重建 MILU 的印度本土考试题收集、分层质检、主题恢复、学科-语言缺口补齐、79,617/8,933 发布、双评测路径， 并区分论文、受限 Hugging Face 数据与当前评测代码的聚合边界。
+  legend: 实线表示论文支持的构建流程与非 API 对数似然路径；虚线数据箭头表示独立验证集发布与 API 生成路径。底部无连线卡片是证据审计， 不是处理步骤；论文 v3、受限 Hugging Face 快照与当前评测代码不可合并为同一版本。
 nodes:
-  - id: collect
+  - id: evidence
     label: |-
-      抓取已发布考试试卷
-      超过 40 类考试
-      国家级 · 邦级 · 区域级网站
-      超过 15 万道原始问题
-    type: database
-    size: xl
-    position:
-      x: 20
-      'y': 40
-  - id: coverage
-    label: |-
-      保留印度本土覆盖
-      11 种印度语言
-      通识与文化知识
-      邦史 · 艺术 · 法律 · 理工
+      固定一手证据
+      arXiv 2411.02538v3
+      修订 2025-02-04
+      PDF a862d7eb…
+      Git 7d8e6c9 · HF 946c423
+      数据提交 be958af
     type: document
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: format_filter
+      x: 40
+      'y': 60
+  - id: exam_sources
     label: |-
-      统一多项选择格式
-      去除阅读理解题
-      去除图像问题
-      去除超过 4 个选项的题目
+      选择考试来源
+      公开国家级 · 邦级 · 区域级网站
+      1,500 多场考试
+      40 多类 · 覆盖近年试卷
+      专家答案 · 网站人工标签
+    type: database
+    size: xl
+    position:
+      x: 280
+      'y': 60
+  - id: scrape
+    label: |-
+      抓取已发布试卷
+      15 万多道原始多选题
+      11 种语言且含英语
+      通识 + 文化特定知识
+      地方史 · 艺术 · 节庆 · 法律
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: clean
+      x: 520
+      'y': 60
+  - id: format_qc
     label: |-
-      执行多层清洗
+      执行格式质检
+      去除阅读理解
+      去除图像题
+      去除超过四个选项的问题
+      保留统一四选一题
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 60
+  - id: language_qc
+    label: |-
+      执行分层清洗
       人工检查大规模样本
-      IndicLID 加 Unicode 语言过滤
-      去除重复问题
+      IndicLID + Unicode 检查
+      去除语言错误记录
+      问题去重
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: recover_tags
+      x: 1000
+      'y': 60
+  - id: topic_recovery
     label: |-
-      恢复缺失主题标签
-      初始仅 45% 标签准确
-      用 IndicTrans2 翻译成英文
-      GPT-4o-mini 生成约 2 万标签
+      恢复缺失主题
+      仅约 45% 标签准确
+      IndicTrans2 译成英文
+      GPT-4o-mini 分配主题
+      约 2 万个细粒度标签
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
+      x: 1000
+      'y': 280
   - id: taxonomy
     label: |-
-      归并主题分类体系
-      NV-Embed-v2 标签向量
+      构建主题分类
+      NV-Embed-v2 嵌入标签
       K-means 聚为 50 簇
-      人工合并为 41 学科 · 8 领域
+      人工复核并合并
+      41 学科 · 八大领域
     type: user
     size: xl
     position:
-      x: 1420
-      'y': 40
+      x: 760
+      'y': 280
   - id: gap_fill
     label: |-
       补齐学科-语言缺口
       每个组合至少 100 题
-      从相同英文科目抽题
-      用任务感知 GPT-4o 翻译
+      抽取同科英文题
+      任务感知 GPT-4o 翻译
+      每个组合最多 500 题
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: final_audit
+      x: 520
+      'y': 280
+  - id: final_qc
     label: |-
       执行最终语言审计
-      从每种语言抽样
+      每种语言抽样
       人工验证准确性
       修正剩余错误
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: dataset
+      x: 280
+      'y': 280
+  - id: test_release
     label: |-
-      发布 MILU 测试集
-      79,617 道四选一问题
-      11 种语言 · 41 个学科
-      八个主要领域
+      发布测试集
+      79,617 道四选一题
+      19,915 道翻译题 · 约 25%
+      11 种语言 · 41 学科
+      八大领域 · 发布各语言题量
     type: database
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: validation
+      x: 520
+      'y': 460
+  - id: validation_release
     label: |-
-      保留独立验证集
-      8,933 个样本
-      提供上下文示例
-      不与测试计分混合
+      发布验证集
+      8,933 例 · 覆盖全部 41 学科
+      仅用于少样本演示
+      未声明训练集
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 460
+  - id: public_contract
+    label: |-
+      发布行字段契约
+      question · 四选项 · target
+      翻译标记 · language
+      domain · subject
+      11 配置 · test + validation
+      CC BY 4.0 · 自动门控
     type: document
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: evaluate
+      x: 520
+      'y': 640
+  - id: harness
     label: |-
-      评测多项选择模型
-      零样本 · 一样本 · 五样本
-      解析所选选项
-      对照标准答案
+      固定官方评测代码
+      Git 7d8e6c9 · 任务 683a670
+      lm_eval 0.4.4 · MIT
+      ai4bharat/MILU · token=true
+      11 个任务 · 版本 0.0
+    type: service
+    size: xl
+    position:
+      x: 760
+      'y': 640
+  - id: eval_route
+    label: |-
+      评测分支
+      对数似然
+      或零样本 JSON
+    type: decision
+    size: xl
+    position:
+      x: 1000
+      'y': 640
+  - id: nonapi_setup
+    label: |-
+      设置非 API 样本数
+      论文：零/一/五样本
+      验证集提供演示
+      当前采样器 first_n
+      多数开放模型为五样本
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
+      x: 1000
+      'y': 820
+  - id: prompt
+    label: |-
+      渲染评测提示
+      Question: question
+      Choices: A-D · 四个选项
+      Answer:
+      指令模型可用聊天模板
+    type: document
+    size: xl
+    position:
+      x: 760
+      'y': 820
+  - id: loglikelihood
+    label: |-
+      为四个选项计分
+      每个选项以提示为条件
+      累加目标 token 对数概率
+      选择最高分
+      不使用生成解析器
+    type: process
+    size: xl
+    position:
+      x: 520
+      'y': 820
+  - id: item_accuracy
+    label: |-
+      计算单题准确率
+      option1-option4 映射 0-3
+      比较预测与标准答案
+      正确 1 · 错误 0
+      取平均准确率
+    type: process
+    size: xl
+    position:
+      x: 280
+      'y': 820
+  - id: language_score
+    label: |-
+      计算逐语言分数
+      11 个测试配置
+      论文单元格为八领域均值
+      分析学科与资源等级
+      保留对应样本设置
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 820
+  - id: api_generate
+    label: |-
+      执行论文 API 路径
+      闭源模型 · 仅零样本
+      不支持提示对数概率
+      生成结构化 JSON
+      成本限制一/五样本
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 1020
+  - id: api_parse
+    label: |-
+      解析 API 响应
+      提取所选答案
+      JSON schema/解析器未发布
+      固定代码中无 API 任务
+    type: document
+    size: xl
+    position:
+      x: 520
+      'y': 1020
+  - id: paper_aggregate
+    label: |-
+      计算论文汇总
+      11 种语言宏平均
+      GPT-4o 74.74% · API 零样本
+      开放模型多数五样本
+      明确保留混合样本设置
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 1100
   - id: report
     label: |-
-      报告准确率
-      按语言与领域汇总
-      分析学科与资源等级
-      比较 42 个模型
+      报告论文分析
+      语言 · 领域 · 学科
+      模型家族 · 规模 · 资源等级
+      可用时报告零/一/五样本
+      HF 卡片不等于新评测
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 280
+      'y': 1100
+  - id: construction_gaps
+    label: |-
+      未披露的构建细节
+      网站 URL · 收集日期
+      标注者 · 一致性
+      去重方法 · 质检样本量
+      翻译提示/模型 · 随机种子
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 1320
+  - id: release_boundary
+    label: |-
+      当前 HF 边界
+      HF 946c423 · 自动门控
+      仅列出 11 × 2 个 Parquet
+      实体/Dataset Server 返回 401
+      未独立审计当前数据行
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 1320
+  - id: data_history
+    label: |-
+      发布历史边界
+      初始数学格式缺陷
+      v3 计分排除数学题
+      数据于 2025-04-28 重推
+      表格 79,617 · 正文约 85K
+    type: document
+    size: xl
+    position:
+      x: 520
+      'y': 1320
+  - id: repo_boundary
+    label: |-
+      论文/评测代码边界
+      论文未固定代码提交
+      当前少样本为 first_n
+      README: --apply_chat_template
+      未发布完整运行命令
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 1500
+  - id: aggregation_boundary
+    label: |-
+      聚合边界
+      论文单元格：领域均值
+      总分：11 种语言宏平均
+      代码组：weight_by_size
+      派生 75.95：反事实值
+      非官方 · 非复现
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 1500
+  - id: reporting_drift
+    label: |-
+      论文/README 数量漂移
+      摘要：超过 42 个模型
+      第 4 节 42 · 引言/结论 45
+      任务 README：42 学科 · 72%
+      v3/卡片：41 学科 · 74%
+    type: document
+    size: xl
+    position:
+      x: 520
+      'y': 1500
 edges:
-  - from: collect
-    to: coverage
+  - from: evidence
+    to: exam_sources
     type: primary
-  - from: coverage
-    to: format_filter
+  - from: exam_sources
+    to: scrape
     type: primary
-  - from: format_filter
-    to: clean
+  - from: scrape
+    to: format_qc
     type: primary
-  - from: clean
-    to: recover_tags
+  - from: format_qc
+    to: language_qc
     type: primary
-  - from: recover_tags
+  - from: language_qc
+    to: topic_recovery
+    type: primary
+  - from: topic_recovery
     to: taxonomy
     type: primary
   - from: taxonomy
     to: gap_fill
     type: primary
   - from: gap_fill
-    to: final_audit
+    to: final_qc
     type: primary
-  - from: final_audit
-    to: dataset
+  - from: final_qc
+    to: test_release
     type: primary
-  - from: dataset
-    to: validation
+  - from: final_qc
+    to: validation_release
+    type: data
+  - from: test_release
+    to: public_contract
     type: primary
-  - from: validation
-    to: evaluate
+  - from: validation_release
+    to: public_contract
+    type: data
+    waypoints:
+      - x: 280
+        'y': 590
+      - x: 480
+        'y': 590
+      - x: 480
+        'y': 690
+  - from: public_contract
+    to: harness
     type: primary
-  - from: evaluate
+  - from: harness
+    to: eval_route
+    type: primary
+  - from: eval_route
+    to: nonapi_setup
+    type: primary
+  - from: nonapi_setup
+    to: prompt
+    type: primary
+  - from: prompt
+    to: loglikelihood
+    type: primary
+  - from: loglikelihood
+    to: item_accuracy
+    type: primary
+  - from: eval_route
+    to: api_generate
+    type: data
+    waypoints:
+      - x: 1240
+        'y': 690
+      - x: 1240
+        'y': 1070
+      - x: 1000
+        'y': 1070
+  - from: api_generate
+    to: api_parse
+    type: data
+  - from: api_parse
+    to: item_accuracy
+    type: data
+  - from: item_accuracy
+    to: language_score
+    type: primary
+  - from: language_score
+    to: paper_aggregate
+    type: primary
+  - from: paper_aggregate
     to: report
     type: primary
 modules: []

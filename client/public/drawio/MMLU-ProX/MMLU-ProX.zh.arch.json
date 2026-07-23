@@ -1,155 +1,393 @@
 {
   "version": 1,
-  "title": "MMLU-ProX 构建流程",
+  "title": "MMLU-ProX v2 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 30,
+    "edges": 31,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "以 MMLU-Pro 为源数据\n57 个学科 · 14 个领域\n每题十个选项\n英文推理型题目",
+      "id": "mmlu_pro",
+      "label": "MMLU-Pro 英文源题\n侧重推理的多项选择题\n14 个学科领域\n最多 10 个答案选项",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "clean",
-      "label": "整理英文源题\n删除或合并重复题\n修复语法与符号\n对齐问题与选项",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "translate",
-      "label": "阶段一：初始翻译\n使用 Claude 3.7 Sonnet\n保留术语与文化含义\n保持数学代码及格式",
+      "id": "curate",
+      "label": "人工清洗英文源题\n删除 / 合并完全与部分重复题\n修正语法 · 连字符 · 符号\n修复题干与选项不匹配\n4 名跨学科专家 · 约 20 小时",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "reflect",
-      "label": "阶段二：自我反思\n检查与源文对应关系\n核验名称与专业术语\n发现增译或漏译",
+      "id": "initial_translate",
+      "label": "I · 初始翻译\nClaude Sonnet 3.7\n保持公式 · 代码 · 货币符号\n翻译单位但不改变数值\nF.1 后文又要求单位与源文完全一致",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "self_reflect",
+      "label": "II · 自我反思\n对照译文与英文原文\n检查专名与专业术语\n标记多余说明与增译",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "improve",
-      "label": "阶段三：改进翻译\n应用反思反馈\n仅解释缺少对等词的内容\n保留引文与单位",
+      "label": "III · 翻译改进\n应用自我反思反馈\n§3.3 允许为无对应概念加解释\n附录 F 却要求不得加任何解释\n保持引号与 JSON 结构",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "examine",
-      "label": "阶段四：外部检查\no3 检查四种非洲语言\nGPT-4.1 检查其余 25 种\n标记显著差异",
+      "id": "external_exam",
+      "label": "IV · 外部检查\nO3：SW · ZU · YO · WO\nGPT-4.1：其余目标语言\n仅标记显著差异",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "verify",
-      "label": "执行专家核验\n每领域抽取 20 题\n覆盖 15 种语言\n每语言两名母语译者",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "ratings",
-      "label": "三维度一至五分评价\n准确性 · 流畅性 · 完整性\n两人均低于三分则重译\n各类别均分需高于四分",
+      "id": "manual_review",
+      "label": "标记项复核\n人工检查 + 人工翻译\n仅显著问题进入此步骤\n外检提示与参数未发布",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "full",
-      "label": "汇总 29 种并行语言\n每语言 11,829 道题\n各语言题目完全一致\n30 余专家 · 400 多小时",
+      "id": "expert_sample",
+      "label": "专家核验样本\n20 × 14 = 280 道共同题\n15 种语言 · 每种 2 名译者\n>30 名专家 · >400 小时",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "expert_gate",
+      "label": "任一指标是否两位译者均低于 3？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "retranslate",
+      "label": "重译整个学科\n针对该语言与类别执行\n仅约鲁巴语法律类触发\n恢复翻译质量",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "approved",
+      "label": "15 语言抽样审计结果\n准确性 · 流畅性 · 完整性\n三项均按 1–5 分评定\n目标 >4；论文后文又称 ≥4\n其余 14 语言未做专家核验",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "full_release",
+      "label": "MMLU-ProX 完整版\n29 种并行语言\n专家抽样覆盖 15 语言\n其余 14 语言未专家核验\n11,829 = 验证 70 + 测试 11,759",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "lite",
-      "label": "构建 MMLU-ProX Lite\n每领域均匀抽取 5%\n保留全部 14 个领域\n每语言 658 道题",
+      "id": "lite_release",
+      "label": "MMLU-ProX Lite 固定快照\n每语言 658 题\n验证 70 + 测试 588\n发布测试集约为 5% 分层样本",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "reserve",
-      "label": "预留提示样例\n留出 70 道验证题\n完整版实际评测 11,759 题\n轻量版实际评测 588 题",
+      "id": "paper_eval",
+      "label": "论文 v2 评测 · 36 个模型\n29 种语言 · 主要五样本 CoT\n另有零样本 · H100 >1 万 GPUh\n仓库：vLLM 0.7.3\n405B 例外：vLLM 0.6.6",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "paper_report",
+      "label": "论文报告证据\n每种语言的准确率\n总体 AVG 覆盖 29 种语言\nFull–Lite 平均差 1.14 个百分点",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "public_harness",
+      "label": "后续公开 Harness 参照\n提交 0b45cc7 · 2025-08-26\n新增 29 语言 + Lite 任务\n晚于论文 v2",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "version_route",
+      "label": "评测哪一种发布版本？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "full_input",
+      "label": "完整版评测输入\n每语言 11,759 道测试题\n划分为 14 个领域任务\n数据集：li-lab/MMLU-ProX\nHF revision 未锁定",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "lite_input",
+      "label": "Lite 评测输入\n每语言 588 道测试题\n划分为 14 个领域任务\n数据集：MMLU-ProX-Lite\nHF revision 未锁定",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "shot_route",
+      "label": "Harness 样本设置 / CLI 覆盖？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "five_demos",
+      "label": "五样本 CoT 演示\n取前 5 道验证题\n按领域与语言分别选取\n保留本地化推理与答案",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "evaluate",
-      "label": "评测多语言模型\n零样本与五样本思维链\n解析模型所选选项\n报告各语言准确率",
+      "id": "eval_prompt",
+      "label": "本地化生成提示\n领域说明 + 问题\n仅输出非空 A–J 选项\n以逐步思考提示结尾",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "确定性生成配置\ndo_sample=false · 温度 0\n最多 2048 token · 停止标记\n运行时失败将中止任务",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parse",
+      "label": "按语言定制的答案后缀正则\n在本地化答案短语中\n提取首个匹配的 A–J\n答案短语匹配区分大小写\n无匹配 → [invalid]",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "accuracy",
+      "label": "精确匹配题级准确率\n比较时忽略大小写与标点\n无效解析计入分母并判错\n对全部测试题取均值",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "public_result",
+      "label": "公开 Harness 语言分数\n14 领域按题量加权平均\n等价于题级微平均\n完整版与 Lite 分别报告",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "version_boundary",
+      "label": "论文版本 + 开发成本\nv1：13 语言 · 25 模型\nGPT-4o 检查 · 人工核验进行中\nv2：29 · 36 · 完整核验协议\n整个基准开发成本约 8 万美元",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "lite_boundary",
+      "label": "Lite 抽样矛盾\n论文称 20 × 14“得到 658”\n算术结果应为 280 而非 658\n发布版为 70 + 588、按比例取样",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_boundary",
+      "label": "发布 Schema 与许可\n18 字段，含 ID · CoT · 来源\n可空选项 · 实测每题 3–10 个\nFull/Lite HF 数据卡声明 MIT\n项目仓库无 LICENSE 文件",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "reproducibility_gap",
+      "label": "复现边界\n论文未锁定 Harness 提交\nHarness 未锁定 HF 数据 revision\nFull/Lite CLI 的 chat template 不同\n外检提示与 Lite 种子未发布",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "clean",
+      "from": "mmlu_pro",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "clean",
-      "to": "translate",
+      "from": "curate",
+      "to": "initial_translate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "translate",
-      "to": "reflect",
+      "from": "initial_translate",
+      "to": "self_reflect",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "reflect",
+      "from": "self_reflect",
       "to": "improve",
       "type": "primary"
     },
     {
       "id": "edge-5",
       "from": "improve",
-      "to": "examine",
+      "to": "external_exam",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "examine",
-      "to": "verify",
+      "from": "external_exam",
+      "to": "manual_review",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "verify",
-      "to": "ratings",
+      "from": "manual_review",
+      "to": "full_release",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "ratings",
-      "to": "full",
-      "type": "primary"
+      "from": "manual_review",
+      "to": "expert_sample",
+      "type": "secondary",
+      "label": "15 语言抽样审计"
     },
     {
       "id": "edge-9",
-      "from": "full",
-      "to": "lite",
+      "from": "expert_sample",
+      "to": "expert_gate",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "lite",
-      "to": "reserve",
-      "type": "primary"
+      "from": "expert_gate",
+      "to": "approved",
+      "type": "primary",
+      "label": "否"
     },
     {
       "id": "edge-11",
-      "from": "reserve",
-      "to": "evaluate",
+      "from": "expert_gate",
+      "to": "retranslate",
+      "type": "primary",
+      "label": "是"
+    },
+    {
+      "id": "edge-12",
+      "from": "retranslate",
+      "to": "approved",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "retranslate",
+      "to": "full_release",
+      "type": "secondary",
+      "label": "合入已触发修订"
+    },
+    {
+      "id": "edge-14",
+      "from": "full_release",
+      "to": "lite_release",
+      "type": "primary",
+      "label": "高效子集"
+    },
+    {
+      "id": "edge-15",
+      "from": "full_release",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "lite_release",
+      "to": "paper_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "paper_eval",
+      "to": "paper_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "full_release",
+      "to": "public_harness",
+      "type": "secondary",
+      "label": "后续实现"
+    },
+    {
+      "id": "edge-19",
+      "from": "lite_release",
+      "to": "public_harness",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-20",
+      "from": "public_harness",
+      "to": "version_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-21",
+      "from": "version_route",
+      "to": "full_input",
+      "type": "primary",
+      "label": "完整版"
+    },
+    {
+      "id": "edge-22",
+      "from": "version_route",
+      "to": "lite_input",
+      "type": "primary",
+      "label": "精简版"
+    },
+    {
+      "id": "edge-23",
+      "from": "full_input",
+      "to": "shot_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "lite_input",
+      "to": "shot_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "shot_route",
+      "to": "eval_prompt",
+      "type": "primary",
+      "label": "CLI 覆盖为零样本"
+    },
+    {
+      "id": "edge-26",
+      "from": "shot_route",
+      "to": "five_demos",
+      "type": "primary",
+      "label": "默认五样本"
+    },
+    {
+      "id": "edge-27",
+      "from": "five_demos",
+      "to": "eval_prompt",
+      "type": "primary"
+    },
+    {
+      "id": "edge-28",
+      "from": "eval_prompt",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "generate",
+      "to": "parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-30",
+      "from": "parse",
+      "to": "accuracy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-31",
+      "from": "accuracy",
+      "to": "public_result",
       "type": "primary"
     }
   ],

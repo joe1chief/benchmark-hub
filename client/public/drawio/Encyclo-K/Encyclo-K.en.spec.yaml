@@ -6,103 +6,169 @@ meta:
   routing: orthogonal
   title: Encyclo-K Build Process
   description: >-
-    Paper-aligned statement-level curation, false-statement synthesis, dynamic question assembly, and exact accuracy
-    evaluation.
+    Revision-pinned textbook statement curation, deceptive false-statement synthesis, dynamic question assembly, and
+    exact option parsing.
   legend: >-
-    Solid arrows follow the three official stages: collect correct statements, generate incorrect statements, and
-    assemble dynamic questions. Section 3.1.1 reports 43 source subfields; Table 1 reports 44 fields / 62 subfields.
+    Solid arrows follow the paper's three construction stages; the dashed arrow pins paper, repository, and dataset.
+    Section 3.1.1 has 43 source subfields, while the final collection has 44 fields / 62 subfields.
 nodes:
+  - id: evidence
+    label: |-
+      Fixed evidence boundary
+      arXiv:2512.24867v2
+      repo @ 5549c73
+      HF dataset @ 0f81da9
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: books
     label: |-
-      Select 62 university / graduate textbooks
-      11 disciplines · 43 source subfields (§3.1.1)
-      authoritative bilingual knowledge sources
+      Select 62 textbooks
+      university / graduate level
+      11 disciplines
+      43 source subfields (§3.1.1)
+      authoritative sources
     type: database
     size: xl
     position:
       x: 40
-      'y': 250
+      'y': 320
   - id: screenshots
     label: |-
-      Manually capture textbook screenshots
-      mask irrelevant content with mosaics
-      retain grounded source context
+      Manually capture
+      textbook screenshots
+      mask irrelevant content
+      with mosaics
+      preserve page grounding
     type: process
     size: xl
     position:
       x: 300
-      'y': 250
+      'y': 320
   - id: extract
     label: |-
-      Extract correct standalone statements
-      doubao-1.5-vision-pro-32k + titles
-      independence · clarity · conciseness rules
+      Extract correct statements
+      and titles from screenshots
+      doubao-1.5-vision-pro-32k
+      independence / completeness
+      clarity / conciseness
     type: process
     size: xl
     position:
       x: 560
-      'y': 250
-  - id: correct_qc
+      'y': 320
+  - id: correct_filter
     label: |-
-      Filter and review correct statements
-      remove images / references / ambiguous items
-      3 annotators review 21,525 qualified statements
+      Sequential correct-statement QC
+      images: remove 3,269
+      references / formula numbers /
+      chemical equations: remove 642
+      ambiguity: remove 127
+      retain 21,525
     type: process
     size: xl
     position:
       x: 820
-      'y': 250
-  - id: false_stmts
+      'y': 320
+  - id: correct_review
     label: |-
-      Generate deceptive incorrect counterparts
-      DeepSeek-R1 with six error patterns
-      filter short items → 21,494 false statements
+      3 annotators review all 21,525
+      no significant issue found
+      format compliance only
+      no domain-expert
+      question writing
     type: process
     size: xl
     position:
       x: 1080
-      'y': 250
-  - id: pool
+      'y': 320
+  - id: false_generate
     label: |-
-      Build the statement collection
-      21,525 correct + 21,494 incorrect
-      43,019 total · 44 fields / 62 subfields (Table 1)
-    type: database
+      DeepSeek-R1 false counterparts
+      concept substitution
+      causal inversion
+      detail falsification
+      temporal dislocation
+      logical paradox
+      scope modification
+      generate an error rationale
+    type: process
     size: xl
     position:
       x: 1340
-      'y': 250
-  - id: assemble
+      'y': 320
+    style:
+      fontSize: 9
+  - id: false_review
     label: |-
-      Dynamically sample and assemble questions
-      8–10 statements · 4–8 options
-      each option combines 2–4 statements
+      Remove overly short samples
+      → 21,494 false statements
+      manually audit 200
+      5 rationale mismatches
+      statements remain false
+      no additional processing
     type: process
     size: xl
     position:
       x: 1600
-      'y': 250
-  - id: dataset
+      'y': 320
+  - id: pool
     label: |-
-      Encyclo-K standard configuration
-      5,038 questions: 3,286 EN + 1,752 ZH
-      discipline-proportional allocation
+      Statement pool: 43,019
+      21,525 correct + 21,494 false
+      28,045 English + 14,974 Chinese
+      11 disciplines · 44 fields
+      62 final subfields
     type: database
     size: xl
     position:
       x: 1860
-      'y': 250
-  - id: evaluate
+      'y': 320
+  - id: assemble
     label: |-
-      Parse option letters by regex tiers
-      fallback to matching option content
-      misses count wrong · report accuracy
-    type: terminal
+      Programmatic random assembly
+      8–10 statements
+      4–8 lettered options
+      2–4 statements per option
+      repo omits builder code
+      and standard seed
+    type: process
     size: xl
     position:
       x: 2120
-      'y': 250
+      'y': 320
+  - id: dataset
+    label: |-
+      Encyclo-K standard set
+      5,038 questions
+      3,286 English + 1,752 Chinese
+      discipline-proportional
+      statements: i, ii, …
+      options: A, B, …
+    type: database
+    size: xl
+    position:
+      x: 2380
+      'y': 320
+  - id: evaluate
+    label: |-
+      Three regex groups
+      search last line first
+      then full response
+      fallback: exact
+      option-content matching
+      miss = incorrect · accuracy
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 320
 edges:
+  - from: evidence
+    to: books
+    type: data
   - from: books
     to: screenshots
     type: primary
@@ -110,12 +176,18 @@ edges:
     to: extract
     type: primary
   - from: extract
-    to: correct_qc
+    to: correct_filter
     type: primary
-  - from: correct_qc
-    to: false_stmts
+  - from: correct_filter
+    to: correct_review
     type: primary
-  - from: false_stmts
+  - from: correct_review
+    to: false_generate
+    type: primary
+  - from: false_generate
+    to: false_review
+    type: primary
+  - from: false_review
     to: pool
     type: primary
   - from: pool

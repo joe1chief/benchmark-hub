@@ -6,20 +6,25 @@ meta:
   routing: orthogonal
   title: MicroVQA Build and Evaluation Process
   description: >-
-    Paper-aligned expert creation of raw microscopy VQA, exam-style conversion with a supervised DSPy prompt, RefineBot
-    removal of language shortcuts, expert correction, and multimodal chain-of-thought evaluation.
+    Paper-aligned construction from expert microscopy questions through exam-style conversion, RefineBot shortcut
+    removal, creator review, and exact official accuracy parsing, with paper-versus-scaffold boundaries made explicit.
   legend: >-
-    Twelve biology experts created 1,061 raw samples; after the two-stage MCQ pipeline and full expert review, the
-    released benchmark contains 1,042 questions across three scientific-reasoning tasks.
+    Twelve biology experts created 1,061 raw samples. The paper releases 1,042 fully creator-reviewed MCQs but does not
+    report the nineteen-item attrition rule. The final gate requires GPT-4o-2024-08-06 and Claude-3.5-Sonnet-20241022 to
+    both fail across two random seeds. Failed RefineBot cases retain their Stage-one MCQ.
 nodes:
   - id: tasks
     label: |-
-      Define Scientific Reasoning Tasks
-      Interview Nine Microscopy PIs and Postdocs
+      Define Three Research Tasks
+      Interview Nine Microscopy PIs
+      and Postdocs
       Expert Image Understanding
-      Hypothesis Generation · Experiment Proposal
+      Hypothesis Generation
+      Experiment Proposal
     type: document
     size: xl
+    style:
+      fontSize: 9
     position:
       x: 20
       'y': 40
@@ -28,7 +33,8 @@ nodes:
       Recruit 12 Biology Experts
       Diverse Microscopy Fields
       About 90 Samples per Expert
-      Estimated Expert Time: About 600 Hours
+      Estimated Expert Time
+      About 600 Hours
     type: process
     size: xl
     position:
@@ -38,8 +44,8 @@ nodes:
     label: |-
       Source Redistributable Images
       Contributors' Own Experiments
-      Image Databases
-      Research Papers Published since 2024
+      Open Databases and CC-BY Papers
+      Publications from January 2024 Onward
     type: database
     size: xl
     position:
@@ -48,9 +54,9 @@ nodes:
   - id: raw
     label: |-
       Create 1,061 Raw VQA Samples
-      Image Set · Question · Detailed Answer
+      Up to Six RGB Images or Video Frames
+      Question · Detailed Answer · Distractors
       Experimental Context and Motivation
-      30 to 40 Minutes per Sample
     type: process
     size: xl
     position:
@@ -59,9 +65,9 @@ nodes:
   - id: quality
     label: |-
       Review Contributor Quality
-      Research-level Difficulty
-      Task Alignment · Image Diversity
-      Feedback after First 10 and 40 Samples
+      Research Difficulty · Task Fit · Diversity
+      Main Text · Feedback after 10 and 40
+      Appendix E.1 · Initial Four to Six
     type: process
     size: xl
     position:
@@ -71,8 +77,8 @@ nodes:
     label: |-
       Create 50 Gold-standard MCQs
       Physician-scientist Leads Design
-      Manually Convert Raw QA Pairs
-      Follow NBME and Bloom Principles
+      One-best-answer NBME Format
+      Preserve the Raw QA Objective
     type: process
     size: xl
     position:
@@ -81,9 +87,9 @@ nodes:
   - id: dspy
     label: |-
       Optimize the Stage-one Prompt
-      Supervise DSPy with Gold MCQs
-      Content Similarity · NBME Formatting
-      Penalize Extraneous Clues
+      DSPy MIPROv2 · CoT + RAG · o1-mini
+      Judge Meaning · NBME Format · Clues
+      Meaning Receives the Highest Weight
     type: process
     size: xl
     position:
@@ -91,81 +97,165 @@ nodes:
       'y': 40
   - id: stage1
     label: |-
-      Generate Exam-style MCQs
-      Preserve Original QA Meaning
+      Generate Stage-one Exam MCQs
+      Preserve Scientific Meaning
       Produce One Best Answer
-      Add Plausible Distractors
+      Add Plausible Similar-length Distractors
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: reflect
+      x: 1820
+      'y': 40
+  - id: refine
     label: |-
-      Run RefineBot Evaluator and Reflector
-      Answer without the Image using CoT
-      Expose Language-only Shortcuts
-      Summarize the Exploited Strategy
+      Run One RefineBot Attempt
+      GPT-4o No-image Evaluator + Reflector
+      Rewriter Uses Accumulated Reflections
+      Equivalence Checker
+      At Most Five Iterations
     type: process
     size: xl
     position:
-      x: 1220
+      x: 1820
       'y': 420
-  - id: rewrite
+  - id: refine_gate
     label: |-
-      Rewrite Weak MCQs
-      Replace Easy Distractors
-      Checker Enforces Semantic Equivalence
-      Repeat until Hard or Iteration Limit
+      RefineBot Attempt Succeeds?
+      Evaluator Wrong · Meaning Preserved
+    type: decision
+    size: xl
+    position:
+      x: 1540
+      'y': 420
+  - id: dual_gate
+    label: |-
+      Final Difficulty Gate Passes?
+      Both Named Models Fail · Two Seeds
+    type: decision
+    size: xl
+    position:
+      x: 1260
+      'y': 420
+  - id: gate_models
+    label: |-
+      Final-gate Model Pair
+      GPT-4o-2024-08-06
+      Claude-3.5-Sonnet-20241022
+    type: document
+    size: xl
+    position:
+      x: 1260
+      'y': 240
+  - id: rerun
+    label: |-
+      Rerun the Whole RefineBot Attempt
+      Use a Different Random Seed
+      Paper Gives No Total Rerun Cap
+      Some MCQs Still Never Pass
+    type: process
+    size: xl
+    position:
+      x: 1540
+      'y': 760
+  - id: stage1_fallback
+    label: |-
+      Retain the Stage-one MCQ
+      Used when RefineBot Never Passes
+      No Successful Stage-two Rewrite
+    type: process
+    size: xl
+    position:
+      x: 1260
+      'y': 760
+  - id: manual
+    label: |-
+      Original Creator Reviews Final MCQ
+      Review All 1,042 Released Questions
+      Check Correct Answer and Distractors
+      Apply Minimal Corrections when Needed
     type: process
     size: xl
     position:
       x: 980
       'y': 420
-  - id: seeds
+  - id: attrition
     label: |-
-      Apply the Final Difficulty Gate
-      Rerun Failed Cases with New Seeds
-      Two Seeds for GPT-4o and Claude 3.5
-      Require Both Models to Answer Incorrectly
-    type: process
+      Construction-count Boundary
+      1,061 Raw → 1,042 Final
+      Nineteen-item Attrition Rule
+      Not Reported in Paper or Dataset Card
+    type: document
     size: xl
     position:
       x: 740
       'y': 420
-  - id: manual
+  - id: release
     label: |-
-      Expert-review Every Final MCQ
-      Original Creator Checks Its Correctness
-      Make Minimal Fixes when Needed
-      Review All 1,042 Released Questions
-    type: process
+      Release MicroVQA Test Split
+      1,042 MCQs · 423 Multi-image
+      Three Scientific-reasoning Tasks
+      CC BY-SA 4.0 Dataset
+    type: database
     size: xl
     position:
       x: 500
       'y': 420
-  - id: release
+  - id: eval_prompt
     label: |-
-      Release MicroVQA
-      1,042 Expert-curated MCQs
-      Brightfield · Fluorescence · Electron Images
-      Three Scientific-reasoning Tasks
-    type: database
+      Build the Paper Evaluation Prompt
+      Image + Question
+      One-indexed Choices
+      MMMU-Pro CoT except LLaVA Families
+      Request “The answer is (X)”
+    type: process
     size: xl
     position:
       x: 260
       'y': 420
-  - id: evaluate
+  - id: parse
     label: |-
-      Evaluate Multimodal Models
-      MMMU-Pro Chain-of-thought Prompt
-      Parse the Numbered Final Answer
-      Report Accuracy by Task and No-image Ablation
-    type: terminal
+      Parse the First Exact Answer Match
+      Case-sensitive “answer is” + One Digit
+      Allow Optional Bold and Parentheses
+      Subtract One
+      No Match Becomes Minus One
+    type: process
     size: xl
     position:
       x: 20
       'y': 420
+  - id: metrics
+    label: |-
+      Report Official Metrics
+      Mean Accuracy over
+      Every Released Row
+      Missing or Bad-format Output
+      Is Incorrect
+      Per-task · No-image
+      Choices-only Analyses
+    type: terminal
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 20
+      'y': 760
+  - id: scaffold_gap
+    label: |-
+      Pinned Evaluator Reproduction Boundary
+      Paper Gives LLaVA
+      Special Prefix + Suffix
+      Current Code Applies
+      One Shared Prompt
+      CLI Uses test
+      Batch Helper Requests train
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 260
+      'y': 760
 edges:
   - from: tasks
     to: experts
@@ -189,21 +279,88 @@ edges:
     to: stage1
     type: primary
   - from: stage1
-    to: reflect
+    to: refine
     type: primary
-  - from: reflect
-    to: rewrite
+  - from: refine
+    to: refine_gate
     type: primary
-  - from: rewrite
-    to: seeds
+  - from: refine_gate
+    to: dual_gate
     type: primary
-  - from: seeds
+    label: 'Yes'
+    labelPosition: center
+  - from: gate_models
+    to: dual_gate
+    type: secondary
+    style:
+      dashed: true
+    label: Required pair
+    labelPosition: center
+  - from: refine_gate
+    to: rerun
+    type: secondary
+    style:
+      dashed: true
+    label: 'No'
+    labelPosition: center
+  - from: dual_gate
     to: manual
     type: primary
+    label: 'Yes'
+    labelPosition: center
+  - from: dual_gate
+    to: rerun
+    type: secondary
+    style:
+      dashed: true
+    label: 'No'
+    labelPosition: center
+  - from: rerun
+    to: refine
+    type: secondary
+    style:
+      dashed: true
+    label: Retry
+    labelPosition: center
+  - from: rerun
+    to: stage1_fallback
+    type: secondary
+    style:
+      dashed: true
+    label: Fallback
+    labelPosition: center
+  - from: stage1_fallback
+    to: manual
+    type: primary
+    label: Retained
+    labelPosition: center
   - from: manual
+    to: attrition
+    type: primary
+  - from: attrition
     to: release
     type: primary
   - from: release
-    to: evaluate
+    to: eval_prompt
     type: primary
+  - from: eval_prompt
+    to: parse
+    type: primary
+  - from: parse
+    to: metrics
+    type: primary
+  - from: parse
+    to: scaffold_gap
+    type: secondary
+    style:
+      dashed: true
+    label: Code/paper drift
+    labelPosition: center
+  - from: scaffold_gap
+    to: metrics
+    type: secondary
+    style:
+      dashed: true
+    label: Caveat
+    labelPosition: center
 modules: []

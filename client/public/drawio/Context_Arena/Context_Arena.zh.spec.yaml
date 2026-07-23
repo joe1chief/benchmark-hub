@@ -4,130 +4,145 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Context Arena OpenAI-MRCR 评测流程
-  description: 按来源还原 OpenAI MRCR v2 外部评测与看板流程，重点展示八针序数检索、随机哈希约束、平均匹配率、长度分桶与归一化 AUC。
-  legend: 实线表示合成样本构建与评分；哈希失败分支直接记为零分。
+  title: Context Arena GDM-MRCRv2 评测流程
+  description: 展示当前 Context Arena 的 GDM MRCRv2 Full 8-needle 流程；历史 OpenAI MRCR 仅作为版本漂移证据，不进入当前评测链。
+  legend: 实线表示当前独立评分路径；虚线分支只记录历史看板来源。
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      已发布 OpenAI MRCR v2 数据
-      源自 Google DeepMind MRCR 思路
-      Context Arena 使用外部评测结果
+      Michelangelo arXiv:2409.12640v2
+      eval_hub 提交 67b7fd2
+      contextarena.ai 核查于 2026-07-18
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 300
+  - id: history
+    label: |-
+      历史 OpenAI MRCR @ f4c69fa
+      2 / 4 / 8 needles；2025-12-05 修错
+      旧看板来源，非当前流程
     type: database
     size: xl
     position:
       x: 40
-      'y': 190
-  - id: generation
+      'y': 40
+  - id: construct
     label: |-
-      GPT-4o 生成针与干扰项
-      多种写作体裁和主题
-      每次测试使用独特合成长对话
+      构造长用户—助手对话
+      键 = 格式 + 主题 + 风格
+      不同回答与干扰项随机交错
+      最终查询要求第 i 个匹配回答
     type: process
     size: xl
     position:
       x: 320
-      'y': 190
-  - id: conversation
+      'y': 300
+  - id: current_release
     label: |-
-      长多轮对话
-      2 / 4 / 8 个相同请求
-      回答散布在干扰请求之间
-    type: process
-    size: xl
-    position:
-      x: 600
-      'y': 190
-  - id: query
-    label: |-
-      最终序数检索问题
-      返回第 N 个匹配回答
-      前置本次测试随机哈希
-    type: document
-    size: xl
-    position:
-      x: 880
-      'y': 190
-  - id: bins
-    label: |-
-      按 o200k_base 计算长度分桶
-      8K / 16K / 32K / 64K / 128K
-      256K / 512K / 1M；每桶 100 题
+      GDM MRCRv2 发布版
+      2 / 4 / 8 needles；文件扩至 8M tokens
+      要求唯一随机 12 字符前缀
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 190
-  - id: run
+      x: 600
+      'y': 300
+  - id: arena_slice
     label: |-
-      外部模型评测
-      Claude 系统卡采用最难八针版本
-      其内部表格运行五次
+      当前看板：仅 Full 8-needle
+      8K 至 1M 共 8 个桶
+      每桶运行数非固定 100
+    type: database
+    size: xl
+    position:
+      x: 880
+      'y': 300
+  - id: independent_run
+    label: |-
+      每个模型独立运行
+      无两两对战；无 LLM 裁判
+      必须报告工具权限以便比较
     type: process
     size: xl
     position:
-      x: 1440
-      'y': 190
+      x: 1160
+      'y': 300
   - id: hash
-    label: 哈希正确？
+    label: |-
+      是否找到要求的
+      12 字符哈希最后一次出现？
     type: decision
     size: xl
     position:
-      x: 1720
-      'y': 190
+      x: 1440
+      'y': 300
   - id: zero
-    label: 缺失或错误哈希 → 记 0 分
+    label: |-
+      哈希缺失
+      单题记 0 分
     type: terminal
     size: xl
     position:
-      x: 1980
-      'y': 60
+      x: 1720
+      'y': 100
   - id: compare
     label: |-
-      移除正确哈希
-      Python difflib SequenceMatcher
-      将回答与标准针内容比较
+      保留最后一次哈希之后的内容
+      difflib.SequenceMatcher 对比目标
+      得分范围 [0, 1]
     type: process
     size: xl
     position:
-      x: 1980
-      'y': 300
-  - id: bin_score
+      x: 1720
+      'y': 500
+  - id: bin_mean
     label: |-
-      每个长度桶的平均匹配率
-      对桶内 100 个测试取平均
+      每桶单题比例取均值
+      得到 Pointwise 桶分数
     type: process
     size: xl
     position:
-      x: 2260
+      x: 2000
+      'y': 300
+  - id: aggregate
+    label: |-
+      Pointwise + Cum AVG（桶间不加权）
+      AUC = 线性端点上的归一化梯形面积
+      缺失桶按 0 计
+    type: process
+    size: xl
+    position:
+      x: 2280
       'y': 300
   - id: report
     label: |-
       Context Arena 看板
-      128K / 1M 得分与归一化 AUC
-      模型 AUC、Token 效率与成本
+      128K / 1M 的分数、Cum AVG 与 AUC
+      Token 效率与成本为辅助信息
     type: terminal
     size: xl
     position:
-      x: 2540
-      'y': 190
+      x: 2560
+      'y': 300
 edges:
-  - from: source
-    to: generation
+  - from: evidence
+    to: history
+    type: data
+  - from: evidence
+    to: construct
     type: primary
-  - from: generation
-    to: conversation
+  - from: construct
+    to: current_release
     type: primary
-  - from: conversation
-    to: query
+  - from: current_release
+    to: arena_slice
     type: primary
-  - from: query
-    to: bins
+  - from: arena_slice
+    to: independent_run
     type: primary
-  - from: bins
-    to: run
-    type: primary
-  - from: run
+  - from: independent_run
     to: hash
     type: primary
   - from: hash
@@ -137,12 +152,15 @@ edges:
     to: compare
     type: primary
   - from: zero
-    to: report
+    to: bin_mean
     type: primary
   - from: compare
-    to: bin_score
+    to: bin_mean
     type: primary
-  - from: bin_score
+  - from: bin_mean
+    to: aggregate
+    type: primary
+  - from: aggregate
     to: report
     type: primary
 modules: []

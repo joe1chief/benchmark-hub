@@ -13,6 +13,16 @@ meta:
     The three solid parallel branches are separate paper benchmarks, not sequential stages; dashed autograder edges
     indicate validated scalable proxies while expert proof grades remain the primary paper results.
 nodes:
+  - id: evidence
+    label: |-
+      Primary Evidence + Fixed Releases
+      arXiv:2511.01846v1 · Code 92ae8c2
+      Current Project 96fa6c4
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: panel
     label: |-
       IMO Medalists + Mathematicians
@@ -26,14 +36,14 @@ nodes:
   - id: suite
     label: |-
       IMO-Bench Paper Snapshot
-      Three Complementary Benchmarks
+      Three Parallel Paper Benchmarks
       Answer 400 · Proof 60 · Grading 1,000
     type: database
     size: xl
     position:
       x: 320
       'y': 300
-  - id: answer_build
+  - id: answer
     label: |-
       IMO-AnswerBench
       400 Verifiable Short-answer Problems
@@ -73,11 +83,11 @@ nodes:
     position:
       x: 1460
       'y': 40
-  - id: proof_build
+  - id: proof_basic
     label: |-
-      IMO-ProofBench
-      60 Proof Problems
-      30 Basic + 30 Advanced
+      Basic Proof Set · 30 Problems
+      Rephrased Existing Problems
+      Pre-IMO through IMO-Medium
     type: document
     size: xl
     position:
@@ -86,18 +96,19 @@ nodes:
   - id: proof_advanced
     label: |-
       Advanced Set Composition
-      18 Medalist-authored Novel
+      Advanced Proof Set · 30 Problems
+      18 Medalist-authored Novel Problems
       6 IMO 2024 + 6 USAMO 2025
     type: process
     size: xl
     position:
       x: 900
       'y': 300
-  - id: proof_grade
+  - id: proof_human
     label: |-
-      Proof Evaluation
-      Problem + Candidate + Reference + Guidelines
-      Expert Integer Grade from 0 to 7
+      Primary Human Proof Grading
+      Problem + Candidate + Reference
+      Specific Guideline · Integer 0 to 7
     type: user
     size: xl
     position:
@@ -107,7 +118,7 @@ nodes:
     label: |-
       Proof Result
       Percent of Maximum Points
-      Basic / Advanced / Source Slices
+      Human Grades Are Primary
     type: terminal
     size: xl
     position:
@@ -116,52 +127,52 @@ nodes:
   - id: proof_auto
     label: |-
       Gemini 2.5 Pro ProofAutoGrader
+      Predict Points out of 7
       Scalable Proxy, Not Human Replacement
-      Validate Rank Correlation
     type: process
     size: xl
     position:
-      x: 1180
+      x: 1460
       'y': 430
-  - id: grading_build
+  - id: grading_data
     label: |-
       IMO-GradingBench
-      1,000 Advanced-proof Solutions
-      Human 0–7 Grades
+      1,000 Solutions to 30 Advanced Problems
+      Human Integer Grades from 0 to 7
     type: document
     size: xl
     position:
-      x: 620
-      'y': 560
-  - id: grading_labels
-    label: |-
-      Map and Balance Four Labels
-      Correct 7 · Almost 6
-      Partial 1 · Incorrect 0
-    type: process
-    size: xl
-    position:
-      x: 900
-      'y': 560
-  - id: grading_eval
-    label: |-
-      Grade with Minimal Context
-      Problem + Proposed Solution Only
-      Predict One of Four Labels
-    type: process
-    size: xl
-    position:
       x: 1180
+      'y': 560
+  - id: grading_context
+    label: |-
+      Minimal Grader Context
+      Problem + Proposed Solution Only
+      No Reference or Grading Guideline
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 560
+  - id: grading_parse
+    label: |-
+      Map and Parse Four Labels
+      Buckets 7 / 6-4 / 3-1 / 0
+      Last Word First · LLM Fallback
+    type: process
+    size: xl
+    position:
+      x: 1740
       'y': 560
   - id: grading_metric
     label: |-
       Grading Result
-      Four-way Accuracy
-      Mean Absolute Error
+      Four-way Accuracy + MAE
+      Predicted Score Buckets 7/6/1/0
     type: terminal
     size: xl
     position:
-      x: 1460
+      x: 2020
       'y': 560
   - id: report
     label: |-
@@ -171,16 +182,30 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 1760
+      x: 2320
+      'y': 300
+  - id: artifact_boundary
+    label: |-
+      Public / Paper Boundary
+      answerbench_v2 + proofbench_v2
+      LeanProof Added Later · Excluded
+      Paper Benchmark Assets Are CSV-only
+    type: document
+    size: xl
+    position:
+      x: 2600
       'y': 300
 edges:
+  - from: evidence
+    to: suite
+    type: data
   - from: panel
     to: suite
     type: primary
   - from: suite
-    to: answer_build
+    to: answer
     type: primary
-  - from: answer_build
+  - from: answer
     to: answer_robust
     type: primary
   - from: answer_robust
@@ -190,33 +215,36 @@ edges:
     to: answer_metric
     type: primary
   - from: suite
-    to: proof_build
+    to: proof_basic
     type: primary
-  - from: proof_build
+  - from: suite
     to: proof_advanced
     type: primary
-  - from: proof_advanced
-    to: proof_grade
+  - from: proof_basic
+    to: proof_human
     type: primary
-  - from: proof_grade
+  - from: proof_advanced
+    to: proof_human
+    type: primary
+  - from: proof_human
     to: proof_metric
     type: primary
-  - from: proof_grade
+  - from: proof_human
     to: proof_auto
-    type: optional
+    type: secondary
   - from: proof_auto
     to: proof_metric
-    type: optional
-  - from: suite
-    to: grading_build
+    type: secondary
+  - from: proof_human
+    to: grading_data
+    type: secondary
+  - from: grading_data
+    to: grading_context
     type: primary
-  - from: grading_build
-    to: grading_labels
+  - from: grading_context
+    to: grading_parse
     type: primary
-  - from: grading_labels
-    to: grading_eval
-    type: primary
-  - from: grading_eval
+  - from: grading_parse
     to: grading_metric
     type: primary
   - from: answer_metric
@@ -228,4 +256,7 @@ edges:
   - from: grading_metric
     to: report
     type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
 modules: []

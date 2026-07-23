@@ -5,100 +5,147 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: FACTS Grounding 构建流程
-  description: 按论文还原 FACTS Grounding 的数据构建、评委校准、资格过滤与事实性评分。
-  legend: 实线箭头区分数据集构建和两套独立校准的评测阶段；不合格回答在最终分数中按不准确计。
+  description: 固定论文与公开数据版本，展示数据构建、人工质检、平衡划分、分别校准的资格与事实性评委，以及最终分数聚合。
+  legend: 实线遵循 arXiv:2501.03200v1；虚线提供固定的校准或发布证据。资格与事实性使用两套独立金标集。
 nodes:
+  - id: evidence
+    label: |-
+      固定证据边界
+      arXiv:2501.03200v1
+      HF 数据集 @ 11b6961
+      FACTS Grounding 1.0 公开产物
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: documents
     label: |-
-      收集网页文档与评论
-      金融 · 科技 · 零售 · 医疗 · 法律
-      平均 2.5k tokens；最长 32k
+      收集网页文档或评论集合
+      医疗 · 法律 · 互联网/技术
+      金融 · 零售/产品
+      平均 2.5k tokens · 最长 32k
     type: database
     size: xl
     position:
       x: 40
-      'y': 250
+      'y': 360
   - id: authoring
     label: |-
-      第三方标注员编写仅依赖上下文的任务
+      第三方标注员编写长输入/长输出任务
       问答 · 摘要 · 文档改写
-      非平凡请求并要求长篇回答
+      请求非平凡且可仅由上下文回答
+      系统指令禁止使用外部知识
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 320
+      'y': 360
   - id: quality
     label: |-
-      人工核验每个样本
-      排除创作 / 专业知识 / 数学推理任务
-      去除 OCR 不可读 PDF 与无效上下文
+      人工核验每一个样本
+      移除创意写作和专家知识任务
+      移除数学 / 逻辑 / 元分析任务
+      移除 OCR 不可读的 PDF 上下文
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
+      x: 600
+      'y': 360
   - id: splits
     label: |-
-      按任务属性做平衡随机采样
-      Open 公开集 860 条
-      Blind 私有集 859 条
+      平衡随机采样划分
+      Open 公开集：860
+      Blind 私有集：859
+      合计：1,719 条
     type: database
     size: xl
     position:
-      x: 820
-      'y': 250
+      x: 880
+      'y': 360
   - id: responses
     label: |-
-      生成长篇模型回答
-      仅用给定上下文满足用户请求
-      不应依赖外部知识
+      生成模型回答
+      系统指令 + 用户请求 + 上下文
+      以长篇形式完成请求
+      只能以给定上下文为依据
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 250
+      x: 1160
+      'y': 360
+  - id: eligibility_setup
+    label: |-
+      校准资格判定提示
+      独立金标集 N=450
+      仅请求 vs 请求 + 上下文
+      每个评委选择 Macro-F1 最优模板
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 40
   - id: eligibility
     label: |-
-      在 N=450 金标集校准资格评判
-      每位评委从2个提示中按宏F1选优
-      仅当3位评委一致时判为不合格
+      三评委资格判定
+      Gemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet
+      是否充分回应用户请求
+      仅三者一致时判为不合格
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 250
+      x: 1760
+      'y': 120
   - id: factuality_setup
     label: |-
-      在 N=402 金标集校准事实性
-      每位评委测试7个提示模板
-      选择宏F1最高的提示
-    type: process
+      校准事实性判定提示
+      独立金标集 N=402 · 类别比例 87:13
+      测试 7 种提示模板
+      每个评委选择 Macro-F1 最优模板
+    type: document
     size: xl
     position:
-      x: 1600
-      'y': 250
+      x: 1460
+      'y': 680
   - id: factuality
     label: |-
-      Gemini 1.5 Pro · GPT-4o · Claude 3.5 Sonnet
-      仅当每一条有效信息都被文档支持
-      才把回答判为准确
+      三评委事实性判定
+      仅当每个信息性断言有依据
+      或无需依据时才准确
+      一个无依据断言即判不准确
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 250
+      x: 1760
+      'y': 600
+  - id: combine
+    label: |-
+      合并两个阶段
+      淘汰不合格回答
+      将每条不合格回答计为不准确
+      分别计算每个事实性评委的准确率
+    type: process
+    size: xl
+    position:
+      x: 2080
+      'y': 360
   - id: score
     label: |-
-      不合格回答按不准确计
-      平均三位评委的准确回答百分比
-      得到最终 FACTS Grounding 事实性分数
+      FACTS Grounding 事实性分数
+      平均准确回答率
+      来自三个评委
+      报告 Open 与 Blind 榜单
+      跨提供方评委
+      缓解自偏好
     type: terminal
     size: xl
     position:
-      x: 2120
-      'y': 250
+      x: 2380
+      'y': 360
 edges:
+  - from: evidence
+    to: documents
+    type: data
   - from: documents
     to: authoring
     type: primary
@@ -114,13 +161,52 @@ edges:
   - from: responses
     to: eligibility
     type: primary
-  - from: eligibility
-    to: factuality_setup
-    type: primary
-  - from: factuality_setup
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.65
+  - from: eligibility_setup
+    to: eligibility
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.5
+      entryY: 0
+  - from: responses
     to: factuality
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.35
+  - from: factuality_setup
+    to: factuality
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0.5
+      entryY: 1
+  - from: eligibility
+    to: combine
+    type: primary
+    waypoints:
+      - x: 2040
+        'y': 170
+      - x: 2040
+        'y': 410
   - from: factuality
+    to: combine
+    type: primary
+    waypoints:
+      - x: 2060
+        'y': 650
+      - x: 2060
+        'y': 410
+  - from: combine
     to: score
     type: primary
 modules: []

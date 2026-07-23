@@ -1,98 +1,164 @@
 {
   "version": 1,
-  "title": "Math-VR 构建流程",
+  "title": "Math-VR 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 25,
+    "edges": 26,
     "modules": 0
   },
   "nodes": [
     {
       "id": "collect",
-      "label": "收集约 90 万道数学题\n面向中学数学\n来源为公开网站\n解题说明至少包含一张图",
+      "label": "收集约 90 万道数学题\n中学水平 · 来源为公开网站\n每道题的解答至少包含一张图\n论文未披露源网址与抓取日期",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "用 Qwen2.5-VL-72B 筛图\n标注每张图的作用\n保留数学图形\n删除无关图或纯文字图",
+      "id": "image_gate",
+      "label": "Qwen2.5-VL-72B 图像门控\n解答是否包含与推理相关的\n数学图形？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "retain",
+      "label": "保留依赖图形的问题\n题目必须需要该图形\n才能完成数学推理",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "drop_image",
+      "label": "图像门控拒绝\n图片无关或仅含文字\n不保留该样本",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "standardize",
-      "label": "用 GPT-4.1 标准化\n转写剩余文字图像\n分离问题与解答\n将两者改写为 Markdown",
+      "label": "使用 GPT-4.1 标准化\n转写剩余的纯文字图片\n分离问题与解答\n将两者改写为 Markdown",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "qc_translate",
-      "label": "用 GPT-4.1 验证与翻译\n删除不完整或不连贯样本\n翻译标准化记录\n形成中英文配对",
+      "id": "quality_gate",
+      "label": "GPT-4.1 质量门控\n标准化后的问题和解答\n是否完整且连贯？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "translate",
+      "label": "创建英文版本\n翻译标准化样本\n配对中文与英文记录\n保留问题、解答与答案",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "drop_qc",
+      "label": "质量门控拒绝\n记录不完整或不连贯\n不保留该样本",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "corpus",
-      "label": "构建 Math-VR 语料\n共 89,075 道独立问题\n训练 86,575 + 测试 2,500\n展开为 178,150 条双语样本",
+      "label": "组成双语总语料\n共 89,075 道独立问题\n178,150 条中英文记录\n此时尚未确定最终划分",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "taxonomy",
-      "label": "标注学科层次\n几何、代数、微积分、统计\n几何占 81%\n纯文本 29% · 多模态 71%",
+      "label": "应用 GPT-4.1 学科层次体系\n纯文本 29% · 多模态 71%\nv1 PDF 的几何占比存在三种口径\n正文 p.4 + 附录 A.2 p.14：81%\n图 3 p.5：77% · 图 6 p.14：76%",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "candidates",
-      "label": "形成 benchmark 候选池\n排除证明题和大多数多选题\n从其余问题随机抽取 3,000 道\n聚焦非平凡视觉推理",
+      "label": "形成 3,000 道候选题\n排除证明题\n排除大多数选择题\n论文未报告随机种子",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human_review",
-      "label": "开展专家人工复核\n15 名高年级 STEM 大学生\n删除视觉推理极少或过于简单的题\n验证问题与答案",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "benchmark",
-      "label": "发布双语 benchmark\n2,500 道独立测试题\n纯文本 1,000 + 多模态 1,500\n中英文共 5,000 条样本",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "rubric",
-      "label": "构造经验证的评分参考\nGPT-4.1 总结标准答案\n生成关键评分点\n人工复核评分点与难度权重",
+      "id": "auto_rubric",
+      "label": "生成评测元信息\nGPT-4.1 总结最终答案\n抽取关键评分点\n每个评分点赋值 1 或 2",
       "type": "document",
       "size": "xl"
     },
     {
+      "id": "manual_gate",
+      "label": "人工复核 · 15 名高年级\nSTEM 学生\n视觉推理是否非平凡？\n答案与评分元信息是否有效？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark",
+      "label": "确定论文语料划分与基准\n训练 86,575 + 测试 2,500\n测试：纯文本 1,000 + 多模态 1,500\n中英文共 5,000 条测试样本",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "drop_review",
+      "label": "人工复核拒绝\n视觉推理过于简单或极少\n或评测元信息不合格",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
       "id": "response",
-      "label": "生成模型回答\n输入纯文本或多模态问题\n保持双语评测划分\n记录完整推理与最终答案",
+      "label": "读取候选回答 JSON\n问题 ID → 完整解答\n仅评测已提供的 ID\n不检查是否覆盖全部 2,500 题",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "使用 GPT-4.1 裁判\nAC · 整体答案二元正确性\nPS · 按权重命中的评分点\n使用论文定义的 PS 折扣",
+      "label": "用 GPT-4.1 裁判每个已提供回答\n输入题目文本、答案摘要与评分规则\n加入候选推理和最终答案\n裁判不接收题目图像",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "validate",
-      "label": "验证自动裁判一致性\n1,000 道题 × 3 个模型回答\n与人工评分比较\nAC 用 κ/MCC · PS 用 Pearson/Spearman",
+      "id": "json_gate",
+      "label": "裁判输出能解码为 JSON？\n截取首个“{”至末个“}”\n仅执行 json.loads\n不验证 schema 或字段类型",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "retry_gate",
+      "label": "仍有尝试次数？\n每个 ID 最多调用裁判五次",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "omit",
+      "label": "省略多次无效的 JSON\n该 ID 不写入 result.json\n也不进入均值分母",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "correct_gate",
+      "label": "is_fully_correct 是真值？\n这是 PS 满分门控\n按 Python truthiness，非布尔类型检查",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "full_score",
+      "label": "真值分支\nPS = 100\nAC 仅在 Python “is True”时为 100\n“False”或 1 → PS 100 · AC 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "partial_score",
+      "label": "假值分支\nAC = 0\nPS = 0.7 × final_score / max_score × 100\n不验证类型或数值范围",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "报告 AC 与 PS\n纯文本、多模态与总体结果\n分析学科和语言差异\n明确保留两项指标含义",
+      "label": "对 result.json 已存条目取平均\n分纯文本、多模态与总体\n缺失 ID 不进入分母\n已存条目缺字段时按零计",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "validate",
+      "label": "人机相关性研究\n1,000 道题 · 每题 3 个模型回答\n15 名学生 · 每人评 200 个回答\nAC κ/MCC .75 · PS Pearson .72/Spearman .70",
       "type": "terminal",
       "size": "xl"
     }
@@ -101,80 +167,171 @@
     {
       "id": "edge-1",
       "from": "collect",
-      "to": "filter",
+      "to": "image_gate",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "filter",
+      "from": "image_gate",
+      "to": "retain",
+      "type": "primary",
+      "label": "是 · 数学图形与推理相关"
+    },
+    {
+      "id": "edge-3",
+      "from": "image_gate",
+      "to": "drop_image",
+      "type": "primary",
+      "label": "否 · 图片无关或仅含文字"
+    },
+    {
+      "id": "edge-4",
+      "from": "retain",
       "to": "standardize",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-5",
       "from": "standardize",
-      "to": "qc_translate",
+      "to": "quality_gate",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "qc_translate",
+      "id": "edge-6",
+      "from": "quality_gate",
+      "to": "translate",
+      "type": "primary",
+      "label": "是 · 完整且连贯"
+    },
+    {
+      "id": "edge-7",
+      "from": "quality_gate",
+      "to": "drop_qc",
+      "type": "primary",
+      "label": "否 · 拒绝"
+    },
+    {
+      "id": "edge-8",
+      "from": "translate",
       "to": "corpus",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-9",
       "from": "corpus",
       "to": "taxonomy",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-10",
       "from": "taxonomy",
       "to": "candidates",
       "type": "primary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-11",
       "from": "candidates",
-      "to": "human_review",
+      "to": "auto_rubric",
       "type": "primary"
     },
     {
-      "id": "edge-8",
-      "from": "human_review",
+      "id": "edge-12",
+      "from": "auto_rubric",
+      "to": "manual_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "manual_gate",
       "to": "benchmark",
-      "type": "primary"
+      "type": "primary",
+      "label": "是 · 保留并验证"
     },
     {
-      "id": "edge-9",
+      "id": "edge-14",
+      "from": "manual_gate",
+      "to": "drop_review",
+      "type": "primary",
+      "label": "否 · 标记不合格"
+    },
+    {
+      "id": "edge-15",
       "from": "benchmark",
-      "to": "rubric",
-      "type": "primary"
-    },
-    {
-      "id": "edge-10",
-      "from": "rubric",
       "to": "response",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-16",
       "from": "response",
       "to": "judge",
       "type": "primary"
     },
     {
-      "id": "edge-12",
+      "id": "edge-17",
       "from": "judge",
-      "to": "validate",
+      "to": "json_gate",
       "type": "primary"
     },
     {
-      "id": "edge-13",
-      "from": "validate",
+      "id": "edge-18",
+      "from": "json_gate",
+      "to": "correct_gate",
+      "type": "primary",
+      "label": "是 · json.loads 成功"
+    },
+    {
+      "id": "edge-19",
+      "from": "json_gate",
+      "to": "retry_gate",
+      "type": "primary",
+      "label": "否 · JSON 解码失败"
+    },
+    {
+      "id": "edge-20",
+      "from": "retry_gate",
+      "to": "judge",
+      "type": "secondary",
+      "label": "是 · 重试"
+    },
+    {
+      "id": "edge-21",
+      "from": "retry_gate",
+      "to": "omit",
+      "type": "primary",
+      "label": "否 · 五次尝试耗尽"
+    },
+    {
+      "id": "edge-22",
+      "from": "correct_gate",
+      "to": "full_score",
+      "type": "primary",
+      "label": "是 · 真值"
+    },
+    {
+      "id": "edge-23",
+      "from": "correct_gate",
+      "to": "partial_score",
+      "type": "primary",
+      "label": "否 · 假值"
+    },
+    {
+      "id": "edge-24",
+      "from": "full_score",
       "to": "report",
       "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "partial_score",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "report",
+      "to": "validate",
+      "type": "secondary",
+      "label": "论文公开的可靠性研究"
     }
   ],
   "modules": []

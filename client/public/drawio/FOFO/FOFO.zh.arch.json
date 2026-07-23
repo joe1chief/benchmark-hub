@@ -7,56 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 8,
-    "edges": 7,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "domain_seed",
-      "label": "专家提供适合AI智能体的子领域种子\nGPT-4扩展并归纳为超级领域\n人工反复再生成与复核",
-      "type": "process",
+      "id": "evidence",
+      "label": "证据边界：arXiv:2402.18667v1\nFoFo @ 140b1661\n测试集 SHA 8f4cddcb\n论文方法 + 固定公开发布物审计",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "taxonomy",
-      "label": "固化领域分类体系\n10个领域×每领域5个子领域\n覆盖医疗、金融、软件、法律、艺术等",
+      "id": "domain_taxonomy",
+      "label": "专家给出适合智能体的子领域种子\nGPT-4 扩展，人工迭代并重新归组\n10 个领域 × 5 个子领域 = 50",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "format_generation",
-      "label": "GPT-4为每个子领域提出5种文本格式\n要求人可理解、领域专用并附示例\n初步排除通用TXT/CSV/JSON/XML",
+      "id": "format_candidates",
+      "label": "GPT-4 为每个子领域提出 5 种专用格式\n500 个候选三元组 · 254 个唯一字符串\n要求人类可读，初始排除通用格式",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "format_review",
-      "label": "专家评估、再生成或移除格式\n再加入通用JSON/XML/CSV/Markdown/YAML\n最终248种数据格式",
+      "label": "专家评估、重生成或移除候选格式\n加回 JSON / XML / CSV\n以及 Markdown / YAML\n再确定领域-格式清单",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "instruction_generation",
-      "label": "GPT-4按三元组编写FORMAT-INSTRU\n真实复杂任务 + 精确格式配置\n附虚拟上下文或允许补全缺失细节",
+      "id": "instruction_authoring",
+      "label": "GPT-4 为每个三元组写 FORMAT-INSTRU\n明确格式配置与真实任务\n提供虚拟上下文或允许模型自行补全",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "instruction_review",
-      "label": "人工逐条核验、编辑、移除或再生成\n最终494条FORMAT-INSTRU\n平均指令长度2,908字符",
+      "id": "release",
+      "label": "人工逐条核验、编辑、移除或重生成\n发布：494 条指令 · 248 种格式\n指令平均长度 2,908 字符",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "generation",
-      "label": "对每条测试指令生成一次回答\n使用各模型官方提示格式\n采样温度0.7 · 最多5,120新tokens",
+      "id": "prompting",
+      "label": "按模型家族封装每条指令\nAlpaca · Vicuna · Mistral\nZephyr · OpenChat\n其他模型直接使用原始指令",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "evaluation",
-      "label": "GPT-4给二元格式判断与解释\n缺少任一要求即整题失败\n报告格式准确率；人工复核84/100一致",
+      "id": "generation",
+      "label": "每条指令生成一个回答\ntemperature 0.7 · top-p 1\n最多 5,120 token\n解码并剥离提示，Zephyr 单独切分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "judge",
+      "label": "GPT-4 评审 · 最多 1,024\ntemperature 0\n为每个回答输出二元判定与理由\n缺少任一格式要求即失败",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "parser_metric",
+      "label": "json_parser 提取\nformat_correctness\n仅保留二元 0/1 标签\n准确率 = 100 × n_correct / n_total",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_audit",
+      "label": "人工复核 100 个模型回答\n84/100 与 GPT-4 一致\n16 个分歧均为评审假阳性",
       "type": "terminal",
       "size": "xl"
     }
@@ -64,44 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "domain_seed",
-      "to": "taxonomy",
+      "from": "evidence",
+      "to": "domain_taxonomy",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "taxonomy",
-      "to": "format_generation",
+      "from": "domain_taxonomy",
+      "to": "format_candidates",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "format_generation",
+      "from": "format_candidates",
       "to": "format_review",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "format_review",
-      "to": "instruction_generation",
+      "to": "instruction_authoring",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "instruction_generation",
-      "to": "instruction_review",
+      "from": "instruction_authoring",
+      "to": "release",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "instruction_review",
-      "to": "generation",
+      "from": "release",
+      "to": "prompting",
       "type": "primary"
     },
     {
       "id": "edge-7",
+      "from": "prompting",
+      "to": "generation",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
       "from": "generation",
-      "to": "evaluation",
+      "to": "judge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "judge",
+      "to": "parser_metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "parser_metric",
+      "to": "human_audit",
       "type": "primary"
     }
   ],

@@ -5,175 +5,212 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BrowseComp-Plus 构建流程
-  description: >-
-    按论文把 1,266 道 BrowseComp 问题转为固定 100,195 篇去重语料上的 830 道人工验证查询，加入困难负样本、 evidence/gold qrels、受控检索器-Agent
-    运行、答案与引用评分以及独立检索诊断。
-  legend: 实线表示语料构建与 Agent 评测，虚线把语料统计和 Qrels 送入诊断报告。
+  description: 与论文一致的 1,266 → 1,142 → 1,005 → 830 筛选漏斗；仅从人工验证后的最终集合挖掘困难负样本； 在固定语料上分别进行 GPT-4.1 判分的端到端回答评测、引用评测与独立检索评测。
+  legend: 实线表示构建或端到端评测；虚线数据箭头输入独立诊断。
 nodes:
   - id: original
     label: |-
-      从原始 BrowseComp 出发
-      1,266 个复杂问答对
-      替代动态黑盒网页评测
+      原始 BrowseComp
+      1,266 个问题答案对
+      开始证据收集
     type: database
     size: xl
     position:
       x: 40
-      'y': 220
-  - id: o3_mining
+      'y': 420
+  - id: o3_gate
     label: |-
-      使用 OpenAI o3 与网页搜索
-      生成线索、候选 URL 与证据片段
-      抓取候选页面
+      使用 o3 联网搜索
+      124 个因格式错误或拒答失败
+      排除失败响应
     type: process
     size: xl
     position:
-      x: 320
-      'y': 220
-  - id: initial_filter
+      x: 290
+      'y': 420
+  - id: after_o3
     label: |-
-      过滤幻觉 URL 与抓取失败
-      为 1,142 个查询保留初始证据
-      把证据链送入人工复核
-    type: decision
+      保留 1,142 个查询
+      结构化线索 • URL • 片段
+      继续收集页面
+    type: database
     size: xl
     position:
-      x: 600
-      'y': 220
+      x: 540
+      'y': 420
+  - id: scrape
+    label: |-
+      抓取每个引用 URL
+      Selenium + Trafilatura
+      提取候选证据文本
+    type: process
+    size: xl
+    position:
+      x: 790
+      'y': 420
+  - id: scrape_gate
+    label: |-
+      验证已抓取页面
+      137 个幻觉 URL 或抓取失败
+      排除不可用查询
+    type: process
+    size: xl
+    position:
+      x: 1040
+      'y': 420
+  - id: after_scrape
+    label: |-
+      保留 1,005 个查询
+      候选证据可成功抓取
+      每个查询均进入人工验证
+    type: database
+    size: xl
+    position:
+      x: 1290
+      'y': 420
   - id: human_verify
     label: |-
-      14 位学生标注员验证证据
-      超过 400 小时 • 一致率超过 80%
-      检查每条线索与完整作答链
+      人工验证线索与可回答性
+      14 名标注员 • 400+ 小时 • 一致率 >80%
+      必要时修订或搜索至少 20 分钟
     type: user
     size: xl
     position:
-      x: 880
-      'y': 40
+      x: 1540
+      'y': 420
   - id: verified
     label: |-
-      得到 830 个验证查询
-      标记推理必需的 Evidence 文档
-      标记同时含最终答案的 Gold 文档
+      最终 830 个验证查询
+      Evidence 文档支撑推理
+      Gold 文档还包含最终答案
     type: database
     size: xl
     position:
-      x: 1160
-      'y': 40
+      x: 1790
+      'y': 420
   - id: decompose
     label: |-
-      GPT-4o 分解每个查询
-      平均生成七条搜索子查询
-      定位主题相关的干扰文档
+      GPT-4o 查询分解
+      每个查询约 7 个子查询
+      仅作用于最终 830 个查询
     type: process
     size: xl
     position:
-      x: 880
-      'y': 400
+      x: 2040
+      'y': 820
   - id: hard_negatives
     label: |-
-      用 Google Search API 挖掘困难负样本
-      主题相关但不能帮助得到最终答案
-      增加检索难度
+      挖掘困难负样本
+      SerpAPI：每个子查询最多 100 个结果
+      保留相关但不提供支持的文档
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 400
+      x: 2290
+      'y': 820
   - id: corpus
     label: |-
-      构建固定去重语料
-      830 个查询共 100,195 篇文档
-      平均 6.1 Evidence • 76.28 负样本 • 2.9 Gold
+      固定去重语料库
+      830 个查询对应 100,195 篇文档
+      Evidence + Gold qrels + 困难负样本
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 220
+      x: 2540
+      'y': 420
   - id: retrievers
     label: |-
-      配置受控检索器
-      BM25 • Qwen3-Embedding 0.6B / 4B / 8B
-      ReasonIR 8B • Oracle 证据上下文
+      配置检索器
+      BM25 • Qwen3 Embedding • ReasonIR
+      以 Oracle Evidence 上下文作对照
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 220
+      x: 2790
+      'y': 420
   - id: topk
     label: |-
-      每次搜索返回 Top-5
-      每条结果截断到 512 Token
-      可选 get-document 工具打开全文
+      Agent 搜索接口
+      Top 5 • 每条结果 512 Token
+      可选全文文档工具
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 220
+      x: 3040
+      'y': 420
   - id: agent
     label: |-
-      Deep-Research Agent 迭代搜索
-      规划查询 • 阅读结果 • 交叉核验证据
-      返回最终答案与文档引用
+      深度研究 Agent
+      迭代搜索与交叉核验
+      输出带文档引用的最终答案
     type: process
     size: xl
     position:
-      x: 2280
-      'y': 220
-  - id: answer_score
+      x: 3290
+      'y': 420
+  - id: end_to_end
     label: |-
-      评分端到端作答
-      归一化答案准确率与 Recall
-      统计搜索调用次数与 Agent 成本
+      端到端回答评测
+      GPT-4.1 Judge：准确率 + 召回率
+      搜索调用次数 + 校准误差
     type: process
     size: xl
     position:
-      x: 2560
-      'y': 40
+      x: 3540
+      'y': 20
   - id: citation_score
     label: |-
-      评分引用落地性
-      对 Positive 文档计算 Precision 与 Recall
-      保留逐查询指标
+      端到端引用评测
+      覆盖率 + 数量
+      引用精确率 + 召回率
     type: process
     size: xl
     position:
-      x: 2560
-      'y': 220
+      x: 3540
+      'y': 420
   - id: retrieval_score
     label: |-
-      评分独立检索
-      Evidence 与 Gold Recall@5 / 100 / 1000
-      对公开 Qrels 计算 NDCG@10
+      独立检索评测
+      Evidence / Gold Recall@5、100、1000
+      基于已发布 qrels 的 nDCG@10
     type: process
     size: xl
     position:
-      x: 2560
-      'y': 400
+      x: 3540
+      'y': 820
   - id: report
     label: |-
-      报告受控 Agent 与检索器结果
-      解耦检索、推理、引用与上下文
-      比较 BM25、稠密检索、Oracle 与消融
+      报告可控实验结果
+      分离检索、回答与引用能力
+      对比检索器、Oracle 与消融实验
     type: terminal
     size: xl
     position:
-      x: 2840
-      'y': 220
+      x: 3790
+      'y': 420
 edges:
   - from: original
-    to: o3_mining
+    to: o3_gate
     type: primary
-  - from: o3_mining
-    to: initial_filter
+  - from: o3_gate
+    to: after_o3
     type: primary
-  - from: initial_filter
+  - from: after_o3
+    to: scrape
+    type: primary
+  - from: scrape
+    to: scrape_gate
+    type: primary
+  - from: scrape_gate
+    to: after_scrape
+    type: primary
+  - from: after_scrape
     to: human_verify
     type: primary
   - from: human_verify
     to: verified
     type: primary
-  - from: initial_filter
+  - from: verified
     to: decompose
     type: primary
   - from: decompose
@@ -195,15 +232,15 @@ edges:
     to: agent
     type: primary
   - from: agent
-    to: answer_score
+    to: end_to_end
     type: primary
   - from: agent
     to: citation_score
     type: primary
   - from: retrievers
     to: retrieval_score
-    type: primary
-  - from: answer_score
+    type: data
+  - from: end_to_end
     to: report
     type: primary
   - from: citation_score

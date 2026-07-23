@@ -6,56 +6,59 @@ meta:
   routing: orthogonal
   title: clembench-2024 Build Process
   description: >-
-    Paper-aligned clembench flow: dialogue games separate reusable templates, response parsers, and game logic from
-    freshly sampled instances; a programmatic GameMaster runs LLM self-play, formal and quality scores form clemscore,
-    and human plus multilingual studies validate challenge and extensibility.
-  legend: Solid arrows show game construction and scoring; branches show human and multilingual validation studies.
+    Paper-era clembench flow: reusable game specifications generate fresh instances for offline self-play; formal play
+    and normalized game quality form clemscore, while expert and translated reference-game studies validate the design.
+  legend: Solid arrows follow the May 2024 paper; the dashed branch records later v3.0 repository drift.
 nodes:
-  - id: games
+  - id: evidence_boundary
     label: |-
-      Select Capability-probing Dialogue Games
-      Instruction Following • Strategy • Language Understanding
-      Fully Specifiable Goals and Terminal States
-    type: database
+      Paper-era Evidence Boundary
+      arXiv 2405.20859v1
+      Official Repo ba687db
+      Evaluation Run: May 2024
+    type: document
     size: xl
     position:
       x: 40
       'y': 220
-  - id: templates
+  - id: release_drift
     label: |-
-      Write Prompt Templates
-      Define Player Roles and Turn Instructions
-      Keep Game Specification Separate from Instances
+      Current Repo adff278
+      v3.0 Games and CLI
+      Later Release; Not 2024 Paper
     type: document
     size: xl
     position:
       x: 340
-      'y': 40
-  - id: parsers
+      'y': 440
+  - id: game_spec
     label: |-
-      Implement Parsers and Game Flow
-      Enforce Well-formed Responses
-      Detect Valid Actions and Terminal States
-    type: process
+      Specify Each Dialogue Game
+      Prompt Templates
+      Response Parsing Rules
+      Game Flow + Terminal State
+    type: document
     size: xl
     position:
       x: 340
-      'y': 400
+      'y': 220
   - id: instances
     label: |-
-      Create Fresh Game Instances
-      Sample Existing Pools or Lightly Curate Targets
-      Reduce Fixed-instance Contamination Risk
+      Create New Instances for All Games
+      Sample Existing Pools
+      Light Manual Target Curation
+      Reduce Fixed-instance Contamination
     type: process
     size: xl
     position:
       x: 640
       'y': 220
-  - id: master
+  - id: gamemaster
     label: |-
-      Instantiate the Programmatic GameMaster
-      Fill Templates with Concrete Instances
-      Control Turns, State, and Game-specific Rules
+      Instantiate Programmatic GameMaster
+      Fill Templates with Instances
+      Control Turns + Game Rules
+      Detect Terminal States
     type: process
     size: xl
     position:
@@ -64,8 +67,8 @@ nodes:
   - id: selfplay
     label: |-
       Run LLM-vs-LLM Self-play
-      Prompt Both Player Roles Turn by Turn
-      Record Complete Offline Dialogue Episodes
+      Prompt Both Roles Turn by Turn
+      Record Full Offline Episodes
     type: terminal
     size: xl
     position:
@@ -73,9 +76,9 @@ nodes:
       'y': 220
   - id: formal
     label: |-
-      Measure Formal Play
-      Percentage of Games Played to End
-      Expose Formatting and Protocol Failures
+      Check Formal Play
+      Parsing-rule Violations = Not Played
+      Measure % Games Played to End
     type: process
     size: xl
     position:
@@ -84,18 +87,19 @@ nodes:
   - id: quality
     label: |-
       Score Game-specific Quality
-      Apply Each Game's Main Metric
-      Normalize Quality to a 0–100 Scale
+      Main Metric 0–100 per Game
+      Score Well-formed Episodes
     type: process
     size: xl
     position:
       x: 1540
       'y': 400
-  - id: aggregate
+  - id: clemscore
     label: |-
       Compute clemscore
-      Combine Formal Play and Quality
-      Average Main Metrics by Game, Then across Games
+      Average Main Metric per Game
+      Then Average across Games
+      % Played × Quality Score Product
     type: terminal
     size: xl
     position:
@@ -103,9 +107,10 @@ nodes:
       'y': 220
   - id: human
     label: |-
-      Establish Human Expert Baselines
-      Author Pairings Play 10–15 Episodes per Game
-      Exclude Instances Created by the Same Player
+      Human Expert Baseline
+      Authors Play 10–15 Episodes/Game
+      Exclude Instances They Created
+      Omit Wordle-clue/Critic Variants
     type: user
     size: xl
     position:
@@ -113,9 +118,10 @@ nodes:
       'y': 40
   - id: multilingual
     label: |-
-      Run Multilingual Case Study
-      Native Speakers Translate Templates and Targets
-      Preserve the Same Parser and Game Logic
+      Reference Game Case Study
+      Native Speakers Translate Prompts
+      Target Expressions + Parsing Rules
+      Keep the Same Game Logic
     type: user
     size: xl
     position:
@@ -124,8 +130,9 @@ nodes:
   - id: validation
     label: |-
       Validate Benchmark Properties
-      Fresh-instance Rank Correlation 0.71
-      Compare Human Ceiling and Language Effects
+      Run-to-run Rank Correlation 0.71
+      Human Quality 86.93 • 100% Played
+      CA τ=0.65 • HELM τ=0.39
     type: process
     size: xl
     position:
@@ -133,31 +140,29 @@ nodes:
       'y': 220
   - id: report
     label: |-
-      Publish Dynamic Benchmark Results
-      clemscore • % Played • Quality Score
-      Model Ranking + Human + Multilingual Analysis
+      Publish May 2024 Results
+      clemscore • % Played • Quality
+      53 Models + Human Baseline
+      Multilingual Reference Analysis
     type: terminal
     size: xl
     position:
       x: 2740
       'y': 220
 edges:
-  - from: games
-    to: templates
+  - from: evidence_boundary
+    to: game_spec
     type: primary
-  - from: games
-    to: parsers
-    type: primary
-  - from: templates
-    to: instances
-    type: primary
-  - from: parsers
+  - from: evidence_boundary
+    to: release_drift
+    type: data
+  - from: game_spec
     to: instances
     type: primary
   - from: instances
-    to: master
+    to: gamemaster
     type: primary
-  - from: master
+  - from: gamemaster
     to: selfplay
     type: primary
   - from: selfplay
@@ -167,15 +172,15 @@ edges:
     to: quality
     type: primary
   - from: formal
-    to: aggregate
+    to: clemscore
     type: primary
   - from: quality
-    to: aggregate
+    to: clemscore
     type: primary
-  - from: aggregate
+  - from: clemscore
     to: human
     type: primary
-  - from: aggregate
+  - from: clemscore
     to: multilingual
     type: primary
   - from: human

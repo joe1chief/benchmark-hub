@@ -5,152 +5,139 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Gaia2 Build Process
-  description: >-
-    Paper-aligned ARE environment, human scenario, augmentation, execution, and write-action verification flow for
-    Gaia2.
+  description: Paper-and-release-aligned construction, validation, augmentation, execution, and write-action verification flow.
   legend: >-
-    Solid arrows follow arXiv:2602.11964. The 800 human-authored core scenarios are distinct from the 320 Noise/A2A
-    augmentations derived from Gaia2-mini, giving 1,120 evaluated scenarios.
+    Dotted arrow denotes pinned evidence; solid arrows denote the benchmark build and evaluation flow. The five public
+    dataset configs are distinct from the two mini-derived evaluation augmentations.
 nodes:
-  - id: are
+  - id: evidence
     label: |-
-      Build the asynchronous ARE abstractions
-      stateful apps · time manager · events/DAGs
-      notifications · scenarios · write verification
-    type: database
+      Primary evidence
+      arXiv:2602.11964v1
+      repo 79463674 · data 78ea3bdb
+    type: document
     size: xl
     position:
       x: 40
-      'y': 250
-  - id: mobile
+      'y': 100
+  - id: are_mobile
     label: |-
-      Instantiate the Mobile environment
-      12 apps · 101 tools · 10 user universes
-      PersonaHub seeds and cross-app dependency propagation
+      Build ARE Mobile
+      12 apps · 101 tools · 10 universes
+      400K–800K tokens per universe
     type: process
     size: xl
     position:
       x: 300
-      'y': 250
-  - id: content
+      'y': 100
+  - id: annotation
     label: |-
-      Populate coherent long-horizon state
-      400K–800K structured/unstructured tokens
-      simulated time advances during model generation
+      Human-authored scenario DAGs
+      initial state · oracle write actions
+      events · one dominant capability
     type: process
     size: xl
     position:
       x: 560
-      'y': 250
-  - id: author
+      'y': 100
+  - id: validation
     label: |-
-      Humans author oracle scenario DAGs
-      write actions + environment events + initial state
-      isolate Execution/Search/Ambiguity/Adaptability/Time
+      Independent validation rounds
+      consistency · graph guardrails
+      baseline-agent calibration
     type: process
     size: xl
     position:
       x: 820
-      'y': 250
-  - id: validate
+      'y': 100
+  - id: core_release
     label: |-
-      Independently validate in multiple rounds
-      consistency check + graph guardrails
-      calibrate difficulty with a baseline agent
+      800 unique core scenarios
+      five capability splits × 160
+      curate Gaia2-mini: 160
+    type: database
+    size: xl
+    position:
+      x: 1080
+      'y': 100
+  - id: augmentations
+    label: |-
+      Apply modifiers to mini
+      Noise 160 · Agent2Agent 160
+      reuse write-action annotations
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 100
+  - id: release_boundary
+    label: |-
+      Pinned public-release boundary
+      five core configs × 160 = 800
+      mini 160 · demo 3
+      private test · validation leaderboard
+    type: document
+    size: xl
+    position:
+      x: 1340
+      'y': 380
+  - id: scaffold
+    label: |-
+      ReAct-like agent scaffold
+      one JSON tool call per step
+      T 0.5 · 16K/turn · 3 runs · ≤200
     type: process
     size: xl
     position:
       x: 1080
-      'y': 250
-  - id: core
+      'y': 380
+  - id: verifier
     label: |-
-      Assemble 800 unique core scenarios
-      five human-authored capability splits
-      curate a 160-scenario Gaia2-mini subset
-    type: database
-    size: xl
-    position:
-      x: 1340
-      'y': 250
-  - id: augment
-    label: |-
-      Apply two environment augmentations to mini
-      Noise: tool failures/signature changes/spam events
-      A2A: replace apps with on-demand app-agents
+      Minimal oracle write verifier
+      exact rigid · LLM-flexible args
+      causality · timing · completeness
     type: process
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: release
+      x: 820
+      'y': 380
+  - id: metric
     label: |-
-      Final Gaia2 evaluation suite
-      800 core + 320 augmented = 1,120 scenarios
-      seven views: five core + Noise + Agent2Agent
-    type: database
-    size: xl
-    position:
-      x: 1860
-      'y': 250
-  - id: run
-    label: |-
-      Run the same ReAct-style scaffold
-      one JSON tool call/step + notification hooks
-      temperature 0.5 · 16K/turn · 3 runs · ≤200 steps
-    type: process
-    size: xl
-    position:
-      x: 2120
-      'y': 250
-  - id: verify
-    label: |-
-      ARE Verifier checks every write action
-      exact/flexible arguments · causality · timing · completeness
-      0.98 agreement and 0.99 precision on 450 trajectories
-    type: process
-    size: xl
-    position:
-      x: 2380
-      'y': 250
-  - id: score
-    label: |-
-      Report Pass@1 by split and overall
-      average across capability splits
-      also analyze cost, latency, and robustness trade-offs
+      Report Pass@1
+      split and overall scores
+      450 labels: agreement 0.98
+      precision 0.99 · recall 0.95
     type: terminal
     size: xl
     position:
-      x: 2640
-      'y': 250
+      x: 560
+      'y': 380
 edges:
-  - from: are
-    to: mobile
+  - from: evidence
+    to: are_mobile
+    type: data
+  - from: are_mobile
+    to: annotation
     type: primary
-  - from: mobile
-    to: content
+  - from: annotation
+    to: validation
     type: primary
-  - from: content
-    to: author
+  - from: validation
+    to: core_release
     type: primary
-  - from: author
-    to: validate
+  - from: core_release
+    to: augmentations
     type: primary
-  - from: validate
-    to: core
+  - from: augmentations
+    to: release_boundary
     type: primary
-  - from: core
-    to: augment
+  - from: release_boundary
+    to: scaffold
     type: primary
-  - from: augment
-    to: release
+  - from: scaffold
+    to: verifier
     type: primary
-  - from: release
-    to: run
-    type: primary
-  - from: run
-    to: verify
-    type: primary
-  - from: verify
-    to: score
+  - from: verifier
+    to: metric
     type: primary
 modules: []

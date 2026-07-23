@@ -7,10 +7,11 @@ meta:
   title: AlignBench Build Process
   description: >-
     AlignBench curates 683 real-scenario Chinese queries through human-in-the-loop reference verification and a
-    three-model difficulty filter, then applies a rule-calibrated multidimensional GPT-4 point-wise judge.
+    three-model difficulty filter, then applies the fixed GPT-4-0613 protocol, score-dictionary parsing, and official
+    reasoning/language aggregation.
   legend: >-
-    The three layered rows form one continuous construction-and-evaluation path; the dashed branch records web evidence
-    required while humans verify knowledge-intensive references.
+    The layered rows form one path. Candidate generation exposes the 0.7 creative-task setting; the judge is fixed to
+    gpt-4-0613 at T=0.1. Final aggregation weights reasoning and language group means equally.
 nodes:
   - id: sources
     label: |-
@@ -35,7 +36,8 @@ nodes:
   - id: taxonomy
     label: |-
       Paper Categories 1–4
-      Fundamental Language Ability • Advanced Chinese Understanding
+      Fundamental Language Ability
+      Advanced Chinese Understanding
       Open-ended Questions • Writing Ability
     type: document
     size: xl
@@ -117,8 +119,9 @@ nodes:
       'y': 360
   - id: model
     label: |-
-      Target LLM Response
-      Category-Specific Temperature
+      Generate Target LLM Response
+      Fixed-Answer Categories: T = 0.1
+      Target T = 0.7 for Open / Writing / Role
     type: process
     size: xl
     position:
@@ -126,23 +129,45 @@ nodes:
       'y': 360
   - id: judge
     label: |-
-      GPT-4 Point-Wise Judge
+      Fixed gpt-4-0613 Point-Wise Judge
+      Judge T = 0.1
+      Query + Reference + Target Response
       Task-Specific Dimensions + CoT
-      Rule-Calibrated 1–10 Rubrics
     type: process
     size: xl
     position:
       x: 40
       'y': 360
-  - id: score
+  - id: score_dict
     label: |-
-      Dimension + Overall Scores
-      Human Reference Anchored at 8
-      Final Score on a 1–10 Scale
-    type: terminal
+      Parse Last Score Dictionary
+      Integer Scores for Each Dimension
+      Read 'Overall Score'; Regex Fallback
+    type: document
     size: xl
     position:
       x: 40
+      'y': 640
+  - id: aggregate
+    label: |-
+      Aggregate Official Results
+      Reasoning = mean(Math, Logic)
+      Language = mean(6 language categories)
+      Overall = (Reasoning + Language) / 2
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 640
+  - id: score
+    label: |-
+      AlignBench Results
+      Category • Reasoning • Language
+      Overall Score on the 1–10 Scale
+    type: terminal
+    size: xl
+    position:
+      x: 600
       'y': 640
 edges:
   - from: sources
@@ -187,6 +212,12 @@ edges:
     to: judge
     type: primary
   - from: judge
+    to: score_dict
+    type: primary
+  - from: score_dict
+    to: aggregate
+    type: primary
+  - from: aggregate
     to: score
     type: primary
 modules: []

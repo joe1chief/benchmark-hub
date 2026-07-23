@@ -7,32 +7,32 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 12,
+    "nodes": 15,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
       "id": "pddl",
-      "label": "Generate PDDL Domain + Problem\n13 ACPBench planning domains\nReuse ALFWorld PDDL",
+      "label": "PDDL Source Preparation\nGenerator when available\nALFWorld: reuse official PDDL\n13 planning domains",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "planner",
-      "label": "Run Top-K / Top-Quality Planner\nProduce multiple valid plans\nKeep task, current state, and goal",
+      "label": "Plan Production\nTop-quality planner first\nDiverse planner as backup\nRetain multiple valid plans",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "sample",
-      "label": "Sample Plan / Intermediate State\nChoose artifact per task\nSkip uncertain reachability states",
+      "label": "Task-Scoped Sampling\nSample plans or intermediate states\naccording to the target task",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "symbolic",
-      "label": "Generate Symbolic QA\nApplicability • progression\nReachability • action reachability\nValidation • justification\nLandmarks • next action",
+      "label": "Task-Specific Symbolic QA\nApp • Prog • Reach • AReach\nVal • Just • Land • NextA\nReach / AReach: skip uncertain states\nRetain validator artifacts",
       "type": "process",
       "size": "xl"
     },
@@ -56,31 +56,49 @@
     },
     {
       "id": "parse",
-      "label": "Task-Specific Grammar Parser\nExtract actions, facts, plans, or index\nReject invalid / unparseable symbols",
+      "label": "Lenient Grammar Parser\nDiscard out-of-grammar tokens\nExtract actions, facts, lists, or index\nThen run symbolic validators",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "route",
-      "label": "Validator Path?",
+      "label": "Validator Family?",
       "type": "decision",
       "size": "xl"
     },
     {
-      "id": "stored",
-      "label": "Stored / Simulation Checks\nExact sets: applicability, progression\nFirst invalid index\nSubsequence justification",
+      "id": "deterministic",
+      "label": "Direct / Simulation Validators\nApp, Prog: exact complete sets\nVal: first invalid index\nJust: proper subsequence + valid plan",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "known_fast",
+      "label": "Known-Answer Fast Path\nReach • AReach • Land • NextA\nCheck None / cached positive-negative sets",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "unresolved",
+      "label": "Unresolved Candidate?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
       "id": "solve",
-      "label": "Planner-Backed Checks\nReachability • action reachability\nLandmarks\nNext action: optimal distance −1",
+      "label": "Planner Fallback\nReach / AReach / Land\nNextA: optimal cost drops by 1",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "ACPBench Hard Results\nBinary accuracy per task / domain\nStrict answers\nOptional applicability Jaccard",
+      "label": "Strict ACPBench Hard Accuracy\nBinary accuracy per task / domain\nFinal answers only",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "jaccard",
+      "label": "Applicability-Only Add-on\nOptional Jaccard similarity",
       "type": "terminal",
       "size": "xl"
     }
@@ -137,28 +155,55 @@
     {
       "id": "edge-9",
       "from": "route",
-      "to": "stored",
+      "to": "deterministic",
       "type": "primary",
-      "label": "Stored: Applicability • Progression\nValidation • Justification"
+      "label": "App • Prog\nVal • Just"
     },
     {
       "id": "edge-10",
       "from": "route",
-      "to": "solve",
+      "to": "known_fast",
       "type": "primary",
-      "label": "Solve • 4 checks"
+      "label": "Reach • AReach • Land • NextA"
     },
     {
       "id": "edge-11",
-      "from": "stored",
+      "from": "deterministic",
       "to": "report",
       "type": "primary"
     },
     {
       "id": "edge-12",
+      "from": "known_fast",
+      "to": "unresolved",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "unresolved",
+      "to": "report",
+      "type": "primary",
+      "label": "Known result"
+    },
+    {
+      "id": "edge-14",
+      "from": "unresolved",
+      "to": "solve",
+      "type": "primary",
+      "label": "Planner needed"
+    },
+    {
+      "id": "edge-15",
       "from": "solve",
       "to": "report",
       "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "report",
+      "to": "jaccard",
+      "type": "secondary",
+      "label": "Less-strict analysis"
     }
   ],
   "modules": []

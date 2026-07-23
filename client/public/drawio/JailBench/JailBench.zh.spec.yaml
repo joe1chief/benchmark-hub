@@ -5,18 +5,29 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: JailBench 构建流程
-  description: 对齐论文的 JailBench 构建：从中文两级安全分类与有害问题的翻译、标注、扩增开始，经过 AJPE 模板测试、 上下文提示生成、对数概率排序，形成越狱测试集并完成安全评测。
-  legend: JailBench Seed 构建池超过 10,000 题；公开评测设计从中选 540 道种子题，与 20 个高效越狱提示组合成 10,800 个用例。
+  description: 对齐论文的 JailBench 构建：中文安全分类体系与四个公开有害问题来源形成种子池；AJPE 测试模板与种子组合，保留有害证据，归纳并评分新提示，再将高分提示回写模板池。
+  legend: 实线表示主要构建与评测流程；虚线表示证据或分类输入及高分模板反馈回路。论文完整规模与公开仓库子集分别标注，不混为同一发布物。
 nodes:
-  - id: standard
+  - id: evidence
     label: |-
-      中国生成式 AI 安全基本要求
-      训练数据与生成内容主要风险
-      安全专家 + 语言学专家协作
+      主要证据与固定版本
+      arXiv:2502.18935v1
+      PAKDD 2025
+      官方 Git 5f47407
     type: document
     size: xl
     position:
       x: 20
+      'y': 40
+  - id: standard
+    label: |-
+      中国生成式 AI 安全要求
+      训练数据与生成内容风险
+      安全专家与语言学专家协作
+    type: document
+    size: xl
+    position:
+      x: 300
       'y': 40
   - id: taxonomy
     label: |-
@@ -26,63 +37,62 @@ nodes:
     type: database
     size: xl
     position:
-      x: 300
+      x: 580
       'y': 40
-  - id: collect
+  - id: sources
     label: |-
-      汇集有害问题
-      来源为公开红队与安全数据集
-      同时包含有标签与无标签来源
-      保留原始分类信息
+      四个公开有害问题来源
+      Anthropic 红队数据 · AdvBench
+      SafetyBench · Flames
+      同时包含有标签与无标签问题
     type: cloud
     size: xl
     position:
-      x: 580
-      'y': 40
+      x: 300
+      'y': 300
   - id: translate
     label: |-
       中文本地化
-      将来源问题翻译为中文
+      翻译全部来源问题
       人工校正语言与语义
-      形成基础原始数据
+    type: process
+    size: xl
+    position:
+      x: 580
+      'y': 300
+  - id: label
+    label: |-
+      对齐 JailBench 分类体系
+      映射已有标签
+      ChatGPT 分类无标签问题
+      任务 · 标准 · 输出格式约束
     type: process
     size: xl
     position:
       x: 860
-      'y': 40
-  - id: label
-    label: |-
-      对齐 JailBench 分类
-      映射已有标签类别
-      ChatGPT 分类无标签问题
-      提示包含分类标准与输出格式
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 40
+      'y': 300
   - id: verify
     label: |-
       标签质量控制
-      随机抽样已分类条目
+      随机抽样已分类问题
       人工按分类体系复核
       修正不准确的类别分配
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 40
+      x: 1140
+      'y': 300
   - id: augment
     label: |-
       补齐稀缺类别
       ChatGPT 少样本生成有害问题
-      输入目标类别与已有样例
-      迭代提升覆盖度与多样性
+      输入目标类别与随机样例
+      反复迭代覆盖度与多样性
     type: process
     size: xl
     position:
-      x: 1700
-      'y': 40
+      x: 1420
+      'y': 300
   - id: seed_pool
     label: |-
       JailBench Seed 构建池
@@ -91,92 +101,178 @@ nodes:
     type: database
     size: xl
     position:
-      x: 1980
-      'y': 40
+      x: 1700
+      'y': 300
   - id: prior_templates
     label: |-
-      收集已有越狱模板
-      AutoDAN · GPTFuzzer · DeepInception 等
-      翻译为中文并人工精修
+      越狱模板池
+      AutoDAN · GPTFuzzer
+      Jailbroken · ReNeLLM · ICA
+      DeepInception；中文翻译并人工精修
     type: document
     size: xl
     position:
       x: 1980
-      'y': 380
-  - id: test
+      'y': 620
+  - id: template_seed
     label: |-
-      AJPE 模板测试
-      随机模板 × 种子问题
-      评估目标模型输出有害性
-      丢弃 ASR 低于阈值的模板
-    type: process
+      AJPE 模板测试输入
+      随机越狱模板
+      + 原始 JailBench Seed 问题
+    type: database
     size: xl
     position:
       x: 1700
-      'y': 380
-  - id: generate
+      'y': 620
+  - id: target_llm
     label: |-
-      AJPE 提示生成
-      学习成功有害输入输出对
-      ChatGPT 生成多样诱导提示
-      模仿有效模板特征
+      查询目标模型组
+      对增强提示生成回答
+      保留模板到输出的轨迹
     type: process
     size: xl
     position:
       x: 1420
-      'y': 380
-  - id: score
+      'y': 620
+  - id: evaluator
     label: |-
-      提示质量筛选
-      用输出对数概率衡量提示有效性
-      保留表现最高的提示
-      将模板池扩展至超过 1,000 个
+      安全评估器
+      判定目标输出是否有害
+      计算各模板 ASR
     type: process
     size: xl
     position:
       x: 1140
-      'y': 380
-  - id: combine
+      'y': 620
+  - id: gate
     label: |-
-      构建最终 JailBench
-      选择 20 个高效越狱提示
-      选择 540 道 JailBench Seed 问题
-      笛卡尔积 → 10,800 个测试用例
-    type: database
+      输出有害
+      且模板达到
+      预设 ASR 阈值？
+    type: decision
     size: xl
     position:
       x: 860
-      'y': 380
+      'y': 620
+  - id: harmful_pairs
+    label: |-
+      保留 AJPE 证据
+      成功有害输入输出对
+      + 对应有效模板
+    type: database
+    size: xl
+    position:
+      x: 580
+      'y': 620
+  - id: induction
+    label: |-
+      ChatGPT 上下文归纳
+      学习有害输入输出对
+      生成多样诱导指令
+      模仿有效模板特征
+    type: process
+    size: xl
+    position:
+      x: 300
+      'y': 620
+  - id: score
+    label: |-
+      对数概率提示评分
+      用模型置信度代理有效性
+      排序新生成提示
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 620
+  - id: prompt_pool
+    label: |-
+      高分越狱提示池
+      保留最佳提示并回写模板池
+      AJPE 扩展至超过 1,000 个
+    type: database
+    size: xl
+    position:
+      x: 20
+      'y': 900
+  - id: combine
+    label: |-
+      构建论文完整 JailBench
+      选择 20 个高效提示
+      选择 540 道 JailBench Seed 问题
+      笛卡尔积 = 10,800 个用例
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 900
   - id: evaluate
     label: |-
-      执行安全评测
-      查询 13 个中文能力模型
-      MDJudge 判定输出有害性
-      按 5 个领域与 40 类汇总
+      评测论文中的 13 个中文能力模型
+      JailBench Seed + 增强 JailBench
+      汇总 5 个领域 + Overall
     type: process
     size: xl
     position:
       x: 580
-      'y': 380
+      'y': 900
   - id: report
     label: |-
       汇报安全漏洞
-      攻击成功率 = 有害输出 / 总问题数
-      攻击效率进一步考虑提示长度
+      ASR = n / m
+      AE = k/m · Σ 1/exp(l_s/l_o)
       对比 Seed 与越狱增强结果
     type: terminal
     size: xl
     position:
-      x: 300
-      'y': 380
+      x: 860
+      'y': 900
+  - id: artifact_boundary
+    label: |-
+      论文与公开资产边界
+      论文：540 × 20 = 10,800 · 40 类
+      Git 5f47407：108 / 2,160 · 27 类
+      完整数据需申请；公开 CSV 为子集
+      README：MDJudge + 14 模型榜单
+    type: document
+    size: xl
+    position:
+      x: 1140
+      'y': 900
+  - id: safe_discard
+    label: |-
+      安全或低 ASR 分支
+      丢弃安全输出证据
+      丢弃低于 ASR 阈值的模板
+    type: terminal
+    size: xl
+    position:
+      x: 1980
+      'y': 900
 edges:
+  - from: evidence
+    to: standard
+    type: data
+  - from: evidence
+    to: sources
+    type: data
+    waypoints:
+      - x: 160
+        'y': 220
+      - x: 420
+        'y': 220
   - from: standard
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: collect
-    type: primary
-  - from: collect
+    to: label
+    type: data
+    waypoints:
+      - x: 720
+        'y': 220
+      - x: 980
+        'y': 220
+  - from: sources
     to: translate
     type: primary
   - from: translate
@@ -192,18 +288,56 @@ edges:
     to: seed_pool
     type: primary
   - from: seed_pool
-    to: prior_templates
+    to: template_seed
     type: primary
   - from: prior_templates
-    to: test
+    to: template_seed
     type: primary
-  - from: test
-    to: generate
+  - from: template_seed
+    to: target_llm
     type: primary
-  - from: generate
+  - from: target_llm
+    to: evaluator
+    type: primary
+  - from: evaluator
+    to: gate
+    type: primary
+  - from: gate
+    to: harmful_pairs
+    type: primary
+    label: 有害且达到阈值
+  - from: gate
+    to: safe_discard
+    type: primary
+    label: 安全或低于阈值
+    waypoints:
+      - x: 1000
+        'y': 840
+      - x: 2100
+        'y': 840
+  - from: harmful_pairs
+    to: induction
+    type: primary
+  - from: induction
     to: score
     type: primary
   - from: score
+    to: prompt_pool
+    type: primary
+  - from: prompt_pool
+    to: prior_templates
+    type: data
+    label: 高分提示回写
+    waypoints:
+      - x: 160
+        'y': 1180
+      - x: 2380
+        'y': 1180
+      - x: 2380
+        'y': 780
+      - x: 2100
+        'y': 780
+  - from: prompt_pool
     to: combine
     type: primary
   - from: combine
@@ -212,4 +346,7 @@ edges:
   - from: evaluate
     to: report
     type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
 modules: []

@@ -243,7 +243,7 @@ test('pins primary papers and official code or data snapshots', () => {
       note: /§3\.2\.1.*§3\.5/isu,
     },
     CiteEval: {
-      paper: 'https://arxiv.org/abs/2506.01829v1',
+      paper: 'https://aclanthology.org/2025.acl-long.1574/',
       pdf: 'https://arxiv.org/pdf/2506.01829v1',
       note: /§3\.1.*§3\.2.*Appendix C\.2.*88f567d244a73607fe1feebdb821f17d96acf796/isu,
     },

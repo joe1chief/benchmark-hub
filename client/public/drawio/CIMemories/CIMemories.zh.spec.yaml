@@ -5,139 +5,151 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CIMemories 构建流程
-  description: 与论文对齐的 CIMemories 流程：从合成身份扩展出基于个人事件的记忆，与人工设计的目标—接收者情境配对， 按 Westin 隐私人格严格筛选一致标签，最终在重复任务压力下衡量不当披露与有效回忆。
-  legend: 实线表示基准构建与评测主流程；虚线表示通过标签筛选后的发布路径。
+  description: >-
+    与论文一致地合成用户画像与情境，使用隐私人格标注并进行一致性筛选，再执行记忆评测；另设来源分支明确展示 Hugging Face 上固定版本的 71,883 行原始提示资产，其 label 列为空白或
+    null，并非论文的筛选后金标评测集。
+  legend: 实线表示论文评测路径；虚线数据箭头通往独立的公开原始资产。
 nodes:
   - id: identities
     label: |-
-      创建合成用户身份
-      Faker 生成的人口属性档案
-      主评测使用 10 个用户档案
+      创建合成成年身份
+      Faker 画像 • 21–70 岁
+      主评测使用 10 个画像
     type: database
     size: xl
     position:
       x: 40
-      'y': 220
+      'y': 420
   - id: events
     label: |-
-      采样个人生活事件
-      正向经历与挑战性经历
-      覆盖九类信息领域
+      采样个人事件
+      3 个事件 × 9 个领域
+      每事件最多 7 个属性
     type: process
     size: xl
     position:
-      x: 340
-      'y': 220
+      x: 290
+      'y': 420
   - id: memories
     label: |-
-      生成属性与记忆
-      GPT-OSS-120B 生成记忆陈述
-      每个档案平均约 147 个属性
+      生成个人记忆
+      GPT-OSS-120B 生成陈述
+      主评测画像平均 147 个属性
     type: document
     size: xl
     position:
-      x: 640
-      'y': 220
+      x: 540
+      'y': 420
   - id: contexts
     label: |-
-      人工设计 49 个社交任务情境
-      明确目标、接收者与具体场景
+      策划 49 个情境种子
+      指定目标 • 接收者 • 情况
       将情境与候选属性配对
     type: process
     size: xl
     position:
-      x: 940
-      'y': 40
+      x: 790
+      'y': 180
   - id: personas
     label: |-
-      应用 Westin 隐私人格
-      隐私保守型 • 务实型 • 不关心型
-      每种人格采样 10 次 GPT-5 标签
+      应用三种 Westin 隐私人格
+      保守型 • 实用型 • 不关心型
+      GPT-5 为每种人格采样 10 次标签
     type: user
     size: xl
     position:
-      x: 940
-      'y': 400
+      x: 790
+      'y': 660
   - id: labels
     label: |-
-      标注属性必要性与风险
-      完成任务是否必须使用？
-      向该接收者透露是否不恰当？
+      标注属性–情境对
+      完成任务是否必要？
+      向该接收者披露是否不恰当？
     type: process
     size: xl
     position:
-      x: 1240
-      'y': 220
+      x: 1040
+      'y': 420
   - id: consensus
     label: |-
-      强制零熵一致性
-      按 Westin 先验混合人格投票
-      丢弃有歧义的属性—情境对
+      结合人格分布与 Westin 先验
+      仅保留零熵的必要 / 不恰当属性对
+      排除模糊标签
+    type: process
+    size: xl
+    position:
+      x: 1290
+      'y': 420
+  - id: balance
+    label: |-
+      筛选评测情境
+      必须同时含必要与不恰当样本
+      缺少任一标签类型即删除
     type: process
     size: xl
     position:
       x: 1540
-      'y': 220
-  - id: balance
+      'y': 420
+  - id: paper_eval
     label: |-
-      每个情境需同时包含两类标签
-      保留必要属性与不当披露属性
-      移除缺少任一类别的情境
-    type: process
-    size: xl
-    position:
-      x: 1840
-      'y': 220
-  - id: instances
-    label: |-
-      发布 CIMemories 样本
-      Hub 上共 7.19 万条属性—情境记录
-      记忆 + 任务 + 接收者 + 标准标签
+      论文的筛选后标注评测集
+      金标情境完整性属性对
+      最终保留行数未披露
     type: database
     size: xl
     position:
-      x: 2140
-      'y': 220
+      x: 1790
+      'y': 420
+  - id: hf_raw
+    label: |-
+      固定版本的 Hugging Face 原始资产
+      test.csv：71,883 行提示
+      label 为空白 / null；不是金标评测集
+    type: database
+    size: xl
+    position:
+      x: 1540
+      'y': 800
   - id: runs
     label: |-
       运行记忆增强模型
-      在任务前注入已存用户记忆
-      每个样本采样五个回答
+      在任务前拼接已存用户记忆
+      每个实例采样 5 个响应
     type: process
     size: xl
     position:
-      x: 2440
-      'y': 220
+      x: 2040
+      'y': 420
   - id: judge
     label: |-
-      检测被透露的属性
-      使用 DeepSeek-R1 的 REVEAL 判分器
-      将回答内容与标准属性匹配
-    type: terminal
-    size: xl
-    position:
-      x: 2740
-      'y': 220
-  - id: metrics
-    label: |-
-      计算隐私与效用指标
-      Violation@5 衡量不当披露
-      Completeness 衡量必要信息完整度
+      检测被披露的属性
+      DeepSeek-R1 REVEAL Judge
+      将响应与金标属性匹配
     type: process
     size: xl
     position:
-      x: 3040
-      'y': 220
+      x: 2290
+      'y': 420
+  - id: metrics
+    label: |-
+      计算隐私与效用
+      Violation@5 衡量不恰当披露
+      Completeness 衡量必要信息
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 420
   - id: stress
     label: |-
       持久记忆压力测试
-      每个用户从 1 扩展到 40 个任务
-      每个任务重复生成 1 至 5 次
+      每用户扩展到 1–40 个任务
+      每任务重复 1–5 次生成
     type: terminal
     size: xl
     position:
-      x: 3340
-      'y': 220
+      x: 2790
+      'y': 420
 edges:
   - from: identities
     to: events
@@ -164,9 +176,15 @@ edges:
     to: balance
     type: primary
   - from: balance
-    to: instances
+    to: paper_eval
+    type: primary
+  - from: memories
+    to: hf_raw
     type: data
-  - from: instances
+  - from: contexts
+    to: hf_raw
+    type: data
+  - from: paper_eval
     to: runs
     type: primary
   - from: runs

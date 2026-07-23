@@ -1,177 +1,402 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MM-MTBench 构建流程
-  description: 按论文重建 92 个一至四轮实用多模态对话及其 GPT-4o 评判流程。
-  legend: 每轮使用标准历史答案独立生成，再按正确性与完整性评判，避免前序模型错误传播。
+  title: MM-MT-Bench 证据对齐的构建与评测流程
+  description: >-
+    重建论文中的 92 对话构建与 teacher-forcing 逐轮评测，并区分固定 Hugging Face 发布与官方 mistral-evals 提交
+    d61811fcd34b7802109538bacc28e70d8633f261 的实际行为。
+  legend: >-
+    实线箭头表示论文支持的构建主线与已发布评测器的成功执行路径。中间一排无连线卡片是独立审计发现。 当三者不一致时，论文事实与 Hugging Face 数据提交
+    0d94c4edef2c971a37c1407a9b99dcdf9003410b、当前评测代码严格分开。
 nodes:
-  - id: usecases
+  - id: evidence
     label: |-
-      选择实用场景
-      信息抽取 · 摘要生成
-      基于图像的推理
-      模拟真实助手使用
+      固定一手证据
+      论文 · arXiv 2410.07073v2
+      数据 · 0d94c4ed · Parquet caca64ff
+      评测器 · d61811fc
+      任务代码自 70eecd8f 未变
     type: document
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: images
+      x: 80
+      'y': 224
+    style:
+      fontSize: 10
+  - id: use_cases
     label: |-
-      策展五类图像
+      定义实用多模态用途
+      信息抽取 · 摘要生成
+      基于图像的推理
+      每个问题都必须依赖图像
+      未报告正式纳入规则
+    type: document
+    size: xl
+    position:
+      x: 352
+      'y': 224
+    style:
+      fontSize: 10
+  - id: paper_categories
+    label: |-
+      论文 · 五类图像
       图表 21 · 表格 19
       PDF 页面 24 · 图示 20
       其他 8
+      合计 · 92 个对话
     type: database
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: author
+      x: 624
+      'y': 224
+    style:
+      fontSize: 10
+  - id: manual_curation
     label: |-
-      人工策展对话
-      编写图像问题与答案
-      保持开放式回答
-      确保问题必须看图
+      人工策展基准内容
+      选择图像
+      编写开放式问题
+      编写参考答案
+      保持图像依赖性
     type: user
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: verify
+      x: 896
+      'y': 224
+    style:
+      fontSize: 10
+  - id: answer_verification
     label: |-
       验证参考答案
       由第二组标注员复核
-      检查抽取信息正确性
-      检查要点覆盖完整性
+      人工答案接受二次检查
+      未描述复核准则
+      未报告一致性统计
     type: process
     size: xl
     position:
-      x: 860
-      'y': 40
+      x: 1168
+      'y': 224
+    style:
+      fontSize: 10
   - id: conversations
     label: |-
-      组织 92 个对话
-      69 个单轮 · 18 个两轮
-      四个三轮 · 一个四轮
-      保留轮次顺序
+      构建对话结构
+      69 × 一轮 · 18 × 两轮
+      4 × 三轮 · 1 × 四轮
+      92 个对话
+      121 组用户问题 / 参考答案
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: release
+      x: 1440
+      'y': 224
+    style:
+      fontSize: 10
+  - id: paper_output
     label: |-
-      发布 MM-MT-Bench
-      92 个多模态对话
-      问题与参考答案
-      五类实用图像
+      论文基准产物
+      实用多模态对话
+      开放式参考答案
+      每个对话一张图像
+      未报告数据划分方案
     type: database
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: query
+      x: 1712
+      'y': 224
+    style:
+      fontSize: 10
+  - id: hf_snapshot
     label: |-
-      按轮查询模型
-      各轮并行独立评测
-      提供图像与当前问题
-      历史使用标准答案
-    type: process
+      固定 Hugging Face eval 发布
+      提交 0d94c4ed · 92 行
+      image · conversation · category
+      eval · 顶层空值 0
+      bytes 92 · path 空值 92 · SHA caca64ff…
+    type: database
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: response
+      x: 1984
+      'y': 224
+    style:
+      fontSize: 10
+  - id: failure_boundary
     label: |-
-      保存候选回答
-      保留完整对话历史
-      每轮配对参考答案
-      不传播前序模型错误
+      已发布失败状态
+      无 [[rating]] → 内部 -1 sentinel
+      sentinel 不返回 · 无限重试
+      第三次评判 API 异常即抛出
+      模型 / 评判器终态错误中止整跑
     type: document
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: judge
+      x: 80
+      'y': 544
+    style:
+      fontSize: 10
+  - id: wording_drift
     label: |-
-      独立评判每一轮
-      论文使用 GPT-4o
+      评判标准措辞漂移
+      第 3 节：正确性 + 完整性
+      附录 A.5 与代码：
+      正确性 + 有帮助性
+      要求输出 · [[rating]]
+    type: document
+    size: xl
+    position:
+      x: 352
+      'y': 544
+    style:
+      fontSize: 10
+  - id: paper_judge_contract
+    label: |-
+      论文评测合同
+      并行查询全部轮次
+      历史使用标准答案
+      每轮独立评判
       提供完整对话历史
-      对比候选与参考答案
+    type: document
+    size: xl
+    position:
+      x: 624
+      'y': 544
+    style:
+      fontSize: 10
+  - id: construction_gaps
+    label: |-
+      未披露的构建细节
+      图像来源与逐行权利
+      纳入 / 排除规则
+      标注员数量 / 培训 / 一致性
+      拒绝与仲裁数量
+    type: document
+    size: xl
+    position:
+      x: 896
+      'y': 544
+    style:
+      fontSize: 10
+  - id: openness_boundary
+    label: |-
+      公开访问边界
+      HF 数据与 GitHub 代码可下载
+      数据卡未声明许可证
+      评测仓库无许可证文件
+      当前 README 增加权利限制
+    type: document
+    size: xl
+    position:
+      x: 1168
+      'y': 544
+    style:
+      fontSize: 10
+  - id: release_history
+    label: |-
+      可变且未固定的数据依赖
+      load_dataset(name) · 未指定 revision
+      早期 91 行 · 2024-09-19 起 92 行
+      出现过五个不同 Parquet LFS 对象
+      无数据集发布标签
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 544
+    style:
+      fontSize: 10
+  - id: schema_audit
+    label: |-
+      Conversation JSON 合同
+      121 组交替用户 / 助手消息
+      首轮用户：图像 + 文本 · 92
+      后续用户：仅文本 · 29
+      助手：单一文本块 · 121
+    type: document
+    size: xl
+    position:
+      x: 1712
+      'y': 544
+    style:
+      fontSize: 10
+  - id: category_drift
+    label: |-
+      固定发布的类别漂移
+      charts 21 · tables 24
+      pdf_pages 19 · diagrams 20 · misc 8
+      表格 / PDF 数量与论文对调
+      无行 ID 或来源字段
+    type: document
+    size: xl
+    position:
+      x: 1984
+      'y': 544
+    style:
+      fontSize: 10
+  - id: expand_turns
+    label: |-
+      按用户轮次展开对话
+      创建 121 个独立交互
+      保留历史标准助手答案
+      当前参考答案单独保存
+      前序候选错误不会传播
+    type: process
+    size: xl
+    position:
+      x: 1984
+      'y': 896
+    style:
+      fontSize: 10
+  - id: candidate_query
+    label: |-
+      查询候选模型
+      8 个并行 worker
+      temperature = 0
+      max_tokens = 4,096
+      已发布 VLLMModel · 三次尝试
+    type: process
+    size: xl
+    position:
+      x: 1712
+      'y': 896
+    style:
+      fontSize: 10
+  - id: candidate_answers
+    label: |-
+      收集候选回答
+      每个评测轮次一个回答
+      按完成顺序保存交互
+      与当前参考答案配对
+      不补填缺失回答
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 896
+    style:
+      fontSize: 10
+  - id: released_replay
+    label: |-
+      已发布评判回放缺陷
+      传入完整消息字典
+      用户问题变为 “rolecontent”
+      参考答案变为原始列表 / 字典
+      图像与真实问题均被遗漏
+    type: process
+    size: xl
+    position:
+      x: 1168
+      'y': 896
+    style:
+      fontSize: 10
+  - id: judge_api
+    label: |-
+      调用已发布 GPT-4o 评判器
+      gpt-4o-2024-05-13
+      temperature = 0 · max_tokens = 2,048
+      8 个并行 worker
+      返回解释 + [[rating]]
     type: user
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: criteria
+      x: 896
+      'y': 896
+    style:
+      fontSize: 10
+  - id: score_parser
     label: |-
-      按两项核心标准评分
-      抽取内容的正确性
-      相对参考答案的完整性
-      给出一至十分
+      解析首个双括号数字
+      正则接受整数或小数
+      不验证一至十分范围
+      未匹配时产生 -1 sentinel
+      仅解析成功值成为逐轮分数
     type: process
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: aggregate
+      x: 624
+      'y': 896
+    style:
+      fontSize: 10
+  - id: aggregation
     label: |-
-      汇总逐轮评分
-      跨对话计算平均值
-      得到 MM-MT-Bench 分数
-      分数越高越好
+      汇总成功的逐轮分数
+      Micro · 121 轮整体均值
+      五个类别均值
+      四个轮次位置均值
+      “Macro” · 上述九个均值再平均
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: validate
+      x: 352
+      'y': 896
+    style:
+      fontSize: 10
+  - id: output
     label: |-
-      验证实用场景一致性
-      报告平均评判分
-      对照视觉竞技场 ELO
-      皮尔逊相关系数 0.91
+      已发布指标 JSON
+      micro_average_score
+      混合 macro_average_score
+      五类 + 四个轮次位置均值
+      不重新计算论文 r = 0.91
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 80
+      'y': 896
+    style:
+      fontSize: 10
 edges:
-  - from: usecases
-    to: images
+  - from: evidence
+    to: use_cases
     type: primary
-  - from: images
-    to: author
+  - from: use_cases
+    to: paper_categories
     type: primary
-  - from: author
-    to: verify
+  - from: paper_categories
+    to: manual_curation
     type: primary
-  - from: verify
+  - from: manual_curation
+    to: answer_verification
+    type: primary
+  - from: answer_verification
     to: conversations
     type: primary
   - from: conversations
-    to: release
+    to: paper_output
     type: primary
-  - from: release
-    to: query
+  - from: paper_output
+    to: hf_snapshot
     type: primary
-  - from: query
-    to: response
+  - from: hf_snapshot
+    to: expand_turns
     type: primary
-  - from: response
-    to: judge
+    waypoints:
+      - x: 2280
+        'y': 400
+      - x: 2280
+        'y': 840
+  - from: expand_turns
+    to: candidate_query
     type: primary
-  - from: judge
-    to: criteria
+  - from: candidate_query
+    to: candidate_answers
     type: primary
-  - from: criteria
-    to: aggregate
+  - from: candidate_answers
+    to: released_replay
     type: primary
-  - from: aggregate
-    to: validate
+  - from: released_replay
+    to: judge_api
+    type: primary
+  - from: judge_api
+    to: score_parser
+    type: primary
+  - from: score_parser
+    to: aggregation
+    type: primary
+  - from: aggregation
+    to: output
     type: primary
 modules: []

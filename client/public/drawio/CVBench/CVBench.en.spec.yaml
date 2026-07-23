@@ -5,8 +5,10 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: CVBench Build Process
-  description: Paper-aligned cross-video curation, relational QA synthesis, two-stage human review, and accuracy evaluation.
-  legend: Solid arrows show the paper's construction, human review, and evaluation pipeline.
+  description: >-
+    Paper-aligned cross-video curation and four-stage QA synthesis, followed by model-assisted validation, two-stage
+    human quality control with corrective loops, and accuracy evaluation.
+  legend: Solid arrows show construction and accepted items; dashed arrows return rejected items for correction.
 nodes:
   - id: candidates
     label: |-
@@ -56,7 +58,8 @@ nodes:
   - id: relations
     label: |-
       Relational summary
-      state · causality · complement · contradiction
+      state · causality · complement ·
+      contradiction
     type: document
     size: xl
     position:
@@ -65,30 +68,54 @@ nodes:
   - id: synthesize
     label: |-
       GPT-4o synthesis
-      ≥2 MCQs/group · 1 answer + 3 distractors
+      ≥2 MCQs/group · 1 answer + 3
+      distractors
     type: process
     size: xl
     position:
       x: 1600
       'y': 210
-  - id: qc1
+  - id: model_gate
     label: |-
-      First human check
-      8 annotators · 15 criteria · revise / recollect
-    type: user
+      Consensus + Difficulty Validation
+      Multi-Model Hallucination Detection
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 110
-  - id: qc2
+      'y': 210
+  - id: human_gate
     label: |-
-      Independent re-examination
-      5 new annotators · 200 QA each
-    type: user
+      Eight-Annotator First Review
+      15 Task-Specific Criteria
+      Compliant · Correct · Non-Trivial?
+    type: decision
     size: xl
     position:
       x: 2120
-      'y': 110
+      'y': 210
+  - id: repair
+    label: |-
+      Corrective Actions
+      Revise Low-Quality Questions or
+      Distractors
+      Recollect Videos When Needed
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 430
+  - id: independent_audit
+    label: |-
+      5 New Annotators
+      200 QA Pairs Each
+      Compliance · Correctness · No
+      Hallucination?
+    type: decision
+    size: xl
+    position:
+      x: 2640
+      'y': 210
   - id: benchmark
     label: |-
       CVBench
@@ -96,16 +123,17 @@ nodes:
     type: database
     size: xl
     position:
-      x: 2380
+      x: 2900
       'y': 210
   - id: input
     label: |-
       Multi-video input
-      indexed videos · 8 frames/video for open models
+      indexed videos · 8 frames/video for
+      open models
     type: process
     size: xl
     position:
-      x: 2640
+      x: 3160
       'y': 210
   - id: prompting
     label: |-
@@ -114,7 +142,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2900
+      x: 3420
       'y': 210
   - id: accuracy
     label: |-
@@ -123,7 +151,7 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 3160
+      x: 3680
       'y': 210
 edges:
   - from: candidates
@@ -145,14 +173,31 @@ edges:
     to: synthesize
     type: primary
   - from: synthesize
-    to: qc1
+    to: model_gate
     type: primary
-  - from: qc1
-    to: qc2
+  - from: model_gate
+    to: human_gate
     type: primary
-  - from: qc2
+  - from: human_gate
+    to: repair
+    type: optional
+    label: Revise
+  - from: repair
+    to: human_gate
+    type: optional
+    label: Recheck
+  - from: human_gate
+    to: independent_audit
+    type: primary
+    label: Pass
+  - from: independent_audit
+    to: repair
+    type: optional
+    label: Correct
+  - from: independent_audit
     to: benchmark
     type: primary
+    label: Pass
   - from: benchmark
     to: input
     type: primary

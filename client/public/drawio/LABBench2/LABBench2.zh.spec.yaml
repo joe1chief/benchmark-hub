@@ -5,134 +5,474 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: LABBench2 构建流程
-  description: 对齐论文的 1,912 个真实生物研究任务构建流程，通过并行的专家与计算构建路线、任务专用质检、 多模态输入方式、工具增强评测和验证器完成。
-  legend: 两个构建路线方框并行汇入同一数据集。图像与表格任务的数量包含同一组 101/100 个问题的 图像、完整论文和自主检索三种变体。
+  description: 对齐论文 v2 的 1,912 行生物科研评测集构建流程，分别呈现六条有独立证据的任务路线、精确发布与输入模式边界、按标签路由的验证及下游汇报。
+  legend: 六个构建方框是采用任务专用质量控制的独立路线。FigQA2 和 TableQA2 的数量包含同一组 101/100 个基础问题分别物化为自主检索、完整论文 PDF 和图像行。
 nodes:
-  - id: scope
+  - id: evidence
     label: |-
-      定义五类真实科研能力
-      文献理解与检索
-      数据访问 · 分子生物学
-      实验方案排错 · 实验规划
+      主要证据与固定版本
+      arXiv:2604.09554v2 · 2026-05-05
+      Git c028ecdc · 2026-05-07
+      HF 27d12d72 · 2026-03-13
+      官方排行榜核验于 2026-07-21
     type: document
     size: xl
     position:
-      x: 20
-      'y': 200
-  - id: expert_track
+      x: 24
+      'y': 0
+  - id: scope
     label: |-
-      专家编写路线 · 1,426 个任务
-      文献 · 专利 · 临床试验 · 补充材料 · 来源质量
-      图像 101×3 · 表格 100×3
-      实验方案 125 · 克隆规划 14
+      定义五类科研能力
+      文献理解与检索 1,287 · 数据访问 86
+      分子生物学 400 · 实验方案排错 125
+      实验规划 14 · 合计 1,912
+      开放式检索与文件任务
+    type: document
+    size: xl
+    position:
+      x: 24
+      'y': 640
+  - id: literature_pipeline
+    label: |-
+      专家文献路线 · 1,137 行
+      LitQA3 168 · 专利 121 · 临床 120
+      补充 125 · 图 101×3 · 表 100×3
+      博士级签约专家 · 专用平台
+      仅由指定来源回答 · 签约与内部专家多轮审核
     type: user
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: computational_track
+      x: 480
+      'y': 0
+  - id: sourcequality_pipeline
     label: |-
-      混合与程序构建路线 · 486 个任务
-      数据访问 86：分析 1,000 篇预印本
-      专家整理 43 个数据源
-      序列任务：20 个模板 × 20 个变体 = 400
+      SourceQualQA · 150 行
+      从 100 篇开放系统综述开始
+      提取因果问题 · 排除研究 · 专家组理由
+      当前 file 模式提供被排除研究的 PDF
+      最终人工检查专家可回答性
     type: process
     size: xl
     position:
-      x: 300
-      'y': 380
-  - id: review
+      x: 480
+      'y': 240
+  - id: dbqa_pipeline
     label: |-
-      应用任务专用质量控制
-      签约专家与内部专家多轮审核
-      检查是否只能由指定来源回答
-      验证模板、答案与验证器
+      DbQA2 · 86 行
+      用 LLM 分析 1,000 篇近期 bioRxiv 论文
+      按来源占比排序 · 人工整理与补充
+      43 个来源 → 内部与签约专家编题
+      多轮审核与修订
+    type: process
+    size: xl
+    position:
+      x: 480
+      'y': 480
+  - id: seqqa_pipeline
+    label: |-
+      SeqQA2 · 400 行
+      内部生物学家定义 20 个模板
+      每类扩展 20 个设计或真实序列变体
+      保留逐题模式与验证器参数
+      构建 20 类任务专用验证器
+    type: process
+    size: xl
+    position:
+      x: 480
+      'y': 720
+  - id: protocol_pipeline
+    label: |-
+      ProtocolQA2 · 125 行
+      protocols.io · STAR Methods · 专家方案
+      专家提供的部分方案尚未发表
+      签约专家注入一个会导致明确失败的错误
+      构造情景与结果 · 后缀要求只答一个错误
     type: user
     size: xl
     position:
-      x: 620
-      'y': 200
+      x: 480
+      'y': 960
+  - id: cloning_pipeline
+    label: |-
+      CloningQA · 14 行
+      限制性连接 · Gibson · Golden Gate
+      设计 DNA / 酶与端到端步骤
+      要求输出可解析 DSL 以供计算机模拟检查
+      论文未披露任务构建来源
+    type: process
+    size: xl
+    position:
+      x: 480
+      'y': 1200
   - id: dataset
     label: |-
-      汇总 LABBench2 · 1,912 个任务
-      开放式科研问题
-      科学论文 · 图像 · 数据文件
-      来源、标准答案与评分器元数据
+      发布 LABBench2 · 1,912 行评测数据
+      五类规模：1,287 + 86 + 400 + 125 + 14
+      HF all + 15 个配置 · 唯一 split 名为 train
+      自动门控 Parquet · 公开 GCS 附件
+      ideal · sources · mode · 评分器元数据
     type: database
     size: xl
     position:
-      x: 940
-      'y': 200
-  - id: modes
+      x: 936
+      'y': 600
+  - id: document_modes
     label: |-
-      生成真实输入方式
-      图表：图像 · 完整论文 · 自主检索
-      序列：内嵌 · 文件 · 自主检索
-      文献与数据库任务要求自主检索
+      物化文档与检索模式
+      图：inject/PDF/图像 · 各 101
+      表：inject/PDF/图像 · 各 100
+      文献/专利/临床/补充/Db：inject
+      SourceQuality/ProtocolQA2：file
     type: process
     size: xl
     position:
-      x: 1260
-      'y': 200
+      x: 1392
+      'y': 360
+  - id: sequence_modes
+    label: |-
+      物化序列输入模式
+      SeqQA2：inject 400 · file 400
+      retrieve 200
+      Cloning：inject/file/retrieve · 各 14
+      按逐题 mode 过滤支持
+      自主检索 ≠ harness 模式别名
+    type: process
+    size: xl
+    position:
+      x: 1392
+      'y': 840
   - id: evaluate
     label: |-
-      评测基础与工具增强系统
-      首先在无工具条件运行
-      再提供网络搜索与代码执行
-      传递文件和检索到的上下文
+      运行官方评测框架
+      基础系统：不提供工具
+      工具增强：主要提供网络搜索与代码执行
+      路由模式专用提示、文件与检索输入
+      HybridEvaluator 按 tag 分发
     type: process
     size: xl
     position:
-      x: 1580
-      'y': 200
-  - id: graders
+      x: 1848
+      'y': 600
+  - id: semantic_judge
     label: |-
-      应用任务专用验证
-      开放答案与来源一致性评分器
-      序列任务的计算机模拟验证器
-      解析克隆领域语言并端到端验证
+      通用语义 LLM 评分器
+      LitQA3 · 专利 · 临床试验
+      SourceQuality · Protocol
+      Claude Sonnet 4.5 · 温度 0
+      接受语义或数值等价
+      正确 1 · 错误 / 不确定 / 评分异常 0
     type: process
     size: xl
     position:
-      x: 1580
-      'y': 560
-  - id: report
+      x: 2304
+      'y': 0
+  - id: dbqa_judge
     label: |-
-      汇报 LABBench2 准确率
-      五类科研能力得分
-      基础系统与工具增强系统对比
-      输入方式与子任务拆分
+      DbQA2 召回率 LLM 评分器
+      召回率 = 匹配的期望项 / 期望项总数
+      数值默认允许 ±5% · 必须精确时除外
+      召回率 ≥ 0.95 → 1
+      较低召回率 / 不确定 / 评分异常 → 0
+    type: process
+    size: xl
+    position:
+      x: 2304
+      'y': 240
+  - id: numeric_judge
+    label: |-
+      数值 LLM 评分器
+      FigQA2* · TableQA2* · SuppQA2
+      绝对或相对误差 < 1e-6
+      遵循题目明确要求的输出格式
+      正确 1 · 其他 / 不确定 / 评分异常 0
+    type: process
+    size: xl
+    position:
+      x: 2304
+      'y': 480
+  - id: seqqa_verifier
+    label: |-
+      SeqQA2 确定性验证器
+      用逐题 answer_regex 解析 [answer]
+      合并 validator_params 与抽取字段
+      调用 20 类任务专用验证器之一
+      通过 1 · 解析 / 文件 / 验证失败 0
+    type: process
+    size: xl
+    position:
+      x: 2304
+      'y': 720
+  - id: cloning_verifier
+    label: |-
+      CloningQA DSL 验证器
+      解析并执行 [protocol] 表达式
+      相似度 = 1 − 编辑距离 / 最大长度
+      与参考序列相似度 ≥ 0.95 · 支持环状旋转
+      可选酶切片段检查 · 任一失败记 0
+    type: process
+    size: xl
+    position:
+      x: 2304
+      'y': 960
+  - id: score
+    label: |-
+      计算评测指标
+      Overall = 正确数 /（完成数 + 运行失败数）
+      Attempted = 正确数 / 完成数
+      每个运行失败均记 0
+      按能力类 · 模式 · 类型 · 基础/工具拆分
     type: terminal
     size: xl
     position:
-      x: 1260
-      'y': 560
+      x: 2760
+      'y': 480
+  - id: leaderboard
+    label: |-
+      官方在线排行榜
+      对 15 个子基准做宏平均
+      重复运行取均值 · 展示标准误差
+      汇总对比要求覆盖至少 14/15
+      2026-07-21 观测：9 个模型 · 201 次运行
+    type: terminal
+    size: xl
+    position:
+      x: 3216
+      'y': 240
+  - id: release_drift
+    label: |-
+      发布与结果漂移
+      v1 / OpenReview 1,883 → arXiv v2 1,912
+      2026-03-13：替换 150 条 SourceQuality
+      inject → file · 03-23 runner 修复
+      博客 1,892 + HF 论文号已过时
+    type: document
+    size: xl
+    position:
+      x: 3216
+      'y': 840
+  - id: artifact_boundary
+    label: |-
+      制品与披露边界
+      任务数据自动门控 · 框架与 GCS 文件公开
+      train 只是 split 名称，不代表用于训练
+      未报告 train/dev/test、去重或污染检查流程
+      未披露 Cloning 题目构建来源与质控
+    type: document
+    size: xl
+    position:
+      x: 3672
+      'y': 480
 edges:
+  - from: evidence
+    to: scope
+    type: data
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
   - from: scope
-    to: expert_track
+    to: literature_pipeline
+    type: primary
+    waypoints:
+      - x: 160
+        'y': 608
+      - x: 160
+        'y': 0
+  - from: scope
+    to: sourcequality_pipeline
     type: primary
   - from: scope
-    to: computational_track
+    to: dbqa_pipeline
     type: primary
-  - from: expert_track
-    to: review
+    waypoints:
+      - x: 240
+        'y': 640
+      - x: 240
+        'y': 480
+  - from: scope
+    to: seqqa_pipeline
     type: primary
-  - from: computational_track
-    to: review
+  - from: scope
+    to: protocol_pipeline
     type: primary
-  - from: review
+  - from: scope
+    to: cloning_pipeline
+    type: primary
+    waypoints:
+      - x: 272
+        'y': 688
+      - x: 272
+        'y': 1200
+  - from: literature_pipeline
     to: dataset
     type: primary
-  - from: dataset
-    to: modes
+    waypoints:
+      - x: 808
+        'y': 0
+      - x: 808
+        'y': 560
+  - from: sourcequality_pipeline
+    to: dataset
     type: primary
-  - from: modes
+    waypoints:
+      - x: 768
+        'y': 240
+      - x: 768
+        'y': 576
+  - from: dbqa_pipeline
+    to: dataset
+    type: primary
+    waypoints:
+      - x: 728
+        'y': 480
+      - x: 728
+        'y': 592
+  - from: seqqa_pipeline
+    to: dataset
+    type: primary
+    waypoints:
+      - x: 616
+        'y': 720
+      - x: 616
+        'y': 608
+  - from: protocol_pipeline
+    to: dataset
+    type: primary
+    waypoints:
+      - x: 656
+        'y': 960
+      - x: 656
+        'y': 624
+  - from: cloning_pipeline
+    to: dataset
+    type: primary
+    waypoints:
+      - x: 696
+        'y': 1200
+      - x: 696
+        'y': 640
+  - from: dataset
+    to: document_modes
+    type: primary
+  - from: dataset
+    to: sequence_modes
+    type: primary
+  - from: document_modes
     to: evaluate
     type: primary
+    waypoints:
+      - x: 1600
+        'y': 360
+      - x: 1600
+        'y': 584
+  - from: sequence_modes
+    to: evaluate
+    type: primary
+    waypoints:
+      - x: 1664
+        'y': 840
+      - x: 1664
+        'y': 616
   - from: evaluate
-    to: graders
+    to: semantic_judge
     type: primary
-  - from: graders
-    to: report
+    waypoints:
+      - x: 1984
+        'y': 560
+      - x: 1984
+        'y': 0
+  - from: evaluate
+    to: dbqa_judge
     type: primary
+  - from: evaluate
+    to: numeric_judge
+    type: primary
+    waypoints:
+      - x: 2064
+        'y': 592
+      - x: 2064
+        'y': 480
+  - from: evaluate
+    to: seqqa_verifier
+    type: primary
+  - from: evaluate
+    to: cloning_verifier
+    type: primary
+  - from: semantic_judge
+    to: score
+    type: primary
+    waypoints:
+      - x: 2632
+        'y': 0
+      - x: 2632
+        'y': 440
+  - from: dbqa_judge
+    to: score
+    type: primary
+    waypoints:
+      - x: 2592
+        'y': 240
+      - x: 2592
+        'y': 456
+  - from: numeric_judge
+    to: score
+    type: primary
+    waypoints:
+      - x: 2552
+        'y': 480
+      - x: 2552
+        'y': 472
+  - from: seqqa_verifier
+    to: score
+    type: primary
+    waypoints:
+      - x: 2440
+        'y': 720
+      - x: 2440
+        'y': 488
+  - from: cloning_verifier
+    to: score
+    type: primary
+    waypoints:
+      - x: 2480
+        'y': 960
+      - x: 2480
+        'y': 504
+  - from: score
+    to: leaderboard
+    type: primary
+    waypoints:
+      - x: 2992
+        'y': 464
+      - x: 2992
+        'y': 240
+  - from: dataset
+    to: release_drift
+    type: data
+    waypoints:
+      - x: 1072
+        'y': 632
+      - x: 1072
+        'y': 1320
+      - x: 3072
+        'y': 1320
+      - x: 3072
+        'y': 840
+  - from: release_drift
+    to: artifact_boundary
+    type: data
+    waypoints:
+      - x: 3440
+        'y': 824
+      - x: 3440
+        'y': 504
+  - from: leaderboard
+    to: artifact_boundary
+    type: data
+    waypoints:
+      - x: 3480
+        'y': 256
+      - x: 3480
+        'y': 464
 modules: []

@@ -12,7 +12,7 @@ test('locks a desktop-exported SVG to the light academic color scheme', () => {
   const svgPath = join(root, 'diagram.svg');
   writeFileSync(
     svgPath,
-    '<svg style="background: transparent; color-scheme: light dark;"><foreignObject><div style="color: light-dark(#212121, #d1d1d1); background-color: light-dark(#ffffff, #111111); stroke: light-dark(rgb(33, 150, 243), rgb(66, 66, 66));">Node</div></foreignObject></svg>\n',
+    '<svg style="background: transparent; color-scheme: light dark;" content="&lt;mxfile&gt;Text is not SVG - cannot display&lt;/mxfile&gt;"><foreignObject><div style="color: light-dark(#212121, #d1d1d1); background-color: light-dark(#ffffff, #111111); stroke: light-dark(rgb(33, 150, 243), rgb(66, 66, 66));"><rect style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212));"/>Node</div></foreignObject></svg>\n',
   );
 
   const result = spawnSync(
@@ -27,5 +27,7 @@ test('locks a desktop-exported SVG to the light academic color scheme', () => {
   assert.match(normalized, /color: #212121;/u);
   assert.match(normalized, /background-color: #ffffff;/u);
   assert.match(normalized, /stroke: rgb\(33, 150, 243\);/u);
+  assert.match(normalized, /fill: #ffffff;/u);
   assert.doesNotMatch(normalized, /light-dark\(/u);
+  assert.doesNotMatch(normalized, /\scontent="|Text is not SVG/u);
 });

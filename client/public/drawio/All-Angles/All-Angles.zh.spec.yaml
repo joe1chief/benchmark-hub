@@ -5,19 +5,19 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: All-Angles Bench 构建流程
-  description: 基于 arXiv:2504.15280 对齐的多视角场景筛选、问题构建与人工质检流程；下游评测以独立分支展示。
-  legend: 每个样本都是三选一且只有一个正确答案；配对问题通过受控变换检验模型能否保持跨视角对应关系。
+  description: 论文 v2 对齐的多视角场景筛选、六类问题构造、分层人工质检与配对问题发布流程；模型评测与独立人类实验只作为下游证据展示。
+  legend: 实线表示基准构建；虚线分支仅在数据发布后开始，分别表示模型评测与人类实验，不属于数据构建。
 nodes:
   - id: source_pools
     label: |-
-      候选多视角来源
+      多视角来源池
       Ego-Exo4D + EgoHumans
       真实多相机活动场景
     type: database
     size: xl
     position:
       x: 40
-      'y': 170
+      'y': 140
   - id: select_scenes
     label: |-
       人工筛选场景
@@ -27,101 +27,125 @@ nodes:
     size: xl
     position:
       x: 320
-      'y': 170
+      'y': 140
   - id: view_set
     label: |-
       整理每组视角
-      最终保留 4–5 个空间分散视图
-      图像缩放至 796 × 448
+      最终保留 4–5 个分散视图
+      缩放至 796 × 448
     type: process
     size: xl
     position:
       x: 600
-      'y': 170
+      'y': 140
   - id: task_design
     label: |-
-      设计六类推理任务
+      设计六类任务
       计数 • 属性 • 距离 • 方向
       物体操作 • 相机姿态
-    type: database
+    type: document
     size: xl
     position:
       x: 880
-      'y': 170
-  - id: draft
+      'y': 140
+  - id: mllm_questions
     label: |-
-      五类 MLLM 生成任务
+      GPT-4o 生成五类任务
+      每场景每类生成三题
       计数 • 属性 • 距离
       方向 • 物体操作
-      每场景每任务三题
     type: process
     size: xl
     position:
       x: 1160
-      'y': 80
+      'y': 40
     style:
       fontSize: 10
   - id: camera_template
     label: |-
-      相机姿态估计
-      专用问题模板
-      每场景一题
+      相机姿态专用模板
+      独立构造规则
+      每场景生成一题
     type: document
     size: xl
     position:
       x: 1160
-      'y': 300
+      'y': 260
   - id: view_policy
     label: |-
-      应用任务特定视角策略
-      计数与相机姿态使用全部视图
-      其他任务随机选择两个视角
+      按任务选择视角
+      计数与相机姿态使用全部视角
+      其余任务随机选择两个视角
     type: process
     size: xl
     position:
       x: 1440
-      'y': 190
-  - id: human_review
+      'y': 150
+  - id: first_review
     label: |-
-      八名 STEM 博士标注员全量复核
-      移除无效问题
-      优化措辞与答案选项
+      首轮人工复核
+      8 名 STEM 博士标注员
+      先试标，再全量复核
     type: user
     size: xl
     position:
       x: 1440
-      'y': 500
-  - id: mcq
+      'y': 460
+  - id: cross_check
     label: |-
-      强制选择题合同
-      三个答案选项
-      且仅有一个正确答案
-    type: document
+      每条标注交叉复核
+      至少由另一名标注员检查
+      分歧通过小组讨论解决
+    type: user
     size: xl
     position:
       x: 1160
-      'y': 500
-  - id: paired
+      'y': 460
+  - id: random_audit
     label: |-
-      构造配对问题
-      改写、交换方位或更换视图
-      保持底层对应关系不变
-    type: process
+      定期随机抽检
+      抽查已复核问题
+      发布前纠正问题
+    type: user
     size: xl
     position:
       x: 880
-      'y': 500
+      'y': 460
+  - id: mcq_contract
+    label: |-
+      固化选择题合同
+      三个答案选项
+      仅有一个正确答案
+    type: document
+    size: xl
+    position:
+      x: 600
+      'y': 460
+  - id: paired
+    label: |-
+      构造配对问题
+      改写 • 改变方向 • 改变视角
+      保持视觉对应关系
+    type: process
+    size: xl
+    position:
+      x: 320
+      'y': 460
+    style:
+      fontSize: 10
   - id: final_qc
     label: |-
       最终人工质检
       核验视觉证据与唯一答案
-      除计数外配对覆盖率 85.3%
+      配对覆盖率 85.3%，不含计数
     type: user
     size: xl
     position:
-      x: 600
-      'y': 500
-  - id: benchmark
+      x: 40
+      'y': 460
+    style:
+      fontSize: 10
+  - id: release
     label: |-
       发布 All-Angles Bench
       2,132 个问答对 • 90 个场景
@@ -129,59 +153,70 @@ nodes:
     type: database
     size: xl
     position:
-      x: 320
-      'y': 500
-  - id: model_eval
+      x: 40
+      'y': 760
+  - id: eval_contract
     label: |-
-      下游评测：27 个 MLLM
-      标准选择题提示
-      解析三个答案选项之一
+      下游模型评测
+      VLMEvalKit • 贪心解码 • 温度 0
+      固定选择题提示与选项字母
     type: process
     size: xl
     position:
-      x: 360
-      'y': 760
+      x: 340
+      'y': 690
+    style:
+      fontSize: 10
+  - id: answer_parser
+    label: |-
+      提取最终选项
+      Qwen2.5-32B 解析器
+      将输出映射为一个选项字母
+    type: process
+    size: xl
+    position:
+      x: 640
+      'y': 690
   - id: accuracy
     label: |-
-      计算准确率
-      总体与任务类别分项
-      比较开源与闭源模型
-    type: process
-    size: xl
-    position:
-      x: 720
-      'y': 660
-  - id: consistency
-    label: |-
-      测量配对不一致率
-      比较对应问题的答案
-      诊断跨视角不稳定性
-    type: process
-    size: xl
-    position:
-      x: 720
-      'y': 860
-  - id: human
-    label: |-
-      下游人类参考
-      随机抽取 250 题子集
-      排除配对问题
-      覆盖全部六类任务
-    type: user
-    size: xl
-    position:
-      x: 1080
-      'y': 1060
-  - id: report
-    label: |-
-      汇报下游模型结果
-      准确率 • 配对一致性
-      总体及分任务表现
+      准确率
+      总体与逐任务统计
+      直接选择题正确性
     type: terminal
     size: xl
     position:
-      x: 1080
-      'y': 760
+      x: 940
+      'y': 590
+  - id: consistency
+    label: |-
+      配对一致性
+      CC • WW • IC 三类结果
+      诊断跨视角不稳定
+    type: terminal
+    size: xl
+    position:
+      x: 940
+      'y': 790
+  - id: human_subset
+    label: |-
+      独立人类实验
+      250 题 • 排除配对数据
+      另由两名博士标注员作答
+    type: user
+    size: xl
+    position:
+      x: 640
+      'y': 990
+  - id: report
+    label: |-
+      报告评测证据
+      准确率 • CC / WW / IC
+      模型与人类结果保持分离
+    type: terminal
+    size: xl
+    position:
+      x: 1240
+      'y': 690
 edges:
   - from: source_pools
     to: select_scenes
@@ -193,7 +228,7 @@ edges:
     to: task_design
     type: primary
   - from: task_design
-    to: draft
+    to: mllm_questions
     type: primary
     style:
       exitX: 1
@@ -208,7 +243,7 @@ edges:
       exitY: 0.75
       entryX: 0
       entryY: 0.5
-  - from: draft
+  - from: mllm_questions
     to: view_policy
     type: primary
     style:
@@ -225,82 +260,73 @@ edges:
       entryX: 0
       entryY: 0.75
   - from: view_policy
-    to: human_review
+    to: first_review
     type: primary
-  - from: human_review
-    to: mcq
+  - from: first_review
+    to: cross_check
     type: primary
-  - from: mcq
+  - from: cross_check
+    to: random_audit
+    type: primary
+  - from: random_audit
+    to: mcq_contract
+    type: primary
+  - from: mcq_contract
     to: paired
     type: primary
   - from: paired
     to: final_qc
     type: primary
   - from: final_qc
-    to: benchmark
+    to: release
     type: primary
-  - from: benchmark
-    to: model_eval
+  - from: release
+    to: eval_contract
     type: secondary
     style:
-      strokeColor: '#757575'
-      strokeWidth: 1
-      dashed: true
-      dashPattern: 4 4
-      endArrow: open
-      endFill: false
-    waypoints:
-      - x: 324
-        'y': 640
-      - x: 364
-        'y': 640
-  - from: model_eval
+      exitX: 1
+      exitY: 0.35
+      entryX: 0
+      entryY: 0.5
+  - from: eval_contract
+    to: answer_parser
+    type: secondary
+  - from: answer_parser
     to: accuracy
-    type: primary
+    type: secondary
     style:
       exitX: 1
       exitY: 0.25
       entryX: 0
       entryY: 0.5
-  - from: model_eval
+  - from: answer_parser
     to: consistency
-    type: data
+    type: secondary
     style:
       exitX: 1
       exitY: 0.75
       entryX: 0
       entryY: 0.5
-  - from: benchmark
-    to: human
-    type: secondary
-    style:
-      strokeColor: '#757575'
-      strokeWidth: 1
-      dashed: true
-      dashPattern: 4 4
-      endArrow: open
-      endFill: false
-    waypoints:
-      - x: 160
-        'y': 498
-      - x: 160
-        'y': 960
-      - x: 1084
-        'y': 960
   - from: accuracy
     to: report
-    type: primary
-    style:
-      exitX: 1
-      exitY: 0.5
-      entryX: 0
-      entryY: 0.25
+    type: secondary
   - from: consistency
     to: report
-    type: primary
-    style:
-      exitX: 1
-      exitY: 0.5
-      entryX: 0
-      entryY: 0.75
+    type: secondary
+  - from: release
+    to: human_subset
+    type: optional
+    waypoints:
+      - x: 180
+        'y': 1040
+      - x: 620
+        'y': 1040
+  - from: human_subset
+    to: report
+    type: optional
+    waypoints:
+      - x: 1100
+        'y': 1040
+      - x: 1100
+        'y': 850
 modules: []

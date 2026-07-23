@@ -5,84 +5,138 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DeepSeek LeetCode Build Process
-  description: Paper-aligned recent-contest collection, high-coverage Python execution, and Pass@1 evaluation.
-  legend: Solid arrows trace problem collection, test construction, prompt assembly, code generation, and execution scoring.
+  description: Paper- and release-aligned recent-contest collection, public-test execution, and Pass@1 evaluation.
+  legend: >-
+    Solid arrows trace the released construction and evaluation protocol; the inference diamond preserves the official
+    direct and chain-of-thought modes.
 nodes:
+  - id: evidence_boundary
+    label: |-
+      Evidence boundary
+      arXiv 2401.14196v2 · §4.1
+      Table 5 · repo 2f9fd859
+      data blob b96d7574
+      no standalone benchmark paper
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 250
   - id: contests
     label: |-
       Recent LeetCode contests
       July 2023 – January 2024
+      reduce pretraining overlap
+      not eliminate contamination
     type: database
     size: xl
     position:
-      x: 40
-      'y': 210
-  - id: recency
-    label: |-
-      Select latest problems
-      reduce overlap with pretraining data
-    type: process
-    size: xl
-    position:
       x: 300
-      'y': 210
+      'y': 250
   - id: benchmark
     label: |-
-      180 Python problems
-      45 Easy · 91 Medium · 44 Hard
+      Released public Python suite
+      180 problems · 45 Easy
+      91 Medium · 44 Hard
+      no train / validation split
     type: database
     size: xl
     position:
       x: 560
-      'y': 210
+      'y': 250
   - id: tests
     label: |-
-      Collect 100 test cases / problem
-      coverage-oriented executable oracle
+      Public executable tests
+      100 assert cases per problem
+      released with each record
     type: process
     size: xl
     position:
       x: 820
-      'y': 210
+      'y': 250
   - id: prompt
     label: |-
-      Build instruction prompt
-      problem description + Python code template
+      Assemble instruction
+      problem description
+      complete the code below
+      Python code template
     type: document
     size: xl
     position:
       x: 1080
-      'y': 210
-  - id: model
-    label: Model completes the Python solution
-    type: process
+      'y': 250
+  - id: mode
+    label: Inference mode?
+    type: decision
     size: xl
     position:
       x: 1340
-      'y': 210
-  - id: execute
+      'y': 250
+  - id: direct_prompt
     label: |-
-      Execute hidden tests
-      problem passes only if all tests pass
-    type: process
+      Direct mode
+      use the base completion instruction
+    type: document
     size: xl
     position:
       x: 1600
-      'y': 210
-  - id: score
+      'y': 90
+  - id: cot_prompt
     label: |-
-      Pass@1 by difficulty and overall
-      retain paper's contamination caveat
-    type: terminal
+      CoT mode
+      append step-by-step outline
+      then write the code
+    type: document
+    size: xl
+    position:
+      x: 1600
+      'y': 410
+  - id: inference
+    label: |-
+      Generate one output / problem
+      temperature 0 · max tokens 1,024
+      one output per example
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 210
+      'y': 250
+  - id: extract
+    label: |-
+      Extract first fenced Python block
+      fallback: keep prefix before
+      def · class · if · # · print
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: execute
+    label: |-
+      HumanEval-style execution
+      10 s timeout per completion
+      pass only if all 100 tests pass
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 250
+  - id: score
+    label: |-
+      Pass@1 = mean problem pass
+      overall + difficulty strata
+      one completion per problem
+      retain contamination caveat
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 250
 edges:
-  - from: contests
-    to: recency
+  - from: evidence_boundary
+    to: contests
     type: primary
-  - from: recency
+  - from: contests
     to: benchmark
     type: primary
   - from: benchmark
@@ -92,9 +146,28 @@ edges:
     to: prompt
     type: primary
   - from: prompt
-    to: model
+    to: mode
     type: primary
-  - from: model
+  - from: mode
+    to: direct_prompt
+    type: primary
+    label: Direct
+    labelPosition: center
+  - from: mode
+    to: cot_prompt
+    type: primary
+    label: CoT
+    labelPosition: center
+  - from: direct_prompt
+    to: inference
+    type: primary
+  - from: cot_prompt
+    to: inference
+    type: primary
+  - from: inference
+    to: extract
+    type: primary
+  - from: extract
     to: execute
     type: primary
   - from: execute

@@ -5,7 +5,7 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BRIGHT-Pro 构建流程
-  description: 严格对齐 arXiv:2605.04018，展示 BRIGHT-Pro 推理密集检索基准的专家构建、静态评测与 Agentic 评测流程。
+  description: 展示专家构建与两条评测路径，并明确固定 HF 发布中的权重尺度边界。
   legend: 实线表示基准构建与评测主流程；虚线传递 aspect 权重、已验证参考答案或复核反馈。
 nodes:
   - id: bright_source
@@ -40,8 +40,9 @@ nodes:
       'y': 60
   - id: weights
     label: |-
-      标注 aspect 重要性
-      Likert 1–5 分 • 归一化后总和为 1
+      论文 aspect 重要性
+      Likert 1–5 分
+      归一化后权重总和为 1
       从主导证据到边缘证据
     type: process
     size: xl
@@ -100,13 +101,25 @@ nodes:
       'y': 240
   - id: release
     label: |-
-      发布 BRIGHT-Pro
-      739 个查询 • 平均 3.74 个 aspect
-      每题平均 7.13 个正例文档
+      论文基准汇总
+      739 查询 • 526,319 文档
+      2,763 aspect • 5,272 金证据
+      平均 3.74 aspect • 7.13 正例
     type: database
     size: xl
     position:
       x: 1720
+      'y': 240
+  - id: release_boundary
+    label: |-
+      固定 HF 发布边界
+      2,763 条 aspect 使用 {1, 2, 3}
+      论文写 Likert 1–5
+      HF 修订 dbdc22b
+    type: document
+    size: xl
+    position:
+      x: 2000
       'y': 240
   - id: static_eval
     label: |-
@@ -116,37 +129,40 @@ nodes:
     type: process
     size: xl
     position:
-      x: 2000
+      x: 2280
       'y': 40
   - id: static_metrics
     label: |-
       评分静态检索
-      α-nDCG@k，α = 0.5 • 加权 A-Recall
-      NDCG@k 与 Recall@k 诊断
+      α-nDCG@k，α = 0.5
+      加权 A-Recall • NDCG@k
+      Recall@k
     type: process
     size: xl
     position:
-      x: 2280
+      x: 2560
       'y': 40
   - id: agentic_sample
     label: |-
       固定 Agentic 评测样本
       175 题 • 每领域 25 题
+      固定随机种子 42
       所有检索器使用相同样本与预算
     type: process
     size: xl
     position:
-      x: 2000
+      x: 2280
       'y': 240
   - id: agent_loop
     label: |-
       在搜索 Agent 中运行检索器
-      GPT-5-mini 与 Qwen3.5 • 每轮 Top 5
-      固定 R=1,2,3 或自适应停止
+      GPT-5-mini + Qwen3.5 后端
+      每轮 Top-5
+      固定 R=1, 2, 3 或自适应停止
     type: process
     size: xl
     position:
-      x: 2280
+      x: 2560
       'y': 240
   - id: reference
     label: |-
@@ -156,17 +172,18 @@ nodes:
     type: document
     size: xl
     position:
-      x: 2000
+      x: 2280
       'y': 440
   - id: judge
     label: |-
-      评审带引用的最终答案
-      aspect 覆盖 0 / 0.5 / 1 • 总体 1–5
+      GPT-5 评审引用答案
+      aspect 覆盖 0 / 0.5 / 1
+      总体质量 1–5
       完整性 • 轮数 • AER 效率奖励
     type: process
     size: xl
     position:
-      x: 2280
+      x: 2560
       'y': 440
   - id: report
     label: |-
@@ -176,7 +193,7 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 2560
+      x: 2840
       'y': 240
 edges:
   - from: bright_source
@@ -209,6 +226,11 @@ edges:
   - from: weights
     to: qc
     type: data
+    waypoints:
+      - x: 884
+        'y': -8
+      - x: 1444
+        'y': -8
   - from: qc
     to: refine
     type: optional
@@ -216,18 +238,21 @@ edges:
     to: release
     type: primary
   - from: release
+    to: release_boundary
+    type: primary
+  - from: release_boundary
     to: static_eval
     type: primary
   - from: static_eval
     to: static_metrics
     type: primary
-  - from: release
+  - from: release_boundary
     to: agentic_sample
     type: primary
   - from: agentic_sample
     to: agent_loop
     type: primary
-  - from: release
+  - from: release_boundary
     to: reference
     type: data
   - from: agent_loop

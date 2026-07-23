@@ -4,196 +4,198 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: BIG-Bench Extra Hard 构建流程
-  description: 对齐论文的 BBEH 流程：从 23 项 BBH 饱和审计，经半对抗难度校准、确定性答案抽取， 到完整集与 Mini 集的分层聚合。
-  legend: 实线表示构建与评测；虚线循环表示持续加难，直到两个参考模型准确率都低于 70%。
+  title: BIG-Bench Hard 构建流程
+  description: 基于 arXiv:2210.09261v1，展示真正 BBH 的任务筛选、数据打包、人工 CoT 示例、直接作答与 CoT 并行评测、答案抽取和精确匹配聚合。
+  legend: 上行构建 BBH；下方两支并行比较直接作答与思维链提示。
 nodes:
-  - id: bbh_audit
+  - id: bigbench
     label: |-
-      审计BBH
-      饱和与捷径
+      BIG-Bench 评测池
+      209 个评测任务
+      数据与元数据覆盖不均
     type: database
     size: xl
     position:
       x: 40
-      'y': 240
-  - id: skill_map
+      'y': 140
+  - id: structure_filter
     label: |-
-      保持覆盖
-      23个推理领域
+      结构条件筛选
+      移除 >3 子任务者：209 → 187
+      移除 <103 样本者：187 → 130
     type: process
     size: xl
     position:
-      x: 280
-      'y': 240
-  - id: harder_tasks
+      x: 320
+      'y': 140
+  - id: baseline_filter
     label: |-
-      逐项替换
-      更难同域任务
+      可比较评测任务
+      要求人类基线：130 → 85
+      保留选择题 / 精确匹配：85 → 78
     type: process
     size: xl
     position:
-      x: 520
-      'y': 240
-  - id: candidates
+      x: 600
+      'y': 140
+  - id: hardness_filter
     label: |-
-      构造候选
-      长上下文与多跳
+      难度与范围复核
+      移除模型超过人类者：78 → 36
+      移除 13 个极难 / 超范围者：36 → 23
     type: process
     size: xl
     position:
-      x: 760
-      'y': 240
-  - id: ref_models
+      x: 880
+      'y': 140
+  - id: dataset
     label: |-
-      参考模型
-      Flash与Thinking
-    type: process
-    size: xl
-    position:
-      x: 1000
-      'y': 80
-  - id: difficulty_gate
-    label: |-
-      两个模型
-      都低于70%？
-    type: decision
-    size: xl
-    position:
-      x: 1000
-      'y': 240
-  - id: harden
-    label: |-
-      增加难度
-      或替换任务
-    type: process
-    size: xl
-    position:
-      x: 760
-      'y': 440
-  - id: full_set
-    label: |-
-      完整BBEH
-      23项任务
-      每项200；DQA 120
+      打包 BIG-Bench Hard
+      23 个任务 • 27 个子任务
+      6,511 个评测样本
     type: database
     size: xl
     position:
-      x: 1240
-      'y': 240
-  - id: mini
+      x: 1160
+      'y': 140
+  - id: examples
     label: |-
-      BBEH Mini
-      每项20，共460
-    type: database
-    size: xl
-    position:
-      x: 1480
-      'y': 60
-  - id: prompt
-    label: |-
-      逐步推理后缀
-      固定终答前缀
+      各任务样本数
+      通常每任务 250 题
+      例外：187 • 146 • 178 题
     type: document
     size: xl
     position:
-      x: 1480
-      'y': 240
-  - id: extract
+      x: 1440
+      'y': 140
+  - id: human_cot
     label: |-
-      抽取并清洗
-      确定性匹配
+      人工 CoT 示例
+      每任务三个
+      推理过程 + 最终答案格式
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 140
+  - id: answer_only
+    label: |-
+      少样本直接作答提示
+      使用同一批 BBH 任务示例
+      直接输出最终答案
+    type: process
+    size: xl
+    position:
+      x: 1560
+      'y': 440
+  - id: cot_prompt
+    label: |-
+      少样本思维链提示
+      使用三个人工 CoT 示例
+      先推理再给出最终答案
+    type: process
+    size: xl
+    position:
+      x: 1880
+      'y': 440
+  - id: decode
+    label: |-
+      PaLM • InstructGPT • Codex
+      贪心解码 • 温度 = 0
+      使用同一批评测样本
     type: process
     size: xl
     position:
       x: 1720
-      'y': 240
-  - id: task_accuracy
+      'y': 700
+  - id: extract
     label: |-
-      分任务
-      准确率
+      确定性抽取
+      读取 “the answer is” 之后的文本
+      按任务归一化
     type: process
     size: xl
     position:
-      x: 1960
-      'y': 240
-  - id: harmonic
+      x: 1440
+      'y': 700
+  - id: score
     label: |-
-      完整BBEH
-      调整调和平均
-    type: document
+      BBH 评分
+      精确匹配 + 任务准确率
+      23 个任务无权平均
+    type: process
     size: xl
     position:
-      x: 2200
-      'y': 100
-  - id: micro
-    label: |-
-      BBEH Mini
-      微平均
-    type: document
-    size: xl
-    position:
-      x: 2200
-      'y': 380
+      x: 1160
+      'y': 700
   - id: report
     label: |-
-      模型报告
-      通用推理能力
+      对比直接作答与 CoT
+      对照平均人类表现
+      分析模型规模效应
     type: terminal
     size: xl
     position:
-      x: 2440
-      'y': 240
+      x: 880
+      'y': 700
 edges:
-  - from: bbh_audit
-    to: skill_map
+  - from: bigbench
+    to: structure_filter
     type: primary
-  - from: skill_map
-    to: harder_tasks
+  - from: structure_filter
+    to: baseline_filter
     type: primary
-  - from: harder_tasks
-    to: candidates
+  - from: baseline_filter
+    to: hardness_filter
     type: primary
-  - from: candidates
-    to: difficulty_gate
+  - from: hardness_filter
+    to: dataset
     type: primary
-  - from: ref_models
-    to: difficulty_gate
+  - from: dataset
+    to: examples
     type: primary
-  - from: difficulty_gate
-    to: harden
-    type: optional
-  - from: harden
-    to: candidates
-    type: optional
-  - from: difficulty_gate
-    to: full_set
+  - from: examples
+    to: human_cot
     type: primary
-  - from: full_set
-    to: mini
+  - from: human_cot
+    to: answer_only
     type: primary
-  - from: full_set
-    to: prompt
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: human_cot
+    to: cot_prompt
     type: primary
-  - from: mini
-    to: prompt
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: answer_only
+    to: decode
     type: primary
-  - from: prompt
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.25
+      entryY: 0
+  - from: cot_prompt
+    to: decode
+    type: primary
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.75
+      entryY: 0
+  - from: decode
     to: extract
     type: primary
   - from: extract
-    to: task_accuracy
+    to: score
     type: primary
-  - from: task_accuracy
-    to: harmonic
-    type: primary
-  - from: task_accuracy
-    to: micro
-    type: primary
-  - from: harmonic
-    to: report
-    type: primary
-  - from: micro
+  - from: score
     to: report
     type: primary
 modules: []

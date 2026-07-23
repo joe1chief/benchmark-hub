@@ -5,170 +5,479 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MixEval-Hard 构建流程
-  description: 对齐论文的 MixEval 重构，以及难度加权、分布约束的拒绝采样流程。
-  legend: 实线箭头表示查询挖掘、基准混合、动态刷新与真值评分。
+  description: 对齐论文 v2 的 MixEval 重构、预测加权困难采样、动态刷新与已发布评测器流程。
+  legend: 实线是主要构建与评测路径；虚线是输入、拒绝循环、刷新分支、失败策略或发布边界。
 nodes:
-  - id: crawl
+  - id: initial_detector
     label: |-
-      Common Crawl
-      自收集检测器数据
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 240
-  - id: detector
-    label: |-
-      Vicuna-33B 查询检测器
-      GPT-4 正/负样本标注
-      召回 >99% / 精度 >98%
+      两个检测器基准
+      真实查询/Wikipedia + 作者精选
+      提示 Vicuna-33B
+      在 Crawl 子集检出约 2 万条
+      初始召回率 >99%
     type: process
     size: xl
     position:
-      x: 320
-      'y': 240
-  - id: wild
+      x: 40
+      'y': 80
+  - id: gpt4_labels
     label: |-
-      约 200 万条网页查询
-      GPT-4 Turbo 过滤
-      保留文本输入 / 文本输出
-    type: database
+      GPT-4 重标约 2 万条
+      正样本或负样本
+    type: process
     size: xl
     position:
       x: 600
-      'y': 240
-  - id: pool
+      'y': 80
+  - id: trained_detector
     label: |-
-      真值基准池
-      通用 + 领域 benchmark
-      开发集与测试集
-    type: database
+      训练 Vicuna-33B 检测器
+      召回 >99% · 精度 >98%
+    type: process
     size: xl
     position:
       x: 880
-      'y': 420
-  - id: match
+      'y': 80
+  - id: apply_detector
     label: |-
-      逐样本查询匹配
-      all-mpnet-base-v2 点积
-      归一化嵌入 + 长度约束 θ
+      应用训练后的检测器
+      扫描完整 Common Crawl
     type: process
     size: xl
     position:
       x: 1160
-      'y': 240
-  - id: dataset
+      'y': 80
+  - id: wild_queries
     label: |-
-      MixEval 来源集
-      4,000 个匹配样本
-      源基准真值
+      检出 200 万条用户查询
+      真实查询候选池
     type: database
     size: xl
     position:
       x: 1440
-      'y': 240
-  - id: difficulty
+      'y': 80
+  - id: gpt4_filter
     label: |-
-      难度分数 ξ
-      模型准确率加权错误向量
+      GPT-4 Turbo 过滤并分类
+      保留文本输入/文本输出查询
     type: process
     size: xl
     position:
       x: 1720
-      'y': 240
-  - id: sampling
+      'y': 80
+  - id: general_pool
     label: |-
-      拒绝采样 ∝ exp(λξ)
-      聚类距离约束
-      保持网页查询分布
+      12 个通用基准 · 开发集 + 测试集
+      MMLU · BoolQ · HellaSwag · ARC
+      CSQA · AGIEval · OBQA · GPQA
+      WinoGrande · TriviaQA
+      DROP · BBH
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: domain_pool
+    label: |-
+      6 个领域基准 · 开发集 + 测试集
+      数学：GSM8K · MATH
+      代码：MBPP · HumanEval
+      物理：PIQA · 社交：SIQA
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: benchmark_pool
+    label: |-
+      18 个带真值基准
+      开发集 + 测试集
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: match
+    label: |-
+      all-mpnet-base-v2 匹配
+      归一化点积 · Top-1
+      输入/上下文长度约束 θ
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: mixeval
+    label: |-
+      MixEval · 论文目标 4,000 条
+      英文占 95.15% · 自由回答 + 选择题
+      保留源基准真值
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: prediction_runs
+    label: |-
+      在 MixEval 上运行多个模型
+      收集模型预测结果
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: error_matrix
+    label: |-
+      错误矩阵 A
+      N_models × N_MixEval · 1 表示错误
+      μ 表示各模型准确率
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: difficulty
+    label: |-
+      难度分数 ξᵢ（xi_i）
+      ξᵢ = μ · Aᵢ
+      按模型准确率加权错误
+    type: formula
+    size: xl
+    position:
+      x: 2000
+      'y': 400
+  - id: probability
+    label: |-
+      难度优先抽样
+      p(bᵢ′) ∝ exp(λξᵢ)
+      ξᵢ（xi_i）越高 · 概率越大
+    type: formula
+    size: xl
+    position:
+      x: 2280
+      'y': 400
+  - id: cluster_gate
+    label: |-
+      分布约束门
+      α(B″ ∪ {bᵢ′}, B′) ≤ τ？
+      保持真实查询形状
+    type: decision
+    size: xl
+    position:
+      x: 2560
+      'y': 400
+  - id: hard
+    label: |-
+      MixEval-Hard · 1,000 条
+      英文占 95.22% · 自由回答 + 选择题
+      保留源基准真值
+    type: database
+    size: xl
+    position:
+      x: 2840
+      'y': 400
+  - id: batch_update
+    label: |-
+      批次查询更新
+      均匀采样不同批次
     type: process
     size: xl
     position:
       x: 2000
-      'y': 240
-  - id: hard
+      'y': 720
+  - id: crawl_update
     label: |-
-      MixEval-Hard
-      1,000 个困难样本
-      真值评分
-    type: database
+      源查询更新
+      使用最新 Common Crawl
+    type: process
     size: xl
     position:
       x: 2280
-      'y': 240
-  - id: dynamic
+      'y': 720
+  - id: pool_update
     label: |-
-      动态刷新
-      查询批次 / 最新 Crawl
-      新增基准池
+      基准池更新
+      加入新的带真值基准
     type: process
     size: xl
     position:
       x: 2560
-      'y': 240
-  - id: model
+      'y': 720
+  - id: hard_refresh
     label: |-
-      模型推理
-      官方聊天模板
-      基础模型：5-shot
+      重建 MixEval + 困难子集
+      重跑依赖模型预测的采样
+      保持 1,000 条规模
     type: process
     size: xl
     position:
       x: 2840
-      'y': 240
-  - id: parser
+      'y': 720
+  - id: version_facts
     label: |-
-      GPT-3.5-Turbo-0125 解析器
-      自由回答评分 / 多选抽取
-    type: process
+      更新证据
+      MixEval 一分钟内 · 5 个 MixEval 版本
+      Hard 耗时取决于模型预测
+      仅用 GPT-4 Turbo 时约两分钟
+    type: document
     size: xl
     position:
       x: 3120
-      'y': 240
-  - id: metrics
+      'y': 720
+  - id: inference
     label: |-
-      真值准确率
-      Arena Elo 排名相关性
+      候选模型推理
+      官方或 FastChat 模板
+      基础模型 · 5-shot
+    type: process
+    size: xl
+    position:
+      x: 40
+      'y': 1040
+  - id: parser_gate
+    label: |-
+      属于哪个发布分片？
+      自由回答或选择题
+    type: decision
+    size: xl
+    position:
+      x: 320
+      'y': 1040
+  - id: freeform_parser
+    label: |-
+      GPT-3.5-Turbo-0125 解析器
+      自由回答得分 0.0–1.0
+      必须输出 [[score]]
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 880
+  - id: mc_parser
+    label: |-
+      GPT-3.5-Turbo-0125 解析器
+      抽取选项 · 必须输出 [[A]]
+      与真值精确匹配
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 1200
+  - id: failure_rules
+    label: |-
+      已发布失败策略 · 随机种子 42
+      外层重试 10 次；无效则随机
+      BadRequest：自由回答记 0 · 选择题随机
+    type: document
+    size: xl
+    position:
+      x: 320
+      'y': 1440
+  - id: overall
+    label: |-
+      报告总分
+      按样本数加权
+      自由回答 + 选择题
     type: terminal
     size: xl
     position:
-      x: 3400
-      'y': 240
+      x: 880
+      'y': 1040
+  - id: meta_eval
+    label: |-
+      跨模型元评估
+      Arena Elo 排名相关性
+      不是逐题评分
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 1040
+  - id: release_boundary
+    label: |-
+      发布边界 · 部分公开
+      Git 7c52b419… · 仅评测器与动态数据
+      HF 66a05ec3… · 数据卡 Apache-2.0
+      构建流水线未发布 · 仓库无 LICENSE
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 720
 edges:
-  - from: crawl
-    to: detector
+  - from: initial_detector
+    to: gpt4_labels
     type: primary
-  - from: detector
-    to: wild
+  - from: gpt4_labels
+    to: trained_detector
     type: primary
-  - from: wild
+  - from: trained_detector
+    to: apply_detector
+    type: primary
+  - from: apply_detector
+    to: wild_queries
+    type: primary
+  - from: wild_queries
+    to: gpt4_filter
+    type: primary
+  - from: gpt4_filter
     to: match
     type: primary
-  - from: pool
+    waypoints:
+      - x: 1924
+        'y': 220
+      - x: 984
+        'y': 220
+      - x: 984
+        'y': 300
+  - from: general_pool
+    to: benchmark_pool
+    type: secondary
+    label: 12 个通用基准
+    style:
+      dashed: true
+    waypoints:
+      - x: 260
+        'y': 350
+      - x: 700
+        'y': 350
+  - from: domain_pool
+    to: benchmark_pool
+    type: secondary
+    label: 6 个领域基准
+    style:
+      dashed: true
+  - from: benchmark_pool
     to: match
-    type: data
+    type: secondary
+    label: 真值基准池
+    style:
+      dashed: true
   - from: match
-    to: dataset
+    to: mixeval
     type: primary
-  - from: dataset
+  - from: mixeval
+    to: prediction_runs
+    type: primary
+  - from: prediction_runs
+    to: error_matrix
+    type: primary
+  - from: error_matrix
     to: difficulty
     type: primary
   - from: difficulty
-    to: sampling
+    to: probability
     type: primary
-  - from: sampling
+  - from: probability
+    to: cluster_gate
+    type: primary
+  - from: cluster_gate
     to: hard
     type: primary
+    label: 接受
+  - from: cluster_gate
+    to: probability
+    type: secondary
+    label: 拒绝并重采样
+    style:
+      dashed: true
+    waypoints:
+      - x: 2460
+        'y': 600
+      - x: 2380
+        'y': 600
   - from: hard
-    to: dynamic
+    to: hard_refresh
     type: primary
-  - from: dynamic
-    to: model
+  - from: batch_update
+    to: hard_refresh
+    type: secondary
+    label: 新批次
+    style:
+      dashed: true
+    waypoints:
+      - x: 2004
+        'y': 820
+      - x: 2720
+        'y': 820
+  - from: crawl_update
+    to: hard_refresh
+    type: secondary
+    label: 新 Crawl
+    style:
+      dashed: true
+    waypoints:
+      - x: 2284
+        'y': 860
+      - x: 2720
+        'y': 860
+  - from: pool_update
+    to: hard_refresh
+    type: secondary
+    label: 新基准池
+    style:
+      dashed: true
+    waypoints:
+      - x: 2564
+        'y': 900
+      - x: 2720
+        'y': 900
+  - from: hard_refresh
+    to: version_facts
+    type: secondary
+    label: 耗时证据
+    style:
+      dashed: true
+  - from: hard_refresh
+    to: inference
     type: primary
-  - from: model
-    to: parser
+    label: 发布版本
+    waypoints:
+      - x: 3000
+        'y': 960
+      - x: 1800
+        'y': 960
+      - x: 1800
+        'y': 800
+      - x: 44
+        'y': 800
+  - from: mixeval
+    to: release_boundary
+    type: secondary
+    label: 发布边界
+    style:
+      dashed: true
+  - from: inference
+    to: parser_gate
     type: primary
-  - from: parser
-    to: metrics
+  - from: parser_gate
+    to: freeform_parser
     type: primary
+    label: 自由回答
+  - from: parser_gate
+    to: mc_parser
+    type: primary
+    label: 选择题
+  - from: failure_rules
+    to: freeform_parser
+    type: secondary
+    label: 失败策略
+    style:
+      dashed: true
+  - from: failure_rules
+    to: mc_parser
+    type: secondary
+    label: 失败策略
+    style:
+      dashed: true
+  - from: freeform_parser
+    to: overall
+    type: primary
+  - from: mc_parser
+    to: overall
+    type: primary
+  - from: overall
+    to: meta_eval
+    type: primary
+    label: 跨模型
 modules: []

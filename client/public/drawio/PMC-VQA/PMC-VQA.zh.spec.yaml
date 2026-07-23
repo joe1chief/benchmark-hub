@@ -5,201 +5,337 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: PMC-VQA 构建与评测流程
-  description: 与论文一致地展示从图注生成VQA、两级视觉依赖过滤、图像隔离划分、人工测试集核验及双任务评分。
-  legend: 最终226,946对数据经过自动清洗；2,000题PMC-VQA-test是图像隔离的50,000题初始测试集中的人工核验子集。
+  description: 基于固定来源重建图注到 VQA 生成、两级视觉依赖过滤、人工核验测试集和 Choice 与 Blanking 并行评测，并将发布漂移留在主流程之外。
+  legend: 实线表示论文披露的构建与评测流程；虚线表示固定证据、公开发布漂移、指标实现缺口和许可证边界，不是额外构建步骤。
 nodes:
-  - id: step_1
+  - id: source_evidence
     label: |-
-      从PMC-OA开始
-      160万对生物医学图像与图注
-      来源为PubMed Central开放子集
-      覆盖240万篇论文
-    type: database
+      固定官方证据
+      arXiv 2305.10415v6 · PDF 7573df69e4c0
+      官方代码 1678ec2c97f0
+      HF 数据 b56ae594f794
+    type: document
     size: xl
     position:
       x: 20
-      'y': 40
-  - id: step_2
+      'y': 260
+  - id: pmc_oa
     label: |-
-      选取381K对图像与图注
-      使用医学图像采集第一阶段
-      不执行自动子图切分
-      保留复杂医学图像
+      从 PMC-OA 开始
+      160 万生物医学图像图注对
+      PubMed Central 开放获取子集
+      来源覆盖 240 万篇论文
     type: database
     size: xl
     position:
       x: 260
-      'y': 40
-  - id: step_3
+      'y': 260
+  - id: subset
     label: |-
-      每条图注生成五组问答
-      用图注文本提示ChatGPT
-      四个选项且仅一个正确
+      选取 38.1 万图像图注对
+      使用图像收集第一阶段
+      跳过自动子图拆分
+      保留多样复杂图像
+    type: database
+    size: xl
+    position:
+      x: 500
+      'y': 260
+  - id: generate
+    label: |-
+      每个图注生成五组问答
+      用图注文本提示 ChatGPT
+      四个选项且一个正确
       随机化正确选项位置
     type: process
     size: xl
     position:
-      x: 500
-      'y': 40
-  - id: step_4
+      x: 740
+      'y': 260
+  - id: clean
     label: |-
       清洗生成输出
-      移除重复拒答与虚假条目
-      强制符合指定模板
-      保留1,497,808组问答
-    type: process
-    size: xl
-    position:
-      x: 740
-      'y': 40
-  - id: step_5
-    label: |-
-      把数据分成两半
-      避免文本过滤器自训练
-      在其中一半训练
-      到另一半执行推理
+      删除重复拒答与占位样本
+      强制满足指定输出模板
+      保留 1,497,808 组问答
     type: process
     size: xl
     position:
       x: 980
-      'y': 40
-  - id: step_6
+      'y': 260
+  - id: cross_half
     label: |-
-      训练纯文本LLaMA-7B
-      只输入问题与答案选项
-      不提供对应图像
-      学习生物医学语言捷径
+      分成两半交叉拟合
+      在其中一半训练
+      在另一半推理
+      避免过滤自身训练样本
     type: process
     size: xl
     position:
       x: 1220
-      'y': 40
-  - id: step_7
+      'y': 260
+  - id: text_only
     label: |-
-      过滤纯语言可答问题
-      打乱选项并推理五次
-      正确至少3次即移除
-      保留848,433组问答
+      训练纯文本 LLaMA-7B
+      只提供问题与四个选项
+      不提供对应图像
+      学习仅凭语言可答捷径
     type: process
     size: xl
     position:
       x: 1460
-      'y': 40
-  - id: step_8
+      'y': 260
+  - id: language_filter
+    label: |-
+      过滤仅凭语言可答问答
+      打乱选项并推理五次
+      至少答对三次则删除
+      保留 848,433 组问答
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 260
+  - id: manual_labels
     label: |-
       标注图像可回答性
-      人工标注2,192组问答
-      1,752训练 · 440测试
-      使用二元图像可答标签
+      人工标注 2,192 组问答
+      训练 1,752 · 测试 440
+      二元图像可回答标签
     type: database
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: step_9
+      x: 1940
+      'y': 260
+  - id: classifier
     label: |-
       训练问题分类器
-      准确率达到81.77%
-      识别仅依赖图注的信息
+      准确率达到 81.77%
+      排除只在图注中出现的信息
       应用于剩余候选池
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: step_10
+      x: 2180
+      'y': 260
+  - id: final_dataset
     label: |-
-      形成清洗后PMC-VQA
-      226,946组问答
-      对应149,075张医学图像
-      约80%为放射学图像
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: step_11
-    label: |-
-      创建图像隔离划分
-      随机选择50,000组问答
-      形成PMC-VQA-test-initial
-      训练与测试图像不重叠
+      定稿清洗后 PMC-VQA
+      226,946 组问答
+      149,075 张医疗图像
+      约 80% 为放射影像
     type: database
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: step_12
+      x: 2420
+      'y': 260
+  - id: initial_test
+    label: |-
+      创建图像隔离初始测试集
+      随机选择 50,000 组问答
+      PMC-VQA-test-initial
+      与训练集无图像重叠
+    type: database
+    size: xl
+    position:
+      x: 2660
+      'y': 260
+  - id: verified_test
     label: |-
       人工核验测试样本
-      检查图像相关性与可答性
-      检查干扰项难度和图像质量
-      保留2,000题PMC-VQA-test
+      检查图像相关性与可回答性
+      检查干扰项与图像质量
+      保留 2,000 题 PMC-VQA-test
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: step_13
+      x: 2900
+      'y': 260
+  - id: choice
     label: |-
-      运行两类评测任务
-      Choice提供四个候选答案
-      Blanking不提供选项
-      生成A至D或自由文本
+      执行 Choice 任务
+      论文提示为 Question q · Options a1 到 a4
+      后缀为 the answer is
+      生成正确的 A B C 或 D
+      在人工核验测试集评测
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: step_14
+      x: 3140
+      'y': 80
+  - id: blanking
     label: |-
-      报告任务专用指标
-      Choice使用准确率
-      Blanking使用准确率与BLEU-1
-      在人工核验测试集上比较
+      执行 Blanking 任务
+      论文提示为 Question question
+      后缀为 the answer is
+      生成自由文本答案
+      在人工核验测试集评测
+    type: process
+    size: xl
+    position:
+      x: 3140
+      'y': 440
+  - id: acc_parser
+    label: |-
+      将输出映射到答案选项
+      使用 difflib.SequenceMatcher 比率
+      选择最相似候选项
+      计算严格选择准确率
+    type: process
+    size: xl
+    position:
+      x: 3380
+      'y': 200
+  - id: bleu
+    label: |-
+      评分自由文本
+      BLEU-1 衡量一元词精确率
+      同时映射到选项计算准确率
+      Blanking 报告两项指标
+    type: process
+    size: xl
+    position:
+      x: 3380
+      'y': 500
+  - id: report
+    label: |-
+      报告任务特定指标
+      Choice：Accuracy
+      Blanking：Accuracy 与 BLEU-1
+      分任务保留结果
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 3620
+      'y': 320
+  - id: release_snapshot
+    label: |-
+      固定公开数据快照
+      v1：train.csv · images.zip
+      test.csv 50,000 行
+      test_clean.csv 2,000 行
+      test_clean SHA-256 852307310866
+    type: document
+    size: xl
+    position:
+      x: 2420
+      'y': 800
+  - id: release_drift
+    label: |-
+      论文发布后漂移
+      xmcmic 地址现解析到 RadGenome
+      数据卡写 train2 test2 images2
+      快照文件名在数字 2 前增加下划线
+    type: document
+    size: xl
+    position:
+      x: 2660
+      'y': 1020
+  - id: metric_boundary
+    label: |-
+      指标实现边界
+      论文定义 SequenceMatcher ACC 与 BLEU-1
+      TE 使用 The choices are · TD 使用 Choices
+      ACC 解析器不同 · 不含 BLEU 实现
+    type: document
+    size: xl
+    position:
+      x: 3380
+      'y': 900
+  - id: license_boundary
+    label: |-
+      许可证边界
+      数据卡声明 CC BY-SA
+      源论文清单为 CC0 或 CC BY
+      官方代码仓库采用 MIT
+    type: document
+    size: xl
+    position:
+      x: 2180
+      'y': 1020
 edges:
-  - from: step_1
-    to: step_2
+  - from: source_evidence
+    to: pmc_oa
+    type: secondary
+    style:
+      dashed: true
+  - from: pmc_oa
+    to: subset
     type: primary
-  - from: step_2
-    to: step_3
+  - from: subset
+    to: generate
     type: primary
-  - from: step_3
-    to: step_4
+  - from: generate
+    to: clean
     type: primary
-  - from: step_4
-    to: step_5
+  - from: clean
+    to: cross_half
     type: primary
-  - from: step_5
-    to: step_6
+  - from: cross_half
+    to: text_only
     type: primary
-  - from: step_6
-    to: step_7
+  - from: text_only
+    to: language_filter
     type: primary
-  - from: step_7
-    to: step_8
+  - from: language_filter
+    to: manual_labels
     type: primary
-  - from: step_8
-    to: step_9
+  - from: manual_labels
+    to: classifier
     type: primary
-  - from: step_9
-    to: step_10
+  - from: classifier
+    to: final_dataset
     type: primary
-  - from: step_10
-    to: step_11
+  - from: final_dataset
+    to: initial_test
     type: primary
-  - from: step_11
-    to: step_12
+  - from: initial_test
+    to: verified_test
     type: primary
-  - from: step_12
-    to: step_13
+  - from: verified_test
+    to: choice
     type: primary
-  - from: step_13
-    to: step_14
+  - from: verified_test
+    to: blanking
     type: primary
+  - from: choice
+    to: acc_parser
+    type: primary
+  - from: blanking
+    to: acc_parser
+    type: primary
+  - from: blanking
+    to: bleu
+    type: primary
+  - from: acc_parser
+    to: report
+    type: primary
+  - from: bleu
+    to: report
+    type: primary
+  - from: final_dataset
+    to: release_snapshot
+    type: secondary
+    style:
+      dashed: true
+  - from: release_snapshot
+    to: release_drift
+    type: secondary
+    style:
+      dashed: true
+  - from: acc_parser
+    to: metric_boundary
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 3760
+        'y': 202
+      - x: 3760
+        'y': 898
+  - from: release_snapshot
+    to: license_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

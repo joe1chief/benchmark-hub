@@ -6,9 +6,11 @@ meta:
   routing: orthogonal
   title: Aider Polyglot Build Process
   description: >-
-    Official-source-aligned six-language Exercism selection, seven-model difficulty probing, end-to-end file editing,
-    and Docker test evaluation.
-  legend: Read the benchmark selection row left-to-right, then the Aider execution row right-to-left.
+    Official-source-aligned Exercism selection, Aider editing with tests withheld from model context, and the default
+    two-try hidden-test repair protocol.
+  legend: >-
+    Read the selection row left-to-right, then the execution row right-to-left. Failed try 1 exposes only test output
+    for one repair; default --tries 2 means an initial edit plus one repair attempt.
 nodes:
   - id: exercism
     label: |-
@@ -54,7 +56,9 @@ nodes:
     label: |-
       Aider Polyglot
       225 Hard Exercises
-      C++26 / Go39 / Java47 / JS49 / Py34 / Rust30
+      C++ 26 • Go 39 • Java 47
+      JavaScript 49 • Python 34
+      Rust 30
     type: database
     size: xl
     position:
@@ -63,8 +67,9 @@ nodes:
   - id: input
     label: |-
       Benchmark Task
-      Natural-Language Coding Request
-      Existing Source Files + Unit Tests
+      Exercise Instructions
+      Editable Solution Files Only
+      Test / Example / Metadata Files Withheld
     type: document
     size: xl
     position:
@@ -90,25 +95,46 @@ nodes:
     position:
       x: 1160
       'y': 440
-  - id: docker
+  - id: hidden_tests
     label: |-
-      Isolated Docker Execution
-      Run Language-Specific Unit Tests
-      Record Success / Failure per Exercise
+      Run Withheld Tests in Docker
+      Test Files Excluded from Model Context
+      Copied In Only After Each Edit
+      Use the Language-Specific Test Command
     type: process
     size: xl
     position:
       x: 880
       'y': 440
+  - id: retry_gate
+    label: |-
+      Tests Pass or Tries Exhausted?
+      Stop After the Second Test Run
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: repair
+    label: |-
+      Retry from Test Output
+      Default --tries 2
+      Initial Edit + One Repair Attempt
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 720
   - id: report
     label: |-
       Benchmark Report
+      Pass@1 and Pass@2
       Percent Completed Correctly
       Correct Edit Format / Well-Formed Rate
     type: terminal
     size: xl
     position:
-      x: 600
+      x: 320
       'y': 440
 edges:
   - from: exercism
@@ -133,9 +159,23 @@ edges:
     to: edit
     type: primary
   - from: edit
-    to: docker
+    to: hidden_tests
     type: primary
-  - from: docker
+  - from: hidden_tests
+    to: retry_gate
+    type: primary
+  - from: retry_gate
     to: report
     type: primary
+    label: pass or try 2 exhausted
+  - from: retry_gate
+    to: repair
+    type: data
+    label: try 1 failed
+    waypoints:
+      - x: 600
+        'y': 720
+  - from: repair
+    to: edit
+    type: data
 modules: []

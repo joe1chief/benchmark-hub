@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 export function normalizeDrawioSvgContent(svg) {
   return svg
+    .replace(/<svg\b[^>]*>/u, tag => tag.replace(/\scontent="[^"]*"/u, ''))
     .replace(/color-scheme:\s*light\s+dark;/gu, 'color-scheme: light;')
     .replace(
       /light-dark\(\s*(rgba?\([^)]*\))\s*,\s*rgba?\([^)]*\)\s*\)/giu,
@@ -13,6 +14,10 @@ export function normalizeDrawioSvgContent(svg) {
     )
     .replace(
       /light-dark\(\s*(#[0-9a-f]{3,8})\s*,\s*#[0-9a-f]{3,8}\s*\)/giu,
+      '$1',
+    )
+    .replace(
+      /light-dark\(\s*(#[0-9a-f]{3,8})\s*,\s*var\(\s*--[^,()]+,\s*#[0-9a-f]{3,8}\s*\)\s*\)/giu,
       '$1',
     );
 }

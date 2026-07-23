@@ -6,6 +6,8 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { normalizeImporterDrawioContent } from './normalize_importer_build_process_assets.mjs';
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const e2eDrawioCli = process.env.IMPORTER_DRAWIO_E2E_CLI;
@@ -164,7 +166,7 @@ test('keeps the MCP evaluation lane at readable WCAG contrast', () => {
   }
 });
 
-test('stores edge labels once in Draw.io instead of rendering duplicates', () => {
+test('stores each edge label on its parent edge without child label vertices', () => {
   for (const id of ['MCP-Bench', 'MaXIFE']) {
     for (const language of ['en', 'zh']) {
       const drawio = readDrawio(id, language);
@@ -172,10 +174,14 @@ test('stores edge labels once in Draw.io instead of rendering duplicates', () =>
         /<mxCell id="\d+" value="([^"]*)"[^>]* edge="1"/gu,
       )].map(match => match[1]);
       assert.ok(edgeValues.length > 0, `${id}.${language} must contain edges`);
-      assert.deepEqual(
-        edgeValues.filter(Boolean),
-        [],
-        `${id}.${language} edge values duplicate their explicit label vertices`,
+      assert.ok(
+        edgeValues.some(Boolean),
+        `${id}.${language} must retain labeled decision edges`,
+      );
+      assert.doesNotMatch(
+        drawio,
+        /style="edgeLabel(?:;|")/u,
+        `${id}.${language} must not retain child label vertices`,
       );
     }
   }
@@ -216,9 +222,10 @@ test('optionally rebuilds MCP-Bench and MaXIFE through the formal chain without 
   }
 });
 
-test('normalizes a repository raw-CLI fixture without duplicate labels or drift', () => {
+test('normalizes a raw-CLI fixture to parent-only edge labels without drift', () => {
   const tempRoot = mkdtempSync(join(tmpdir(), 'importer-build-process-fixture-'));
   const generated = join(tempRoot, 'fixture.drawio');
+  const minified = join(tempRoot, 'fixture.minified.drawio');
   try {
     const raw = readFileSync(join(fixtureDir, 'duplicate-edge-labels.raw.drawio'), 'utf8');
     assert.match(raw, /<mxCell id="edge-labeled" value="Pass"[^>]* edge="1"/u);
@@ -229,11 +236,74 @@ test('normalizes a repository raw-CLI fixture without duplicate labels or drift'
     assert.equal(once, readFileSync(join(fixtureDir, 'duplicate-edge-labels.normalized.drawio'), 'utf8'));
     execFileSync(process.execPath, [assetNormalizer, generated], { stdio: 'pipe' });
     assert.equal(readFileSync(generated, 'utf8'), once, 'fixture normalization must be idempotent');
-    assert.doesNotMatch(once, /<mxCell id="edge-labeled" value="[^"]+"[^>]* edge="1"/u);
-    assert.match(once, /<mxCell id="edge-label" value="Pass"[^>]* parent="edge-labeled"/u);
+    assert.match(once, /<mxCell id="edge-labeled" value="Pass"[^>]* edge="1"/u);
+    assert.match(
+      once,
+      /<mxCell id="edge-labeled"[\s\S]*?<mxGeometry x="-0\.6" relative="1" as="geometry">[\s\S]*?<mxPoint x="0" y="-12" as="offset"\/>/u,
+      'child label position and offset must move onto the parent edge geometry',
+    );
+    assert.doesNotMatch(once, /style="edgeLabel(?:;|")/u);
+
+    writeFileSync(minified, raw.replace(/>\s+</gu, '><'));
+    execFileSync(process.execPath, [assetNormalizer, minified], { stdio: 'pipe' });
+    const minifiedResult = readFileSync(minified, 'utf8');
+    assert.match(
+      minifiedResult,
+      /<mxCell id="edge-labeled"[\s\S]*?<mxGeometry x="-0\.6" relative="1" as="geometry"><mxPoint x="0" y="-12" as="offset"\/><\/mxGeometry>/u,
+      'minified CLI output must preserve child label geometry on the parent edge',
+    );
+    assert.doesNotMatch(minifiedResult, /style="edgeLabel(?:;|")/u);
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }
+});
+
+test('normalizes multiline edge labels in one idempotent pass', () => {
+  const raw = readFileSync(join(fixtureDir, 'duplicate-edge-labels.raw.drawio'), 'utf8')
+    .replace('id="edge-labeled" value="Pass"', 'id="edge-labeled" value="Pass\nAgain"')
+    .replace('id="edge-label" value="Pass"', 'id="edge-label" value="Pass\nAgain"');
+  const once = normalizeImporterDrawioContent(raw);
+  assert.equal(normalizeImporterDrawioContent(once), once);
+  assert.match(once, /id="edge-labeled" value="Pass&#xa;Again"/u);
+});
+
+test('does not let a self-closing cell swallow the following labeled edge', () => {
+  const raw = readFileSync(join(fixtureDir, 'duplicate-edge-labels.raw.drawio'), 'utf8')
+    .replace(
+      '<mxCell id="edge-labeled"',
+      '<mxCell id="spacer" parent="1"/><mxCell id="edge-labeled"',
+    )
+    .replace(/>\s+</gu, '><');
+  const normalized = normalizeImporterDrawioContent(raw);
+  assert.match(
+    normalized,
+    /id="edge-labeled"[\s\S]*?<mxGeometry x="-0\.6" relative="1" as="geometry"><mxPoint x="0" y="-12" as="offset"\/><\/mxGeometry>/u,
+  );
+  assert.doesNotMatch(normalized, /style="edgeLabel(?:;|")/u);
+});
+
+test('scopes repeated cell ids and edge labels to their Draw.io page', () => {
+  const page = (name, label, x) => `
+  <diagram name="${name}">
+    <mxGraphModel math="1"><root>
+      <mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="edge" value="${label}" style="html=1" edge="1" parent="1">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+      <mxCell id="edge-label" value="${label}" style="edgeLabel;html=1" vertex="1" parent="edge">
+        <mxGeometry x="${x}" relative="1" as="geometry"><mxPoint x="0" y="-12" as="offset"/></mxGeometry>
+      </mxCell>
+    </root></mxGraphModel>
+  </diagram>`;
+  const normalized = normalizeImporterDrawioContent(
+    `<mxfile>${page('One', 'First', 0.2)}${page('Two', 'Second', 0.8)}</mxfile>`,
+  );
+  const pages = [...normalized.matchAll(/<diagram\b[^>]*>[\s\S]*?<\/diagram>/gu)]
+    .map(match => match[0]);
+  assert.equal(pages.length, 2);
+  assert.match(pages[0], /id="edge" value="First"[\s\S]*?<mxGeometry x="-0\.6"/u);
+  assert.match(pages[1], /id="edge" value="Second"[\s\S]*?<mxGeometry x="0\.6"/u);
+  assert.doesNotMatch(normalized, /style="edgeLabel(?:;|")/u);
 });
 
 test('keeps the default scoped test portable outside a developer workstation', () => {

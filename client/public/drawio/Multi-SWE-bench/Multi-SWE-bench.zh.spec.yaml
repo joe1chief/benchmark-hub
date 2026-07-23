@@ -4,130 +4,220 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: Multi-SWE-bench 构建流程
-  description: 对齐论文的多语言仓库筛选、可执行性过滤、专家复核与补丁评测流程。
-  legend: 上排从左向右完成自动构建，下排从右向左完成人工筛选与评测。
+  title: Multi-SWE-bench 构建与评测流程
+  description: 对齐论文 v1 展示五阶段构建、双人专家验证、多语言智能体评测，以及明确的发布与基准范围边界。
+  legend: 实线表示 1,632 条主集的构建和评测路径；虚线表示发布证据或对比集合，不计入主基准数量。
 nodes:
   - id: repos
     label: |-
       七种语言的 GitHub 仓库
-      超过 500 星且活跃至少 6 个月
-      有 CI/CD，最新提交可构建
+      星标超过 500 · 活跃至少六个月
+      必须有持续集成与部署
+      最新提交可构建/可测试
+      仅需最少人工设置
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
+      'y': 80
   - id: prs
     label: |-
-      抓取关联 Issue 的 PR
+      抓取并筛选拉取请求
+      至少关联一个 GitHub 问题
+      修改过测试文件
       已合并到主分支
-      PR 修改测试
     type: process
     size: xl
     position:
       x: 320
-      'y': 100
+      'y': 80
   - id: artifacts
     label: |-
-      构造候选资产
-      Issue + 基准提交
-      修复补丁 + 测试补丁
+      收集候选资产
+      问题描述 + 基准提交
+      真值修复补丁
+      测试补丁
     type: document
     size: xl
     position:
       x: 600
-      'y': 100
+      'y': 80
   - id: environment
     label: |-
-      确定执行环境
-      分析 CI / 文档与依赖
-      调整 Dockerfile，否则丢弃
+      为每个拉取请求
+      确定容器环境
+      检查持续集成 · 文档 · 试运行
+      区分仓库公共依赖
+      与请求特有依赖
+      修正构建脚本
+      无法修复则丢弃
     type: process
     size: xl
     position:
       x: 880
-      'y': 100
+      'y': 80
   - id: runs
     label: |-
-      运行三种测试配置
-      基线、测试补丁、测试 + 修复
-      解析逐测试状态转换
+      以三种配置运行完整测试套件
+      运行日志：基准提交
+      测试日志：基准提交 + 测试补丁
+      修复日志：基准提交 + 测试补丁
+      + 修复补丁
     type: process
     size: xl
     position:
       x: 1160
-      'y': 100
+      'y': 80
   - id: filter
     label: |-
-      执行状态转换过滤
-      必须有 ANY -> FAILED -> PASSED
-      排除回归与异常转换
+      按每项测试的状态转换过滤
+      丢弃 任意→通过→失败
+      至少需要一项
+      任意→失败→通过
+      丢弃 通过→不存在或跳过
+      →失败
     type: process
     size: xl
     position:
       x: 1440
-      'y': 100
+      'y': 80
   - id: candidates
     label: |-
-      2,456 个可执行候选
+      保留 2,456 个可执行候选
       来自 39 个仓库
       覆盖七种编程语言
+      保留细粒度测试状态转换
     type: database
     size: xl
     position:
       x: 1440
-      'y': 440
-  - id: annotation
+      'y': 400
+  - id: annotator_setup
     label: |-
-      双人专家标注
-      每个实例交叉复核
-      共 68 位专家标注员
+      招募 68 位外包专家
+      目标语言经验
+      至少两年
+      相关专业本科及以上学历
+      一小时培训
+      + 实时答疑渠道
     type: process
     size: xl
     position:
       x: 1160
-      'y': 440
-  - id: quality
+      'y': 400
+  - id: annotation
     label: |-
-      内部质量验收
-      14 位工程师制作参考答案
-      要求准确率至少 80%
+      每个实例由两位标注员
+      独立标注
+      交叉复核两份标注
+      形成一个一致的最终标签
+      记录预计解决时间
     type: process
     size: xl
     position:
       x: 880
-      'y': 440
-  - id: dataset
+      'y': 400
+  - id: quality
     label: |-
-      Multi-SWE-bench
-      1,632 个高质量实例
-      Java / TS / JS / Go / Rust / C / C++
-    type: database
+      内部质量门 · 14 位工程师
+      制作参考答案
+      准确率必须不低于 80%
+      仅保留 Q2.1=0
+      且 Q3.1 与 Q4.1 属于 {2,3}
+    type: process
     size: xl
     position:
       x: 600
-      'y': 440
-  - id: patch
+      'y': 400
+  - id: dataset
     label: |-
-      智能体接收 Issue 与代码库
-      生成并应用修复补丁
-      在 Docker 环境中执行
+      Multi-SWE-bench · 1,632 个实例
+      Java · TypeScript · JavaScript · Go
+      Rust · C · C++
+      经人工验证的真实问题解决任务
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: methods
+    label: |-
+      把三种方法
+      改造成多语言版本
+      MagentLess · MSWE-agent
+      MopenHands
+      多语言提示词
+      + 语言专用工具
+      论文用九个大语言模型评测
     type: process
     size: xl
     position:
       x: 320
-      'y': 440
+      'y': 720
+  - id: patch
+    label: |-
+      向智能体提供问题
+      与基准提交代码库
+      定位相关代码
+      编辑代码库
+      提交生成的修复补丁
+    type: process
+    size: xl
+    position:
+      x: 600
+      'y': 720
+  - id: harness
+    label: |-
+      在容器中应用
+      生成的修复补丁
+      执行仓库测试
+      对照真值
+      测试要求
+      判定已解决或未解决
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 720
   - id: metrics
     label: |-
-      可执行评测
-      问题解决率 + 成功定位率
-      平均成本
+      报告评测指标
+      问题解决率 · 主要指标
+      成功定位率
+      文件级准确率
+      每个问题的平均成本
     type: terminal
     size: xl
     position:
+      x: 1160
+      'y': 720
+  - id: release_boundary
+    label: |-
+      公开发布边界
+      Git 24f493f8… · Apache-2.0
+      代码与环境
+      HF 68e134be… · 元数据为“其他”
+      数据卡正文称 CC0
+      仍须遵守上游许可证
+    type: document
+    size: xl
+    position:
       x: 40
-      'y': 440
+      'y': 400
+  - id: scope_boundary
+    label: |-
+      范围区分
+      不合并数量
+      主基准 1,632 条
+      不含 Python
+      对比实验另加 500 条 Python 数据
+      Multi-SWE-RL 4,723 条
+      同一流程但跳过阶段五
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 720
 edges:
   - from: repos
     to: prs
@@ -148,6 +238,9 @@ edges:
     to: candidates
     type: primary
   - from: candidates
+    to: annotator_setup
+    type: primary
+  - from: annotator_setup
     to: annotation
     type: primary
   - from: annotation
@@ -157,9 +250,27 @@ edges:
     to: dataset
     type: primary
   - from: dataset
+    to: methods
+    type: primary
+  - from: methods
     to: patch
     type: primary
   - from: patch
+    to: harness
+    type: primary
+  - from: harness
     to: metrics
     type: primary
+  - from: dataset
+    to: release_boundary
+    type: secondary
+    label: 发布证据
+    style:
+      dashed: true
+  - from: metrics
+    to: scope_boundary
+    type: secondary
+    label: 范围区分
+    style:
+      dashed: true
 modules: []

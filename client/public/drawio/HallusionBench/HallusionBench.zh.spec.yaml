@@ -4,180 +4,200 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: HallusionBench 构建流程
-  description: >-
-    按论文对齐的 HallusionBench 流程：专家定义视觉依赖与视觉补充问题，收集并编辑 346 张图像，构造 455 个控制对和 1,129 道二元问题； GPT-4 对 LVLM
-    回复判定三次取平均，再报告单题、图像、问题对、难度、偏置、一致性及故障诊断指标。
-  legend: 实线表示控制对构建和评测；指标分支区分正确性统计与故障诊断。
+  title: HallusionBench 构建与评测流程
+  description: 与论文和官方数据工件对齐的 HallusionBench 流程：专家从原图、编辑图和无图输入构造视觉依赖与视觉补充控制题对， 再对 LVLM 回答进行正确性判定、偏置与一致性分析及失败归因。
+  legend: 实线表示论文主流程；虚线表示分析支路或公开工件边界。
 nodes:
+  - id: evidence
+    label: |-
+      一手证据
+      arXiv 2310.14566v5 · 第3–4节
+      仓库 744007c · HallusionBench.json
+      SHA256 ca6e0fb
+    type: document
+    size: xl
+    position:
+      x: 20
+      'y': 260
   - id: taxonomy
     label: |-
-      视觉问题
-      分类体系
+      视觉依赖（VD）
+      必须依赖视觉上下文
+      视觉补充（VS）
+      无图也可回答
     type: document
-    size: large
+    size: xl
     position:
-      x: 40
-      'y': 240
-  - id: dependent
-    label: |-
-      视觉依赖问题
-      591 题
-    type: process
-    size: large
-    position:
-      x: 240
-      'y': 80
-  - id: supplement
-    label: |-
-      视觉补充问题
-      538 题
-    type: process
-    size: large
-    position:
-      x: 240
-      'y': 400
+      x: 260
+      'y': 260
   - id: collect
     label: |-
-      专家精选
-      346 张图像
-    type: user
-    size: large
-    position:
-      x: 440
-      'y': 240
-  - id: original
-    label: |-
-      无图输入 16%
-      原始图像输入 39%
-    type: document
-    size: large
-    position:
-      x: 640
-      'y': 80
-  - id: edited
-    label: |-
+      人类专家整理
+      165 张原始图像
       181 张人工编辑图像
-      占问题 45%
-    type: process
-    size: large
+      合计 346 张图像
+    type: user
+    size: xl
     position:
-      x: 640
-      'y': 400
-  - id: controls
+      x: 500
+      'y': 260
+  - id: edit
     label: |-
-      455 个控制对
-      1,129 组是非问答
-    type: database
-    size: large
-    position:
-      x: 840
-      'y': 240
-  - id: model
-    label: LVLM 回复
+      人工图像编辑
+      翻转 · 顺序反转 · 遮挡
+      OCR · 对象 · 颜色编辑
     type: process
-    size: large
+    size: xl
     position:
-      x: 1040
-      'y': 240
+      x: 740
+      'y': 40
+  - id: inputs
+    label: |-
+      输入分布
+      178 道无图题
+      447 道原图题
+      504 道编辑图题
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 260
+  - id: pairs
+    label: |-
+      455 个控制题对
+      1,129 道二值问题
+      VD 591 · VS 538
+    type: database
+    size: xl
+    position:
+      x: 1220
+      'y': 260
+  - id: response
+    label: |-
+      LVLM 回答
+      是 / 否 / 不确定
+      同一问题跨控制条件
+    type: process
+    size: xl
+    position:
+      x: 1460
+      'y': 260
   - id: judge
     label: |-
-      GPT-4 裁判 3 次
-      温度 0；取平均
+      论文纯文本 GPT-4 裁判协议
+      正确 / 错误 / 不清楚
+      温度 0 · 重复 3 次
+      报告平均结果
     type: process
-    size: large
+    size: xl
     position:
-      x: 1240
-      'y': 240
-  - id: binary
+      x: 1700
+      'y': 260
+  - id: harness
     label: |-
-      正确 / 错误 /
-      不确定
+      固定代码
+      每行 1 次正确性裁判调用
+      未显式传入 temperature 参数
+      解析：incorrect→0 · correct→1
+      其他→2
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 560
+  - id: rules
+    label: |-
+      计分规则
+      VS 无图时不确定可接受
+      将裁判结果转为二值
     type: decision
-    size: large
+    size: xl
     position:
-      x: 1440
-      'y': 240
-  - id: correctness
+      x: 1940
+      'y': 260
+  - id: score
     label: |-
-      单题 / 图像 /
-      问题对准确率
+      正确性指标
+      aAcc · fAcc · qAcc
+      简单 / 困难题准确率
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 1640
+      x: 2180
       'y': 80
-  - id: difficulty
+  - id: diagnose
     label: |-
-      简单 / 困难
-      单题准确率
-    type: terminal
-    size: large
-    position:
-      x: 1640
-      'y': 240
-  - id: diagnostics
-    label: |-
-      是/否偏置 +
-      一致性测试
+      分析性诊断
+      是/否偏置 · 一致性
+      控制题对决策树
     type: process
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 400
+      x: 2180
+      'y': 440
   - id: failure
     label: |-
-      故障决策树
-      语言 / 视觉 / 混合
+      失败归因
+      语言幻觉
+      视觉错觉
+      混合 / 不确定
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 1840
-      'y': 400
+      x: 2420
+      'y': 440
+  - id: artifact_boundary
+    label: |-
+      公开工件边界
+      HallusionBench.json：1,129 行
+      固定快照；模型生成逻辑
+      由用户实现
+    type: document
+    size: xl
+    position:
+      x: 1460
+      'y': 560
 edges:
-  - from: taxonomy
-    to: dependent
+  - from: evidence
+    to: taxonomy
     type: primary
   - from: taxonomy
-    to: supplement
-    type: primary
-  - from: dependent
-    to: collect
-    type: primary
-  - from: supplement
     to: collect
     type: primary
   - from: collect
-    to: original
+    to: edit
     type: primary
   - from: collect
-    to: edited
+    to: inputs
     type: primary
-  - from: original
-    to: controls
+  - from: edit
+    to: inputs
     type: primary
-  - from: edited
-    to: controls
+  - from: inputs
+    to: pairs
     type: primary
-  - from: controls
-    to: model
+  - from: pairs
+    to: response
     type: primary
-  - from: model
+  - from: response
     to: judge
     type: primary
   - from: judge
-    to: binary
+    to: rules
     type: primary
-  - from: binary
-    to: correctness
+  - from: judge
+    to: harness
+    type: data
+  - from: rules
+    to: score
     type: primary
-  - from: binary
-    to: difficulty
-    type: primary
-  - from: binary
-    to: diagnostics
-    type: primary
-  - from: diagnostics
+  - from: rules
+    to: diagnose
+    type: secondary
+  - from: diagnose
     to: failure
     type: primary
+  - from: pairs
+    to: artifact_boundary
+    type: data
 modules: []

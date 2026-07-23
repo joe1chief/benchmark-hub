@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: Aider Polyglot 构建流程
-  description: 对齐官方资料的六语言 Exercism 筛选、七模型难度预试、端到端文件编辑与 Docker 测试流程。
-  legend: 上排从左向右完成基准筛选，下排从右向左完成 Aider 执行评测。
+  description: 对齐官方资料的 Exercism 筛选、测试文件不进入模型上下文的 Aider 编辑，以及默认两次尝试的隐藏测试修复协议。
+  legend: 上排从左向右筛选题目，下排从右向左评测。首次失败仅向模型反馈测试输出并允许一次修复；默认 --tries 2 即首次编辑加一次修复。
 nodes:
   - id: exercism
     label: |-
@@ -52,7 +52,9 @@ nodes:
     label: |-
       Aider Polyglot
       225 道困难练习
-      C++26 / Go39 / Java47 / JS49 / Py34 / Rust30
+      C++ 26 • Go 39 • Java 47
+      JavaScript 49 • Python 34
+      Rust 30
     type: database
     size: xl
     position:
@@ -61,8 +63,9 @@ nodes:
   - id: input
     label: |-
       基准任务
-      自然语言编码需求
-      现有源文件 + 单元测试
+      练习说明
+      仅提供可编辑的解答文件
+      测试 / 示例 / 元数据文件均不提供
     type: document
     size: xl
     position:
@@ -88,25 +91,46 @@ nodes:
     position:
       x: 1160
       'y': 440
-  - id: docker
+  - id: hidden_tests
     label: |-
-      隔离 Docker 执行
-      运行语言专用单元测试
-      记录每题成功或失败
+      在 Docker 中运行隐藏测试
+      测试文件不进入模型上下文
+      每次编辑后才复制测试文件
+      使用语言专用测试命令
     type: process
     size: xl
     position:
       x: 880
       'y': 440
+  - id: retry_gate
+    label: |-
+      测试通过或尝试次数耗尽？
+      第二次测试后停止
+    type: decision
+    size: xl
+    position:
+      x: 600
+      'y': 440
+  - id: repair
+    label: |-
+      根据测试输出重试
+      默认 --tries 2
+      首次编辑 + 一次修复尝试
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 720
   - id: report
     label: |-
       基准报告
+      Pass@1 与 Pass@2
       正确完成题目百分比
       正确编辑格式 / 格式完好率
     type: terminal
     size: xl
     position:
-      x: 600
+      x: 320
       'y': 440
 edges:
   - from: exercism
@@ -131,9 +155,23 @@ edges:
     to: edit
     type: primary
   - from: edit
-    to: docker
+    to: hidden_tests
     type: primary
-  - from: docker
+  - from: hidden_tests
+    to: retry_gate
+    type: primary
+  - from: retry_gate
     to: report
     type: primary
+    label: 通过或第二次尝试已结束
+  - from: retry_gate
+    to: repair
+    type: data
+    label: 首次失败
+    waypoints:
+      - x: 600
+        'y': 720
+  - from: repair
+    to: edit
+    type: data
 modules: []

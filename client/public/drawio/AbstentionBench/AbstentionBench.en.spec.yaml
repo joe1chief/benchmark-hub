@@ -5,19 +5,31 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AbstentionBench Build and Evaluation Process
-  description: Paper-aligned construction of the 20-dataset suite and conditional judging of abstention and answer correctness.
+  description: >-
+    Paper-aligned candidate screening, fixed-size normalization, six-scenario construction, and conditional abstention
+    judging.
   legend: >-
-    Sixteen selected datasets, three constructed -Abstain variants, and UMWP are parallel inputs. Correctness is judged
-    only for a non-abstaining response with an available reference answer.
+    The suite combines 16 selected datasets, three copied-and-context-removed variants, and UMWP. Correctness is judged
+    only for a non-abstaining response with an available reference answer; the judge audit used 300 responses.
 nodes:
   - id: candidate_search
     label: |-
       Search Candidate Datasets
-      Review 82 resources
+      183 candidates • review 82 resources
     type: process
     size: xl
     position:
       x: 40
+      'y': 40
+  - id: selection
+    label: |-
+      Dataset Selection Gate
+      Publicly available data
+      License permits redistribution
+    type: process
+    size: xl
+    position:
+      x: 280
       'y': 40
   - id: general_datasets
     label: |-
@@ -26,7 +38,7 @@ nodes:
     type: database
     size: xl
     position:
-      x: 280
+      x: 520
       'y': 40
   - id: reasoning_sources
     label: |-
@@ -40,7 +52,8 @@ nodes:
   - id: abstain_variants
     label: |-
       Build 3 -Abstain Variants
-      Remove required context
+      Copy answerable source items
+      Remove answer-enabling context
     type: process
     size: xl
     position:
@@ -55,14 +68,35 @@ nodes:
     position:
       x: 280
       'y': 440
+  - id: normalize
+    label: |-
+      Fixed Uniform Sampling
+      Normalize each component
+      to at most 3,500 questions
+    type: process
+    size: xl
+    position:
+      x: 760
+      'y': 240
+  - id: scenarios
+    label: |-
+      Assign 6 Scenarios
+      Answerable / unanswerable
+      Reference availability varies
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 240
   - id: release
     label: |-
       AbstentionBench
-      20 datasets • >35,000 questions
+      16 + 3 + 1 = 20 datasets
+      >35,000 unanswerable questions
     type: database
     size: xl
     position:
-      x: 520
+      x: 1240
       'y': 240
   - id: inference
     label: |-
@@ -71,8 +105,18 @@ nodes:
     type: process
     size: xl
     position:
-      x: 760
+      x: 1480
       'y': 240
+  - id: judge_validation
+    label: |-
+      Abstention-Judge Audit
+      300 human-annotated responses
+      Cohen's kappa = 0.88
+    type: user
+    size: xl
+    position:
+      x: 1720
+      'y': 20
   - id: abstention_judge
     label: |-
       Llama 3.1 8B Judge
@@ -80,7 +124,7 @@ nodes:
     type: decision
     size: xl
     position:
-      x: 1000
+      x: 1720
       'y': 240
   - id: reference_gate
     label: |-
@@ -89,7 +133,7 @@ nodes:
     type: decision
     size: xl
     position:
-      x: 1240
+      x: 1960
       'y': 240
   - id: correctness_judge
     label: |-
@@ -98,7 +142,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1480
+      x: 2200
       'y': 80
   - id: metrics
     label: |-
@@ -108,7 +152,7 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1720
+      x: 2440
       'y': 240
   - id: report
     label: |-
@@ -118,22 +162,31 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 1960
+      x: 2680
       'y': 240
 edges:
   - from: candidate_search
+    to: selection
+    type: primary
+  - from: selection
     to: general_datasets
     type: primary
   - from: reasoning_sources
     to: abstain_variants
     type: primary
   - from: general_datasets
-    to: release
+    to: normalize
     type: primary
   - from: abstain_variants
-    to: release
+    to: normalize
     type: primary
   - from: umwp
+    to: normalize
+    type: primary
+  - from: normalize
+    to: scenarios
+    type: primary
+  - from: scenarios
     to: release
     type: primary
   - from: release
@@ -142,16 +195,19 @@ edges:
   - from: inference
     to: abstention_judge
     type: primary
+  - from: judge_validation
+    to: abstention_judge
+    type: data
   - from: abstention_judge
     to: metrics
     type: optional
     label: Abstained
     waypoints:
-      - x: 1120
-        'y': 560
-      - x: 1720
-        'y': 560
-      - x: 1720
+      - x: 1840
+        'y': 600
+      - x: 2440
+        'y': 600
+      - x: 2440
         'y': 320
   - from: abstention_judge
     to: reference_gate

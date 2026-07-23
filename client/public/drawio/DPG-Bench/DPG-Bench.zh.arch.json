@@ -1,74 +1,98 @@
 {
   "version": 1,
-  "title": "DPG-Bench 构建流程",
+  "title": "DPG-Bench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 14,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "DPG-Bench · arXiv:2403.05135v1\nELLA 仓库 @ 3c228f1\n官方 dpg_bench.csv @ 68f5076\n已固定构建与评测版本",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "sources",
-      "label": "四个来源数据集\nCOCO · PartiPrompts · DSG-1k · Object365",
+      "label": "四类提示来源\nCOCO · PartiPrompts\nDSG-1k · Object365\n后续按来源分别处理",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "adapt",
-      "label": "适配来源提示\n扩写前三个来源\n从 Object365 抽取 1–4 个对象",
+      "id": "route",
+      "label": "按来源调整提示",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "short",
+      "label": "COCO / PartiPrompts / DSG-1k\n取前三个来源的提示\n将短提示扩写\n为长且密集的描述",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "object365",
+      "label": "Object365 组合\n抽取 1–4 个对象\n覆盖主类别与子类别\n形成多对象提示种子",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "expand",
-      "label": "GPT-4 密集扩写\n场景细节 · 对象属性 · 对象关系",
+      "label": "第一次 GPT-4：密集扩写\n丰富场景上下文\n增加对象属性\n指明空间 / 语义关系",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "verify",
-      "label": "人工核验\n检查长提示与语义要求",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "graph",
-      "label": "GPT-4 执行 DSG 流程\n元组分类 · 问题 · 依赖图",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "benchmark",
-      "label": "DPG-Bench\n1,065 个提示 · 平均 83.91 个 CLIP 词元\n4,286 个名词 · 一级 5 类 / 二级 13 类",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "generate",
-      "label": "文生图模型\n每个密集提示生成 4 张图\n建议拼为 2×2 网格",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "vqa",
-      "label": "mPLUG-large 裁判\n回答每个预设语义问题",
+      "label": "人工核验\n检查扩写提示\n修正无依据或不连贯细节\n保留有效密集要求",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "dsg",
-      "label": "DSG 图评分\n按问题依赖关系计算提示分",
+      "label": "第二次 GPT-4：DSG 标注\n提取语义元组与类别\n编写 yes / no 问题\n构建问题依赖图",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "metrics",
-      "label": "DPG-Bench 报告\n平均图分 + 全局 / 实体\n属性 / 关系 / 其他问题均分",
+      "id": "artifact",
+      "label": "固定 DPG-Bench @ 68f5076\n1,065 条提示 · 平均 83.91 CLIP token\n4,286 个不同名词\n5 个一级 · 13 个二级类别",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "generate",
+      "label": "候选图像生成\n每条提示生成 4 张图\n推荐 2×2 网格\n文件名必须与提示匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "vqa",
+      "label": "官方 VQA 检查点\ndamo/mplug_visual-question-\nanswering_coco_large_en\n为每题回答 yes / no\n独立评分四张图",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dependency",
+      "label": "依赖感知逐题得分\nyes = 1 · no = 0\n若任一父问题为 no\n子问题得分置 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "三级聚合\n单图得分 = 剪枝后问题平均\n提示得分 = 4 张图得分平均\n基准得分 = 所有提示平均",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "DPG-Bench 报告\n总体依赖感知图得分\nGlobal · Entity · Attribute\nRelation · Other + 13 个二级类别\n分类均值使用依赖剪枝前\n的原始 yes / no 得分",
       "type": "terminal",
       "size": "xl"
     }
@@ -76,56 +100,86 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "sources",
-      "to": "adapt",
-      "type": "primary"
+      "from": "evidence",
+      "to": "sources",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "adapt",
-      "to": "expand",
+      "from": "sources",
+      "to": "route",
       "type": "primary"
     },
     {
       "id": "edge-3",
+      "from": "route",
+      "to": "short",
+      "type": "primary"
+    },
+    {
+      "id": "edge-4",
+      "from": "route",
+      "to": "object365",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
+      "from": "short",
+      "to": "expand",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "object365",
+      "to": "expand",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
       "from": "expand",
       "to": "verify",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "verify",
-      "to": "graph",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "graph",
-      "to": "benchmark",
-      "type": "primary"
-    },
-    {
-      "id": "edge-6",
-      "from": "benchmark",
-      "to": "generate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "generate",
-      "to": "vqa",
-      "type": "primary"
-    },
-    {
       "id": "edge-8",
-      "from": "vqa",
+      "from": "verify",
       "to": "dsg",
       "type": "primary"
     },
     {
       "id": "edge-9",
       "from": "dsg",
-      "to": "metrics",
+      "to": "artifact",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "artifact",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "generate",
+      "to": "vqa",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "vqa",
+      "to": "dependency",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "dependency",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "aggregate",
+      "to": "report",
       "type": "primary"
     }
   ],

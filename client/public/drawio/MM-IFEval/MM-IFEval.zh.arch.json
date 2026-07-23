@@ -1,155 +1,257 @@
 {
   "version": 1,
-  "title": "MM-IFEval 构建流程",
+  "title": "MM-IFEval 构建、发布、评测与证据边界",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 20,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "images",
-      "label": "汇集多样图像来源\n自然场景 · 用户界面\n图示 · 图表 · 数学表达式\n纳入已有问答数据集",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "tasks",
-      "label": "定义指令任务\n使用 16 类任务描述\n覆盖真实应用场景\n任务必须基于图像",
+      "id": "evidence",
+      "label": "证据固化\narXiv 2504.07957v2\n2025-04-27 · PDF e927327a…\n仓库 bb844a7 · 内置评测 d4900dd\nVLMEvalKit 7055d30 · 修复 a039b67",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "过滤来源问题\n去除少样本示例\n去除多选题选项\n使用正则与长度限制",
+      "id": "sources",
+      "label": "五类图像领域\nCC3M + ALLaVA · 自然场景\nRICO 移动 · MultiUI 网页\nChartQA · Geo170k\n各来源题数未说明",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "image_qc",
+      "label": "图像质量筛选\n剔除低分辨率\n剔除低语义丰富度\n信号：IC9600 + RAM\n阈值/淘汰数未说明",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "task_generation",
+      "label": "任务生成 / 筛选\n无 QA：采样 16 类任务池\nGPT-4o 选择图像匹配任务\n有 QA：去少样本 / 选项\n正则 + 长度限制",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "taxonomy",
-      "label": "建立约束池\n六个主要类别\n32 个约束子类别\n混合多项要求",
+      "label": "约束分类体系\n6 大类 · 32 个子类别\n长度 · 数学 · 语言/格式\n修辞/逻辑 · 动作\n关键词 · LLM 填充内容",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "integrate",
-      "label": "用 LLM 整合约束\n生成具体要求\n保持与任务相关\n过滤完全矛盾的组合",
+      "label": "约束整合\n无 QA：为多样性采样\n有 QA：选择兼容类型\nLLM 重选/生成内容\n剔除完全矛盾组合",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "annotate",
-      "label": "人工标注评测问题\n组合级输出约束\n感知级视觉约束\n标注感知题标准答案",
+      "id": "human_review",
+      "label": "人工标注\nC：开放回答 + 多项约束\nP：图像问题 + 标准答案列表\n论文的关键复核环节\n协议/一致性未说明",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "conflict",
-      "label": "后处理约束冲突\n让额外 LLM 再次检查\n缓解不兼容要求\n保留人工标注",
+      "id": "conflict_qc",
+      "label": "冲突后处理\n额外 LLM 复查问题\n缓解问题/约束冲突\n保留人工复核题目\n无 Prompt/种子/泄漏审计",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "汇总 400 道题\n300 道组合级开放题\n100 道有答案的感知题\n覆盖 13 类感知图像",
+      "id": "paper_release",
+      "label": "论文基准\n400 道主问题\n300 C · 平均 5.1 项约束\n100 P · 标准答案列表\nP 覆盖 13 类图像",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "respond",
-      "label": "生成模型回答\n提供图像与完整指令\n保留全部约束\n逐题进行评分",
+      "id": "released_tsv",
+      "label": "发布 TSV 审计\n687 = 400 主问题 + 287 辅助\n300 C · 1,524 项约束\n489 规则 · 748 直接 · 287 对比\nMD5 973bb839…70ae7a6",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "inference",
+      "label": "候选模型推理\nC：图像 + 完整约束 Prompt\nP：图像 + 原始问题\n辅助：移除一项约束\n解码参数未固定",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "rules",
-      "label": "执行规则验证\n覆盖 10 个可验证子类别\n提取验证函数参数\n人工复核函数映射",
+      "id": "eval_route",
+      "label": "评测 / 失败路由\nTSV 标签 → 规则 · 直接 · 对比 · P\nAPI：直接 ×4 · 对比/P ×3\nans 未赋值可中止\n解析策略因路径而异",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "rule_verify",
+      "label": "规则验证\n10 个算法子类\n函数/参数经人工复核\n字符串化 · 逐约束布尔分\n异常传播；无兜底",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "judges",
-      "label": "执行两种 LLM 评判\n直接判断明确约束\n与无该约束回答对比\n处理语气风格与角色扮演",
-      "type": "user",
+      "id": "direct_judge",
+      "label": "直接 Judge / 正则\n图像 + 回答 + 直接约束\n清理空白/* · 解析 x/y\n解析错：外层最多 3 轮\nAPI 耗尽可中止",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "报告混合评测准确率\n组合级准确率\n感知级准确率\n汇总 400 题平均准确率",
+      "id": "compare_judge",
+      "label": "对比 Judge / 解析\n无图 · 每项一条辅助请求\n有/无约束 → Summary 布尔\n解析错：跳过且不外层重试\n漏项会缩小分母",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "c_item_score",
+      "label": "C 单题 / 失败计分\n规则/对比二值 · 直接 x/y\n正常：已记录约束分数均值\n对比解析错会缩小分母\n缺 total_score：C 汇总加 0",
+      "type": "formula",
+      "size": "xl"
+    },
+    {
+      "id": "p_judge",
+      "label": "P Judge / 解析\n无图 · 回答 + JSON 标准答案\n标准子串；先 right 后 wrong\n解析错：外层最多 3 轮\n缺 total_score：汇总中止",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "aggregate",
+      "label": "400 题汇总\nC = 300 道 C 题均值\nP = 100 道 P 题均值\nOverall = (300C + 100P)/400\n当前 0-1 · 论文用百分比",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "openness_boundary",
+      "label": "发布 / 开放性审计\n部分公开；TSV 许可未知\n无逐行来源/图像权利\nMMIF-23k 仅为训练数据\n无固定发布 · 正文 16 vs 附录 18",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "evaluator_drift",
+      "label": "评测器版本边界\n论文未固定 Judge 快照\n内置 C：GPT-4o-2024-11-20\n内置 P：GPT-4o-mini\nREADME 05-13 vs 可变别名",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "images",
-      "to": "tasks",
+      "from": "evidence",
+      "to": "sources",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "tasks",
-      "to": "filter",
+      "from": "sources",
+      "to": "image_qc",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "filter",
-      "to": "taxonomy",
+      "from": "image_qc",
+      "to": "task_generation",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "task_generation",
+      "to": "taxonomy",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
       "from": "taxonomy",
       "to": "integrate",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "integrate",
-      "to": "annotate",
-      "type": "primary"
-    },
-    {
       "id": "edge-6",
-      "from": "annotate",
-      "to": "conflict",
+      "from": "integrate",
+      "to": "human_review",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "conflict",
-      "to": "dataset",
+      "from": "human_review",
+      "to": "conflict_qc",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "dataset",
-      "to": "respond",
+      "from": "conflict_qc",
+      "to": "paper_release",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "respond",
-      "to": "rules",
-      "type": "primary"
+      "from": "paper_release",
+      "to": "released_tsv",
+      "type": "data"
     },
     {
       "id": "edge-10",
-      "from": "rules",
-      "to": "judges",
+      "from": "released_tsv",
+      "to": "inference",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "judges",
-      "to": "report",
+      "from": "inference",
+      "to": "eval_route",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "eval_route",
+      "to": "rule_verify",
+      "type": "data"
+    },
+    {
+      "id": "edge-13",
+      "from": "eval_route",
+      "to": "direct_judge",
+      "type": "data"
+    },
+    {
+      "id": "edge-14",
+      "from": "eval_route",
+      "to": "compare_judge",
+      "type": "data"
+    },
+    {
+      "id": "edge-15",
+      "from": "eval_route",
+      "to": "p_judge",
+      "type": "data"
+    },
+    {
+      "id": "edge-16",
+      "from": "rule_verify",
+      "to": "c_item_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "direct_judge",
+      "to": "c_item_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "compare_judge",
+      "to": "c_item_score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "c_item_score",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "p_judge",
+      "to": "aggregate",
       "type": "primary"
     }
   ],

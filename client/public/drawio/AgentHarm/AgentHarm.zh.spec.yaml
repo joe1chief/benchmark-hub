@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: AgentHarm 构建流程
-  description: 对齐 arXiv:2410.09024v3 第 3.1-3.2 节及第 4.1 节的最终任务编写、独立审核、工具与量规封装及评测流程。
-  legend: 四种有害变体及匹配的良性对应任务形成最终任务后，再由非作者独立审核；不是只提前审核 110 个基础行为。
+  description: 对齐论文的任务编写与封装、危害和拒答并行评分，以及 AgentHarm 官方数据卡所述较窄的当前公开范围。
+  legend: 论文定义 44/264/132 个增强任务划分；当前数据卡仅公开 8/11 个验证基础行为和 44/66 个公开测试基础行为。危害评分与拒答判断独立消费同一批完整轨迹。
 nodes:
   - id: taxonomy
     label: |-
@@ -80,14 +80,25 @@ nodes:
       'y': 440
   - id: package
     label: |-
-      封装 AgentHarm
-      440 个有害任务及良性对应
+      论文数据集合同
+      440 个有害任务 + 匹配良性任务
       验证 44 • 公开 264 • 私有 132
     type: database
     size: xl
     position:
       x: 1440
       'y': 280
+  - id: release_scope
+    label: |-
+      当前官方卡公开范围
+      公开：44 / 66 个基础行为 = 176 个变体
+      验证：8 / 11 个基础行为 = 32 个变体
+      私有集仍不公开
+    type: document
+    size: xl
+    position:
+      x: 1440
+      'y': 720
   - id: run_harmful
     label: |-
       运行有害任务评测
@@ -108,26 +119,37 @@ nodes:
     position:
       x: 1720
       'y': 440
-  - id: trace_checks
+  - id: trajectories
     label: |-
-      评分完整轨迹
-      确定性量规检查
-      按准则给予部分分
-    type: process
+      完整 Agent 轨迹
+      有害与良性任务运行
+      消息 + 工具调用 + 参数
+    type: document
     size: xl
     position:
       x: 2000
       'y': 280
+  - id: harm_score
+    label: |-
+      计算危害分数
+      人工编写的确定性量规检查
+      必要时使用窄语义检查
+      按准则给予部分分
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 120
   - id: refusal
     label: |-
-      单独判断拒答
-      检查每条 Agent 消息
+      独立运行拒答评审器
+      检查所有 Agent 消息
       记录未拒答表现
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 650
+      x: 2280
+      'y': 440
   - id: score
     label: |-
       报告 AgentHarm 结果
@@ -136,8 +158,8 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 1720
-      'y': 650
+      x: 2560
+      'y': 280
 edges:
   - from: taxonomy
     to: base_behaviors
@@ -172,16 +194,25 @@ edges:
   - from: package
     to: run_benign
     type: data
+  - from: package
+    to: release_scope
+    type: data
   - from: run_harmful
-    to: trace_checks
+    to: trajectories
     type: primary
   - from: run_benign
-    to: trace_checks
+    to: trajectories
     type: data
-  - from: trace_checks
+  - from: trajectories
+    to: harm_score
+    type: primary
+  - from: trajectories
     to: refusal
+    type: data
+  - from: harm_score
+    to: score
     type: primary
   - from: refusal
     to: score
-    type: primary
+    type: data
 modules: []

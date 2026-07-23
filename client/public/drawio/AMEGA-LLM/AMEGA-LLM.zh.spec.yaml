@@ -7,8 +7,8 @@ meta:
   title: AMEGA-LLM 构建与评测流程
   description: 对齐论文的 AMEGA：医生基于指南构建临床病例，通过准则级 GPT-4 判断、失败尝试恢复、有效尝试多数投票、显式门控的 Reask、加权计分与评估器验证，完成自动化口试评测。
   legend: >-
-    本图固定采用论文快照的 20 个病例、135 个问题和 1,337 项准则；官方仓库后来扩展为 24 个病例、163 个问题和 1,497 项准则。 实线主链遵循 Methods 顺序：失败率 >50% 时拆半重试；≤50%
-    时先按准则多数投票并计算置信度，再判断未满足准则是否进入 Reask。虚线验证支路是独立可靠性研究。
+    本图固定采用论文快照的 20 个病例、135 个问题和 1,337 项准则；官方仓库后来扩展为 24 个病例、163 个问题和 1,497 项准则。每次尝试的 Boolean 数量与准则数量不等时才算格式失败；格式失败超过 50%
+    时将准则二分，每半都重新进行 11 次评估。否则对有效向量做准则多数投票与置信度计算，再决定是否 Reask。虚线验证支路是独立可靠性研究。
 nodes:
   - id: guidelines
     label: |-
@@ -77,6 +77,7 @@ nodes:
       模拟零样本临床口试
       先给初始病例，再逐题提问
       统一提示；不提供示范答案
+      候选模型温度 0
     type: document
     size: xl
     position:
@@ -95,15 +96,18 @@ nodes:
   - id: evaluator
     label: |-
       GPT-4-0613 评估器
-      并行运行 11 次准则评估
-      返回各准则是否满足的 True / False 向量
+      并行运行 11 次评估尝试
+      每次同时评估全部准则
+      返回一个 True / False 向量
     type: process
     size: xl
     position:
       x: 1160
       'y': 470
   - id: failure_gate
-    label: 评估失败率是否 >50%？
+    label: |-
+      格式失败尝试是否 >50%？
+      Boolean 数量 ≠ 准则数量
     type: decision
     size: xl
     position:
@@ -112,8 +116,8 @@ nodes:
   - id: split_criteria
     label: |-
       将准则列表拆成两半
-      分别评估每一半
-      再次检查自一致性
+      每一半均重新运行 11 次
+      再次校验 Boolean 向量
     type: process
     size: xl
     position:
@@ -224,7 +228,7 @@ edges:
   - from: reask
     to: candidate
     type: optional
-    label: 返回补充
+    label: 补充后重新评估
   - from: gate
     to: score
     type: primary

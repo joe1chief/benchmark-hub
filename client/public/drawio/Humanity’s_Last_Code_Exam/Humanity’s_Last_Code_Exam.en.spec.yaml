@@ -6,140 +6,173 @@ meta:
   routing: orthogonal
   title: Humanity's Last Code Exam Build and Evaluation Process
   description: >-
-    Paper-aligned construction of HLCE from ICPC World Finals and IOI problems, followed by its harmonized standard-I/O
-    and interactive evaluation plus the separate self-recognition task.
+    Paper-aligned parallel construction of the ICPC and IOI subsets, followed by their distinct official-test evaluation
+    paths and the separate self-recognition task.
   legend: >-
-    Read the benchmark-construction row left-to-right, then the evaluation row right-to-left; counts and year ranges
-    preserve the paper's distinct ICPC and IOI subsets.
+    Solid arrows are the paper protocol; dotted arrows expose evidence or a separate analysis path. The ICPC timeout
+    node preserves the paper-versus-current-repository command difference instead of silently reconciling it.
 nodes:
-  - id: sources
+  - id: icpc_source
     label: |-
-      Elite Contest Sources
-      ICPC World Finals + IOI
-      Overall Coverage: 2010-2024
+      ICPC Official Inputs
+      Official PDFs + Official Tests
+      World Finals 2011-2023
     type: database
     size: xl
     position:
       x: 40
-      'y': 100
+      'y': 80
   - id: icpc_extract
     label: |-
       ICPC Statement Extraction
       Manually Copy Official PDFs
-      ChatGPT Formatting Standardization
+      ChatGPT Formatting Only
     type: document
     size: xl
     position:
-      x: 320
-      'y': 100
+      x: 360
+      'y': 80
   - id: icpc_gate
     label: |-
-      ICPC Official-Test Gate
+      ICPC Gate: 146 (2011-2023)
       Remove Missing / Corrupted Tests
       Exclude Incompatible Interactive Tasks
     type: process
     size: xl
     position:
-      x: 600
-      'y': 100
+      x: 680
+      'y': 80
+  - id: ioi_source
+    label: |-
+      IOI Official Inputs
+      Codeforces IOI Dump + Official Tests
+      Olympiad Tasks 2010-2024
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 300
   - id: ioi_extract
     label: |-
       IOI Statement Extraction
-      Scrape Codeforces IOI Dump
-      ChatGPT Cleaning and Reformatting
+      Web-Scrape the Codeforces Dump
+      ChatGPT Cleanup and Reformatting
     type: document
     size: xl
     position:
-      x: 880
-      'y': 100
+      x: 360
+      'y': 300
   - id: ioi_gate
     label: |-
-      IOI Official-Test Gate
-      Collect Complete Test Cases
+      IOI Gate: 89 (2010-2024)
+      Keep Complete Official Test Sets
       Exclude Output-Only Problems
     type: process
     size: xl
     position:
-      x: 1160
-      'y': 100
+      x: 680
+      'y': 300
   - id: release
     label: |-
-      HLCE Release: 235 Problems
-      146 ICPC (2011-2023)
-      89 IOI (2010-2024)
+      HLCE Code Suite
+      235 Problems Total
+      146 ICPC + 89 IOI
     type: database
     size: xl
     position:
-      x: 1440
-      'y': 100
-  - id: prompt
+      x: 1000
+      'y': 190
+  - id: generate
     label: |-
-      Model Evaluation Input
-      Problem Statement + Constraints
-      C++ / Python Competition Setting
+      Generate Code Candidates
+      5 Responses per Problem
+      OpenRouter Default Hyperparameters
+    type: process
+    size: xl
+    position:
+      x: 1000
+      'y': 500
+  - id: eval_route
+    label: |-
+      Route by Contest Family
+      ICPC: Offline Standard I/O
+      IOI: Official Online Judge
+    type: decision
+    size: xl
+    position:
+      x: 680
+      'y': 520
+  - id: protocol_boundary
+    label: |-
+      Paper / Repository Boundary
+      Paper Appendix: 30 s Timeout
+      Repo README Command: 60 s
     type: document
     size: xl
     position:
-      x: 1440
-      'y': 440
-  - id: generate
+      x: 680
+      'y': 740
+  - id: icpc_judge
     label: |-
-      Code Generation Task
-      Generate 5 Responses per Problem
-      Default OpenRouter Hyperparameters
+      ICPC Python Harness
+      Standard Input / Output
+      Pass All Official Tests
     type: process
     size: xl
     position:
-      x: 1160
+      x: 360
       'y': 440
-  - id: judge
+  - id: ioi_judge
     label: |-
-      Harmonized Online-Offline Judge
-      ICPC: Python Standard-I/O Harness
-      IOI: Codeforces Submission Bot
+      IOI Codeforces Submission Bot
+      Official Judge Score Must Equal 100
+      Any Partial Score Is a Failure
     type: process
     size: xl
     position:
-      x: 880
-      'y': 440
-  - id: correctness
+      x: 360
+      'y': 640
+  - id: passk
     label: |-
-      Functional Correctness
-      ICPC: All Official Tests Pass
-      IOI: Score 100; Partial Scores Fail
+      Code-Generation Metrics
+      Pass@1 and Pass@5
+      1 - C(n-c,k) / C(n,k)
     type: process
     size: xl
     position:
-      x: 600
-      'y': 440
+      x: 40
+      'y': 540
   - id: self_recognition
     label: |-
       Separate Self-Recognition Task
       Judge Whether Own Code Is Correct
-      Python Evaluation Framework
+      Metric: AUC
     type: process
     size: xl
     position:
-      x: 320
-      'y': 440
+      x: 1000
+      'y': 940
   - id: report
     label: |-
       HLCE Results
-      Code: Pass@1 and Pass@5
-      Self-Recognition: AUC
+      Code Correctness via Pass@k
+      Self-Recognition via AUC
     type: terminal
     size: xl
     position:
       x: 40
-      'y': 440
+      'y': 940
 edges:
-  - from: sources
+  - from: icpc_source
     to: icpc_extract
     type: primary
   - from: icpc_extract
     to: icpc_gate
     type: primary
   - from: icpc_gate
+    to: release
+    type: primary
+  - from: ioi_source
     to: ioi_extract
     type: primary
   - from: ioi_extract
@@ -149,21 +182,40 @@ edges:
     to: release
     type: primary
   - from: release
-    to: prompt
-    type: primary
-  - from: prompt
     to: generate
     type: primary
   - from: generate
-    to: judge
+    to: eval_route
     type: primary
-  - from: judge
-    to: correctness
+  - from: eval_route
+    to: icpc_judge
     type: primary
-  - from: correctness
+  - from: eval_route
+    to: ioi_judge
+    type: primary
+  - from: protocol_boundary
+    to: icpc_judge
+    type: data
+    waypoints:
+      - x: 920
+        'y': 790
+      - x: 920
+        'y': 580
+      - x: 460
+        'y': 580
+  - from: icpc_judge
+    to: passk
+    type: primary
+  - from: ioi_judge
+    to: passk
+    type: primary
+  - from: generate
     to: self_recognition
+    type: data
+  - from: passk
+    to: report
     type: primary
   - from: self_recognition
     to: report
-    type: primary
+    type: secondary
 modules: []

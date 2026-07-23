@@ -1,86 +1,110 @@
 {
   "version": 1,
-  "title": "MatBench 构建流程",
+  "title": "MatBench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 11,
+    "nodes": 16,
+    "edges": 17,
     "modules": 0
   },
   "nodes": [
     {
       "id": "sources",
-      "label": "汇集 10 个材料数据源\n包含 DFT 与实验数据\n光学、热学、电子与热力学\n拉伸与弹性属性",
+      "label": "汇集 10 个材料数据源\n包含 DFT 与实验记录\n光学、热学、电子与热力学\n拉伸与弹性属性",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "clean",
-      "label": "逐源标准化和清洗\n仅保留材料输入与一个目标值\n删除辅助元数据\n剔除非物理、稀有或无关记录",
+      "label": "逐项重建 MatBench v0.1 任务\n执行 Methods 表 2 的第 1–11 项\n这些是按任务选用的数据修改\n第 7/8 项包含删除辅助列",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "tasks",
-      "label": "定义 13 项 MatBench 任务\n10 项回归 · 3 项分类\n输入为成分或晶体结构\n每项 312–132,752 条样本",
-      "type": "process",
+      "label": "固定 13 项监督任务\n10 项回归 · 3 项分类\n输入为成分或晶体结构\n声子：论文 1,296 · v0.6 为 1,265",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "folds",
-      "label": "固定五个外层折\n随机种子 · 18012019\n80% 训练/验证 · 20% 测试\n分类任务采用分层划分",
+      "label": "固定五个外层测试折\nKFold · 随机种子 18012019\n分类任务使用 StratifiedKFold\n80% 训练/验证 · 20% 测试",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "fit",
-      "label": "仅在各训练折内调参\n使用嵌套交叉验证\n在外层训练分区拟合\n预测对应留出测试分区",
+      "label": "仅在外层训练数据内调参\n每个外层折拟合一个模型\n预测所有留出样本\n缺失或多余预测均被拒绝",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "original_metrics",
-      "label": "使用原始任务指标\n回归 · 平均绝对误差\n分类 · ROC-AUC\n对五折结果取平均",
+      "id": "original_type",
+      "label": "原始任务类型？\n回归或分类",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "regression_metric",
+      "label": "回归分支\n每个测试折计算 MAE\n对五折 MAE 取平均\n越低越好",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "baselines",
-      "label": "发布可复现参考结果\nDummy · 随机森林\nAutomatminer · CGCNN · MEGNet\n在相同外层折上比较",
+      "id": "classification_metric",
+      "label": "分类分支\n每个测试折计算 ROC-AUC\n对五折 ROC-AUC 取平均\n越高越好",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "original_report",
+      "label": "发布可比较的参考结果\nAutomatminer Express · Dummy · RF\n适用时加入 CGCNN / MEGNet\n所有方法使用相同外层折",
       "type": "terminal",
       "size": "xl"
     },
     {
       "id": "select_four",
-      "label": "Intern-S1 适配器选择 4 项任务\n钢材 · 实验带隙\n实验金属分类 · 玻璃形成\n使用 OpenCompass 任务文件",
+      "label": "后续 OpenCompass 适配器 · 34da831\n只加载 fold 0 测试文件\n钢材 · 实验带隙\n金属分类 · 玻璃形成",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "prompt",
-      "label": "构造零样本生成式提示\n插入每道材料问题\n要求模型输出自由文本\n保留数值或类别真值",
+      "label": "执行零样本生成式推理\n插入材料问题\n收集自由文本模型回答\n不复现原始五折嵌套验证",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "按目标类型裁判回答\n数值 · 由 LLM 抽取浮点数\n分类 · 由 LLM 判断是否正确\n汇总任务级预测",
+      "id": "adapter_type",
+      "label": "适配器目标类型？\n数值或二元类别",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "numeric_parse",
+      "label": "数值裁判分支\n裁判须只返回一个浮点数\n不完整或无法确定 → 0\n正则取首个数字；无数字 → 0",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "adapter_metrics",
-      "label": "计算适配器任务得分\n数值任务 · MAE\n分类任务 · 准确率\n分别保留四项结果",
+      "id": "class_judge",
+      "label": "分类裁判分支\n提示冲突：A/B 与 CORRECT/INCORRECT\n解析器只查找首个 A 或 B\n无 A/B → unknown → 按未答对计",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "adapter_scores",
+      "label": "计算四项适配器得分\n带隙与钢材 · MAE\n金属与玻璃 · 准确率（%）\n分别保留每项任务得分",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "aggregate",
-      "label": "形成 Intern-S1 综合分\n带隙 · (2 − MAE) / 2 × 100\n钢材 · (2000 − MAE) / 2000 × 100\n再合并两项分类准确率",
+      "label": "计算 Intern-S1 综合分\n带隙 · (2 − MAE) / 2 × 100\n钢材 · (2000 − MAE) / 2000 × 100\n与两项准确率取算术平均",
       "type": "terminal",
       "size": "xl"
     }
@@ -113,42 +137,83 @@
     {
       "id": "edge-5",
       "from": "fit",
-      "to": "original_metrics",
+      "to": "original_type",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "original_metrics",
-      "to": "baselines",
-      "type": "primary"
+      "from": "original_type",
+      "to": "regression_metric",
+      "type": "primary",
+      "label": "回归 · 10 项"
     },
     {
       "id": "edge-7",
-      "from": "tasks",
-      "to": "select_four",
-      "type": "secondary"
+      "from": "original_type",
+      "to": "classification_metric",
+      "type": "primary",
+      "label": "分类 · 3 项"
     },
     {
       "id": "edge-8",
+      "from": "regression_metric",
+      "to": "original_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
+      "from": "classification_metric",
+      "to": "original_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "tasks",
+      "to": "select_four",
+      "type": "secondary",
+      "label": "后续 LLM 适配器"
+    },
+    {
+      "id": "edge-11",
       "from": "select_four",
       "to": "prompt",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-12",
       "from": "prompt",
-      "to": "parse",
+      "to": "adapter_type",
       "type": "primary"
     },
     {
-      "id": "edge-10",
-      "from": "parse",
-      "to": "adapter_metrics",
+      "id": "edge-13",
+      "from": "adapter_type",
+      "to": "numeric_parse",
+      "type": "primary",
+      "label": "带隙 + 钢材"
+    },
+    {
+      "id": "edge-14",
+      "from": "adapter_type",
+      "to": "class_judge",
+      "type": "primary",
+      "label": "金属 + 玻璃"
+    },
+    {
+      "id": "edge-15",
+      "from": "numeric_parse",
+      "to": "adapter_scores",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "adapter_metrics",
+      "id": "edge-16",
+      "from": "class_judge",
+      "to": "adapter_scores",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "adapter_scores",
       "to": "aggregate",
       "type": "primary"
     }

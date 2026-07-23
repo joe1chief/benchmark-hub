@@ -5,120 +5,135 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HealthBench Hard 构建流程
-  description: 与论文一致的 1,000 条 HealthBench 困难子集选择流程及官方评分准则协议复用。
-  legend: HealthBench Hard 是从 HealthBench 选择的子集，不是新编数据。选择流程使用五个前沿模型，先删除所有模型均为零分的样本， 再取跨提供方平均分最低的 1,000 条。
+  description: 对齐论文、公开数据与当前参考 runner 的 HealthBench Hard 难例筛选及带符号量表评分流程。
+  legend: 实线表示公开的构建与评测主流程；虚线表示固定的一手证据及公开/私有资产边界。后加的可选 runner 参数不属于论文协议。
 nodes:
-  - id: full
+  - id: evidence
     label: |-
-      从完整 HealthBench 开始
-      5,000 段对话与医生评分准则
-      保留主题 · 维度 · 准则权重
-    type: database
+      一手证据
+      arXiv:2505.08775v1
+      数据 40ee1968 · runner 652c89d0
+    type: document
     size: xl
     position:
       x: 40
-      'y': 300
-  - id: models
+      'y': 96
+  - id: full
     label: |-
-      运行五个前沿模型
-      o3 · Grok 3 · Gemini 2.5 Pro
-      Claude 3.7 Sonnet · Llama 4 Maverick
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 300
-  - id: score_candidates
-    label: |-
-      计算单样本分数
-      模型裁判逐条检查评分准则
-      使用官方正负分公式
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 300
-  - id: all_zero
-    label: |-
-      删除全零分样本
-      所有模型都无正分时过滤
-      约去除 1.5% 可能过难题
-    type: process
-    size: xl
-    position:
-      x: 940
-      'y': 300
-  - id: average
-    label: |-
-      跨模型提供方取平均
-      降低针对单一模型的对抗选择
-      按难度排序剩余样本
-    type: process
-    size: xl
-    position:
-      x: 1240
-      'y': 300
-  - id: select
-    label: |-
-      选择平均分最低 1,000 条
-      对当前前沿模型保持困难
-      为未来系统保留提升空间
-    type: process
-    size: xl
-    position:
-      x: 1540
-      'y': 300
-  - id: hard_set
-    label: |-
-      发布 HealthBench Hard
-      1,000 段原始对话与评分准则
-      不新增对话或准则标注
+      HealthBench 全量来源
+      5,000 段对话 · 48,562 条准则
+      带符号分值 −10 到 10
     type: database
     size: xl
     position:
-      x: 1840
-      'y': 300
+      x: 304
+      'y': 96
+  - id: models
+    label: |-
+      五个提供商模型
+      o3 · Grok 3 · Gemini 2.5 Pro
+      Claude 3.7 扩展思考
+      Llama 4 Maverick
+    type: process
+    size: xl
+    position:
+      x: 568
+      'y': 96
+  - id: score_candidates
+    label: |-
+      逐例计算分数
+      逐准则判断命中或未命中
+      带符号总和 / 正分上限
+    type: process
+    size: xl
+    position:
+      x: 832
+      'y': 96
+  - id: all_zero
+    label: |-
+      删除无正分样本
+      无模型获得正分
+      约移除 1.5%
+    type: process
+    size: xl
+    position:
+      x: 1096
+      'y': 96
+  - id: average
+    label: |-
+      对提供商分数取平均
+      避免只针对单一模型家族
+      选最低 1,000 例
+    type: process
+    size: xl
+    position:
+      x: 1360
+      'y': 96
+  - id: hard_set
+    label: |-
+      HealthBench Hard 公开行:
+      发布 2025-05-08-21-00-10
+      SHA: b0320430 · 1,000 行
+    type: database
+    size: xl
+    position:
+      x: 1624
+      'y': 96
   - id: inference
     label: |-
-      生成被测响应
-      回答最后一个用户消息
-      保留完整对话上下文
+      生成被评回答
+      完整对话作为上下文
+      回答最后用户消息
     type: process
     size: xl
     position:
-      x: 2140
-      'y': 300
+      x: 1624
+      'y': 384
   - id: grade
     label: |-
-      复用官方评分准则裁判
-      逐条判断准则真或假
-      每条给予全分或零分
+      参考量表评分器
+      GPT-4.1-2025-04-14
+      逐准则输出 JSON 布尔值
     type: process
     size: xl
     position:
-      x: 2440
-      'y': 300
+      x: 1360
+      'y': 384
   - id: example_score
     label: |-
-      计算原始单样本分数
-      满足的加权分除以最大正分
-      负向准则可降低分数
+      原始样本分
+      命中带符号分值总和 / 正分上限
+      负分准则可降低分数
     type: process
     size: xl
     position:
-      x: 2740
-      'y': 300
+      x: 1096
+      'y': 384
   - id: aggregate
     label: |-
-      报告 HealthBench Hard 分数
-      1,000 条均值裁剪至 0-1
-      相同维度拆分与自助法不确定性
+      HealthBench Hard 分数
+      1,000 例均值 · 截断到 [0,1]
+      维度切片沿用同一规则
     type: terminal
     size: xl
     position:
-      x: 3040
-      'y': 300
+      x: 832
+      'y': 384
+  - id: artifact_boundary
+    label: |-
+      资产边界
+      筛选分数矩阵不在公开行中
+      保留少量私有同分布留出集
+      可选 GPT-5.4/长度参数为后加功能
+    type: document
+    size: xl
+    position:
+      x: 568
+      'y': 384
 edges:
+  - from: evidence
+    to: full
+    type: data
   - from: full
     to: models
     type: primary
@@ -132,9 +147,6 @@ edges:
     to: average
     type: primary
   - from: average
-    to: select
-    type: primary
-  - from: select
     to: hard_set
     type: primary
   - from: hard_set
@@ -149,4 +161,7 @@ edges:
   - from: example_score
     to: aggregate
     type: primary
+  - from: aggregate
+    to: artifact_boundary
+    type: data
 modules: []

@@ -4,6 +4,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -14,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = ['CountBench', 'CounterFactQA', 'CraftBench', 'CraneMath'];
+const craftBenchRecordId = 'manufacturing_execution_system_1';
+const drawioDesktop = '/Applications/draw.io.app/Contents/MacOS/draw.io';
 const drawioCli = process.env.IMPORTER_DRAWIO_E2E_CLI
   || join(homedir(), '.agents/skills/drawio/scripts/cli.js');
 const normalizer = join(
@@ -76,6 +79,15 @@ function pngDimensions(path) {
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
+function restoreLiteralCraftBenchRecordId(path) {
+  const source = readFileSync(path, 'utf8');
+  const restored = source.replace(
+    new RegExp(`value="([^"]*${craftBenchRecordId}[^"]*)"`, 'gu'),
+    (_attribute, value) => `value="${value.replaceAll('\\(', '').replaceAll('\\)', '')}"`,
+  );
+  writeFileSync(path, restored);
+}
+
 test('keeps all four A10h packages bilingual with identical typed topology', () => {
   for (const id of benchmarkIds) {
     assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), id);
@@ -89,7 +101,12 @@ test('keeps bilingual A10h labels inside reviewed native-text boxes', () => {
         const lines = String(node.label).split('\n');
         assert.ok(lines.length <= 5, `${id}.${language}.${node.id}: ${lines.length} lines`);
         for (const line of lines) {
-          assert.ok([...line].length <= maxLineLength, `${id}.${language}.${node.id}: ${line}`);
+          const reviewedLineLimit = id === 'CraftBench'
+            && node.id === 'craft_record'
+            && line === craftBenchRecordId
+            ? craftBenchRecordId.length
+            : maxLineLength;
+          assert.ok([...line].length <= reviewedLineLimit, `${id}.${language}.${node.id}: ${line}`);
         }
       }
     }
@@ -202,22 +219,34 @@ test('keeps CraftBench as a released AWM scenario, not a standalone benchmark', 
     assert.match(nodes.get('seeds')?.label ?? '', /100.*domain|100.*域名/isu);
     assert.match(
       nodes.get('scenario_filter')?.label ?? '',
-      /CRUD.*embedding.*0\.85.*cap|CRUD.*嵌入.*0\.85.*上限/isu,
+      /CRUD.*embedding.*retain.*≤\s*0\.85.*cap|CRUD.*嵌入.*保留.*≤\s*0\.85.*上限/isu,
     );
+    assert.doesNotMatch(nodes.get('scenario_filter')?.label ?? '', /<\s*0\.85/isu);
     assert.match(nodes.get('collection')?.label ?? '', /1,000.*scenario|1,000.*场景/isu);
     assert.match(
       nodes.get('craft_record')?.label ?? '',
-      /CraftBench.*Custom Manufacturing Job Tracker.*manufacturing.*execution.*system.*1|CraftBench.*定制制造作业跟踪器.*manufacturing.*execution.*system.*1/isu,
+      new RegExp(
+        `CraftBench.*(?:Custom Manufacturing Job Tracker|定制制造作业跟踪器).*${craftBenchRecordId}`,
+        'isu',
+      ),
     );
     assert.match(nodes.get('tasks')?.label ?? '', /10.*API.*post-auth.*10,000|10.*API.*登录后.*10,000/isu);
-    assert.match(nodes.get('sqlite')?.label ?? '', /SQLite.*18.*table.*114.*insert|SQLite.*18.*表.*114.*插入/isu);
+    assert.match(nodes.get('schema')?.label ?? '', /SQLite.*schema.*18.*table|SQLite.*模式.*18.*表/isu);
+    assert.match(nodes.get('sample_data')?.label ?? '', /114.*INSERT|114.*插入/isu);
+    assert.match(nodes.get('api_spec')?.label ?? '', /interface.*spec.*18.*API.*group.*50.*endpoint|接口规范.*18.*API.*组.*50.*端点/isu);
     assert.match(
-      nodes.get('interface')?.label ?? '',
-      /SQLAlchemy.*Pydantic.*FastAPI.*MCP.*50.*endpoint|SQLAlchemy.*Pydantic.*FastAPI.*MCP.*50.*端点/isu,
+      nodes.get('env_code')?.label ?? '',
+      /SQLAlchemy.*Pydantic.*FastAPI.*MCP.*tool|SQLAlchemy.*Pydantic.*FastAPI.*MCP.*工具/isu,
     );
-    assert.match(nodes.get('verifier')?.label ?? '', /before.*after.*database.*criteria|前后.*数据库.*标准/isu);
-    assert.match(nodes.get('self_correct')?.label ?? '', /traceback.*200.*500.*5|traceback.*200.*500.*5/isu);
-    assert.match(nodes.get('tolerance')?.label ?? '', /schema.*data.*10%.*startup.*0%|模式.*数据.*10%.*启动.*0%/isu);
+    assert.match(nodes.get('schema_feedback')?.label ?? '', /DDL.*<\s*10%.*traceback.*200.*500.*5|DDL.*<\s*10%.*traceback.*200.*500.*5/isu);
+    assert.match(nodes.get('data_feedback')?.label ?? '', /INSERT.*<\s*10%.*traceback.*200.*500.*5|INSERT.*<\s*10%.*traceback.*200.*500.*5/isu);
+    assert.match(nodes.get('env_feedback')?.label ?? '', /launch.*health.*list.*0%.*traceback.*200.*500.*5|启动.*健康.*工具列表.*0%.*traceback.*200.*500.*5/isu);
+    assert.match(nodes.get('verifier')?.label ?? '', /before.*after.*database.*structured.*criteria|前后.*数据库.*结构化.*标准/isu);
+    assert.match(nodes.get('release')?.label ?? '', /executable.*environment.*verifier|可执行.*环境.*验证器/isu);
+    assert.match(nodes.get('agent_trajectory')?.label ?? '', /agent.*trajectory.*tool|智能体.*轨迹.*工具/isu);
+    assert.match(nodes.get('verification_signals')?.label ?? '', /structured.*verification.*signals|结构化.*验证.*信号/isu);
+    assert.match(nodes.get('judge')?.label ?? '', /code-augmented.*GPT-5.*judge|代码增强.*GPT-5.*判分器/isu);
+    assert.match(nodes.get('outcome')?.label ?? '', /Completed.*Partially Completed.*Agent Error.*Environment Error|完成.*部分完成.*智能体错误.*环境错误/isu);
     assert.match(
       nodes.get('boundary')?.label ?? '',
       /no standalone.*split.*prompt.*harness.*metric|无独立.*划分.*提示.*评测程序.*指标/isu,
@@ -230,13 +259,28 @@ test('keeps CraftBench as a released AWM scenario, not a standalone benchmark', 
     assert.ok(edges.has('scenario_filter->collection:primary'));
     assert.ok(edges.has('collection->craft_record:primary'));
     assert.ok(edges.has('craft_record->tasks:primary'));
-    assert.ok(edges.has('tasks->sqlite:primary'));
-    assert.ok(edges.has('sqlite->interface:primary'));
-    assert.ok(edges.has('interface->verifier:primary'));
-    assert.ok(edges.has('verifier->self_correct:primary'));
-    assert.ok(edges.has('self_correct->tolerance:primary'));
-    assert.ok(edges.has('tolerance->boundary:primary'));
-    assert.ok(edges.has('verifier->awm_reward:data'));
+    assert.ok(edges.has('tasks->schema:primary'));
+    assert.ok(edges.has('schema->sample_data:primary'));
+    assert.ok(edges.has('sample_data->api_spec:primary'));
+    assert.ok(edges.has('api_spec->env_code:primary'));
+    assert.ok(edges.has('env_code->verifier:primary'));
+    assert.ok(edges.has('verifier->release:primary'));
+    assert.ok(edges.has('release->boundary:primary'));
+    assert.ok(edges.has('schema->schema_feedback:data'));
+    assert.ok(edges.has('schema_feedback->schema:data'));
+    assert.ok(edges.has('sample_data->data_feedback:data'));
+    assert.ok(edges.has('data_feedback->sample_data:data'));
+    assert.ok(edges.has('env_code->env_feedback:data'));
+    assert.ok(edges.has('env_feedback->env_code:data'));
+    assert.ok(edges.has('release->agent_trajectory:data'));
+    assert.ok(edges.has('verifier->verification_signals:data'));
+    assert.ok(edges.has('agent_trajectory->judge:data'));
+    assert.ok(edges.has('verification_signals->judge:data'));
+    assert.ok(edges.has('judge->outcome:primary'));
+    assert.ok(edges.has('outcome->awm_reward:primary'));
+    assert.ok(edges.has('awm_reward->boundary:data'));
+    assert.equal(nodes.has('self_correct'), false);
+    assert.equal(nodes.has('tolerance'), false);
   }
 
   const detail = readDetail('CraftBench');
@@ -244,8 +288,16 @@ test('keeps CraftBench as a released AWM scenario, not a standalone benchmark', 
   assert.match(detail.arxiv_pdf_url, /2602\.10090v3/u);
   assert.match(
     detail.drawio_review_note,
-    /§3\.1.*§3\.2.*§3\.3.*Table 15.*85e322f69279e3b3325b7377ec3bab788514e9cb.*dde80a0283fe781bdc51656bce57063dc5650213.*10 tasks.*18 tables.*114.*50 endpoints.*no standalone.*metric/isu,
+    /§3\.1.*§3\.2.*§3\.3.*Table 15.*85e322f69279e3b3325b7377ec3bab788514e9cb.*dde80a0283fe781bdc51656bce57063dc5650213.*manufacturing_execution_system_1.*≤\s*0\.85.*schema.*feedback loop.*sample data.*feedback loop.*environment.*feedback loop.*agent trajectory.*structured verification signals.*10 tasks.*18 tables.*114.*50 endpoints.*no standalone.*metric/isu,
   );
+  for (const language of ['en', 'zh']) {
+    const drawio = readFileSync(
+      join(publicDir, 'drawio', 'CraftBench', `CraftBench.${language}.drawio`),
+      'utf8',
+    );
+    assert.match(drawio, new RegExp(craftBenchRecordId, 'u'));
+    assert.doesNotMatch(drawio, /\\\([^"\n]*manufacturing_execution_system_1|manufacturing_execution_system_1[^"\n]*\\\)/u);
+  }
 });
 
 test('keeps CraneMath as a train-only rewrite corpus with separate pool and ablation statistics', () => {
@@ -347,6 +399,46 @@ test('publishes native fixed-light SVG and readable PNG pairs for A10h', () => {
   }
 });
 
+test('reproduces both normalized CraftBench SVG and PNG exports from Draw.io sources', {
+  skip: existsSync(drawioDesktop) ? false : 'Draw.io desktop exporter is not installed',
+}, () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'paper-review-site-a10h-craft-exports-'));
+  try {
+    for (const language of ['en', 'zh']) {
+      const base = join(publicDir, 'drawio', 'CraftBench', `CraftBench.${language}`);
+      const generatedSvg = join(tempRoot, `CraftBench.${language}.svg`);
+      const generatedPng = join(tempRoot, `CraftBench.${language}.png`);
+      execFileSync(drawioDesktop, [
+        '-x',
+        '-f', 'svg',
+        '--svg-theme', 'light',
+        '-o', generatedSvg,
+        `${base}.drawio`,
+      ], { stdio: 'pipe' });
+      execFileSync(process.execPath, [normalizer, generatedSvg], { stdio: 'pipe' });
+      assert.equal(
+        readFileSync(generatedSvg, 'utf8'),
+        readFileSync(`${base}.svg`, 'utf8'),
+        `CraftBench.${language}.svg export freshness`,
+      );
+
+      execFileSync(drawioDesktop, [
+        '-x',
+        '-f', 'png',
+        '-o', generatedPng,
+        `${base}.drawio`,
+      ], { stdio: 'pipe' });
+      assert.deepEqual(
+        readFileSync(generatedPng),
+        readFileSync(`${base}.png`),
+        `CraftBench.${language}.png export freshness`,
+      );
+    }
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('strictly rebuilds and normalizes all eight A10h specs without byte drift', {
   skip: existsSync(drawioCli) ? false : 'Draw.io build CLI is not installed',
 }, () => {
@@ -365,6 +457,9 @@ test('strictly rebuilds and normalizes all eight A10h specs without byte drift',
           '--write-sidecars',
         ], { stdio: 'pipe' });
         execFileSync(process.execPath, [normalizer, generated], { stdio: 'pipe' });
+        if (id === 'CraftBench') {
+          restoreLiteralCraftBenchRecordId(generated);
+        }
         assert.equal(readFileSync(generated, 'utf8'), readFileSync(`${base}.drawio`, 'utf8'), `${id}.${language}`);
         assert.equal(
           readFileSync(generated.replace(/\.drawio$/u, '.arch.json'), 'utf8'),

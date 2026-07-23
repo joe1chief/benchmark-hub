@@ -1,180 +1,368 @@
 {
   "version": 1,
-  "title": "MedAlign Build Process",
+  "title": "MedAlign Construction and Evaluation",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
+    "nodes": 27,
+    "edges": 29,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "ehr",
-      "label": "Prepare Longitudinal EHRs\nInclude Structured · Text Events\nRepresent Data in OMOP CDM\nConvert Each Record to One XML",
-      "type": "database",
-      "size": "xl"
-    },
-    {
       "id": "recruit",
-      "label": "Recruit Clinician Authors\nFifteen Practicing Clinicians\nCover Seven Medical Specialties\nSubmit through an Online Form",
+      "label": "Recruit Clinician Authors by Email\nFifteen Practicing Clinicians\nSeven Medical Specialties\nSubmit through an Online Form",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "collect",
-      "label": "Stage 1 · Collect Instructions\nImagine Daily EHR Workflows\nSubmit 1,314 Queries or Commands\nAdd Patient and Clinical Context",
+      "label": "Stage 1 · Collect Instructions\nImagine Routine EHR Workflows\nSubmit 1,314 Questions or Commands\nAdd Patient Traits + Clinical Context",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "dedup",
-      "label": "Clean and Tag Instructions\nNear-duplicate if ROUGE-L over 0.7\nRetain 983 after Deduplication\nMark 407 Generally Applicable",
-      "type": "process",
+      "id": "dedup_gate",
+      "label": "Does an Instruction Have\nROUGE-L Similarity above 0.7?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "near_duplicate",
+      "label": "Remove Near-identical Instruction\nExcluded from the 983-item Catalog",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "catalog",
+      "label": "Retain MedAlign Instruction Catalog\n983 Deduplicated Instructions\n407 Marked Applicable Generally\nSix Categories · Twenty Subcategories",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "general_gate",
+      "label": "Is the Instruction Marked\nApplicable to Patients Generally?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "catalog_only",
+      "label": "Keep as Instruction-only Record\nNo EHR Matching or Reference Response\nStill Included among All 983 Instructions",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "query",
-      "label": "Stage 2 · Build Search Queries\nUse Generally Applicable Items\nAppend Patient and Clinical Metadata\nCompare Random and BM25Okapi",
+      "label": "Stage 2 · Build Search Query\nInstruction + Patient Characteristics\n+ Intended Clinical Context\nCompare BM25Okapi with Random Sampling",
       "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ehr_pool",
+      "label": "Prepare Longitudinal EHR Index\nTimestamped Structured + Text Events\nOMOP CDM → One XML per Record\nRandom 77,200-patient Subsample",
+      "type": "database",
       "size": "xl"
     },
     {
       "id": "retrieve",
-      "label": "Retrieve Relevant Patient EHRs\nSearch a 77,200-patient Subsample\nReturn BM25 Top Five per Query\nReuse the Pool for Random Baseline",
+      "label": "Retrieve and Review Candidate EHRs\nBM25 Returns Top Five per Query\nReview in Rank Order · Stop at First Relevant\nSame Patient Pool for Random Baseline",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "relevance",
-      "label": "Manually Judge Pair Relevance\nAuthors Apply a Binary Review\n303 Queries Have a Relevant Top Five\nBM25 74% versus Random 38%",
-      "type": "process",
+      "id": "relevance_gate",
+      "label": "Is at Least One of the Top Five\nEHRs Manually Judged Relevant?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "unmatched",
+      "label": "Exclude from Grounded-response Subset\nNo Relevant EHR among Top Five\nInstruction Remains in the 983 Catalog",
+      "type": "terminal",
       "size": "xl"
     },
     {
       "id": "response",
-      "label": "Stage 3 · Write Expert Responses\nPrefer Same-specialty Non-authors\nCheck Feasibility and Sufficiency\nAnswer at the Latest EHR Timestamp",
+      "label": "Stage 3 · Write Expert Response\nPrefer Same-specialty Non-author\nCheck Feasibility + EHR Sufficiency\nAnswer at the Latest EHR Timestamp",
       "type": "user",
       "size": "xl"
     },
     {
       "id": "release",
-      "label": "Release the MedAlign Contract\n983 Clinical Instructions\n303 Expert Reference Responses\nGrounded in 276 Distinct EHRs",
+      "label": "Release the Paper MedAlign Contract\n983 Instructions · 303 References\n303 Relevant Pairs · 276 Distinct EHRs\nBM25 Top-five 74% · Random 38%",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "models",
-      "label": "Run Six General-domain LLMs\nInclude Closed and Open Models\nReserve 256 Tokens for Output\nRetain the Most Recent EHR Context",
+      "id": "release_boundary",
+      "label": "Access and Version Boundary\nFull Data Requires Redivis + CITI + DUA\nPaper v2 Says 276 EHRs; Repo Says 275\nResponse-stage Rejections Are Not Quantified",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "evaluation",
+      "label": "Evaluate Six LLM Configurations\nGPT-4 Variants · Vicuna-7B/13B · MPT-7B\nSame Instruction + Matched EHR Prompt\nReserve 256 Tokens for Generation",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "mr",
-      "label": "Handle Long-record Context\nOver 80% Exceed 32k Tokens\nRefine Sequentially over 30k Chunks\nUpdate or Keep the Prior Response",
+      "id": "context_gate",
+      "label": "Use the GPT-4 32k\nMulti-step-refinement Configuration?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "direct_context",
+      "label": "Build a Single-context Prompt\nSubtract Prompt + Instruction + 256 Tokens\nTruncate from the Record Beginning\nRetain the Most Recent EHR Content",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "Blind Nine Clinician Evaluators\nMark Clinical Correctness Binary\nRank Relevance and Appropriateness\nAllow Ties · Shuffle Model Order",
+      "id": "mr_context",
+      "label": "Run Multi-step Refinement\nSplit Full EHR into 30k-token Chunks\nProcess Earliest to Latest\nUpdate or Keep the Previous Response",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "output_gate",
+      "label": "Did the Model API Return\na Clinical-text Response?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "filter_error",
+      "label": "Preserve Content-filter Error Outcome\n44 Questions Affect ≥1 GPT-4 Variant\nMain Correctness · Failure = Incorrect\nSupplemental Set · Exclude → 259\nMain 303 Rank Handling Undisclosed",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "clinician_review",
+      "label": "Blind Nine Clinician Evaluators\nShow the Full Untruncated EHR\nExclude Own Instructions or Responses\nShuffle Models · Permit Tied Ranks\nFifty Pairs Receive Three Reviews",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "correctness",
+      "label": "Record Binary Clinical Correctness\nInappropriate, Meaning-changing Error,\nor Unanswered Instruction → Incorrect\nMain Denominator: 303 Pairs per Configuration",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "ranking",
+      "label": "Aggregate Human Preferences\nRank Relevance + Appropriateness\nReport Mean Rank and Strict Win Rate\nFilter-error Rank Handling Undisclosed",
+      "type": "process",
+      "size": "xl"
+    },
+    {
       "id": "automated",
-      "label": "Run Automated NLG Metrics\nCOMET · BERTScore · METEOR\nAdd chrF · BLEU · ROUGE and More\nDerive Metric-based Rankings",
+      "label": "Compute Automated NLG Metrics\nSource-free Metrics Use Gold Reference\nCOMET + UniEval Also Use BM25 EHR Snippets\nConvert Metric Scores to Model Ranks",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "Aggregate Human and Auto Results\nReport Correct · Win Rate · Rank\nCompute Kendall Tau with Humans\nAnalyze Context-length Effects",
+      "label": "Publish MedAlign Evaluation Results\nCorrectness · Mean Rank · Pairwise Wins\nMean Kendall Tau: Metric vs Human Ranks\nAnalyze Model and Context-length Effects",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "no_harness",
+      "label": "Reproducibility Boundary\nPinned Public Repo Has Samples, Not Evaluator\nFree-text Outputs Have No Answer Parser\nMetric Code Versions Are Not Released There",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "ehr",
-      "to": "recruit",
-      "type": "primary"
-    },
-    {
-      "id": "edge-2",
       "from": "recruit",
       "to": "collect",
       "type": "primary"
     },
     {
-      "id": "edge-3",
+      "id": "edge-2",
       "from": "collect",
-      "to": "dedup",
+      "to": "dedup_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-3",
+      "from": "dedup_gate",
+      "to": "catalog",
+      "type": "primary",
+      "label": "No · retain 983 total"
     },
     {
       "id": "edge-4",
-      "from": "dedup",
-      "to": "query",
-      "type": "primary"
+      "from": "dedup_gate",
+      "to": "near_duplicate",
+      "type": "optional",
+      "label": "Yes · remove"
     },
     {
       "id": "edge-5",
+      "from": "catalog",
+      "to": "general_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "general_gate",
+      "to": "query",
+      "type": "primary",
+      "label": "Yes · 407 instructions"
+    },
+    {
+      "id": "edge-7",
+      "from": "general_gate",
+      "to": "catalog_only",
+      "type": "optional",
+      "label": "No · catalog only"
+    },
+    {
+      "id": "edge-8",
       "from": "query",
       "to": "retrieve",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-9",
+      "from": "ehr_pool",
+      "to": "retrieve",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
       "from": "retrieve",
-      "to": "relevance",
+      "to": "relevance_gate",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "relevance",
+      "id": "edge-11",
+      "from": "relevance_gate",
       "to": "response",
-      "type": "primary"
+      "type": "primary",
+      "label": "Yes · 303 instructions"
     },
     {
-      "id": "edge-8",
+      "id": "edge-12",
+      "from": "relevance_gate",
+      "to": "unmatched",
+      "type": "optional",
+      "label": "No · no grounded response"
+    },
+    {
+      "id": "edge-13",
       "from": "response",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-14",
+      "from": "catalog",
+      "to": "release",
+      "type": "optional",
+      "label": "All 983 instruction records"
+    },
+    {
+      "id": "edge-15",
       "from": "release",
-      "to": "models",
+      "to": "release_boundary",
+      "type": "optional",
+      "label": "Restricted and drifted release"
+    },
+    {
+      "id": "edge-16",
+      "from": "release",
+      "to": "evaluation",
       "type": "primary"
     },
     {
-      "id": "edge-10",
-      "from": "models",
-      "to": "mr",
+      "id": "edge-17",
+      "from": "evaluation",
+      "to": "context_gate",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "mr",
-      "to": "human",
+      "id": "edge-18",
+      "from": "context_gate",
+      "to": "mr_context",
+      "type": "primary",
+      "label": "Yes · GPT-4 32k + MR"
+    },
+    {
+      "id": "edge-19",
+      "from": "context_gate",
+      "to": "direct_context",
+      "type": "primary",
+      "label": "No · single context"
+    },
+    {
+      "id": "edge-20",
+      "from": "mr_context",
+      "to": "output_gate",
       "type": "primary"
     },
     {
-      "id": "edge-12",
-      "from": "human",
+      "id": "edge-21",
+      "from": "direct_context",
+      "to": "output_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-22",
+      "from": "output_gate",
+      "to": "clinician_review",
+      "type": "primary",
+      "label": "Yes · evaluate response"
+    },
+    {
+      "id": "edge-23",
+      "from": "output_gate",
+      "to": "filter_error",
+      "type": "optional",
+      "label": "No · API content filter"
+    },
+    {
+      "id": "edge-24",
+      "from": "filter_error",
+      "to": "correctness",
+      "type": "optional",
+      "label": "Main correctness only · force incorrect"
+    },
+    {
+      "id": "edge-25",
+      "from": "clinician_review",
+      "to": "correctness",
+      "type": "primary"
+    },
+    {
+      "id": "edge-26",
+      "from": "correctness",
+      "to": "ranking",
+      "type": "primary"
+    },
+    {
+      "id": "edge-27",
+      "from": "ranking",
       "to": "automated",
       "type": "primary"
     },
     {
-      "id": "edge-13",
+      "id": "edge-28",
       "from": "automated",
       "to": "report",
       "type": "primary"
+    },
+    {
+      "id": "edge-29",
+      "from": "report",
+      "to": "no_harness",
+      "type": "optional",
+      "label": "Public code boundary"
     }
   ],
   "modules": []

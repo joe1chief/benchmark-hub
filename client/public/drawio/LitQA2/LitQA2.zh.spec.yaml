@@ -1,177 +1,389 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LitQA2 构建流程
-  description: 根据 arXiv:2409.13740 重建 LitQA2 的专家出题流程与论文报告的 PaperQA2 精确测量协议。
-  legend: LitQA2 在原始 47 题 LitQA 上先增加 100 题再增加 101 题。准确率按全部问题计算，精确率按已作答问题计算， 召回率衡量系统是否把答案归因到基准记录的正确来源 DOI。
+  description: 对齐论文 v2 的 248 道专家编写 LitQA2 问题构建、论文报告的精确测量协议，并将当前公开/门控划分与实现漂移单独标明。
+  legend: 实线表示有论文依据的构建或测量流程。发布分支记录当前复现清单，不等同于论文旧 147/新 101 的开发时间线。 两张未连接卡片分别保留论文未披露项与当前代码漂移，避免把它们误当成论文协议。
 nodes:
-  - id: papers
+  - id: source_lock
     label: |-
-      确定近期科学论文
-      发布时间在过去36个月内
-      优先选择冷门的中间发现
-      记录预期来源DOI
-    type: database
+      固定可复现实证
+      论文 2409.13740v2
+      paper-qa d7675d7b · Aviary 1c061dbc
+      公开/门控数据 5c77cec6/e9ee5486
+    type: document
+    module: construction
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: draft
+      x: 32
+      'y': 240
+    style:
+      fontSize: 9
+  - id: recent_papers
     label: |-
-      专家起草多项选择题
+      选择近期来源论文
+      发表时间在过去36个月内
+      优先选择冷门的中间发现
+      记录预期来源 DOI
+    type: database
+    module: construction
+    size: xl
+    position:
+      x: 304
+      'y': 240
+  - id: draft_question
+    label: |-
+      专家人工编写多项选择题
       答案必须依赖论文正文
       不能仅凭标题或摘要回答
-      需要推理且不是原文直接引用
-    type: process
+      需要推理且不能直接照抄原句
+    type: user
+    module: construction
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: choices
+      x: 576
+      'y': 240
+  - id: distractors
     label: |-
-      构造可信的答案选项
-      干扰项符合论文或领域语境
-      加入“信息不足”选项
+      构造可信干扰项
+      使用论文其他事实或领域知识
+      保存标准答案或 null
       允许有意设计不可回答题
     type: process
+    module: construction
     size: xl
     position:
-      x: 580
-      'y': 40
+      x: 848
+      'y': 240
   - id: challenge
     label: |-
-      对每道草稿题做挑战测试
-      关闭日志后测试ChatGPT 3.5或4
-      在Google Scholar搜索题目表述
-      改写易答或可直接检索的问题
+      挑战测试题目草稿
+      定期测试 ChatGPT 3.5/4 · 关闭日志
+      经常在 Google Scholar 搜索题目措辞
+      检查能否由替代来源回答
     type: process
+    module: construction
     size: xl
     position:
-      x: 860
-      'y': 40
-  - id: review
+      x: 1120
+      'y': 240
+  - id: reject_item
     label: |-
-      校准并持续审核出题者
-      细审每位新作者最初约10题
-      返工或淘汰薄弱问题
-      合入题库前继续由作者审核
-    type: process
+      从候选中剔除
+      未通过作者质量审核
+      不得合入正式题库
+    type: terminal
+    module: construction
+    size: large
+    position:
+      x: 1664
+      'y': 424
+  - id: calibration
+    label: |-
+      出题者校准与持续作者审核
+      细审新作者最初约10题
+      接收 · 返工 · 剔除？
+    type: decision
+    module: construction
     size: xl
     position:
-      x: 1140
-      'y': 40
-  - id: release
+      x: 1664
+      'y': 240
+  - id: release_248
     label: |-
-      汇总LitQA2
-      原始LitQA · 47题
-      首批增加100题 → 147题
-      再增加101题 → 共248题
+      汇总 LitQA2 · 248题
+      原始 LitQA 47题
+      首次发布 +100 → 147题
+      后续新增未见101题 → 248题
+      问题 · 答案/null · 干扰项 · DOI
     type: database
+    module: construction
     size: xl
     position:
-      x: 1420
-      'y': 40
-  - id: randomize
+      x: 1936
+      'y': 240
+    style:
+      fontSize: 9
+  - id: current_manifest
     label: |-
-      随机排列答案顺序
-      每次调用都打乱选项
-      保留理想答案映射
-      避免利用固定选项位置
-    type: process
+      paper-qa 复现清单
+      二次 ID 划分 · 不是 HF 物理 split
+      从199行选训练159 + 验证40
+      从门控语料选测试49
+    type: document
+    module: release
     size: xl
     position:
-      x: 1420
-      'y': 420
-  - id: run
+      x: 304
+      'y': 720
+  - id: public_199
     label: |-
-      运行待评系统
-      每题调用一次PaperQA
-      对全部问题完整运行三次
-      论文测试温度均为0
-    type: process
+      固定 HF LAB-Bench 语料
+      仅一个物理 train split · 199行
+      不存在物理 eval 或 test split
+      HF 5c77cec6 · CC BY-SA 4.0
+    type: database
+    module: release
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: extract
+      x: 576
+      'y': 624
+  - id: gated_49
     label: |-
-      抽取单个字母答案
-      使用GPT-4-0613
-      应用论文公布的抽取提示词
-      解析返回的选项字母
-    type: process
+      自动门控测试题库 · 49题
+      aviary-paper-data 测试划分
+      HF e9ee5486 · 共享联系信息门槛
+    type: database
+    module: release
     size: xl
     position:
-      x: 860
-      'y': 420
-  - id: grade
+      x: 576
+      'y': 816
+  - id: release_boundary
+    label: |-
+      部分公开发布
+      199题无门槛 · 49题自动门控
+      数据集许可证 · CC BY-SA 4.0
+      无官方实时排行榜
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 848
+      'y': 720
+  - id: missing_contracts
+    label: |-
+      未披露的构建细节
+      精确采样框与候选题总量
+      挑战提示词与生成参数
+      接收率与复核者一致性
+      完整剔除与修订记录
+    type: document
+    module: release
+    size: xl
+    position:
+      x: 1120
+      'y': 864
+    style:
+      fontSize: 9
+  - id: eval_prep
+    label: |-
+      准备每次论文 v2 调用
+      问题 + 全部答案选项
+      加入“信息不足，无法回答”
+      每次调用均随机排列选项
+    type: process
+    module: measurement
+    size: xl
+    position:
+      x: 1936
+      'y': 1200
+  - id: paper_run
+    label: |-
+      运行一项 PaperQA 配置
+      每题调用一次 paperqa
+      对全部248题完整运行3次
+      温度0 · 系统配置可变
+    type: process
+    module: measurement
+    size: xl
+    position:
+      x: 1664
+      'y': 1200
+  - id: extract_letter
+    label: |-
+      GPT-4-0613 字母抽取器
+      论文原始提示词（保留英文）
+      Extract the single letter answer
+      from the following question and answer
+      {prompt_output('QA')}
+      Single Letter Answer:
+    type: process
+    module: measurement
+    size: xl
+    position:
+      x: 1392
+      'y': 1200
+    style:
+      fontSize: 9
+  - id: grade_choice
     label: |-
       判定解析后的选项
-      命中标准答案 · 正确
-      选择信息不足 · 不确定
-      标答为空且选信息不足 · 正确
+      命中标准答案 → 正确
+      选择信息不足 → 不确定
+      标答为 null 且选信息不足 → 正确
     type: process
+    module: measurement
     size: xl
     position:
-      x: 580
-      'y': 420
+      x: 1120
+      'y': 1200
   - id: metrics
     label: |-
-      计算三项指标
-      准确率 · 正确数 / 全部题数
-      精确率 · 正确数 / 已作答数
-      召回率 · 归因到正确来源DOI
-    type: process
+      计算 LitQA2 指标
+      准确率 = 正确数 / 全部题数
+      精确率 = 正确数 / 已作答数
+      DOI召回率 = 正确来源归因数 / 全部题数
+    type: formula
+    module: measurement
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: report
+      x: 848
+      'y': 1200
+  - id: paper_report
     label: |-
-      报告LitQA2结果
-      汇总三次运行波动
-      比较旧147题与新101题
-      单独报告允许工具的人类基线
+      报告论文 v2 评测
+      按配置汇总三次运行
+      比较旧147题与未见新101题
+      单独报告人工工具使用基线
     type: terminal
+    module: measurement
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 576
+      'y': 1200
+  - id: implementation_drift
+    label: |-
+      当前默认实现 ≠ 论文 v2 协议
+      paper-qa d767 · 提示词常量已不同
+      Aviary 1c061 · gpt-4o-mini + 选项文本
+      选项需显式提供随机种子才会打乱
+      不可与论文报告结果混用
+    type: document
+    module: measurement
+    size: xl
+    position:
+      x: 304
+      'y': 1392
+    style:
+      fontSize: 9
 edges:
-  - from: papers
-    to: draft
+  - from: source_lock
+    to: recent_papers
     type: primary
-  - from: draft
-    to: choices
+  - from: recent_papers
+    to: draft_question
     type: primary
-  - from: choices
+  - from: draft_question
+    to: distractors
+    type: primary
+  - from: distractors
     to: challenge
     type: primary
   - from: challenge
-    to: review
+    to: calibration
     type: primary
-  - from: review
-    to: release
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: calibration
+    to: release_248
     type: primary
-  - from: release
-    to: randomize
+    label: 接收
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: calibration
+    to: challenge
+    type: optional
+    label: 返工
+    style:
+      exitX: 0.25
+      exitY: 1
+      entryX: 0.5
+      entryY: 1
+  - from: calibration
+    to: reject_item
+    type: optional
+    label: 剔除
+    style:
+      exitX: 0.75
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: release_248
+    to: current_manifest
+    type: data
+    label: 当前划分清单
+    waypoints:
+      - x: 2064
+        'y': 560
+      - x: 432
+        'y': 560
+      - x: 432
+        'y': 720
+  - from: current_manifest
+    to: public_199
     type: primary
-  - from: randomize
-    to: run
+    label: 来源语料 · 199行
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: current_manifest
+    to: gated_49
+    type: optional
+    label: 测试来源语料
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: public_199
+    to: release_boundary
     type: primary
-  - from: run
-    to: extract
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: gated_49
+    to: release_boundary
+    type: optional
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: release_248
+    to: eval_prep
     type: primary
-  - from: extract
-    to: grade
+    label: 论文 v2 测量
+    style:
+      exitX: 0.5
+      exitY: 1
+      entryX: 0.5
+      entryY: 0
+  - from: eval_prep
+    to: paper_run
     type: primary
-  - from: grade
+  - from: paper_run
+    to: extract_letter
+    type: primary
+  - from: extract_letter
+    to: grade_choice
+    type: primary
+  - from: grade_choice
     to: metrics
     type: primary
   - from: metrics
-    to: report
+    to: paper_report
     type: primary
-modules: []
+modules:
+  - id: construction
+    label: 构建
+    color: $primaryLight
+  - id: release
+    label: 发布
+    color: $warningLight
+  - id: measurement
+    label: 评测
+    color: $secondaryLight

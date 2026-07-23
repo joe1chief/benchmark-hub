@@ -5,122 +5,123 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: GDPVal Build Process
-  description: Paper-aligned construction, quality control, gold-set release, and expert-comparison evaluation flow for GDPVal.
+  description: Paper-aligned sector selection, expert task authoring, quality control, release, and expert comparison.
   legend: >-
-    Solid arrows follow arXiv:2510.04374. Counts distinguish the 1,320-task full benchmark from the public 220-task gold
-    subset; automated grading is experimental and is not shown as the primary metric.
+    Evidence is pinned to arXiv:2510.04374v1 and public dataset 11e7900c. The 1,320-task full set is private; the
+    220-task gold set is public. The paper's automated grader is experimental and its implementation is not released.
 nodes:
+  - id: evidence
+    label: |-
+      Evidence snapshot
+      paper 2510.04374v1
+      public data 11e7900c
+      grader code: not released
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 160
   - id: sectors
     label: |-
-      Select economically material U.S. sectors
-      each contributes more than 5% of GDP
+      Select Q2 2024 U.S. sectors
+      each contributes >5% of GDP
       retain 9 sectors
     type: database
     size: xl
     position:
-      x: 40
-      'y': 250
+      x: 296
+      'y': 160
   - id: occupations
     label: |-
-      Select predominantly digital occupations
-      GPT-4o classifies O*NET tasks; ≥60% digital
-      top wage/employment choices yield 44 occupations
+      Select digital occupations
+      GPT-4o classifies O*NET tasks
+      weighted digital share ≥60%
+      top compensation choices → 44 roles
     type: process
     size: xl
     position:
-      x: 300
-      'y': 250
+      x: 552
+      'y': 160
   - id: experts
     label: |-
-      Recruit and qualify occupation experts
-      interview · background check · training · quiz
-      ≥4 years' experience; 14 years on average
+      Qualify occupation experts
+      interview · checks · training · quiz
+      <10% selected · ≥4 years
+      average experience: 14 years
     type: process
     size: xl
     position:
-      x: 560
-      'y': 250
-  - id: task_authoring
+      x: 808
+      'y': 160
+  - id: authoring
     label: |-
-      Experts author authentic work products
-      request + optional reference files + deliverable
-      map each task to an O*NET work activity
+      Author realistic work tasks
+      request + references + deliverable
+      map to O*NET work activity
+      value = time × median hourly wage
     type: process
     size: xl
     position:
-      x: 820
-      'y': 250
-  - id: metadata
+      x: 1064
+      'y': 160
+  - id: qc
     label: |-
-      Record economic and realism metadata
-      difficulty · representativeness · completion time
-      estimated value = expert time × occupation wage
-    type: document
-    size: xl
-    position:
-      x: 1080
-      'y': 250
-  - id: quality
-    label: |-
-      Screen, review, comment, and revise
-      automated checks plus at least 3 human reviews
-      5 human reviews per task on average
+      Screen, review, and revise
+      model flags are advisory only
+      at least 3 human reviews
+      5 human reviews on average
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 250
-  - id: full_set
+      x: 1064
+      'y': 400
+  - id: release
     label: |-
-      Assemble the full benchmark
-      1,320 tasks · at least 30 per occupation
-      average task requires about 7 expert-hours
+      Full private set: 1,320 tasks
+      30 per role · about 7 hours each
+      public gold: 220 · 5 per role
+      prompt/ref/deliverable/rubric fields
     type: database
     size: xl
     position:
-      x: 1600
-      'y': 250
-  - id: gold
-    label: |-
-      Release the 220-task gold subset
-      5 tasks per occupation with request/reference files
-      scrub expert identifiers from deliverables
-    type: database
-    size: xl
-    position:
-      x: 1860
-      'y': 250
+      x: 808
+      'y': 400
   - id: model_runs
     label: |-
-      Generate model deliverables
-      three independent samples per task
-      compare complete artifacts, not short answers
+      Generate complete deliverables
+      prompt + reference files as input
+      3 independent samples per task
     type: process
     size: xl
     position:
-      x: 2120
-      'y': 250
-  - id: grading
+      x: 552
+      'y': 400
+  - id: human_grade
     label: |-
-      Blind occupation experts to provenance
-      pair model output against human deliverable
-      3 graders × 3 samples = 9 comparisons per task
+      Blind experts to provenance
+      model versus human deliverable
+      3 graders × 3 samples
+      9 comparisons per task
     type: process
     size: xl
     position:
-      x: 2380
-      'y': 250
+      x: 296
+      'y': 400
   - id: metric
     label: |-
-      Report head-to-head deliverable win rate
-      human expert work is the reference baseline
-      experimental grader: 66% vs 71% human agreement
+      Score win 1 · tie 0.5 · loss 0
+      main: better-or-tied share
+      appendix: better-only win rate
+      report by occupation and overall
     type: terminal
     size: xl
     position:
-      x: 2640
-      'y': 250
+      x: 40
+      'y': 400
 edges:
+  - from: evidence
+    to: sectors
+    type: primary
   - from: sectors
     to: occupations
     type: primary
@@ -128,27 +129,21 @@ edges:
     to: experts
     type: primary
   - from: experts
-    to: task_authoring
+    to: authoring
     type: primary
-  - from: task_authoring
-    to: metadata
+  - from: authoring
+    to: qc
     type: primary
-  - from: metadata
-    to: quality
+  - from: qc
+    to: release
     type: primary
-  - from: quality
-    to: full_set
-    type: primary
-  - from: full_set
-    to: gold
-    type: primary
-  - from: gold
+  - from: release
     to: model_runs
     type: primary
   - from: model_runs
-    to: grading
+    to: human_grade
     type: primary
-  - from: grading
+  - from: human_grade
     to: metric
     type: primary
 modules: []

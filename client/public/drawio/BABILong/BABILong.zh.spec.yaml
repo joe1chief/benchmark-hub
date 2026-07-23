@@ -5,8 +5,8 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BABILong 构建流程
-  description: 基于 arXiv:2406.10149，展示 BABILong 的论文对齐生成与长上下文评测流程。
-  legend: 实线表示数据生成与直接评测；虚线区分检索和循环记忆基线。
+  description: 基于 arXiv:2406.10149v2，展示 BABILong 的论文对齐生成与长上下文评测流程。
+  legend: 实线表示数据生成和各方法评分；虚线选择检索或循环记忆基线，直接、RAG 与循环记忆评测分别保留论文规定的独立样本协议。
 nodes:
   - id: babi_simulation
     label: |-
@@ -107,7 +107,7 @@ nodes:
     size: xl
     position:
       x: 1440
-      'y': 580
+      'y': 620
   - id: recurrent_eval
     label: |-
       评测循环记忆
@@ -117,47 +117,72 @@ nodes:
     size: xl
     position:
       x: 1720
-      'y': 580
+      'y': 620
   - id: score
     label: |-
-      计算任务精确准确率
-      按 QA 任务与上下文长度报告
-      32K 以内 1,000 例，以上 100 例
+      直接评测 QA1–QA5 准确率
+      每任务、每长度 1,000 例
+      覆盖至 32K
+      32K 以上 100 例
     type: process
     size: xl
     position:
       x: 2000
-      'y': 400
+      'y': 40
+  - id: rag_score
+    label: |-
+      RAG 精确准确率
+      每任务、每长度 50 例
+      RAG-C / RAG-S 分别报告
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 310
+  - id: recurrent_score
+    label: |-
+      循环记忆准确率
+      至 1M 使用完整测试集
+      10M 使用 100 例
+      部分实验外推至 50M
+    type: process
+    size: xl
+    position:
+      x: 2000
+      'y': 620
   - id: effective_context
     label: |-
-      诊断有效上下文利用
-      比较一、二、三事实任务
+      诊断上下文利用
+      一、二、三事实任务
       跟踪准确率随长度衰减
+      分析检索顺序与遗漏事实
     type: process
     size: xl
     position:
-      x: 1720
-      'y': 760
+      x: 2280
+      'y': 550
   - id: method_compare
     label: |-
-      比较直接、RAG 与记忆模型
-      分析检索顺序和遗漏事实
-      在论文报告处单列拒答
+      比较独立评测协议
+      直接 • RAG-C • RAG-S
+      RMT • ARMT • Mamba
+      不合并不同样本数
     type: process
     size: xl
     position:
-      x: 2000
-      'y': 760
+      x: 2280
+      'y': 310
   - id: report
     label: |-
       发布 BABILong 结果
-      按任务、长度和方法报告准确率
-      固定分区与 50M 外推结果
+      按任务、长度、方法报告准确率
+      保留各自样本协议
+      报告部分 50M 外推结果
     type: terminal
     size: xl
     position:
-      x: 2000
-      'y': 980
+      x: 2560
+      'y': 430
 edges:
   - from: babi_simulation
     to: task_suite
@@ -186,6 +211,11 @@ edges:
   - from: release
     to: recurrent_train
     type: optional
+    waypoints:
+      - x: 1330
+        'y': 350
+      - x: 1330
+        'y': 670
   - from: recurrent_train
     to: recurrent_eval
     type: primary
@@ -193,24 +223,30 @@ edges:
     to: score
     type: primary
   - from: rag_chunks
-    to: score
+    to: rag_score
     type: data
   - from: rag_sentences
-    to: score
+    to: rag_score
     type: data
   - from: recurrent_eval
-    to: score
+    to: recurrent_score
     type: data
-  - from: score
-    to: effective_context
-    type: primary
   - from: score
     to: method_compare
+    type: primary
+  - from: rag_score
+    to: method_compare
     type: data
-  - from: effective_context
-    to: report
+  - from: recurrent_score
+    to: method_compare
+    type: data
+  - from: method_compare
+    to: effective_context
     type: primary
   - from: method_compare
     to: report
     type: data
+  - from: effective_context
+    to: report
+    type: primary
 modules: []

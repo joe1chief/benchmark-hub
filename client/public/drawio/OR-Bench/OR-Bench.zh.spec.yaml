@@ -5,9 +5,20 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: OR-Bench 构建与评测流程
-  description: 对齐论文的构建管线：将有害种子改写成无害的边界提示，经多模型集成审核与回答恢复后，发布互补的有用性和安全性评测集。
-  legend: OR-Bench 同时衡量安全对齐的两面：无害的过度拒答提示应有较低拒答率，而有毒对照集应有较高拒答率。
+  description: 对齐论文 v5 与固定公开快照：从有害种子、约束改写、集成审核、回答恢复到 Hard 集筛选、双向拒答率评测，并显式标出发布证据。
+  legend: 实线表示构建与评测；虚线仅表示验证、人工审计或来源证据，不参与核心过滤。论文名义数量与公开文件精确行数分开标注。
 nodes:
+  - id: evidence
+    label: |-
+      论文证据快照
+      arXiv v5 · ICML 2025
+      PDF SHA-256 1a4c7b60301a…
+      32 模型修订版
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: categories
     label: |-
       定义 10 类常见拒答主题
@@ -17,152 +28,212 @@ nodes:
     type: document
     size: xl
     position:
-      x: 20
+      x: 288
       'y': 40
   - id: seeds
     label: |-
       生成有害种子
       使用 Mixtral 8×7B
-      每类 2,000 条种子
-      每批生成 20 条
+      每类 2,000 条
+      每批 20 条 · 温度 1.0
     type: process
     size: xl
     position:
-      x: 260
+      x: 536
       'y': 40
   - id: dedupe
     label: |-
-      去除重复种子
+      去重有害种子
       合并各生成批次
       保留类别覆盖
-      留存有毒对照来源
+      形成有毒对照候选
     type: process
     size: xl
     position:
-      x: 500
+      x: 784
       'y': 40
   - id: rewrite
     label: |-
       每个种子改写五次
-      Mixtral 8×7B 配五个示例
-      避免“安全”或“合法”提示词
-      避免虚构式表达
+      配置五个人工挑选的少样本示例
+      避免安全 · 合法 · 转折提示
+      避免虚构框架 · 温度 0.7
     type: process
     size: xl
     position:
-      x: 740
+      x: 1032
       'y': 40
   - id: moderate
     label: |-
-      审核每条改写提示
-      GPT-4 Turbo · Llama 3 70B
-      Gemini 1.5 Pro
       先解释再分类
+      GPT-4-turbo-2024-04-09
+      Llama-3-70B
+      Gemini-1.5-pro-latest
     type: process
     size: xl
     position:
-      x: 980
+      x: 1280
       'y': 40
   - id: vote
     label: |-
-      采用集成多数票
-      纳入多数判安全的提示
-      降低单一模型族偏差
-      暂存被判有害的提示
-    type: process
+      集成多数票
+      三个审核器中
+      至少两个判为安全？
+    type: decision
     size: xl
     position:
-      x: 1220
+      x: 1528
       'y': 40
-  - id: recover
+  - id: benign_pool
     label: |-
-      恢复过敏误判
-      Mistral 7B 回答被拦提示
-      集成审核器复审回答
-      回答安全则恢复原提示
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: partition
-    label: |-
-      按最终安全标签分流
-      安全或恢复 → 无害池
-      其余有害项 → 有毒池
-      保留类别元数据
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: release_main
-    label: |-
-      发布互补数据集
-      OR-Bench-80K：安全提示
-      OR-Bench-Toxic：约 600 条
-      同测有用性与安全性
+      无害过度拒答池
+      多数判安全的改写
+      加入回答恢复的提示
+      保留 10 类标签
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: screen
+      x: 1776
+      'y': 40
+  - id: hard_select
     label: |-
-      筛选无害提示难度
-      查询各族最大或最新模型
-      按模型族汇总结果
-      记录安全提示拒答情况
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: hard
-    label: |-
-      选出 OR-Bench-Hard-1K
-      安全但频繁被拒答
-      每个模型族的头部模型中
+      构建困难候选集
+      论文列出的六个模型中
       至少三个拒答
-    type: database
-    size: xl
-    position:
-      x: 740
-      'y': 420
-  - id: query
-    label: |-
-      评测 32 个大模型
-      覆盖八个模型族
-      公共 API · 温度 0.0
-      不使用系统提示
+      随机抽取名义 1K
+      公开集重合 1,318 · 额外一条
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
+      x: 2024
+      'y': 40
+  - id: public_snapshot
+    label: |-
+      发布三种配置
+      论文名义 80K · Hard-1K · Toxic 600
+      公开精确 80,359 · 1,319 · 655
+      每个文件均覆盖 10 类
+    type: database
+    size: xl
+    position:
+      x: 2272
+      'y': 40
+  - id: eval_models
+    label: |-
+      评测 32 个模型
+      覆盖八个模型族 · 公共 API
+      不使用系统提示
+      温度 0.0
+    type: process
+    size: xl
+    position:
+      x: 2520
+      'y': 40
   - id: judge
     label: |-
-      识别模型是否拒答
-      80K 全集用关键词匹配
-      Hard 与 Toxic 用 GPT-4
-      同查安全和有用性
+      识别模型拒答
+      在随机 10,000 条上提取关键词
+      关键词覆盖 80K 全集
+      GPT-4 评判 Hard 与 Toxic
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 2768
+      'y': 40
   - id: report
     label: |-
       报告拒答率
-      安全提示越低越好
-      有毒提示越高越好
-      按 10 个类别细分
+      无害集越低越好
+      有毒集越高越好
+      分类别报告 · 无合并标量
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 3016
+      'y': 40
+  - id: flagged_response
+    label: |-
+      回答被拦截提示
+      Mistral-7B-Instruct-v0.3
+      测试能否生成安全回答
+      保留原提示身份
+    type: process
+    size: xl
+    position:
+      x: 1528
+      'y': 360
+  - id: response_moderate
+    label: |-
+      重新审核模型回答
+      使用同一三模型集成
+      先解释再分类
+      判断回答是否安全
+    type: process
+    size: xl
+    position:
+      x: 1776
+      'y': 360
+  - id: recovery_gate
+    label: |-
+      回答安全吗？
+      恢复原始提示
+      或保留有毒标签
+    type: decision
+    size: xl
+    position:
+      x: 2024
+      'y': 360
+  - id: toxic_pool
+    label: |-
+      有毒对照池
+      仍然有害的种子与提示
+      与无害评测互补
+      公开文件精确 655 行
+    type: database
+    size: xl
+    position:
+      x: 2272
+      'y': 360
+  - id: moderator_validation
+    label: |-
+      仅作审核器验证
+      100 条 · 三名工人加一名专家
+      五票多数构成真值
+      集成 93% · 专家 94%
+    type: document
+    size: xl
+    position:
+      x: 1280
+      'y': 680
+  - id: expert_audit
+    label: |-
+      仅作困难集审计
+      两名独立专家审核全部 1,319 条
+      任一专家标出 38 条 · 约 9 条存疑
+      存疑项保留
+    type: document
+    size: xl
+    position:
+      x: 2520
+      'y': 680
+  - id: source_boundary
+    label: |-
+      公开来源边界
+      Git 4fad1f9e4d4b… · Apache-2.0
+      HF e36d8b80e818… · CC-BY-4.0
+      仅有组件脚本 · 无端到端编排器
+      GitHub 无发布标签
+    type: document
+    size: xl
+    position:
+      x: 3016
+      'y': 680
 edges:
+  - from: evidence
+    to: categories
+    type: secondary
+    style:
+      dashed: true
   - from: categories
     to: seeds
     type: primary
@@ -179,27 +250,78 @@ edges:
     to: vote
     type: primary
   - from: vote
-    to: recover
+    to: benign_pool
     type: primary
-  - from: recover
-    to: partition
+    label: 多数判安全
+  - from: vote
+    to: flagged_response
     type: primary
-  - from: partition
-    to: release_main
+    label: 被拦截
+  - from: flagged_response
+    to: response_moderate
     type: primary
-  - from: release_main
-    to: screen
+  - from: response_moderate
+    to: recovery_gate
     type: primary
-  - from: screen
-    to: hard
+  - from: recovery_gate
+    to: benign_pool
     type: primary
-  - from: hard
-    to: query
+    label: 回答安全
+    waypoints:
+      - x: 2144
+        'y': 288
+      - x: 1896
+        'y': 288
+  - from: recovery_gate
+    to: toxic_pool
     type: primary
-  - from: query
+    label: 仍有害
+  - from: benign_pool
+    to: hard_select
+    type: primary
+  - from: benign_pool
+    to: public_snapshot
+    type: primary
+    waypoints:
+      - x: 1896
+        'y': 224
+      - x: 2392
+        'y': 224
+  - from: hard_select
+    to: public_snapshot
+    type: primary
+  - from: toxic_pool
+    to: public_snapshot
+    type: primary
+  - from: public_snapshot
+    to: eval_models
+    type: primary
+  - from: eval_models
     to: judge
     type: primary
   - from: judge
     to: report
     type: primary
+  - from: moderate
+    to: moderator_validation
+    type: secondary
+    style:
+      dashed: true
+  - from: hard_select
+    to: expert_audit
+    type: secondary
+    waypoints:
+      - x: 2008
+        'y': 280
+      - x: 2008
+        'y': 600
+      - x: 2640
+        'y': 600
+    style:
+      dashed: true
+  - from: report
+    to: source_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

@@ -1,50 +1,56 @@
 {
   "version": 1,
-  "title": "AlpacaEval 2.0 Build Process",
+  "title": "AlpacaEval 2.0 Evaluation Process",
   "type": "academic-diagram",
   "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 12,
+    "nodes": 13,
+    "edges": 14,
     "modules": 0
   },
   "nodes": [
     {
       "id": "instructions",
-      "label": "Fixed Instructions\n805 Alpaca Prompts",
+      "label": "Fixed Instruction Set\n805 AlpacaEval Prompts",
       "type": "document",
       "size": "large"
     },
     {
       "id": "baseline",
-      "label": "Baseline Responses\nGPT-4-1106-Preview",
+      "label": "Baseline Responses\ngpt-4-1106-preview\nSame 805 Instructions",
       "type": "process",
       "size": "large"
     },
     {
       "id": "candidate",
-      "label": "Candidate Responses\nSame 805 Prompts",
+      "label": "Candidate Responses\nEvaluated Model Outputs\nSame 805 Instructions",
       "type": "process",
       "size": "large"
     },
     {
       "id": "evaluator",
-      "label": "weighted_alpaca_eval_\ngpt4_turbo Judge\nRandom Order • Single Token\nLogprobs →\nContinuous Preference",
+      "label": "weighted_alpaca_eval_gpt4_turbo\nRandomize A/B Only Before Judging\nSingle-Token Judge • Token Logprobs",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "ratings",
-      "label": "Continuous Pairwise Preference\nLogprob Probability per Instruction",
+      "id": "restore_direction",
+      "label": "Restore Candidate/Baseline\nDirection After Parsing\nIf Swapped: preference ← 3 − preference\nUndo `output_1` / `output_2` Column Swap",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "preferences",
+      "label": "Restored Preferences\nBaseline = `output_1`\nCandidate = `output_2`\nCandidate Win Probability = preference − 1",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "raw_win",
-      "label": "Weighted Win Rate\nMean Continuous Preference over 805",
+      "id": "raw_weighted",
+      "label": "Weighted Win Rate\nMean of (Preference − 1)\nCandidate Win Semantics • 805 Instructions",
       "type": "terminal",
       "size": "large"
     },
@@ -52,29 +58,35 @@
       "id": "glm",
       "label": "Antisymmetric GLM\nModel Identity + Output Length\nInstruction Difficulty",
       "type": "formula",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "regularize",
-      "label": "Fit and Regularize\n5-fold CV + L2",
+      "id": "paper_l2",
+      "label": "Paper v2 Statistical Specification\n5-fold CV • L2 Regularization\nSource: arXiv:2404.04475v2",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "official_l1",
+      "label": "Official 0.6.6 @ cd543a149df89434\n5-fold CV • L1 • liblinear\nPinned glm_winrate.py Implementation",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "lc_counterfactual",
+      "label": "Length-Controlled Counterfactual\nSet the Length Term to Zero\nRetain Model and Instruction Terms",
       "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "lc_win",
-      "label": "LC Win Rate\nSet Length Term = 0",
-      "type": "terminal",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "semantics",
-      "label": "Win-rate Semantics\nSelf 50%; Swap Symmetry",
+      "label": "Candidate Win Semantics\nSelf Comparison = 50%\nSwap Symmetry After Restoration",
       "type": "document",
       "size": "large"
     },
     {
       "id": "validation",
-      "label": "External Validation\nGameability 25% → 10%\nArena ρ: .94 → .98",
+      "label": "Paper Validation\nGameability: 25% → 10%\nArena ρ: .94 → .98",
       "type": "terminal",
       "size": "xl"
     }
@@ -107,47 +119,59 @@
     {
       "id": "edge-5",
       "from": "evaluator",
-      "to": "ratings",
+      "to": "restore_direction",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "ratings",
-      "to": "raw_win",
+      "from": "restore_direction",
+      "to": "preferences",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "ratings",
-      "to": "glm",
+      "from": "preferences",
+      "to": "raw_weighted",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "glm",
-      "to": "regularize",
+      "from": "preferences",
+      "to": "glm",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "regularize",
-      "to": "lc_win",
-      "type": "primary"
+      "from": "glm",
+      "to": "paper_l2",
+      "type": "optional"
     },
     {
       "id": "edge-10",
-      "from": "lc_win",
+      "from": "glm",
+      "to": "official_l1",
+      "type": "optional"
+    },
+    {
+      "id": "edge-11",
+      "from": "glm",
+      "to": "lc_counterfactual",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "lc_counterfactual",
       "to": "semantics",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "raw_win",
+      "id": "edge-13",
+      "from": "raw_weighted",
       "to": "validation",
       "type": "optional"
     },
     {
-      "id": "edge-12",
+      "id": "edge-14",
       "from": "semantics",
       "to": "validation",
       "type": "optional"

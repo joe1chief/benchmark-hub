@@ -4,206 +4,429 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: PACE-Bench Build and Evaluation Process
+  title: PACE-Bench Construction, Validation, and Release
   description: >-
-    Paper-aligned construction of compact non-agentic proxies for four expensive agentic targets through relevance and
-    leverage selection.
+    Paper-v2 and fixed-source alignment for strict Local/Global proxy selection, held-out-model validation, and the
+    separate fit-all release of four weighted target proxies.
   legend: >-
-    PACE-Bench is the concrete output of the PACE framework: one approximately 100-instance weighted proxy per target,
-    selected under strict leave-one-model-out evaluation.
+    Primary edges separate LOOCV validation from fit-all publication. Dashed edges isolate fixed evidence,
+    paper-versus-code SVD behavior, release identity, unresolved content, and mixed upstream licenses.
 nodes:
-  - id: step_1
+  - id: evidence
     label: |-
-      Evaluate Four Agentic Targets
-      GAIA · SWE-Bench Verified
-      SWE-Bench Multimodal · SWT-Bench
-      OpenHands Index harness
+      Fixed Primary Evidence
+      arXiv 2607.02032v2 · 0af39b8c953f
+      Git dc2ef80e00ad · a42cd03e0977
+      HF ce177cfe25bc · c7fbf603d2d6
     type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: step_2
+  - id: targets
     label: |-
-      Evaluate 19 Source Benchmarks
-      Cheap non-agentic instances
-      11 capability groups
-      lm-eval harness or official code
+      Evaluate Four Agentic Targets
+      GAIA 165 · SWE-Bench Verified 500
+      SWE-Bench Multimodal 102
+      SWT-Bench 430 · 14 Models
+      OpenHands Index
     type: database
     size: xl
     position:
       x: 260
       'y': 40
-  - id: step_3
+  - id: sources
     label: |-
-      Build Calibration Matrices
-      14-model source score matrix X
-      Target instance scores
-      Aggregate target means y
+      19 Non-agentic Benchmarks
+      Instance Scores · 11 Capabilities
+      lm-evaluation-harness
+      Official Code · Multimodal Signals
     type: database
     size: xl
     position:
       x: 500
-      'y': 40
-  - id: step_4
+      'y': 220
+  - id: matrices
     label: |-
-      Apply Strict Model LOOCV
-      Hold out one evaluated model
-      Use 13 models for calibration
-      Repeat across all 14 models
-    type: process
+      Build Source and Target Matrices
+      X: Model by Source-instance Scores
+      P: Per-target-instance Agent Scores
+      Drop Near-zero-variance Columns
+    type: database
     size: xl
     position:
       x: 740
       'y': 40
-  - id: step_5
+  - id: protocol_gate
     label: |-
-      Bootstrap Target Instances
-      Sample target items with replacement
-      Stabilize target mean estimates
-      Repeat selection and fitting
-    type: process
+      Choose Protocol
+      Held-out Validation
+      or Fit-all Publication
+    type: decision
     size: xl
     position:
       x: 980
       'y': 40
-  - id: step_6
+  - id: loocv
     label: |-
-      Compute Thin SVD of X
-      Factor source-instance responses
-      Obtain right singular vectors V
-      Represent global geometry
+      Run Strict Model LOOCV
+      Hold Out One of 14 Models
+      Select and Fit on the Other 13
+      Aggregate 14 Held-out Predictions
     type: process
     size: xl
     position:
       x: 1220
       'y': 40
-  - id: step_7
+  - id: global_basis
     label: |-
-      Calculate Two Signals
-      Leverage h from V
-      Absolute Spearman relevance rho
-      Use calibration models only
+      Form the Paper Global SVD Basis
+      Thin SVD of Calibration-only X
+      Retain Right-singular Geometry V
+      Method Excludes Held-out Model
     type: process
     size: xl
     position:
       x: 1460
       'y': 40
-  - id: step_8
+  - id: code_boundary
     label: |-
-      Select Local Subset
-      Rank instances by absolute rho
-      Keep top C_L Local candidates
-      Emphasize target correlation
+      Paper-code SVD Boundary
+      Paper Excludes Held-out Model
+      cli.py Vt_full Uses All 14 X Rows
+      Target Y Uses Training Fold Only
+    type: document
+    size: xl
+    position:
+      x: 1700
+      'y': 40
+  - id: signals
+    label: |-
+      Score Every Candidate Instance
+      Relevance: Absolute Spearman rho
+      Leverage h: Squared V-loading Sum
+      rho: Calibration Models Only
     type: process
     size: xl
     position:
       x: 1460
-      'y': 420
-  - id: step_9
+      'y': 400
+  - id: selection_gate
     label: |-
-      Select Global Subset
-      Rank by h times absolute rho
-      Keep top C_G Global candidates
-      Balance geometry and relevance
-    type: process
+      Split Strict Budget C
+      Local Budget C_L
+      Global Budget C_G
+    type: decision
     size: xl
     position:
       x: 1220
-      'y': 420
-  - id: step_10
+      'y': 400
+  - id: local
     label: |-
-      Form Concrete Target Proxy
-      Resolve Local-Global overlap
-      Extend rankings in fixed ratio
-      Stop at C = 100 unique instances
-    type: database
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: step_11
-    label: |-
-      Project Local and Global Scores
-      Use subset-specific SVD features
-      Fit two complementary views
-      Preserve calibration-only fitting
+      Select Local Subset L
+      Rank by Absolute Spearman rho
+      Recompute SVD on Selected X_L
+      Build Target-adapted Local Basis
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: step_12
+      x: 980
+      'y': 280
+  - id: global
     label: |-
-      Fit Two Prediction Goals
-      Linear least squares for score
-      Logistic regression for pairwise order
-      Predict held-out agent capability
+      Select Global Subset G
+      Rank by h Times Absolute rho
+      Use Global Source-pool Geometry
+      Balance Information and Relevance
+    type: process
+    size: xl
+    position:
+      x: 980
+      'y': 520
+  - id: union
+    label: |-
+      C Unique Composite Instances
+      Union L and G · C_L:C_G Ratio
+      Extend Each Ranking Past Overlap
+      Stop at C = 100 per Target
+    type: database
+    size: xl
+    position:
+      x: 740
+      'y': 400
+  - id: embeddings
+    label: |-
+      Embed Calibration/Held-out Models
+      Local SVD Coordinates for L
+      Global Pseudoinverse Coordinates
+      Keep the Two Views Separate
     type: process
     size: xl
     position:
       x: 500
-      'y': 420
-  - id: step_13
+      'y': 400
+  - id: bootstrap
     label: |-
-      Ensemble Both Paths
-      Blend Local and Global predictors
-      Tune mixture coefficient lambda
-      Serialize source ids metrics weights images
+      Bootstrap Target after Selection
+      Resample Items with Replacement
+      B = 300 · Seed 42
+      Pool Noisy Target Means for Fitting
     type: process
     size: xl
     position:
       x: 260
-      'y': 420
-  - id: step_14
+      'y': 400
+  - id: goal_gate
     label: |-
-      Validate Proxy Quality
-      MAE 3.80 percent · Spearman 0.81
-      Pairwise accuracy 84.37 percent
-      Below 1 percent target-evaluation cost
-    type: terminal
+      Prediction Goal
+      Absolute Score
+      or Pairwise Order
+    type: decision
     size: xl
     position:
       x: 20
-      'y': 420
+      'y': 400
+  - id: absolute
+    label: |-
+      Goal A: Released Implementation
+      SVD Coordinates
+      Spearman Weights · Intercept OLS
+      Bootstrapped Target Means
+      Paper: Raw C-vector Predictor
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 700
+  - id: pairwise
+    label: |-
+      Goal B: Pairwise Preference
+      Ordered Model-score Differences
+      Fit Ridge Logistic Regressors
+      Reuse Goal A Instance Selection
+    type: process
+    size: xl
+    position:
+      x: 260
+      'y': 920
+  - id: ensemble
+    label: |-
+      Ensemble Local + Global Paths
+      Lambda Blends Held-out Predictions
+      Tune Split Ranks + Target Mixture
+      Keep Strict 100-instance Union
+    type: process
+    size: xl
+    position:
+      x: 500
+      'y': 800
+  - id: report
+    label: |-
+      Auto-tuned LOOCV · C=100
+      MAE 3.80% · Spearman 0.81
+      Pearson 0.74
+      Pairwise Accuracy 84.37%
+      Target Cost Below 1 Percent
+      Aggregated Held-out Labels
+    type: terminal
+    size: xl
+    position:
+      x: 740
+      'y': 800
+  - id: fit_all
+    label: |-
+      Materialize Fit-all PACE-Bench
+      Fixed Hyperparameters
+      Use All 14 Models
+      No Held-out Prediction
+      Fit Per-path Weights · Four Targets
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 1050
+  - id: hf_release
+    label: |-
+      Weighted JSONL Files · Images
+      GAIA 100 · SWE 100 · MM 105
+      SWT 107 · Prompt/Answer/Metric
+      Weight · 12 Selected Sources
+      from 19 Candidates
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 1050
+  - id: release_boundary
+    label: |-
+      Validation and Identity Boundary
+      LOOCV Is Not Fit-all Evaluation
+      100 Unique Composite Keys/File
+      Five MM · Seven SWT
+      H/G Duplicate Rows
+    type: document
+    size: xl
+    position:
+      x: 1220
+      'y': 1050
+  - id: content_boundary
+    label: |-
+      Published-content Boundary
+      405 of 412 Rows Resolved
+      Seven Rows Unresolved
+      after Upstream Drift · Identity
+      Benchmark Subdir Instance ID
+    type: document
+    size: xl
+    position:
+      x: 980
+      'y': 1050
+  - id: license_boundary
+    label: |-
+      Openness and License Boundary
+      HF Declares mixed-upstream
+      Upstream Terms Kept per Instance
+      Git: No LICENSE
+      No Tagged Release
+    type: document
+    size: xl
+    position:
+      x: 740
+      'y': 1050
 edges:
-  - from: step_1
-    to: step_2
+  - from: evidence
+    to: targets
+    type: secondary
+    style:
+      dashed: true
+  - from: evidence
+    to: sources
+    type: secondary
+    style:
+      dashed: true
+    waypoints:
+      - x: 140
+        'y': 190
+      - x: 620
+        'y': 190
+  - from: targets
+    to: matrices
     type: primary
-  - from: step_2
-    to: step_3
+  - from: sources
+    to: matrices
     type: primary
-  - from: step_3
-    to: step_4
+    waypoints:
+      - x: 700
+        'y': 100
+  - from: matrices
+    to: protocol_gate
     type: primary
-  - from: step_4
-    to: step_5
+  - from: protocol_gate
+    to: loocv
     type: primary
-  - from: step_5
-    to: step_6
+    label: Validation
+  - from: protocol_gate
+    to: fit_all
     type: primary
-  - from: step_6
-    to: step_7
+    label: Publication
+    waypoints:
+      - x: 1100
+        'y': 190
+      - x: 1960
+        'y': 190
+      - x: 1960
+        'y': 1110
+  - from: loocv
+    to: global_basis
     type: primary
-  - from: step_7
-    to: step_8
+  - from: global_basis
+    to: signals
     type: primary
-  - from: step_8
-    to: step_9
+  - from: global_basis
+    to: code_boundary
+    type: secondary
+    label: Paper-code drift
+    style:
+      dashed: true
+  - from: signals
+    to: selection_gate
     type: primary
-  - from: step_9
-    to: step_10
+  - from: selection_gate
+    to: local
     type: primary
-  - from: step_10
-    to: step_11
+    label: Local
+  - from: selection_gate
+    to: global
     type: primary
-  - from: step_11
-    to: step_12
+    label: Global
+  - from: local
+    to: union
     type: primary
-  - from: step_12
-    to: step_13
+  - from: global
+    to: union
     type: primary
-  - from: step_13
-    to: step_14
+  - from: union
+    to: embeddings
     type: primary
+  - from: embeddings
+    to: bootstrap
+    type: primary
+  - from: bootstrap
+    to: goal_gate
+    type: primary
+  - from: goal_gate
+    to: absolute
+    type: primary
+    label: Goal A
+  - from: goal_gate
+    to: pairwise
+    type: primary
+    label: Goal B
+    waypoints:
+      - x: 140
+        'y': 620
+      - x: 380
+        'y': 620
+  - from: absolute
+    to: ensemble
+    type: primary
+  - from: pairwise
+    to: ensemble
+    type: primary
+  - from: ensemble
+    to: report
+    type: primary
+  - from: fit_all
+    to: hf_release
+    type: primary
+  - from: report
+    to: release_boundary
+    type: secondary
+    label: LOOCV evidence
+    style:
+      dashed: true
+    waypoints:
+      - x: 860
+        'y': 970
+      - x: 1340
+        'y': 970
+  - from: hf_release
+    to: release_boundary
+    type: secondary
+    label: Snapshot
+    style:
+      dashed: true
+      fontSize: 9
+  - from: release_boundary
+    to: content_boundary
+    type: secondary
+    label: Coverage
+    style:
+      dashed: true
+  - from: content_boundary
+    to: license_boundary
+    type: secondary
+    label: Terms
+    style:
+      dashed: true
 modules: []

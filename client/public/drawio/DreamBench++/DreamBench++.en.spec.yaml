@@ -6,179 +6,297 @@ meta:
   routing: orthogonal
   title: DreamBench++ Build Process
   description: >-
-    Paper-aligned construction of the diverse personalized-generation set and the human-aligned GPT-4o evaluation
-    protocol.
+    Paper- and release-aligned image curation, GPT-4o prompt creation, personalized generation, and human-aligned
+    judging.
   legend: >-
-    Solid arrows trace dataset curation, image generation, two-step GPT-4o judging, and validation against independent
-    human ratings.
+    Solid arrows show the core dataset and judging flow; dotted arrows separate release boundaries and independent human
+    ratings from GPT scoring.
 nodes:
-  - id: sources
+  - id: evidence_boundary
     label: |-
-      Reference-image sources
-      authors · Unsplash · Rawpixel · Google Image Search
-      copyright checked for academic use
-    type: database
+      Evidence boundary
+      arXiv 2406.16855v2
+      repo 66ca27e5
+      HF revision 459b0649
+      data.zip commit d5b0c8a2
+    type: document
     size: xl
     position:
       x: 40
       'y': 250
-  - id: images
+  - id: keywords
     label: |-
-      Curate 150 diverse references
-      live subjects · objects · styles
-      120 photorealistic + 30 non-photorealistic
+      Candidate subject keywords
+      200 from GPT-4o + top 200 Unsplash
+      deduplicate, then 7 annotators extend
+      about 300 keywords after expansion
     type: process
     size: xl
     position:
       x: 300
       'y': 250
-  - id: prompts
+  - id: sources
     label: |-
-      Write 9 prompts per image
-      4 photorealistic · 3 non-photorealistic
-      2 complicated / imaginative
-    type: document
+      Acquire candidate references
+      Unsplash · Rawpixel · Google Search
+      authorized individual contributions
+      verify academic-use copyright status
+    type: database
     size: xl
     position:
       x: 560
       'y': 250
-  - id: benchmark
+  - id: sam
     label: |-
-      DreamBench++ evaluation set
-      150 references · 1,350 prompts
-      subject / object / style difficulty coverage
-    type: database
+      SAM automatic filter
+      remove images with a too-small
+      main subject area
+    type: process
     size: xl
     position:
       x: 820
       'y': 250
-  - id: generation
+  - id: human_qc
     label: |-
-      Generate personalized images
-      seven modern methods in the paper
-      official implementations and tuned settings
+      Seven-annotator quality control
+      remove noisy backgrounds and NSFW
+      crop / center the main subject
+      keep two images per keyword
+      discard keywords without suitable images
     type: process
     size: xl
     position:
       x: 1080
       'y': 250
-  - id: meta
+  - id: balance
     label: |-
-      Human-written evaluation meta-prompt
-      task · criteria · 0–4 range · output format
-      reference + target + text prompt
-    type: document
+      Reinforce non-photorealistic styles
+      anime · sketch · Chinese painting
+      artwork · game cartoons
+      balance subject class and image style
+    type: process
     size: xl
     position:
       x: 1340
       'y': 250
-  - id: think
+  - id: prompts
     label: |-
-      Step 1 · internal thinking
-      GPT-4o confirms task understanding
-      self-aligned summary and scoring plan
-    type: process
+      GPT-4o generates 9 prompts / image
+      PartiPrompts few-shot · human calibration
+      4 photo + 3 non-photo + 2 imaginative
+      600 + 450 + 300 = 1,350 prompts
+    type: document
     size: xl
     position:
       x: 1600
       'y': 250
-  - id: dimensions
+  - id: release
     label: |-
-      Step 2 · score two dimensions
-      task reinforcement keeps the judge on rubric
-    type: decision
+      Core DreamBench++ release · 150 images
+      animal 45 · human 20 · object 65
+      style 20 · 120 photo + 30 non-photo
+      150 captions · 9 prompts each
+    type: database
     size: xl
     position:
       x: 1860
       'y': 250
-  - id: concept
+  - id: release_boundary
     label: |-
-      Concept preservation
-      image ↔ image
-      shape · color · texture · facial traits
-    type: document
-    size: xl
-    position:
-      x: 2120
-      'y': 90
-  - id: following
-    label: |-
-      Prompt following
-      text ↔ generated image
-      relevance · accuracy · completeness · context
-    type: document
-    size: xl
-    position:
-      x: 2120
-      'y': 410
-  - id: gpt_score
-    label: |-
-      GPT-4o score output
-      independent 0–4 ratings per dimension
-      aggregate benchmark results
+      Release boundary
+      no train / validation / test split
+      outputs and ratings use unversioned Drive
+      not part of pinned HF core
     type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 650
+  - id: methods
+    label: |-
+      Seven paper methods
+      TI · DB · DB-LoRA · BLIP-Diffusion
+      Emu2 · IP-Adapter Plus-H
+      IP-Adapter-G · SD1.5 / SDXL
+    type: process
+    size: xl
+    position:
+      x: 2120
+      'y': 250
+  - id: generation
+    label: |-
+      1,350 × 7 = 9,450 target outputs
+      default: 100 steps · guidance 7.5
+      Emu2: 50 steps · guidance 3
+      IP-Adapter scale 0.6 · seed 42
+    type: process
     size: xl
     position:
       x: 2380
       'y': 250
-  - id: human
+  - id: meta
     label: |-
-      Independent human ground truth
-      7 trained annotators
-      every instance rated by at least two humans
-    type: process
+      Human-written CP / PF meta-prompts
+      task · rubric · raw 0–4 · format
+      GPT-4o-2024-05-13
+      temperature 1 · max retry 3
+    type: document
     size: xl
     position:
       x: 2640
       'y': 250
-  - id: report
+  - id: prefill
     label: |-
-      Human-alignment report
-      Krippendorff analysis
-      compare GPT-4o, DINO, CLIP-I, and CLIP-T
-    type: terminal
+      Stored summary-plan assistant prefill
+      one scoring call per instance
+      not dynamic two-call planning
+    type: process
     size: xl
     position:
       x: 2900
       'y': 250
+  - id: dimensions
+    label: |-
+      Independent rating dimensions
+      CP: reference + generated image
+      PF: text + generated image
+    type: decision
+    size: xl
+    position:
+      x: 3160
+      'y': 250
+  - id: concept
+    label: |-
+      Concept preservation
+      subject: shape · color · texture · face
+      style: color · brushstroke · texture
+      style representation
+    type: document
+    size: xl
+    position:
+      x: 3420
+      'y': 90
+  - id: following
+    label: |-
+      Prompt following
+      relevance · accuracy
+      completeness · context
+      no reference image input
+    type: document
+    size: xl
+    position:
+      x: 3420
+      'y': 410
+  - id: gpt_score
+    label: |-
+      Raw 0–4 score for each dimension
+      report mean(score) / 4 on 0–1 scale
+      full / full2 / full3 runs
+      aggregate mean ± std
+    type: terminal
+    size: xl
+    position:
+      x: 3680
+      'y': 250
+  - id: human
+    label: |-
+      Independent human ratings
+      7 trained annotators · same rubric
+      GPT and human ratings isolated
+      at least 2 human ratings / instance
+    type: process
+    size: xl
+    position:
+      x: 3680
+      'y': 650
+  - id: agreement
+    label: |-
+      Interval Krippendorff alpha
+      H-H by method and CP / PF
+      G-H = mean across human groups
+      Pearson reported separately
+    type: process
+    size: xl
+    position:
+      x: 3940
+      'y': 330
+  - id: report
+    label: |-
+      Metric-alignment report
+      compare GPT-4o, DINO, CLIP-I/T
+      alpha / Pearson are validation analyses
+      not per-image benchmark scores
+    type: terminal
+    size: xl
+    position:
+      x: 4200
+      'y': 330
 edges:
-  - from: sources
-    to: images
+  - from: evidence_boundary
+    to: keywords
     type: primary
-  - from: images
+  - from: keywords
+    to: sources
+    type: primary
+  - from: sources
+    to: sam
+    type: primary
+  - from: sam
+    to: human_qc
+    type: primary
+  - from: human_qc
+    to: balance
+    type: primary
+  - from: balance
     to: prompts
     type: primary
   - from: prompts
-    to: benchmark
+    to: release
     type: primary
-  - from: benchmark
+  - from: release
+    to: release_boundary
+    type: optional
+  - from: release
+    to: methods
+    type: primary
+  - from: methods
     to: generation
     type: primary
   - from: generation
     to: meta
     type: primary
   - from: meta
-    to: think
+    to: prefill
     type: primary
-  - from: think
+  - from: prefill
     to: dimensions
     type: primary
   - from: dimensions
     to: concept
     type: primary
+    label: CP
+    labelPosition: center
   - from: dimensions
     to: following
     type: primary
+    label: PF
+    labelPosition: center
   - from: concept
     to: gpt_score
     type: primary
   - from: following
     to: gpt_score
     type: primary
-  - from: gpt_score
+  - from: generation
     to: human
+    type: optional
+  - from: gpt_score
+    to: agreement
     type: primary
   - from: human
+    to: agreement
+    type: primary
+  - from: agreement
     to: report
     type: primary
 modules: []

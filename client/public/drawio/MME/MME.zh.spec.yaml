@@ -1,129 +1,304 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MME 构建流程
-  description: >-
-    按论文对齐的 MME 流程：十个感知子任务与四个认知子任务使用不带原始标注的公开图像，以及新拍摄或生成的图像； 在 1,187 张图像上人工编写 2,374 组指令-答案，每图一题答案为“是”、一题为“否”，最终计算
-    ACC、ACC+ 及感知/认知总分。
-  legend: 实线先区分感知与认知图像来源，再合流到人工问答和统一评分流程。
+  title: MME 证据对齐的构建与评测流程
+  description: 重建论文中的 14 子任务图像收集和人工成对问题设计，并区分论文指标合同与官方工具的精确解析、失败、分母和聚合行为。
+  legend: 实线表示数据构建与评分路径；判断分支显式标注条件结果；未连接卡片保留证据缺口及论文到公开发布的访问边界。
 nodes:
-  - id: taxonomy
-    label: 14 个子任务
-    type: decision
-    size: large
+  - id: evidence
+    label: |-
+      固定一手证据
+      初始论文 · arXiv 2306.13394v1
+      最新论文 · v5 · 核心套件不变
+      Evaluation 分支 · 04eb8401
+      评分工具 · 1c1d69e1
+    type: document
+    size: xl
     position:
-      x: 40
-      'y': 240
+      x: 80
+      'y': 272
+  - id: taxonomy
+    label: |-
+      定义 14 个子任务
+      感知 · 10 项
+      认知 · 四项
+      均使用成对是非问题
+    type: document
+    size: xl
+    position:
+      x: 352
+      'y': 272
   - id: perception
     label: |-
-      感知 10 项
-      识别 + OCR
+      感知分支 · 10 项
+      粗粒度识别 · 四项
+      细粒度识别 · 五项
+      OCR · 一项
     type: document
-    size: large
+    size: xl
     position:
-      x: 240
+      x: 624
       'y': 80
   - id: cognition
     label: |-
-      认知 4 项
-      推理 / 计算 / 文本 / 代码
+      认知分支 · 四项
+      常识推理
+      数值计算 · 文本翻译
+      代码推理
     type: document
-    size: large
+    size: xl
     position:
-      x: 240
+      x: 624
+      'y': 464
+  - id: coarse
+    label: |-
+      从 COCO 采样图像
+      存在 · 计数 · 颜色 · 位置
+      每项 30 张图像
+      合计 120 张
+    type: database
+    size: xl
+    position:
+      x: 896
+      'y': 16
+  - id: fine
+    label: |-
+      从公开识别集采样
+      海报 147 · 名人 170
+      场景 / 地标 / 艺术品各 200
+      合计 917 张
+    type: database
+    size: xl
+    position:
+      x: 896
+      'y': 144
+  - id: ocr
+    label: |-
+      从公开 OCR 集采样
+      选择相对简单的样本
+      20 张图像
+    type: database
+    size: xl
+    position:
+      x: 896
+      'y': 272
+  - id: commonsense
+    label: |-
+      构建常识推理图像
+      人工拍摄或扩散模型生成
+      70 张图像
+    type: database
+    size: xl
+    position:
+      x: 896
       'y': 400
-  - id: public_images
+  - id: cognition_three
     label: |-
-      COCO + 公开数据集
-      仅使用图像
+      拍摄另外三类认知图像
+      数值 · 翻译 · 代码
+      每项 20 张图像
+      合计 60 张
     type: database
-    size: large
+    size: xl
     position:
-      x: 440
-      'y': 80
-  - id: new_images
+      x: 896
+      'y': 528
+  - id: merge_sources
     label: |-
-      人工拍摄 +
-      扩散模型生成图
-    type: database
-    size: large
-    position:
-      x: 440
-      'y': 400
-  - id: manual_qa
-    label: |-
-      全部问答人工编写
-      不使用来源标注
-    type: user
-    size: large
-    position:
-      x: 640
-      'y': 240
-  - id: dataset
-    label: |-
-      1,187 张图像
-      2,374 组问答
-    type: database
-    size: large
-    position:
-      x: 840
-      'y': 240
-  - id: pair_rule
-    label: |-
-      每图 2 个问题
-      一题“是” + 一题“否”
-    type: document
-    size: large
-    position:
-      x: 1040
-      'y': 240
-  - id: prompt
-    label: |-
-      零样本提示
-      “请回答是或否”
+      合并五路图像来源
+      保留子任务归属
     type: process
-    size: large
+    size: s
     position:
-      x: 1240
-      'y': 240
-  - id: scoring
-    label: 评分输出
-    type: decision
-    size: large
+      x: 1200
+      'y': 304
+  - id: manual_pairs
+    label: |-
+      独立人工编写全部问答对
+      不直接复用或依赖来源数据集标注
+      第一题标准答案 · 是
+      第二题标准答案 · 否
+    type: user
+    size: xl
     position:
       x: 1440
-      'y': 240
-  - id: acc
+      'y': 272
+  - id: prompt_rule
     label: |-
-      ACC
-      按单题统计
-    type: terminal
-    size: large
+      使用简洁零样本指令
+      问题 + “请回答是或否”
+      每张图像恰有两个问题
+      不提供示例
+    type: process
+    size: xl
     position:
-      x: 1640
-      'y': 80
-  - id: acc_plus
+      x: 1712
+      'y': 272
+  - id: dataset
     label: |-
-      ACC+
-      两题同时正确
-    type: terminal
-    size: large
+      汇总 MME
+      1,187 张图像
+      2,374 组指令-答案
+      14 个逐子任务文件
+    type: database
+    size: xl
     position:
-      x: 1640
-      'y': 240
+      x: 1984
+      'y': 272
+  - id: release
+    label: |-
+      访问与发布边界
+      v1 · 邮件申请
+      2024 HF 快照 · 7056f44d
+      2,374 行 · 数量与论文一致
+      数据卡 · Apache-2.0
+    type: document
+    size: xl
+    position:
+      x: 2256
+      'y': 272
+  - id: construction_gaps
+    label: |-
+      未披露的构建细节
+      标注员数量 / 培训 / 一致性
+      图像筛选与拒绝规则
+      去重 / 污染审计
+      逐行来源与权利映射
+    type: document
+    size: xl
+    position:
+      x: 80
+      'y': 640
+  - id: release_schema
+    label: |-
+      公开快照边界
+      question_id · image · question
+      answer · category
+      无逐行来源 / 许可证字段
+      已替代最初的仅邮件申请方式
+    type: document
+    size: xl
+    position:
+      x: 352
+      'y': 640
+  - id: paper_history
+    label: |-
+      论文修订边界
+      v1 评测 10 个模型
+      v5 评测 30 个模型
+      构建与指标未变化
+      当前会议信息为论文后更新
+    type: document
+    size: xl
+    position:
+      x: 624
+      'y': 640
+  - id: format_results
+    label: |-
+      准备官方评分工具文件
+      每个子任务一个文件
+      每张图像连续两行
+      将响应追加为第四个制表字段
+      响应必须保持单行
+    type: process
+    size: xl
+    position:
+      x: 2256
+      'y': 864
+  - id: input_gate
+    label: 四字段且每块恰有两行？
+    type: decision
+    size: xl
+    position:
+      x: 1712
+      'y': 864
+  - id: abort
+    label: |-
+      中止整个评分器
+      字段拆包 / 断言失败
+      不逐行跳过或补值
+    type: terminal
+    size: xl
+    position:
+      x: 1440
+      'y': 736
+  - id: parse
+    label: |-
+      解析小写化后的响应
+      精确 yes / no 直接接受
+      否则只检查前四个字符
+      先查 yes 再查 no · 否则 other
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 864
+  - id: parse_gate
+    label: 解析结果为 yes 或 no？
+    type: decision
+    size: xl
+    position:
+      x: 1168
+      'y': 864
+  - id: recognized
+    label: |-
+      与标准答案比较
+      标签正确则单题正确数加一
+      两题都正确则 ACC+ 计数加一
+    type: process
+    size: xl
+    position:
+      x: 896
+      'y': 736
+  - id: other
+    label: |-
+      将 other 视为错误
+      保留在 ACC 与 ACC+ 分母
+      从精确率 / 召回率 / 混淆计数中排除
+    type: process
+    size: xl
+    position:
+      x: 896
+      'y': 992
+  - id: pair_metrics
+    label: |-
+      计算两个核心指标
+      ACC · 正确问题 / 全部问题
+      ACC+ · 两题均对 / 全部图像
+      随机基线 · 50% 与 25%
+    type: process
+    size: xl
+    position:
+      x: 624
+      'y': 864
+  - id: task_score
+    label: |-
+      计算逐子任务得分
+      100 × (ACC + ACC+)
+      满分 · 200
+    type: process
+    size: xl
+    position:
+      x: 352
+      'y': 864
   - id: totals
     label: |-
-      子任务分 = ACC + ACC+
-      感知 2000 / 认知 800
+      分别报告两类总分
+      感知 · 10 项求和 · 满分 2,000
+      认知 · 四项求和 · 满分 800
+      分母取决于实际提供的行 / 两行块
     type: terminal
-    size: large
+    size: xl
     position:
-      x: 1640
-      'y': 400
+      x: 80
+      'y': 864
 edges:
+  - from: evidence
+    to: taxonomy
+    type: primary
   - from: taxonomy
     to: perception
     type: primary
@@ -131,36 +306,111 @@ edges:
     to: cognition
     type: primary
   - from: perception
-    to: public_images
+    to: coarse
+    type: primary
+  - from: perception
+    to: fine
+    type: primary
+  - from: perception
+    to: ocr
     type: primary
   - from: cognition
-    to: new_images
+    to: commonsense
     type: primary
-  - from: public_images
-    to: manual_qa
+  - from: cognition
+    to: cognition_three
     type: primary
-  - from: new_images
-    to: manual_qa
+  - from: coarse
+    to: merge_sources
     type: primary
-  - from: manual_qa
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.1
+  - from: fine
+    to: merge_sources
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.3
+  - from: ocr
+    to: merge_sources
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+  - from: commonsense
+    to: merge_sources
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.7
+  - from: cognition_three
+    to: merge_sources
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.9
+  - from: merge_sources
+    to: manual_pairs
+    type: primary
+  - from: manual_pairs
+    to: prompt_rule
+    type: primary
+  - from: prompt_rule
     to: dataset
     type: primary
   - from: dataset
-    to: pair_rule
+    to: release
     type: primary
-  - from: pair_rule
-    to: prompt
+  - from: release
+    to: format_results
     type: primary
-  - from: prompt
-    to: scoring
+  - from: format_results
+    to: input_gate
     type: primary
-  - from: scoring
-    to: acc
+  - from: input_gate
+    to: abort
     type: primary
-  - from: scoring
-    to: acc_plus
+    label: 否
+    labelPosition: end
+  - from: input_gate
+    to: parse
     type: primary
-  - from: scoring
+    label: 是
+    labelPosition: end
+  - from: parse
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: recognized
+    type: primary
+    label: 是
+    labelPosition: end
+  - from: parse_gate
+    to: other
+    type: primary
+    label: 否
+    labelPosition: end
+  - from: recognized
+    to: pair_metrics
+    type: primary
+  - from: other
+    to: pair_metrics
+    type: primary
+  - from: pair_metrics
+    to: task_score
+    type: primary
+  - from: task_score
     to: totals
     type: primary
 modules: []

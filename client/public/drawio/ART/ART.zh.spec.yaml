@@ -5,13 +5,14 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: ART 构建与评测流程
-  description: 按论文呈现从真实 EHR 格式数据中挖掘高风险临床场景、生成平衡的行动式推理任务基准、审核临床忠实度， 并在实时 FHIR 环境中评测医疗 Agent 的完整流程。
-  legend: 此处 ART 指行动式推理任务，而非自动化红队。论文评测共 600 题：检索、时间聚合、阈值或条件推理各 200 题，患者数据保持真实且不被改写。
+  description: 按论文呈现从 EHR 挖掘高风险失败场景、围绕不变患者数据合成措辞、验证临床忠实度，再执行无状态 FHIR 评测的四阶段流程。
+  legend: 600 题包含检索、聚合、阈值/条件任务各 200 题。结果对按 GPT-4o-mini / Claude 3.5 Sonnet 顺序报告；精确匹配不验证推理路径。
 nodes:
   - id: failures
     label: |-
-      分析 Agent 失败
-      检索 • 聚合 • 条件
+      分析 MedAgentBench 失败
+      检索 • 聚合
+      阈值 / 条件逻辑
     type: process
     size: xl
     position:
@@ -19,9 +20,9 @@ nodes:
       'y': 260
   - id: ehr
     label: |-
-      挖掘真实 EHR
-      5 万记录 • 695 患者
-      保留数值与时间
+      挖掘单机构 EHR
+      FHIR R5 格式记录
+      50,000 条记录 • 695 位患者
     type: database
     size: xl
     position:
@@ -37,17 +38,18 @@ nodes:
   - id: retrieval
     label: |-
       检索场景
-      11 种化验代码
+      ≤3 次读数 • 2 小时内聚集
       23–25 小时边界
+      覆盖 11 种化验代码
     type: process
     size: xl
     position:
       x: 880
-      'y': 40
+      'y': 20
   - id: aggregation
     label: |-
-      24 小时聚合
-      至少 3 次测量
+      24 小时聚合场景
+      有效窗口内至少 3 次读数
       血糖 • 血钾 • 血钠
     type: process
     size: xl
@@ -57,37 +59,29 @@ nodes:
   - id: conditional
     label: |-
       条件场景
-      7 档数值
-      人口学规则
+      7 档数值 • HGB / HCT / CR
+      年龄与性别相关阈值
+      检索 → 判断 → 干预
     type: process
     size: xl
     position:
       x: 880
-      'y': 480
+      'y': 500
   - id: generate
     label: |-
-      生成任务
-      真实数值
-      仅合成措辞
+      LLM 仅合成措辞
+      患者数值与时间保持不变
+      每种失败模式生成 200 题
     type: process
     size: xl
     position:
       x: 1160
       'y': 260
-  - id: dataset
-    label: |-
-      平衡 ART 集
-      每类 200 • 共 600
-    type: database
-    size: xl
-    position:
-      x: 2000
-      'y': 260
   - id: automatic_audit
     label: |-
-      源 EHR 验证
-      纳入前验证
-      数值 • 时间 • 规则
+      对照源 EHR 验证
+      核对数值 • 窗口 • 阈值
+      验证后才纳入
     type: process
     size: xl
     position:
@@ -96,49 +90,75 @@ nodes:
   - id: clinical_audit
     label: |-
       临床 HITL 审核
-      代表性子集
+      审核代表性子集
+      事实 • 逻辑 • 临床语境
     type: user
     size: xl
     position:
       x: 1720
       'y': 260
+  - id: dataset
+    label: |-
+      平衡 ART 评测集
+      检索 200 • 聚合 200
+      条件 200 • 共 600 题
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 260
   - id: environment
     label: |-
-      实时 FHIR R5
-      无状态 • 温度 0
+      实时 FHIR 兼容 EHR 运行
+      使用 MedAgentBench 框架
+      无状态 • 温度 0 • 无历史
     type: process
     size: xl
     position:
       x: 2000
-      'y': 680
+      'y': 760
   - id: agents
     label: |-
-      评测两个 Agent
-      GPT-4o-mini • Claude 3.5
+      评测两个医疗 Agent
+      GPT-4o-mini
+      Claude 3.5 Sonnet
     type: process
     size: xl
     position:
       x: 1720
-      'y': 680
+      'y': 760
   - id: score
     label: |-
       精确匹配成功率
       对照 EHR 标准答案
+      按失败模式分别报告
     type: process
     size: xl
     position:
       x: 1440
-      'y': 680
+      'y': 760
   - id: report
     label: |-
-      报告模式差距
-      检索 100/100 • 聚合 28/64
-      条件 32/38
+      论文报告成功率
+      GPT-4o-mini / Claude 3.5
+      检索 100 / 100
+      聚合 28 / 64
+      条件 32 / 38
     type: terminal
     size: xl
     position:
       x: 1160
-      'y': 680
+      'y': 650
+  - id: limitation
+    label: |-
+      指标限制
+      精确匹配不验证
+      推理路径是否正确
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 870
 edges:
   - from: failures
     to: ehr
@@ -185,4 +205,7 @@ edges:
   - from: score
     to: report
     type: primary
+  - from: score
+    to: limitation
+    type: secondary
 modules: []

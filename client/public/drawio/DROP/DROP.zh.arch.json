@@ -1,74 +1,92 @@
 {
   "version": 1,
-  "title": "DROP 构建流程",
+  "title": "DROP 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "论文 arXiv:1903.00161v2\n发布包 SHA256 39d2278…\nAllenNLP v0.9.0 @ 052353e\n论文描述 ≠ 发布评分器",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "passages",
-      "label": "Wikipedia 段落搜索\n叙事 + 数字密集文本\nNFL / 历史 / 至少 20 个数字\n约 7,000 个段落",
+      "label": "Wikipedia 段落检索\n叙事与数字密集文本\nNFL / 历史 / 至少 20 个数字\n约 7,000 个候选段落",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "hit",
-      "label": "AMT 任务\n随机给出 5 个段落\n至少编写 12 组问答",
+      "label": "AMT 任务 · 随机 5 个段落\n至少编写 12 组问答\n加减 · 最大最小\n计数 · 选择 · 比较",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "reasoning",
-      "label": "离散推理提示\n加减 / 最大最小 / 计数\n选择 / 比较",
-      "type": "document",
-      "size": "xl"
-    },
-    {
       "id": "adversarial",
-      "label": "实时 BiDAF 门\n仅模型答错时可提交",
+      "label": "实时 BiDAF 门槛\n仅基线答错时\n才能提交问题",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "answer_types",
-      "label": "标注员提供答案\n段落 / 问题文本片段\n日期或带明确单位的数字",
+      "label": "标注员提供答案\n段落 / 问题文本片段\n日期或数字\n数字题必须写明单位",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "dataset",
-      "label": "DROP：96,567 道题\n7,735 个段落\n英文",
-      "type": "database",
-      "size": "large"
-    },
-    {
       "id": "split",
-      "label": "按段落划分\n训练 77,409 / 开发 9,536\n测试 9,622",
+      "label": "将已收集问答按段落划分\n80/10/10\n问题数\n77,409 / 9,536 / 9,622\n段落数 · 5,565 / 582 / 588",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "validate",
-      "label": "开发 / 测试验证\n至少 2 个附加答案\n移除 0.7% 无效题\nCohen's κ = 0.74",
+      "label": "开发 / 测试集复标\n至少 2 个附加答案\n移除 0.7% 无效题\nκ = 0.74 · 数字 0.81\n片段 0.62 · 日期 0.65",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "dataset",
+      "label": "DROP 最终发布集\n96,567 道英文问题\n共 6,735 个段落",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "predict",
-      "label": "阅读理解 + 离散推理\n预测片段、日期或数字",
+      "label": "阅读器生成预测\n片段、日期或数字\n与全部标准答案比较",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "score",
-      "label": "归一化精确匹配\n数值敏感宏平均 F1\n对齐多片段；多答案取最大",
+      "id": "metric_boundary",
+      "label": "评分版本边界\n2019 论文描述\n与发布评分器",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "paper_metric",
+      "label": "论文 v2 描述\n归一化 EM + 宏平均 F1\n多片段贪心一对一对齐\n数字不匹配 → F1 为 0\n多个标准答案取最大",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_metric",
+      "label": "AllenNLP v0.9.0 评分器\n匈牙利最优匹配\n数字匹配门槛\n对齐片段 F1 取均值\n多个标准答案取最大",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "DROP 评测报告\n精确匹配 · 宏平均 F1\n必须注明评分器版本",
       "type": "terminal",
       "size": "xl"
     }
@@ -76,19 +94,19 @@
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "passages",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
       "from": "passages",
       "to": "hit",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "hit",
-      "to": "reasoning",
-      "type": "primary"
-    },
-    {
       "id": "edge-3",
-      "from": "reasoning",
+      "from": "hit",
       "to": "adversarial",
       "type": "primary"
     },
@@ -101,31 +119,55 @@
     {
       "id": "edge-5",
       "from": "answer_types",
-      "to": "dataset",
-      "type": "primary"
-    },
-    {
-      "id": "edge-6",
-      "from": "dataset",
       "to": "split",
       "type": "primary"
     },
     {
-      "id": "edge-7",
+      "id": "edge-6",
       "from": "split",
       "to": "validate",
       "type": "primary"
     },
     {
-      "id": "edge-8",
+      "id": "edge-7",
       "from": "validate",
+      "to": "dataset",
+      "type": "primary"
+    },
+    {
+      "id": "edge-8",
+      "from": "dataset",
       "to": "predict",
       "type": "primary"
     },
     {
       "id": "edge-9",
       "from": "predict",
-      "to": "score",
+      "to": "metric_boundary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "metric_boundary",
+      "to": "paper_metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "metric_boundary",
+      "to": "release_metric",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "paper_metric",
+      "to": "report",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "release_metric",
+      "to": "report",
       "type": "primary"
     }
   ],

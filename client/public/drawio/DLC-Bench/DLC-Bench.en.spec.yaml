@@ -4,150 +4,198 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: DLC-Bench Build Process
+  title: DLC-Bench Build and Evaluation Process
   description: >-
-    Paper-aligned region selection, multi-VLM property generation, positive/negative question curation, and
-    reference-free localized-caption scoring.
-  legend: >-
-    Solid arrows trace benchmark construction from Objects365 regions and separate detail-recall and
-    hallucination-control questions.
+    Paper-version benchmark curation and the recognition-gated, reference-free scoring protocol, kept separate from the
+    DLC-SDP training-data pipeline.
+  legend: Solid arrows trace the benchmark pipeline; the evidence card pins the paper, code, and released data revisions.
 nodes:
+  - id: evidence
+    label: |-
+      DLC-Bench · arXiv:2504.16072v1
+      code @ 153ad3d · data @ 2336d95
+      DLC-SDP is a training-data pipeline
+      not the benchmark
+      construction process
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 20
   - id: source
     label: |-
-      Objects365 v2 validation subset
-      object instances with human segmentation masks
+      Objects365 v2 Validation Source
+      challenging object regions
+      human-annotated segmentation masks
+      one target region
+      per benchmark instance
     type: database
     size: xl
     position:
       x: 40
-      'y': 210
-  - id: select
+      'y': 360
+  - id: allocation
     label: |-
-      Select 100 challenging masked regions
-      one object of interest per instance
+      Allocate 100 Regions to Three VLMs
+      GPT-4o: 34
+      Gemini 1.5 Pro: 35
+      Claude 3.5 Sonnet: 31
     type: process
     size: xl
     position:
-      x: 300
-      'y': 210
-  - id: vlms
-    label: |-
-      Multi-VLM property proposals
-      GPT-4o 34 · Gemini-1.5-Pro 35
-      Claude-3.5-Sonnet 31 regions
-    type: process
-    size: xl
-    position:
-      x: 560
-      'y': 210
-  - id: route
+      x: 320
+      'y': 360
+  - id: question_route
     label: Two question families
     type: decision
     size: xl
     position:
-      x: 820
-      'y': 210
+      x: 600
+      'y': 360
   - id: positive
     label: |-
-      Positive questions
-      object / part properties
-      color · shape · texture · material · size
+      Positive Detail Questions
+      object / part: color · shape
+      texture · material · size
+      manually add missing · revise inaccurate
+      remove hallucinated / ambiguous
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 70
+      x: 880
+      'y': 140
   - id: negative
     label: |-
-      Negative questions
-      typical but absent attributes
-      or details outside the target region
+      Negative Hallucination Questions
+      mislocalization: outside-mask objects
+      hallucination: typical parts
+      absent / not visible / occluded
+      avoid unsupported details
     type: document
     size: xl
     position:
-      x: 1080
-      'y': 350
-  - id: qa
+      x: 880
+      'y': 580
+  - id: curate
     label: |-
-      Manual inspection and integrity checks
-      remove ambiguous / unclear answers
-      deduplicate against DLC training images
+      Manual QA Curation
+      inspect every question
+      remove ambiguous / unclear cases
+      make choices mutually exclusive
+      deduplicate benchmark images
+      against training images
     type: process
     size: xl
     position:
-      x: 1340
-      'y': 210
-  - id: benchmark
+      x: 1160
+      'y': 360
+  - id: artifact
     label: |-
-      DLC-Bench
-      100 masked instances · 892 verified questions
-      no reference captions required
+      Pinned DLC-Bench Artifact @ 2336d95
+      100 region instances
+      over 77 source images
+      892 questions total
+      392 positive + 500 negative
     type: database
     size: xl
     position:
-      x: 1600
-      'y': 210
+      x: 1440
+      'y': 360
   - id: caption
     label: |-
-      Candidate localized captioner
-      image + specified mask → detailed region description
+      Candidate Localized Caption
+      image + target mask
+      produce a detailed region description
+      no reference caption required
     type: process
     size: xl
     position:
-      x: 1860
-      'y': 210
+      x: 1720
+      'y': 360
   - id: judge
     label: |-
-      Llama-3.1-8B text-only judge
-      choose a mutually exclusive answer per question
+      Meta-Llama-3.1-8B-Instruct
+      official text-only judge
+      temperature 0 · max 300 tokens
+      select one choice per question
     type: process
     size: xl
     position:
-      x: 2120
-      'y': 210
+      x: 2000
+      'y': 360
+  - id: recognition
+    label: |-
+      Recognition Gate
+      recognition question is prepended
+      if recognition is wrong
+      all question scores are capped at ≤ 0
+    type: process
+    size: xl
+    position:
+      x: 2280
+      'y': 360
   - id: score
     label: |-
-      Reference-free DLC report
-      Pos: +1 / +0.5 / 0 / −1
-      Neg: reward omission; penalize hallucination
-      report Pos · Neg · average
+      Per-question Score
+      positive: 1 / 0.5 / 0 / -1
+      negative: omit unsupported
+      detail = 1
+      hallucination = -1
+      intermediate cases = 0
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 360
+  - id: report
+    label: |-
+      DLC-Bench Report
+      mean per instance
+      positive mean · negative mean
+      final = average of positive and negative
     type: terminal
     size: xl
     position:
-      x: 2380
-      'y': 210
+      x: 2840
+      'y': 360
 edges:
+  - from: evidence
+    to: source
+    type: data
   - from: source
-    to: select
+    to: allocation
     type: primary
-  - from: select
-    to: vlms
+  - from: allocation
+    to: question_route
     type: primary
-  - from: vlms
-    to: route
-    type: primary
-  - from: route
+  - from: question_route
     to: positive
     type: primary
-  - from: route
+  - from: question_route
     to: negative
     type: primary
   - from: positive
-    to: qa
+    to: curate
     type: primary
   - from: negative
-    to: qa
+    to: curate
     type: primary
-  - from: qa
-    to: benchmark
+  - from: curate
+    to: artifact
     type: primary
-  - from: benchmark
+  - from: artifact
     to: caption
     type: primary
   - from: caption
     to: judge
     type: primary
   - from: judge
+    to: recognition
+    type: primary
+  - from: recognition
     to: score
+    type: primary
+  - from: score
+    to: report
     type: primary
 modules: []

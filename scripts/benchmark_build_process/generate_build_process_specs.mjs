@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
+import { parseDocument } from 'yaml';
 
 import { writeFileBatchAtomically } from './atomic_file_batch.mjs';
 
@@ -90,6 +99,15 @@ function resolveContained(base, ...segments) {
   return target;
 }
 
+function isContainedPath(base, target) {
+  const relativePath = relative(base, target);
+  return !(
+    relativePath === '..'
+    || relativePath.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)
+    || isAbsolute(relativePath)
+  );
+}
+
 function parseArgs(argv) {
   const args = {
     root: process.cwd(),
@@ -113,19 +131,162 @@ function parseArgs(argv) {
   return args;
 }
 
+function normalizeReviewSentence(value) {
+  return String(value)
+    .trim()
+    .replace(/\s+/gu, ' ')
+    .replace(/\.{2,}/gu, '.')
+    .replace(/\.;/gu, ';')
+    .replace(/[.;:\s]+$/gu, '');
+}
+
+function isValidIsoDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
+    return false;
+  }
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+}
+
+function validatePaperAlignmentReview(entry) {
+  const review = entry.paper_alignment_review;
+  if (review?.status !== 'passed') {
+    throw new Error(
+      `${entry.id}: sync requires paper_alignment_review.status "passed"`,
+    );
+  }
+  if (!isValidIsoDate(review.reviewed_at)) {
+    throw new Error(
+      `${entry.id}: paper_alignment_review.reviewed_at must be a valid YYYY-MM-DD date`,
+    );
+  }
+  for (const field of ['source_url', 'source_locator']) {
+    if (typeof review[field] !== 'string' || !review[field].trim()) {
+      throw new Error(
+        `${entry.id}: paper_alignment_review.${field} must be non-empty`,
+      );
+    }
+    if (review[field] !== entry[field]) {
+      throw new Error(
+        `${entry.id}: paper_alignment_review.${field} must exactly match ${field}`,
+      );
+    }
+  }
+}
+
+function reviewNote(entry) {
+  validatePaperAlignmentReview(entry);
+  const reviewedAt = entry.paper_alignment_review.reviewed_at;
+  return `Paper-alignment review passed on ${reviewedAt}. ${normalizeReviewSentence(entry.source_locator)}.`;
+}
+
 function syncRecord(record, entry) {
   return {
     ...record,
     ...entry.assets,
-    drawio_review_note: `Aligned with ${entry.source_locator}. ${entry.evidence_summary_en}`,
+    drawio_review_note: reviewNote(entry),
   };
+}
+
+const xmlParser = new XMLParser({
+  allowBooleanAttributes: false,
+  ignoreAttributes: false,
+  preserveOrder: true,
+  processEntities: false,
+});
+
+function parseXmlRoot(content) {
+  if (XMLValidator.validate(content, { allowBooleanAttributes: false }) !== true) {
+    return null;
+  }
+  try {
+    const parsed = xmlParser.parse(content);
+    const roots = parsed.flatMap((node) => Object.keys(node).filter(
+      (key) => key !== ':@' && !key.startsWith('?') && !key.startsWith('#'),
+    ));
+    return roots.length === 1 ? roots[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+function isObjectRecord(value) {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function isValidSpecYaml(content) {
+  try {
+    const document = parseDocument(content, {
+      prettyErrors: false,
+      schema: 'core',
+      strict: true,
+      uniqueKeys: true,
+    });
+    if (document.errors.length > 0) return false;
+    const spec = document.toJS({ maxAliasCount: 50 });
+    return Boolean(
+      isObjectRecord(spec)
+      && isObjectRecord(spec.meta)
+      && typeof spec.meta.title === 'string'
+      && spec.meta.title.trim()
+      && Array.isArray(spec.nodes)
+      && spec.nodes.every(isObjectRecord)
+      && Array.isArray(spec.edges)
+      && spec.edges.every(isObjectRecord)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validateCheckedInAsset(entry, field, absoluteAssetPath) {
+  const stats = lstatSync(absoluteAssetPath);
+  if (!stats.isFile()) {
+    throw new Error(`${entry.id}: checked-in asset ${field} must be a regular file`);
+  }
+  if (stats.size === 0) {
+    throw new Error(`${entry.id}: checked-in asset ${field} is empty`);
+  }
+
+  const content = readFileSync(absoluteAssetPath, 'utf8');
+  if (field.startsWith('drawio_flowchart_')) {
+    if (parseXmlRoot(content) !== 'svg') {
+      throw new Error(`${entry.id}: checked-in asset ${field} is not valid SVG`);
+    }
+  } else if (field.startsWith('drawio_source_')) {
+    if (parseXmlRoot(content) !== 'mxfile') {
+      throw new Error(
+        `${entry.id}: checked-in asset ${field} is not valid Draw.io XML`,
+      );
+    }
+  } else if (field.startsWith('drawio_spec_')) {
+    if (!isValidSpecYaml(content)) {
+      throw new Error(`${entry.id}: checked-in asset ${field} is not valid spec YAML`);
+    }
+  } else if (field.startsWith('drawio_arch_')) {
+    let architecture;
+    try {
+      architecture = JSON.parse(content);
+    } catch {
+      throw new Error(
+        `${entry.id}: checked-in asset ${field} is not valid architecture JSON`,
+      );
+    }
+    if (!Array.isArray(architecture.nodes) || !Array.isArray(architecture.edges)) {
+      throw new Error(
+        `${entry.id}: checked-in asset ${field} is not valid architecture JSON`,
+      );
+    }
+  }
 }
 
 function prepareBenchmarkDataSync(publicDir, selectedEntries) {
   const listPath = join(publicDir, 'benchmarks.json');
   const list = JSON.parse(readFileSync(listPath, 'utf8'));
   const selectedById = new Map(selectedEntries.map((entry) => [entry.id, entry]));
+  let checkedInRealPaths;
   for (const entry of selectedEntries) {
+    validatePaperAlignmentReview(entry);
     for (const field of REQUIRED_ASSET_FIELDS) {
       const assetPath = entry.assets?.[field];
       if (typeof assetPath !== 'string' || !assetPath.trim()) {
@@ -134,7 +295,45 @@ function prepareBenchmarkDataSync(publicDir, selectedEntries) {
       if (isAbsolute(assetPath)) {
         throw new Error(`${entry.id}: asset ${field} must be a relative public path`);
       }
-      resolveContained(publicDir, assetPath);
+      const absoluteAssetPath = resolveContained(publicDir, assetPath);
+      if (entry.spec_authority === 'checked_in') {
+        if (!existsSync(absoluteAssetPath)) {
+          throw new Error(`${entry.id}: checked-in asset ${field} does not exist: ${assetPath}`);
+        }
+        if (!checkedInRealPaths) {
+          const publicRoot = realpathSync(publicDir);
+          const drawioRoot = realpathSync(resolveContained(publicDir, 'drawio'));
+          if (!isContainedPath(publicRoot, drawioRoot)) {
+            throw new Error(
+              `${entry.id}: checked-in drawio directory real path escapes public directory`,
+            );
+          }
+          checkedInRealPaths = { publicRoot, drawioRoot };
+        }
+        const assetParentRealPath = realpathSync(dirname(absoluteAssetPath));
+        if (!isContainedPath(checkedInRealPaths.drawioRoot, assetParentRealPath)) {
+          throw new Error(
+            `${entry.id}: checked-in asset ${field} parent real path escapes drawio directory`,
+          );
+        }
+        if (!isContainedPath(checkedInRealPaths.publicRoot, assetParentRealPath)) {
+          throw new Error(
+            `${entry.id}: checked-in asset ${field} parent real path escapes public directory`,
+          );
+        }
+        const assetRealPath = realpathSync(absoluteAssetPath);
+        if (!isContainedPath(checkedInRealPaths.drawioRoot, assetRealPath)) {
+          throw new Error(
+            `${entry.id}: checked-in asset ${field} real path escapes drawio directory`,
+          );
+        }
+        if (!isContainedPath(checkedInRealPaths.publicRoot, assetRealPath)) {
+          throw new Error(
+            `${entry.id}: checked-in asset ${field} real path escapes public directory`,
+          );
+        }
+        validateCheckedInAsset(entry, field, absoluteAssetPath);
+      }
     }
   }
   const foundListIds = new Set();
@@ -509,12 +708,25 @@ function main() {
     selectedEntries.push(entry);
   }
 
-  const renderedEntries = selectedEntries.map((entry) => ({
-    entry,
-    specs: new Map(
-      ['en', 'zh'].map((language) => [language, renderSpec(entry, language)]),
-    ),
-  }));
+  for (const entry of selectedEntries) {
+    if (
+      entry.spec_authority === 'checked_in'
+      && (!args.syncDataOnly || args.syncData)
+    ) {
+      throw new Error(
+        `${entry.id}: spec_authority "checked_in" cannot be regenerated; use --sync-data-only`,
+      );
+    }
+  }
+
+  const renderedEntries = selectedEntries
+    .filter((entry) => entry.spec_authority !== 'checked_in')
+    .map((entry) => ({
+      entry,
+      specs: new Map(
+        ['en', 'zh'].map((language) => [language, renderSpec(entry, language)]),
+      ),
+    }));
   const syncPlan = args.syncData || args.syncDataOnly
     ? prepareBenchmarkDataSync(publicDir, selectedEntries)
     : null;

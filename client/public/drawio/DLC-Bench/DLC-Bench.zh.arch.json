@@ -1,80 +1,92 @@
 {
   "version": 1,
-  "title": "DLC-Bench 构建流程",
+  "title": "DLC-Bench 构建与评测流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 11,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "DLC-Bench · arXiv:2504.16072v1\n代码 @ 153ad3d · 数据 @ 2336d95\nDLC-SDP 训练数据流水线\n不属于本基准构建流程",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "source",
-      "label": "Objects365 v2 验证集子集\n带人工分割掩码的对象实例",
+      "label": "Objects365 v2 验证子集\n选择高难对象区域\n人工标注分割掩码\n每个基准实例对应一个目标区域",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "select",
-      "label": "选择 100 个高难掩码区域\n每个实例含一个目标对象",
+      "id": "allocation",
+      "label": "将 100 个区域分配给三个 VLM\nGPT-4o：34\nGemini 1.5 Pro：35\nClaude 3.5 Sonnet：31",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "vlms",
-      "label": "多视觉语言模型提出属性\nGPT-4o 34 · Gemini-1.5-Pro 35\nClaude-3.5-Sonnet 31 个区域",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "route",
+      "id": "question_route",
       "label": "两类问题",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "positive",
-      "label": "正向问题\n对象 / 部件属性\n颜色 · 形状 · 纹理 · 材质 · 尺寸",
+      "label": "正向细节问题\n对象 / 部件：颜色 · 形状\n纹理 · 材料 · 大小\n人工补充缺项 · 修正错误\n移除幻觉 / 歧义",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "negative",
-      "label": "负向问题\n常见但实际不存在的属性\n或目标区域之外的细节",
+      "label": "负向幻觉问题\n错位：掩码外对象\n幻觉：常见部件\n缺失 / 不可见 / 遮挡\n检查是否避开无依据细节",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "人工检查与完整性验证\n删除答案含糊或不清的问题\n与局部描述训练图像去重",
+      "id": "curate",
+      "label": "人工问答整理\n逐题检查\n删除歧义 / 不清晰案例\n保证选项互斥\n基准图像与训练图像去重",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "benchmark",
-      "label": "DLC-Bench\n100 个掩码实例 · 892 个验证问题\n无需参考描述",
+      "id": "artifact",
+      "label": "固定 DLC-Bench 产物 @ 2336d95\n100 个区域实例\n来自 77 张源图像\n共 892 道问题\n392 道正向 + 500 道负向",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "caption",
-      "label": "候选局部描述模型\n图像 + 指定掩码 → 详细区域描述",
+      "label": "候选局部描述\n图像 + 目标掩码\n生成详细区域描述\n无需参考描述",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "Llama-3.1-8B 纯文本裁判\n为每题选择一个互斥答案",
+      "label": "Meta-Llama-3.1-8B-Instruct\n官方纯文本裁判\n温度 0 · 最多 300 token\n每题选择一个选项",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recognition",
+      "label": "识别门控\n识别题前置\n若对象识别错误\n所有问题得分上限 ≤ 0",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "无参考局部描述报告\n正向：+1 / +0.5 / 0 / −1\n负向：遗漏得分，幻觉扣分\n报告正向 · 负向 · 平均分",
+      "label": "逐题计分\n正向：1 / 0.5 / 0 / -1\n负向：省略无依据细节 = 1\n幻觉 = -1；中间情形 = 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "DLC-Bench 报告\n逐实例平均\n正向平均 · 负向平均\n最终为正向与负向两者平均",
       "type": "terminal",
       "size": "xl"
     }
@@ -82,55 +94,55 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "select",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "select",
-      "to": "vlms",
+      "from": "source",
+      "to": "allocation",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "vlms",
-      "to": "route",
+      "from": "allocation",
+      "to": "question_route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "route",
+      "from": "question_route",
       "to": "positive",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "route",
+      "from": "question_route",
       "to": "negative",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "positive",
-      "to": "qa",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-7",
       "from": "negative",
-      "to": "qa",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "qa",
-      "to": "benchmark",
+      "from": "curate",
+      "to": "artifact",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "benchmark",
+      "from": "artifact",
       "to": "caption",
       "type": "primary"
     },
@@ -143,7 +155,19 @@
     {
       "id": "edge-11",
       "from": "judge",
+      "to": "recognition",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "recognition",
       "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],

@@ -4,169 +4,293 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MMVU 构建流程
-  description: 按论文以专家流程构建覆盖 27 个学科主题的 3,000 道知识密集型视频问题，并执行教材引导标注、专家质检与 GPT-4o 准确率判定。
-  legend: 每个保留样本都必须依赖视频理解，不能仅凭问题文本或单帧作答。
+  title: MMVU 论文 v1 构建、发布与准确率评测
+  description: 以 arXiv:2501.12380v1 为依据呈现专家构建流程，并显式区分论文内部冲突、公开验证集与隐藏测试集、 固定仓库行为、结构化判分失败及数据集许可证未声明边界。
+  legend: 实线表示构建和计分主流程，虚线数据箭头表示发布或溯源边界。仅 1,000 项验证集公开； 2,000 项测试标注仍由作者持有。
 nodes:
   - id: study
     label: |-
-      开展学科选择用户研究
-      招募 133 名大学及研究生
-      每人编写两个示例
-      收集构建体验反馈
+      学科选择用户研究
+      133 名本科生及研究生
+      每人编写两个专家视频问答样例
+      作者选定 27 个主题与四大学科
     type: user
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: subjects
-    label: |-
-      选择学科覆盖范围
-      作者人工分析示例
-      保留 27 个学科主题
-      覆盖四大核心学科
-    type: process
-    size: xl
-    position:
-      x: 260
+      x: 40
       'y': 40
   - id: experts
     label: |-
       招募并培训专家
-      共 67 名专家标注员
+      正文 §3.1：共 67 人
+      附录 A.1：列出 73 个 ID
       每主题至少两名专家
-      完成正式协议培训
     type: user
     size: xl
     position:
-      x: 500
+      x: 560
       'y': 40
   - id: concepts
     label: |-
-      审阅权威教材
-      逐章检查教材内容
-      寻找需动态呈现的概念
-      同时保证知识广度与深度
+      教材引导的概念定位
+      由专家选择权威教材
+      逐章审阅
+      选择需动态呈现的概念
     type: document
     size: xl
     position:
-      x: 740
+      x: 820
       'y': 40
   - id: videos
     label: |-
-      搜集概念相关视频
-      检索 YouTube CC 内容
-      用 Data API 核验许可
-      标注相关起止时间
+      检索概念相关 YouTube 视频
+      用 Data API v3 核验 CC 许可
+      无音轨 • 屏幕文字尽量少
+      排除讲座
     type: database
     size: xl
     position:
-      x: 980
+      x: 1080
       'y': 40
-  - id: visual_gate
+  - id: video_gate
+    label: 是合格的视觉密集型 CC 视频？
+    type: decision
+    size: xl
+    position:
+      x: 1600
+      'y': 40
+  - id: resample_video
     label: |-
-      强制依赖视觉理解
-      移除音轨以阻断捷径
-      要求屏幕文字尽量少
-      排除讲座等文本捷径
+      拒绝视频候选
+      继续检索概念相关视频
     type: process
     size: xl
     position:
-      x: 1220
-      'y': 40
+      x: 1600
+      'y': 300
   - id: questions
     label: |-
       每视频编写两至三题
-      混合选择题与开放题
-      要求应用领域知识
-      记录题目起止时间
+      运用领域知识理解视频
+      记录题目起止时间戳
     type: document
     size: xl
     position:
-      x: 1460
+      x: 1860
+      'y': 40
+  - id: question_type
+    label: 题目类型？
+    type: decision
+    size: xl
+    position:
+      x: 2120
       'y': 40
   - id: mcq
     label: |-
-      构造选择题选项
-      编写四个可信干扰项
+      选择题
+      四个可信干扰项
       每题共五个选项
-      随机打乱选项顺序
+      界面随机打乱选项
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: rationale
+      x: 2380
+      'y': 0
+  - id: open
     label: |-
-      标注专家解答
-      列出所需领域知识
-      将概念链接至维基页面
-      编写逐步推理依据
+      开放式问答
+      专家级短答案
+      依据视频与领域知识
+    type: process
+    size: xl
+    position:
+      x: 2380
+      'y': 220
+  - id: solutions
+    label: |-
+      专家解答元数据
+      维基百科领域知识链接
+      逐步推理依据
+      仓库称依据经 GPT-4o 校订
     type: document
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: compensation
-    label: |-
-      以机制保障标注质量
-      按实际工时支付报酬
-      避免按数量赶工
-      单题平均标注 20分17秒
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 420
+      x: 2640
+      'y': 110
   - id: validation
     label: |-
-      执行人类专家验证
-      核验答案与全部标注
-      排除文本或单帧可答题
-      优先修订而非直接删除
+      作者或高表现标注员复核
+      检查全部标注
+      排除纯文本或单帧捷径
+      验证回答必须理解视频
+    type: user
+    size: xl
+    position:
+      x: 3160
+      'y': 110
+  - id: revision_gate
+    label: 需要修订？
+    type: decision
+    size: xl
+    position:
+      x: 3420
+      'y': 110
+  - id: revise
+    label: |-
+      修订并重新提交
+      共修订 523 个样例
+      再次接受专家复核
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: qc_result
-    label: |-
-      处理质检结果
-      修订 523 个样本
-      剔除仍不合格的 72 个
-      仅保留必须看视频的题
-    type: process
+      x: 3680
+      'y': 340
+  - id: post_revision_gate
+    label: 修订后符合设计标准？
+    type: decision
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: release
+      x: 3940
+      'y': 340
+  - id: excluded
     label: |-
-      汇总 MMVU
-      3,000 题 · 1,529 个视频
-      1,858 选择题 · 1,142 开放题
-      验证 1K · 隐藏测试 2K
-    type: database
-    size: xl
-    position:
-      x: 260
-      'y': 420
-  - id: evaluate
-    label: |-
-      以准确率评测 32 个模型
-      使用思维链或直接提示
-      GPT-4o 抽取最终答案
-      对照标准答案判断正误
+      剔除仍不合格的样例
+      共移除 72 个样例
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 4200
+      'y': 500
+  - id: release
+    label: |-
+      MMVU 论文快照
+      3,000 题 • 1,529 个视频
+      1,858 选择题 • 1,142 开放题
+      论文 v1 • 仓库 4d54223d912f
+    type: database
+    size: xl
+    position:
+      x: 4460
+      'y': 110
+  - id: rights_boundary
+    label: |-
+      权利边界
+      源视频按 YouTube CC 条件筛选
+      仓库及 HF 数据集未声明许可证
+      网站 CC BY-SA 仅适用于站点
+    type: document
+    size: xl
+    position:
+      x: 4720
+      'y': 360
+  - id: split_gate
+    label: 随机划分去向？
+    type: decision
+    size: xl
+    position:
+      x: 4460
+      'y': 720
+  - id: public_validation
+    label: |-
+      公开验证集
+      HF 版本 b937f414a87e
+      1,000 行 • 625 选择题 / 375 开放题
+      知识与依据字段均已填充
+    type: database
+    size: xl
+    position:
+      x: 4200
+      'y': 700
+  - id: hidden_test
+    label: |-
+      隐藏测试集
+      2,000 项 • 由作者持有
+      提交代码后由作者运行评测
+      内容无法独立核验
+    type: database
+    size: xl
+    position:
+      x: 4720
+      'y': 700
+  - id: inference
+    label: |-
+      生成模型回答
+      按题型使用 CoT 或直接回答提示
+      模型专用视频或帧输入
+      温度 1.0 • 最多 1,024 Tokens
+      Gemini 2.0 Flash Thinking 例外：最多 8,192 Tokens
+    type: process
+    size: xl
+    position:
+      x: 3940
+      'y': 700
+  - id: eval_type
+    label: 评测题型？
+    type: decision
+    size: xl
+    position:
+      x: 3680
+      'y': 700
+  - id: mcq_grade
+    label: |-
+      GPT-4o 选择题判分
+      抽取 A–E 中的单个字母
+      与标准答案比较
+      返回结构化布尔值
+    type: process
+    size: xl
+    position:
+      x: 3420
+      'y': 580
+  - id: open_grade
+    label: |-
+      GPT-4o 开放题判分
+      要求明确且无歧义地等价于
+      相同技术或概念
+      不补造回答中缺失的答案
+    type: process
+    size: xl
+    position:
+      x: 3420
+      'y': 820
+  - id: parse_gate
+    label: 成功解析 EvaluationOutput？
+    type: decision
+    size: xl
+    position:
+      x: 3160
+      'y': 700
+  - id: use_boolean
+    label: |-
+      使用 GPT-4o 的 correct 布尔值
+      单题计为 1 或 0
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 580
+  - id: grader_failure
+    label: |-
+      结构化判分失败
+      错误请求或总计十次尝试耗尽
+      抽取答案置空 • correct=False
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 820
+  - id: accuracy
+    label: |-
+      准确率
+      正确题数 / 评测题数
+      代码使用未锁日期的“gpt-4o”别名
+    type: terminal
+    size: xl
+    position:
+      x: 2640
+      'y': 700
 edges:
   - from: study
-    to: subjects
-    type: primary
-  - from: subjects
     to: experts
     type: primary
   - from: experts
@@ -176,30 +300,111 @@ edges:
     to: videos
     type: primary
   - from: videos
-    to: visual_gate
+    to: video_gate
     type: primary
-  - from: visual_gate
+  - from: video_gate
     to: questions
     type: primary
+    label: 通过全部控制项
+  - from: video_gate
+    to: resample_video
+    type: primary
+    label: 拒绝并重新搜集
+  - from: resample_video
+    to: videos
+    type: primary
   - from: questions
+    to: question_type
+    type: primary
+  - from: question_type
     to: mcq
     type: primary
+    label: 选择题
+  - from: question_type
+    to: open
+    type: primary
+    label: 开放题
   - from: mcq
-    to: rationale
+    to: solutions
     type: primary
-  - from: rationale
-    to: compensation
+  - from: open
+    to: solutions
     type: primary
-  - from: compensation
+  - from: solutions
     to: validation
     type: primary
   - from: validation
-    to: qc_result
+    to: revision_gate
     type: primary
-  - from: qc_result
+  - from: revision_gate
     to: release
     type: primary
+    label: 否 — 接收
+  - from: revision_gate
+    to: revise
+    type: primary
+    label: 是 — 修订
+  - from: revise
+    to: post_revision_gate
+    type: primary
+  - from: post_revision_gate
+    to: release
+    type: primary
+    label: 是 — 保留
+  - from: post_revision_gate
+    to: excluded
+    type: primary
+    label: 否 — 剔除
   - from: release
-    to: evaluate
+    to: rights_boundary
+    type: data
+  - from: release
+    to: split_gate
+    type: primary
+  - from: split_gate
+    to: public_validation
+    type: primary
+    label: 验证集 — 公开 1,000 项
+  - from: split_gate
+    to: hidden_test
+    type: primary
+    label: 测试集 — 隐藏 2,000 项
+  - from: public_validation
+    to: inference
+    type: primary
+  - from: hidden_test
+    to: inference
+    type: data
+    label: 作者运行测试
+  - from: inference
+    to: eval_type
+    type: primary
+  - from: eval_type
+    to: mcq_grade
+    type: primary
+    label: 选择题
+  - from: eval_type
+    to: open_grade
+    type: primary
+    label: 开放题
+  - from: mcq_grade
+    to: parse_gate
+    type: primary
+  - from: open_grade
+    to: parse_gate
+    type: primary
+  - from: parse_gate
+    to: use_boolean
+    type: primary
+    label: 成功解析对象
+  - from: parse_gate
+    to: grader_failure
+    type: primary
+    label: None 或格式异常
+  - from: use_boolean
+    to: accuracy
+    type: primary
+  - from: grader_failure
+    to: accuracy
     type: primary
 modules: []

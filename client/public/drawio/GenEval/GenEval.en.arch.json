@@ -7,68 +7,74 @@
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 11,
+    "edges": 10,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "tasks",
-      "label": "Define six compositional tasks\nsingle/two object · counting · color\nposition · color attribute binding",
-      "type": "process",
+      "id": "evidence",
+      "label": "Primary evidence\narXiv:2310.11513v1\nofficial repo af4902f2\nno separate official dataset",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "vocabulary",
-      "label": "Build template vocabularies\n80 MS-COCO object classes\n10 generation colors · 3 counts · 4 positions",
+      "id": "templates",
+      "label": "Define six task templates\n80 COCO classes · 10 colors\ncounts 2–4 · 4 positions",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "prompts",
-      "label": "Sample 100 prompts per task\nfill task-specific templates uniformly\nremove duplicates → 553 prompts total",
+      "id": "sampling",
+      "label": "Sample with seed 43\nall 80 single-object prompts\nfive other tasks × 100\nYAML-form deduplicate",
       "type": "process",
       "size": "xl"
     },
     {
+      "id": "prompt_set",
+      "label": "Release 553 structured prompts\ntask counts: 80/99/80/94/100/100\ninclude/exclude metadata clauses",
+      "type": "database",
+      "size": "xl"
+    },
+    {
       "id": "generate",
-      "label": "Run each text-to-image model\ngenerate 4 images for every prompt\npreserve prompt metadata for verification",
+      "label": "Generate 4 images per prompt\nkeep each model's default settings\npreserve evaluation metadata",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "detect",
-      "label": "Detect and segment objects\nCOCO Mask2Former threshold 0.3\nuse 0.9 only for counting",
+      "label": "COCO Mask2Former detection\nthreshold 0.3 · counting 0.9\nmaximum 16 objects per class",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "geometry",
-      "label": "Verify object requirements\npresence and exact count\ncentroid geometry for relative position",
+      "label": "Check include/exclude constraints\ncount + center-based position\noffset 0.1 dims · direction >0.5",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "color",
-      "label": "Verify color and attribute binding\ncrop by box · mask background gray\nzero-shot CLIP ViT-L/14 over candidate colors",
+      "id": "color_binding",
+      "label": "CLIP ViT-L/14 color classifier\nbox crop + segmentation mask\n#999 background · 10 candidates",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "binary",
-      "label": "Assign binary correctness per image\npass only when every requested element\nproperty and relation is correct",
+      "label": "Binary correctness per image\npass only if all requested clauses pass\nretain a failure reason",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "aggregate",
-      "label": "Average the four generations\nreport each of the six task scores\naverage task scores for overall GenEval",
+      "label": "Mean correctness over images\nreport all six task scores\nunweighted mean is overall score",
       "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "human",
-      "label": "Validate against human judgment\n6,000 annotations on 1,200 images\n83% agreement · 88% inter-annotator · 91% unanimous",
+      "id": "human_validation",
+      "label": "Human validation: 6,000 labels\n1,200 images · 5 annotators each\n83% vs 88%; 860 unanimous → 91%",
       "type": "terminal",
       "size": "xl"
     }
@@ -76,56 +82,62 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "tasks",
-      "to": "vocabulary",
-      "type": "primary"
+      "from": "evidence",
+      "to": "templates",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "vocabulary",
-      "to": "prompts",
+      "from": "templates",
+      "to": "sampling",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "prompts",
-      "to": "generate",
+      "from": "sampling",
+      "to": "prompt_set",
       "type": "primary"
     },
     {
       "id": "edge-4",
+      "from": "prompt_set",
+      "to": "generate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-5",
       "from": "generate",
       "to": "detect",
       "type": "primary"
     },
     {
-      "id": "edge-5",
+      "id": "edge-6",
       "from": "detect",
       "to": "geometry",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "geometry",
-      "to": "color",
-      "type": "primary"
-    },
-    {
       "id": "edge-7",
-      "from": "color",
-      "to": "binary",
+      "from": "geometry",
+      "to": "color_binding",
       "type": "primary"
     },
     {
       "id": "edge-8",
+      "from": "color_binding",
+      "to": "binary",
+      "type": "primary"
+    },
+    {
+      "id": "edge-9",
       "from": "binary",
       "to": "aggregate",
       "type": "primary"
     },
     {
-      "id": "edge-9",
+      "id": "edge-10",
       "from": "aggregate",
-      "to": "human",
+      "to": "human_validation",
       "type": "primary"
     }
   ],

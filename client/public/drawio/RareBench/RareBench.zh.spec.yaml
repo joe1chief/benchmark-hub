@@ -4,136 +4,383 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: "RareBench 构建与评测流程"
-  description: "RareBench结合1650份PUMCH电子病历和1122份公开罕见病病例，定义表型抽取、不完整信息诊断、常见病与罕见病鉴别、通用罕见病鉴别四项任务，各子集分别含87、33、527和2185例。论文整合四个公共知识库形成罕见病图谱，以基于信息量的随机游走生成表型向量用于动态三样本检索。模型在零样本、思维链、随机少样本和动态少样本提示下，用任务专属抽取指标或Top-k召回评测；另在75份高质量PUMCH病例上将GPT-4与50名专科医生比较。"
-  legend: "来源：arXiv:2402.06341v2 Sections 3.1-3.4, 4-5 and Appendix A, cross-checked against chenxz1111/RareBench。实线箭头表示论文或官方资料明确支持的主流程。"
+  title: RareBench 论文对齐的构建与评测过程
+  description: >-
+    按 KDD 2024 论文呈现四个公开罕见病来源与经过隐私保护的协和医院病历队列、四项任务子集分配、用于通用鉴别诊断的
+    知识图谱动态提示，以及每项任务各自的指标合同。
+  legend: >-
+    实线表示论文构建与评测流程；虚线隔离证据、医生对照实验、代码、发布与许可边界，并将论文许可、仓库代码许可、
+    Hugging Face 数据卡许可与未公开完整协和队列及上游权利分别限定。
 nodes:
-  - id: step_1
-    label: "患者数据来源"
+  - id: source_evidence
+    label: |-
+      KDD 2024 · arXiv 2402.06341v2
+      PDF SHA256 f8755b27ca79
+      论文本身采用 CC BY 4.0
+      仓库 Git 82a9d8ca86c9
     type: document
     size: xl
-    position:
-      x: 16
-      'y': 40
-  - id: step_2
-    label: "表型抽取集"
+    position: { x: 20, y: 300 }
+    style: { fontSize: 8 }
+  - id: public_source
+    label: |-
+      公开罕见病病例
+      数量格式为病例数 / 疾病数
+      MME 40/17 · LIRICAL 370/252
+      HMS 88/39 · RAMEDIS 624/63
+      合计 1,122 / 362
     type: database
     size: xl
-    position:
-      x: 256
-      'y': 40
-  - id: step_3
-    label: "不完整病例"
+    position: { x: 260, y: 40 }
+    style: { fontSize: 8 }
+  - id: pumch_source
+    label: |-
+      协和医院电子病历队列
+      共 1,650 例
+      罕见病 1,183 + 常见病 467
+      四项任务的院内来源池
     type: database
     size: xl
-    position:
-      x: 496
-      'y': 40
-  - id: step_4
-    label: "罕见常见鉴别"
-    type: database
-    size: xl
-    position:
-      x: 736
-      'y': 40
-  - id: step_5
-    label: "通用鉴别诊断"
-    type: database
-    size: xl
-    position:
-      x: 976
-      'y': 40
-  - id: step_6
-    label: "罕见病图谱"
+    position: { x: 260, y: 560 }
+    style: { fontSize: 9 }
+  - id: privacy_filter
+    label: |-
+      临床数据保护
+      完全移除个人身份信息
+      协和医生监控全部病例
+      过滤诊断不明或信息稀疏记录
     type: process
     size: xl
-    position:
-      x: 1216
-      'y': 40
-  - id: step_7
-    label: "IC随机游走"
+    position: { x: 500, y: 560 }
+    style: { fontSize: 9 }
+  - id: task_allocation
+    label: |-
+      分配任务子集
+      先任务 1 · 再任务 2
+      任务 3 使用剩余匹配病历
+      任务 4 使用剩余罕见病例与公开数据
     type: process
     size: xl
-    position:
-      x: 1456
-      'y': 40
-  - id: step_8
-    label: "动态示例检索"
+    position: { x: 740, y: 300 }
+    style: { fontSize: 9 }
+  - id: task1
+    label: |-
+      任务 1 · 表型提取
+      34 种疾病 · 87 份病历
+      PTE · GEE · GES
+      三个抽取子任务
     type: process
     size: xl
-    position:
-      x: 1456
-      'y': 416
-  - id: step_9
-    label: "提示模型"
+    position: { x: 980, y: 0 }
+    style: { fontSize: 9 }
+  - id: task2
+    label: |-
+      任务 2 · 特定疾病筛查
+      3 种疾病 · 33 份病历
+      ALS · PNH · MSA
+      使用完整临床信息
+    type: process
+    size: xl
+    position: { x: 980, y: 200 }
+    style: { fontSize: 9 }
+  - id: task3
+    label: |-
+      任务 3 · 常见病与罕见病比较
+      77 种疾病 · 527 份病历
+      罕见病 60 + 常见病 467
+      返回前十个诊断
+    type: process
+    size: xl
+    position: { x: 980, y: 400 }
+    style: { fontSize: 9 }
+  - id: task4
+    label: |-
+      任务 4 · 通用鉴别诊断
+      421 种疾病 · 2,185 个病例
+      公开病例 + 剩余协和罕见病例
+      返回前十个诊断
+    type: process
+    size: xl
+    position: { x: 980, y: 600 }
+    style: { fontSize: 9 }
+  - id: task_suite
+    label: |-
+      RareBench 任务套件
+      四种临床能力
+      各任务保留独立输入输出
+      保留论文表 1 的数量
+    type: database
+    size: xl
+    position: { x: 1220, y: 300 }
+    style: { fontSize: 9 }
+  - id: knowledge_sources
+    label: |-
+      四个知识库
+      HPO 层级 · OMIM
+      Orphanet · CCRD
+      疾病—表型关系
+    type: database
+    size: xl
+    position: { x: 1220, y: 820 }
+    style: { fontSize: 9 }
+  - id: knowledge_graph
+    label: |-
+      集成罕见病知识图谱
+      17,232 个表型
+      9,260 种唯一罕见病
+      21,505 条表型-表型边
+    type: process
+    size: xl
+    position: { x: 1460, y: 820 }
+    style: { fontSize: 9 }
+  - id: ic_walk
+    label: |-
+      IC 加权随机游走
+      偏向特异性高的表型
+      Node2vec 式训练
+      生成 256 维节点嵌入
+    type: process
+    size: xl
+    position: { x: 1700, y: 820 }
+    style: { fontSize: 9 }
+  - id: dynamic_retrieval
+    label: |-
+      动态三样本检索
+      IC 加权患者嵌入
+      按余弦相似度排序
+      选取最相似的三个病例
+    type: process
+    size: xl
+    position: { x: 1940, y: 820 }
+    style: { fontSize: 9 }
+  - id: prompt_regimes
+    label: |-
+      提示方案
+      设定罕见病专家角色
+      零样本 · GPT-4 思维链
+      随机少样本；任务 4 使用动态检索
     type: document
     size: xl
-    position:
-      x: 1216
-      'y': 416
-  - id: step_10
-    label: "比较少样本"
+    position: { x: 2180, y: 300 }
+    style: { fontSize: 9 }
+  - id: model_run
+    label: |-
+      运行 11 个大模型
+      API 与开源模型
+      输入各任务专用内容
+      生成表型或诊断
     type: process
     size: xl
-    position:
-      x: 976
-      'y': 416
-  - id: step_11
-    label: "解析输出"
+    position: { x: 2420, y: 300 }
+    style: { fontSize: 9 }
+  - id: metric_router
+    label: |-
+      按任务评分
+      保留不同评分合同
+      不得合并成单一指标
     type: process
     size: xl
-    position:
-      x: 736
-      'y': 416
-  - id: step_12
-    label: "报告指标"
+    position: { x: 2660, y: 300 }
+    style: { fontSize: 9 }
+  - id: task1_metric
+    label: |-
+      任务 1 指标
+      精确率 · 召回率 · F1
+      PTE 与 GES 精确匹配
+      GEE 语义匹配
     type: process
     size: xl
-    position:
-      x: 496
-      'y': 416
-  - id: step_13
-    label: "医生对比"
+    position: { x: 2900, y: 20 }
+    style: { fontSize: 9 }
+  - id: task2_metric
+    label: |-
+      任务 2 指标
+      逐疾病计算召回率
+      ALS · PNH · MSA
+    type: process
+    size: xl
+    position: { x: 2900, y: 260 }
+    style: { fontSize: 9 }
+  - id: task34_metric
+    label: |-
+      任务 3 与 4 指标
+      Top-k 召回率 k=1 · 3 · 10
+      中位排名
+      标准病名是否进入排序
+    type: process
+    size: xl
+    position: { x: 2900, y: 500 }
+    style: { fontSize: 9 }
+  - id: report
+    label: |-
+      RareBench 报告
+      四项任务结果
+      提示方案比较
+      各任务独立指标
     type: terminal
     size: xl
-    position:
-      x: 256
-      'y': 416
+    position: { x: 3140, y: 300 }
+    style: { fontSize: 9 }
+  - id: doctor_study
+    label: |-
+      独立人类对照实验
+      75 个高质量协和病例
+      16 种疾病 · 五个科室
+      50 名专科医生
+    type: document
+    size: xl
+    position: { x: 3380, y: 20 }
+    style: { fontSize: 9 }
+  - id: repo_snapshot
+    label: |-
+      官方代码快照
+      Git 82a9d8ca86c9
+      评测代码与提示词
+      Apache-2.0
+    type: document
+    size: xl
+    position: { x: 3380, y: 420 }
+    style: { fontSize: 8 }
+  - id: release_boundary
+    label: |-
+      当前 HF 发布 · chenxz/RareBench 6f054e040719
+      数据卡 Apache-2.0 · PUMCH_ADM 75 / 16
+      data.zip：四个公开集 · 无 PUMCH_ADM
+      Task1 压缩包：87 例 · 完整 1,650 例未公开
+      数据卡 RAMEDIS 624 / 74；论文 624 / 63
+    type: document
+    size: xl
+    position: { x: 3620, y: 420 }
+    style: { fontSize: 8 }
+  - id: license_boundary
+    label: |-
+      许可来源边界
+      论文 · CC BY 4.0
+      仓库代码 · Apache-2.0
+      HF 数据卡 · Apache-2.0
+      不外推至未公开完整协和队列或上游权利
+    type: document
+    size: xl
+    position: { x: 3860, y: 420 }
+    style: { fontSize: 8 }
 edges:
-  - from: step_1
-    to: step_2
+  - from: source_evidence
+    to: public_source
+    type: secondary
+    style: { dashed: true }
+  - from: source_evidence
+    to: pumch_source
+    type: secondary
+    style: { dashed: true }
+  - from: pumch_source
+    to: privacy_filter
     type: primary
-  - from: step_2
-    to: step_3
+  - from: privacy_filter
+    to: task_allocation
     type: primary
-  - from: step_3
-    to: step_4
+  - from: task_allocation
+    to: task1
     type: primary
-  - from: step_4
-    to: step_5
+    waypoints:
+      - { x: 690, y: 80 }
+      - { x: 930, y: 80 }
+      - { x: 930, y: 72 }
+  - from: task_allocation
+    to: task2
     type: primary
-  - from: step_5
-    to: step_6
+  - from: task_allocation
+    to: task3
     type: primary
-  - from: step_6
-    to: step_7
+  - from: task_allocation
+    to: task4
     type: primary
-  - from: step_7
-    to: step_8
+    waypoints:
+      - { x: 690, y: 480 }
+      - { x: 930, y: 480 }
+      - { x: 930, y: 532 }
+  - from: public_source
+    to: task4
     type: primary
-  - from: step_8
-    to: step_9
+    waypoints:
+      - { x: 620, y: 42 }
+      - { x: 620, y: 702 }
+      - { x: 980, y: 702 }
+  - from: task1
+    to: task_suite
     type: primary
-  - from: step_9
-    to: step_10
+    waypoints:
+      - { x: 1030, y: 120 }
+      - { x: 1270, y: 120 }
+      - { x: 1270, y: 228 }
+  - from: task2
+    to: task_suite
     type: primary
-  - from: step_10
-    to: step_11
+  - from: task3
+    to: task_suite
     type: primary
-  - from: step_11
-    to: step_12
+  - from: task4
+    to: task_suite
     type: primary
-  - from: step_12
-    to: step_13
+    waypoints:
+      - { x: 1030, y: 520 }
+      - { x: 1270, y: 520 }
+      - { x: 1270, y: 368 }
+  - from: task4
+    to: knowledge_sources
     type: primary
+  - from: knowledge_sources
+    to: knowledge_graph
+    type: primary
+  - from: knowledge_graph
+    to: ic_walk
+    type: primary
+  - from: ic_walk
+    to: dynamic_retrieval
+    type: primary
+  - from: dynamic_retrieval
+    to: prompt_regimes
+    type: primary
+  - from: task_suite
+    to: prompt_regimes
+    type: primary
+  - from: prompt_regimes
+    to: model_run
+    type: primary
+  - from: model_run
+    to: metric_router
+    type: primary
+  - from: metric_router
+    to: task1_metric
+    type: primary
+  - from: metric_router
+    to: task2_metric
+    type: primary
+  - from: metric_router
+    to: task34_metric
+    type: primary
+  - from: task1_metric
+    to: report
+    type: primary
+  - from: task2_metric
+    to: report
+    type: primary
+  - from: task34_metric
+    to: report
+    type: primary
+  - from: report
+    to: doctor_study
+    type: secondary
+    style: { dashed: true }
+  - from: report
+    to: repo_snapshot
+    type: secondary
+    style: { dashed: true }
+  - from: repo_snapshot
+    to: release_boundary
+    type: secondary
+    style: { dashed: true }
+  - from: release_boundary
+    to: license_boundary
+    type: secondary
+    style: { dashed: true }
 modules: []

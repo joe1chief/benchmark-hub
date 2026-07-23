@@ -4,167 +4,308 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MathCanvas-Bench Build Process
+  title: MathCanvas-Bench Construction and Evaluation
   description: >-
-    Paper-aligned construction of MathCanvas-Bench from a multimodal math pool through the 3K release and dual-metric
-    evaluation.
+    Paper- and release-aligned workflow from the 632K multimodal problem pool to the 3,079-item public benchmark, the
+    separately decontaminated 218,604-item training set, and the released GPT-4.1 answer evaluator.
   legend: >-
-    Solid arrows trace 632K-source collection, two GPT-5 filtering rounds, deduplication and enhancement, non-MCQ
-    weighted sampling, leakage control, and answer-level scoring.
+    Solid arrows show retained data and evaluation flow. Labeled branches expose paper-defined exclusions, weighted
+    benchmark selection, training-only leakage removal, valid-evaluation filtering, and single-part versus multi-part
+    scoring. The paper rounds the public benchmark to 3K; the pinned release contains exactly 3,079 records.
 nodes:
   - id: collect
     label: |-
       Collect Multimodal Math Problems
-      Use Textbooks · Exams · Websites
-      Cover Middle · High School
-      Start with 632K Solutions
+      Textbooks · Exams · Websites
+      Middle + High School
+      Start with about 632K Pairs
     type: database
     size: xl
     position:
       x: 20
       'y': 40
-  - id: relevance_filter
+  - id: relevance_review
     label: |-
-      Run First GPT-5 Filter
-      Remove Irrelevant Images
-      Normalize Math into LaTeX
-      Retain about 367K Items
+      First GPT-5 Review
+      Test Whether Images Aid Reasoning
+      Normalize Mathematical Formulas
+      into LaTeX
     type: process
     size: xl
     position:
-      x: 260
+      x: 380
       'y': 40
-  - id: quality_filter
+  - id: relevance_gate
     label: |-
-      Run Second GPT-5 Filter
-      Remove Errors · Missing Answers
-      Remove Bad Images · Drawing-only
-      Retain about 303K Items
+      Does the Image Contribute
+      to the Reasoning Process?
+    type: decision
+    size: xl
+    position:
+      x: 740
+      'y': 40
+  - id: quality_review
+    label: |-
+      Second GPT-5 Review
+      Check Correctness + Explicit Answer
+      Check Image Clarity
+      Exclude Drawing-only Tasks
     type: process
     size: xl
     position:
-      x: 500
+      x: 1100
+      'y': 40
+  - id: quality_gate
+    label: |-
+      Correct, Answered, Clear,
+      and Not Drawing-only?
+    type: decision
+    size: xl
+    position:
+      x: 1460
       'y': 40
   - id: deduplicate
     label: |-
       Deduplicate Text and Images
-      Compare Problem · Visual Content
-      Merge or Remove Near Duplicates
-      Produce about 222K Items
+      Retain Unique Problem–Solution Pairs
+      About 303K → About 222K
+      Threshold Not Reported
     type: process
     size: xl
     position:
-      x: 740
+      x: 1820
       'y': 40
   - id: image_enhance
     label: |-
-      Standardize Visual Inputs
+      Standardize All Images
       Apply SwinIR Super-resolution
-      Resize Images to 512 × 512
-      Improve Low-quality Figures
+      Resize to 512 × 512
+      Preserve Problem–Solution Pairing
     type: process
     size: xl
     position:
-      x: 980
+      x: 2180
       'y': 40
   - id: taxonomy
     label: |-
-      Label Mathematical Categories
       Classify with GPT-4.1
-      Assign Eight Major Categories
+      Eight Major Knowledge Categories
       Add Fine-grained Subcategories
+      Prepare Category-aware Sampling
     type: process
     size: xl
     position:
-      x: 1220
+      x: 2540
       'y': 40
-  - id: benchmark_sample
+  - id: quality_reject
     label: |-
-      Form the Benchmark Candidate Pool
-      Draw Candidates from 222K Items
-      Exclude Every Multiple-choice Item
-      Keep Open Visual-reasoning Tasks
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: weighted_sample
-    label: |-
-      Draw a Weighted 3K Sample
-      Raise Each Category Share to 0.7
-      Raise Rare Mathematical Types
-      Preserve Natural Distribution
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: leakage
-    label: |-
-      Control Train–Benchmark Leakage
-      Compute 5-gram Jaccard Similarity
-      If Similarity Exceeds 0.4
-      Remove the Training Question
-    type: process
-    size: xl
-    position:
-      x: 1220
-      'y': 420
-  - id: release
-    label: |-
-      Release MathCanvas-Bench
-      3,000 Open-ended Problems
-      Require Interleaved Visual · Text
-      Keep about 219K Training Items
-    type: database
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: infer
-    label: |-
-      Run a Multimodal Model
-      Input Problem and Original Image
-      Allow Visual Intermediate Outputs
-      Generate Interleaved Solutions
-    type: document
-    size: xl
-    position:
-      x: 740
-      'y': 420
-  - id: extract
-    label: |-
-      Extract Every Sub-answer
-      Use GPT-4.1 for Final Answers
-      Compare against Ground Truth
-      Record Each Subquestion Correctness
-    type: process
-    size: xl
-    position:
-      x: 500
-      'y': 420
-  - id: metrics
-    label: |-
-      Aggregate Two Metrics
-      Complete: All Subanswers Correct
-      Weighted: Increasing Item Weights
-      Report Overall · Category Results
+      Exclude from Curated Corpus
+      Irrelevant Image or Quality Failure
     type: terminal
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 1100
+      'y': 260
+  - id: mcq_gate
+    label: |-
+      Multiple-choice Problem?
+      Benchmark Eligibility Gate
+    type: decision
+    size: xl
+    position:
+      x: 2540
+      'y': 380
+  - id: weighted_sample
+    label: |-
+      Weighted Benchmark Sampling
+      Raise Each Category Share to Power 0.7
+      Increase Rare-type Representation
+      Target about 3K Problems
+    type: process
+    size: xl
+    position:
+      x: 2180
+      'y': 380
+  - id: sample_gate
+    label: |-
+      Selected for the Weighted
+      Benchmark Sample?
+    type: decision
+    size: xl
+    position:
+      x: 1820
+      'y': 380
+  - id: benchmark_release
+    label: |-
+      Release MathCanvas-Bench
+      Paper: 3K Problems
+      Public Snapshot: 3,079 Records
+      Eight Test Configurations
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 380
+  - id: training_candidates
+    label: |-
+      Form Training Candidates
+      Benchmark-ineligible MCQs
+      + Non-selected Open Problems
+      Apply Leakage Check Only Here
+    type: database
+    size: xl
+    position:
+      x: 2180
+      'y': 800
+  - id: leakage_gate
+    label: |-
+      5-gram Jaccard Similarity > 0.4
+      to Any Benchmark Question?
+    type: decision
+    size: xl
+    position:
+      x: 1820
+      'y': 800
+  - id: training_release
+    label: |-
+      Release MathCanvas-Instruct
+      218,604 Training Problems
+      Paper Reports About 219K
+      No Detected Near-test Question
+    type: database
+    size: xl
+    position:
+      x: 1460
+      'y': 800
+  - id: leakage_remove
+    label: |-
+      Remove from Training Set
+      Similarity Exceeds 0.4
+      Benchmark Item Remains Unchanged
+    type: terminal
+    size: xl
+    position:
+      x: 1820
+      'y': 1030
+  - id: model_output
+    label: |-
+      Run the Evaluated LMM
+      Input Question + Initial Images
+      Generate Interleaved Visual–Text
+      Reasoning and Final Answers
+    type: document
+    size: xl
+    position:
+      x: 1100
+      'y': 380
+  - id: judge_input
+    label: |-
+      Prepare Official Judge Input
+      Concatenate Text Reasoning Steps Only
+      Add Question + Ground-truth Answer
+      Images Are Not Sent to the Judge
+    type: process
+    size: xl
+    position:
+      x: 740
+      'y': 380
+  - id: gpt_judge
+    label: |-
+      Judge with GPT-4.1-2025-04-14
+      Parse Tagged Ground-truth Parts
+      Extract Matching Predicted Answers
+      Missing Answer → null + Incorrect
+    type: process
+    size: xl
+    position:
+      x: 380
+      'y': 380
+  - id: valid_evaluation_gate
+    label: |-
+      API + Schema Successful
+      and One to Four Parts?
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 380
+  - id: parts_gate
+    label: |-
+      How Many Ground-truth
+      Answer Parts?
+    type: decision
+    size: xl
+    position:
+      x: 20
+      'y': 650
+  - id: invalid_evaluation
+    label: |-
+      Exclude from Metric Denominator
+      API/Schema Failure or Unsupported Count
+      Record Error or Skipped-item Count
+    type: terminal
+    size: xl
+    position:
+      x: 740
+      'y': 650
+  - id: single_score
+    label: |-
+      Score One Answer Part
+      Correct → 1 · Incorrect → 0
+      Weighted Score Equals Binary Score
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 930
+  - id: multi_score
+    label: |-
+      Score Two to Four Parts
+      Each Later Part Gets 1.3× Weight
+      Normalize Weights to Sum to 1
+      Sum Weights of Correct Parts
+    type: process
+    size: xl
+    position:
+      x: 380
+      'y': 930
+  - id: metrics
+    label: |-
+      Aggregate Official Metrics
+      Denominator: valid_evaluations
+      Complete: Mean All-parts-correct
+      Weighted: Mean Per-problem Score
+    type: terminal
+    size: xl
+    position:
+      x: 740
+      'y': 930
 edges:
   - from: collect
-    to: relevance_filter
+    to: relevance_review
     type: primary
-  - from: relevance_filter
-    to: quality_filter
+  - from: relevance_review
+    to: relevance_gate
     type: primary
-  - from: quality_filter
+  - from: relevance_gate
+    to: quality_review
+    type: primary
+    label: Yes · retain about 367K
+  - from: relevance_gate
+    to: quality_reject
+    type: optional
+    label: No · remove
+  - from: quality_review
+    to: quality_gate
+    type: primary
+  - from: quality_gate
     to: deduplicate
     type: primary
+    label: Yes · retain about 303K
+  - from: quality_gate
+    to: quality_reject
+    type: optional
+    label: No · remove
   - from: deduplicate
     to: image_enhance
     type: primary
@@ -172,24 +313,90 @@ edges:
     to: taxonomy
     type: primary
   - from: taxonomy
-    to: benchmark_sample
+    to: mcq_gate
     type: primary
-  - from: benchmark_sample
+  - from: mcq_gate
+    to: training_candidates
+    type: optional
+    label: Yes · training only
+    waypoints:
+      - x: 2640
+        'y': 690
+      - x: 2420
+        'y': 690
+  - from: mcq_gate
     to: weighted_sample
     type: primary
+    label: No · benchmark candidate
   - from: weighted_sample
-    to: leakage
+    to: sample_gate
     type: primary
-  - from: leakage
-    to: release
+  - from: sample_gate
+    to: benchmark_release
     type: primary
-  - from: release
-    to: infer
+    label: Selected · 3,079
+  - from: sample_gate
+    to: training_candidates
+    type: optional
+    label: Not selected · train
+    waypoints:
+      - x: 1920
+        'y': 620
+      - x: 2140
+        'y': 620
+  - from: training_candidates
+    to: leakage_gate
     type: primary
-  - from: infer
-    to: extract
+  - from: leakage_gate
+    to: leakage_remove
+    type: optional
+    label: Above 0.4 · remove
+  - from: leakage_gate
+    to: training_release
     type: primary
-  - from: extract
+    label: At most 0.4 · retain
+  - from: benchmark_release
+    to: model_output
+    type: primary
+  - from: model_output
+    to: judge_input
+    type: primary
+  - from: judge_input
+    to: gpt_judge
+    type: primary
+  - from: gpt_judge
+    to: valid_evaluation_gate
+    type: primary
+  - from: valid_evaluation_gate
+    to: parts_gate
+    type: primary
+    label: Yes · valid evaluation
+  - from: valid_evaluation_gate
+    to: invalid_evaluation
+    type: optional
+    label: No · exclude denominator
+    waypoints:
+      - x: 120
+        'y': 550
+      - x: 840
+        'y': 550
+  - from: parts_gate
+    to: single_score
+    type: primary
+    label: One part
+  - from: parts_gate
+    to: multi_score
+    type: primary
+    label: Two to four parts
+  - from: single_score
+    to: metrics
+    type: primary
+    waypoints:
+      - x: 120
+        'y': 1120
+      - x: 840
+        'y': 1120
+  - from: multi_score
     to: metrics
     type: primary
 modules: []

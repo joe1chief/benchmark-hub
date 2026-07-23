@@ -5,122 +5,192 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: HaluEval Build Process
-  description: Paper-aligned two-branch construction of 30,000 task-specific and 5,000 human-annotated HaluEval samples.
+  description: >-
+    Paper-aligned automatic and human-annotation branches for HaluEval, with subset-specific evaluation and release
+    boundaries.
   legend: >-
-    The official name is HaluEval. Its 35,000 samples combine a 30,000-example ChatGPT sampling/filtering branch with a
-    separate 5,000-query human-annotation branch.
+    The official name is HaluEval. The paper defines 30,000 task-specific pairs plus 5,000 general responses. The pinned
+    repository contains all task pairs but only 4,507 lines in general_data.json; this is shown explicitly.
 nodes:
+  - id: evidence
+    label: |-
+      Evidence & fixed revision
+      HaluEval · arXiv 2305.11747v3
+      official repository b7b66e8
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 300
   - id: task_seeds
     label: |-
       Sample 30,000 task seeds
       HotpotQA · OpenDialKG · CNN/DailyMail
-      10,000 each for QA · dialogue · summarization
+      10,000 each: QA · dialogue · summary
     type: database
     size: xl
     position:
-      x: 40
-      'y': 80
+      x: 340
+      'y': 40
   - id: sample
     label: |-
-      Generate two hallucinated candidates
-      ChatGPT one-pass instruction
-      plus conversational instruction learning
+      ChatGPT one-pass + conversational
+      patterns: QA 4 · dialogue 3 · summarization 3
+      temperature 1.0 · max 256 · top-p 1.0
     type: process
     size: xl
     position:
-      x: 340
-      'y': 80
+      x: 640
+      'y': 40
   - id: filter
     label: |-
-      Filter for difficult hallucinations
-      ground-truth-enhanced ChatGPT judge
-      keep the most plausible candidate
+      Ground-truth-enhanced filtering
+      compare the two hallucinated candidates
+      keep the most plausible and difficult one
     type: process
     size: xl
     position:
-      x: 640
-      'y': 80
+      x: 940
+      'y': 40
   - id: auto_set
     label: |-
-      Finalize 30,000 task samples
-      factual/normal answer paired with
-      its selected hallucinated counterpart
-    type: database
-    size: xl
-    position:
-      x: 940
-      'y': 80
-  - id: alpaca
-    label: |-
-      Start from Alpaca 52K queries
-      sample three ChatGPT responses per query
-      target general instruction-following use
-    type: database
-    size: xl
-    position:
-      x: 40
-      'y': 520
-  - id: divergence
-    label: |-
-      Rank response divergence
-      average pairwise BERTScore similarity
-      retain 5,000 lowest-similarity queries
-    type: process
-    size: xl
-    position:
-      x: 340
-      'y': 520
-  - id: annotate
-    label: |-
-      Label each retained response three times
-      Yes/No plus hallucinated spans
-      unverifiable · non-factual · irrelevant
-    type: process
-    size: xl
-    position:
-      x: 640
-      'y': 520
-  - id: human_set
-    label: |-
-      Majority-vote human labels
-      30 qualified labelers · Fleiss kappa 0.811
-      5,000 responses · 977 hallucinated
-    type: database
-    size: xl
-    position:
-      x: 940
-      'y': 520
-  - id: merge
-    label: |-
-      Assemble HaluEval
-      30,000 task-specific + 5,000 general
-      35,000 hallucinated/normal samples
+      Finalize 30,000 task records
+      right output + selected hallucinated output
+      stored as one pair
     type: database
     size: xl
     position:
       x: 1240
-      'y': 300
-  - id: inference
+      'y': 40
+  - id: alpaca
     label: |-
-      Build recognition instances
-      randomly present normal or hallucinated output
-      ask whether the content hallucinates
+      Start from Alpaca 52K queries
+      sample three ChatGPT responses per query
+      target general instruction following
+    type: database
+    size: xl
+    position:
+      x: 340
+      'y': 560
+  - id: divergence
+    label: |-
+      Rank response divergence
+      average semantic similarity via BERTScore
+      retain the 5,000 lowest-similarity queries
     type: process
+    size: xl
+    position:
+      x: 640
+      'y': 560
+  - id: annotate
+    label: |-
+      Three labelers judge three dimensions
+      unverifiable · non-factual · irrelevant
+      record Yes/No + hallucinated spans
+    type: process
+    size: xl
+    position:
+      x: 940
+      'y': 560
+  - id: human_set
+    label: |-
+      Apply max/majority vote
+      30 selected labelers · Fleiss κ=0.811
+      paper: 5,000 responses · 977 positive
+    type: database
+    size: xl
+    position:
+      x: 1240
+      'y': 560
+  - id: release
+    label: |-
+      Paper-defined HaluEval · 35,000 samples
+      30,000 task pairs + 5,000 general
+      general: hallucination Yes/No
+      + hallucination_spans
+    type: database
     size: xl
     position:
       x: 1540
       'y': 300
-  - id: score
+  - id: eval_route
     label: |-
-      Report recognition accuracy
-      QA · knowledge-grounded dialogue
-      summarization · general queries
-    type: terminal
+      Choose released subset
+      task pair or general response
+    type: decision
     size: xl
     position:
       x: 1840
       'y': 300
+  - id: task_eval
+    label: |-
+      Three task-specific evaluators
+      QA · dialogue · summarization load own instruction
+      randomly show normal or hallucinated output
+      temperature 0
+    type: process
+    size: xl
+    position:
+      x: 2140
+      'y': 40
+  - id: task_parser
+    label: |-
+      Remove periods from judge text
+      both Yes and No, or neither → incorrect
+      one substring match → normalize Yes or No
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 40
+  - id: general_eval
+    label: |-
+      Classify annotated ChatGPT response
+      paper reports General accuracy
+      released evaluate.py has no general path
+    type: process
+    size: xl
+    position:
+      x: 2440
+      'y': 560
+  - id: score
+    label: |-
+      Report recognition accuracy
+      QA · dialogue · summarization
+      general responses
+    type: terminal
+    size: xl
+    position:
+      x: 2740
+      'y': 300
+  - id: artifact_boundary
+    label: |-
+      Official-artifact boundary at b7b66e8
+      paper/README: 5,000 general
+      general_data.json: 4,507 lines
+      three task JSONL files: 10,000 each
+    type: document
+    size: xl
+    position:
+      x: 3040
+      'y': 560
 edges:
+  - from: evidence
+    to: task_seeds
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: evidence
+    to: alpaca
+    type: data
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
   - from: task_seeds
     to: sample
     type: primary
@@ -129,9 +199,6 @@ edges:
     type: primary
   - from: filter
     to: auto_set
-    type: primary
-  - from: auto_set
-    to: merge
     type: primary
   - from: alpaca
     to: divergence
@@ -142,13 +209,61 @@ edges:
   - from: annotate
     to: human_set
     type: secondary
-  - from: human_set
-    to: merge
-    type: secondary
-  - from: merge
-    to: inference
+  - from: auto_set
+    to: release
     type: primary
-  - from: inference
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: human_set
+    to: release
+    type: secondary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: release
+    to: eval_route
+    type: primary
+  - from: eval_route
+    to: task_eval
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.25
+      entryX: 0
+      entryY: 0.5
+  - from: eval_route
+    to: general_eval
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.75
+      entryX: 0
+      entryY: 0.5
+  - from: task_eval
+    to: task_parser
+    type: primary
+  - from: task_parser
     to: score
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.25
+  - from: general_eval
+    to: score
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.75
+  - from: score
+    to: artifact_boundary
+    type: data
 modules: []

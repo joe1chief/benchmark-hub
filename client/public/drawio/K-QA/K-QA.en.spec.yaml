@@ -6,156 +6,204 @@ meta:
   routing: orthogonal
   title: K-QA Build Process
   description: >-
-    Paper-aligned K-QA construction from deidentified K Health conversations through stand-alone question curation,
-    physician-authored granular references, GPT-4-assisted statement decomposition, and validated NLI metrics.
+    Paper-aligned K-QA construction from deidentified K Health questions through stand-alone medical curation,
+    physician-authored references, GPT-4-assisted statement decomposition, and the official GPT-4 NLI metrics.
   legend: >-
-    K-QA contains 1,212 questions; the physician-reference and statement-level evaluation subset contains 201 answers
-    decomposed into 1,589 Must Have or Nice to Have statements.
+    Solid arrows show the construction and scoring path. Dashed arrows mark the fixed evidence, the optional
+    NLI-validator study, and the boundary between released K-QA artifacts and the unreleased raw conversation corpus.
 nodes:
-  - id: interactions
+  - id: evidence
     label: |-
-      Source Real Patient Interactions
-      Deidentified K Health Conversations
-      1,055 Unique Users
-      Manually Review for Privacy Leaks
-    type: database
+      Primary Evidence + Fixed Revision
+      arXiv:2401.14493v1 · 25 Jan 2024
+      Official Git ef403d0
+      Paper Sections 3–5 + Appendices A–B
+    type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: prefilter
+  - id: interactions
     label: |-
-      Automatic Question Prefilter
-      BERT Question-vs-statement Classifier
-      Regex Removes Billing and Logistics
-      Retain Candidate Patient Questions
-    type: process
+      Source K Health Conversations
+      Real Patient-physician Text Interactions
+      Paper Says Questions Are Deidentified
+      Raw Conversation Corpus Not Released
+    type: database
     size: xl
     position:
       x: 300
       'y': 40
-  - id: candidates
+  - id: prefilter
     label: |-
-      Candidate Pool · About 26K
-      Real Consumer-health Wording
-      Ambiguous Jargon and Multiple Conditions
-      Potential Stand-alone Questions
-    type: database
+      Automatic Question Prefilter
+      Fine-tuned BERT: Question vs Statement
+      Regex Removes Logistics Questions
+      Billing and Delivery Examples
+    type: process
     size: xl
     position:
       x: 580
+      'y': 40
+  - id: candidates
+    label: |-
+      Candidate Question Pool · About 26K
+      Real Consumer-health Wording
+      Ambiguous Jargon + Multiple Conditions
+      Candidates for Stand-alone Review
+    type: database
+    size: xl
+    position:
+      x: 860
       'y': 40
   - id: medical_review
     label: |-
       Medical-professional Review
+      Assess Every Candidate Individually
       Require Stand-alone Answerability
-      Exclude Need for Patient History
-      Assign ICD-10 Condition Labels
+      Assign an ICD-10 Condition
     type: user
-    size: xl
-    position:
-      x: 860
-      'y': 40
-  - id: questions
-    label: |-
-      Release K-QA Questions · 1,212
-      More Than 100 Medical Conditions
-      Real-world Long-form Medical QA
-      Full Question Set Has No Gold Answer
-    type: database
     size: xl
     position:
       x: 1140
       'y': 40
+  - id: questions
+    label: |-
+      K-QA Question Set · 1,212
+      From 1,055 Unique Users
+      172 ICD-10-coded Conditions
+      Only 201 Have Physician References
+    type: database
+    size: xl
+    position:
+      x: 1420
+      'y': 40
   - id: answers
     label: |-
-      Author 201 Physician Answers
-      Six Doctors + Experienced Reviewer
-      Consult UpToDate and PubMed
+      Physician References for 201 Questions
+      Six Doctors on Different Question Sets
+      Reviewer · UpToDate / PubMed · Lay Style
       No Generative AI · About 400 Hours
     type: user
     size: xl
     position:
-      x: 1420
+      x: 1700
       'y': 40
   - id: decomposition
     label: |-
-      Decompose into Atomic Statements
-      Six Different Medical Doctors
+      Six Different Doctors Decompose Answers
       GPT-4 Few-shot Suggestions
-      Amend, Remove, or Add Missing Facts
+      Amend, Remove, or Add Statements
+      6.86% of Suggested Statements Modified
     type: process
     size: xl
     position:
-      x: 1700
+      x: 1980
       'y': 40
   - id: statements
     label: |-
-      Produce 1,589 Statements
+      Produce 1,589 Self-contained Statements
       Average 7.9 per Physician Answer
-      Concise · Accurate · Self-contained
       892 Must Have + 697 Nice to Have
+      Each Captures a Distinct Fact
     type: database
+    size: xl
+    position:
+      x: 1980
+      'y': 380
+  - id: importance
+    label: |-
+      Classify Clinical Importance
+      Same Six Doctors as Decomposition
+      Must: Crucial · Nice: Supplemental
+      Group Discussion to Consensus · 20 Hours
+    type: user
     size: xl
     position:
       x: 1700
       'y': 380
-  - id: importance
+  - id: predict
     label: |-
-      Clinician Importance Consensus
-      Must Have: Clinically Crucial
-      Nice to Have: Supplemental
-      Collaborative Medical-group Decision
-    type: user
+      Generate or Load Model Answers
+      Match the 201 Referenced Questions
+      Zero Temperature Where Configurable
+      ICL and Medical RAG Are Variants
+    type: process
     size: xl
     position:
       x: 1420
       'y': 380
-  - id: predict
+  - id: nli
     label: |-
-      Generate Model Answer
-      Evaluate the 201 Referenced Questions
-      Zero Temperature Where Configurable
-      Optional ICL and Medical RAG Variants
+      Official GPT-4 Few-shot CoT NLI
+      Model Answer = Premise
+      Each Gold Statement = Hypothesis
+      Separate Entailment + Contradiction Checks
     type: process
     size: xl
     position:
       x: 1140
       'y': 380
-  - id: nli
+  - id: comp
     label: |-
-      Automatic NLI Comparison
-      Model Answer Is Premise
-      Each Gold Statement Is Hypothesis
-      GPT-4 Few-shot CoT: Entail / Contradict
+      Comp · Comprehensiveness
+      Per Question: Entailed Must / All Must
+      Full Score = Sum of Fractions / 201
+      Nice-to-Have Entailment Is Skipped
     type: process
     size: xl
     position:
       x: 860
-      'y': 380
-  - id: validate
+      'y': 260
+  - id: hall
     label: |-
-      Validate the NLI Evaluator
-      50 Question-answer Pairs · 402 Statements
-      Three Physicians + Majority Vote
-      Fleiss Kappa 0.70
+      Hall · Hallucination Rate
+      Count Contradicted Must + Nice Statements
+      Full Score = Total Contradictions / 201
+      Mean Count per Question, Not Statement %
     type: process
+    size: xl
+    position:
+      x: 860
+      'y': 500
+  - id: report
+    label: |-
+      Report K-QA Answer Quality
+      Higher Comp · Lower Hall
+      Official Full-benchmark Denominator: 201
+      No Score over 1,011 Unreferenced Questions
+    type: terminal
     size: xl
     position:
       x: 580
       'y': 380
-  - id: metrics
+  - id: artifact_boundary
     label: |-
-      Report Medical Answer Quality
-      Comprehensiveness: Entailed Must Haves
-      Hallucination: Contradicted Gold Facts
-      Higher Comp and Lower Hall Are Better
-    type: terminal
+      Partly Public Artifact Boundary
+      Public: 1,212 Questions · 201 References
+      Statements + Eval Code · NLI CSV: 399
+      Paper Validator Study Used 402 Statements
+      Raw Patient Conversations Not Released
+    type: document
     size: xl
     position:
       x: 300
       'y': 380
+  - id: validate
+    label: |-
+      Optional NLI Evaluator Validation
+      50 Question-answer Pairs · 402 Statements
+      Three Physicians + Majority Vote
+      Fleiss Kappa = 0.70
+    type: process
+    size: xl
+    position:
+      x: 1140
+      'y': 700
 edges:
+  - from: evidence
+    to: interactions
+    type: data
   - from: interactions
     to: prefilter
     type: primary
@@ -187,9 +235,22 @@ edges:
     to: nli
     type: primary
   - from: nli
+    to: comp
+    type: primary
+  - from: nli
+    to: hall
+    type: primary
+  - from: comp
+    to: report
+    type: primary
+  - from: hall
+    to: report
+    type: primary
+  - from: report
+    to: artifact_boundary
+    type: data
+  - from: nli
     to: validate
-    type: primary
-  - from: validate
-    to: metrics
-    type: primary
+    type: data
+    label: Optional Validator Study
 modules: []

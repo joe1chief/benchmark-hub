@@ -4,20 +4,21 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MedAgentsBench Build Process
+  title: MedicalAgentsBench Construction and Evaluation
   description: >-
-    Current MedicalAgentsBench paper-aligned difficulty filtering over eight medical QA sources, human reasoning-depth
-    and validity review, MELD contamination screening, 862-item release, and joint accuracy-cost evaluation.
+    Paper-v3-aligned workflow from eight medical QA sources through difficulty filtering, human and MELD
+    verification, the 862-question release contract, and the released exact-choice, cost, and latency analysis.
   legend: >-
-    Solid arrows trace eight source datasets, a below-50% model-accuracy gate, nine balanced subsets, four
-    medical-student reviewers, MELD, 862 questions, and model-method cost evaluation.
+    Solid arrows show retained construction and evaluation flow. Labeled branches expose the below-50% hard gate,
+    human validity exclusions, emitted-result denominator, and paper-to-release drift. Dashed arrows mark exclusions
+    or evidence boundaries; the paper does not disclose a MELD cutoff, verification order, or replacement policy.
 nodes:
   - id: sources
     label: |-
-      Aggregate Eight Medical QA Sets
-      MedQA · PubMedQA · MedMCQA
-      MedBullets · MMLU · MMLU-Pro
-      MedExQA and MedXpertQA
+      Aggregate Eight Medical QA Sources
+      MedQA · PubMedQA · MedMCQA · MedBullets
+      MMLU · MMLU-Pro · MedExQA · MedXpertQA
+      MedXpertQA Splits into R and U
     type: database
     size: xl
     position:
@@ -25,147 +26,219 @@ nodes:
       'y': 40
   - id: standardize
     label: |-
-      Standardize Multiple-choice Data
-      Preserve Question · Options · Gold
-      Unify Dataset and Item Identifiers
-      Split MedXpert into R and U
+      Standardize Multiple-choice Records
+      Question · Option Map · Gold Index
+      Preserve Dataset and Real-item IDs
+      Three to Ten Answer Options
     type: process
     size: xl
     position:
-      x: 260
+      x: 340
       'y': 40
   - id: probe
     label: |-
-      Probe Difficulty across Models
-      Run Diverse Architectures per Item
-      Measure the Fraction Correct
+      Probe Each Candidate across Models
+      Use Multiple Model Architectures
+      Count k Correct among N Tested
       Avoid One-model Difficulty Bias
     type: process
     size: xl
     position:
-      x: 500
+      x: 660
       'y': 40
-  - id: hardgate
+  - id: hard_gate
     label: |-
-      Apply the Hard-candidate Gate
-      Keep Items below 50% Correct
-      Focus on Unsaturated Reasoning
-      Remove Clearly Easy Questions
-    type: process
+      Is the Correct-model Fraction
+      k / N Strictly below 50%?
+    type: decision
     size: xl
     position:
-      x: 740
+      x: 980
       'y': 40
   - id: sample
     label: |-
+      Sample Hard Candidates per Subset
+      Maximum 100 from Each Subset
       Balance Nine Evaluation Subsets
-      Seven Subsets Keep 100 Each
-      MedBullets Keeps 89
-      MMLU Keeps 73
+      Preserve Source Diversity
     type: process
     size: xl
     position:
-      x: 980
+      x: 1300
       'y': 40
   - id: depth
     label: |-
-      Validate Multi-step Reasoning
-      Four Clinical-year Med Students
-      Use a Five-level Depth Rubric
-      Document Discrete Inference Steps
+      Annotate Reasoning Depth
+      Four Clinical-year Medical Students
+      Five Levels of Minimum Inference Steps
+      Calibration + Overlap for Agreement
     type: user
     size: xl
     position:
-      x: 1220
+      x: 1620
       'y': 40
-  - id: validity
+  - id: human_review
     label: |-
-      Review Clinical Validity
-      Flag Wrong Gold and Poor Context
-      Exclude Outdated · Irrelevant Items
-      Remove 21 Questions in Total
+      Review Question Validity
+      Flag Wrong Gold · Poor Context
+      Flag Outdated or Irrelevant Knowledge
+      Any Flag Triggers Group Review
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 40
+      x: 1620
+      'y': 380
+  - id: validity_gate
+    label: |-
+      Do Fewer than Two Annotators
+      Agree the Concern Is Valid?
+    type: decision
+    size: xl
+    position:
+      x: 1300
+      'y': 380
   - id: meld
     label: |-
-      Screen Contamination with MELD
-      Exclude Answer Options from Text
-      Prompt First Half · Generate Second
-      Detect Memory by Levenshtein Match
+      Run MELD Contamination Screening
+      Remove Options · Split Question in Half
+      Generate the Unseen Second Half
+      Compare by Levenshtein Similarity
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: release
+      x: 1620
+      'y': 700
+  - id: verification_merge
     label: |-
-      Release MedicalAgentsBench
-      Final Set Has 862 Hard Questions
-      Average Length · 147.4 Tokens
-      Eight Sources · Nine Subsets
-    type: database
+      Integrate Both Verification Controls
+      Human Validity + MELD Evidence
+      MELD Cutoff + Exclusions Undisclosed
+      Final-count Reconciliation Undisclosed
+    type: process
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: basemodels
+      x: 1300
+      'y': 700
+  - id: excluded
     label: |-
-      Evaluate Ten Base Models
-      Seven Non-reasoning Models
-      Three Internalized Reasoners
-      Use Unified Prompts and Parsing
-    type: process
+      Exclude from Paper Hard Set
+      Easy Candidate or Validity Failure
+      Twenty-one Human-review Exclusions
+      5 Wrong · 5 Context · 11 Relevance
+    type: terminal
     size: xl
     position:
       x: 980
-      'y': 420
-  - id: methods
+      'y': 980
+  - id: release
     label: |-
-      Evaluate Nine Externalized Methods
-      CoT and Self-Consistency
-      Three Advanced Prompting Methods
-      Four Collaborative or Search Agents
+      Release Paper-v3 MedicalAgentsBench
+      862 Questions · Mean 147.4 Tokens
+      Seven Subsets × 100 + MedBullets 89
+      + MMLU 73 across Nine Subsets
+    type: database
+    size: xl
+    position:
+      x: 980
+      'y': 700
+  - id: release_drift
+    label: |-
+      Pinned Public-release Drift
+      Git v1.0 + HF/Zenodo Add AfriMedQA 32
+      README Task Table Totals 894, Not 862
+      Paper Gives No Reconciliation
+    type: document
+    size: xl
+    position:
+      x: 660
+      'y': 980
+  - id: evaluation
+    label: |-
+      Run Standardized Evaluations
+      7 Base + 3 Internalized Models
+      Nine Externalized Methods; Coverage Varies
+      SPO/AFlow: GPT-4o-mini / GPT-4o Only
+      Hard-set Agents · Three Runs
     type: process
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: accuracy
+      x: 660
+      'y': 700
+  - id: parser
     label: |-
-      Calculate Choice Accuracy
-      Compare Prediction with Gold Index
-      Aggregate by Nine Subsets
-      Average across Source Datasets
+      Extract One Option Label
+      Method-specific JSON or LLM Parsers
+      Reimplemented Agent Parsers Where Needed
+      No Single Universal Parser Is Released
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: cost
+      x: 340
+      'y': 700
+  - id: emitted_gate
     label: |-
-      Measure Inference Cost and Time
-      Price Commercial Models by Tokens
-      Estimate Open Models by Hosting
-      Time the Full Interaction Cycle
-    type: process
+      Did the Runner Emit a Result Row
+      with realidx and predicted_answer?
+    type: decision
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: report
+      x: 20
+      'y': 700
+  - id: missing_boundary
     label: |-
-      Publish Accuracy–Cost Analysis
-      Compare Internalized · Externalized
-      Trace the Pareto Frontier
-      Report Complementary Gains
+      Method-specific Failure or Omission
+      Global Scorer Does Not Restore Missing IDs
+      No Fixed-862 Denominator Is Enforced
     type: terminal
     size: xl
     position:
       x: 20
-      'y': 420
+      'y': 980
+  - id: exact_score
+    label: |-
+      Score Exact Choice Equality
+      Gold = answer_idx, Else answer
+      Correct iff Gold Equals Prediction
+      Item Score Is One or Zero
+    type: process
+    size: xl
+    position:
+      x: 20
+      'y': 1260
+  - id: aggregate
+    label: |-
+      Deduplicate First by realidx
+      Accuracy = Mean over Retained Rows
+      Macro-average the Nine Paper Subsets
+      Report Mean ± Std over Three Runs
+    type: process
+    size: xl
+    position:
+      x: 340
+      'y': 1260
+  - id: cost_time
+    label: |-
+      Average Cost/Time on Retained Rows
+      API Tokens or Published Hosting Rates
+      Raw Time = Full-cycle Wall Clock
+      Pareto Notebook Adjusts DeepSeek-V3
+      Plotted Time = Raw Mean / 10
+    type: process
+    size: xl
+    position:
+      x: 660
+      'y': 1260
+  - id: report
+    label: |-
+      Publish Accuracy–Cost Results
+      Pass@1 + Per-subset Accuracy
+      Inference Cost + Adjusted Time Markers
+      Empirical Pareto Frontier
+    type: terminal
+    size: xl
+    position:
+      x: 980
+      'y': 1260
 edges:
   - from: sources
     to: standardize
@@ -174,36 +247,92 @@ edges:
     to: probe
     type: primary
   - from: probe
-    to: hardgate
+    to: hard_gate
     type: primary
-  - from: hardgate
+  - from: hard_gate
     to: sample
     type: primary
+    label: Yes · k/N < 0.5
+    labelPosition: end
+  - from: hard_gate
+    to: excluded
+    type: optional
+    label: No · at least 50% correct
+    labelPosition: end
+    waypoints:
+      - x: 1080
+        'y': 250
+      - x: 1080
+        'y': 900
   - from: sample
     to: depth
     type: primary
   - from: depth
-    to: validity
+    to: human_review
     type: primary
-  - from: validity
+  - from: human_review
+    to: validity_gate
+    type: primary
+  - from: validity_gate
+    to: verification_merge
+    type: primary
+    label: Yes · retain
+    labelPosition: end
+  - from: validity_gate
+    to: excluded
+    type: optional
+    label: No · two or more agree
+    labelPosition: end
+    waypoints:
+      - x: 1400
+        'y': 560
+      - x: 1080
+        'y': 560
+  - from: depth
     to: meld
     type: primary
+    waypoints:
+      - x: 1740
+        'y': 250
+      - x: 1740
+        'y': 620
   - from: meld
+    to: verification_merge
+    type: primary
+  - from: verification_merge
     to: release
     type: primary
   - from: release
-    to: basemodels
+    to: release_drift
+    type: optional
+    label: Current artifact mismatch
+    labelPosition: end
+  - from: release
+    to: evaluation
     type: primary
-  - from: basemodels
-    to: methods
+  - from: evaluation
+    to: parser
     type: primary
-  - from: methods
-    to: accuracy
+  - from: parser
+    to: emitted_gate
     type: primary
-  - from: accuracy
-    to: cost
+  - from: emitted_gate
+    to: exact_score
     type: primary
-  - from: cost
+    label: Yes · retained row
+    labelPosition: end
+  - from: emitted_gate
+    to: missing_boundary
+    type: optional
+    label: No · not in scorer input
+    labelPosition: end
+  - from: exact_score
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: cost_time
+    type: primary
+  - from: cost_time
     to: report
     type: primary
 modules: []

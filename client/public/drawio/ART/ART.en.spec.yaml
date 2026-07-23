@@ -6,18 +6,17 @@ meta:
   routing: orthogonal
   title: ART Construction and Evaluation Workflow
   description: >-
-    Paper-aligned workflow for mining failure-prone clinical scenarios from real EHR-formatted data, generating a
-    balanced Action-based Reasoning Task benchmark, auditing clinical fidelity, and evaluating medical agents through a
-    live FHIR environment.
+    Paper-aligned four-stage workflow for mining failure-prone EHR scenarios, synthesizing wording around unchanged
+    patient data, validating clinical fidelity, and running stateless FHIR evaluation.
   legend: >-
-    ART means Action-based Reasoning Task, not automated red teaming. The released study evaluates 600 tasks: 200
-    retrieval, 200 temporal-aggregation, and 200 threshold or conditional tasks grounded in unchanged patient data.
+    The 600-task evaluation contains 200 retrieval, 200 aggregation, and 200 threshold/conditional tasks. Reported
+    result pairs are ordered GPT-4o-mini / Claude 3.5 Sonnet. Exact match does not validate the reasoning path.
 nodes:
   - id: failures
     label: |-
-      Analyze Agent Failures
-      Retrieval • aggregation
-      Conditional logic
+      Analyze MedAgentBench Failures
+      Retrieval • Aggregation
+      Threshold / Conditional Logic
     type: process
     size: xl
     position:
@@ -25,9 +24,9 @@ nodes:
       'y': 260
   - id: ehr
     label: |-
-      Mine Real EHR Records
-      50k rows • 695 patients
-      Keep values and times
+      Mine Single-Institution EHR
+      FHIR R5-Formatted Records
+      50,000 Records • 695 Patients
     type: database
     size: xl
     position:
@@ -42,19 +41,20 @@ nodes:
       'y': 260
   - id: retrieval
     label: |-
-      Retrieval Cases
-      11 lab codes
-      23–25 h boundaries
+      Retrieval Scenarios
+      ≤3 Readings • Clusters within 2 h
+      23–25 h Boundaries
+      11 Laboratory Codes
     type: process
     size: xl
     position:
       x: 880
-      'y': 40
+      'y': 20
   - id: aggregation
     label: |-
-      24 h Aggregation Cases
-      ≥3 measurements
-      Glucose • K • Na
+      24 h Aggregation Scenarios
+      Valid Windows with ≥3 Readings
+      Glucose • Potassium • Sodium
     type: process
     size: xl
     position:
@@ -62,38 +62,30 @@ nodes:
       'y': 260
   - id: conditional
     label: |-
-      Conditional Cases
-      7 value bands
-      Demographic rules
+      Conditional Scenarios
+      7 Value Bands • HGB / HCT / CR
+      Age- and Sex-Specific Thresholds
+      Retrieve → Judge → Intervene
     type: process
     size: xl
     position:
       x: 880
-      'y': 480
+      'y': 500
   - id: generate
     label: |-
-      Generate Tasks
-      Authentic values
-      Synthetic wording only
+      LLM Rephrasing Only
+      Patient Values and Times Unchanged
+      200 Tasks per Failure Mode
     type: process
     size: xl
     position:
       x: 1160
       'y': 260
-  - id: dataset
-    label: |-
-      Balanced ART Set
-      200 × 3 = 600 tasks
-    type: database
-    size: xl
-    position:
-      x: 2000
-      'y': 260
   - id: automatic_audit
     label: |-
-      Source-EHR Validation
-      Validate Before Inclusion
-      Values • time • rules
+      Validate against Source EHR
+      Check Values • Windows • Thresholds
+      Complete Before Inclusion
     type: process
     size: xl
     position:
@@ -101,50 +93,76 @@ nodes:
       'y': 260
   - id: clinical_audit
     label: |-
-      Clinical HITL Audit
-      Representative subset
+      Clinical HITL Review
+      Representative Subset
+      Facts • Logic • Clinical Context
     type: user
     size: xl
     position:
       x: 1720
       'y': 260
+  - id: dataset
+    label: |-
+      Balanced ART Evaluation Set
+      Retrieval 200 • Aggregation 200
+      Conditional 200 • Total 600
+    type: database
+    size: xl
+    position:
+      x: 2000
+      'y': 260
   - id: environment
     label: |-
-      Live FHIR R5 Run
-      Stateless • temperature 0
+      Live FHIR-Compliant EHR Run
+      MedAgentBench Framework
+      Stateless • Temperature 0 • No History
     type: process
     size: xl
     position:
       x: 2000
-      'y': 680
+      'y': 760
   - id: agents
     label: |-
-      Evaluate Two Agents
-      GPT-4o-mini • Claude 3.5
+      Evaluate Two Medical Agents
+      GPT-4o-mini
+      Claude 3.5 Sonnet
     type: process
     size: xl
     position:
       x: 1720
-      'y': 680
+      'y': 760
   - id: score
     label: |-
-      Exact-Match Success
-      Against EHR ground truth
+      Exact-Match Success Rate
+      Compare with EHR Ground Truth
+      Report by Failure Mode
     type: process
     size: xl
     position:
       x: 1440
-      'y': 680
+      'y': 760
   - id: report
     label: |-
-      Report Mode Gaps
-      R 100/100 • A 28/64
-      C 32/38
+      Reported Success Rate
+      GPT-4o-mini / Claude 3.5
+      Retrieval 100 / 100
+      Aggregation 28 / 64
+      Conditional 32 / 38
     type: terminal
     size: xl
     position:
       x: 1160
-      'y': 680
+      'y': 650
+  - id: limitation
+    label: |-
+      Metric Limitation
+      Exact Match Does Not Verify
+      the Reasoning Path
+    type: document
+    size: xl
+    position:
+      x: 1160
+      'y': 870
 edges:
   - from: failures
     to: ehr
@@ -191,4 +209,7 @@ edges:
   - from: score
     to: report
     type: primary
+  - from: score
+    to: limitation
+    type: secondary
 modules: []

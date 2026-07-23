@@ -1,130 +1,324 @@
 {
   "version": 1,
-  "title": "Mantis-Eval Build Process",
+  "title": "Mantis-Eval Evidence-aligned Build and Evaluation Process",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 10,
-    "edges": 9,
+    "nodes": 26,
+    "edges": 24,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "Freeze Primary Evidence\nPaper · arXiv 2405.01483v3\nOfficial Repo · f3a31920\nHF Dataset · a3d92f9e\nAudit Exact Revisions",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "scope",
-      "label": "Define Held-out Multi-image Evaluation\nTarget Reasoning and Coreference\nCover Relations across Images\nUse English Questions",
+      "label": "Define Held-out Mantis-Eval\nMulti-image Reasoning + Coreference\nEnglish Test Questions\nUnseen during Mantis Training",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "acquire",
-      "label": "Acquire Candidate Images\nAnnotators Use Google Search\nSelect Images Needed Together\nCover Diverse Everyday Topics",
+      "label": "Paper · Annotators Acquire Images\nUse Google Search\nForm Multi-image Groups\nCover Diverse Topics",
       "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "compose",
-      "label": "Compose Multi-image Instances\nAverage 2.5 Images per Example\nMaximum 5 Images\nPreserve Image Order",
-      "type": "process",
       "size": "xl"
     },
     {
       "id": "author",
-      "label": "Manually Author Questions\nRequire Joint Image Understanding\nInclude Multiple Choice\nInclude Short Answer",
+      "label": "Manually Author Proper Questions\nRequire Joint Image Understanding\nCover Size / Weight and Other Relations\nInclude MCQ + Short Answer",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "curate",
-      "label": "Finalize Manual Curation\nTopics Include Size Perception\nWeight Comparison and Other Relations\nKeep Both Question Formats",
-      "type": "process",
-      "size": "xl"
-    },
-    {
       "id": "release",
-      "label": "Release Mantis-Eval\n217 Test Examples\nMultiple-choice + Short-answer Items\nHeld Out from Mantis Training Data",
+      "label": "Release Paper Mantis-Eval\n217 Test Examples\n2.5 Images on Average · Maximum 5\nReasoning + Coreference",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "input",
-      "label": "Prepare Model-specific Inputs\nNative Models Receive Image Sequence\nSingle-image Baselines Merge Horizontally\nAppend the Question Text",
+      "id": "support_gate",
+      "label": "model.support_multi_image Flag?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "sequence_input",
+      "label": "True Path · Build Interleaved Input\nPreserve Image / Text Interleaving\nAdd Missing Image Placeholders\nPreserve Released Image Order",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "prompt",
-      "label": "Request a Concise Final Response\nMultiple Choice · Output Option Letter\nShort Answer · Use “Final Answer:”\nGenerate One Response per Item",
+      "id": "flat_input",
+      "label": "False Path · Build Images-first Input\nRemove Image Placeholders from Text\nPass Every Image before Joined Text\nQwenVL Keeps List · Other Wrappers May Merge",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "type_gate",
+      "label": "Released Question Type?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "mc_prompt",
+      "label": "Format Multiple-choice Prompt\nAppend Lettered Options as Needed\nAsk for the Option Letter Directly\nRun the Selected Model Wrapper",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "Apply Type-specific Parsing\nMC · First Alphabetic Character / Option Text\nShort · Parse Final-answer Phrases\nCompare Case-insensitively",
+      "id": "short_prompt",
+      "label": "Format Short-answer Prompt\nAllow Analysis before Final Response\nRequest Final Answer: Marker\nRun the Selected Model Wrapper",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "mc_parse",
+      "label": "Normalize Multiple-choice Response\nStrip Final Answer: / The Answer Is / Answer:\nThen Select First Alphabetic Character\nUppercase the Selected Character",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "letter_gate",
+      "label": "Valid In-range Option Letter?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "letter_compare",
+      "label": "Compare Option Letter\nSelected Uppercase Letter\nEquals Reference Letter",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "text_fallback",
+      "label": "Exact Option-text Fallback\nUse Raw Response, Not Parsed Phrase\nStrip A. / A: / (A) from Gold Option\nCase-sensitive Exact Equality",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "short_parse",
+      "label": "Parse Short Answer\nSame Three Marker Precedence Rules\nStrip Marker Suffix; Else Keep Raw\nNormalize Reference Parentheses / Space\nCase-insensitive Exact Equality",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "match_gate",
+      "label": "Row Marked Correct?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "correct",
+      "label": "Count Row Correct",
+      "type": "terminal",
+      "size": "m"
+    },
+    {
+      "id": "incorrect",
+      "label": "Count Row Incorrect",
+      "type": "terminal",
+      "size": "m"
+    },
+    {
+      "id": "aggregate",
+      "label": "Aggregate All Evaluated Rows\nMC Accuracy · 200-row Denominator\nShort Accuracy · 17-row Denominator\nOverall Accuracy · 217-row Denominator",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "report",
-      "label": "Report Accuracy\nMultiple-choice Accuracy\nShort-answer Accuracy\nOverall Mean Correctness",
+      "label": "Report Mantis-Eval Results\nMultiple-choice Accuracy\nShort-answer Accuracy\nOverall Row-level Accuracy",
       "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "construction_boundary",
+      "label": "Undisclosed Construction Boundary\nCandidate Counts / Rejection Rules\nQC Review / Adjudication\nMCQ Option + Distractor Generation",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "release_snapshot",
+      "label": "Pinned HF Test Snapshot\n217 Rows · 200 MCQ + 17 Short\nImage Counts · 145 / 39 / 32 / 1\nFor 2 / 3 / 4 / 5 Images",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "source_boundary",
+      "label": "Paper-to-release Source Boundary\nPaper Says Google Search\nHF Source Field · Manual 50 · ChatGPT 42\nImagenHub 28 + Mixed Web / Datasets",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "rights_boundary",
+      "label": "Release and Rights Boundary\nRepo + HF Card · Apache-2.0\nEmbedded Third-party Images\nNo Per-image License Mapping Disclosed",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "code_boundary",
+      "label": "Evaluator Version Boundary\nFirst Public Code · 44d20bf6\nParser Update · 33561424\nGeneration Settings Are Wrapper-specific",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
+      "from": "evidence",
+      "to": "scope",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
       "from": "scope",
       "to": "acquire",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "acquire",
-      "to": "compose",
-      "type": "primary"
-    },
-    {
       "id": "edge-3",
-      "from": "compose",
+      "from": "acquire",
       "to": "author",
       "type": "primary"
     },
     {
       "id": "edge-4",
       "from": "author",
-      "to": "curate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "curate",
       "to": "release",
       "type": "primary"
     },
     {
-      "id": "edge-6",
+      "id": "edge-5",
       "from": "release",
-      "to": "input",
+      "to": "support_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-6",
+      "from": "support_gate",
+      "to": "sequence_input",
+      "type": "primary",
+      "label": "True · Interleaved"
     },
     {
       "id": "edge-7",
-      "from": "input",
-      "to": "prompt",
-      "type": "primary"
+      "from": "support_gate",
+      "to": "flat_input",
+      "type": "primary",
+      "label": "False · Images First"
     },
     {
       "id": "edge-8",
-      "from": "prompt",
-      "to": "parse",
+      "from": "sequence_input",
+      "to": "type_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "parse",
+      "from": "flat_input",
+      "to": "type_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "type_gate",
+      "to": "mc_prompt",
+      "type": "primary",
+      "label": "Multiple Choice"
+    },
+    {
+      "id": "edge-11",
+      "from": "type_gate",
+      "to": "short_prompt",
+      "type": "primary",
+      "label": "Short Answer"
+    },
+    {
+      "id": "edge-12",
+      "from": "mc_prompt",
+      "to": "mc_parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "mc_parse",
+      "to": "letter_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "letter_gate",
+      "to": "letter_compare",
+      "type": "primary",
+      "label": "Valid Letter"
+    },
+    {
+      "id": "edge-15",
+      "from": "letter_gate",
+      "to": "text_fallback",
+      "type": "primary",
+      "label": "Invalid / Missing"
+    },
+    {
+      "id": "edge-16",
+      "from": "short_prompt",
+      "to": "short_parse",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "letter_compare",
+      "to": "match_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "text_fallback",
+      "to": "match_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
+      "from": "short_parse",
+      "to": "match_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-20",
+      "from": "match_gate",
+      "to": "correct",
+      "type": "primary",
+      "label": "Correct"
+    },
+    {
+      "id": "edge-21",
+      "from": "match_gate",
+      "to": "incorrect",
+      "type": "primary",
+      "label": "Incorrect"
+    },
+    {
+      "id": "edge-22",
+      "from": "correct",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-23",
+      "from": "incorrect",
+      "to": "aggregate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "aggregate",
       "to": "report",
       "type": "primary"
     }

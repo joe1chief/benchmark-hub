@@ -71,10 +71,7 @@ function drawioCells(xml) {
     && !readAttribute(tag, 'style').split(';').includes('edgeLabel')
   ));
   const edges = tags.filter(tag => readAttribute(tag, 'edge') === '1');
-  const edgeLabels = tags.filter(tag => (
-    readAttribute(tag, 'vertex') === '1'
-    && readAttribute(tag, 'style').split(';').includes('edgeLabel')
-  ));
+  const edgeLabels = edges.filter(tag => normalizedLabel(readAttribute(tag, 'value')));
   return { nodes, edges, edgeLabels };
 }
 

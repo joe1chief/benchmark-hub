@@ -5,179 +5,261 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: NExT-QA 构建与评测流程
-  description: 对齐论文的高交互 VidOR 视频筛选、三阶段人工标注、质量控制、困难多选干扰项生成、开放式回答生成与分题型评测流程。
-  legend: NExT-QA 含 5,440 个视频和 52,044 条开放式问答，其中因果、时序和描述问题分别占 48%、29% 和 23%。
+  description: 对齐论文 v2 与公开代码的视频筛选、分阶段标注、验收过滤、五选一干扰项构造、选择题与开放题独立评分及发布边界。
+  legend: NExT-QA 保留 5,440 个视频与 52,044 条自由回答问答；47,692 道五选一题和完整开放题使用不同评分器，论文未定义跨任务合并分数。
 nodes:
-  - id: goal
+  - id: scope
     label: |-
       定义解释型视频问答
-      因果与时序动作
-      丰富物体交互
+      可见的因果与时序动作
+      丰富的物体交互
       真实日常活动
     type: document
     size: xl
     position:
       x: 20
-      'y': 230
+      'y': 250
   - id: videos
     label: |-
       筛选 6,000 个 VidOR 视频
-      原始来源为 YFCC-100M
+      原始视频来自 YFCC-100M
       优先较长且交互丰富的片段
-      训练验证测试按 7:1:2 划分
+      不限定演员或活动类别
     type: database
     size: xl
     position:
       x: 260
-      'y': 230
-  - id: annotation
+      'y': 250
+  - id: split
     label: |-
-      执行三阶段标注
-      100 名受训本科生
-      在监督下持续一年
-      依次标注因果时序与描述问题
-    type: process
+      按视频随机划分
+      训练 · 验证 · 测试 = 7:1:2
+      在题目标注之前完成划分
+      避免视频跨划分复用
+    type: database
     size: xl
     position:
       x: 500
-      'y': 230
-  - id: qa_control
+      'y': 250
+  - id: guidance
     label: |-
-      分离问题与答案标注角色
-      回答者修复或删除坏问题
-      要求证据可见且答案客观
-      建议题干 22 词 · 答案 6 词
-    type: process
+      培训并监督 100 名本科生
+      从下拉菜单选择问题类型
+      建议题干 ≤22 词 · 答案 ≤6 词
+      上报无法提出好问题的视频
+    type: document
     size: xl
     position:
       x: 740
-      'y': 230
-  - id: postprocess
+      'y': 250
+  - id: annotation
     label: |-
-      后处理标注数据
-      删除确认无聊的视频
-      均衡验证测试中的是否答案
-      删除答案超过二十的计数题
+      一年内分三阶段标注
+      先标注因果问题
+      再标注时序问题
+      最后标注描述问题
     type: process
     size: xl
     position:
       x: 980
-      'y': 230
+      'y': 250
+  - id: qa_roles
+    label: |-
+      分离问题与答案标注角色
+      回答者先检查问题质量
+      尽可能修复不合格问题
+      仅依据可见客观证据作答
+    type: process
+    size: xl
+    position:
+      x: 1220
+      'y': 250
+  - id: acceptance_gate
+    label: |-
+      能否依据视频可见证据
+      客观回答？
+    type: decision
+    size: xl
+    position:
+      x: 1460
+      'y': 250
+  - id: reject_annotation
+    label: |-
+      删除不可用问题
+      主观 · 无法回答
+      或缺少可见证据
+    type: terminal
+    size: xl
+    position:
+      x: 1460
+      'y': 500
+  - id: postprocess
+    label: |-
+      后处理已验收标注
+      删除确认无聊的视频
+      均衡验证与测试集的是非答案
+      删除答案大于二十的计数题
+    type: process
+    size: xl
+    position:
+      x: 1700
+      'y': 250
   - id: release
     label: |-
-      保留 5,440 视频 · 52,044 问答
+      保留 5,440 个视频 · 52,044 条问答
       训练 3,870 · 验证 570 · 测试 1,000
       因果 48% · 时序 29% · 描述 23%
       保留简短自由文本答案
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 230
-  - id: mc_group
-    label: |-
-      按题型分组非二元问题
-      检索 50 个最相似问题
-      使用 Sentence-BERT 余弦相似度
-      收集其答案作为候选干扰项
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: open_task
-    label: |-
-      定义开放式问答
-      不提供候选选项
-      生成简短短语答案
-      使用全部 52,044 条问答
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: mc_filter
-    label: |-
-      过滤干扰项候选
-      删除词形重复项
-      删除相似度高于 0.9 的答案
-      保留相似度高于 0.2 的困难负例
-    type: process
-    size: xl
-    position:
-      x: 1700
-      'y': 40
-  - id: open_eval
-    label: |-
-      评测生成答案
-      删除停用词并词形还原
-      使用 WUPS 语义相似度
-      二元与计数题使用准确率
-    type: process
-    size: xl
-    position:
-      x: 1700
-      'y': 420
-  - id: mc_manual
-    label: |-
-      组成并检查五个选项
-      采样四个合格干扰项
-      均匀插入正确答案
-      人工修订每组题目与选项
-    type: process
-    size: xl
-    position:
       x: 1940
-      'y': 40
-  - id: mc_eval
+      'y': 250
+  - id: task_gate
     label: |-
-      评测多项选择问答
-      47,692 道五选一问题
-      精确选项准确率
-      比较视觉与盲问答基线
-    type: process
+      采用哪种评测
+      任务合同？
+    type: decision
     size: xl
     position:
       x: 2180
-      'y': 40
-  - id: report
+      'y': 250
+  - id: mc_group
     label: |-
-      报告 NExT-QA 结果
-      因果 · 时序 · 描述
-      多选准确率 · 开放式 WUPS
-      与人类表现比较
-    type: terminal
+      构造选择题候选答案
+      排除二元问题
+      按已标注题型分组
+      用 Sentence-BERT 检索 50 个最相似问题
+    type: process
     size: xl
     position:
       x: 2420
-      'y': 230
+      'y': 40
+  - id: mc_filter
+    label: |-
+      过滤候选答案
+      忽略停用词后删除词形重复项
+      删除答案相似度 >0.9 的候选
+      淘汰相似度 <0.2 的简单负例
+    type: process
+    size: xl
+    position:
+      x: 2660
+      'y': 40
+  - id: mc_manual
+    label: |-
+      组成每组五选一题目
+      采样四个合格干扰项
+      均匀插入正确答案
+      人工检查并修订全部题组
+    type: process
+    size: xl
+    position:
+      x: 2900
+      'y': 40
+  - id: mc_eval
+    label: |-
+      评分 47,692 道选择题
+      精确比较选项索引
+      细分题型 · 因果 · 时序 · 描述
+      总准确率 · 人类验证集准确率 88.38%
+    type: process
+    size: xl
+    position:
+      x: 3140
+      'y': 40
+  - id: oe_task
+    label: |-
+      定义开放式生成任务
+      不提供候选选项
+      使用全部 52,044 条问答
+      生成简短自由文本答案
+    type: process
+    size: xl
+    position:
+      x: 2420
+      'y': 460
+  - id: oe_eval
+    label: |-
+      使用公开的 NExT-OE 评分器
+      自定义停用词过滤 · 词形还原
+      二元题与计数题使用精确匹配
+      其余用 WUPS@0 · 有补充答案时取最高分
+    type: process
+    size: xl
+    position:
+      x: 2660
+      'y': 460
+  - id: report
+    label: |-
+      分别报告 NExT-QA 结果
+      选择题准确率
+      因果/时序/描述开放题 WUPS
+      论文未定义跨任务合并分数
+    type: terminal
+    size: xl
+    position:
+      x: 3380
+      'y': 250
+  - id: source_boundary
+    label: |-
+      论文与发布边界
+      arXiv v2 SHA-256 c2c951…
+      NExT-QA 2432e97… · NExT-OE a83f8f5… · MIT
+      问答标注与评分器公开 · 原始视频经网盘提供
+      标注日志与构建脚本未发布
+    type: document
+    size: xl
+    position:
+      x: 3380
+      'y': 500
 edges:
-  - from: goal
+  - from: scope
     to: videos
     type: primary
   - from: videos
+    to: split
+    type: primary
+  - from: split
+    to: guidance
+    type: primary
+  - from: guidance
     to: annotation
     type: primary
   - from: annotation
-    to: qa_control
+    to: qa_roles
     type: primary
-  - from: qa_control
+  - from: qa_roles
+    to: acceptance_gate
+    type: primary
+  - from: acceptance_gate
     to: postprocess
     type: primary
+    label: 验收
+    labelPosition: center
+  - from: acceptance_gate
+    to: reject_annotation
+    type: primary
+    label: 删除
+    labelPosition: center
   - from: postprocess
     to: release
     type: primary
   - from: release
+    to: task_gate
+    type: primary
+  - from: task_gate
     to: mc_group
     type: primary
-  - from: release
-    to: open_task
+    label: 五选一
+    labelPosition: center
+  - from: task_gate
+    to: oe_task
     type: primary
+    label: 开放式
+    labelPosition: center
   - from: mc_group
     to: mc_filter
-    type: primary
-  - from: open_task
-    to: open_eval
     type: primary
   - from: mc_filter
     to: mc_manual
@@ -185,10 +267,24 @@ edges:
   - from: mc_manual
     to: mc_eval
     type: primary
+  - from: oe_task
+    to: oe_eval
+    type: primary
   - from: mc_eval
     to: report
     type: primary
-  - from: open_eval
+    label: 准确率
+    labelPosition: center
+  - from: oe_eval
     to: report
     type: primary
+    label: 语义相似度
+    labelPosition: center
+  - from: report
+    to: source_boundary
+    type: secondary
+    label: 来源边界
+    labelPosition: center
+    style:
+      dashed: true
 modules: []

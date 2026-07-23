@@ -1,177 +1,256 @@
 meta:
   profile: academic-paper
-  source: generated
+  source: edited
   theme: academic-color
   layout: horizontal
   routing: orthogonal
   title: LiveCodeBench v6 构建流程
-  description: 展示官方竞赛题整理到 release_v6 的构建过程，以及当前官方代码生成评测路径。
-  legend: release_v6 包含 2023 年 5 月至 2025 年 4 月发布的 1,055 道题。官方运行器默认使用裁剪后的 code_generation_lite 测试；--not_fast 可切换到原始完整测试。
+  description: 合并论文 v2 的整理方法、固定的 release_v6 数据，以及当前官方代码生成与自修复 runner，并保留版本、完整测试与榜单漂移边界。
+  legend: 实线表示官方数据或评测流程；下方分支是独立自修复任务；右侧卡片说明 --not_fast 不是固定到 v6 的完整测试快照。
 nodes:
   - id: platforms
     label: |-
       持续跟踪公开编程竞赛
-      LeetCode周赛与双周赛
-      AtCoder Beginner Contest
-      部分CodeForces Div.3和Div.4
+      LeetCode周赛/双周赛
+      AtCoder ABC
+      部分CodeForces Div.3/4
     type: database
     size: xl
     position:
-      x: 20
-      'y': 40
-  - id: collect
+      x: 64
+      'y': 96
+  - id: scrape
     label: |-
-      收集每道新题
-      题面 · 发布日期 · 难度
-      标准解答
-      可获得时收集测试与起始代码
+      抓取公开问题记录
+      题面 · 竞赛日期 · 难度
+      标准解 · 测试 · 起始代码
+      只使用公开可见内容
     type: process
     size: xl
     position:
-      x: 300
-      'y': 40
-  - id: curate
+      x: 336
+      'y': 96
+  - id: filter
     label: |-
-      整理难度与测试
+      应用论文质量筛选
+      解析公式 · 排除图片题
+      排除不可输入输出判题任务
       排除过度困难的问题
-      完整时直接使用平台测试
-      生成或修补缺失测试覆盖
     type: process
     size: xl
     position:
-      x: 580
-      'y': 40
-  - id: format
-    label: |-
-      标准化代码生成实例
-      自然语言题面与示例
-      函数式或标准输入约定
-      以未见测试判断功能正确性
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 40
-  - id: extend
-    label: |-
-      扩展持续更新的基准
-      纳入自2023年5月起的问题
-      持续收录至2025年4月
-      保留日期用于时间窗口评分
-    type: process
-    size: xl
-    position:
-      x: 1140
-      'y': 40
-  - id: release
-    label: |-
-      发布release_v6
-      共1,055道编程题
-      简单 · 中等 · 困难标签
-      公开LiveCodeBench版本
-    type: database
-    size: xl
-    position:
-      x: 1420
-      'y': 40
+      x: 608
+      'y': 96
   - id: tests
     label: |-
-      选择测试套件
-      默认 · 裁剪版code_generation_lite
-      更快且表现估计相近
-      --not_fast · 原始完整测试
+      整理功能测试
+      可得时直接使用平台测试
+      否则生成随机+对抗输入
+      用正确程序验证 · 最多100个
     type: process
     size: xl
     position:
-      x: 1420
-      'y': 420
+      x: 880
+      'y': 96
+  - id: format
+    label: |-
+      标准化代码生成任务
+      LeetCode · 函数式+起始代码
+      AtCoder/CodeForces · 标准输入
+      保留日期 · 平台 · 难度
+    type: process
+    size: xl
+    position:
+      x: 1152
+      'y': 96
+  - id: release
+    label: |-
+      固定release_v6
+      1,055题 · 2023年5月–2025年4月
+      公开code_generation_lite资产
+      晚于论文的511题快照
+    type: database
+    size: xl
+    position:
+      x: 1424
+      'y': 96
+  - id: select
+    label: |-
+      加载官方test划分
+      version_tag = release_v6
+      可选起止日期筛选
+      Hugging Face单一test划分
+    type: process
+    size: xl
+    position:
+      x: 1424
+      'y': 416
   - id: prompt
     label: |-
-      构造模型专用提示词
-      区分函数式与标准输入格式
-      应用配置的模型风格
-      要求仅输出完整解答
+      构造模型风格提示
+      区分函数式与标准输入契约
+      论文 · 指令模型0-shot
+      论文 · 基础模型1-shot
     type: process
     size: xl
     position:
-      x: 1140
-      'y': 420
-  - id: generate
+      x: 1152
+      'y': 416
+  - id: sample
     label: |-
-      采样候选程序
-      n = 10 · 温度 = 0.2
-      top_p = 0.95 · 最大2,000词元
-      按需缓存或续跑输出
+      应用当前CLI默认值
+      n=10 · 温度=0.2 · top_p=0.95
+      max_tokens=2,000
+      属于配置 · 不是数据属性
     type: process
     size: xl
     position:
-      x: 860
-      'y': 420
+      x: 880
+      'y': 416
   - id: parse
     label: |-
-      抽取可执行代码
-      应用模型风格输出解析
-      每题保留10个候选
-      将每个候选送入检查器
+      解析模型专用输出
+      抽取可执行Python代码
+      保留n个候选 · 默认10个
     type: process
     size: xl
     position:
-      x: 580
-      'y': 420
-  - id: check
+      x: 608
+      'y': 416
+  - id: checker
     label: |-
       运行修改版APPS检查器
-      在全部测试上编译并执行
-      处理已修复边界情况与超时
-      记录每个候选通过或失败
+      编译/执行公开与私有测试
+      候选必须通过全部测试
+      超时可带来小于0.5分波动
     type: process
     size: xl
     position:
-      x: 300
-      'y': 420
-  - id: report
+      x: 336
+      'y': 416
+  - id: metrics
     label: |-
-      报告代码生成得分
-      估计Pass@1与Pass@5
+      报告代码生成指标
+      官方文档 · Pass@1+Pass@5
       按日期 · 平台 · 难度切分
-      固定release_v6以便复现
+    type: formula
+    size: xl
+    position:
+      x: 64
+      'y': 416
+  - id: leaderboard
+    label: |-
+      动态官方榜单
+      当前快照 · v6 · Pass@1
+      只接收代码生成PR提交
+      保留旧release_v5页面
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 64
+      'y': 736
+  - id: repair_seed
+    label: |-
+      启动独立自修复任务
+      读取既有代码生成评测文件
+      已正确输出保持不变
+    type: document
+    size: xl
+    position:
+      x: 336
+      'y': 736
+  - id: repair_feedback
+    label: |-
+      对每个失败候选
+      给出语法/运行时/错误答案
+      或超时反馈
+      要求输出完整修复程序
+    type: process
+    size: xl
+    position:
+      x: 608
+      'y': 736
+  - id: repair_check
+    label: |-
+      每个失败候选生成一次修复
+      当前自修复命令仅支持n=1
+      抽取代码 · 重跑功能测试
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 736
+  - id: repair_metric
+    label: |-
+      自修复合并Pass@1
+      原始成功+修复成功
+      独立任务 · 不是Pass@5
+    type: terminal
+    size: xl
+    position:
+      x: 1152
+      'y': 736
+  - id: full_boundary
+    label: |-
+      完整测试版本边界
+      默认 · 裁剪版code_generation_lite
+      --not_fast加载code_generation
+      当前完整加载器忽略release_version
+    type: document
+    size: xl
+    position:
+      x: 1424
+      'y': 736
 edges:
   - from: platforms
-    to: collect
+    to: scrape
     type: primary
-  - from: collect
-    to: curate
+  - from: scrape
+    to: filter
     type: primary
-  - from: curate
-    to: format
-    type: primary
-  - from: format
-    to: extend
-    type: primary
-  - from: extend
-    to: release
-    type: primary
-  - from: release
+  - from: filter
     to: tests
     type: primary
   - from: tests
+    to: format
+    type: primary
+  - from: format
+    to: release
+    type: primary
+  - from: release
+    to: select
+    type: primary
+  - from: select
     to: prompt
     type: primary
   - from: prompt
-    to: generate
+    to: sample
     type: primary
-  - from: generate
+  - from: sample
     to: parse
     type: primary
   - from: parse
-    to: check
+    to: checker
     type: primary
-  - from: check
-    to: report
+  - from: checker
+    to: metrics
     type: primary
+  - from: metrics
+    to: leaderboard
+    type: primary
+  - from: checker
+    to: repair_seed
+    type: data
+  - from: repair_seed
+    to: repair_feedback
+    type: primary
+  - from: repair_feedback
+    to: repair_check
+    type: primary
+  - from: repair_check
+    to: repair_metric
+    type: primary
+  - from: select
+    to: full_boundary
+    type: optional
 modules: []

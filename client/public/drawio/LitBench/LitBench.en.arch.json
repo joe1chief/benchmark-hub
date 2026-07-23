@@ -2,172 +2,256 @@
   "version": 1,
   "title": "LitBench Build Process",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 14,
+    "nodes": 20,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "Start from r/WritingPrompts\nStories Share a Writing Prompt\nReddit Upvotes Supply Preference Signals\nPreserve Story · Prompt · Time Metadata",
+      "id": "evidence",
+      "label": "Evidence · EACL 2026 Final\n2026.eacl-long.362 · Git c1017dbe\nA.9 · Effective Batch128 · LR1e-5\nWarmup10% · bfloat16 · AdamW\nGit GenRM · 2e-5 · 3 Epochs · Max8192\nGit Shell ≠ Paper Setup",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "reddit",
+      "label": "r/WritingPrompts Corpus\nHuman Stories under Shared Prompts\nUpvotes · Comments · Timestamps\nUpvotes Are a Noisy Preference Proxy",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "test_raw",
-      "label": "Collect the Held-out Benchmark\nQuery Reddit with PRAW\nSearch Top 100 Results for 5,000+ Prompt IDs\nKeep Stories Posted after 2 January 2023",
+      "id": "test_source",
+      "label": "Held-out Test Candidates\nPRAW Search over Fan et al. Posts\nTop 100 Results per Source Post\n5,000+ Prompt Post IDs\nDiscard Stories Older than 2023",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "train_raw",
-      "label": "Source the Training Corpus\nUse MIT-licensed WritingPrompts Preferences\nTake Stories Posted before 2023\nKeep Training Separate from the Held-out Test",
+      "id": "train_source",
+      "label": "Training Candidates\neuclaise/WritingPrompts_preferences\nSource HF 6f0b721 · MIT\nStories Strictly before 2023",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "story_filter",
-      "label": "Filter Stories Independently in Each Split\nRequire at Least 10 Upvotes\nKeep 50+ Words and at Most 2,048 Tokens\nRemove Low-signal or Excessively Long Entries",
+      "id": "test_story_qc",
+      "label": "Story-level QC · Test\nRequire at Least 10 Upvotes\nRemove Non-story Comments\n50+ Words · At Most 2,048 Tokens",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "pairs",
-      "label": "Form Within-prompt Story Pairs\nCompare Two Responses to the Same Prompt\nMark Higher-upvote Story as Chosen\nRetain the Pair Metadata",
+      "id": "train_story_qc",
+      "label": "Story-level QC · Train\nRequire at Least 10 Upvotes\nRemove Non-story Comments\n50+ Words · At Most 2,048 Tokens",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "preference_filter",
-      "label": "Strengthen the Preference Signal\nRequire at Least 25% Upvote Difference\nChosen Story Must Have Been Posted Later\nReduce Marginal and Exposure-time Bias",
+      "id": "test_pairs",
+      "label": "Within-prompt Test Pairs\nHigher-upvote Story Is Chosen\nGap at Least 25% of Chosen Score\nChosen Story Must Be Newer",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "length_debias",
-      "label": "Debias Story-length Differences\nBuild a 100-bin Length-difference Histogram\nPrune Pairs toward a Symmetric Distribution\nBalance Longer and Shorter Chosen Stories",
+      "id": "train_pairs",
+      "label": "Within-prompt Training Pairs\nHigher-upvote Story Is Chosen\nGap at Least 25% of Chosen Score\nChosen Story Must Be Newer",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "release",
-      "label": "Release LitBench Data Resources\nTest · 2,480 Pairs from 3,543 Stories\nTrain · 43,827 Pairs from 50,309 Stories\nApply the Same Curation Separately to Both",
+      "id": "test_length",
+      "label": "Debias Test Pair Length\n100-bin Chosen-minus-rejected Histogram\nPrune to a Symmetric Distribution\nBalance Longer / Shorter Chosen Stories",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "train_length",
+      "label": "Debias Training Pair Length\n100-bin Chosen-minus-rejected Histogram\nPrune to a Symmetric Distribution\nBalance Longer / Shorter Chosen Stories",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "test_set",
+      "label": "Paper Test Benchmark\n2,480 Pairwise Comparisons\n3,543 Unique Stories\nAverage Story Length · 550 Words",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "judges",
-      "label": "Evaluate Zero-shot LLM Judges\nPresent Unlabeled Stories A and B\nSwap Both Orders to Control Position Bias\nCompare the Verdict with Human Preference",
+      "id": "train_set",
+      "label": "Paper Training Corpus\n43,827 Preference Pairs\n50,309 Unique Stories\nCurated Independently from Test",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "zero_shot",
+      "label": "Zero-shot LLM Judges\nUnlabeled Story A / Story B\nExplanation then A/B Verdict\nEvaluate Both Story Orders\nAverage Pairwise Accuracy",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "rewards",
-      "label": "Train Creative-writing Reward Models\nBradley–Terry Discriminative Models\nGenerative Models with or without Rationale\nTest Agreement on the Debiased Benchmark",
+      "id": "bt_model",
+      "label": "Bradley-Terry Reward Model\nTrain on 43,827 Pairs\nScore Each Story Independently\nMinimize Negative Log-sigmoid\nof Chosen-minus-rejected Reward",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gen_model",
+      "label": "Generative Reward Models\nSFT Direct A/B or GPT-4.1 Rationale + Verdict\nRandomize A/B at Test Time\nTemperature 0 · One Sample\nCross-entropy Training",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "Pairwise Accuracy + Paper Findings\nCorrect Preferences ÷ Evaluated Pairs\nZero-shot Averages Both Story Orders\nClaude 3.7 Sonnet · 73%\nBest BT / GenRM · About 78%\nGenRM-CoT · 72%",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "rm_ranking",
+      "label": "Novel-story RM Ranking\n64 Stories · 40 LitBench Prompts\nGenerated by GPT-4.1 + GPT-4o\nLlama-8B BT Ranks New Stories\nSelect RM-best / RM-worst per Prompt",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human_study",
-      "label": "Validate Rankings Online with Humans\nGenerate New Stories with GPT-4.1 and GPT-4o\nRank Them with the Trained Reward Model\nAsk Annotators for Pairwise Preferences",
+      "label": "Online Human Study\n46 US/UK Prolific Workers\n10–13 Raters per Pair\nRM-preferred · 56.4% vs 43.6%",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "Report Agreement with Human Preferences\nCompare Off-the-shelf and Trained Judges\nBest Zero-shot Judge Reaches 73%\nBradley–Terry and Generative Models Reach 78%",
-      "type": "terminal",
+      "id": "release_boundary",
+      "label": "Public Artifacts · Pinned\nTrain 079a36d · 43,827 Pairs\nTest 21e2739 · 2,381 Complete IDs\nRationales 7c5e045 · 43,736 Rows\n91 Short of Paper Train\nGit c1017dbe · No Licence · PRAW Fetch",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "disclosure_gaps",
+      "label": "Artifact Gaps\nTest 2,480 · Clean IDs 2,381 · 99 Incomplete\nTrain 43,827 · Rationales 43,736 · Gap 91\nReddit Text Not Relicensed\n§4.3: 5/Precision · A.3: 6/Accuracy\nNo Pinned Model or Leaderboard",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "test_raw",
+      "from": "reddit",
+      "to": "test_source",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "source",
-      "to": "train_raw",
+      "from": "reddit",
+      "to": "train_source",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "test_raw",
-      "to": "story_filter",
+      "from": "test_source",
+      "to": "test_story_qc",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "train_raw",
-      "to": "story_filter",
+      "from": "test_story_qc",
+      "to": "test_pairs",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "story_filter",
-      "to": "pairs",
+      "from": "test_pairs",
+      "to": "test_length",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "pairs",
-      "to": "preference_filter",
+      "from": "test_length",
+      "to": "test_set",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "preference_filter",
-      "to": "length_debias",
+      "from": "train_source",
+      "to": "train_story_qc",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "length_debias",
-      "to": "release",
+      "from": "train_story_qc",
+      "to": "train_pairs",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "release",
-      "to": "judges",
+      "from": "train_pairs",
+      "to": "train_length",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "release",
-      "to": "rewards",
+      "from": "train_length",
+      "to": "train_set",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "release",
-      "to": "human_study",
-      "type": "primary"
+      "from": "test_set",
+      "to": "zero_shot",
+      "type": "data"
     },
     {
       "id": "edge-12",
-      "from": "judges",
-      "to": "report",
-      "type": "primary"
+      "from": "test_set",
+      "to": "bt_model",
+      "type": "data"
     },
     {
       "id": "edge-13",
-      "from": "rewards",
-      "to": "report",
-      "type": "primary"
+      "from": "test_set",
+      "to": "gen_model",
+      "type": "data"
     },
     {
       "id": "edge-14",
-      "from": "human_study",
+      "from": "train_set",
+      "to": "bt_model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "train_set",
+      "to": "gen_model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "zero_shot",
       "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "bt_model",
+      "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
+      "from": "gen_model",
+      "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "bt_model",
+      "to": "rm_ranking",
+      "type": "dependency"
+    },
+    {
+      "id": "edge-20",
+      "from": "rm_ranking",
+      "to": "human_study",
       "type": "primary"
     }
   ],

@@ -34,22 +34,99 @@ function normalizeCellStyle(style) {
 
 function normalizeCellValueNewlines(tag) {
   return tag.replace(/\bvalue="([^"]*)"/u, (_attribute, value) => (
-    `value="${value.replace(/\r\n|\r|\n/gu, '&#xa;')}"`
+    `value="${normalizeAttributeValueNewlines(value)}"`
   ));
 }
 
-export function normalizeImporterDrawioContent(xml) {
-  if (!/<mxfile\b/u.test(xml)) throw new Error('Expected a Draw.io mxfile document.');
+function normalizeAttributeValueNewlines(value) {
+  return value.replace(/\r\n|\r|\n/gu, '&#xa;');
+}
 
-  const cellTags = [...xml.matchAll(/<mxCell\b[^>]*>/gu)].map(match => match[0]);
-  const labeledEdgeIds = new Set();
-  for (const tag of cellTags) {
-    const style = readAttribute(tag, 'style') ?? '';
-    const parent = readAttribute(tag, 'parent');
-    if (style.split(';').includes('edgeLabel') && parent) labeledEdgeIds.add(parent);
+function formatCoordinate(value) {
+  return String(Number(value.toFixed(6)));
+}
+
+function readEdgeLabel(cell) {
+  const openingTag = cell.match(/<mxCell\b[^>]*>/u)?.[0] ?? '';
+  const geometryTag = cell.match(/<mxGeometry\b[^>]*>/u)?.[0] ?? '';
+  const value = readAttribute(openingTag, 'value');
+  const rawX = Number.parseFloat(readAttribute(geometryTag, 'x') ?? '');
+  const rawY = Number.parseFloat(readAttribute(geometryTag, 'y') ?? '');
+
+  return {
+    parent: readAttribute(openingTag, 'parent'),
+    value: value === undefined ? undefined : normalizeAttributeValueNewlines(value),
+    x: Number.isFinite(rawX) ? formatCoordinate((rawX * 2) - 1) : undefined,
+    y: Number.isFinite(rawY) ? formatCoordinate(rawY) : undefined,
+    offset: cell.match(/<mxPoint\b[^>]*\bas="offset"[^>]*\/>/u)?.[0],
+  };
+}
+
+function applyEdgeLabelPosition(geometryTag, label) {
+  const attributes = [];
+  if (label.x !== undefined) attributes.push(`x="${label.x}"`);
+  if (label.y !== undefined) attributes.push(`y="${label.y}"`);
+  if (attributes.length === 0) return geometryTag;
+
+  const withoutOldPosition = geometryTag
+    .replace(/\s+x="[^"]*"/u, '')
+    .replace(/\s+y="[^"]*"/u, '');
+  return withoutOldPosition.replace('<mxGeometry', `<mxGeometry ${attributes.join(' ')}`);
+}
+
+function mergeEdgeLabelGeometry(cell, label) {
+  const selfClosing = cell.match(/<mxGeometry\b[^>]*\/>/u);
+  if (selfClosing) {
+    const [geometryTag] = selfClosing;
+    const positioned = applyEdgeLabelPosition(geometryTag, label);
+    if (!label.offset) return cell.replace(geometryTag, positioned);
+    const prefix = cell.slice(0, selfClosing.index);
+    const indentation = prefix.match(/(?:^|\n)([ \t]*)$/u)?.[1] ?? '';
+    const expanded = cell.includes('\n')
+      ? `${positioned.slice(0, -2)}>\n${indentation}  ${label.offset}\n${indentation}</mxGeometry>`
+      : `${positioned.slice(0, -2)}>${label.offset}</mxGeometry>`;
+    return cell.replace(geometryTag, expanded);
   }
 
-  return xml
+  const expanded = cell.match(/(<mxGeometry\b[^>]*>)([\s\S]*?)(<\/mxGeometry>)/u);
+  if (!expanded) return cell;
+
+  const [, geometryTag, originalBody, closingTag] = expanded;
+  const prefix = cell.slice(0, expanded.index);
+  const indentation = prefix.match(/(?:^|\n)([ \t]*)$/u)?.[1] ?? '';
+  const positioned = applyEdgeLabelPosition(geometryTag, label);
+  let body = originalBody;
+  if (label.offset) {
+    if (/<mxPoint\b[^>]*\bas="offset"[^>]*\/>/u.test(body)) {
+      body = body.replace(/<mxPoint\b[^>]*\bas="offset"[^>]*\/>/u, label.offset);
+    } else {
+      body = cell.includes('\n')
+        ? `\n${indentation}  ${label.offset}${body}`
+        : `${label.offset}${body}`;
+    }
+  }
+  return cell.replace(expanded[0], `${positioned}${body}${closingTag}`);
+}
+
+function normalizeImporterDiagramContent(xml) {
+  const cellBlocks = [...xml.matchAll(/<mxCell\b[^>]*(?:\/>|>[\s\S]*?<\/mxCell>)/gu)]
+    .map(match => match[0]);
+  const edgeLabelsByParent = new Map();
+  const edgeLabelCellIds = new Set();
+  for (const cell of cellBlocks) {
+    const tag = cell.match(/<mxCell\b[^>]*>/u)?.[0] ?? '';
+    const style = readAttribute(tag, 'style') ?? '';
+    if (!style.split(';').includes('edgeLabel')) continue;
+
+    const id = readAttribute(tag, 'id');
+    const label = readEdgeLabel(cell);
+    if (id) edgeLabelCellIds.add(id);
+    if (label.parent && label.value !== undefined && !edgeLabelsByParent.has(label.parent)) {
+      edgeLabelsByParent.set(label.parent, label);
+    }
+  }
+
+  let normalizedXml = xml
     .replace(/math="[01]"/gu, 'math="0"')
     .replace(/<mxCell\b[^>]*>/gu, (tag) => {
       let normalized = normalizeCellValueNewlines(tag);
@@ -62,11 +139,54 @@ export function normalizeImporterDrawioContent(xml) {
       }
 
       const id = readAttribute(tag, 'id');
-      if (id && labeledEdgeIds.has(id) && readAttribute(tag, 'edge') === '1') {
-        normalized = normalized.replace(/\bvalue="[^"]*"/u, 'value=""');
+      if (id && edgeLabelsByParent.has(id) && readAttribute(tag, 'edge') === '1') {
+        const { value: label } = edgeLabelsByParent.get(id);
+        if (/\bvalue="[^"]*"/u.test(normalized)) {
+          normalized = normalized.replace(/\bvalue="[^"]*"/u, `value="${label}"`);
+        } else {
+          normalized = normalized.replace('<mxCell', `<mxCell value="${label}"`);
+        }
       }
       return normalized;
     });
+
+  normalizedXml = normalizedXml.replace(
+    /<mxCell\b(?![^>]*\/>)[^>]*>[\s\S]*?<\/mxCell>/gu,
+    (cell) => {
+      const openingTag = cell.match(/<mxCell\b[^>]*>/u)?.[0] ?? '';
+      const id = readAttribute(openingTag, 'id');
+      const label = id ? edgeLabelsByParent.get(id) : undefined;
+      return label && readAttribute(openingTag, 'edge') === '1'
+        ? mergeEdgeLabelGeometry(cell, label)
+        : cell;
+    },
+  );
+
+  normalizedXml = normalizedXml.replace(
+    /(?:^[ \t]*)?<mxCell\b[^>]*(?:\/>|>[\s\S]*?<\/mxCell>)(?:\r?\n)?/gmu,
+    (cell) => {
+      const openingTag = cell.match(/<mxCell\b[^>]*>/u)?.[0] ?? '';
+      const id = readAttribute(openingTag, 'id');
+      return id && edgeLabelCellIds.has(id) ? '' : cell;
+    },
+  );
+
+  return normalizedXml;
+}
+
+export function normalizeImporterDrawioContent(xml) {
+  if (!/<mxfile\b/u.test(xml)) throw new Error('Expected a Draw.io mxfile document.');
+
+  let diagramCount = 0;
+  const normalizedXml = xml.replace(
+    /<diagram\b[^>]*>[\s\S]*?<\/diagram>/gu,
+    (diagram) => {
+      diagramCount += 1;
+      return normalizeImporterDiagramContent(diagram);
+    },
+  );
+  if (diagramCount === 0) throw new Error('Expected at least one Draw.io diagram page.');
+  return normalizedXml;
 }
 
 function selectLightColor(css) {

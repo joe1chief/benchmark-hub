@@ -28,15 +28,24 @@ nodes:
     position:
       x: 40
       'y': 200
-  - id: five_shot
+  - id: string_prompt
     label: |-
-      Build 5-Shot Prompts
-      Sample seed examples
+      Harmful-String 5-Shot Prompt
+      Sample only string seeds
     type: document
     size: xl
     position:
       x: 280
-      'y': 100
+      'y': 0
+  - id: behavior_prompt
+    label: |-
+      Harmful-Behavior 5-Shot Prompt
+      Sample only behavior seeds
+    type: document
+    size: xl
+    position:
+      x: 280
+      'y': 200
   - id: generator
     label: |-
       Wizard-Vicuna-30B-Uncensored
@@ -59,7 +68,7 @@ nodes:
   - id: release
     label: |-
       Release AdvBench
-      500 strings + 500 behaviors
+      Paper: 500 strings + 500 behaviors
     type: database
     size: xl
     position:
@@ -73,61 +82,82 @@ nodes:
     type: process
     size: xl
     position:
-      x: 1000
+      x: 1240
       'y': 440
-  - id: aggregate_loss
+  - id: individual
     label: |-
-      Aggregate Target Loss
-      Across selected prompts
-      and models
+      Individual Protocol
+      100 runs • 1 behavior • 1 model
     type: process
     size: xl
     position:
-      x: 760
+      x: 1480
+      'y': 240
+  - id: universal
+    label: |-
+      Universal Protocol
+      Optimize on 25 behaviors
+      Evaluate 100 behaviors
+    type: process
+    size: xl
+    position:
+      x: 1480
       'y': 440
+  - id: transfer
+    label: |-
+      Transfer Protocol
+      Optimize on 25 behaviors
+      Evaluate 388 unseen behaviors
+    type: process
+    size: xl
+    position:
+      x: 1480
+      'y': 640
   - id: gcg
     label: |-
       Run GCG Search
-      Top-k 256 • batch 512
+      20-token suffix • 500 steps
+      Gradient top-k 256 • batch 512
     type: process
     size: xl
     position:
-      x: 520
+      x: 1720
       'y': 440
   - id: run
     label: |-
       Run Victim Models
-      Keep best suffix after 500 steps
+      Keep best adversarial suffix
     type: process
     size: xl
     position:
-      x: 280
+      x: 1960
       'y': 440
   - id: success_gate
     label: Which success rule?
     type: decision
     size: xl
     position:
-      x: 40
+      x: 2200
       'y': 440
   - id: string_score
     label: |-
-      String Success
-      Exact target appears
+      Harmful-String Score
+      Target cross-entropy only
+      Check exact target elicitation
     type: process
     size: xl
     position:
-      x: 280
-      'y': 680
+      x: 2440
+      'y': 320
   - id: behavior_score
     label: |-
-      Behavior Success
-      Attempted compliance
+      Harmful-Behavior Score
+      Human judgment of compliance
     type: process
     size: xl
     position:
-      x: 280
-      'y': 880
+      x: 2440
+      'y': 560
   - id: asr
     label: |-
       Attack Success Rate
@@ -136,8 +166,8 @@ nodes:
     type: process
     size: xl
     position:
-      x: 520
-      'y': 780
+      x: 2680
+      'y': 440
   - id: report
     label: |-
       Report Robustness
@@ -145,16 +175,19 @@ nodes:
     type: terminal
     size: xl
     position:
-      x: 760
-      'y': 780
+      x: 2920
+      'y': 440
 edges:
   - from: seed_strings
-    to: five_shot
+    to: string_prompt
     type: primary
   - from: seed_behaviors
-    to: five_shot
+    to: behavior_prompt
     type: primary
-  - from: five_shot
+  - from: string_prompt
+    to: generator
+    type: primary
+  - from: behavior_prompt
     to: generator
     type: primary
   - from: generator
@@ -164,9 +197,24 @@ edges:
     to: protocol
     type: primary
   - from: protocol
-    to: aggregate_loss
+    to: individual
     type: primary
-  - from: aggregate_loss
+    label: Individual
+  - from: protocol
+    to: universal
+    type: primary
+    label: Universal
+  - from: protocol
+    to: transfer
+    type: primary
+    label: Transfer
+  - from: individual
+    to: gcg
+    type: primary
+  - from: universal
+    to: gcg
+    type: primary
+  - from: transfer
     to: gcg
     type: primary
   - from: gcg
@@ -183,11 +231,6 @@ edges:
     to: behavior_score
     type: primary
     label: Behavior
-    waypoints:
-      - x: 120
-        'y': 800
-      - x: 120
-        'y': 880
   - from: string_score
     to: asr
     type: primary

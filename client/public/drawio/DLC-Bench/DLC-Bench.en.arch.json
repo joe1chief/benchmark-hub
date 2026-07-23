@@ -1,80 +1,92 @@
 {
   "version": 1,
-  "title": "DLC-Bench Build Process",
+  "title": "DLC-Bench Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 11,
+    "nodes": 13,
+    "edges": 13,
     "modules": 0
   },
   "nodes": [
     {
+      "id": "evidence",
+      "label": "DLC-Bench · arXiv:2504.16072v1\ncode @ 153ad3d · data @ 2336d95\nDLC-SDP is a training-data pipeline\nnot the benchmark\nconstruction process",
+      "type": "document",
+      "size": "xl"
+    },
+    {
       "id": "source",
-      "label": "Objects365 v2 validation subset\nobject instances with human segmentation masks",
+      "label": "Objects365 v2 Validation Source\nchallenging object regions\nhuman-annotated segmentation masks\none target region\nper benchmark instance",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "select",
-      "label": "Select 100 challenging masked regions\none object of interest per instance",
+      "id": "allocation",
+      "label": "Allocate 100 Regions to Three VLMs\nGPT-4o: 34\nGemini 1.5 Pro: 35\nClaude 3.5 Sonnet: 31",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "vlms",
-      "label": "Multi-VLM property proposals\nGPT-4o 34 · Gemini-1.5-Pro 35\nClaude-3.5-Sonnet 31 regions",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "route",
+      "id": "question_route",
       "label": "Two question families",
       "type": "decision",
       "size": "xl"
     },
     {
       "id": "positive",
-      "label": "Positive questions\nobject / part properties\ncolor · shape · texture · material · size",
+      "label": "Positive Detail Questions\nobject / part: color · shape\ntexture · material · size\nmanually add missing · revise inaccurate\nremove hallucinated / ambiguous",
       "type": "document",
       "size": "xl"
     },
     {
       "id": "negative",
-      "label": "Negative questions\ntypical but absent attributes\nor details outside the target region",
+      "label": "Negative Hallucination Questions\nmislocalization: outside-mask objects\nhallucination: typical parts\nabsent / not visible / occluded\navoid unsupported details",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "qa",
-      "label": "Manual inspection and integrity checks\nremove ambiguous / unclear answers\ndeduplicate against DLC training images",
+      "id": "curate",
+      "label": "Manual QA Curation\ninspect every question\nremove ambiguous / unclear cases\nmake choices mutually exclusive\ndeduplicate benchmark images\nagainst training images",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "benchmark",
-      "label": "DLC-Bench\n100 masked instances · 892 verified questions\nno reference captions required",
+      "id": "artifact",
+      "label": "Pinned DLC-Bench Artifact @ 2336d95\n100 region instances\nover 77 source images\n892 questions total\n392 positive + 500 negative",
       "type": "database",
       "size": "xl"
     },
     {
       "id": "caption",
-      "label": "Candidate localized captioner\nimage + specified mask → detailed region description",
+      "label": "Candidate Localized Caption\nimage + target mask\nproduce a detailed region description\nno reference caption required",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "judge",
-      "label": "Llama-3.1-8B text-only judge\nchoose a mutually exclusive answer per question",
+      "label": "Meta-Llama-3.1-8B-Instruct\nofficial text-only judge\ntemperature 0 · max 300 tokens\nselect one choice per question",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recognition",
+      "label": "Recognition Gate\nrecognition question is prepended\nif recognition is wrong\nall question scores are capped at ≤ 0",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "score",
-      "label": "Reference-free DLC report\nPos: +1 / +0.5 / 0 / −1\nNeg: reward omission; penalize hallucination\nreport Pos · Neg · average",
+      "label": "Per-question Score\npositive: 1 / 0.5 / 0 / -1\nnegative: omit unsupported\ndetail = 1\nhallucination = -1\nintermediate cases = 0",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "DLC-Bench Report\nmean per instance\npositive mean · negative mean\nfinal = average of positive and negative",
       "type": "terminal",
       "size": "xl"
     }
@@ -82,55 +94,55 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "select",
-      "type": "primary"
+      "from": "evidence",
+      "to": "source",
+      "type": "data"
     },
     {
       "id": "edge-2",
-      "from": "select",
-      "to": "vlms",
+      "from": "source",
+      "to": "allocation",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "vlms",
-      "to": "route",
+      "from": "allocation",
+      "to": "question_route",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "route",
+      "from": "question_route",
       "to": "positive",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "route",
+      "from": "question_route",
       "to": "negative",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "positive",
-      "to": "qa",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-7",
       "from": "negative",
-      "to": "qa",
+      "to": "curate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "qa",
-      "to": "benchmark",
+      "from": "curate",
+      "to": "artifact",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "benchmark",
+      "from": "artifact",
       "to": "caption",
       "type": "primary"
     },
@@ -143,7 +155,19 @@
     {
       "id": "edge-11",
       "from": "judge",
+      "to": "recognition",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "recognition",
       "to": "score",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "score",
+      "to": "report",
       "type": "primary"
     }
   ],

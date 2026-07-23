@@ -2,172 +2,256 @@
   "version": 1,
   "title": "LitBench 构建流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "edited",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 14,
+    "nodes": 20,
+    "edges": 20,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "source",
-      "label": "从 r/WritingPrompts 出发\n同一写作提示下有多篇故事\n以 Reddit 赞数作为偏好信号\n保留故事、提示与发布时间元数据",
+      "id": "evidence",
+      "label": "证据 · EACL 2026 正式版\n2026.eacl-long.362 · Git c1017dbe\nA.9 · 有效 batch128 · LR1e-5\nwarmup10% · bfloat16 · AdamW\nGit GenRM · 2e-5 · 3 epochs · max8192\nGit 脚本 ≠ 论文配置",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "reddit",
+      "label": "r/WritingPrompts 语料源\n共享提示下的人类故事\n赞数 · 评论 · 时间戳\n赞数只是有噪声的偏好代理",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "test_raw",
-      "label": "收集留出测试基准\n使用 PRAW 查询 Reddit\n对 5,000+ 提示 ID 搜索前 100 项\n仅保留 2023-01-02 之后的故事",
+      "id": "test_source",
+      "label": "留出测试候选\n用 PRAW 搜索 Fan 等来源帖\n每个来源帖取前 100 项结果\n得到 5,000+ 个提示帖 ID\n剔除 2023 年前故事",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "train_raw",
-      "label": "引入训练语料\n使用 MIT 许可的 WritingPrompts 偏好集\n选取 2023 年前发布的故事\n与留出测试集严格分离",
+      "id": "train_source",
+      "label": "训练候选\neuclaise/WritingPrompts_preferences\n来源 HF 6f0b721 · MIT\n故事严格早于 2023 年",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "story_filter",
-      "label": "在两份数据上分别过滤故事\n要求至少 10 个赞\n词数不少于 50 且不超过 2,048 token\n去除低信号或过长样本",
+      "id": "test_story_qc",
+      "label": "故事级质检 · 测试\n赞数至少为 10\n删除非故事评论\n不少于 50 词 · 至多 2,048 token",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "pairs",
-      "label": "在同一提示内组成故事对\n比较对同一提示的两篇回答\n将赞数更高者标为偏好故事\n保留配对相关元数据",
+      "id": "train_story_qc",
+      "label": "故事级质检 · 训练\n赞数至少为 10\n删除非故事评论\n不少于 50 词 · 至多 2,048 token",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "preference_filter",
-      "label": "增强偏好信号可靠性\n要求赞数差至少达到 25%\n偏好故事必须发布时间更晚\n降低边缘差异与曝光时长偏差",
+      "id": "test_pairs",
+      "label": "同提示测试配对\n赞数更高者作为 chosen\n赞数差至少为 chosen 的 25%\nchosen 必须发布时间更晚",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "length_debias",
-      "label": "消除故事长度差偏差\n构建 100 桶长度差直方图\n剪枝至近似对称分布\n平衡偏好故事更长与更短的比例",
+      "id": "train_pairs",
+      "label": "同提示训练配对\n赞数更高者作为 chosen\n赞数差至少为 chosen 的 25%\nchosen 必须发布时间更晚",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "release",
-      "label": "发布 LitBench 数据资源\n测试集 · 2,480 对 / 3,543 篇故事\n训练集 · 43,827 对 / 50,309 篇故事\n两份数据分别执行同一套筛选流程",
+      "id": "test_length",
+      "label": "测试配对长度去偏\n按 chosen−rejected 建 100 桶直方图\n剪枝至对称分布\n平衡 chosen 更长 / 更短",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "train_length",
+      "label": "训练配对长度去偏\n按 chosen−rejected 建 100 桶直方图\n剪枝至对称分布\n平衡 chosen 更长 / 更短",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "test_set",
+      "label": "论文测试基准\n2,480 个成对比较\n3,543 篇唯一故事\n平均每篇 550 词",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "judges",
-      "label": "评测零样本 LLM 裁判\n输入未标注的故事 A 与 B\n交换两种顺序以控制位置偏差\n将裁决与人类偏好对比",
+      "id": "train_set",
+      "label": "论文训练语料\n43,827 个偏好对\n50,309 篇唯一故事\n与测试集独立整理",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "zero_shot",
+      "label": "零样本 LLM 裁判\n输入无标签故事 A / B\n先解释再输出 A/B\n两种故事顺序都评测\n对成对准确率取平均",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "rewards",
-      "label": "训练创意写作奖励模型\nBradley–Terry 判别式模型\n带或不带推理说明的生成式模型\n在去偏测试集上计算一致率",
+      "id": "bt_model",
+      "label": "Bradley-Terry 奖励模型\n用 43,827 对训练\n分别给两篇故事打分\n最小化 chosen−rejected 奖励\n的负对数 sigmoid",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "gen_model",
+      "label": "生成式奖励模型\nSFT 直接 A/B 或 GPT-4.1 理由 + 结论\n测试时随机交换 A/B\n温度 0 · 单次采样\n使用交叉熵训练",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "report",
+      "label": "成对准确率 + 论文结论\n正确偏好数 ÷ 有效样本数\n零样本结果平均两种故事顺序\nClaude 3.7 Sonnet · 73%\n最佳 BT / GenRM · 约 78%\nGenRM-CoT · 72%",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "rm_ranking",
+      "label": "新故事奖励模型排序\n64 篇故事 · 40 个 LitBench 提示\n由 GPT-4.1 + GPT-4o 生成\nLlama-8B BT 排序新故事\n每个提示选 RM 最佳 / 最差故事",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "human_study",
-      "label": "通过在线人工实验验证排序\n用 GPT-4.1 与 GPT-4o 生成新故事\n由训练后的奖励模型排序\n请标注者进行成对偏好选择",
+      "label": "在线人工实验\n46 名英美 Prolific 工作者\n每对 10–13 名评分者\n选择 RM 偏好者 · 56.4% vs 43.6%",
       "type": "user",
       "size": "xl"
     },
     {
-      "id": "report",
-      "label": "报告与人类偏好的一致率\n比较现成裁判与训练后模型\n最佳零样本裁判达到 73%\nBradley–Terry 与生成式模型达到 78%",
-      "type": "terminal",
+      "id": "release_boundary",
+      "label": "固定公开工件\nTrain 079a36d · 43,827 对\nTest 21e2739 · 2,381 个完整 ID\nRationales 7c5e045 · 43,736 条\n比论文训练对少 91 条\nGit c1017dbe · 无许可证 · PRAW 复水",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "disclosure_gaps",
+      "label": "工件缺口\nTest 2,480 · 干净 ID 2,381 · 99 对不完整\nTrain 43,827 · Rationales 43,736 · 差 91\nReddit 文本未重新许可\n§4.3：5/precision · A.3：6/accuracy\n无固定模型或官方排行榜",
+      "type": "document",
       "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "source",
-      "to": "test_raw",
+      "from": "reddit",
+      "to": "test_source",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "source",
-      "to": "train_raw",
+      "from": "reddit",
+      "to": "train_source",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "test_raw",
-      "to": "story_filter",
+      "from": "test_source",
+      "to": "test_story_qc",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "train_raw",
-      "to": "story_filter",
+      "from": "test_story_qc",
+      "to": "test_pairs",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "story_filter",
-      "to": "pairs",
+      "from": "test_pairs",
+      "to": "test_length",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "pairs",
-      "to": "preference_filter",
+      "from": "test_length",
+      "to": "test_set",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "preference_filter",
-      "to": "length_debias",
+      "from": "train_source",
+      "to": "train_story_qc",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "length_debias",
-      "to": "release",
+      "from": "train_story_qc",
+      "to": "train_pairs",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "release",
-      "to": "judges",
+      "from": "train_pairs",
+      "to": "train_length",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "release",
-      "to": "rewards",
+      "from": "train_length",
+      "to": "train_set",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "release",
-      "to": "human_study",
-      "type": "primary"
+      "from": "test_set",
+      "to": "zero_shot",
+      "type": "data"
     },
     {
       "id": "edge-12",
-      "from": "judges",
-      "to": "report",
-      "type": "primary"
+      "from": "test_set",
+      "to": "bt_model",
+      "type": "data"
     },
     {
       "id": "edge-13",
-      "from": "rewards",
-      "to": "report",
-      "type": "primary"
+      "from": "test_set",
+      "to": "gen_model",
+      "type": "data"
     },
     {
       "id": "edge-14",
-      "from": "human_study",
+      "from": "train_set",
+      "to": "bt_model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "train_set",
+      "to": "gen_model",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "zero_shot",
       "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-17",
+      "from": "bt_model",
+      "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-18",
+      "from": "gen_model",
+      "to": "report",
+      "type": "data"
+    },
+    {
+      "id": "edge-19",
+      "from": "bt_model",
+      "to": "rm_ranking",
+      "type": "dependency"
+    },
+    {
+      "id": "edge-20",
+      "from": "rm_ranking",
+      "to": "human_study",
       "type": "primary"
     }
   ],

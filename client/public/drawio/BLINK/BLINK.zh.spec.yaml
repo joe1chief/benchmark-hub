@@ -5,7 +5,7 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: BLINK 构建流程
-  description: 基于 arXiv:2404.12390 与 ECCV 2024 论文，展示 BLINK 的论文对齐视觉感知数据构建与多模态评测流程。
+  description: 展示论文对齐构建与评测，并把固定 HF 发布与 README 计数不一致分开。
   legend: 实线表示数据构建与模型评分；虚线表示人类、纯描述和视觉提示诊断分支。
 nodes:
   - id: task_selection
@@ -21,7 +21,8 @@ nodes:
   - id: geometry_sources
     label: |-
       复用几何视觉数据
-      HPatches • IIW • DIW • VSR • Wild6D
+      HPatches • IIW • DIW
+      VSR • Wild6D
       标准点位、深度与运动
     type: database
     size: xl
@@ -31,8 +32,9 @@ nodes:
   - id: perception_sources
     label: |-
       复用感知数据集
-      TARA • WikiArt • LVIS • TallyQA
-      DreamSim • SPair-71k • FunKPoint
+      TARA • WikiArt • LVIS
+      TallyQA • DreamSim
+      SPair-71k • FunKPoint
     type: database
     size: xl
     position:
@@ -41,7 +43,8 @@ nodes:
   - id: new_sources
     label: |-
       新收集取证与 IQ 数据
-      COCO 描述驱动 SDXL + 匹配真实照片
+      COCO 描述驱动 SDXL
+      + 匹配真实照片
       许可证友好的视觉规律题
     type: database
     size: xl
@@ -51,8 +54,8 @@ nodes:
   - id: task_instances
     label: |-
       构造任务特定样本
-      采样点、帧、框、拼图块与计数
-      从来源标注推导正确选项
+      采样点、帧、框和拼图块
+      推导计数与正确选项
     type: process
     size: xl
     position:
@@ -88,15 +91,26 @@ nodes:
     position:
       x: 1440
       'y': 220
-  - id: release
+  - id: canonical_release
     label: |-
-      发布 BLINK
-      3,807 题、约 7.3K 张图像
+      论文 + HF 标准发布
+      3,807 题 • 7,358 张图像
       验证集 1,901 • 测试集 1,906
+      HF 修订 a3666eb
     type: database
     size: xl
     position:
       x: 1720
+      'y': 220
+  - id: readme_drift
+    label: |-
+      README 计数不一致
+      榜单写测试集 1,907
+      论文与固定 HF 写 1,906
+    type: document
+    size: xl
+    position:
+      x: 2000
       'y': 220
   - id: model_setup
     label: |-
@@ -111,12 +125,12 @@ nodes:
   - id: answer_parse
     label: |-
       提取模型选择
-      使用预定义解析规则
-      其余输出交由 GPT-3.5-Turbo 解析
+      先用预定义解析规则
+      其余由 GPT-3.5-Turbo 回退解析
     type: process
     size: xl
     position:
-      x: 1440
+      x: 2000
       'y': 500
   - id: human_reference
     label: |-
@@ -187,17 +201,25 @@ edges:
     to: qc
     type: primary
   - from: qc
-    to: release
+    to: canonical_release
     type: primary
-  - from: release
+  - from: canonical_release
+    to: readme_drift
+    type: data
+  - from: canonical_release
     to: model_setup
     type: primary
   - from: model_setup
     to: answer_parse
     type: primary
-  - from: release
+  - from: canonical_release
     to: human_reference
     type: optional
+    waypoints:
+      - x: 1864
+        'y': 660
+      - x: 884
+        'y': 660
   - from: answer_parse
     to: caption_analysis
     type: optional
@@ -207,6 +229,13 @@ edges:
   - from: human_reference
     to: report
     type: data
+    waypoints:
+      - x: 1120
+        'y': 900
+      - x: 1400
+        'y': 900
+      - x: 1400
+        'y': 1010
   - from: caption_analysis
     to: report
     type: data
@@ -216,4 +245,11 @@ edges:
   - from: answer_parse
     to: report
     type: primary
+    waypoints:
+      - x: 2320
+        'y': 560
+      - x: 2320
+        'y': 900
+      - x: 1584
+        'y': 900
 modules: []

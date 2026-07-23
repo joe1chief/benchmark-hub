@@ -5,105 +5,171 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: DefenderBench Build Process
-  description: Paper-aligned conversion of public cybersecurity data into modular interactive agent environments.
-  legend: Solid arrows trace fixed-seed preprocessing, task-family environments, agent episodes, and normalized aggregation.
+  description: Paper- and implementation-aligned construction of five cybersecurity task types and eight reported metrics.
+  legend: >-
+    Solid arrows show the pinned toolkit flow; task nodes retain paper-versus-loader drift instead of presenting intent
+    as released behavior.
 nodes:
-  - id: sources
+  - id: evidence_boundary
     label: |-
-      Public cybersecurity sources
-      CyberBattleSim · phishing · CTI
-      CodeXGLUE · Devign · CVEFix
-    type: database
+      Evidence boundary
+      arXiv 2506.00739v4
+      repo e431098e
+      Zenodo DOI 13118970
+    type: document
     size: xl
     position:
       x: 40
-      'y': 210
-  - id: preprocess
+      'y': 330
+  - id: sources
     label: |-
-      Data preprocessing module
-      download/cache · fixed-seed shuffle
-      filtering · test/few-shot sampling
-    type: process
+      Public upstream sources
+      no frozen consolidated suite bundle
+      toolkit downloads and caches inputs
+      upstream revisions may drift
+    type: database
     size: xl
     position:
       x: 300
-      'y': 210
-  - id: suite
-    label: Five cybersecurity task types
-    type: decision
-    size: xl
-    position:
-      x: 560
-      'y': 210
-  - id: intrusion
+      'y': 330
+  - id: preprocess
     label: |-
-      Network intrusion
-      CBS Chain + CTF text game
-      JSON state · 3 actions · 100 steps
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 50
-  - id: detection
-    label: |-
-      Detection and knowledge
-      malicious text 500 · web 500 · CTI MCQA 500
-      vulnerability CG 500 + DV 500
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 210
-  - id: fixing
-    label: |-
-      Vulnerability fixing
-      12,107 commits → single-method/single-CVE filter
-      240 multilingual-code samples
-    type: document
-    size: xl
-    position:
-      x: 820
-      'y': 370
-  - id: environment
-    label: |-
-      Interactive task environment
-      instruction + sample + optional few-shot + history
+      Task-specific preprocessing
+      fixed-seed shuffle and filtering
+      test / few-shot sampling
+      CVEFix uses separate seed 42
     type: process
     size: xl
     position:
-      x: 1080
-      'y': 210
-  - id: agent
+      x: 560
+      'y': 330
+  - id: suite
+    label: Five task types
+    type: decision
+    size: xl
+    position:
+      x: 820
+      'y': 330
+  - id: intrusion
     label: |-
-      Standard agent interface
-      action → observation → format feedback
-      up to 5 steps; intrusion up to 100
+      Network intrusion
+      Chain10 + ToyCTF6 in pinned code
+      JSON/text game · 3 actions
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 10
+  - id: malicious
+    label: |-
+      Malicious content detection
+      text 20,137 · web 15,612 after −144
+      paper: 500 test + 10/class ICL
+      web loader bug: both ICL pools positive
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 170
+  - id: cti
+    label: |-
+      CTI MCQA
+      2,500 → 2,338 → 500 test + 20 ICL
+      paper: remove inaccessible links
+      loader only checks URL contains http
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 330
+  - id: vuln_detect
+    label: |-
+      Vulnerability detection
+      two report columns share one corpus
+      same 2,732-row Devign-derived test
+      same seed → same 500-row subset
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 490
+  - id: fixing
+    label: |-
+      Vulnerability fixing
+      12,107 commits · 4,249 projects
+      repository filters → 8 languages × 30
+      240 test samples · paper/repo drift
+    type: document
+    size: xl
+    position:
+      x: 1080
+      'y': 650
+  - id: intrusion_episode
+    label: |-
+      Intrusion episode
+      action → observation history
+      up to 100 agent steps
     type: process
     size: xl
     position:
       x: 1340
-      'y': 210
-  - id: metrics
+      'y': 90
+  - id: static_episode
     label: |-
-      Task-native metrics
-      intrusion win % · macro-F1 · CodeBLEU
+      Static-task episode
+      up to 5 total attempts
+      first answer counts as attempt 1
+      format feedback before retry
+    type: process
+    size: xl
+    position:
+      x: 1340
+      'y': 530
+  - id: intrusion_metrics
+    label: |-
+      Two intrusion percentages
+      nodes taken / total nodes
+      takeover fraction, not binary win
     type: process
     size: xl
     position:
       x: 1600
-      'y': 210
+      'y': 90
+  - id: task_metrics
+    label: |-
+      Six static report columns
+      five Macro-F1 columns
+      CodeBLEU weights
+      0.1 / 0.1 / 0.4 / 0.4
+    type: process
+    size: xl
+    position:
+      x: 1600
+      'y': 530
   - id: aggregate
     label: |-
-      DefenderBench score
-      unweighted mean of 8 reported task metrics
-      average across 5 runs
-    type: terminal
+      Paper-table DefenderBench score
+      DefB = sum(8 column percentages) / 8
+      official runner does not compute it
+    type: process
     size: xl
     position:
       x: 1860
-      'y': 210
+      'y': 330
+  - id: repeat
+    label: |-
+      Evaluation report
+      five independent runs per experiment
+      report the run mean
+    type: terminal
+    size: xl
+    position:
+      x: 2120
+      'y': 330
 edges:
+  - from: evidence_boundary
+    to: sources
+    type: primary
   - from: sources
     to: preprocess
     type: primary
@@ -113,28 +179,136 @@ edges:
   - from: suite
     to: intrusion
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.2
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
   - from: suite
-    to: detection
+    to: malicious
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.35
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: suite
+    to: cti
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: suite
+    to: vuln_detect
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.65
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
   - from: suite
     to: fixing
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.8
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
   - from: intrusion
-    to: environment
+    to: intrusion_episode
     type: primary
-  - from: detection
-    to: environment
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.5
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: malicious
+    to: static_episode
     type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.2
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: cti
+    to: static_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.4
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: vuln_detect
+    to: static_episode
+    type: primary
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.6
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
   - from: fixing
-    to: environment
+    to: static_episode
     type: primary
-  - from: environment
-    to: agent
+    style:
+      exitX: 1
+      exitY: 0.5
+      entryX: 0
+      entryY: 0.8
+      exitDx: 0
+      exitDy: 0
+      entryDx: 0
+      entryDy: 0
+  - from: intrusion_episode
+    to: intrusion_metrics
     type: primary
-  - from: agent
-    to: metrics
+  - from: static_episode
+    to: task_metrics
     type: primary
-  - from: metrics
+  - from: intrusion_metrics
     to: aggregate
+    type: primary
+  - from: task_metrics
+    to: aggregate
+    type: primary
+  - from: aggregate
+    to: repeat
     type: primary
 modules: []

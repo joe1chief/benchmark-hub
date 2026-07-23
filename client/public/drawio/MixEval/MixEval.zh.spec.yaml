@@ -5,133 +5,406 @@ meta:
   layout: horizontal
   routing: orthogonal
   title: MixEval 构建流程
-  description: 对齐论文的网页查询检测、真值基准匹配、动态更新和评测流程。
-  legend: 实线箭头表示查询挖掘、基准混合、动态刷新与真值评分。
+  description: 对齐论文 v2 的查询检测器、18 基准混合、动态刷新与已发布评测器流程。
+  legend: 实线是主要构建与评测路径；虚线是来源输入、刷新分支、失败策略或发布边界。
 nodes:
-  - id: crawl
+  - id: detector_benchmarks
     label: |-
-      Common Crawl
-      自收集检测器数据
-    type: database
+      两个检测器基准
+      真实查询正例 · Wikipedia 负例
+      第二套由作者人工精选
+    type: document
     size: xl
     position:
       x: 40
-      'y': 240
-  - id: detector
+      'y': 80
+  - id: initial_detector
     label: |-
-      Vicuna-33B 查询检测器
-      GPT-4 正/负样本标注
-      召回 >99% / 精度 >98%
+      提示 Vicuna-33B
+      在 Crawl 子集检出约 2 万条
+      初始召回率 >99%
     type: process
     size: xl
     position:
       x: 320
-      'y': 240
-  - id: wild
+      'y': 80
+  - id: gpt4_labels
     label: |-
-      约 200 万条网页查询
-      GPT-4 Turbo 过滤
-      保留文本输入 / 文本输出
-    type: database
+      GPT-4 重标约 2 万条
+      正样本或负样本
+    type: process
     size: xl
     position:
       x: 600
-      'y': 240
-  - id: pool
+      'y': 80
+  - id: trained_detector
     label: |-
-      真值基准池
-      通用 + 领域 benchmark
-      开发集与测试集
-    type: database
+      训练 Vicuna-33B 检测器
+      召回 >99% · 精度 >98%
+    type: process
     size: xl
     position:
       x: 880
-      'y': 420
-  - id: match
+      'y': 80
+  - id: common_crawl
     label: |-
-      逐样本查询匹配
-      all-mpnet-base-v2 点积
-      归一化嵌入 + 长度约束 θ
+      完整 Common Crawl
+      网页语料库
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 320
+  - id: apply_detector
+    label: |-
+      应用训练后的检测器
+      扫描完整 Crawl
     type: process
     size: xl
     position:
       x: 1160
-      'y': 240
-  - id: dataset
+      'y': 80
+  - id: wild_queries
     label: |-
-      MixEval
-      4,000 个匹配基准样本
-      保留源基准真值
+      检出 200 万条用户查询
+      真实查询候选池
     type: database
     size: xl
     position:
       x: 1440
-      'y': 240
-  - id: dynamic
+      'y': 80
+  - id: gpt4_filter
     label: |-
-      动态刷新
-      查询批次 / 最新 Crawl
-      新增基准池
+      GPT-4 Turbo 过滤并分类
+      保留文本输入/文本输出查询
     type: process
     size: xl
     position:
       x: 1720
-      'y': 240
-  - id: model
+      'y': 80
+  - id: general_pool
     label: |-
-      模型推理
-      官方聊天模板
-      基础模型：5-shot
+      12 个通用基准 · 开发集 + 测试集
+      MMLU · BoolQ · HellaSwag · ARC
+      CSQA · AGIEval · OBQA · GPQA
+      WinoGrande · TriviaQA
+      DROP · BBH
+    type: database
+    size: xl
+    position:
+      x: 40
+      'y': 400
+  - id: domain_pool
+    label: |-
+      6 个领域基准 · 开发集 + 测试集
+      数学：GSM8K · MATH
+      代码：MBPP · HumanEval
+      物理：PIQA · 社交：SIQA
+    type: database
+    size: xl
+    position:
+      x: 320
+      'y': 400
+  - id: benchmark_pool
+    label: |-
+      18 个带真值基准
+      开发集 + 测试集
+    type: database
+    size: xl
+    position:
+      x: 600
+      'y': 400
+  - id: match
+    label: |-
+      all-mpnet-base-v2 匹配
+      归一化点积 · Top-1
+      输入/上下文长度约束 θ
+    type: process
+    size: xl
+    position:
+      x: 880
+      'y': 400
+  - id: mixeval
+    label: |-
+      MixEval · 论文目标 4,000 条
+      英文占 95.15% · 自由回答 + 选择题
+      保留源基准真值
+    type: database
+    size: xl
+    position:
+      x: 1160
+      'y': 400
+  - id: batch_update
+    label: |-
+      批次查询更新
+      均匀采样不同批次
+    type: process
+    size: xl
+    position:
+      x: 1160
+      'y': 720
+  - id: crawl_update
+    label: |-
+      源查询更新
+      使用最新 Common Crawl
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 720
+  - id: pool_update
+    label: |-
+      基准池更新
+      加入新的带真值基准
+    type: process
+    size: xl
+    position:
+      x: 1720
+      'y': 720
+  - id: refresh
+    label: |-
+      重新执行基准混合
+      保持 4,000 条规模
+    type: process
+    size: xl
+    position:
+      x: 1440
+      'y': 400
+  - id: stability
+    label: |-
+      5 个版本 · 一分钟内更新
+      分数标准差 0.36 · 网页查询独有率 99.71%
+      MixEval 样本独有率 85.05%
+    type: document
+    size: xl
+    position:
+      x: 1720
+      'y': 400
+  - id: inference
+    label: |-
+      候选模型推理
+      官方或 FastChat 模板
+      基础模型 · 5-shot
     type: process
     size: xl
     position:
       x: 2000
-      'y': 240
-  - id: parser
+      'y': 400
+  - id: parser_gate
     label: |-
-      GPT-3.5-Turbo-0125 解析器
-      自由回答评分 / 多选抽取
-    type: process
+      属于哪个发布分片？
+      自由回答或选择题
+    type: decision
     size: xl
     position:
       x: 2280
-      'y': 240
-  - id: metrics
+      'y': 400
+  - id: freeform_parser
     label: |-
-      真值准确率
-      Arena Elo 排名相关性
-      动态稳定性
-    type: terminal
+      GPT-3.5-Turbo-0125 解析器
+      自由回答得分 0.0–1.0
+      必须输出 [[score]]
+    type: process
     size: xl
     position:
       x: 2560
       'y': 240
+  - id: mc_parser
+    label: |-
+      GPT-3.5-Turbo-0125 解析器
+      抽取选项 · 必须输出 [[A]]
+      与真值精确匹配
+    type: process
+    size: xl
+    position:
+      x: 2560
+      'y': 560
+  - id: failure_rules
+    label: |-
+      已发布失败策略 · 随机种子 42
+      外层重试 10 次；无效则随机
+      BadRequest：自由回答记 0 · 选择题随机
+    type: document
+    size: xl
+    position:
+      x: 2280
+      'y': 800
+  - id: overall
+    label: |-
+      报告总分
+      按样本数加权
+      自由回答 + 选择题
+    type: terminal
+    size: xl
+    position:
+      x: 2840
+      'y': 400
+  - id: meta_eval
+    label: |-
+      跨模型元评估
+      Arena Elo 排名相关性
+      不是逐题评分
+    type: document
+    size: xl
+    position:
+      x: 3120
+      'y': 400
+  - id: release_boundary
+    label: |-
+      发布边界 · 部分公开
+      Git 7c52b419… · 仅评测器与动态数据
+      HF 66a05ec3… · 数据卡 Apache-2.0
+      无构建代码 · 仓库无 LICENSE
+    type: document
+    size: xl
+    position:
+      x: 880
+      'y': 720
 edges:
-  - from: crawl
-    to: detector
+  - from: detector_benchmarks
+    to: initial_detector
     type: primary
-  - from: detector
-    to: wild
+  - from: initial_detector
+    to: gpt4_labels
     type: primary
-  - from: wild
+  - from: gpt4_labels
+    to: trained_detector
+    type: primary
+  - from: trained_detector
+    to: apply_detector
+    type: primary
+  - from: common_crawl
+    to: apply_detector
+    type: secondary
+    label: 完整语料
+    style:
+      dashed: true
+    waypoints:
+      - x: 960
+        'y': 322
+      - x: 960
+        'y': 180
+      - x: 1064
+        'y': 180
+  - from: apply_detector
+    to: wild_queries
+    type: primary
+  - from: wild_queries
+    to: gpt4_filter
+    type: primary
+  - from: gpt4_filter
     to: match
     type: primary
-  - from: pool
+    waypoints:
+      - x: 1924
+        'y': 220
+      - x: 984
+        'y': 220
+      - x: 984
+        'y': 300
+  - from: general_pool
+    to: benchmark_pool
+    type: secondary
+    label: 12 个通用基准
+    style:
+      dashed: true
+    waypoints:
+      - x: 260
+        'y': 350
+      - x: 700
+        'y': 350
+  - from: domain_pool
+    to: benchmark_pool
+    type: secondary
+    label: 6 个领域基准
+    style:
+      dashed: true
+  - from: benchmark_pool
     to: match
-    type: data
+    type: secondary
+    label: 真值基准池
+    style:
+      dashed: true
   - from: match
-    to: dataset
+    to: mixeval
     type: primary
-  - from: dataset
-    to: dynamic
+  - from: mixeval
+    to: refresh
     type: primary
-  - from: dynamic
-    to: model
+  - from: batch_update
+    to: refresh
+    type: secondary
+    label: 新批次
+    style:
+      dashed: true
+  - from: crawl_update
+    to: refresh
+    type: secondary
+    label: 新 Crawl
+    style:
+      dashed: true
+  - from: pool_update
+    to: refresh
+    type: secondary
+    label: 新基准池
+    style:
+      dashed: true
+  - from: refresh
+    to: stability
+    type: secondary
+    label: 版本证据
+    style:
+      dashed: true
+  - from: refresh
+    to: inference
     type: primary
-  - from: model
-    to: parser
+    waypoints:
+      - x: 1580
+        'y': 300
+      - x: 1868
+        'y': 300
+  - from: mixeval
+    to: release_boundary
+    type: secondary
+    label: 发布边界
+    style:
+      dashed: true
+    waypoints:
+      - x: 1164
+        'y': 520
+      - x: 884
+        'y': 520
+  - from: inference
+    to: parser_gate
     type: primary
-  - from: parser
-    to: metrics
+  - from: parser_gate
+    to: freeform_parser
     type: primary
+    label: 自由回答
+  - from: parser_gate
+    to: mc_parser
+    type: primary
+    label: 选择题
+  - from: failure_rules
+    to: freeform_parser
+    type: secondary
+    label: 失败策略
+    style:
+      dashed: true
+  - from: failure_rules
+    to: mc_parser
+    type: secondary
+    label: 失败策略
+    style:
+      dashed: true
+  - from: freeform_parser
+    to: overall
+    type: primary
+  - from: mc_parser
+    to: overall
+    type: primary
+  - from: overall
+    to: meta_eval
+    type: primary
+    label: 跨模型
 modules: []

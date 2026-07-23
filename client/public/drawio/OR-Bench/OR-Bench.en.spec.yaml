@@ -6,12 +6,23 @@ meta:
   routing: orthogonal
   title: OR-Bench Build and Evaluation Process
   description: >-
-    Paper-aligned pipeline that rewrites toxic seeds into benign borderline prompts, moderates them with an LLM ensemble
-    and response recovery, and releases complementary helpfulness and safety evaluation sets.
+    Paper-v5 and fixed-release-aligned construction from toxic seeds through constrained rewriting, ensemble moderation,
+    response recovery, Hard-set screening, dual refusal-rate evaluation, and explicit publication evidence.
   legend: >-
-    OR-Bench measures both sides of safety alignment: low rejection is desired on benign over-refusal prompts, while
-    high rejection is desired on the toxic control set.
+    Solid connectors encode construction and evaluation. Dashed connectors are validation, audit, or source evidence;
+    they do not filter the core pipeline. Paper labels and exact public-file counts are shown separately.
 nodes:
+  - id: evidence
+    label: |-
+      Paper Evidence Snapshot
+      arXiv v5 · ICML 2025
+      PDF SHA-256 1a4c7b60301a…
+      32-model Revision
+    type: document
+    size: xl
+    position:
+      x: 40
+      'y': 40
   - id: categories
     label: |-
       Define 10 Refusal Categories
@@ -21,152 +32,212 @@ nodes:
     type: document
     size: xl
     position:
-      x: 20
+      x: 288
       'y': 40
   - id: seeds
     label: |-
       Generate Toxic Seeds
       Mixtral 8×7B
-      2,000 Seeds per Category
-      Batches of 20 Prompts
+      2,000 per Category
+      20 per Batch · Temperature 1.0
     type: process
     size: xl
     position:
-      x: 260
+      x: 536
       'y': 40
   - id: dedupe
     label: |-
-      Remove Duplicate Seeds
-      Consolidate Generation Batches
+      Deduplicate Toxic Seeds
+      Merge Generation Batches
       Preserve Category Coverage
-      Keep Toxic Controls
+      Form Toxic-control Candidates
     type: process
     size: xl
     position:
-      x: 500
+      x: 784
       'y': 40
   - id: rewrite
     label: |-
-      Rewrite Each Seed Five Ways
-      Mixtral 8×7B with Five Examples
-      Avoid “Safe” or “Legal” Cues
-      Avoid Fictional Framing
+      Five Rewrites per Seed
+      Five Human-picked Few-shot Examples
+      Avoid Safe · Legal · However Cues
+      Avoid Fictional Framing · Temperature 0.7
     type: process
     size: xl
     position:
-      x: 740
+      x: 1032
       'y': 40
   - id: moderate
     label: |-
-      Moderate Every Rewrite
-      GPT-4 Turbo · Llama 3 70B
-      Gemini 1.5 Pro
       Explain Then Classify
+      GPT-4-turbo-2024-04-09
+      Llama-3-70B
+      Gemini-1.5-pro-latest
     type: process
     size: xl
     position:
-      x: 980
+      x: 1280
       'y': 40
   - id: vote
     label: |-
-      Take Ensemble Majority Vote
-      Include Majority-safe Prompts
-      Reduce Single-family Bias
-      Hold Flagged Prompts for Recovery
-    type: process
+      Ensemble Majority
+      Safe by at Least Two
+      of Three Moderators?
+    type: decision
     size: xl
     position:
-      x: 1220
+      x: 1528
       'y': 40
-  - id: recover
+  - id: benign_pool
     label: |-
-      Recover Oversensitive Flags
-      Mistral 7B Answers Flagged Prompt
-      Ensemble Reassesses Response
-      Recover Prompt if Response Is Safe
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 40
-  - id: partition
-    label: |-
-      Partition by Final Safety Label
-      Safe or Recovered → Benign Pool
-      Remaining Harmful → Toxic Pool
-      Preserve Category Metadata
-    type: process
-    size: xl
-    position:
-      x: 1460
-      'y': 420
-  - id: release_main
-    label: |-
-      Release Complementary Sets
-      OR-Bench-80K: Safe Prompts
-      OR-Bench-Toxic: About 600
-      Test Helpfulness and Safety
+      Benign Over-refusal Pool
+      Majority-safe Rewrites
+      Plus Recovered Prompts
+      Preserve 10 Categories
     type: database
     size: xl
     position:
-      x: 1220
-      'y': 420
-  - id: screen
+      x: 1776
+      'y': 40
+  - id: hard_select
     label: |-
-      Screen Benign Prompt Difficulty
-      Query Largest and Newest Models
-      Group Results by Model Family
-      Record Which Safe Prompts Refuse
-    type: process
-    size: xl
-    position:
-      x: 980
-      'y': 420
-  - id: hard
-    label: |-
-      Select OR-Bench-Hard-1K
-      Safe Yet Frequently Refused
+      Build Hard Candidate Set
+      Six Listed Models
       Rejected by at Least Three
-      Top Models in Each Family
-    type: database
-    size: xl
-    position:
-      x: 740
-      'y': 420
-  - id: query
-    label: |-
-      Evaluate 32 LLMs
-      Eight Model Families
-      Public APIs · Temperature 0.0
-      No System Prompt
+      Randomly Sample 1K
+      Public: 1,318 Overlap · One Extra
     type: process
     size: xl
     position:
-      x: 500
-      'y': 420
+      x: 2024
+      'y': 40
+  - id: public_snapshot
+    label: |-
+      Publish Three Configurations
+      Paper Labels 80K · Hard-1K · Toxic 600
+      Public Exact 80,359 · 1,319 · 655
+      Ten Categories in Every File
+    type: database
+    size: xl
+    position:
+      x: 2272
+      'y': 40
+  - id: eval_models
+    label: |-
+      Evaluate 32 Models
+      Eight Families · Public APIs
+      No System Prompt
+      Temperature 0.0
+    type: process
+    size: xl
+    position:
+      x: 2520
+      'y': 40
   - id: judge
     label: |-
-      Detect Model Rejections
-      Keyword Match on Full 80K
-      GPT-4 on Hard and Toxic Sets
-      Check Safety–Helpfulness Balance
+      Detect Rejections
+      Derive Keyword Patterns on
+      10,000 Random Prompts · Full 80K
+      GPT-4 Judges Hard and Toxic
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
+      x: 2768
+      'y': 40
   - id: report
     label: |-
       Report Rejection Rates
-      Lower on Safe Prompts Is Better
-      Higher on Toxic Prompts Is Better
-      Break Down by 10 Categories
+      Benign Lower Is Better
+      Toxic Higher Is Better
+      By Category · No Combined Scalar
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 3016
+      'y': 40
+  - id: flagged_response
+    label: |-
+      Answer Flagged Prompt
+      Mistral-7B-Instruct-v0.3
+      Test Whether a Safe Answer Exists
+      Keep Original Prompt Identity
+    type: process
+    size: xl
+    position:
+      x: 1528
+      'y': 360
+  - id: response_moderate
+    label: |-
+      Re-moderate the Response
+      Same Three-model Ensemble
+      Explain Then Classify
+      Judge Response Safety
+    type: process
+    size: xl
+    position:
+      x: 1776
+      'y': 360
+  - id: recovery_gate
+    label: |-
+      Response Safe?
+      Recover Original Prompt
+      or Retain Toxic Label
+    type: decision
+    size: xl
+    position:
+      x: 2024
+      'y': 360
+  - id: toxic_pool
+    label: |-
+      Toxic Control Pool
+      Still-harmful Seeds and Prompts
+      Complement Benign Evaluation
+      Public File Has 655 Rows
+    type: database
+    size: xl
+    position:
+      x: 2272
+      'y': 360
+  - id: moderator_validation
+    label: |-
+      Moderator Validation Only
+      100 Tasks · Three Workers + Expert
+      Five-vote Ground Truth
+      Ensemble 93% · Expert 94%
+    type: document
+    size: xl
+    position:
+      x: 1280
+      'y': 680
+  - id: expert_audit
+    label: |-
+      Hard-set Audit Only
+      Two Independent Experts · All 1,319
+      38 Flagged · About 9 Debatable
+      Debatable Items Kept
+    type: document
+    size: xl
+    position:
+      x: 2520
+      'y': 680
+  - id: source_boundary
+    label: |-
+      Public-source Boundary
+      Git 4fad1f9e4d4b… · Apache-2.0
+      HF e36d8b80e818… · CC-BY-4.0
+      Component Scripts · No End-to-end Orchestrator
+      No GitHub Release Tag
+    type: document
+    size: xl
+    position:
+      x: 3016
+      'y': 680
 edges:
+  - from: evidence
+    to: categories
+    type: secondary
+    style:
+      dashed: true
   - from: categories
     to: seeds
     type: primary
@@ -183,27 +254,78 @@ edges:
     to: vote
     type: primary
   - from: vote
-    to: recover
+    to: benign_pool
     type: primary
-  - from: recover
-    to: partition
+    label: Majority safe
+  - from: vote
+    to: flagged_response
     type: primary
-  - from: partition
-    to: release_main
+    label: Flagged
+  - from: flagged_response
+    to: response_moderate
     type: primary
-  - from: release_main
-    to: screen
+  - from: response_moderate
+    to: recovery_gate
     type: primary
-  - from: screen
-    to: hard
+  - from: recovery_gate
+    to: benign_pool
     type: primary
-  - from: hard
-    to: query
+    label: Safe response
+    waypoints:
+      - x: 2144
+        'y': 288
+      - x: 1896
+        'y': 288
+  - from: recovery_gate
+    to: toxic_pool
     type: primary
-  - from: query
+    label: Still harmful
+  - from: benign_pool
+    to: hard_select
+    type: primary
+  - from: benign_pool
+    to: public_snapshot
+    type: primary
+    waypoints:
+      - x: 1896
+        'y': 224
+      - x: 2392
+        'y': 224
+  - from: hard_select
+    to: public_snapshot
+    type: primary
+  - from: toxic_pool
+    to: public_snapshot
+    type: primary
+  - from: public_snapshot
+    to: eval_models
+    type: primary
+  - from: eval_models
     to: judge
     type: primary
   - from: judge
     to: report
     type: primary
+  - from: moderate
+    to: moderator_validation
+    type: secondary
+    style:
+      dashed: true
+  - from: hard_select
+    to: expert_audit
+    type: secondary
+    waypoints:
+      - x: 2008
+        'y': 280
+      - x: 2008
+        'y': 600
+      - x: 2640
+        'y': 600
+    style:
+      dashed: true
+  - from: report
+    to: source_boundary
+    type: secondary
+    style:
+      dashed: true
 modules: []

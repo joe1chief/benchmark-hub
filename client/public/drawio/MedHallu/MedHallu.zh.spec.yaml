@@ -4,166 +4,366 @@ meta:
   theme: academic-color
   layout: horizontal
   routing: orthogonal
-  title: MedHallu 构建与评测流程
-  description: 对齐论文展示从 10,000 条 PubMedQA 记录到受控幻觉生成、多模型质量筛选、蕴含校验、TextGrad 优化、 难度分层及二元检测评测的完整流程。
-  legend: 来源恰为 1,000 条 pqa_labeled 与随机抽取的 9,000 条 pqa_artificial；失败候选最多经历五次生成尝试， 之后才进入语义相似度回退。
+  title: MedHallu 论文与发布代码流程
+  description: 对齐论文展示数据构建与幻觉检测评测；固定版本官方代码或数据无法复现论文协议之处，以独立路径明确标出。
+  legend: 实线表示论文报告或代码可执行路径；虚线表示来源、权利、实现漂移或失败行为。论文内部矛盾及未披露细节均显式保留。
 nodes:
-  - id: source
+  - id: evidence
     label: |-
-      获取 PubMedQA 记录
-      pqa_labeled：1,000 条专家样本
-      pqa_artificial：随机 9,000 条
-      输入共 10,000 个问答对
-    type: database
+      证据与版本固定点
+      arXiv:2502.14302v1
+      代码 3c49c8b · 数据 5150604
+      审计日期 2026-07-21
+    type: document
     size: xl
     position:
       x: 20
-      'y': 40
+      'y': 160
+  - id: source_mix
+    label: |-
+      论文来源组合 · 共 10,000 条
+      pqa_labeled：1,000 条专家样本
+      pqa_artificial：随机 9,000 条
+      PubMedQA 问题 + 上下文 + 标准答案
+    type: database
+    size: xl
+    position:
+      x: 300
+      'y': 160
   - id: inputs
     label: |-
-      组装生成输入
-      医学问题
-      相关知识上下文
+      组装生成记录
+      问题 · 相关知识
       标准答案
     type: document
     size: xl
     position:
-      x: 260
-      'y': 40
+      x: 580
+      'y': 160
   - id: categories
     label: |-
       定义四类医学幻觉
-      误解问题
-      信息不完整
-      机制错配 · 方法或证据捏造
+      问题误解 · 信息不完整
+      机制或路径错配
+      方法或证据捏造
     type: document
     size: xl
     position:
-      x: 500
-      'y': 40
+      x: 860
+      'y': 160
   - id: generate
     label: |-
-      生成候选幻觉答案
-      Qwen2.5-14B 自选幻觉类型
-      温度 0.3 至 0.7 · top-p 0.95
-      最长 512 词元 · 答案长度 ±10%
+      论文候选生成协议
+      Qwen2.5-14B · 温度 .3–.7
+      top-p .95 · 最长 512
+      标答长度 ±10%
+      标签化输出答案 + 理由
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
-      x: 740
-      'y': 40
+      x: 1140
+      'y': 160
   - id: quality
     label: |-
-      执行判别式质量检查
-      比较候选答案与标准答案
-      GPT-4o mini · Gemma2-9B
-      Qwen2.5-7B 独立投票
+      论文质量过滤 · 多处矛盾
+      共同：GPT-4o-mini
+      主文：Gemma2-9B
+      + Qwen2.5-7B
+      附录 E：Gemma2-2B
+      + Llama3.2-3B
+      图 2/第 4 节 ≥1 · 第 3 节多数
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
-      x: 980
-      'y': 40
+      x: 1420
+      'y': 160
   - id: correctness
     label: |-
-      两层过滤是否均通过？
-      质量：至少骗过一个模型
-      正确性：不与标答语义等价
-      双向 DeBERTa 阈值 0.75
+      论文正确性过滤矛盾
+      第 3 节：RoBERTa
+      阈值未披露
+      第 4 节：DeBERTa · 阈值 .75
+      附录 C 加入 Llama-3.1
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1700
+      'y': 160
+  - id: initial_gate
+    label: |-
+      候选是否通过论文所述
+      质量门与非等价门？
     type: decision
     size: xl
     position:
-      x: 1220
-      'y': 40
+      x: 1980
+      'y': 160
   - id: difficulty
     label: |-
-      通过或重试合格：划分难度
-      按骗过的判别模型数计
-      一个：简单 · 两个：中等
-      三个：困难
+      按论文划分难度
+      骗过 1 个：简单 · 2 个：中等
+      3 个：困难
     type: process
     size: xl
     position:
-      x: 980
-      'y': 280
-  - id: refine
+      x: 2260
+      'y': 40
+  - id: textgrad
     label: |-
-      未通过：优化候选
-      使用 GPT-4o mini 驱动 TextGrad
-      应用质量与正确性反馈
-      提升可信度与自然度
+      优化失败候选
+      GPT-4o-mini 驱动 TextGrad
+      回传质量 + 正确性反馈
     type: process
     size: xl
     position:
-      x: 1460
-      'y': 420
-  - id: retry
+      x: 2260
+      'y': 300
+  - id: retry_gate
     label: |-
-      仅重试未通过候选
-      根据 TextGrad 反馈重新生成
-      重复两层过滤
-      首次通过即停 · 最多五次尝试
-    type: process
+      优化后的候选是否
+      通过两项所述过滤？
+    type: decision
     size: xl
     position:
-      x: 1220
-      'y': 420
+      x: 2540
+      'y': 300
+  - id: attempt_gate
+    label: |-
+      是否已耗尽五次
+      总生成尝试？
+    type: decision
+    size: xl
+    position:
+      x: 2820
+      'y': 300
   - id: fallback
     label: |-
-      五次尝试耗尽：执行回退
-      保留全部失败尝试
-      选择与标准答案余弦相似度最高者
-      将所选样本标为简单
+      五次后执行论文回退
+      取与标准答案余弦
+      相似度最高者
+      标记为简单
     type: process
     size: xl
+    style:
+      fontSize: 9
     position:
-      x: 980
-      'y': 560
-  - id: dataset
+      x: 3100
+      'y': 300
+  - id: release
     label: |-
-      发布 MedHallu
-      10,000 个医学问答对
-      正确答案与幻觉答案
-      简单 · 中等 · 困难三档
+      MedHallu 公开发布集
+      10,000 个英文问答对
+      正确答案 + 幻觉答案
+      简单 · 中等 · 困难
     type: database
     size: xl
     position:
-      x: 740
-      'y': 420
-  - id: settings
+      x: 3100
+      'y': 40
+  - id: repo_build_drift
     label: |-
-      运行两类检测设置
-      无知识零样本
-      提供标准知识的上下文设置
-      比较通用与医学大模型
+      固定版生成器漂移
+      前 9,000 条人工集 · 温度 .8
+      2B + 3B · 主路径无 NLI
+      解析器丢弃类别
+      单行错误直接跳过
+      5 轮最多生成 10 个候选
+      无随机种子
+    type: loss
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 20
+      'y': 440
+  - id: rights
+    label: |-
+      发布边界
+      UT Austin · UNC · Drexel
+      代码/数据 MIT · 站点保留权利
+      资产公开 · 仅结果页
+      无提交排行榜
     type: document
     size: xl
     position:
-      x: 500
-      'y': 420
-  - id: detect
+      x: 3380
+      'y': 160
+  - id: eval_route
     label: |-
-      判断每个问题与答案
-      幻觉或非幻觉
-      分析可选的不确定类别
-      按难度层级拆分结果
+      当前审计哪一种
+      评测合同？
+    type: decision
+    size: xl
+    position:
+      x: 3100
+      'y': 640
+  - id: paper_settings
+    label: |-
+      论文检测设置
+      无知识零样本
+      上下文设置：
+      提供 PubMedQA 知识
+      仅输入输出；不确定类分开
+      答案配对抽样未披露
+    type: document
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 2820
+      'y': 540
+  - id: paper_prompt
+    label: |-
+      论文二分类裁判提示
+      输出 0：事实正确 · 1：存在幻觉
+      仅输出整数
+      解析失败处理未披露
+    type: document
+    size: xl
+    position:
+      x: 2540
+      'y': 540
+  - id: paper_infer
+    label: |-
+      论文模型执行
+      通用 + 医疗大模型
+      OpenAI 接口或 HF 流水线 · 温度约 .2–.3
+      随机种子与模型版本未披露
     type: process
     size: xl
     position:
-      x: 260
-      'y': 420
-  - id: report
+      x: 2260
+      'y': 540
+  - id: paper_metrics
     label: |-
-      报告检测表现
-      F1 与精确率
-      总体及分难度成绩
-      衡量知识与拒答带来的增益
+      论文检测报告
+      总体 F1 + 精确率
+      简单 / 中等 / 困难 F1
+      一万样本表
+      各项分母未披露
+      不确定类单独报告
+    type: terminal
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1980
+      'y': 540
+  - id: repo_schema
+    label: |-
+      固定版运行器输入缺口
+      HF 发布集：标题式列名
+      运行器：小写列名
+      仅生成器 CSV 可用
+      无发布集适配器
+      无纯二分类运行器
+    type: loss
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 2820
+      'y': 900
+  - id: repo_pair
+    label: |-
+      固定版运行器组装评测对
+      每行无种子随机选择
+      标准答案或幻觉答案
+      依据选择生成真实类别
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 900
+  - id: repo_infer
+    label: |-
+      已发布三分类 vLLM
+      0 事实 · 1 幻觉
+      2 不确定
+      温度.3 · p.95 · 最长512 · 并行4
+      半精度 · 显存 .85
+      模型版本未固定
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 2260
+      'y': 900
+  - id: repo_parser
+    label: |-
+      已发布解析器顺序
+      1 / not / non → 类别 1
+      not sure / pass / skip / 2
+      → 类别 2
+      其余 → 类别 0
+      故 not sure → 类别 1
+    type: process
+    size: xl
+    style:
+      fontSize: 9
+    position:
+      x: 1980
+      'y': 900
+  - id: repo_class
+    label: |-
+      解析后的类别
+      是 0 或 1，还是 2？
+    type: decision
+    size: xl
+    position:
+      x: 1700
+      'y': 900
+  - id: repo_scored
+    label: |-
+      对类别 0 与 1 计分
+      从总体及难度层级
+      分母中排除类别 2
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 780
+  - id: repo_abstain
+    label: |-
+      单独统计解析为类别 2 的样本
+      报告拒答比例
+    type: process
+    size: xl
+    position:
+      x: 1420
+      'y': 1020
+  - id: repo_failure
+    label: |-
+      评测子进程失败
+      打印错误 · 不输出结果行
+    type: loss
+    size: xl
+    position:
+      x: 1980
+      'y': 1220
+  - id: repo_report
+    label: |-
+      固定版运行器报告
+      总体精确率 · 召回率 · F1
+      分难度准确率 · 精确率 · 召回率 · F1
+      拒答比例
     type: terminal
     size: xl
     position:
-      x: 20
-      'y': 420
+      x: 1140
+      'y': 900
 edges:
-  - from: source
+  - from: evidence
+    to: source_mix
+    type: primary
+  - from: source_mix
     to: inputs
     type: primary
   - from: inputs
@@ -179,63 +379,123 @@ edges:
     to: correctness
     type: primary
   - from: correctness
+    to: initial_gate
+    type: primary
+  - from: initial_gate
     to: difficulty
     type: primary
-    style:
-      exitX: 0.25
-      exitY: 1
-      entryX: 1
-      entryY: 0.25
-  - from: correctness
-    to: refine
+    label: 是
+    labelPosition: end
+  - from: initial_gate
+    to: textgrad
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: textgrad
+    to: retry_gate
     type: primary
-    style:
-      exitX: 0.75
-      exitY: 1
-      entryX: 0.25
-      entryY: 0
-  - from: refine
-    to: retry
-    type: primary
-  - from: retry
+  - from: retry_gate
     to: difficulty
     type: primary
-    style:
-      exitX: 0
-      exitY: 0.25
-      entryX: 1
-      entryY: 0.75
-  - from: retry
+    label: 是
+    labelPosition: end
+    waypoints:
+      - x: 2660
+        'y': 180
+  - from: retry_gate
+    to: attempt_gate
+    type: optional
+    label: 否
+    labelPosition: end
+  - from: attempt_gate
+    to: generate
+    type: optional
+    label: 否：重新生成新候选
+    labelPosition: end
+    waypoints:
+      - x: 2940
+        'y': 460
+      - x: 1260
+        'y': 460
+  - from: attempt_gate
     to: fallback
     type: primary
-    style:
-      exitX: 0
-      exitY: 0.75
-      entryX: 1
-      entryY: 0.25
-  - from: fallback
-    to: dataset
-    type: primary
-    style:
-      exitX: 0
-      exitY: 0.25
-      entryX: 1
-      entryY: 0.75
+    label: 是
+    labelPosition: end
   - from: difficulty
-    to: dataset
+    to: release
     type: primary
-    style:
-      exitX: 0
-      exitY: 0.75
-      entryX: 1
-      entryY: 0.25
-  - from: dataset
-    to: settings
+  - from: fallback
+    to: release
     type: primary
-  - from: settings
-    to: detect
+  - from: evidence
+    to: repo_build_drift
+    type: optional
+    label: 固定代码审计
+    labelPosition: end
+  - from: release
+    to: rights
+    type: optional
+  - from: release
+    to: eval_route
     type: primary
-  - from: detect
-    to: report
+    waypoints:
+      - x: 3240
+        'y': 140
+      - x: 3240
+        'y': 690
+  - from: eval_route
+    to: paper_settings
     type: primary
+    label: 论文协议
+    labelPosition: end
+  - from: paper_settings
+    to: paper_prompt
+    type: primary
+  - from: paper_prompt
+    to: paper_infer
+    type: primary
+  - from: paper_infer
+    to: paper_metrics
+    type: primary
+  - from: eval_route
+    to: repo_schema
+    type: optional
+    label: 固定版运行器
+    labelPosition: end
+  - from: repo_schema
+    to: repo_pair
+    type: optional
+    label: 生成器格式 CSV
+    labelPosition: end
+  - from: repo_pair
+    to: repo_infer
+    type: primary
+  - from: repo_infer
+    to: repo_parser
+    type: primary
+  - from: repo_parser
+    to: repo_class
+    type: primary
+  - from: repo_class
+    to: repo_scored
+    type: primary
+    label: 类别 0 或 1
+    labelPosition: end
+  - from: repo_class
+    to: repo_abstain
+    type: optional
+    label: 类别 2
+    labelPosition: end
+  - from: repo_scored
+    to: repo_report
+    type: primary
+  - from: repo_abstain
+    to: repo_report
+    type: optional
+  - from: repo_infer
+    to: repo_failure
+    type: optional
+    label: 子进程错误
+    labelPosition: end
 modules: []

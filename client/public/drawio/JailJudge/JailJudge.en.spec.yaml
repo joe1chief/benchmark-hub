@@ -6,145 +6,193 @@ meta:
   routing: orthogonal
   title: JailJudge Build Process
   description: >-
-    Paper-aligned JailJudge construction from six harmful-prompt sources and diverse model responses through separate
-    human-labeled test and MultiAgent supervision branches, JAILJUDGE Guard tuning, and judge evaluation.
+    Paper-aligned JailJudge construction from diverse harmful-prompt and response pairs through a separately
+    human-annotated JAILJUDGETEST branch and a GPT-4 MultiAgent ground-truth branch, followed by LoRA tuning of
+    JAILJUDGE Guard and judge evaluation.
   legend: >-
-    The prompt-response pool branches into human-annotated ID/OOD tests and MultiAgent-generated training ground truth;
-    both branches meet only during judge evaluation.
+    Solid arrows show construction and evaluation. Dashed arrows mark evidence inputs or release-boundary notes. The BPA
+    uncertainty hyperparameter is kept distinct from the Guard binary-decision threshold.
 nodes:
-  - id: prompts
+  - id: evidence
     label: |-
-      Build Six Harmful-prompt Sources
-      Vanilla · Synthetic Vanilla · Adversarial
-      Multilingual · In-the-wild · Deceptive
-      Refine into 14 Hazard Categories
-    type: database
+      Primary Evidence + Fixed Revisions
+      arXiv:2410.12855v2
+      Official Git 8743c13
+      Dataset HF edcd9ae · Guard HF cf624b8
+    type: document
     size: xl
     position:
       x: 20
       'y': 40
-  - id: responses
+  - id: prompts
     label: |-
-      Collect Diverse Target Responses
-      Closed-source and Open-source LLMs
-      System-level and Model-level Defenses
-      Include Both Safe and Unsafe Outputs
-    type: cloud
+      Six Harmful-prompt Sources
+      Vanilla · Synthetic Vanilla · Adversarial
+      Multilingual · In-the-wild · Deceptive
+      Refine to 14 MLCommons Hazard Categories
+    type: database
     size: xl
     position:
       x: 300
       'y': 40
-  - id: pool
+  - id: responses
     label: |-
-      Form Prompt-response Pair Pool
-      Coverage · Diversity · Balance
-      JAILJUDGETRAIN Source Pairs
-      35K+ Instruction-tuning Items
-    type: database
+      Collect Diverse Target Responses
+      Closed- and Open-source LLM Families
+      System- and Model-level Defenses
+      Random Assignment · Safe + Unsafe Outputs
+    type: cloud
     size: xl
     position:
       x: 580
+      'y': 40
+  - id: pool
+    label: |-
+      Form Candidate Prompt-response Pairs
+      Coverage · Diversity · Balance
+      Before Test and Training Branches
+      Not Yet the Final 35K+ Training Set
+    type: database
+    size: xl
+    position:
+      x: 860
+      'y': 40
+  - id: test_split
+    label: |-
+      Select Held-out JAILJUDGETEST Pairs
+      ID: 4,500 from Non-multilingual Split
+      OOD: 6,300 · 10 Languages
+      All OOD Samples Absent from TRAIN
+    type: process
+    size: xl
+    position:
+      x: 1140
       'y': 40
   - id: annotation
     label: |-
-      Human Test Annotation
-      Train Annotators on MLCommons Policies
-      Manual Label + GPT-4 Cross-comparison
-      Re-label Mismatches and Majority Vote
+      Create Binary Human Gold Labels
+      Train on Nine MLCommons Policies
+      Manual Labels + GPT-4 Cross-check
+      Re-label Mismatches · Majority Vote
     type: user
     size: xl
     position:
-      x: 860
+      x: 1420
       'y': 40
   - id: testsets
     label: |-
-      Release JAILJUDGETEST
-      ID: 4.5K+ Broad-risk Pairs
-      OOD: 6K+ Pairs in 10 Languages
-      Binary Human Gold Labels
+      Release Human-annotated Test Sets
+      ID 4,500 · OOD 6,300
+      Gold Label: Jailbroken True / False
     type: database
     size: xl
     position:
-      x: 1140
+      x: 1700
       'y': 40
   - id: judging
     label: |-
-      MultiAgent Judging Stage
-      Multiple Judging Agents
-      Reasoning Explanation + Score 1–10
-      Convert Scores to Evidence Masses
-    type: process
-    size: xl
-    position:
-      x: 580
-      'y': 380
-  - id: voting
-    label: |-
-      Evidence Aggregation and Voting
-      Combine Judges with Dempster's Rule
-      Voting Agents Accept or Reject
-      Preserve Reasons and Uncertainty
-    type: process
-    size: xl
-    position:
-      x: 860
-      'y': 380
-  - id: inference
-    label: |-
-      Inference Agent
-      Consume Aggregated Judge Results
-      Consume All Voting Results
-      Produce Final Reason + 1–10 Score
+      GPT-4 MultiAgent Judging Stage
+      3 Judging Agents
+      Each Gives Reason + Score 1–10
     type: process
     size: xl
     position:
       x: 1140
       'y': 380
-  - id: groundtruth
+  - id: bpa
     label: |-
-      Construct Explainable Ground Truth
-      Fine-grained Score and Reasoning
-      Threshold alpha Gives Binary Label
-      Supervise JAILJUDGETRAIN
-    type: document
+      Uncertainty-aware Evidence Aggregation
+      Score to BPA · α = 0.1 Sets Uncertainty
+      Dempster's Rule Combines Three BPAs
+      Recover Aggregate Score + Closest Reason
+      α Is Not a Binary-label Threshold
+    type: process
     size: xl
     position:
       x: 1420
       'y': 380
-  - id: guard
+  - id: voting
     label: |-
-      Instruction-tune JAILJUDGE Guard
-      Llama-2-7B Base Model
-      Input: User Prompt + Target Response
-      Output: Explanation + Score 1–10
+      3 Voting Agents
+      Review Aggregated Score and Reason
+      Accept / Reject + Explanation
     type: process
     size: xl
     position:
       x: 1700
       'y': 380
-  - id: evaluate
+  - id: inference
     label: |-
-      Evaluate Jailbreak Judges
-      JAILJUDGE ID and OOD
-      Also JBB Behaviors and WILDTEST
-      Compare MultiAgent, Guard, and Baselines
+      1 Inference Agent
+      Read Aggregated Judging + All Votes
+      Final Judgment · Reason · Explanation
+      Final Jailbreak Score 1–10
     type: process
     size: xl
     position:
       x: 1980
+      'y': 380
+  - id: train
+    label: |-
+      Build JAILJUDGETRAIN Ground Truth
+      35K+ Instruction-tuning Items
+      Input: Prompt + Response
+      Output: Reasoning + Score 1–10
+    type: document
+    size: xl
+    position:
+      x: 2260
+      'y': 380
+  - id: guard
+    label: |-
+      LoRA Supervised Fine-tuning
+      Llama-2-7B Base
+      Input: User Prompt + Model Response
+      Output: Explanation + Score 1–10
+      Binary Jailbreak When Score > 2
+    type: process
+    size: xl
+    position:
+      x: 2540
+      'y': 380
+  - id: evaluate
+    label: |-
+      Evaluate Jailbreak Judges
+      JAILJUDGE ID / OOD
+      JBB Behaviors / WILDTEST
+      MultiAgent · Guard · Baselines
+    type: process
+    size: xl
+    position:
+      x: 2820
       'y': 40
   - id: metrics
     label: |-
       Report Judge Quality
       Accuracy · Precision · Recall · F1
-      GPT-4 Explainability Quality: 1–5
-      Breakdown by Scenario and Language
+      GPT-4 EQ 1–5 · Human H-score
+      Break Down by Scenario and Language
     type: terminal
     size: xl
     position:
-      x: 2260
+      x: 3100
       'y': 40
+  - id: artifact_boundary
+    label: |-
+      Partly Public Artifact Boundary
+      Git Code Public · Dataset Gated
+      HF Dataset edcd9ae · auto/custom
+      Guard HF cf624b8 Pinned Separately
+      No Full-package Ungated Claim
+    type: document
+    size: xl
+    position:
+      x: 3100
+      'y': 380
 edges:
+  - from: evidence
+    to: prompts
+    type: data
   - from: prompts
     to: responses
     type: primary
@@ -152,6 +200,9 @@ edges:
     to: pool
     type: primary
   - from: pool
+    to: test_split
+    type: primary
+  - from: test_split
     to: annotation
     type: primary
   - from: annotation
@@ -159,17 +210,20 @@ edges:
     type: primary
   - from: pool
     to: judging
-    type: secondary
+    type: primary
   - from: judging
+    to: bpa
+    type: primary
+  - from: bpa
     to: voting
     type: primary
   - from: voting
     to: inference
     type: primary
   - from: inference
-    to: groundtruth
+    to: train
     type: primary
-  - from: groundtruth
+  - from: train
     to: guard
     type: primary
   - from: testsets
@@ -181,4 +235,7 @@ edges:
   - from: evaluate
     to: metrics
     type: primary
+  - from: metrics
+    to: artifact_boundary
+    type: data
 modules: []
