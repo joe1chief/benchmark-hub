@@ -76,6 +76,12 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("DRAWIO_DESKTOP_CLI=", installer)
         self.assertIn("scripts/ci/install_drawio_toolchain.sh", self.ci)
 
+    def test_drawio_dependencies_install_from_the_locked_repository_root(self):
+        installer = (
+            ROOT / "scripts" / "ci" / "install_drawio_toolchain.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('npm ci --prefix "${skill_checkout}"\n', installer)
+
     def test_linux_drawio_wrapper_uses_xvfb(self):
         wrapper = (
             ROOT / "scripts" / "ci" / "drawio-desktop-ci.sh"

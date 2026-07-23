@@ -22,7 +22,7 @@ git clone \
   "${skill_checkout}"
 git -C "${skill_checkout}" fetch --depth 1 origin "${DRAWIO_SKILL_COMMIT}"
 git -C "${skill_checkout}" checkout --detach FETCH_HEAD
-npm ci --prefix "${skill_checkout}/skills/drawio/scripts"
+npm ci --prefix "${skill_checkout}"
 
 curl \
   --fail \
