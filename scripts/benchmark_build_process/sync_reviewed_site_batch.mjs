@@ -792,9 +792,21 @@ function applyReviewNoteReplacements(note, id) {
   return updated;
 }
 
+function isArxivUrl(value) {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:'
+      && (url.hostname === 'arxiv.org' || url.hostname.endsWith('.arxiv.org'))
+    );
+  } catch {
+    return false;
+  }
+}
+
 function pinnedSourceUrl(detail, existing) {
   if (!detail.paper_url) return existing?.source_url || detail.homepage || '';
-  if (detail.paper_url.includes('arxiv.org')) {
+  if (isArxivUrl(detail.paper_url)) {
     const version = detail.drawio_review_note.match(/arXiv:([0-9.]+v\d+)/iu)?.[1];
     if (version) return `https://arxiv.org/abs/${version}`;
   }

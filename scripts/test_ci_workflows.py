@@ -99,6 +99,85 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("xvfb-run", wrapper)
         self.assertIn("/usr/bin/drawio", wrapper)
 
+    def test_macos_drawio_fidelity_job_runs_desktop_tests(self):
+        installer = (
+            ROOT / "scripts" / "ci" / "install_drawio_toolchain_macos.sh"
+        ).read_text(encoding="utf-8")
+        package = (ROOT / "package.json").read_text(encoding="utf-8")
+        self.assertIn("DRAWIO_DESKTOP_VERSION=30.0.2", installer)
+        self.assertIn(
+            "cabbb29b250468d906c2cdd3a3920d96783d3af70871f17b8eed0cd3fa8d2cbf",
+            installer,
+        )
+        self.assertIn("IMPORTER_DRAWIO_E2E_CLI=", installer)
+        self.assertIn("DRAWIO_DESKTOP_CLI=", installer)
+        self.assertIn("brew install imagemagick", installer)
+        self.assertIn('test -x "${image_compare}"', installer)
+        self.assertIn("IMAGEMAGICK_COMPARE=", installer)
+        self.assertIn("IMAGEMAGICK_FONT=", installer)
+        self.assertIn("drawio-fidelity-shards:", self.ci)
+        self.assertIn("drawio-fidelity:", self.ci)
+        self.assertIn("name: Draw.io Export Fidelity (macOS)", self.ci)
+        self.assertIn("runs-on: macos-26", self.ci)
+        self.assertIn("shard: [1, 2]", self.ci)
+        self.assertIn("--test-shard=${{ matrix.shard }}/2", self.ci)
+        self.assertIn("needs: drawio-fidelity-shards", self.ci)
+        self.assertIn("SHARD_RESULT:", self.ci)
+        self.assertIn("scripts/ci/install_drawio_toolchain_macos.sh", self.ci)
+        self.assertIn("scripts/ci/diagnose_drawio_png_macos.sh", self.ci)
+        self.assertIn(
+            "node --test --test-concurrency=2\n"
+            "          --test-shard=${{ matrix.shard }}/2",
+            self.ci,
+        )
+        self.assertIn(
+            '"test:drawio-fidelity": '
+            '"node --test --test-concurrency=2 '
+            'scripts/benchmark_build_process/paper_review_site_a*.scoped.test.mjs"',
+            package,
+        )
+
+    def test_active_suite_does_not_register_superseded_test_cases(self):
+        test_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (ROOT / "scripts" / "benchmark_build_process").glob("*.test.mjs")
+            )
+        )
+        self.assertNotIn(
+            "Superseded by the later A8/A9 paper-review contract",
+            test_sources,
+        )
+
+    def test_active_suite_does_not_compare_png_container_bytes(self):
+        test_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (ROOT / "scripts" / "benchmark_build_process").glob(
+                    "paper_review_site_a*.scoped.test.mjs"
+                )
+            )
+        )
+        self.assertNotRegex(
+            test_sources,
+            r"assert\.deepEqual\(\s*readFileSync\((?:generatedPng|png)\)",
+        )
+
+    def test_active_suite_uses_portable_svg_fidelity(self):
+        test_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (ROOT / "scripts" / "benchmark_build_process").glob(
+                    "paper_review_site_a*.scoped.test.mjs"
+                )
+            )
+        )
+        self.assertIn("assertSvgFidelity(", test_sources)
+        self.assertNotRegex(
+            test_sources,
+            r"assert\.equal\(\s*readFileSync\((?:generatedSvg|svg),\s*'utf8'\)",
+        )
+
     def test_a10h_accepts_the_ci_drawio_desktop_path(self):
         test_source = (
             ROOT
@@ -107,6 +186,15 @@ class CiWorkflowContractTests(unittest.TestCase):
             / "paper_review_site_a10h.scoped.test.mjs"
         ).read_text(encoding="utf-8")
         self.assertIn("process.env.DRAWIO_DESKTOP_CLI", test_source)
+
+    def test_a10r_accepts_the_ci_image_magick_font(self):
+        test_source = (
+            ROOT
+            / "scripts"
+            / "benchmark_build_process"
+            / "paper_review_site_a10r.scoped.test.mjs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("process.env.IMAGEMAGICK_FONT", test_source)
 
     def test_google_font_import_precedes_tailwind_imports(self):
         stylesheet = (ROOT / "client" / "src" / "index.css").read_text(

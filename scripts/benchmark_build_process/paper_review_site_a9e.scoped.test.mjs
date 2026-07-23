@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -295,9 +296,9 @@ test('reproduces the revised A9e SVG and PNG exports from their checked-in Draw.
           `${base}.drawio`,
         ], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, generatedSvg], { stdio: 'pipe' });
-        assert.equal(
-          readFileSync(generatedSvg, 'utf8'),
-          readFileSync(`${base}.svg`, 'utf8'),
+        assertSvgFidelity(
+          generatedSvg,
+          `${base}.svg`,
           `${id}.${language}.svg export freshness`,
         );
 

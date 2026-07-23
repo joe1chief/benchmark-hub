@@ -4,6 +4,7 @@ import type { Benchmark } from '@/types/benchmark';
 import { Calendar, Building2, BarChart3, Layers, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
+import { canonicalizeOpenness } from '@/lib/openness';
 
 interface Props {
   benchmark: Benchmark;
@@ -51,7 +52,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style, isStarred 
     'partly public': { icon: ShieldAlert, color: '#F59E0B', label: t.partlyLabel  },
     'in-house':      { icon: Lock,        color: '#EF4444', label: t.privateLabel },
   };
-  const opennessInfo = b.openness ? opennessConfig[b.openness] : undefined;
+  const opennessInfo = opennessConfig[canonicalizeOpenness(b.openness) || ''];
 
   return (
     <article

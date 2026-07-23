@@ -11,6 +11,8 @@ import {
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
 import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
+import { escapeCitationText, isArxivUrl } from '@/lib/benchmarkText';
+import { canonicalizeOpenness } from '@/lib/openness';
 
 interface Props {
   benchmark: Benchmark | null;
@@ -69,7 +71,7 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
       url: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`,
       label: 'PDF.js Viewer',
     });
-    if (!pdfUrl.includes('arxiv.org')) {
+    if (!isArxivUrl(pdfUrl)) {
       strategies.push({ strategy: 'direct', url: pdfUrl, label: 'Direct' });
     }
   }
@@ -363,7 +365,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
 
   const [citationCopied, setCitationCopied] = useState(false);
   const intro = b ? (isEn ? (b.intro_en || b.intro) : b.intro || '') : '';
-  const cleanIntro = intro.replace(/\s+/g, ' ').replace(/"/g, '\\"').trim();
+  const cleanIntro = escapeCitationText(intro.replace(/\s+/g, ' ').trim());
   
   const bibtexCode = b ? `@article{${b.id},\n  title={${b.name}: ${cleanIntro}},\n  author={${b.org || 'Unknown'}},\n  journal={arXiv preprint},\n  year={${b.year || new Date().getFullYear()}}\n}` : '';
   const apaCitation = b ? `${b.org || 'Unknown'}. (${b.year || new Date().getFullYear()}). ${b.name}: ${cleanIntro}. arXiv preprint.` : '';
@@ -441,7 +443,12 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
     'partly public': { icon: ShieldAlert, color: '#F59E0B', label: t.partlyLabel,  bg: 'bg-amber-50 border-amber-200',    bgDark: 'bg-amber-950/30 border-amber-900/50' },
     'in-house':      { icon: Lock,        color: '#EF4444', label: t.privateLabel, bg: 'bg-red-50 border-red-200',        bgDark: 'bg-red-950/30 border-red-900/50' },
   };
-  const opennessInfo = b.openness ? opennessConfig[b.openness] : undefined;
+  const canonicalOpenness = canonicalizeOpenness(b.openness);
+  const opennessInfo = opennessConfig[canonicalOpenness || ''];
+  const rawOpenness = isEn ? (b.openness_en || b.openness) : b.openness;
+  const opennessDisplay = rawOpenness.trim().toLowerCase() === canonicalOpenness
+    ? opennessInfo?.label
+    : rawOpenness;
 
   const familyMembers = b.family
     ? allBenchmarks.filter(x => x.family === b.family && x.id !== b.id)
@@ -536,7 +543,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
           <InfoRow label={t.fieldBuildMethod}  value={isEn ? (b.build_method_en || b.build_method) : b.build_method} isDark={isDark} />
           <InfoRow label={t.fieldMetric}       value={isEn ? (b.metric_en || b.metric) : b.metric}       isDark={isDark} />
           <InfoRow label={t.fieldEvalFeature}  value={isEn ? (b.eval_feature_en || b.eval_feature) : b.eval_feature} isDark={isDark} />
-          <InfoRow label={t.fieldDataAccess}   value={opennessInfo?.label || b.openness} isDark={isDark} />
+          <InfoRow label={t.fieldDataAccess}   value={opennessDisplay} isDark={isDark} />
           <div className="flex gap-3 py-2.5">
             <span className={`text-[12px] w-24 shrink-0 pt-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t.fieldLeaderboard}</span>
             <span className={`text-[13px] font-medium flex items-center gap-1 ${b.has_leaderboard ? 'text-[#10A37F]' : isDark ? 'text-gray-600' : 'text-gray-400'}`}>

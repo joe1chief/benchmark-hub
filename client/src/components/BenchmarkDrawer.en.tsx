@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
+import { escapeCitationText, isArxivUrl } from '@/lib/benchmarkText';
+import { canonicalizeOpenness } from '@/lib/openness';
 
 interface Props {
   benchmark: Benchmark | null;
@@ -81,7 +83,7 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
       url: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`,
       label: 'PDF.js Viewer',
     });
-    if (!pdfUrl.includes('arxiv.org')) {
+    if (!isArxivUrl(pdfUrl)) {
       strategies.push({ strategy: 'direct', url: pdfUrl, label: 'Direct Embed' });
     }
   }
@@ -138,7 +140,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
 
   const [citationCopied, setCitationCopied] = useState(false);
   const intro = b ? (b.intro_en || b.intro || '') : '';
-  const cleanIntro = intro.replace(/\s+/g, ' ').replace(/"/g, '\"').trim();
+  const cleanIntro = escapeCitationText(intro.replace(/\s+/g, ' ').trim());
   
   const bibtexCode = b ? `@article{${b.id},\n  title={${b.name}: ${cleanIntro}},\n  author={${b.org || 'Unknown'}},\n  journal={arXiv preprint},\n  year={${b.year || new Date().getFullYear()}}\n}` : '';
   const apaCitation = b ? `${b.org || 'Unknown'}. (${b.year || new Date().getFullYear()}). ${b.name}: ${cleanIntro}. arXiv preprint.` : '';
@@ -185,7 +187,12 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
   const strategies = getPdfStrategies(rawPdfUrl);
   const currentStrategy = strategies[strategyIndex];
   const embedUrl = currentStrategy?.url || '';
-  const opennessInfo = OPENNESS_CONFIG[b.openness];
+  const canonicalOpenness = canonicalizeOpenness(b.openness);
+  const opennessInfo = OPENNESS_CONFIG[canonicalOpenness || ''];
+  const rawOpenness = b.openness_en || b.openness;
+  const opennessDisplay = rawOpenness.trim().toLowerCase() === canonicalOpenness
+    ? opennessInfo?.label
+    : rawOpenness;
   const diffLabel = DIFFICULTY_EN[b.difficulty] || b.difficulty;
   const l1Label = L1_EN_MAP[b.l1] || b.l1;
 
@@ -283,7 +290,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
           <InfoRow label="Build Method" value={b.build_method}  isDark={isDark} />
           <InfoRow label="Metric"        value={b.metric}        isDark={isDark} />
           <InfoRow label="Eval Feature"  value={b.eval_feature}  isDark={isDark} />
-          <InfoRow label="Data Access"   value={opennessInfo?.label || b.openness} isDark={isDark} />
+          <InfoRow label="Data Access"   value={opennessDisplay} isDark={isDark} />
           <div className={`flex gap-3 py-2.5 transition-colors`}>
             <span className={`text-[12px] w-24 shrink-0 pt-0.5 transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Leaderboard</span>
             <span className={`text-[13px] font-medium flex items-center gap-1 ${b.has_leaderboard ? 'text-[#10A37F]' : isDark ? 'text-gray-600' : 'text-gray-400'}`}>

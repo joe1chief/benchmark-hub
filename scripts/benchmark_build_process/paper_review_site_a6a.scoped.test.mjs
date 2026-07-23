@@ -249,7 +249,7 @@ test('pins paper and repository versions and records reviewed source locators', 
   for (const [id, { paper, note }] of Object.entries(expected)) {
     const detail = readDetail(id);
     assert.equal(detail.paper_url, paper, `${id} paper URL`);
-    assert.equal(detail.arxiv_pdf_url, paper.includes('arxiv.org') ? paper.replace('/abs/', '/pdf/') : '');
+    assert.equal(detail.arxiv_pdf_url, paper.startsWith('https://arxiv.org/') ? paper.replace('/abs/', '/pdf/') : '');
     assert.match(detail.drawio_review_note, note, `${id} review note`);
   }
 });

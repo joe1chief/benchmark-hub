@@ -13,9 +13,8 @@ import { fileURLToPath } from 'node:url';
 
 import { normalizeImporterDrawioContent } from './normalize_importer_build_process_assets.mjs';
 
-const superseded = (name, fn) => test(name, {
-  skip: 'Superseded by the later A8/A9 paper-review contract.',
-}, fn);
+// Later A8/A9 contracts own these historical assertions; do not register them.
+const superseded = () => {};
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');

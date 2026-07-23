@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -34,6 +35,7 @@ const imageMagick = [
   '/opt/homebrew/bin/magick',
   '/usr/local/bin/magick',
 ].find(path => path && existsSync(path));
+const imageMagickFont = process.env.IMAGEMAGICK_FONT || 'Arial';
 const nativeTextWidthLimit = 196;
 
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
@@ -94,7 +96,7 @@ test('keeps bilingual node text within reviewed native-text boxes', () => {
           );
           if (language === 'en' && imageMagick) {
             const renderedWidth = Number(execFileSync(imageMagick, [
-              '-font', 'Arial',
+              '-font', imageMagickFont,
               '-pointsize', '11',
               `label:${line}`,
               '-format', '%w',
@@ -294,9 +296,9 @@ test('reproduces all eight A10r fixed-light SVG and PNG exports', {
           '-x', '-f', 'svg', '--svg-theme', 'light', '-o', generatedSvg, `${base}.drawio`,
         ], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, generatedSvg], { stdio: 'pipe' });
-        assert.equal(
-          readFileSync(generatedSvg, 'utf8'),
-          readFileSync(`${base}.svg`, 'utf8'),
+        assertSvgFidelity(
+          generatedSvg,
+          `${base}.svg`,
           `${id}.${language}.svg export freshness`,
         );
         execFileSync(drawioDesktop, [

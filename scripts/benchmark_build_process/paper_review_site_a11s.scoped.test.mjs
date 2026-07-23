@@ -5,7 +5,9 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
 import { parse as parseYaml } from 'yaml';
+import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -500,9 +502,9 @@ test('reproduces exactly all twelve A11s SVG and PNG exports from checked-in Dra
           { stdio: 'pipe' },
         );
         execFileSync(process.execPath, [svgNormalizer, generatedSvg], { stdio: 'pipe' });
-        assert.equal(
-          readFileSync(generatedSvg, 'utf8'),
-          readFileSync(`${base}.svg`, 'utf8'),
+        assertSvgFidelity(
+          generatedSvg,
+          `${base}.svg`,
           `${id}.${language}.svg bytes`,
         );
         execFileSync(
@@ -510,10 +512,10 @@ test('reproduces exactly all twelve A11s SVG and PNG exports from checked-in Dra
           ['-x', '-f', 'png', '-o', generatedPng, `${base}.drawio`],
           { stdio: 'pipe' },
         );
-        assert.deepEqual(
-          readFileSync(generatedPng),
-          readFileSync(`${base}.png`),
-          `${id}.${language}.png bytes`,
+        assertPngFidelity(
+          generatedPng,
+          `${base}.png`,
+          `${id}.${language}.png fidelity`,
         );
         exportCount += 1;
       }

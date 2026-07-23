@@ -3,6 +3,7 @@ import React from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import { Calendar, Building2, BarChart3, Layers, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { canonicalizeOpenness } from '@/lib/openness';
 
 interface Props {
   benchmark: Benchmark;
@@ -64,7 +65,7 @@ export default function BenchmarkCard({ benchmark: b, onClick, style, isStarred 
   const widelyTested = (b as any).widely_tested === true;
   const diffLabel = DIFFICULTY_MAP[b.difficulty] || b.difficulty;
   const diffColor = DIFFICULTY_COLORS[b.difficulty] || DIFFICULTY_COLORS[diffLabel];
-  const opennessInfo = OPENNESS_CONFIG[b.openness];
+  const opennessInfo = OPENNESS_CONFIG[canonicalizeOpenness(b.openness) || ''];
   const l1Label = L1_EN_MAP[b.l1] || b.l1;
 
   return (

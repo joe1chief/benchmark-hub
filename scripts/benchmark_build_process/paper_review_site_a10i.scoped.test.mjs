@@ -10,6 +10,8 @@ import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertSvgFidelity } from './assert_svg_fidelity.mjs';
+import { assertPngFidelity } from './assert_png_fidelity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
@@ -369,9 +371,9 @@ test('reproduces all eight A10i SVG and PNG exports from checked-in Draw.io sour
           `${base}.drawio`,
         ], { stdio: 'pipe' });
         execFileSync(process.execPath, [svgNormalizer, generatedSvg], { stdio: 'pipe' });
-        assert.equal(
-          readFileSync(generatedSvg, 'utf8'),
-          readFileSync(`${base}.svg`, 'utf8'),
+        assertSvgFidelity(
+          generatedSvg,
+          `${base}.svg`,
           `${id}.${language}.svg export freshness`,
         );
 
@@ -381,9 +383,9 @@ test('reproduces all eight A10i SVG and PNG exports from checked-in Draw.io sour
           '-o', generatedPng,
           `${base}.drawio`,
         ], { stdio: 'pipe' });
-        assert.deepEqual(
-          readFileSync(generatedPng),
-          readFileSync(`${base}.png`),
+        assertPngFidelity(
+          generatedPng,
+          `${base}.png`,
           `${id}.${language}.png export freshness`,
         );
       }
