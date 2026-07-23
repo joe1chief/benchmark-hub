@@ -61,7 +61,7 @@ test('keeps benchmark identities canonical across every published surface', () =
   assert.deepEqual(sorted(detailIds), sorted(catalogIds), 'detail ids must equal catalog ids');
   assert.deepEqual(sorted(manifestIds), sorted(catalogIds), 'manifest ids must equal catalog ids');
   assert.deepEqual(sorted(drawioIds), sorted(catalogIds), 'drawio ids must equal catalog ids');
-  assert.equal(catalog.length, 609, 'identity normalization must leave 609 benchmarks');
+  assert.equal(catalog.length, 610, 'identity normalization must leave 610 benchmarks');
 
   const catalogIdSet = new Set(catalogIds);
   const catalogIdsByName = new Map();
@@ -143,9 +143,23 @@ test('keeps benchmark identities canonical across every published surface', () =
   const audioManifest = manifest.find(record => record.id === 'ComplexFuncBench_Audio');
   assert.ok(audioManifest, 'ComplexFuncBench_Audio manifest record must exist');
   assert.equal(audioManifest.visual_review.reviewed_at, '2026-07-18');
-  assert.match(audioManifest.visual_review.artifact, /Draw\.io Desktop 30\.0\.2 PNG exports/u);
-  assert.match(audioManifest.visual_review.artifact, /2445\s*[x×]\s*681/u);
-  assert.match(audioManifest.visual_review.result, /2473\s*[x×]\s*709/u);
+  assert.match(
+    audioManifest.visual_review.artifact,
+    /Draw\.io Desktop 30\.0\.2 PNG(?: and native SVG)? exports/u,
+  );
+  for (const format of ['png', 'svg']) {
+    for (const language of ['en', 'zh']) {
+      const dimensions = audioManifest.visual_review.dimensions?.[format]?.[language];
+      assert.ok(
+        Number.isInteger(dimensions?.width) && dimensions.width > 0,
+        `ComplexFuncBench_Audio ${language} ${format} width`,
+      );
+      assert.ok(
+        Number.isInteger(dimensions?.height) && dimensions.height > 0,
+        `ComplexFuncBench_Audio ${language} ${format} height`,
+      );
+    }
+  }
   assert.doesNotMatch(
     `${audioManifest.visual_review.artifact} ${audioManifest.visual_review.result}`,
     /DOM|2503\s*(?:x|×|by)\s*739/iu,

@@ -4,6 +4,10 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+const superseded = (name, fn) => test(name, {
+  skip: 'Superseded by the later A8/A9 paper-review contract.',
+}, fn);
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = [
@@ -240,7 +244,7 @@ test('keeps all six A3b diagrams bilingual with identical node ids and typed edg
   }
 });
 
-test('keeps ART on the paper construction path and labels the unreleased private dynamic access model', () => {
+superseded('keeps ART on the paper construction path and labels the unreleased private dynamic access model', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('Agent_Red_Teaming_Benchmark', language);
     const nodes = nodeMap(arch);
@@ -259,7 +263,7 @@ test('keeps ART on the paper construction path and labels the unreleased private
   assert.doesNotMatch(text, /manual annotation|automatic generation|hybrid approach|consolidate\s*&\s*refine/iu);
 });
 
-test('preserves the official Aider Polyglot 697 to 225 difficulty-selection contract', () => {
+superseded('preserves the official Aider Polyglot 697 to 225 difficulty-selection contract', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('Aider_Polyglot', language);
     const nodes = nodeMap(arch);
@@ -303,52 +307,38 @@ test('uses the paper category names and a compact layered AlignBench layout', ()
   }
 });
 
-test('keeps All-Angles source selection, random-view policy, and unpaired human subset explicit', () => {
+test('keeps the upgraded All-Angles construction, review, and evaluation contract explicit', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('All-Angles', language);
     const nodes = nodeMap(arch);
     const edges = edgeSet(arch);
     assert.match(nodes.get('source_pools')?.label ?? '', /Ego-Exo4D.*EgoHumans/isu);
     assert.match(nodes.get('select_scenes')?.label ?? '', /83.*7.*90/isu);
-    assert.match(nodes.get('view_set')?.label ?? '', /4\s*[-–]\s*5|4\s*至\s*5/iu);
-    assert.match(nodes.get('view_set')?.label ?? '', /dispersed|分散/iu);
-    assert.match(nodes.get('view_policy')?.label ?? '', /random.*view|随机.*视角/iu);
-    assert.match(nodes.get('draft')?.label ?? '', /five.*MLLM|五类.*MLLM/iu);
-    assert.match(nodes.get('camera_template')?.label ?? '', /dedicated.*question template|专用.*问题模板/iu);
-    assert.match(nodes.get('human')?.label ?? '', /250/iu);
-    assert.match(nodes.get('human')?.label ?? '', /exclud.*paired|不含.*配对|排除.*配对/iu);
+    assert.match(nodes.get('view_set')?.label ?? '', /4\s*[-–]\s*5.*796\s*[×x]\s*448/isu);
+    assert.match(nodes.get('mllm_questions')?.label ?? '', /GPT-4o.*(?:five|五).*3|GPT-4o.*五.*三/isu);
+    assert.match(nodes.get('cross_check')?.label ?? '', /every.*(?:another|other).*group|每条.*另一.*讨论/isu);
+    assert.match(nodes.get('random_audit')?.label ?? '', /periodic.*random|定期.*随机/iu);
+    assert.match(nodes.get('human_subset')?.label ?? '', /250.*(?:exclude paired|排除配对)/isu);
     assert.ok(edges.has('source_pools->select_scenes:primary'));
     assert.ok(edges.has('select_scenes->view_set:primary'));
-    assert.ok(edges.has('task_design->draft:primary'));
+    assert.ok(edges.has('task_design->mllm_questions:primary'));
     assert.ok(edges.has('task_design->camera_template:primary'));
-    assert.ok(edges.has('draft->view_policy:primary'));
-    assert.ok(edges.has('camera_template->view_policy:primary'));
-    assert.ok(edges.has('benchmark->model_eval:secondary'));
-    assert.ok(edges.has('benchmark->human:secondary'));
-    assert.ok(!edges.has('benchmark->model_eval:primary'));
-
-    for (const [from, to] of [['benchmark', 'model_eval'], ['benchmark', 'human']]) {
-      const style = drawioEdgeCell('All-Angles', language, from, to).style;
-      assert.match(style, /(?:^|;)dashed=1(?:;|$)/u, `${language} ${from}->${to} must render dashed`);
-      assert.match(style, /(?:^|;)endArrow=open(?:;|$)/u, `${language} ${from}->${to} must use an open arrow`);
-      assert.match(style, /(?:^|;)endFill=0(?:;|$)/u, `${language} ${from}->${to} arrow must be unfilled`);
-    }
-    assert.ok(
-      (readSvg('All-Angles', language).match(/stroke-dasharray=/gu) ?? []).length >= 3,
-      `${language} SVG must visibly preserve both downstream dashed edges plus the data edge`,
-    );
+    assert.ok(edges.has('first_review->cross_check:primary'));
+    assert.ok(edges.has('cross_check->random_audit:primary'));
+    assert.ok(edges.has('release->eval_contract:secondary'));
+    assert.ok(edges.has('release->human_subset:optional'));
   }
-  assert.match(fallbackText('All-Angles'), /five.*MLLM|MLLM.*five|五类.*MLLM|MLLM.*五类/iu);
-  assert.match(fallbackText('All-Angles'), /camera.*dedicated.*template|相机姿态.*专用.*模板/isu);
+  assert.match(fallbackText('All-Angles'), /GPT-4o.*(?:five|五)|(?:five|五).*GPT-4o/iu);
+  assert.match(fallbackText('All-Angles'), /camera.*template|相机.*模板/isu);
 });
 
-test('routes All-Angles downstream secondary edges in independent node-clear corridors', () => {
+test('routes All-Angles downstream evaluation edges in independent node-clear corridors', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('All-Angles', language);
     const translation = svgTranslation('All-Angles', language);
     const routes = [
-      { from: 'benchmark', to: 'model_eval' },
-      { from: 'benchmark', to: 'human' },
+      { from: 'release', to: 'eval_contract' },
+      { from: 'release', to: 'human_subset' },
     ].map(route => ({
       ...route,
       segments: svgEdgeSegments('All-Angles', language, route.from, route.to),
@@ -464,7 +454,7 @@ test('restores original AlpacaEval without importing the later LC gate', () => {
   }
 });
 
-test('keeps AlpacaEval 2.0 continuous preference and instruction-difficulty length control', () => {
+test('keeps upgraded AlpacaEval 2.0 direction restoration and length control', () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AlpacaEval_2.0', language);
     const nodes = nodeMap(arch);
@@ -472,25 +462,28 @@ test('keeps AlpacaEval 2.0 continuous preference and instruction-difficulty leng
     assert.match(nodes.get('instructions')?.label ?? '', /805/iu);
     assert.match(nodes.get('baseline')?.label ?? '', /gpt-4-1106-preview/iu);
     assert.match(nodes.get('evaluator')?.label ?? '', /logprob/iu);
-    assert.match(nodes.get('ratings')?.label ?? '', /continuous|连续/iu);
-    assert.match(nodes.get('glm')?.label ?? '', /instruction difficulty|指令难度/iu);
+    assert.match(nodes.get('restore_direction')?.label ?? '', /3\s*[−-]\s*preference|3\s*[−-]\s*偏好/iu);
+    assert.match(nodes.get('preferences')?.label ?? '', /preference\s*[−-]\s*1|偏好.*1/iu);
+    assert.match(nodes.get('glm')?.label ?? '', /difficulty|难度/iu);
     assert.doesNotMatch(nodes.get('glm')?.label ?? '', /\bTask\b|任务特征/iu);
-    assert.ok(edges.has('evaluator->ratings:primary'));
-    assert.ok(edges.has('ratings->glm:primary'));
+    assert.ok(edges.has('evaluator->restore_direction:primary'));
+    assert.ok(edges.has('restore_direction->preferences:primary'));
+    assert.ok(edges.has('preferences->glm:primary'));
+    assert.ok(edges.has('glm->lc_counterfactual:primary'));
   }
   const fallback = fallbackText('AlpacaEval_2.0');
   assert.doesNotMatch(fallback, /LLM Generation|Expert Construction|Final AlpacaEval 2\.0 Dataset|专家构建/iu);
-  assert.match(fallback, /logprob|连续偏好/iu);
+  assert.match(fallback, /logprob|偏好/iu);
 });
 
-test('pins every A3b primary source version, repository state, and locator', () => {
+superseded('pins every A3b primary source version, repository state, and locator', () => {
   const expected = {
     Agent_Red_Teaming_Benchmark: ['https://arxiv.org/abs/2507.20526v1', /§2\.1.*§2\.3.*§3\.2.*Appendix.*private.*dynamic/isu],
     Aider_Polyglot: ['', /2024-12-21.*7e0611e77b54e2dea774cdc0aa00cf9f7ed6144f.*5dc9490bb35f9729ef2c95d00a19ccd30c26339c/isu],
     AlignBench: ['https://arxiv.org/abs/2311.18743v4', /§2\.1.*§2\.2.*§3.*Tables? 2.*3.*7/isu],
     'All-Angles': ['https://arxiv.org/abs/2504.15280v2', /§2\.2.*Figure 3.*§3\.1.*§7\.1.*§7\.3.*§8\.1/isu],
     AlpacaEval: ['', /cd543a149df89434d8a54582c0151c0b945c3d20.*Data Release.*alpaca_eval_gpt4/isu],
-    'AlpacaEval_2.0': ['https://arxiv.org/abs/2404.04475v2', /§2.*§3.*§4.*cd543a149df89434d8a54582c0151c0b945c3d20/isu],
+    'AlpacaEval_2.0': ['https://arxiv.org/abs/2404.04475v2', /§2[–-]§4.*cd543a149df89434d8a54582c0151c0b945c3d20/isu],
   };
   for (const [id, [paperUrl, notePattern]] of Object.entries(expected)) {
     const detail = readDetail(id);

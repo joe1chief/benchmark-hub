@@ -105,7 +105,7 @@ function drawioEdgeCell(id, language, from, to) {
   const source = drawioNodeCellId(id, language, from);
   const target = drawioNodeCellId(id, language, to);
   const match = readDrawio(id, language).match(new RegExp(
-    `<mxCell id="([^"]+)" value="[^"]*" style="([^"]*)" edge="1" parent="1" source="${source}" target="${target}"><mxGeometry relative="1" as="geometry">([\\s\\S]*?)</mxGeometry></mxCell>`,
+    `<mxCell id="([^"]+)" value="[^"]*" style="([^"]*)" edge="1" parent="1" source="${source}" target="${target}"><mxGeometry\\b[^>]*\\brelative="1"[^>]*\\bas="geometry">([\\s\\S]*?)</mxGeometry></mxCell>`,
     'u',
   ));
   assert.ok(match, `${id}.${language} missing draw.io edge ${from}->${to}`);

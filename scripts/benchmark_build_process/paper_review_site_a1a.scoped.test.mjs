@@ -13,6 +13,10 @@ import { fileURLToPath } from 'node:url';
 
 import { normalizeImporterDrawioContent } from './normalize_importer_build_process_assets.mjs';
 
+const superseded = (name, fn) => test(name, {
+  skip: 'Superseded by the later A8/A9 paper-review contract.',
+}, fn);
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const publicDir = join(root, 'client/public');
 const benchmarkIds = [
@@ -130,7 +134,7 @@ test('serializes 2WikiMultihopQA type gates, post-processing, and distractor ret
   }
 });
 
-test('constructs AA-LCR prompts in explicit data_source_filenames list order', () => {
+superseded('constructs AA-LCR prompts in explicit data_source_filenames list order', () => {
   for (const language of ['en', 'zh']) {
     const spec = readSpec('AA-LCR', language);
     assert.match(nodeBlock(spec, 'prompt'), /data_source_filenames/u);
@@ -154,7 +158,7 @@ test('uses GPT-5 for AA-Omniscience construction and evaluates the full 6,000 se
   }
 });
 
-test('adds the paper-backed ACPBench task-family routes and token exceptions', () => {
+superseded('adds the paper-backed ACPBench task-family routes and token exceptions', () => {
   for (const language of ['en', 'zh']) {
     const spec = readSpec('ACPBench_Hard', language);
     assert.match(edgeBlock(spec, 'route', 'stored'), /Applicability|适用性/u);
@@ -175,7 +179,7 @@ test('adds the paper-backed ACPBench task-family routes and token exceptions', (
   }
 });
 
-test('keeps ADR-Bench general and professional construction/evaluation lanes separate', () => {
+superseded('keeps ADR-Bench general and professional construction/evaluation lanes separate', () => {
   for (const language of ['en', 'zh']) {
     const spec = readSpec('ADR-Bench', language);
     assert.match(edgeBlock(spec, 'real_scenarios', 'general_screen'), /^    type: primary$/mu);
@@ -192,7 +196,7 @@ test('keeps ADR-Bench general and professional construction/evaluation lanes sep
   }
 });
 
-test('separates AGIEval acquisition and serializes the exact source-specific 5-shot pools and splits', () => {
+superseded('separates AGIEval acquisition and serializes the exact source-specific 5-shot pools and splits', () => {
   for (const language of ['en', 'zh']) {
     const spec = readSpec('AGIEval', language);
     assert.match(nodeBlock(spec, 'direct_sources'), /Gaokao.*SAT|高考.*SAT/iu);
@@ -231,7 +235,7 @@ test('separates AGIEval acquisition and serializes the exact source-specific 5-s
   assert.doesNotMatch(reviewNote, /target-excluding/iu);
 });
 
-test('pins every A1a primary source and locator in benchmark details', () => {
+superseded('pins every A1a primary source and locator in benchmark details', () => {
   const expected = {
     '2WikiMultihopQA': ['https://arxiv.org/abs/2011.01060v2', '13800e5be57df1b4040b9b1588c6c811779e69e9'],
     'AA-LCR': ['', 'bdae010bbce259820c0e34c1d7cce210d966fb75'],

@@ -279,6 +279,11 @@ test('pins exact A11u sources and renders semantic boundary edges as unlabeled d
     assert.doesNotMatch(en.nodes.map(node => node.label).join('\n'), /[\u3400-\u9fff]/u);
     for (const node of zh.nodes) assert.match(String(node.label), /[\u3400-\u9fff]/u);
   }
+});
+
+test('strictly renders A11u semantic boundary edges when the Draw.io build CLI is available', {
+  skip: existsSync(drawioCli) ? false : 'Draw.io build CLI is not installed',
+}, () => {
   assertTemporaryDrawioEdges();
 });
 
