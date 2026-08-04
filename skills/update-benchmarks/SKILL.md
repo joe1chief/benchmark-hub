@@ -1,116 +1,122 @@
-# Skill: 更新 LLM Benchmark Costco 数据与前端兼容性
+---
+name: update-benchmarks
+description: Use when updating benchmark catalog data, detail records, Build Process assets, CI, GitHub Pages, branches, worktrees, or dependency PRs in joe1chief/llm-benchmark-costco.
+---
 
-## 简介
-本 Skill 旨在指导如何将最新的 `benchmarks.json` 数据更新到 `llm-benchmark-costco` 项目中，并处理可能出现的前端兼容性问题。由于数据结构的演进（如新增字段、可能为空的字段等），直接替换数据文件可能会导致前端渲染错误。本指南提供了一套标准的操作流程，确保数据更新后站点能够稳定运行。
+# Update LLM Benchmark Costco
 
-## 适用场景
-- 获取了最新的 `benchmarks.json` 数据需要更新到网站。
-- 数据中新增了字段（如 `default_l1`, `default_l2`）。
-- 数据中某些字段可能存在空值（如 `mermaid_flowchart` 为 `null`）。
-- 需要重新构建并部署到 GitHub Pages。
+## Overview
 
-## 操作流程
+Treat local changes, a remote branch, a merged PR, successful `main` CI, and a live Pages deployment as five independent states. Never infer a later state from an earlier one.
 
-### 1. 数据同步与类型更新
-首先，将最新的 `benchmarks.json` 文件放置到 `client/public/` 目录下，并同步到项目根目录（如果需要）。
-接着，更新前端的类型定义文件 `client/src/types/benchmark.ts`，确保所有新字段都被正确声明。
+## Preflight
 
-```typescript
-// client/src/types/benchmark.ts 示例更新
-export interface Benchmark {
-  // ... 现有字段
-  default_l1?: string;
-  default_l2?: string;
-  mermaid_flowchart?: string | null;
-  // 确保所有可能为空的字段都标记为可选或允许 null
-}
-```
-
-### 2. 移除 `as any` 强制类型转换
-在前端代码中，应避免使用 `as any` 来访问未在类型中声明的字段。这会掩盖潜在的类型错误。
-全局搜索 `as any`，并将其替换为安全的类型访问。
+Read the live repository contract before changing anything:
 
 ```bash
-# 查找可能存在 as any 的文件
-grep -rn "as any" client/src/
+git status -sb
+git diff --stat
+git ls-files --others --exclude-standard
+git worktree list --porcelain
+git branch -vv
+git fetch origin --prune
+gh pr list --state open
+git remote get-url origin
 ```
 
-### 3. 加强空值防护
-对于可能为空的字段（特别是 `mermaid_flowchart` 和 `related_benchmarks`），在渲染前必须进行空值检查。
+- Use `client/public/benchmarks.json` as the catalog source of truth. Do not create an untracked root copy.
+- Read `package.json`, `.github/workflows/ci.yml`, and `.github/workflows/deploy.yml`; commands, job dependencies, warning policy, and historical counts can change.
+- If the current checkout contains unrelated changes, create a clean `codex/*` branch/worktree from `origin/main`. Never use `git add .` in a mixed worktree.
+- If another process creates or changes files in a worktree, stop. Do not stash, remove, prune, or force-delete an actively written worktree.
 
-**BenchmarkDrawer.tsx 中的处理示例：**
-```tsx
-// 检查是否有流程图
-const hasFlowchart = Boolean(benchmark.mermaid_flowchart && benchmark.mermaid_flowchart.trim() !== '');
+## Update Contract
 
-// 检查是否有相关基准
-const hasRelated = Boolean(benchmark.related_benchmarks && Array.isArray(benchmark.related_benchmarks) && benchmark.related_benchmarks.length > 0);
+1. Confirm the source, expected record count, allowed additions/deletions, and generated-vs-authored ownership.
+2. Update only the required catalog, `benchmarks_detail`, Draw.io/spec/manifest, type, or README-stat files. Preserve ordering and unrelated records.
+3. Review the semantic diff: unique IDs/names, required fields, resolvable related benchmarks, nullable values, asset paths, and bilingual Build Process consistency.
+4. Do not invent enum values, URLs, prompts, evidence, or missing metadata. Fix the source mapping or record an explicit unknown boundary.
 
-// 渲染相关基准时，确保引用的基准确实存在于数据中
-{hasRelated && (
-  <div className="space-y-2">
-    {benchmark.related_benchmarks.map((relatedName) => {
-      const relatedBench = benchmarks.find(b => b.name === relatedName);
-      if (!relatedBench) return null; // 如果找不到对应的基准，则不渲染
-      return <BenchmarkCard key={relatedName} benchmark={relatedBench} />;
-    })}
-  </div>
-)}
-```
+Validation warnings are not errors, but they are not invisible. Require exit code 0 and zero errors; review and disclose every warning. Warning and passed/skipped/failed test counts must come from the current exact-SHA run; never reuse historical counts.
 
-### 4. 搜索与筛选逻辑的健壮性
-在 `useBenchmarks.ts` 和 `Home.tsx` 中，确保搜索和筛选逻辑能够处理字段缺失的情况。
+## Local Gates
 
-```typescript
-// useBenchmarks.ts 示例
-const matchesSearch = !searchQuery || 
-  b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  (b.institution && b.institution.toLowerCase().includes(searchQuery.toLowerCase())) ||
-  (b.l1 && b.l1.toLowerCase().includes(searchQuery.toLowerCase()));
-```
-
-### 5. 排版与视觉优化
-在更新数据后，检查标签和卡片的排版是否整齐。建议使用 `flex-wrap` 和适当的 `gap` 来处理可能变长的标签列表。
-可以使用分隔符（如 `|`）对不同类型的标签进行视觉分组。
-
-### 6. 本地测试与验证
-在提交代码前，必须在本地启动预览服务器进行全面测试。
+Run the fastest gate first, then mirror CI:
 
 ```bash
-# 构建项目
-pnpm build
-
-# 启动预览服务器
-npx serve dist-ghpages -p 3457
+python3 scripts/validate_benchmarks.py
+python3 scripts/update_readme_stats.py
+pnpm exec tsc --noEmit
+pnpm test:build-process
+pnpm build:ghpages
+test -f dist-ghpages/index.html
+test -f dist-ghpages/benchmarks.json
+git diff --check
 ```
 
-**测试清单：**
-- [ ] 首页列表是否正常渲染，无重复、无空白卡片。
-- [ ] 搜索功能是否正常工作。
-- [ ] 各项筛选（年份、分类、难度等）是否生效。
-- [ ] 点击卡片打开详情抽屉是否正常。
-- [ ] 详情抽屉中的 Basic Info, Evaluation, Related Benchmarks 是否正确显示。
-- [ ] Homepage, Paper Page, PDF, Build Process 入口是否可用。
-- [ ] 中英文切换是否正常。
-- [ ] 深色/浅色模式切换是否正常。
-- [ ] 浏览器控制台是否有报错。
+Review the final diff after the README updater. If Build Process assets changed, also run the relevant scoped tests and `pnpm audit:build-process`.
 
-### 7. 部署到 GitHub Pages
-本项目使用 `gh-pages` 分支进行部署。构建完成后，需要将 `dist-ghpages` 目录的内容推送到 `gh-pages` 分支。
+CI runs data validation and TypeScript/regression checks alongside eight macOS Draw.io fidelity shards. The final Pages build depends on all upstream jobs. Therefore:
+
+- `Build Check (GitHub Pages): skipped` means an upstream gate did not succeed; it is not a pass.
+- A test case skipped by an explicit platform/superseded contract is not a failed job, but must not be counted as passed.
+- Every required macOS shard must succeed when Draw.io fidelity is part of the workflow.
+- CodeQL is blocking only when repository rules mark it required; report neutral/not-configured separately.
+
+## Publish and Deploy
+
+Push the current topic branch, verify its remote SHA, and open a PR to `main`. Do not push directly to `main` and do not run `npx gh-pages` in the normal path.
 
 ```bash
-# 提交 main 分支的更改
-git add .
-git commit -m "Update benchmarks data and fix compatibility"
-git push origin main
-
-# 部署到 gh-pages
-pnpm build
-npx gh-pages -d dist-ghpages
+test -n "$(git branch --show-current)"
+test "$(git branch --show-current)" != main
+test "$(git branch --show-current)" != master
+git merge-base --is-ancestor origin/main HEAD
+git add -- <intended-paths>
+git diff --cached --check
+git diff --cached --stat
+git diff --cached
+git commit -m "<scoped message>"
+git push -u origin HEAD
+test "$(git rev-parse HEAD)" = "$(git ls-remote --heads origin "$(git branch --show-current)" | cut -f1)"
+gh pr create --base main --head "$(git branch --show-current)"
 ```
 
-## 常见问题排查
-- **页面白屏**：通常是因为渲染时访问了 `null` 或 `undefined` 的属性。检查控制台报错，定位到具体的组件并添加空值防护。
-- **Related Benchmarks 渲染异常**：检查 `related_benchmarks` 数组中的名称是否在总数据集中存在。如果不存在，应在渲染时过滤掉。
-- **Mermaid 流程图报错**：确保传递给 Mermaid 组件的代码字符串是有效的。如果 `mermaid_flowchart` 为空，不应渲染该组件。
-- **部署后未更新**：GitHub Pages 的 CDN 缓存可能需要几分钟才能刷新。可以尝试强制刷新浏览器或等待一段时间。如果长时间未更新，检查 GitHub Actions 的 Pages build and deployment 工作流是否成功执行。
+Before merge, use `gh pr view` and `gh pr checks --watch` to verify the PR head SHA and every required check. If `main` advances or the PR becomes `BEHIND`, update it and rerun checks; never rely on an older green run. Never use admin merge, weaken branch protection, or remove required checks to bypass a gate.
+
+Treat each Dependabot PR independently. A benchmark update does **not** authorize dependency changes: unless the user explicitly requests Dependabot merging, report status only. When authorized, refresh live merge state, sync a behind branch, wait for checks on the new head SHA, and merge only if still clean.
+
+After merge, verify the PR is `MERGED` and its commit is reachable from remote `main`. Then use `gh run list --workflow "CI — Validate & Build Check" --commit <main-sha>` and `gh run view <run-id>` on that exact SHA. A successful `main` CI triggers `Deploy to GitHub Pages`, which publishes the verified source SHA to `gh-pages`. Confirm the deployment run records that `main` source SHA; the resulting `gh-pages` commit has a different SHA. Finally verify the live URL and representative updated records.
+
+| Claim | Required evidence |
+|---|---|
+| Uploaded | Remote topic-branch SHA equals the local commit |
+| Merged | PR is `MERGED`; merge/squash SHA is in remote `main` |
+| CI healthy | Final PR SHA and resulting `main` SHA have all required checks successful |
+| Deployed | Pages run succeeded for that `main` SHA and the live site serves the update |
+
+## Recoverable Cleanup
+
+Clean only when explicitly requested and only after publication evidence exists.
+
+1. Inventory every branch/worktree and inspect unique commits and open PR references.
+2. Preserve mixed work with `git stash push -u`; note that ignored files are excluded. If material ignored files exist, leave the worktree in place until the user chooses a separate secret-safe backup.
+3. Put backups outside every worktree, then anchor and verify them:
+
+   ```bash
+   git update-ref refs/backup/cleanup-<timestamp>/<label> "$(git rev-parse refs/stash)"
+   git bundle create <external-backup-directory>/<repository>.bundle --all
+   git bundle verify <external-backup-directory>/<repository>.bundle
+   shasum -a 256 <external-backup-directory>/<repository>.bundle
+   ```
+
+4. Immediately recheck status, Git locks, worktree registration, and active writers. If inactivity is uncertain, leave it. Otherwise remove only clean, unlocked worktrees without `--force`; then delete only bundled/merged branches not referenced by open PRs and run `git worktree prune`.
+5. If a removed worktree reappears or new files arrive during cleanup, stop: a concurrent task owns it.
+
+## Red Flags
+
+- `git add .` with unrelated changes
+- `git push origin main` while working on another branch
+- direct `gh-pages` publishing during the Actions-managed path
+- declaring CI healthy when a required job is skipped, neutral, stale, or tied to another SHA
+- deleting a dirty/reappearing worktree or a branch referenced by an open PR
+- claiming deployment from build success without checking the Pages run and live site
