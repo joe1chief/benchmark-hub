@@ -11,9 +11,6 @@ export const STRINGS = {
     benchmarks: '个基准',
     switchToLight: '切换浅色',
     switchToDark: '切换深色',
-    poweredBy: '由',
-    poweredBySuffix: '提供支持',
-    poweredByFull: '由 Ant AQ eval team提供支持',
 
     // HeroStats
     heroTitle: 'LLM Benchmark Costco',
@@ -140,9 +137,6 @@ export const STRINGS = {
     benchmarks: 'Benchmarks',
     switchToLight: 'Switch to Light',
     switchToDark: 'Switch to Dark',
-    poweredBy: 'powered by',
-    poweredBySuffix: '',
-    poweredByFull: 'powered by Ant AQ eval team',
 
     // HeroStats
     heroTitle: 'LLM Benchmark Costco',
