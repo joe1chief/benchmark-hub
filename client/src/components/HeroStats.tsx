@@ -1,8 +1,9 @@
-// LLM Benchmark Costco — HeroStats (i18n + lazy-cow-47 title fx + nice-sheep-25 atom loader)
+// LLM Benchmark Costco — HeroStats (Cyber-HUD Telemetry Station & KPI Decals)
 import React from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
+import { Zap, ShieldCheck, Cpu, Database } from 'lucide-react';
 
 interface Props {
   data: Benchmark[];
@@ -26,7 +27,7 @@ function AtomLoader() {
 
 export default function HeroStats({ data, activeFilters, onStatClick }: Props) {
   const { theme } = useTheme();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const isDark = theme === 'dark';
 
   const total        = data.length;
@@ -35,93 +36,85 @@ export default function HeroStats({ data, activeFilters, onStatClick }: Props) {
   const widelyTested = data.filter(b => b.widely_tested).length;
 
   const stats = [
-    { key: 'total', value: total,        label: t.statBenchmarks, color: '#10A37F' },
-    { key: 'dims', value: categories,   label: t.statDims,        color: '#1A73E8' },
-    { key: 'families', value: families,     label: t.statFamilies,    color: '#7C3AED' },
-    { key: 'widely', value: widelyTested, label: t.statWidely,      color: '#F59E0B' },
+    { key: 'total', value: total, label: t.statBenchmarks, color: '#00F0FF', icon: Database, desc: '100% Synced' },
+    { key: 'dims', value: categories, label: t.statDims, color: '#3B82F6', icon: Cpu, desc: 'L1 Core Dims' },
+    { key: 'families', value: families, label: t.statFamilies, color: '#8B5CF6', icon: Zap, desc: 'Cluster Series' },
+    { key: 'widely', value: widelyTested, label: t.statWidely, color: '#F59E0B', icon: ShieldCheck, desc: '🏅 Top Standard' },
   ];
 
   return (
-    <div className="container py-10">
-        {/* Title row — lazy-cow-47 特效 + 原子轨道装饰 */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-2.5">
-            {/* nice-sheep-25 原子轨道 Loader */}
+    <div className="py-6 sm:py-8">
+      {/* Title row — Cyber HUD 特效 + 原子轨道装饰 */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-3.5 mb-2">
+            {/* 原子轨道 Loader */}
             <div
-              className="atom-loader-wrap"
+              className="atom-loader-wrap shrink-0"
               style={{
-                opacity: isDark ? 1 : 0.7,
+                opacity: isDark ? 1 : 0.8,
                 transition: 'opacity 0.3s ease',
-                flexShrink: 0,
               }}
             >
               <AtomLoader />
             </div>
 
-            {/* 标题 — lazy-cow-47 特效 */}
+            {/* 标题 — Cyber Gradient */}
             <h1
-              className="hero-title-fx text-[30px] font-semibold tracking-tight"
-              style={{
-                fontFamily: "'Inter', -apple-system, sans-serif",
-                color: isDark ? '#34D399' : '#10A37F',
-              }}
+              className="font-hud text-2xl sm:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 drop-shadow-[0_0_15px_rgba(0,240,255,0.3)]"
             >
               {t.heroTitle}
             </h1>
           </div>
 
           <p
-            className="text-[14px] max-w-xl leading-relaxed"
-            style={{ fontFamily: "'Inter', sans-serif", color: isDark ? '#6B7280' : '#9CA3AF' }}
+            className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans"
           >
             {t.heroDesc(total, categories)}
           </p>
         </div>
+      </div>
 
-        {/* Stats + powered-by brutalist 标签 */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-wrap gap-10">
-            {stats.map((s, i) => {
-              const active = s.key === 'widely' && activeFilters?.widelyTested;
-              return (
-                <div
-                  key={i}
-                  className="flex flex-col gap-0.5 cursor-pointer select-none transition-all duration-300 hover:scale-105 active:scale-95"
-                  onClick={() => onStatClick?.(s.key as any)}
+      {/* 4 Telemetry KPI Metric Cards with Corner Brackets */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {stats.map((s, i) => {
+          const active = s.key === 'widely' && activeFilters?.widelyTested;
+          const Icon = s.icon;
+          return (
+            <div
+              key={i}
+              onClick={() => onStatClick?.(s.key as any)}
+              className={`p-4 rounded-xl hud-bracket cursor-pointer select-none transition-all duration-300 relative overflow-hidden flex flex-col justify-between border ${
+                active
+                  ? 'bg-amber-950/40 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                  : 'bg-white/80 dark:bg-slate-950/70 border-slate-200 dark:border-slate-800/80 hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(0,240,255,0.15)] hover:-translate-y-0.5'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1 mb-2">
+                <span className="text-[11px] font-mono-tech text-slate-500 uppercase tracking-wider">
+                  {s.label}
+                </span>
+                <Icon size={14} style={{ color: s.color }} />
+              </div>
+
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="text-2xl sm:text-3xl font-bold font-hud tabular-nums leading-none"
+                  style={{
+                    color: s.color,
+                    textShadow: active ? `0 0 15px ${s.color}88` : 'none',
+                  }}
                 >
-                  <span
-                    className="text-[32px] font-bold tabular-nums leading-none"
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      letterSpacing: '-0.03em',
-                      color: s.color,
-                      textShadow: active ? `0 0 15px ${s.color}88` : 'none',
-                    }}
-                  >
-                    {s.value}
-                  </span>
-                  <span
-                    className="text-[12px]"
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      color: active ? s.color : (isDark ? '#4B5563' : '#9CA3AF'),
-                      fontWeight: active ? 600 : 400,
-                    }}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* quiet-dog-6 brutalist 文字标签 */}
-          <div className="quiet-dog-tag">
-            <span className="quiet-dog-tag__text">
-              {t.poweredByFull}
-            </span>
-          </div>
-        </div>
+                  {s.value}
+                </span>
+                <span className="text-[10px] font-mono-tech text-slate-400">
+                  {s.desc}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

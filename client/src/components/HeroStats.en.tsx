@@ -119,13 +119,6 @@ export default function HeroStats({ data, activeFilters, onStatClick }: Props) {
               );
             })}
           </div>
-
-          {/* quiet-dog-6 brutalist 文字标签 */}
-          <div className="quiet-dog-tag">
-            <span className="quiet-dog-tag__text">
-              powered by Ant AQ eval team
-            </span>
-          </div>
         </div>
     </div>
   );
