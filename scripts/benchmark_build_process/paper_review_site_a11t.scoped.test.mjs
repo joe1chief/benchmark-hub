@@ -334,6 +334,12 @@ test('keeps every A11t fallback byte-synchronized with source and formal arch', 
   }
 });
 
+test("keeps source topology independent of optional exports: paper_review_site_a11t", () => {
+  for (const id of benchmarkIds) {
+    assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} formal topology`);
+  }
+});
+
 test('publishes exact parent-labeled Draw.io topology with fixed-light SVG and PNG', () => {
   for (const id of benchmarkIds) {
     assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} formal topology`);

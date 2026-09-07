@@ -184,6 +184,20 @@ test('registers all six A12c packages with complete paper-aligned manifest seman
   }
 });
 
+test("keeps source topology independent of optional exports: paper_review_site_a12c", () => {
+  for (const id of benchmarkIds) {
+    for (const language of ['en', 'zh']) {
+      const spec = readSpec(id, language);
+      const arch = readArch(id, language);
+      assert.deepEqual(canonicalGraph(arch), canonicalGraph(spec), `${id}.${language} arch source`);
+      assert.deepEqual(arch.counts, {
+        ...expectedCounts.get(id),
+        modules: (spec.modules ?? []).length,
+      }, `${id}.${language} arch counts`);
+    }
+  }
+});
+
 test('publishes complete native Draw.io, fixed-light SVG, and PNG packages for A12c', () => {
   for (const id of benchmarkIds) {
     for (const language of ['en', 'zh']) {

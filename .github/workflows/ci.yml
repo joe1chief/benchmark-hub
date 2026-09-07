@@ -31,7 +31,7 @@ jobs:
           python-version: "3.11"
 
       - name: Validate benchmark data
-        run: python3 scripts/validate_benchmarks.py
+        run: python3 scripts/validate_benchmarks.py --html
 
       - name: Verify README statistics
         run: |
@@ -83,32 +83,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install pinned Draw.io toolchain
-        run: bash scripts/ci/install_drawio_toolchain.sh
-
-      - name: Verify architecture sources
-        run: |
-          node --test scripts/benchmark_build_process/check_arch_sources.test.mjs
-          pnpm check:build-process-source
-
-      - name: Smoke test Draw.io Desktop
-        run: node scripts/ci/smoke_drawio_desktop.mjs
-
       - name: TypeScript check
         run: pnpm exec tsc --noEmit
 
       - name: Build Process regression tests
         run: pnpm test:build-process
 
-  drawio-fidelity-shards:
-    name: Draw.io Export Fidelity (macOS) / shard ${{ matrix.shard }}
-    runs-on: macos-26
-    timeout-minutes: 30
-    needs: [validate-data, typecheck]
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+  html-flowchart:
+    name: HTML Flowchart Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -126,41 +110,38 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
+      - name: Resolve pnpm store
+        id: pnpm-cache
+        shell: bash
+        run: echo "store_path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store_path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install pinned Draw.io toolchain
-        run: bash scripts/ci/install_drawio_toolchain_macos.sh
-
-      - name: Diagnose representative PNG fidelity
-        if: matrix.shard == 1
-        run: bash scripts/ci/diagnose_drawio_png_macos.sh
-
-      - name: Run Draw.io fidelity regression tests
-        run: >-
-          node --test --test-concurrency=1
-          --test-shard=${{ matrix.shard }}/8
-          scripts/benchmark_build_process/paper_review_site_a*.scoped.test.mjs
-
-  drawio-fidelity:
-    name: Draw.io Export Fidelity (macOS)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: drawio-fidelity-shards
-    if: ${{ always() }}
-    steps:
-      - name: Verify all macOS shards passed
-        env:
-          SHARD_RESULT: ${{ needs.drawio-fidelity-shards.result }}
+      - name: Verify canonical HTML graph sources
         run: |
-          test "$SHARD_RESULT" = "success"
-          echo "✅ All macOS Draw.io fidelity shards passed" >> "$GITHUB_STEP_SUMMARY"
+          node --test scripts/benchmark_build_process/check_arch_sources.test.mjs
+          pnpm check:build-process-source
+
+      - name: Audit all HTML flowchart assets
+        run: pnpm audit:build-process
+
+      - name: Validate HTML flowchart structure and semantics
+        run: pnpm test:html-flowchart
 
   build-check:
     name: Build Check (GitHub Pages)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [validate-data, typecheck, drawio-fidelity]
+    needs: [validate-data, typecheck, html-flowchart]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

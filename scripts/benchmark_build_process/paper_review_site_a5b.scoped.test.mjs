@@ -270,7 +270,24 @@ test('keeps BackendBench suite choice exclusive and pairs only TorchBench arrays
   }
 });
 
-test('pins primary-source versions and publishes native fixed-light SVG/PNG pairs', () => {
+test("pins primary-source versions and publishes native fixed-light SVG/PNG pairs", () => {
+  const sources = {
+    BigOBench: ['https://arxiv.org/abs/2503.15242v2', /Fig(?:ure)?\.?\s*1.*§3.*Fig(?:ure)?\.?\s*2.*§4\.1.*§4\.3.*§5\.1.*§5\.3/isu],
+    BioASQ: ['https://pmc.ncbi.nlm.nih.gov/articles/PMC4450488/', /BMC Bioinformatics 16:138.*Task 1a.*Task 1b/isu],
+    BBQ: ['https://arxiv.org/abs/2110.08193v2', /§3\.1.*§3\.3.*§4.*Fig(?:ure)?\.?\s*1.*§5.*Appendix D/isu],
+    BeyondAIME: ['https://arxiv.org/abs/2504.13914v3', /§2\.2.*§6\.1.*Table 2/isu],
+    BABILong: ['https://arxiv.org/abs/2406.10149v2', /2406\.10149v2/isu],
+    BackendBench: ['', /2a8d7e19e2c13c789ff2dceb44883ea8ea04dab4/isu],
+  };
+  for (const [id, [paperUrl, note]] of Object.entries(sources)) {
+    const detail = readDetail(id);
+    assert.equal(detail.paper_url, paperUrl, `${id} primary source`);
+    assert.equal(detail.arxiv_pdf_url, paperUrl.startsWith('https://arxiv.org/') ? paperUrl.replace('/abs/', '/pdf/') : '');
+    assert.match(detail.drawio_review_note, note, `${id} source locator`);
+  }
+});
+
+test("checks optional export fidelity: pins primary-source versions and publishes native fixed-light SVG/PNG pairs", () => {
   const sources = {
     BigOBench: ['https://arxiv.org/abs/2503.15242v2', /Fig(?:ure)?\.?\s*1.*§3.*Fig(?:ure)?\.?\s*2.*§4\.1.*§4\.3.*§5\.1.*§5\.3/isu],
     BioASQ: ['https://pmc.ncbi.nlm.nih.gov/articles/PMC4450488/', /BMC Bioinformatics 16:138.*Task 1a.*Task 1b/isu],

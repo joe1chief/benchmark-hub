@@ -283,6 +283,17 @@ test('keeps every A11n fallback byte-synchronized with source labels, edges, and
   }
 });
 
+test("keeps source topology independent of optional exports: paper_review_site_a11n", () => {
+  for (const id of benchmarkIds) {
+    assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} formal bilingual topology`);
+    for (const language of ['en', 'zh']) {
+      const spec = readSpec(id, language);
+      const arch = readArch(id, language);
+      assert.deepEqual(topology(arch), topology(spec), `${id}.${language} formal topology freshness`);
+    }
+  }
+});
+
 test('publishes synchronized formal topology, native fixed-light SVG, and readable PNG pairs for A11n', () => {
   for (const id of benchmarkIds) {
     assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} formal bilingual topology`);

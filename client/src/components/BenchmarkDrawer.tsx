@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Benchmark } from '@/types/benchmark';
 import {
   X, ExternalLink, FileText, Calendar, Building2,
@@ -6,12 +6,13 @@ import {
   Maximize2, Download, RefreshCw, AlertTriangle,
   Award, Lock, Unlock, ShieldAlert, Link2, Users,
   Home as HomeIcon, ChevronRight as ChevronRightIcon,
-  GitBranch, ZoomIn, ZoomOut, RotateCcw, Star, CheckCircle2
+  GitBranch, Star, CheckCircle2
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
 import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
 import { escapeCitationText, isArxivUrl } from '@/lib/benchmarkText';
+import { hasBenchmarkFlowchart } from '@/lib/benchmarkFlowchart';
 import { canonicalizeOpenness } from '@/lib/openness';
 import InteractivePipelineViewer from './InteractivePipelineViewer';
 import HtmlBuildProcessView from './HtmlBuildProcessView';
@@ -30,14 +31,6 @@ const MISSING_INFO_VALUES = new Set(['nan', 'none', 'n/a', 'not mentioned', ''])
 
 function isMissingInfo(value: string | undefined | null) {
   return MISSING_INFO_VALUES.has(String(value ?? '').trim().toLowerCase());
-}
-
-function resolvePublicAssetPath(path: string | undefined | null) {
-  const value = String(path ?? '').trim();
-  if (!value) return '';
-  if (/^(https?:)?\/\//.test(value) || value.startsWith('data:') || value.startsWith('blob:')) return value;
-  if (value.startsWith('/')) return value;
-  return `./${value.replace(/^\.?\//, '')}`;
 }
 
 function InfoRow({ label, value, isDark }: { label: string; value: string | undefined | null; isDark: boolean }) {
@@ -79,239 +72,6 @@ function getPdfStrategies(pdfUrl: string): { strategy: PdfStrategy; url: string;
     }
   }
   return strategies;
-}
-
-// Load mermaid from CDN (bypasses Vite bundle issues)
-function loadMermaidFromCDN(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).mermaid && (window as any).mermaid.render) {
-      resolve((window as any).mermaid);
-      return;
-    }
-    const existing = document.getElementById('mermaid-cdn');
-    if (existing) {
-      const check = setInterval(() => {
-        if ((window as any).mermaid && (window as any).mermaid.render) {
-          clearInterval(check);
-          resolve((window as any).mermaid);
-        }
-      }, 100);
-      setTimeout(() => { clearInterval(check); reject(new Error('Mermaid CDN timeout')); }, 15000);
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = 'mermaid-cdn';
-    script.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
-    script.onload = () => {
-      if ((window as any).mermaid) resolve((window as any).mermaid);
-      else reject(new Error('Mermaid not found after CDN load'));
-    };
-    script.onerror = () => reject(new Error('Failed to load Mermaid CDN'));
-    document.head.appendChild(script);
-  });
-}
-
-// Mermaid flowchart renderer component
-function MermaidChart({ code, isDark }: { code: string; isDark: boolean }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [scale, setScale] = useState(0.85);
-  const [svgContent, setSvgContent] = useState<string>('');
-
-  useEffect(() => {
-    if (!code) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    setSvgContent('');
-
-    const renderChart = async () => {
-      try {
-        const mermaid = await loadMermaidFromCDN();
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: isDark ? 'dark' : 'default',
-          themeVariables: isDark ? {
-            primaryColor: '#1a2a1a',
-            primaryTextColor: '#d1fae5',
-            primaryBorderColor: '#10A37F',
-            lineColor: '#10A37F',
-            secondaryColor: '#0f1f0f',
-            tertiaryColor: '#0a1a0a',
-            background: '#111111',
-            mainBkg: '#1a2a1a',
-            nodeBorder: '#10A37F',
-            clusterBkg: '#0f1f0f',
-            titleColor: '#d1fae5',
-            edgeLabelBackground: '#1a2a1a',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '13px',
-          } : {
-            primaryColor: '#f0fdf4',
-            primaryTextColor: '#065f46',
-            primaryBorderColor: '#10A37F',
-            lineColor: '#10A37F',
-            secondaryColor: '#ecfdf5',
-            tertiaryColor: '#f0fdf4',
-            background: '#ffffff',
-            mainBkg: '#f0fdf4',
-            nodeBorder: '#10A37F',
-            clusterBkg: '#ecfdf5',
-            titleColor: '#065f46',
-            edgeLabelBackground: '#f0fdf4',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '13px',
-          },
-          flowchart: {
-            htmlLabels: true,
-            curve: 'basis',
-            padding: 20,
-          },
-          securityLevel: 'loose',
-        });
-
-        const id = `mermaid-${Date.now()}`;
-        const { svg } = await mermaid.render(id, code);
-        setSvgContent(svg);
-        setLoading(false);
-      } catch (err) {
-        console.error('Mermaid render error:', err);
-        setError(String(err));
-        setLoading(false);
-      }
-    };
-
-    renderChart();
-  }, [code, isDark]);
-
-  if (loading) {
-    return (
-      <div className={`flex flex-col items-center justify-center h-48 gap-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-        <div className="w-7 h-7 border-2 border-gray-600 border-t-[#10A37F] rounded-full animate-spin" />
-        <span className="text-[12px]">Rendering flowchart...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={`flex flex-col items-center justify-center h-32 gap-2 px-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-        <AlertTriangle size={20} className="text-amber-500" />
-        <span className="text-[12px] text-center">Failed to render flowchart</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      {/* Zoom controls */}
-      <div className={`absolute top-2 right-2 z-10 flex items-center gap-1 rounded-lg border px-1.5 py-1 ${
-        isDark ? 'bg-gray-900/90 border-gray-700' : 'bg-white/90 border-gray-200'
-      } backdrop-blur-sm`}>
-        <button
-          onClick={() => setScale(s => Math.min(s + 0.15, 2.5))}
-          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
-          title="Zoom in"
-        >
-          <ZoomIn size={12} />
-        </button>
-        <span className={`text-[10px] w-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          onClick={() => setScale(s => Math.max(s - 0.15, 0.3))}
-          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
-          title="Zoom out"
-        >
-          <ZoomOut size={12} />
-        </button>
-        <button
-          onClick={() => setScale(0.85)}
-          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
-          title="Reset zoom"
-        >
-          <RotateCcw size={12} />
-        </button>
-      </div>
-
-      {/* SVG container */}
-      <div
-        ref={containerRef}
-        className="overflow-auto"
-        style={{ maxHeight: '600px' }}
-      >
-        <div
-          style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s ease' }}
-          dangerouslySetInnerHTML={{ __html: svgContent }}
-        />
-      </div>
-    </div>
-  );
-}
-
-export function getDrawioImageWidth(naturalWidth: number | null, scale: number) {
-  return naturalWidth ? `${Math.round(naturalWidth * scale)}px` : `${scale * 100}%`;
-}
-
-export function DrawioSvgChart({ src, alt, isDark }: { src: string; alt: string; isDark: boolean }) {
-  const [scale, setScale] = useState(0.9);
-  const [error, setError] = useState(false);
-  const [naturalWidth, setNaturalWidth] = useState<number | null>(null);
-
-  if (error) {
-    return (
-      <div className={`flex flex-col items-center justify-center h-32 gap-2 px-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-        <AlertTriangle size={20} className="text-amber-500" />
-        <span className="text-[12px] text-center">Failed to load draw.io SVG</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <div className={`absolute top-2 right-2 z-10 flex items-center gap-1 rounded-lg border px-1.5 py-1 ${
-        isDark ? 'bg-gray-900/90 border-gray-700' : 'bg-white/90 border-gray-200'
-      } backdrop-blur-sm`}>
-        <button
-          onClick={() => setScale(s => Math.min(s + 0.15, 2.5))}
-          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
-          title="Zoom in"
-        >
-          <ZoomIn size={12} />
-        </button>
-        <span className={`text-[10px] w-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          onClick={() => setScale(s => Math.max(s - 0.15, 0.3))}
-          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
-          title="Zoom out"
-        >
-          <ZoomOut size={12} />
-        </button>
-        <button
-          onClick={() => setScale(0.9)}
-          className={`p-1 rounded transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
-          title="Reset zoom"
-        >
-          <RotateCcw size={12} />
-        </button>
-      </div>
-      <div className="overflow-auto bg-white" style={{ maxHeight: '680px' }}>
-        <img
-          src={src}
-          alt={alt}
-          onLoad={(event) => setNaturalWidth(event.currentTarget.naturalWidth)}
-          onError={() => setError(true)}
-          className="block max-w-none"
-          style={{ width: getDrawioImageWidth(naturalWidth, scale), minWidth: 720 }}
-        />
-      </div>
-    </div>
-  );
 }
 
 export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmarks, onClose, onSelectBenchmark, isStarred, onToggleStar }: Props) {
@@ -424,23 +184,11 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
   const currentStrategy = strategies[strategyIndex];
   const embedUrl = currentStrategy?.url || '';
 
-  // Flowchart data: prefer draw.io SVG assets, then Mermaid as a legacy fallback.
-  const drawioFlowchartPath = isEn
-    ? (b.drawio_flowchart_en || b.drawio_flowchart_zh || '')
-    : (b.drawio_flowchart_zh || b.drawio_flowchart_en || '');
-  const drawioSourcePath = isEn
-    ? (b.drawio_source_en || b.drawio_source_zh || '')
-    : (b.drawio_source_zh || b.drawio_source_en || '');
-  const drawioSpecPath = isEn
-    ? (b.drawio_spec_en || b.drawio_spec_zh || '')
-    : (b.drawio_spec_zh || b.drawio_spec_en || '');
-  const drawioFlowchartUrl = resolvePublicAssetPath(drawioFlowchartPath);
-  const drawioSourceUrl = resolvePublicAssetPath(drawioSourcePath);
-  const drawioSpecUrl = resolvePublicAssetPath(drawioSpecPath);
+  // HTML views use architecture resources; exported images are not prerequisites.
   const flowchartCode = isEn
     ? (b.flowchart_en || b.mermaid_flowchart || '')
     : (b.flowchart_zh || b.flowchart_en || b.mermaid_flowchart || '');
-  const hasFlowchart = !!drawioFlowchartUrl || !!flowchartCode;
+  const hasFlowchart = hasBenchmarkFlowchart(b, propBenchmark);
 
   const opennessConfig: Record<string, { icon: typeof Unlock; color: string; label: string; bg: string; bgDark: string }> = {
     'public':        { icon: Unlock,      color: '#10A37F', label: t.publicLabel,  bg: 'bg-emerald-50 border-emerald-200', bgDark: 'bg-emerald-950/30 border-emerald-900/50' },
@@ -808,6 +556,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
           </div>
         )}
       </div>
+        {flowchartCode.trim() && (
         <details className="mt-4">
           <summary className={`cursor-pointer text-[12px] select-none transition-colors ${isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}>
             {isEn ? 'View raw Mermaid code' : '查看原始 Mermaid 代码'}
@@ -816,6 +565,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
             {flowchartCode}
           </pre>
         </details>
+        )}
     </div>
   );
 

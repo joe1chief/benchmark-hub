@@ -487,3 +487,19 @@ test('strictly rebuilds and normalizes all eight A10c specs without byte drift',
     rmSync(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('keeps A10c registered semantic arrays synchronized with every source node', () => {
+  const entries = new Map(readJson(join(publicDir, 'benchmarks_build_process_manifest.json')).map(record => [record.id, record]));
+  for (const id of benchmarkIds) {
+    const record = entries.get(id);
+    assert.ok(record, id);
+    for (const language of ['en', 'zh']) {
+      const arch = readArch(id, language);
+      const assigned = [...semanticNodeIds[id].construction, ...semanticNodeIds[id].evaluation];
+      assert.equal(assigned.length, arch.nodes.length);
+      assert.deepEqual(new Set(assigned), new Set(arch.nodes.map(node => node.id)));
+      assert.deepEqual(record[`construction_steps_${language}`], labelsForNodeIds(arch, semanticNodeIds[id].construction));
+      assert.deepEqual(record[`evaluation_steps_${language}`], labelsForNodeIds(arch, semanticNodeIds[id].evaluation));
+    }
+  }
+});

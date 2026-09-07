@@ -209,7 +209,7 @@ test('keeps bilingual native-text labels within reviewed boxes', () => {
   }
 });
 
-test('keeps BLINK canonical paper and HF counts separate from README drift', () => {
+test("keeps BLINK canonical paper and HF counts separate from README drift", () => {
   const routes = new Map();
   for (const language of ['en', 'zh']) {
     const arch = readArch('BLINK', language);
@@ -241,6 +241,16 @@ test('keeps BLINK canonical paper and HF counts separate from README drift', () 
       { x: 1400, y: 1010 },
     ], `${language} human-reference route`);
     routes.set(language, waypoints);
+    assert.match(nodes.get('model_setup')?.label ?? '', /temperature 0.*retry.*10.*no resiz|温度 0.*重试.*10.*不缩放/isu);
+    assert.match(nodes.get('answer_parse')?.label ?? '', /predefined.*GPT-3\.5.*fallback|预定义.*GPT-3\.5.*回退/isu);
+  }
+  assert.deepEqual(routes.get('zh'), routes.get('en'), 'BLINK bilingual route geometry');
+});
+
+test("checks optional export fidelity: keeps BLINK canonical paper and HF counts separate from README drift",  () => {
+  for (const language of ['en', 'zh']) {
+    const nodes = nodeMap(readArch('BLINK', language));
+    const waypoints = readSpecEdgeWaypoints(readSpec('BLINK', language), 'human_reference', 'report');
     const drawio = readDrawio('BLINK', language);
     const source = readDrawioNodeBox(drawio, nodes.get('human_reference').label);
     const obstacle = readDrawioNodeBox(drawio, nodes.get('caption_analysis').label);
@@ -260,10 +270,7 @@ test('keeps BLINK canonical paper and HF counts separate from README drift', () 
         `${language} human_reference->report segment ${index} crosses caption_analysis`,
       );
     }
-    assert.match(nodes.get('model_setup')?.label ?? '', /temperature 0.*retry.*10.*no resiz|温度 0.*重试.*10.*不缩放/isu);
-    assert.match(nodes.get('answer_parse')?.label ?? '', /predefined.*GPT-3\.5.*fallback|预定义.*GPT-3\.5.*回退/isu);
   }
-  assert.deepEqual(routes.get('zh'), routes.get('en'), 'BLINK bilingual route geometry');
 });
 
 test('keeps BRIGHT-Pro paper annotations and pinned release semantics distinct', () => {

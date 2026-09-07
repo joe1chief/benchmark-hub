@@ -15,7 +15,7 @@ const DEFAULT_FS_OPS = {
 
 export function writeFileBatchAtomically(
   writes,
-  { fsOps = DEFAULT_FS_OPS, transactionId = randomUUID() } = {},
+  { fsOps = DEFAULT_FS_OPS, transactionId = randomUUID(), allowCreate = false } = {},
 ) {
   if (!Array.isArray(writes)) throw new TypeError('writes must be an array');
   if (!/^[A-Za-z0-9_-]+$/u.test(transactionId)) {
@@ -39,6 +39,7 @@ export function writeFileBatchAtomically(
       tempPath: `${write.path}.${transactionId}.${index}.tmp`,
       backupPath: `${write.path}.${transactionId}.${index}.bak`,
       backedUp: false,
+      created: false,
     };
   });
 
@@ -47,9 +48,12 @@ export function writeFileBatchAtomically(
       fsOps.writeFileSync(state.tempPath, state.content, { flag: 'wx' });
     }
     for (const state of states) {
-      fsOps.renameSync(state.path, state.backupPath);
-      state.backedUp = true;
+      if (!allowCreate || fsOps.existsSync(state.path)) {
+        fsOps.renameSync(state.path, state.backupPath);
+        state.backedUp = true;
+      }
       fsOps.renameSync(state.tempPath, state.path);
+      state.created = !state.backedUp;
     }
   } catch (error) {
     const rollbackErrors = [];
@@ -61,6 +65,7 @@ export function writeFileBatchAtomically(
             fsOps.renameSync(state.backupPath, state.path);
           }
         }
+        if (state.created && fsOps.existsSync(state.path)) fsOps.unlinkSync(state.path);
         if (fsOps.existsSync(state.tempPath)) fsOps.unlinkSync(state.tempPath);
       } catch (rollbackError) {
         rollbackErrors.push(rollbackError);

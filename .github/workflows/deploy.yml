@@ -74,7 +74,7 @@ jobs:
       - name: Validate benchmark data and README statistics
         id: benchmark-stats
         run: |
-          python3 scripts/validate_benchmarks.py
+          python3 scripts/validate_benchmarks.py --html
           python3 scripts/update_readme_stats.py /tmp/benchmark-stats.env
           if ! git diff --exit-code -- README.md; then
             echo "::error file=README.md::Benchmark statistics are stale."
@@ -84,17 +84,17 @@ jobs:
           echo "benchmark_total=$BENCHMARK_TOTAL" >> "$GITHUB_OUTPUT"
           echo "benchmark_dims=$BENCHMARK_DIMS" >> "$GITHUB_OUTPUT"
 
-      - name: Install pinned Draw.io toolchain for manual deployment
-        if: github.event_name == 'workflow_dispatch'
-        run: bash scripts/ci/install_drawio_toolchain.sh
-
-      - name: Verify architecture sources for manual deployment
+      - name: Verify canonical HTML graph sources for manual deployment
         if: github.event_name == 'workflow_dispatch'
         run: pnpm check:build-process-source
 
-      - name: Smoke test Draw.io Desktop for manual deployment
+      - name: Audit all HTML flowchart assets for manual deployment
         if: github.event_name == 'workflow_dispatch'
-        run: node scripts/ci/smoke_drawio_desktop.mjs
+        run: pnpm audit:build-process
+
+      - name: Validate HTML flowcharts for manual deployment
+        if: github.event_name == 'workflow_dispatch'
+        run: pnpm test:html-flowchart
 
       - name: Run full checks for manual deployment
         if: github.event_name == 'workflow_dispatch'

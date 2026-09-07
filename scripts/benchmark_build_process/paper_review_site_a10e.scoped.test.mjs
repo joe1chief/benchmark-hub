@@ -103,7 +103,7 @@ test('keeps bilingual labels within reviewed native-text boxes', () => {
   }
 });
 
-test('keeps Claw-Eval provenance, authoring counts, audit evidence, and score exact', () => {
+test("keeps Claw-Eval provenance, authoring counts, audit evidence, and score exact", () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('ClawEval', language);
     const nodes = nodeMap(arch);
@@ -135,7 +135,21 @@ test('keeps Claw-Eval provenance, authoring counts, audit evidence, and score ex
     join(publicDir, 'benchmarks_detail', 'ClawEval.json'),
     ...['en', 'zh'].flatMap(language => {
       const base = join(publicDir, 'drawio', 'ClawEval', `ClawEval.${language}`);
-      return [`${base}.spec.yaml`, `${base}.arch.json`, `${base}.drawio`, `${base}.svg`];
+      return [`${base}.spec.yaml`, `${base}.arch.json`];
+    }),
+  ];
+  for (const path of clawFiles) {
+    const text = readFileSync(path, 'utf8');
+    assert.match(text, /Pass³/u, path);
+    assert.doesNotMatch(text, /Pass\^3|\\[()]/u, path);
+  }
+});
+
+test("checks optional export fidelity: keeps Claw-Eval provenance, authoring counts, audit evidence, and score exact", () => {
+  const clawFiles = [
+    ...['en', 'zh'].flatMap(language => {
+      const base = join(publicDir, 'drawio', 'ClawEval', `ClawEval.${language}`);
+      return [`${base}.drawio`, `${base}.svg`];
     }),
   ];
   for (const path of clawFiles) {

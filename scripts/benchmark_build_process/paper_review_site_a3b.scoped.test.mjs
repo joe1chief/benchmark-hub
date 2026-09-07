@@ -279,7 +279,7 @@ superseded('preserves the official Aider Polyglot 697 to 225 difficulty-selectio
   assert.doesNotMatch(fallbackText('Aider_Polyglot'), /hybrid data curation|混合数据策展/iu);
 });
 
-test('uses the paper category names and a compact layered AlignBench layout', () => {
+test("uses the paper category names and a compact layered AlignBench layout", () => {
   const categories = [
     'Fundamental Language Ability',
     'Advanced Chinese Understanding',
@@ -300,6 +300,9 @@ test('uses the paper category names and a compact layered AlignBench layout', ()
   assert.match(enNodes.get('dataset')?.label ?? '', /683/iu);
   assert.ok(enEdges.has('human_review->evidence:data'));
   assert.ok(enEdges.has('evidence->verified:data'));
+});
+
+test("checks optional export fidelity: uses the paper category names and a compact layered AlignBench layout", () => {
   for (const language of ['en', 'zh']) {
     const { width, height } = pngDimensions(join(publicDir, 'drawio', 'AlignBench', `AlignBench.${language}.png`));
     assert.ok(width / height < 3.5, `AlignBench.${language}.png must be layered instead of ultra-wide`);
@@ -388,7 +391,7 @@ test('routes All-Angles downstream evaluation edges in independent node-clear co
   }
 });
 
-test('restores original AlpacaEval without importing the later LC gate', () => {
+test("restores original AlpacaEval without importing the later LC gate", () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('AlpacaEval', language);
     const nodes = nodeMap(arch);
@@ -433,6 +436,9 @@ test('restores original AlpacaEval without importing the later LC gate', () => {
   ].join('\n'), /length[- ]controlled|length debias|长度控制|\bLC\b/iu);
   assert.doesNotMatch(fallbackText('AlpacaEval'), /GPT-4-Turbo Baseline|length-controlled|\bGLM\b|LC胜率/iu);
 
+});
+
+test("checks optional export fidelity: restores original AlpacaEval without importing the later LC gate", () => {
   for (const language of ['en', 'zh']) {
     const candidateEdge = drawioEdgeCell('AlpacaEval', language, 'dataset', 'candidate');
     const referenceEdge = drawioEdgeCell('AlpacaEval', language, 'reference', 'randomize');

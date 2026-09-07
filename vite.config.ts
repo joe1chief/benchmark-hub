@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
@@ -150,7 +151,19 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+// Validate the assets consumed by the website before bundling either target.
+const htmlBuildProcessAudit = {
+  name: "html-build-process-audit",
+  apply: "build" as const,
+  buildStart() {
+    execFileSync(process.execPath, [
+      path.resolve(import.meta.dirname, "scripts/benchmark_build_process/audit_build_process_assets.mjs"),
+      "--root", import.meta.dirname, "--html",
+    ], { stdio: "inherit" });
+  },
+};
+
+const plugins = [htmlBuildProcessAudit, react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
   plugins,

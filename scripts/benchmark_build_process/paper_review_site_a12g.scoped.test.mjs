@@ -182,6 +182,20 @@ test('registers all four A12g packages with complete paper-aligned manifest sema
   }
 });
 
+test("keeps source topology independent of optional exports: paper_review_site_a12g", () => {
+  for (const id of benchmarkIds) {
+    for (const language of ['en', 'zh']) {
+      const spec = readSpec(id, language);
+      const arch = readArch(id, language);
+      assert.deepEqual(canonicalGraph(arch), canonicalGraph(spec));
+      assert.deepEqual(arch.counts, {
+        ...expectedCounts.get(id),
+        modules: (spec.modules ?? []).length,
+      });
+    }
+  }
+});
+
 test('publishes complete native Draw.io, fixed-light SVG, and PNG packages for A12g', () => {
   for (const id of benchmarkIds) {
     for (const language of ['en', 'zh']) {

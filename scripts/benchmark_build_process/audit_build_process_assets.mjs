@@ -73,6 +73,7 @@ function parseArgs(argv) {
   const args = {
     root: process.cwd(),
     json: false,
+    profile: 'legacy',
     allowIncomplete: false,
     queueJson: null,
     queueMarkdown: null,
@@ -106,6 +107,9 @@ function parseArgs(argv) {
     } else if (arg === '--json') {
       markSeen(arg);
       args.json = true;
+    } else if (arg === '--html') {
+      markSeen(arg);
+      args.profile = 'html';
     } else if (arg === '--allow-incomplete') {
       markSeen(arg);
       args.allowIncomplete = true;
@@ -265,18 +269,22 @@ function indexIssuesById(issueGroups) {
   return index;
 }
 
-function nextActionForGates(gates) {
+function nextActionForGates(gates, profile) {
   if (!gates.id_set) {
     return 'Reconcile the benchmark ID across catalog, detail, manifest, physical assets, and complete core assets.';
   }
   if (!gates.core) {
-    return 'Create or fix the referenced bilingual SVG, draw.io, spec, and architecture files.';
+    return profile === 'html'
+      ? 'Create or fix the referenced bilingual spec and architecture files.'
+      : 'Create or fix the referenced bilingual SVG, draw.io, spec, and architecture files.';
   }
   if (!gates.paper) {
     return 'Review and, if needed, redraw the build process against the primary source; then record its exact URL and locator.';
   }
   if (!gates.strict) {
-    return 'Run strict draw.io validation for both languages and record passed evidence.';
+    return profile === 'html'
+      ? 'Fix bilingual architecture topology, node labels, and spec metadata.'
+      : 'Run strict draw.io validation for both languages and record passed evidence.';
   }
   if (!gates.visual) {
     return 'Review both rendered diagrams and record visually_reviewed status.';
@@ -291,6 +299,7 @@ function addFallbackIssue(issues, gate, code) {
 }
 
 function buildUnresolvedQueue({
+  profile,
   allIds,
   manifestById,
   idSetIssues,
@@ -361,24 +370,24 @@ function buildUnresolvedQueue({
     const gates = {
       id_set: !idSetIssueIds.has(id),
       core: completeCoreAssetIds.has(id) && !coreIssueIds.has(id),
-      png: pngCompleteIds.has(id),
+      png: profile === 'html' ? null : pngCompleteIds.has(id),
       strict: Boolean(manifestEntry)
         && !strictIssueIds.has(id)
-        && manifestEntry.strict_validation?.en === 'passed'
-        && manifestEntry.strict_validation?.zh === 'passed',
-      visual: Boolean(manifestEntry)
+        && (profile === 'html' || (manifestEntry.strict_validation?.en === 'passed'
+          && manifestEntry.strict_validation?.zh === 'passed')),
+      visual: profile === 'html' ? null : Boolean(manifestEntry)
         && !visualIssueIds.has(id)
         && manifestEntry.review_status === 'visually_reviewed',
       paper: paperEligibleIds.has(id),
     };
-    if (Object.values(gates).every(Boolean)) return [];
+    if (Object.values(gates).every((passed) => passed !== false)) return [];
 
     const issues = [...(issueIndex.get(id) || [])];
     if (!gates.id_set) addFallbackIssue(issues, 'id_set', 'id_set_mismatch');
     if (!gates.core) addFallbackIssue(issues, 'core', 'core_assets_incomplete');
-    if (!gates.png) addFallbackIssue(issues, 'png', 'png_incomplete');
+    if (gates.png === false) addFallbackIssue(issues, 'png', 'png_incomplete');
     if (!gates.strict) addFallbackIssue(issues, 'strict', 'strict_validation_not_passed');
-    if (!gates.visual) addFallbackIssue(issues, 'visual', 'visual_review_not_passed');
+    if (gates.visual === false) addFallbackIssue(issues, 'visual', 'visual_review_not_passed');
     if (!gates.paper) addFallbackIssue(issues, 'paper', 'paper_alignment_review_not_passed');
     const paperReview = manifestEntry?.paper_alignment_review;
     const invalidIdIssue = invalidIdIssueById.get(id);
@@ -413,9 +422,9 @@ function buildUnresolvedQueue({
       asset_state: {
         physical_directory_present: physicalDrawioIds.has(id),
         core_complete: completeCoreAssetIds.has(id),
-        png_complete: pngCompleteIds.has(id),
+        png_complete: profile === 'html' ? null : pngCompleteIds.has(id),
       },
-      next_action: nextActionForGates(gates),
+      next_action: nextActionForGates(gates, profile),
     }];
   });
 }
@@ -531,7 +540,19 @@ function isLanguageExemptNode(node, exemptNodeIds) {
     || isTechnicalIdentifierLabel(label);
 }
 
-export function auditBuildProcessAssets(root) {
+export function auditBuildProcessAssets(root, { profile = 'legacy' } = {}) {
+  if (!['legacy', 'html'].includes(profile)) {
+    throw new Error(`Unknown build process audit profile: ${profile}`);
+  }
+  const html = profile === 'html';
+  // HTML consumes spec/arch directly. Exported images and draw.io sources are
+  // historical artifacts; their presence or export status is not a web gate.
+  const requiredAssetFields = html
+    ? REQUIRED_ASSET_FIELDS.filter((field) => /^drawio_(?:spec|arch)_/u.test(field))
+    : REQUIRED_ASSET_FIELDS;
+  const coreAssetSuffixes = html
+    ? CORE_ASSET_SUFFIXES.filter((suffix) => /\.(?:spec\.yaml|arch\.json)$/u.test(suffix))
+    : CORE_ASSET_SUFFIXES;
   const publicDir = join(root, 'client/public');
   const detailDir = join(publicDir, 'benchmarks_detail');
   const drawioDir = join(publicDir, 'drawio');
@@ -586,7 +607,7 @@ export function auditBuildProcessAssets(root) {
       : [],
   );
   const completeCoreAssetIds = new Set(
-    [...physicalDrawioIds].filter((id) => CORE_ASSET_SUFFIXES.every((suffix) => (
+    [...physicalDrawioIds].filter((id) => coreAssetSuffixes.every((suffix) => (
       existsSync(join(drawioDir, id, `${id}.${suffix}`))
     ))),
   );
@@ -623,7 +644,7 @@ export function auditBuildProcessAssets(root) {
     }
 
     const entryIssues = [];
-    for (const field of REQUIRED_ASSET_FIELDS) {
+    for (const field of requiredAssetFields) {
       const expectedPath = manifestEntry.assets?.[field] ?? null;
       const actualPath = aggregateEntry[field] || null;
       if (!actualPath) {
@@ -694,7 +715,7 @@ export function auditBuildProcessAssets(root) {
   const paperAlignmentCandidateIds = new Set();
   for (const entry of sortedManifest) {
     for (const language of ['en', 'zh']) {
-      if (entry.strict_validation?.[language] !== 'passed') {
+      if (!html && entry.strict_validation?.[language] !== 'passed') {
         strictIssues.push({
           id: entry.id,
           language,
@@ -702,7 +723,7 @@ export function auditBuildProcessAssets(root) {
         });
       }
     }
-    if (entry.review_status !== 'visually_reviewed') {
+    if (!html && entry.review_status !== 'visually_reviewed') {
       visualIssues.push({ id: entry.id, issue: 'visual_review_not_passed' });
     }
     if (entry.paper_alignment_review?.status !== 'passed') {
@@ -765,7 +786,7 @@ export function auditBuildProcessAssets(root) {
       ...aggregate
         .filter((entry) => !manifestIds.has(entry.id))
         .filter((entry) => (
-          REQUIRED_ASSET_FIELDS.some((field) => Boolean(entry[field]))
+          requiredAssetFields.some((field) => Boolean(entry[field]))
         ))
         .map((entry) => entry.id),
       ...[...physicalDrawioIds].filter((id) => !manifestIds.has(id)),
@@ -775,14 +796,14 @@ export function auditBuildProcessAssets(root) {
 
   for (const { detail, id } of details) {
     const manifestEntry = manifestById.get(id);
-    const missingFields = REQUIRED_ASSET_FIELDS.filter((field) => !detail[field]);
+    const missingFields = requiredAssetFields.filter((field) => !detail[field]);
     const hasStarted = manifestIds.has(id)
       || physicalDrawioIds.has(id)
-      || REQUIRED_ASSET_FIELDS.some((field) => Boolean(detail[field]));
+      || requiredAssetFields.some((field) => Boolean(detail[field]));
     if (hasStarted && !manifestIds.has(id)) {
       assetsWithoutManifestIds.add(id);
     }
-    const missingFiles = REQUIRED_ASSET_FIELDS
+    const missingFiles = requiredAssetFields
       .filter((field) => detail[field])
       .flatMap((field) => {
         const assetPath = resolveContainedAsset(publicDir, detail[field]);
@@ -814,7 +835,7 @@ export function auditBuildProcessAssets(root) {
     }
     const entryConsistencyIssues = [];
     if (manifestEntry) {
-      for (const field of REQUIRED_ASSET_FIELDS) {
+      for (const field of requiredAssetFields) {
         const expectedPath = manifestEntry.assets?.[field] ?? null;
         const actualPath = detail[field] || null;
         if (expectedPath && actualPath && expectedPath !== actualPath) {
@@ -983,7 +1004,7 @@ export function auditBuildProcessAssets(root) {
         }
       }
     }
-    for (const language of ['en', 'zh']) {
+    for (const language of html ? [] : ['en', 'zh']) {
       const field = `drawio_flowchart_${language}`;
       if (!detail[field]) continue;
       const svgPath = resolveContainedAsset(publicDir, detail[field]);
@@ -1028,7 +1049,7 @@ export function auditBuildProcessAssets(root) {
 
   const pngIssues = [];
   const pngCompleteIds = new Set();
-  for (const id of [...allIds].sort(compareText)) {
+  for (const id of html ? [] : [...allIds].sort(compareText)) {
     let complete = true;
     for (const language of ['en', 'zh']) {
       const assetPath = `drawio/${id}/${id}.${language}.png`;
@@ -1057,6 +1078,7 @@ export function auditBuildProcessAssets(root) {
   );
 
   const summary = {
+    profile,
     detail_total: detailFiles.length,
     aggregate_total: rawAggregate.length,
     manifest_total: rawManifest.length,
@@ -1064,13 +1086,13 @@ export function auditBuildProcessAssets(root) {
     complete_aggregate_total: completeAggregateTotal,
     id_sets_equal: idSetIssues.length === 0,
     id_set_issues: idSetIssues,
-    png_complete_total: pngCompleteIds.size,
+    png_complete_total: html ? null : pngCompleteIds.size,
     png_issues: pngIssues,
-    strict_valid_total: manifest.filter(
+    strict_valid_total: html ? null : manifest.filter(
       (entry) => entry.strict_validation?.en === 'passed'
         && entry.strict_validation?.zh === 'passed',
     ).length,
-    visually_reviewed_total: manifest.filter(
+    visually_reviewed_total: html ? null : manifest.filter(
       (entry) => entry.review_status === 'visually_reviewed',
     ).length,
     paper_aligned_total: paperEligibleIds.size,
@@ -1088,6 +1110,7 @@ export function auditBuildProcessAssets(root) {
     review_issues: reviewIssues,
   };
   summary.unresolved_queue = buildUnresolvedQueue({
+    profile,
     allIds: queueIds,
     manifestById,
     idSetIssues,
@@ -1184,9 +1207,9 @@ function formatQueueMarkdown(summary) {
     '',
     `- Catalog benchmarks: ${summary.aggregate_total}`,
     `- Complete bilingual core bundles: ${summary.complete_bilingual_total}`,
-    `- Complete bilingual PNG bundles: ${summary.png_complete_total}`,
-    `- Strict validation passed: ${summary.strict_valid_total}`,
-    `- Visual review passed: ${summary.visually_reviewed_total}`,
+    `- Complete bilingual PNG bundles: ${summary.png_complete_total ?? 'not applicable (HTML profile)'}`,
+    `- Strict validation passed: ${summary.strict_valid_total ?? 'not applicable (HTML profile)'}`,
+    `- Visual review passed: ${summary.visually_reviewed_total ?? 'not applicable (HTML profile)'}`,
     `- Paper alignment passed: ${summary.paper_aligned_total}`,
     `- Unresolved benchmarks: ${summary.unresolved_queue.length}`,
     '',
@@ -1195,7 +1218,7 @@ function formatQueueMarkdown(summary) {
   ];
   for (const entry of summary.unresolved_queue) {
     const failingGates = Object.entries(entry.gates)
-      .filter(([, passed]) => !passed)
+      .filter(([, passed]) => passed === false)
       .map(([gate]) => gate)
       .join(', ');
     const source = [entry.source_type, entry.source_url, entry.source_locator]
@@ -1233,9 +1256,9 @@ function printHumanSummary(summary) {
   console.log(`Complete bilingual: ${summary.complete_bilingual_total}`);
   console.log(`Complete aggregate: ${summary.complete_aggregate_total}`);
   console.log(`ID sets equal: ${summary.id_sets_equal}`);
-  console.log(`PNG complete: ${summary.png_complete_total}`);
-  console.log(`Strict valid: ${summary.strict_valid_total}`);
-  console.log(`Visually reviewed: ${summary.visually_reviewed_total}`);
+  console.log(`PNG complete: ${summary.png_complete_total ?? 'not applicable (HTML profile)'}`);
+  console.log(`Strict valid: ${summary.strict_valid_total ?? 'not applicable (HTML profile)'}`);
+  console.log(`Visually reviewed: ${summary.visually_reviewed_total ?? 'not applicable (HTML profile)'}`);
   console.log(`Paper aligned: ${summary.paper_aligned_total}`);
   console.log(`Missing: ${summary.missing_ids.length}`);
   console.log(`Broken references: ${summary.broken_references.length}`);
@@ -1246,7 +1269,7 @@ function printHumanSummary(summary) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const summary = auditBuildProcessAssets(args.root);
+  const summary = auditBuildProcessAssets(args.root, { profile: args.profile });
   writeQueueReports(args, summary);
   if (args.json) {
     process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
