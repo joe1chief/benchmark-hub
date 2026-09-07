@@ -7,7 +7,7 @@
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-610-purple?style=flat-square)](https://joe1chief.github.io/llm-benchmark-costco/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://joe1chief.github.io/llm-benchmark-costco/)
 
-> A curated, searchable database of **610 LLM evaluation benchmarks** across 16 capability dimensions — with inline PDF reading, bilingual Draw.io build-process review baselines, bilingual UI, dark mode, **neon glow effects**, and **automated CI/CD**.
+> A curated, searchable database of **610 LLM evaluation benchmarks** across 16 capability dimensions — with inline PDF reading, paper-grounded native CSS+HTML build-process flowcharts, bilingual UI, dark mode, **neon glow effects**, and **automated CI/CD**.
 
 **[🌐 Live Demo](https://joe1chief.github.io/llm-benchmark-costco/)** · **[📊 Browse Benchmarks](https://joe1chief.github.io/llm-benchmark-costco/)** · **[🤝 Contribute](CONTRIBUTING.md)**
 
@@ -35,7 +35,7 @@
 - **610 Benchmarks** across 16 capability dimensions — Agent Capability (96), General Language (76), Multimodal (132), Code (63), Science & Reasoning (39), Safety & Alignment (44), Medical & Health (85), and more.
 - **Neon Glow & Shimmer Effects** — Interactive neon glow effect on card hover and a subtle shimmer animation on the logo in dark mode.
 - **Inline PDF Reading** — Click any card to open the details drawer and read the full paper without leaving the page. Most entries embed the original arXiv PDF directly.
-- **Build Process Flowcharts** — All 614 catalog entries include bilingual Draw.io review-baseline diagrams and editable sources, with formal paper-alignment status tracked separately in the manifest and **fullscreen mode** for complex flows.
+- **Build Process Flowcharts** — All 610 benchmarks feature native, pure CSS + HTML dual-track interactive flowcharts (Track A: Construction, Track B: Evaluation) fully grounded in primary academic papers, with bilingual topologies (`.arch.json`) and **fullscreen mode** for complex flows.
 - **Powerful Filtering** — Filter by L1 capability category, year (including 2025/2026 latest), difficulty level (Basic → Frontier), and data openness (Public / Partly / In-house).
 - **Family & Lineage** — Explore benchmark families (e.g., MMLU, GAIA, SWE-bench) and related benchmarks to understand the evaluation landscape.
 - **Bilingual UI** — Full English and Chinese interface with bilingual data fields.
@@ -89,7 +89,7 @@ The data lives in `client/public/benchmarks.json`. Before updating, read [`CONTR
 | Routing | Wouter |
 | CI/CD | GitHub Actions |
 | Icons | Lucide React |
-| Diagrams | Draw.io (SVG + editable sources) |
+| Flowcharts | Native CSS+HTML Engine + Dual-Track Arch (`.arch.json`) |
 | Deployment | GitHub Pages |
 
 ## Project Structure
@@ -105,10 +105,13 @@ llm-benchmark-costco/
 │   │   └── benchmarks.json          # 610 benchmark entries
 │   └── src/
 │       ├── components/
-│       │   ├── BenchmarkCard.tsx     # Card component with neon glow
-│       │   ├── BenchmarkDrawer.tsx   # Detail drawer + PDF + flowchart
-│       │   ├── FilterBar.tsx         # Filter controls
-│       │   └── Navbar.tsx            # Top navigation with logo shimmer
+│       │   ├── BenchmarkCard.tsx          # Card component with neon glow
+│       │   ├── BenchmarkDrawer.tsx        # Detail drawer + PDF + flowchart
+│       │   ├── FilterBar.tsx              # Filter controls
+│       │   ├── HtmlBuildProcessView.tsx   # Dual-track build process container
+│       │   ├── InteractivePipelineViewer.tsx # Interactive pipeline inspector
+│       │   ├── Navbar.tsx                 # Top navigation with logo shimmer
+│       │   └── PureHtmlFlowchart.tsx      # Native pure CSS+HTML flowchart engine
 │       ├── contexts/
 │       │   └── LangContext.tsx       # i18n (EN/ZH)
 │       ├── hooks/

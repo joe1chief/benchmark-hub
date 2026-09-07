@@ -1,82 +1,94 @@
 {
   "version": 1,
-  "title": "LongDocURL Dataset Build and Release Process",
+  "title": "LongDocURL Dataset Build and Evaluation Protocol",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 10,
-    "modules": 0
+    "nodes": 13,
+    "edges": 13,
+    "modules": 2
   },
   "nodes": [
     {
       "id": "source_pool",
-      "label": "CC PDFs\n200k",
+      "label": "Common Crawl PDF Archive\nOver 200,000 raw candidate PDF documents\nUnfiltered multi-domain web publication dump",
       "type": "document",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "page_lang_filter",
-      "label": "50-150p · EN",
+      "label": "Page Count & Language Filter\n50 to 150 pages document length window\nFastText English language identification",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "type_scan",
-      "label": "Type scan\n5-10",
+      "label": "Content Diversity Type Scan\nRequires rich mixed content elements\n5 to 10 visual elements per page (tables, charts, formulas)",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "document_set",
-      "label": "396 docs",
+      "label": "396 Gold Standard Documents\nDiversified across finance, legal, science, government\nAverage 84.7 pages per document",
       "type": "database",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "pdf_parse",
-      "label": "PDF parse",
+      "label": "Multi-Layer Document Parsing\nExtract raw text stream, font attributes & bounding boxes\nSegment pages into coherent visual reading blocks",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "region_triples",
-      "label": "text-type-bbox\nregion triples",
+      "label": "Text-Type-BoundingBox Triples\nStructured representation of visual text layout\nBounding box normalization [0, 1000] coordinates",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "qa_generate",
-      "label": "Iterative QA",
+      "label": "Iterative Multi-Hop QA Generation\nGPT-4o generates question-evidence-answer triples\nMulti-page cross-referencing and spatial reasoning",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "auto_verify",
-      "label": "3-way check",
-      "type": "process",
-      "size": "medium"
+      "id": "quality_gate",
+      "label": "3-Way Verification Gate\nEvaluate answerability & visual grounding\nHuman & automated consensus on evidence bboxes",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "human_verify",
-      "label": "Human verify",
-      "type": "process",
-      "size": "medium"
+      "id": "reject_sink",
+      "label": "Ambiguous Candidate Rejection\nDiscard ungrounded or ambiguous QA pairs\nLog failure reasons for pipeline auditing",
+      "type": "terminal",
+      "size": "xl"
     },
     {
       "id": "final_set",
-      "label": "2,325 QAs",
+      "label": "2,325 Gold Benchmark QA Pairs\nSingle-page, multi-page, and cross-modal reasoning\nExact bounding box spatial grounding labels",
       "type": "database",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "public_release",
-      "label": "HF release",
+      "id": "prompt_format",
+      "label": "Multi-Modal Document Prompting\nInterleave high-resolution page images\nFormulate open-ended QA & grounding queries",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "vlm_inference",
+      "label": "Multimodal LLM Inference\nEvaluate frontier VLMs (GPT-4o, Claude 3.5, Gemini 1.5)\nGenerate natural language answers & predicted bboxes",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric_eval",
+      "label": "Dual-Metric Evaluation & Reporting\nExact Match & F1 for textual answers\nIntersection-over-Union (IoU >= 0.5) for spatial boxes",
       "type": "terminal",
-      "size": "medium"
+      "size": "xl"
     }
   ],
   "edges": [
@@ -119,27 +131,74 @@
     {
       "id": "edge-7",
       "from": "qa_generate",
-      "to": "auto_verify",
+      "to": "quality_gate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "auto_verify",
-      "to": "human_verify",
-      "type": "primary"
+      "from": "quality_gate",
+      "to": "final_set",
+      "type": "primary",
+      "label": "Pass"
     },
     {
       "id": "edge-9",
-      "from": "human_verify",
-      "to": "final_set",
-      "type": "primary"
+      "from": "quality_gate",
+      "to": "reject_sink",
+      "type": "optional",
+      "label": "Reject"
     },
     {
       "id": "edge-10",
       "from": "final_set",
-      "to": "public_release",
+      "to": "prompt_format",
       "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "prompt_format",
+      "to": "vlm_inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "vlm_inference",
+      "to": "metric_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "final_set",
+      "to": "metric_eval",
+      "type": "secondary",
+      "label": "Ground Truth"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction",
+      "name": "Track A: Multi-Hop Long Document QA Construction",
+      "nodeIds": [
+        "source_pool",
+        "page_lang_filter",
+        "type_scan",
+        "document_set",
+        "pdf_parse",
+        "region_triples",
+        "qa_generate",
+        "quality_gate",
+        "reject_sink",
+        "final_set"
+      ]
+    },
+    {
+      "id": "evaluation",
+      "name": "Track B: Multimodal Long Document Evaluation",
+      "nodeIds": [
+        "prompt_format",
+        "vlm_inference",
+        "metric_eval"
+      ]
+    }
+  ]
 }

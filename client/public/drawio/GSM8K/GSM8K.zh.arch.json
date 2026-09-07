@@ -1,97 +1,94 @@
 {
   "version": 1,
-  "title": "GSM8K 数据集构建流程",
+  "title": "GSM8K 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 7,
-    "edges": 6,
-    "modules": 0
+    "nodes": 11,
+    "edges": 10,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "collection",
-      "label": "Upwork 1K → Surge 扩量",
+      "id": "writers",
+      "label": "人工题目原创撰写\nUpwork 与 Surge AI 自由职业者出题\n8.5K 道高语言多样性小学数学题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "gpt3_seeds",
+      "label": "GPT-3 175B 种子题辅助灵感\n两两相似度检测与去重过滤\n杜绝模板化与表层套用",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "seed_assist",
-      "label": "175B GPT-3 可选种子",
+      "id": "step_solutions",
+      "label": "多步自然语言解题编写\n包含 2 至 8 步基础四则运算推理\n内嵌 <<计算表达式=结果>> 标记",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "independent_resolve",
+      "label": "独立盲审交叉重解质检\n非原作者独立重解并比对答案\n修复分歧或剔除不可靠题目",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset_split",
+      "label": "GSM8K 数据集切分冻结\n7,473 训练集 / 1,319 测试集\n人工复验残差错误率 < 1.7%",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "cot_prompt",
+      "label": "思维链提示词组装\n8-shot 少样本范例或直接提问\n引导模型生成完整中间推导过程",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "authoring",
-      "label": "人工编题 + 多样性反馈",
+      "id": "autoregressive_gen",
+      "label": "自回归推理生成采样\n贪婪解码或温度采样（T=0.7）\n单次采样或 N=100 路径生成",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "resolve",
-      "label": "异人重解全部题目",
+      "id": "calc_exec",
+      "label": "计算器与外部工具调用\nPython eval() 计算引擎介入\n覆盖计算错误修正算式结果",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "agreement",
-      "label": "不一致则修复或剔除",
+      "id": "verifier_rank",
+      "label": "验证器打分与多数投票\nToken 级验证器模型打分重排\n或 Best-of-N 多数一致性表决",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "recheck",
-      "label": "小样本二次一致性检查",
+      "id": "answer_extractor",
+      "label": "最终数值正则抽取\n正则表达式提取 #### <数字>\n剥离自然语言锁定纯数值结果",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "release",
-      "label": "7,473 训 / 1,319 测",
+      "id": "exact_match",
+      "label": "精确数值准确率统计\n模型答案与标准数值严格匹配\n汇总 Pass@1, Maj@1 与 Pass@100",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
     }
   ],
   "edges": [
-    {
-      "id": "edge-1",
-      "from": "collection",
-      "to": "authoring",
-      "type": "primary"
-    },
-    {
-      "id": "edge-2",
-      "from": "seed_assist",
-      "to": "authoring",
-      "type": "primary"
-    },
-    {
-      "id": "edge-3",
-      "from": "authoring",
-      "to": "resolve",
-      "type": "primary"
-    },
-    {
-      "id": "edge-4",
-      "from": "resolve",
-      "to": "agreement",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "agreement",
-      "to": "recheck",
-      "type": "primary"
-    },
-    {
-      "id": "edge-6",
-      "from": "recheck",
-      "to": "release",
-      "type": "primary"
-    }
-  ],
-  "modules": []
+    { "from": "writers", "to": "gpt3_seeds", "type": "primary" },
+    { "from": "gpt3_seeds", "to": "step_solutions", "type": "primary" },
+    { "from": "step_solutions", "to": "independent_resolve", "type": "primary" },
+    { "from": "independent_resolve", "to": "dataset_split", "type": "primary" },
+    { "from": "dataset_split", "to": "cot_prompt", "type": "primary" },
+    { "from": "cot_prompt", "to": "autoregressive_gen", "type": "primary" },
+    { "from": "autoregressive_gen", "to": "calc_exec", "type": "primary" },
+    { "from": "calc_exec", "to": "verifier_rank", "type": "primary" },
+    { "from": "verifier_rank", "to": "answer_extractor", "type": "primary" },
+    { "from": "answer_extractor", "to": "exact_match", "type": "primary" }
+  ]
 }

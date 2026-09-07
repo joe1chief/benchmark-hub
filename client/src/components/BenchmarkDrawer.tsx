@@ -6,13 +6,16 @@ import {
   Maximize2, Download, RefreshCw, AlertTriangle,
   Award, Lock, Unlock, ShieldAlert, Link2, Users,
   Home as HomeIcon, ChevronRight as ChevronRightIcon,
-  GitBranch, ZoomIn, ZoomOut, RotateCcw, Star
+  GitBranch, ZoomIn, ZoomOut, RotateCcw, Star, CheckCircle2
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LangContext';
 import { resolveRelatedBenchmarks } from '@/lib/benchmarkRoute';
 import { escapeCitationText, isArxivUrl } from '@/lib/benchmarkText';
 import { canonicalizeOpenness } from '@/lib/openness';
+import InteractivePipelineViewer from './InteractivePipelineViewer';
+import HtmlBuildProcessView from './HtmlBuildProcessView';
+import PureHtmlFlowchart from './PureHtmlFlowchart';
 
 interface Props {
   benchmark: Benchmark | null;
@@ -334,6 +337,7 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
   const [tab, setTab] = useState<'info' | 'flowchart' | 'pdf'>('info');
   const [pdfFullscreen, setPdfFullscreen] = useState(false);
   const [flowchartFullscreen, setFlowchartFullscreen] = useState(false);
+  const [flowchartMode, setFlowchartMode] = useState<'flowchart' | 'cards' | 'graph'>('flowchart');
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [pdfError, setPdfError] = useState(false);
   const [strategyIndex, setStrategyIndex] = useState(0);
@@ -721,45 +725,89 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
 
       {/* Flowchart chart */}
       <div className={`rounded-xl border overflow-hidden transition-colors ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
-        <div className={`px-4 py-2 border-b flex items-center gap-2 transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
-          <GitBranch size={12} className="text-[#10A37F]" />
-          <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-            {b.name} — {isEn ? 'Build Flowchart' : '构建流程图'}
-          </span>
+        <div className={`px-4 py-2 border-b flex items-center justify-between transition-colors ${isDark ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50/80 border-gray-100'}`}>
+          <div className="flex items-center gap-2">
+            <GitBranch size={12} className="text-[#10A37F]" />
+            <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              {b.name} — {isEn ? 'Build Flowchart' : '构建流程图'}
+            </span>
+          </div>
+
+          <div className={`flex items-center rounded-lg border p-0.5 text-[11px] font-mono-tech ${
+            isDark ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'
+          }`}>
+            <button
+              onClick={() => setFlowchartMode('flowchart')}
+              className={`px-2.5 py-0.5 rounded transition-all ${
+                flowchartMode === 'flowchart'
+                  ? (isDark ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm' : 'bg-white text-cyan-700 font-bold shadow-sm')
+                  : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+              }`}
+            >
+              🌊 {isEn ? 'CSS+HTML Flowchart' : 'CSS+HTML 流程图'}
+            </button>
+            <button
+              onClick={() => setFlowchartMode('cards')}
+              className={`px-2.5 py-0.5 rounded transition-all ${
+                flowchartMode === 'cards'
+                  ? (isDark ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm' : 'bg-white text-cyan-700 font-bold shadow-sm')
+                  : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+              }`}
+            >
+              📑 {isEn ? 'Stage Details' : '阶段卡片'}
+            </button>
+            <button
+              onClick={() => setFlowchartMode('graph')}
+              className={`px-2.5 py-0.5 rounded transition-all ${
+                flowchartMode === 'graph'
+                  ? (isDark ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm' : 'bg-white text-cyan-700 font-bold shadow-sm')
+                  : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+              }`}
+            >
+              ⚡ {isEn ? 'DAG Topology' : '拓扑交互'}
+            </button>
+          </div>
         </div>
-        <div className={`p-4 transition-colors ${isDark ? 'bg-[#0d0d0d]' : 'bg-white'}`}>
-          {drawioFlowchartUrl
-            ? <DrawioSvgChart src={drawioFlowchartUrl} alt={`${b.name} build process`} isDark={isDark} />
-            : <MermaidChart code={flowchartCode} isDark={isDark} />}
+        <div className={`p-3 transition-colors ${isDark ? 'bg-[#0d0d0d]' : 'bg-white'}`}>
+          {flowchartMode === 'flowchart' && (
+            <PureHtmlFlowchart benchmark={b} isDark={isDark} initialFullscreen={flowchartFullscreen} />
+          )}
+          {flowchartMode === 'cards' && (
+            <HtmlBuildProcessView benchmark={b} isDark={isDark} isEn={isEn} />
+          )}
+          {flowchartMode === 'graph' && (
+            <InteractivePipelineViewer benchmark={b} isDark={isDark} initialFullscreen={flowchartFullscreen} />
+          )}
         </div>
       </div>
 
-      {drawioFlowchartUrl ? (
-        <div className={`mt-4 flex flex-wrap gap-2 text-[12px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-          <a href={drawioFlowchartUrl} target="_blank" rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
-              isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700'
-            }`}>
-            <ExternalLink size={12} /> SVG
-          </a>
-          {drawioSourceUrl && (
-            <a href={drawioSourceUrl} target="_blank" rel="noopener noreferrer"
+      <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 text-[12px] ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        <div className="flex flex-wrap items-center gap-2">
+          {b.paper_url && (
+            <a href={b.paper_url} target="_blank" rel="noopener noreferrer"
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
-                isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700'
+                isDark ? 'border-gray-800 hover:border-cyan-500/50 hover:text-cyan-300 bg-gray-900' : 'border-gray-200 hover:border-cyan-500/50 hover:text-cyan-700 bg-white'
               }`}>
-              <Download size={12} /> .drawio
+              <ExternalLink size={12} /> {isEn ? 'Original Paper (Primary Source)' : '论文一手出处'}
             </a>
           )}
-          {drawioSpecUrl && (
-            <a href={drawioSpecUrl} target="_blank" rel="noopener noreferrer"
+          {b.homepage && (
+            <a href={b.homepage} target="_blank" rel="noopener noreferrer"
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
-                isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700'
+                isDark ? 'border-gray-800 hover:border-gray-700 hover:text-gray-300 bg-gray-900' : 'border-gray-200 hover:border-gray-300 hover:text-gray-700 bg-white'
               }`}>
-              <FileText size={12} /> YAML
+              <ExternalLink size={12} /> {isEn ? 'Official Website' : '官方网站'}
             </a>
           )}
         </div>
-      ) : (
+
+        {b.drawio_review_note && (
+          <div className="text-[11px] font-mono-tech text-emerald-500 dark:text-emerald-400 flex items-center gap-1">
+            <CheckCircle2 size={12} />
+            <span>{isEn ? '100% Paper-Grounded Native Flowchart' : '100% 论文原文规范重构流程'}</span>
+          </div>
+        )}
+      </div>
         <details className="mt-4">
           <summary className={`cursor-pointer text-[12px] select-none transition-colors ${isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}>
             {isEn ? 'View raw Mermaid code' : '查看原始 Mermaid 代码'}
@@ -768,7 +816,6 @@ export default function BenchmarkDrawer({ benchmark: propBenchmark, allBenchmark
             {flowchartCode}
           </pre>
         </details>
-      )}
     </div>
   );
 

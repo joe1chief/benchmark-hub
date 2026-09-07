@@ -1,167 +1,201 @@
 {
   "version": 1,
-  "title": "CruxEval 数据集构建与任务派生流程",
+  "title": "CruxEval 基准构建与任务派生流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
-  "layout": "vertical",
+  "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
-    "modules": 0
+    "nodes": 15,
+    "edges": 15,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "method_catalog",
-      "label": "69 个标准库方法",
+      "id": "stdlib_methods",
+      "label": "Python 标准库方法库\n涵盖 str、list、dict 的69个高频方法\n作为函数生成的原子操作基础",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "seed_exemplars",
+      "label": "人工编写示范样例\n10个涵盖多样操作的种子问题样例\n用于指导 Code Llama 少样本生成",
       "type": "document",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "seed_examples",
-      "label": "10 个手写示例",
-      "type": "document",
-      "size": "medium"
-    },
-    {
-      "id": "prompt_records",
-      "label": "2,040 条提示",
-      "type": "database",
-      "size": "medium"
-    },
-    {
-      "id": "code_generator",
-      "label": "Code Llama 34B",
+      "id": "prompt_generation",
+      "label": "提示生成引擎\n合成 2,040 个少样本提示模板\n深度组合目标 API 与输入输出范例",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "function_candidates",
-      "label": "102K 个函数",
-      "type": "database",
-      "size": "medium"
-    },
-    {
-      "id": "execute_inputs",
-      "label": "执行 5 个输入",
+      "id": "code_generation",
+      "label": "Code Llama 34B 候选生成\n采样生成 10.2 万个候选 Python 函数\n每个函数自动生成函数体与5组输入",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "io_pairs",
-      "label": "489K 个 I/O 对",
-      "type": "database",
-      "size": "medium"
-    },
-    {
-      "id": "filter_gates",
-      "label": "三类过滤门",
+      "id": "execution_trace",
+      "label": "动态输入输出执行跟踪\n在沙箱中为每函数运行5组输入用例\n产出 489,306 个原始输入输出数据对",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "filtered_pool",
-      "label": "过滤后候选池",
-      "type": "database",
-      "size": "medium"
-    },
-    {
-      "id": "random_sample",
-      "label": "随机抽取 800",
+      "id": "compile_filter",
+      "label": "静态规约与复杂度过滤\n校验字符长度在75-300之间且语法合法\n强制要求调用目标标准库API",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "pinned_release",
-      "label": "固定 JSONL / HF",
-      "type": "document",
-      "size": "medium"
+      "id": "runtime_filter_gate",
+      "label": "运行时确定性过滤决策门\n在2秒时限内确定性运行通过？\n禁止浮点数且操作参数≤3项",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "input_task",
-      "label": "CRUXEval-I",
+      "id": "discard_invalid",
+      "label": "废弃不合格候选样本\n剔除非确定性输出或超时运行代码\n移除执行异常或死循环函数",
       "type": "terminal",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "output_task",
-      "label": "CRUXEval-O",
+      "id": "candidate_pool",
+      "label": "合格可执行代码池\n保留确定性函数与输入输出三元组\n自举重采样评估排名稳定性",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "dataset_release",
+      "label": "CruxEval 冻结基准集\n800道经过人工质检的Python函数\n由输入预测与输出预测双任务共享",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "task_branch_gate",
+      "label": "评测任务分支路由门\n评测反向输入预测 (CRUXEval-I)\n或评测正向输出预测 (CRUXEval-O)？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "input_prediction",
+      "label": "CRUXEval-I 任务轨 (输入预测)\n给定函数源码实现与目标输出结果\n由模型逆向推导并预测合法输入参数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "output_prediction",
+      "label": "CRUXEval-O 任务轨 (输出预测)\n给定函数源码实现与输入参数\n由模型心算模拟执行并预测输出结果",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "sandbox_verify",
+      "label": "沙箱执行与精确比对\n运行预测输入验证输出或字符串比对\n执行严格字符级精确值匹配",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric_report",
+      "label": "客观评测指标报告\nPass@1 · Pass@5 (1万次自举重采样)\n综合衡量代码执行心算与逆向推理能力",
       "type": "terminal",
-      "size": "medium"
+      "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "method_catalog",
-      "to": "prompt_records",
+      "from": "stdlib_methods",
+      "to": "prompt_generation",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "seed_examples",
-      "to": "prompt_records",
+      "from": "seed_exemplars",
+      "to": "prompt_generation",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "prompt_records",
-      "to": "code_generator",
+      "from": "prompt_generation",
+      "to": "code_generation",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "code_generator",
-      "to": "function_candidates",
+      "from": "code_generation",
+      "to": "execution_trace",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "function_candidates",
-      "to": "execute_inputs",
+      "from": "execution_trace",
+      "to": "compile_filter",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "execute_inputs",
-      "to": "io_pairs",
+      "from": "compile_filter",
+      "to": "runtime_filter_gate",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "io_pairs",
-      "to": "filter_gates",
+      "from": "runtime_filter_gate",
+      "to": "candidate_pool",
+      "label": "确定性执行通过",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "filter_gates",
-      "to": "filtered_pool",
+      "from": "runtime_filter_gate",
+      "to": "discard_invalid",
+      "label": "超时或含浮点数",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "filtered_pool",
-      "to": "random_sample",
+      "from": "candidate_pool",
+      "to": "dataset_release",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "random_sample",
-      "to": "pinned_release",
+      "from": "dataset_release",
+      "to": "task_branch_gate",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "pinned_release",
-      "to": "input_task",
+      "from": "task_branch_gate",
+      "to": "input_prediction",
+      "label": "输入预测任务",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "pinned_release",
-      "to": "output_task",
+      "from": "task_branch_gate",
+      "to": "output_prediction",
+      "label": "输出预测任务",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "input_prediction",
+      "to": "sandbox_verify",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "output_prediction",
+      "to": "sandbox_verify",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "sandbox_verify",
+      "to": "metric_report",
       "type": "primary"
     }
   ],
