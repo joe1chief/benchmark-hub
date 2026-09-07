@@ -13,10 +13,23 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { defineConfig } from "vite";
 
+// Validate the assets consumed by the website before bundling either target.
+const htmlBuildProcessAudit = {
+  name: "html-build-process-audit",
+  apply: "build" as const,
+  buildStart() {
+    execFileSync(process.execPath, [
+      path.resolve(import.meta.dirname, "scripts/benchmark_build_process/audit_build_process_assets.mjs"),
+      "--root", import.meta.dirname, "--html",
+    ], { stdio: "inherit" });
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [htmlBuildProcessAudit, react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

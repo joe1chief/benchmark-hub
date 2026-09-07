@@ -199,6 +199,12 @@ test('keeps all six A11v formal packages synchronized with bilingual sources and
   }
 });
 
+test("keeps source topology independent of optional exports: paper_review_site_a11v", () => {
+  for (const id of formalBenchmarkIds) {
+    assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} formal topology`);
+  }
+});
+
 test('publishes all six A11v packages as parent-labeled Draw.io, fixed-light SVG, and PNG', () => {
   for (const id of formalBenchmarkIds) {
     assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} formal topology`);

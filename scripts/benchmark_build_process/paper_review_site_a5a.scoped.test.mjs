@@ -56,6 +56,14 @@ function pngDimensions(buffer) {
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
+test("keeps source topology independent of optional exports: paper_review_site_a5a", () => {
+  for (const id of benchmarkIds) {
+    const en = readArch(id, 'en');
+    const zh = readArch(id, 'zh');
+    assert.deepEqual(topology(zh), topology(en), `${id} bilingual topology`);
+  }
+});
+
 test('publishes seven bilingual, topology-identical native Draw.io packages', () => {
   for (const id of benchmarkIds) {
     const en = readArch(id, 'en');

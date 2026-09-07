@@ -218,7 +218,7 @@ test('pins CountBench and CounterFactQA paper and official-source boundaries', (
   );
 });
 
-test('keeps CraftBench as a released AWM scenario, not a standalone benchmark', () => {
+test("keeps CraftBench as a released AWM scenario, not a standalone benchmark", () => {
   for (const language of ['en', 'zh']) {
     const arch = readArch('CraftBench', language);
     const nodes = nodeMap(arch);
@@ -301,6 +301,9 @@ test('keeps CraftBench as a released AWM scenario, not a standalone benchmark', 
     detail.drawio_review_note,
     /§3\.1.*§3\.2.*§3\.3.*Table 15.*85e322f69279e3b3325b7377ec3bab788514e9cb.*dde80a0283fe781bdc51656bce57063dc5650213.*manufacturing_execution_system_1.*≤\s*0\.85.*schema.*feedback loop.*sample data.*feedback loop.*environment.*feedback loop.*agent trajectory.*structured verification signals.*10 tasks.*18 tables.*114.*50 endpoints.*no standalone.*metric/isu,
   );
+});
+
+test("checks optional export fidelity: keeps CraftBench as a released AWM scenario, not a standalone benchmark", () => {
   for (const language of ['en', 'zh']) {
     const drawio = readFileSync(
       join(publicDir, 'drawio', 'CraftBench', `CraftBench.${language}.drawio`),

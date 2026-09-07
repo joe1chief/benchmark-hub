@@ -70,7 +70,7 @@ Each benchmark entry follows this structure:
 Before submitting a PR, please run the local validation script:
 
 ```bash
-python3 scripts/validate_benchmarks.py
+python3 scripts/validate_benchmarks.py --html
 ```
 
 This script checks for:
@@ -80,7 +80,7 @@ This script checks for:
 - Valid `related_benchmarks` references
 - Correct `year` format
 
-Our CI (`.github/workflows/ci.yml`) will automatically run this validation on your PR.
+Our CI (`.github/workflows/ci.yml`) will automatically run this HTML-profile validation on your PR. The `--html` profile validates website data without requiring optional Draw.io/SVG exports referenced by legacy fields; the default validator retains legacy export checks.
 
 ---
 
@@ -118,23 +118,32 @@ Key files:
 
 ## Build-process sources and automated deployment
 
-The checked-in `.spec.yaml` files are the canonical graph source. Generate `.arch.json` with the pinned Draw.io toolchain; direct sidecar edits are rejected by CI. The HTML views use explicit module membership when available. Nodes without a declared construction/evaluation stage appear in a neutral pipeline, with no inference from labels, language, or array position.
+The website's canonical Build Process presentation is HTML. The checked-in bilingual `.spec.yaml` files define the graph semantics; the standalone source generator produces the `.arch.json` metadata consumed by the HTML views. Direct sidecar edits are rejected by the source consistency gate. HTML views use explicit module membership when available. Nodes without a declared construction/evaluation stage appear in a neutral pipeline, with no inference from labels, language, or array position.
 
-Every pull request and push to `main` runs data validation, TypeScript, frontend regression tests, and the source consistency gate. Only after those pass do the eight macOS export-fidelity shards run. The Pages build requires all shards to pass. A successful `main` push CI triggers deployment of that exact checked commit; pull-request CI cannot deploy. The existing manual deployment entry also runs the source consistency gate.
+Every pull request and push to `main` runs three website gates on Ubuntu: benchmark data validation, TypeScript and the existing core regression tests, and **HTML Flowchart Validation**. The HTML gate explicitly runs full-catalog canonical source consistency (`pnpm check:build-process-source`) and HTML asset auditing (`pnpm audit:build-process`, using `--html`), then runs HTML structural tests and data/graph semantic regressions without an external Draw.io toolchain, Draw.io Desktop, or macOS. The Pages build depends on all three gates succeeding. These are workflow dependencies; changing the workflow does not update repository branch-protection settings.
 
-For local source validation, install the same pinned toolchain used by `scripts/ci/install_drawio_toolchain*.sh` and set `IMPORTER_DRAWIO_E2E_CLI` to its `skills/drawio/scripts/cli.js`:
+A successful `main` push CI from this repository triggers deployment of that exact checked commit. Pull-request CI cannot deploy. Manual deployment checks out the selected event SHA and independently runs data validation, standalone source consistency, full-catalog HTML asset auditing, HTML flowchart tests, TypeScript, and the core regression tests before building and publishing. It also requires no external diagram toolchain.
+
+After installing the locked project dependencies, run the website checks locally:
 
 ```bash
+pnpm install --frozen-lockfile
+python3 scripts/validate_benchmarks.py --html
 pnpm check:build-process-source
-node --test scripts/benchmark_build_process/check_arch_sources.test.mjs
+pnpm audit:build-process
+pnpm test:html-flowchart
+pnpm exec tsc --noEmit
 pnpm test:build-process
-pnpm test:drawio-fidelity
 pnpm build:ghpages
 ```
 
-The source gate checks both languages for every catalog entry, including missing artifacts, node/edge/module metadata, and Mermaid fallbacks in both the detail and catalog records. It is read-only by default and fails if the generator is unavailable. To repair sidecar drift, run `node scripts/benchmark_build_process/check_arch_sources.mjs --write`, then synchronize affected fallbacks with `node scripts/benchmark_build_process/sync_detail_fallbacks_from_arch.mjs --ids ExampleA,ExampleB`. A changed spec also requires rebuilding its Draw.io/SVG/PNG assets through the existing export workflow. Fallback synchronization updates only fallback fields in the catalog, preserving its other metadata.
+The source gate checks both languages for every catalog entry, including missing artifacts, node/edge/module metadata, and Mermaid fallbacks in both detail and catalog records. It is read-only by default and fails on inconsistency. To repair sidecar drift, run `pnpm generate:flowchart-data`, then synchronize affected fallbacks with `node scripts/benchmark_build_process/sync_detail_fallbacks_from_arch.mjs --ids ExampleA,ExampleB`. Fallback synchronization updates only fallback fields in the catalog, preserving its other metadata. Rerun the source and HTML gates after generation; passing structural checks does not replace paper-level semantic review.
 
-Local fidelity tests skip desktop exports when Draw.io Desktop is unavailable; that result does not replace the macOS CI gate or a paper-level semantic review.
+### Optional legacy Draw.io exports
+
+Draw.io, SVG, and PNG exports remain optional legacy artifacts, separate from the website's HTML validation and deployment. When updating or reviewing those exports, use the existing pinned export toolchain and run **Optional Draw.io Export Fidelity** (`.github/workflows/drawio-export.yml`) manually from GitHub Actions on the desired ref. This workflow retains the full original scoped fidelity suite across eight `macos-26` shards, the pinned Draw.io toolchain, an explicit legacy asset audit (`node scripts/benchmark_build_process/audit_build_process_assets.mjs`, without `--html`), representative PNG diagnostics, and an aggregate check that fails unless every shard succeeds. It does not trigger or gate website deployment.
+
+For local legacy fidelity checks, install the pinned toolchain documented in `scripts/ci/install_drawio_toolchain*.sh`, configure its exported tool paths, and run `pnpm test:drawio-fidelity`. Local tests may skip desktop exports when the required tools are unavailable; those skips do not establish export fidelity. The optional workflow is the separate validation path for those artifacts, and no branch-protection setting is changed by this split.
 
 ## Code of Conduct
 

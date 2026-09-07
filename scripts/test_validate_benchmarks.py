@@ -1,6 +1,29 @@
 import unittest
 import json
 from pathlib import Path
+from unittest.mock import patch
+from scripts import validate_benchmarks as validator
+
+
+class HtmlAssetValidationTest(unittest.TestCase):
+    def test_optional_exports_can_be_absent_but_html_sources_cannot(self):
+        with patch.object(validator, 'errors', []), patch.object(Path, 'exists', return_value=False):
+            validator.validate_drawio_assets({'drawio_flowchart_en': 'drawio/X/X.en.svg', 'drawio_source_en': 'drawio/X/X.en.drawio'}, 'X', html=True)
+            self.assertEqual(validator.errors, [])
+            validator.validate_drawio_assets({'drawio_arch_en': 'drawio/X/X.en.arch.json'}, 'X', html=True)
+            self.assertEqual(len(validator.errors), 1)
+            validator.validate_drawio_assets({'drawio_spec_en': 'drawio/X/X.en.spec.yaml'}, 'X', html=True)
+            self.assertEqual(len(validator.errors), 2)
+
+    def test_export_validation_remains_strict_in_legacy_mode(self):
+        with patch.object(validator, 'errors', []), patch.object(Path, 'exists', return_value=False):
+            validator.validate_drawio_assets({'drawio_flowchart_en': 'drawio/X/X.en.svg'}, 'X')
+            self.assertEqual(len(validator.errors), 1)
+
+    def test_html_mode_still_rejects_malformed_optional_links(self):
+        with patch.object(validator, 'errors', []):
+            validator.validate_drawio_assets({'drawio_flowchart_en': 42}, 'X', html=True)
+            self.assertEqual(len(validator.errors), 1)
 
 from scripts.validate_benchmarks import (
     build_related_reference_index,

@@ -13,6 +13,7 @@ Checks:
   8. openness is from the allowed set (lowercase as used in data)
 """
 
+import argparse
 import json
 import re
 import sys
@@ -112,7 +113,7 @@ def resolve_public_asset_path(value: str) -> Optional[Path]:
     return PUBLIC_DIR / normalized
 
 
-def validate_drawio_assets(entry: dict, prefix: str):
+def validate_drawio_assets(entry: dict, prefix: str, *, html: bool = False):
     for field, suffix in DRAWIO_ASSET_FIELDS.items():
         value = entry.get(field)
         if value in (None, ""):
@@ -124,7 +125,8 @@ def validate_drawio_assets(entry: dict, prefix: str):
             err(f"{prefix} {field} must end with '{suffix}', got: '{value}'")
             continue
         asset_path = resolve_public_asset_path(value)
-        if asset_path is not None and not asset_path.exists():
+        optional_export = html and suffix in ('.svg', '.drawio', '.png')
+        if not optional_export and asset_path is not None and not asset_path.exists():
             err(f"{prefix} {field} points to missing public asset: '{value}'")
 
     review_note = entry.get("drawio_review_note")
@@ -207,6 +209,9 @@ def validate_identity_record(entry, index, catalog_id_counts, display_name_count
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Validate benchmark catalog and referenced assets')
+    parser.add_argument('--html', action='store_true', help='Require HTML graph assets; legacy image exports are optional')
+    args = parser.parse_args()
     print(f"Validating {DATA_PATH} ...")
 
     # 1. Valid JSON
@@ -272,7 +277,7 @@ def main():
         if flowchart is not None and not isinstance(flowchart, str):
             err(f"{prefix} mermaid_flowchart must be a string or null, got: {type(flowchart).__name__}")
 
-        validate_drawio_assets(entry, prefix)
+        validate_drawio_assets(entry, prefix, html=args.html)
 
     detail_count = 0
     if DETAIL_DIR.exists():
@@ -287,7 +292,7 @@ def main():
             if not isinstance(detail, dict):
                 err(f"[{detail_path.name}] detail JSON root must be an object")
                 continue
-            validate_drawio_assets(detail, f"[{detail.get('name', detail_path.stem)}]")
+            validate_drawio_assets(detail, f"[{detail.get('name', detail_path.stem)}]", html=args.html)
 
     # Summary
     print()

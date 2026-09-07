@@ -77,6 +77,12 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
 
+test("keeps source topology independent of optional exports: paper_review_site_a6a", () => {
+  for (const id of benchmarkIds) {
+    assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} topology`);
+  }
+});
+
 test('publishes six bilingual, topology-identical native Draw.io packages', () => {
   for (const id of benchmarkIds) {
     assert.deepEqual(topology(readArch(id, 'zh')), topology(readArch(id, 'en')), `${id} topology`);

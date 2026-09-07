@@ -85,7 +85,22 @@ test('keeps all four A10r packages bilingual with identical typed topology', () 
   }
 });
 
-test('keeps bilingual node text within reviewed native-text boxes', () => {
+test("keeps bilingual node text within reviewed native-text boxes", () => {
+  for (const id of benchmarkIds) {
+    for (const [language, maxLineLength] of [['en', 52], ['zh', 32]]) {
+      for (const node of readArch(id, language).nodes) {
+        for (const line of String(node.label).split('\n')) {
+          assert.ok(
+            [...line].length <= maxLineLength,
+            `${id}.${language}.${node.id}: ${line}`,
+          );
+        }
+      }
+    }
+  }
+});
+
+test("checks optional export fidelity: keeps bilingual node text within reviewed native-text boxes", () => {
   for (const id of benchmarkIds) {
     for (const [language, maxLineLength] of [['en', 52], ['zh', 32]]) {
       for (const node of readArch(id, language).nodes) {
