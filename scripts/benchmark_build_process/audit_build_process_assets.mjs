@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from 'node:crypto';
 import {
   closeSync,
   constants,
@@ -456,6 +457,50 @@ function resolveContainedAsset(publicDir, assetPath) {
   return target;
 }
 
+function htmlGenerationIssues(entry, publicDir) {
+  if (!Object.hasOwn(entry, 'html_generation')) return [];
+  const generation = entry.html_generation;
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (!object(generation)) {
+    return [{ id: entry.id, field: 'html_generation', issue: 'invalid_html_generation' }];
+  }
+  const issues = [];
+  for (const [field, expected] of [
+    ['format', 'html-flowchart-generation/v1'], ['model_version', 1],
+  ]) {
+    if (generation[field] !== expected) {
+      issues.push({ id: entry.id, field: `html_generation.${field}`, issue: 'invalid_html_generation', expected });
+    }
+  }
+  for (const kind of ['spec', 'arch']) {
+    const hashes = generation[`${kind}_sha256`];
+    for (const language of ['en', 'zh']) {
+      const field = `html_generation.${kind}_sha256.${language}`;
+      const expected = object(hashes) ? hashes[language] : undefined;
+      if (typeof expected !== 'string' || !/^[a-f0-9]{64}$/u.test(expected)) {
+        issues.push({ id: entry.id, field, issue: 'invalid_html_generation_hash' });
+        continue;
+      }
+      const asset = entry.assets?.[`drawio_${kind}_${language}`];
+      const path = resolveContainedAsset(publicDir, asset);
+      try {
+        // Use public-relative references and reject symlinks escaping public too.
+        if (!path || !isPathContained(realpathSync(publicDir), realpathSync(path))) {
+          issues.push({ id: entry.id, field, issue: 'html_generation_asset_path_invalid' });
+          continue;
+        }
+        const actual = createHash('sha256').update(readFileSync(path)).digest('hex');
+        if (actual !== expected) {
+          issues.push({ id: entry.id, field, issue: 'html_generation_hash_mismatch', expected, actual });
+        }
+      } catch {
+        issues.push({ id: entry.id, field, issue: 'html_generation_asset_unreadable' });
+      }
+    }
+  }
+  return issues;
+}
+
 function architectureTopologyIssues(id, language, arch) {
   const nodes = Array.isArray(arch?.nodes) ? arch.nodes : [];
   const edges = Array.isArray(arch?.edges) ? arch.edges : [];
@@ -779,7 +824,7 @@ export function auditBuildProcessAssets(root, { profile = 'legacy' } = {}) {
   const brokenReferences = [];
   const languageIssues = [];
   const svgIssues = [];
-  const dataConsistencyIssues = [];
+  const dataConsistencyIssues = sortedManifest.flatMap((entry) => htmlGenerationIssues(entry, publicDir));
   const topologyIssues = [];
   const assetsWithoutManifestIds = new Set(
     [
