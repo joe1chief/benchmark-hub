@@ -25,6 +25,21 @@ const drawioCli = process.env.IMPORTER_DRAWIO_E2E_CLI
   || join(homedir(), '.agents/skills/drawio/scripts/cli.js');
 const normalizer = join(root, 'scripts/benchmark_build_process/normalize_importer_build_process_assets.mjs');
 
+function mermaidLabel(label) {
+  return String(label)
+    .replace(/\\/gu, '\\\\')
+    .replace(/"/gu, '\\"')
+    .replace(/\r?\n/gu, '<br/>');
+}
+
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -267,7 +282,7 @@ test('keeps each detail fallback synchronized with every reviewed node and edge'
       for (const edge of readArch(id, language).edges) {
         assert.match(
           fallback,
-          new RegExp(`^    ${escapeRegex(edge.from)} (?:-->|-\\.->) ${escapeRegex(edge.to)}$`, 'mu'),
+          new RegExp(`^    ${escapeRegex(edge.from)} ${escapeRegex(mermaidArrow(edge))} ${escapeRegex(edge.to)}$`, 'mu'),
           `${id}.${language}.${edge.from}->${edge.to}`,
         );
       }

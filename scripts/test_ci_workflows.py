@@ -16,6 +16,14 @@ class CiWorkflowContractTests(unittest.TestCase):
         push_block = self.ci.split("  push:", 1)[1].split("\npermissions:", 1)[0]
         self.assertNotIn("\n    paths:", push_block)
 
+    def test_source_consistency_gates_expensive_exports_and_deployment(self):
+        self.assertIn("pnpm check:build-process-source", self.ci)
+        self.assertIn("check_arch_sources.test.mjs", self.ci)
+        shard_job = self.ci.split("  drawio-fidelity-shards:", 1)[1].split("  drawio-fidelity:", 1)[0]
+        self.assertIn("needs: [validate-data, typecheck]", shard_job)
+        self.assertIn("pnpm check:build-process-source", self.deploy)
+        self.assertIn("needs: [validate-data, typecheck, drawio-fidelity]", self.ci)
+
     def test_ci_uses_read_only_repository_permissions(self):
         permissions = self.ci.split("permissions:", 1)[1].split("\njobs:", 1)[0]
         self.assertIn("contents: read", permissions)

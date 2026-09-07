@@ -42,6 +42,14 @@ const readSpec = (id, language = 'en') => parseYaml(readFileSync(
 const readDetail = id => readJson(join(publicDir, 'benchmarks_detail', `${id}.json`));
 const labels = graph => graph.nodes.map(node => node.label).join('\n');
 
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function topology(graph) {
   return {
     nodes: graph.nodes.map(({ id, type }) => ({ id, type })),
@@ -75,7 +83,7 @@ function renderFallback(graph) {
   const lines = ['flowchart LR'];
   for (const node of graph.nodes) lines.push(`    ${node.id}["${mermaidLabel(node.label)}"]`);
   for (const edge of graph.edges) {
-    lines.push(`    ${edge.from} ${edge.type === 'primary' ? '-->' : '-.->'} ${edge.to}`);
+    lines.push(`    ${edge.from} ${mermaidArrow(edge)} ${edge.to}`);
   }
   return lines.join('\n');
 }

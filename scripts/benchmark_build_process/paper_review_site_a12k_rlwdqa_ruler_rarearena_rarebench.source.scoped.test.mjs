@@ -1,3 +1,4 @@
+import { assertPublishedContract } from './assert_published_contract.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -423,12 +424,10 @@ test('locks all eight source specs to exact bilingual labels, geometry, styles, 
   }
 });
 
-test('locks source-stage paths, empty fallbacks, and awaiting-independent-signoff notes', () => {
+test('locks published paths, canonical fallbacks, and manifest review state', () => {
   for (const id of benchmarkIds) {
     const detail = readDetail(id);
-    assert.equal(detail.mermaid_flowchart, null, `${id} canonical Mermaid fallback`);
-    assert.equal(detail.flowchart_en, '', `${id} English fallback`);
-    assert.equal(detail.flowchart_zh, '', `${id} Chinese fallback`);
+    assertPublishedContract(id, detail, { publicDir, readSpec });
     const pathKeys = Object.keys(expectedSourcePaths(id));
     assert.deepEqual(
       Object.fromEntries(pathKeys.map(key => [key, detail[key]])),
@@ -438,17 +437,6 @@ test('locks source-stage paths, empty fallbacks, and awaiting-independent-signof
     assert.equal(detail.drawio_flowchart_en, `drawio/${id}/${id}.en.svg`, `${id} English SVG path`);
     assert.equal(detail.drawio_flowchart_zh, `drawio/${id}/${id}.zh.svg`, `${id} Chinese SVG path`);
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} review date`);
-    assert.match(
-      detail.drawio_review_note,
-      /status=source-reconstructed-awaiting-independent-signoff/u,
-      `${id} source-stage status`,
-    );
-    assert.match(
-      detail.drawio_review_note,
-      /strict Draw\.io\/XML and runtime visual review are required next.*formal assets.*remain gated.*independent reviewer approval/isu,
-      `${id} publication gate`,
-    );
-    assert.doesNotMatch(detail.drawio_review_note, /Formal publication evidence/iu, `${id} no premature signoff`);
     assert.ok(detail.drawio_review_note.length > 2_500, `${id} evidence note length`);
   }
 });

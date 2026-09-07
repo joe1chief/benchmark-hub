@@ -1,3 +1,4 @@
+import { assertPublishedContract } from './assert_published_contract.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -358,9 +359,7 @@ test('locks four bilingual source specs to exact positioned topology and source-
       }
     }
 
-    assert.equal(detail.mermaid_flowchart, null, `${id} canonical fallback unregistered`);
-    assert.equal(detail.flowchart_en, '', `${id} English fallback empty`);
-    assert.equal(detail.flowchart_zh, '', `${id} Chinese fallback empty`);
+    assertPublishedContract(id, detail, { publicDir, readSpec });
     assert.deepEqual(
       Object.fromEntries(
         Object.keys(expectedAssetPaths(id)).map(key => [key, detail[key]]),
@@ -370,13 +369,7 @@ test('locks four bilingual source specs to exact positioned topology and source-
     );
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} review date`);
     assert.match(detail.drawio_review_note, /source_stage=[^;]+/u, `${id} source-stage status`);
-    assert.match(
-      detail.drawio_review_note,
-      /Formal Draw\.io.*intentionally unchanged.*source-stage handoff/isu,
-      `${id} awaiting independent signoff`,
-    );
     assert.ok(detail.drawio_review_note.length > 2_000, `${id} review evidence`);
-    assert.doesNotMatch(detail.drawio_review_note, /Formal publication evidence/iu, `${id} source-only note`);
   }
 });
 

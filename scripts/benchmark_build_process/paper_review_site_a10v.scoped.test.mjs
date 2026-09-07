@@ -45,18 +45,29 @@ function topology(arch) {
   };
 }
 
+function mermaidLabel(label) {
+  return String(label)
+    .replace(/\\/gu, '\\\\')
+    .replace(/"/gu, '\\"')
+    .replace(/\r?\n/gu, '<br/>');
+}
+
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function fallbackFromArch(arch) {
   const lines = ['flowchart LR'];
   for (const node of arch.nodes) {
-    const label = String(node.label)
-      .replaceAll('"', '&quot;')
-      .replaceAll('\n', '<br/>');
-    lines.push('    ' + node.id + '["' + label + '"]');
+    lines.push(`    ${node.id}["${mermaidLabel(node.label)}"]`);
   }
   for (const edge of arch.edges) {
-    lines.push(
-      '    ' + edge.from + ' ' + (edge.type === 'data' ? '-.->' : '-->') + ' ' + edge.to,
-    );
+    const arrow = mermaidArrow(edge);
+    lines.push(`    ${edge.from} ${arrow} ${edge.to}`);
   }
   return lines.join('\n');
 }

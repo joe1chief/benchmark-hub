@@ -1,3 +1,4 @@
+import { assertPublishedContract } from './assert_published_contract.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -292,25 +293,8 @@ test('keeps PlanBench-XL and Point-Bench source-stage graphs fully locked and bi
     for (const [field, expectedPath] of Object.entries(expectedFlowchartPaths(id))) {
       assert.equal(detail[field], expectedPath, `${id} ${field} legacy formal-asset path`);
     }
-    assert.equal(detail.mermaid_flowchart, null, `${id} source-stage Mermaid fallback`);
-    assert.equal(detail.flowchart_en, '', `${id} source-stage English fallback`);
-    assert.equal(detail.flowchart_zh, '', `${id} source-stage Chinese fallback`);
+    assertPublishedContract(id, detail, { publicDir, readSpec });
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} review date`);
-    assert.match(
-      detail.drawio_review_note,
-      /status=source-reconstructed-awaiting-independent-signoff/u,
-      `${id} source-stage review status`,
-    );
-    assert.match(
-      detail.drawio_review_note,
-      /strict Draw\.io\/XML and runtime visual review are required next.*formal assets.*remain gated.*independent reviewer approval/isu,
-      `${id} source-stage publication gate`,
-    );
-    assert.doesNotMatch(
-      detail.drawio_review_note,
-      /Formal publication evidence/iu,
-      `${id} has no premature publication evidence`,
-    );
     assert.ok(detail.drawio_review_note.length > 2_500, `${id} review evidence`);
   }
 });

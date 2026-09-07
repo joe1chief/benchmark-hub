@@ -39,6 +39,21 @@ const readArch = (id, language) => readJson(
   join(publicDir, 'drawio', id, `${id}.${language}.arch.json`),
 );
 
+function mermaidLabel(label) {
+  return String(label)
+    .replace(/\\/gu, '\\\\')
+    .replace(/"/gu, '\\"')
+    .replace(/\r?\n/gu, '<br/>');
+}
+
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function positionedTopology(graph) {
   return {
     nodes: graph.nodes.map(({ id, type, size, style, position }) => (
@@ -73,7 +88,7 @@ function renderFallback(graph) {
   const lines = ['flowchart LR'];
   for (const node of graph.nodes) lines.push(`    ${node.id}["${encode(node.label)}"]`);
   for (const edge of graph.edges) {
-    lines.push(`    ${edge.from} ${edge.type === 'primary' ? '-->' : '-.->'} ${edge.to}`);
+    lines.push(`    ${edge.from} ${mermaidArrow(edge)} ${edge.to}`);
   }
   return lines.join('\n');
 }

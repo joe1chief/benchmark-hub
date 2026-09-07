@@ -1,254 +1,235 @@
 {
   "version": 1,
-  "title": "DiagnosisArena 数据集构建流水线与临床诊断评测协议",
+  "title": "DiagnosisArena 数据集构建流程",
   "type": "academic-diagram",
-  "source": "paper-grounded",
+  "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
-  "layout": "horizontal",
+  "layout": "hierarchical",
   "counts": {
-    "nodes": 16,
-    "edges": 17,
-    "modules": 2
+    "nodes": 18,
+    "edges": 18,
+    "modules": 0
   },
   "nodes": [
     {
-      "id": "journal_corpus",
-      "label": "顶级医学期刊病例库\n从 10 本国际顶级医学期刊搜集 4,175 份临床真实病例报告\n覆盖 28 个临床专科的疑难与罕见诊断挑战",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "claude_segmentation",
-      "label": "Claude 3.5 Sonnet 临床文本分段\n解耦患者初始临床就诊信息与后续确诊病理及转归结果\n结构化抽取 4 个核心字段（病史、检验检查、鉴别诊断、黄金确诊）",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "leakage_gate",
-      "label": "零诊断信息泄露门控？\n严格审查文本边界，确保隐去术后病理、特异性靶向治疗等提示\n防止就诊早期文本中包含直接暗示最终确诊结论的污染线索",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "leakage_discard",
-      "label": "信息泄露病例剔除池\n剔除治疗方案直接明示疾病本体或分段不彻底的病例报告\n保障临床诊断基准具备真实的床旁盲态决策评测效度",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "multimodel_screening",
-      "label": "多模型难度分级初筛\n采用 3 款基础大模型（GPT-4o、Claude 3.5、Gemini）各尝试 2 次\n快速区分常见典型病例与具备高鉴别难度的复杂疑难病例",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "hardness_gate",
-      "label": "具备足够难度且 AI 全票通过？\n过滤各基础大模型轻而易举即可完全答对的典型常规题目\n筛选出 1,783 个适合深度逻辑临床推演的高难度候选病例",
-      "type": "decision",
-      "size": "xl"
-    },
-    {
-      "id": "trivials_discard",
-      "label": "简单常规病例剔除池\n排除教科书式常见病及无实质鉴别诊断争议的标准病例\n将评测重点高度聚焦于疑难、非典型及罕见临床病症",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "physician_verification",
-      "label": "专科主治医师专家组裁决门控\n资深临床医师对病例信息的真实完整性与无歧义性进行复审\n经 DeepSeek-R1 (8次采样) 验证可解性后最终定稿 1,113 题",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "dataset_freeze",
-      "label": "DiagnosisArena 官方冻结基准\n锁定 1,113 个高难度临床诊断病例（915 个公开测试集）\n标准确诊结论统一规范映射至 ICD-10 与 SNOMED-CT 医学本体",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "prompt_formatting",
-      "label": "病史与辅助检查提示组装\n按时间线呈现主诉、现病史、既往史、查体结果及实验室生化指标\n支持开放式自由鉴别诊断生成或四选一多项选择题型格式",
+      "id": "journals",
+      "label": "阶段 1｜10 本顶级期刊",
       "type": "document",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "model_inference",
-      "label": "临床自回归诊断推演\n待测模型生成按可能性排序的鉴别诊断清单及临床依据\n采用贪婪解码策略 (T=0) 输出首选诊断与 Top-k 备选诊断",
+      "id": "constraint_filter",
+      "label": "约束筛选与下载",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "entity_normalization",
-      "label": "医学实体抽取与 UMLS 归一化\n利用 MedCAT 实体解析器结合同义词正则表达式抽取诊断词条\n将非结构化诊断术语规范映射至统一 UMLS 概念唯一标识符 (CUI)",
+      "id": "raw_cases",
+      "label": "4,175 篇病例报告",
+      "type": "document",
+      "size": "large"
+    },
+    {
+      "id": "chapter_filter",
+      "label": "阶段 2｜章节过滤",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "diagnosis_eval_gate",
-      "label": "预测诊断与黄金确诊匹配？\n对比预测诊断实体与标准金标准病理诊断的语义概念等价性\n判定 Top-1 首选诊断命中状态及 Top-k 鉴别诊断候选覆盖情况",
+      "id": "claude_segment",
+      "label": "Claude 3.5 分段",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "structured_cases",
+      "label": "四字段结构化病例",
+      "type": "document",
+      "size": "large"
+    },
+    {
+      "id": "simple_screen",
+      "label": "阶段 3｜三模型各 2 次",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "simple_decision",
+      "label": "任一尝试答对？",
       "type": "decision",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "misdiagnosis_sink",
-      "label": "误诊/漏诊错误分析池\n归类误诊病种、过早诊断闭合以及错失罕见病鉴别等失效模式\n按人体各大器官系统、疾病发病率及临床误诊严重程度统计",
+      "id": "too_easy",
+      "label": "答对｜过易剔除",
       "type": "terminal",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "differential_scoring",
-      "label": "Top-k 诊断准确率得分累加\n累计统计 Top-1 精确命中分值、Top-3 覆盖率与 Top-5 包含率\n评估模型输出的诊断置信度排序与临床实际严重程度的校准度",
+      "id": "pathway_review",
+      "label": "AI 是否全票判合理？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "ai_reject",
+      "label": "未全票｜剔除",
+      "type": "terminal",
+      "size": "large"
+    },
+    {
+      "id": "stage3_output",
+      "label": "保留 1,783 例",
+      "type": "document",
+      "size": "large"
+    },
+    {
+      "id": "r1_verify",
+      "label": "阶段 4｜R1 × 8",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "metrics_reporting",
-      "label": "DiagnosisArena 官方指标发布\n公布全局 Top-1 确诊准确率 (%)、Top-3 及 Top-5 鉴别覆盖率 (%)\n并提供 28 个临床医学专科方向的详细诊断能力雷达图",
+      "id": "r1_gate",
+      "label": "8 次内命中诊断？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "physician_review",
+      "label": "医师确认完整且明确？",
+      "type": "decision",
+      "size": "large"
+    },
+    {
+      "id": "verification_reject",
+      "label": "R1未命中/医师否决｜剔除",
       "type": "terminal",
-      "size": "xl"
+      "size": "large"
+    },
+    {
+      "id": "paper_final",
+      "label": "论文全集｜1,113 例",
+      "type": "document",
+      "size": "large"
+    },
+    {
+      "id": "public_release",
+      "label": "公开测试集｜915 例",
+      "type": "terminal",
+      "size": "large"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "journal_corpus",
-      "to": "claude_segmentation",
+      "from": "journals",
+      "to": "constraint_filter",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "claude_segmentation",
-      "to": "leakage_gate",
+      "from": "constraint_filter",
+      "to": "raw_cases",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "leakage_gate",
-      "to": "multimodel_screening",
-      "type": "primary",
-      "label": "经审查无确诊线索泄露"
+      "from": "raw_cases",
+      "to": "chapter_filter",
+      "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "leakage_gate",
-      "to": "leakage_discard",
-      "type": "optional",
-      "label": "治疗方案提前泄露确诊"
+      "from": "chapter_filter",
+      "to": "claude_segment",
+      "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "multimodel_screening",
-      "to": "hardness_gate",
+      "from": "claude_segment",
+      "to": "structured_cases",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "hardness_gate",
-      "to": "physician_verification",
-      "type": "primary",
-      "label": "具备高难度且 AI 全票认可"
+      "from": "structured_cases",
+      "to": "simple_screen",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "hardness_gate",
-      "to": "trivials_discard",
-      "type": "optional",
-      "label": "过于简单/存在争议"
+      "from": "simple_screen",
+      "to": "simple_decision",
+      "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "physician_verification",
-      "to": "dataset_freeze",
-      "type": "primary",
-      "label": "临床专科专家评审通过"
+      "from": "simple_decision",
+      "to": "too_easy",
+      "type": "optional"
     },
     {
       "id": "edge-9",
-      "from": "physician_verification",
-      "to": "leakage_discard",
-      "type": "optional",
-      "label": "临床信息不全/存在歧义"
+      "from": "simple_decision",
+      "to": "pathway_review",
+      "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "dataset_freeze",
-      "to": "prompt_formatting",
+      "from": "pathway_review",
+      "to": "stage3_output",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "prompt_formatting",
-      "to": "model_inference",
-      "type": "primary"
+      "from": "pathway_review",
+      "to": "ai_reject",
+      "type": "optional"
     },
     {
       "id": "edge-12",
-      "from": "model_inference",
-      "to": "entity_normalization",
+      "from": "stage3_output",
+      "to": "r1_verify",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "entity_normalization",
-      "to": "diagnosis_eval_gate",
+      "from": "r1_verify",
+      "to": "r1_gate",
       "type": "primary"
     },
     {
       "id": "edge-14",
-      "from": "diagnosis_eval_gate",
-      "to": "differential_scoring",
-      "type": "primary",
-      "label": "命中正确 Top-1 / Top-k"
+      "from": "r1_gate",
+      "to": "physician_review",
+      "type": "primary"
     },
     {
       "id": "edge-15",
-      "from": "diagnosis_eval_gate",
-      "to": "misdiagnosis_sink",
-      "type": "optional",
-      "label": "未能命中金标准诊断"
+      "from": "r1_gate",
+      "to": "verification_reject",
+      "type": "optional"
     },
     {
       "id": "edge-16",
-      "from": "differential_scoring",
-      "to": "metrics_reporting",
+      "from": "physician_review",
+      "to": "paper_final",
       "type": "primary"
     },
     {
       "id": "edge-17",
-      "from": "misdiagnosis_sink",
-      "to": "metrics_reporting",
-      "type": "primary"
-    }
-  ],
-  "modules": [
-    {
-      "id": "construction_track",
-      "title": "Track A: 数据集构建流水线",
-      "nodes": [
-        "journal_corpus",
-        "claude_segmentation",
-        "leakage_gate",
-        "leakage_discard",
-        "multimodel_screening",
-        "hardness_gate",
-        "trivials_discard",
-        "physician_verification",
-        "dataset_freeze"
-      ]
+      "from": "physician_review",
+      "to": "verification_reject",
+      "type": "optional"
     },
     {
-      "id": "evaluation_track",
-      "title": "Track B: 评测协议流程",
-      "nodes": [
-        "prompt_formatting",
-        "model_inference",
-        "entity_normalization",
-        "diagnosis_eval_gate",
-        "misdiagnosis_sink",
-        "differential_scoring",
-        "metrics_reporting"
-      ]
+      "id": "edge-18",
+      "from": "paper_final",
+      "to": "public_release",
+      "type": "data"
     }
-  ]
+  ],
+  "modules": []
 }

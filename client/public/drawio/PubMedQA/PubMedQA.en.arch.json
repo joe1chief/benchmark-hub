@@ -1,192 +1,342 @@
 {
   "version": 1,
-  "title": "PubMedQA Build Process",
+  "title": "PubMedQA Build and Evaluation Process",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 15,
+    "nodes": 25,
+    "edges": 29,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "pubmed",
-      "label": "PubMed Structured Abstracts\nTitle + Body + Conclusion",
-      "type": "database",
-      "size": "large"
+      "id": "source_evidence",
+      "label": "Fixed Official Evidence\narXiv 1909.06146v1\nPDF 190af87fa13a\nOfficial Code 1cbae8e92f72",
+      "type": "document",
+      "size": "xl"
     },
     {
-      "id": "natural_titles",
-      "label": "Natural Question Titles\nTitle Contains Question Mark\nAbstract Has Conclusion Section",
+      "id": "pubmed_pool",
+      "label": "PubMed Article Pool\nStructured Abstracts\nTitle · Body · Conclusion",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "natural_gate",
+      "label": "Select Natural Questions\nTitle Contains Question Mark\nStructured Abstract Has\na Conclusive Section",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "natural_instance",
-      "label": "pre-PQA-U Instance\nQuestion = Title\nContext = Abstract without Conclusion\nLong Answer = Conclusion",
+      "label": "Build pre-PQA-U Instance\nQuestion = Original Title\nContext = Abstract without Conclusion\nLong Answer = Conclusion",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "expert_annotation",
-      "label": "Two M.D. Candidate Annotators\nOne Sees Long Answer; One Does Not\nDiscuss Disagreement or Remove Item",
+      "id": "pqal_sample",
+      "label": "Randomly Sample Candidates\nfor Expert PQA-L Annotation",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "answerability_gate",
+      "label": "Yes · No · Maybe Answerable?\nRemove Non-answerable Items\nbefore Expert Labeling",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "annotator_one",
+      "label": "Annotator 1 · M.D. Candidate\nSees Question + Context\n+ Long Answer\nReasoning-free Label",
       "type": "user",
       "size": "xl"
     },
     {
+      "id": "annotator_two",
+      "label": "Annotator 2 · M.D. Candidate\nSees Question + Context Only\nLong Answer Is Hidden\nReasoning-required Label",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "agreement_gate",
+      "label": "Compare Two Labels\nSame Label Becomes\nthe Ground Truth",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "discussion",
+      "label": "If Labels Differ\nAnnotators Discuss\nSeek One Agreed Label",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "removed_item",
+      "label": "Remove Candidate\nNon-answerable or\nNo Agreement Reached",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
       "id": "pqa_l",
-      "label": "PQA-L: 1,000 Expert-labeled\n500 for 10-fold Cross-validation\n500 Held-out Test",
+      "label": "PQA-L\n1,000 Expert-labeled Items\nYes 55.2% · No 33.8%\nMaybe 11.0%",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "answerable_filter",
-      "label": "PQA-U Rule Filter\nDrop Wh-questions + Multi-entity Choice\n>93% Agreement on Answerability",
+      "id": "pqa_l_split",
+      "label": "Fixed PQA-L Split\n500 Random Items for\n10-fold Cross-validation\nRemaining 500 Test Items",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "eval_input",
+      "label": "Reasoning-required Test\nInput Question + Context\nConclusion Remains Hidden",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "predict",
+      "label": "Predict One Label\nYes · No · Maybe\nfor Every Test PMID",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metrics",
+      "label": "PQA-L Test Report\nAccuracy\nMacro-F1 over Three Labels",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "pqa_u_filter",
+      "label": "Rule-filter pre-PQA-U\nRemove Wh-word Questions\nand Multi-entity Selections\nAnswerability Agreement\nMore than 93% vs Annotator 1",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "pqa_u",
-      "label": "PQA-U\n61.2K Unlabeled\nYes / No / Maybe-answerable",
+      "label": "PQA-U\n61.2K Unlabeled Items\nRetained as Answerable by\nYes · No · Maybe",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "statement_titles",
-      "label": "Statement-title Articles\nNP-(VBP/VBZ) Pattern\nStructured Conclusion Required",
+      "id": "statement_gate",
+      "label": "Select Statement Titles\nNP-(VBP/VBZ) POS Pattern\nStructured Abstract Has\na Conclusive Section",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "artificial_convert",
-      "label": "Heuristic Question Conversion\nMove / Add Copula or Auxiliary\nLabel Yes / No from Verb Negation",
+      "label": "Heuristic PQA-A Conversion\nMove or Add Copula/Auxiliary\nRevise into a Question\nLabel by Verb Negation",
       "type": "process",
       "size": "xl"
     },
     {
       "id": "pqa_a",
-      "label": "PQA-A: 211.3K Artificial\nTrain 200K / Validation 11.3K\nYes 92.8% / No 7.2%",
+      "label": "PQA-A\n211.3K Artificial Items\nYes 92.8% · No 7.2%\nNo Maybe Labels",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "training",
-      "label": "Optional Multi-phase Training\nPQA-A Pretrain → PQA-U Pseudo-label\n→ PQA-L Fine-tune",
-      "type": "process",
+      "id": "pqa_a_split",
+      "label": "PQA-A Split\nRandom 200K Training\nRemaining 11.3K Validation",
+      "type": "database",
       "size": "xl"
     },
     {
-      "id": "evaluate",
-      "label": "PQA-L Reasoning-required Test\nInput: Question + Context\nConclusion Hidden at Inference",
-      "type": "process",
+      "id": "release_snapshot",
+      "label": "Fixed Official Release\nCommit 1cbae8e92f72\nPQA-L 1,000 Records\nori_pqal 8b3276be8942\nTest GT 939fe566f090",
+      "type": "document",
       "size": "xl"
     },
     {
-      "id": "prediction",
-      "label": "Predict One Label\nYes / No / Maybe",
-      "type": "process",
-      "size": "large"
+      "id": "evaluator_boundary",
+      "label": "Evaluator Implementation\nevaluation.py 2838af5bb0ac\nRequires Exactly Test PMIDs\nsklearn Accuracy + Macro-F1",
+      "type": "document",
+      "size": "xl"
     },
     {
-      "id": "metric",
-      "label": "Test Accuracy\nMacro-F1 across Three Labels",
-      "type": "terminal",
-      "size": "large"
+      "id": "license_boundary",
+      "label": "Release Terms Boundary\nRepository LICENSE Is MIT\nLicense SHA 8e75abc6136b",
+      "type": "document",
+      "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "pubmed",
-      "to": "natural_titles",
-      "type": "primary"
+      "from": "source_evidence",
+      "to": "pubmed_pool",
+      "type": "secondary"
     },
     {
       "id": "edge-2",
-      "from": "pubmed",
-      "to": "statement_titles",
+      "from": "pubmed_pool",
+      "to": "natural_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "natural_titles",
-      "to": "natural_instance",
+      "from": "pubmed_pool",
+      "to": "statement_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "natural_instance",
-      "to": "expert_annotation",
+      "from": "natural_gate",
+      "to": "natural_instance",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "expert_annotation",
-      "to": "pqa_l",
+      "from": "natural_instance",
+      "to": "pqal_sample",
       "type": "primary"
     },
     {
       "id": "edge-6",
       "from": "natural_instance",
-      "to": "answerable_filter",
+      "to": "pqa_u_filter",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "answerable_filter",
-      "to": "pqa_u",
+      "from": "pqal_sample",
+      "to": "answerability_gate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "statement_titles",
-      "to": "artificial_convert",
+      "from": "answerability_gate",
+      "to": "annotator_one",
       "type": "primary"
     },
     {
       "id": "edge-9",
+      "from": "answerability_gate",
+      "to": "annotator_two",
+      "type": "primary"
+    },
+    {
+      "id": "edge-10",
+      "from": "answerability_gate",
+      "to": "removed_item",
+      "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "annotator_one",
+      "to": "agreement_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "annotator_two",
+      "to": "agreement_gate",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "agreement_gate",
+      "to": "pqa_l",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "agreement_gate",
+      "to": "discussion",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "discussion",
+      "to": "pqa_l",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "discussion",
+      "to": "removed_item",
+      "type": "primary"
+    },
+    {
+      "id": "edge-17",
+      "from": "pqa_u_filter",
+      "to": "pqa_u",
+      "type": "primary"
+    },
+    {
+      "id": "edge-18",
+      "from": "statement_gate",
+      "to": "artificial_convert",
+      "type": "primary"
+    },
+    {
+      "id": "edge-19",
       "from": "artificial_convert",
       "to": "pqa_a",
       "type": "primary"
     },
     {
-      "id": "edge-10",
-      "from": "pqa_l",
-      "to": "training",
-      "type": "primary"
-    },
-    {
-      "id": "edge-11",
-      "from": "pqa_u",
-      "to": "training",
-      "type": "primary"
-    },
-    {
-      "id": "edge-12",
+      "id": "edge-20",
       "from": "pqa_a",
-      "to": "training",
+      "to": "pqa_a_split",
       "type": "primary"
     },
     {
-      "id": "edge-13",
-      "from": "training",
-      "to": "evaluate",
+      "id": "edge-21",
+      "from": "pqa_l",
+      "to": "pqa_l_split",
       "type": "primary"
     },
     {
-      "id": "edge-14",
-      "from": "evaluate",
-      "to": "prediction",
+      "id": "edge-22",
+      "from": "pqa_l_split",
+      "to": "eval_input",
       "type": "primary"
     },
     {
-      "id": "edge-15",
-      "from": "prediction",
-      "to": "metric",
+      "id": "edge-23",
+      "from": "eval_input",
+      "to": "predict",
       "type": "primary"
+    },
+    {
+      "id": "edge-24",
+      "from": "predict",
+      "to": "metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge-25",
+      "from": "pqa_l",
+      "to": "release_snapshot",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-26",
+      "from": "pqa_u",
+      "to": "release_snapshot",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-27",
+      "from": "pqa_a",
+      "to": "release_snapshot",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-28",
+      "from": "metrics",
+      "to": "evaluator_boundary",
+      "type": "secondary"
+    },
+    {
+      "id": "edge-29",
+      "from": "release_snapshot",
+      "to": "license_boundary",
+      "type": "secondary"
     }
   ],
   "modules": []

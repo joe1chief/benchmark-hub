@@ -1,3 +1,4 @@
+import { assertPublishedContract } from './assert_published_contract.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -509,12 +510,10 @@ test('locks full bilingual labels and every node, edge, module, style, and waypo
   assert.match(promptZh.meta.legend, /不.*归一化.*未解释/isu);
 });
 
-test('locks source-stage fallbacks, six canonical source paths, SVG paths, and awaiting-signoff state', () => {
+test('locks published fallbacks, six canonical source paths, SVG paths, and manifest review state', () => {
   for (const id of benchmarkIds) {
     const detail = readDetail(id);
-    assert.equal(detail.mermaid_flowchart, null, `${id} canonical fallback unregistered`);
-    assert.equal(detail.flowchart_en, '', `${id} English fallback empty`);
-    assert.equal(detail.flowchart_zh, '', `${id} Chinese fallback empty`);
+    assertPublishedContract(id, detail, { publicDir, readSpec });
     const pathKeys = Object.keys(expectedAssetPaths(id));
     assert.deepEqual(
       Object.fromEntries(pathKeys.map(key => [key, detail[key]])),
@@ -524,12 +523,6 @@ test('locks source-stage fallbacks, six canonical source paths, SVG paths, and a
     assert.equal(detail.drawio_flowchart_en, `drawio/${id}/${id}.en.svg`, `${id} English SVG path`);
     assert.equal(detail.drawio_flowchart_zh, `drawio/${id}/${id}.zh.svg`, `${id} Chinese SVG path`);
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} unified review date`);
-    assert.match(
-      detail.drawio_review_note,
-      /status=source-reconstructed-awaiting-independent-signoff/u,
-      `${id} independent signoff pending`,
-    );
-    assert.doesNotMatch(detail.drawio_review_note, /Formal publication evidence/iu, `${id} source-only note`);
   }
 });
 

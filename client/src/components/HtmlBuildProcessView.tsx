@@ -1,29 +1,14 @@
 // LLM Benchmark Costco — Pure HTML + CSS Build Process Explorer
 // Re-renders paper-aligned benchmark construction & evaluation workflows using modern CSS Grid & Flexbox
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Database,
-  Cpu,
-  GitBranch,
-  ShieldCheck,
-  Users,
-  FileText,
-  Bot,
-  ExternalLink,
-  ChevronRight,
-  Copy,
-  Check,
-  Sparkles,
-  Layers,
-  ArrowRight,
-  BookOpen,
-  Filter,
-  CheckCircle2,
-} from 'lucide-react';
+import { Database, Cpu, GitBranch, ShieldCheck, Users, FileText, ExternalLink, Copy, Check, BookOpen, Filter } from 'lucide-react';
+import { BuildProcessCards } from './BuildProcessCards';
 import type { Benchmark } from '@/types/benchmark';
+import { partitionBuildProcess, type StageModule } from '@/lib/buildProcessStages';
 
 interface ArchNode {
   id: string;
+  module?: string;
   label: string;
   type: string;
   size?: string;
@@ -41,6 +26,7 @@ interface ArchData {
   title: string;
   type: string;
   layout?: string;
+  modules?: StageModule[];
   nodes: ArchNode[];
   edges: ArchEdge[];
 }
@@ -119,13 +105,15 @@ const CATEGORY_STYLES: Record<string, {
 export default function HtmlBuildProcessView({ benchmark: b, isDark, isEn }: Props) {
   const [archData, setArchData] = useState<ArchData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeStageFilter, setActiveStageFilter] = useState<'all' | 'construction' | 'evaluation'>('all');
+  const [activeStageFilter, setActiveStageFilter] = useState<'all' | 'construction' | 'evaluation' | 'unassigned'>('all');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Fetch bilingual arch.json
   useEffect(() => {
     setLoading(true);
+    setActiveStageFilter('all');
+    setSelectedNodeId(null);
     const preferredLang = isEn ? 'en' : 'zh';
     const fallbackLang = isEn ? 'zh' : 'en';
 
@@ -145,58 +133,17 @@ export default function HtmlBuildProcessView({ benchmark: b, isDark, isEn }: Pro
       });
   }, [b.id, isEn]);
 
-  // Separate nodes into Construction and Evaluation partitions
-  const { constructionNodes, evaluationNodes, allNodes, nodeMap } = useMemo(() => {
-    if (!archData?.nodes) {
-      return { constructionNodes: [], evaluationNodes: [], allNodes: [], nodeMap: new Map<string, ArchNode>() };
-    }
-
-    const nMap = new Map<string, ArchNode>();
-    archData.nodes.forEach(n => nMap.set(n.id, n));
-
-    // Heuristic or structural partition:
-    // Nodes involving model, inference, prompt, judge, extract, metric, report belong to Evaluation; others to Construction
-    const evalKeywords = ['eval', 'test', 'infer', 'prompt', 'judge', 'cot', 'extract', 'score', 'metric', 'report', 'accuracy', 'pass@', '评测', '推理', '提示', '裁判', '抽取', '得分', '准确率'];
-
-    const construct: ArchNode[] = [];
-    const evaluate: ArchNode[] = [];
-
-    archData.nodes.forEach((node, idx) => {
-      const lower = (node.id + ' ' + node.label).toLowerCase();
-      const isEval = evalKeywords.some(kw => lower.includes(kw)) || idx >= Math.floor(archData.nodes.length * 0.65);
-      if (isEval && idx > 0) {
-        evaluate.push(node);
-      } else {
-        construct.push(node);
-      }
-    });
-
-    return {
-      constructionNodes: construct,
-      evaluationNodes: evaluate,
-      allNodes: archData.nodes,
-      nodeMap: nMap,
-    };
-  }, [archData]);
-
-  // Outgoing connections for each node
-  const outgoingMap = useMemo(() => {
-    const map = new Map<string, string[]>();
-    if (archData?.edges) {
-      archData.edges.forEach(e => {
-        if (!map.has(e.from)) map.set(e.from, []);
-        map.get(e.from)!.push(e.to);
-      });
-    }
-    return map;
-  }, [archData]);
+  const { constructionNodes, evaluationNodes, unassignedNodes, allNodes, edges } = useMemo(
+    () => partitionBuildProcess(archData), [archData],
+  );
 
   // Nodes to display based on filter
   const displayedNodes = useMemo(() => {
     if (activeStageFilter === 'construction') return constructionNodes;
     if (activeStageFilter === 'evaluation') return evaluationNodes;
+    if (activeStageFilter === 'unassigned') return unassignedNodes;
     return allNodes;
-  }, [activeStageFilter, constructionNodes, evaluationNodes, allNodes]);
+  }, [activeStageFilter, constructionNodes, evaluationNodes, unassignedNodes, allNodes]);
 
   // Copy Markdown Pipeline
   const handleCopyMarkdown = () => {
@@ -321,8 +268,9 @@ export default function HtmlBuildProcessView({ benchmark: b, isDark, isEn }: Pro
                 : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
             }`}
           >
-            {isEn ? 'Full Pipeline' : '全量流程'} ({allNodes.length})
+            {isEn ? 'Pipeline' : '流程'} ({allNodes.length})
           </button>
+          {constructionNodes.length > 0 && (
           <button
             onClick={() => setActiveStageFilter('construction')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
@@ -333,6 +281,8 @@ export default function HtmlBuildProcessView({ benchmark: b, isDark, isEn }: Pro
           >
             📦 {isEn ? 'Construction' : '数据集构建'} ({constructionNodes.length})
           </button>
+          )}
+          {evaluationNodes.length > 0 && (
           <button
             onClick={() => setActiveStageFilter('evaluation')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
@@ -343,6 +293,16 @@ export default function HtmlBuildProcessView({ benchmark: b, isDark, isEn }: Pro
           >
             ⚡ {isEn ? 'Evaluation & Scoring' : '评测推理与打分'} ({evaluationNodes.length})
           </button>
+          )}
+          {unassignedNodes.length > 0 && unassignedNodes.length < allNodes.length && (
+          <button
+            onClick={() => setActiveStageFilter('unassigned')}
+            aria-pressed={activeStageFilter === 'unassigned'}
+            className={`px-3 py-1.5 rounded-lg transition-all ${activeStageFilter === 'unassigned' ? 'bg-slate-500/20 font-bold' : ''}`}
+          >
+            {isEn ? 'Other pipeline steps' : '其他流程步骤'} ({unassignedNodes.length})
+          </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono-tech text-slate-400">
@@ -357,85 +317,9 @@ export default function HtmlBuildProcessView({ benchmark: b, isDark, isEn }: Pro
           // LOADING CSS+HTML PIPELINE...
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {displayedNodes.map((node, index) => {
-            const isSelected = selectedNodeId === node.id;
-            const category = CATEGORY_STYLES[node.type] || CATEGORY_STYLES.process;
-            const CategoryIcon = category.icon;
-
-            const lines = node.label.split('\n').map(l => l.trim()).filter(Boolean);
-            const title = lines[0] || node.id;
-            const bullets = lines.slice(1);
-            const outgoing = outgoingMap.get(node.id) || [];
-
-            return (
-              <article
-                key={node.id}
-                onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
-                className={`relative group rounded-xl border p-4 transition-all duration-300 cursor-pointer select-none flex flex-col justify-between ${
-                  category.border
-                } ${category.bg} ${
-                  isSelected
-                    ? 'ring-2 ring-cyan-400 shadow-[0_0_25px_rgba(0,240,255,0.25)] scale-[1.02] z-10'
-                    : isDark
-                    ? 'bg-slate-950/80 shadow-sm'
-                    : 'bg-white shadow-sm'
-                }`}
-              >
-                {/* Step Pill & Category Header */}
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-hud font-bold text-[10.5px] tracking-wider px-2 py-0.5 rounded bg-slate-800/80 text-cyan-300 border border-slate-700">
-                        STEP {String(index + 1).padStart(2, '0')}
-                      </span>
-                      <span className={`text-[9.5px] font-mono-tech font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${category.badge}`}>
-                        <CategoryIcon size={9} className="inline mr-1 -mt-0.5" />
-                        {isEn ? category.tagEn : category.tagZh}
-                      </span>
-                    </div>
-
-                    <span className="text-[10px] font-mono-tech text-slate-500">
-                      #{node.id}
-                    </span>
-                  </div>
-
-                  {/* Stage Main Title */}
-                  <h4 className={`text-sm font-bold leading-snug mb-2 transition-colors ${
-                    isSelected ? 'text-cyan-300' : isDark ? 'text-slate-100 group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-cyan-700'
-                  }`}>
-                    {title}
-                  </h4>
-
-                  {/* Sub-points / Criteria */}
-                  {bullets.length > 0 && (
-                    <ul className="space-y-1.5 my-2.5 border-t border-slate-800/40 pt-2 text-xs">
-                      {bullets.map((bullet, bIdx) => (
-                        <li key={bIdx} className="flex items-start gap-1.5 text-slate-400 dark:text-slate-300 leading-relaxed">
-                          <span className="text-cyan-400 font-bold shrink-0 mt-0.5">▸</span>
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                {/* Card Footer: Outgoing Flow */}
-                {outgoing.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-slate-800/40 flex items-center justify-between text-[10px] font-mono-tech text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <ArrowRight size={10} className="text-cyan-400" />
-                      <span>{isEn ? 'Transitions to' : '流转至'}:</span>
-                    </span>
-                    <span className="text-cyan-400/90 font-medium truncate max-w-[140px]">
-                      {outgoing.map(tid => nodeMap.get(tid)?.label.split('\n')[0] || tid).join(', ')}
-                    </span>
-                  </div>
-                )}
-              </article>
-            );
-          })}
-        </div>
+        <BuildProcessCards nodes={displayedNodes} allNodes={allNodes} edges={edges}
+          isDark={isDark} isEn={isEn} selectedNodeId={selectedNodeId}
+          onSelect={id => setSelectedNodeId(selectedNodeId === id ? null : id)} />
       )}
     </div>
   );

@@ -40,6 +40,14 @@ const readSpec = (id, language = 'en') => readFileSync(
 const nodeMap = arch => new Map(arch.nodes.map(node => [node.id, node]));
 const edgeSet = arch => new Set(arch.edges.map(edge => `${edge.from}->${edge.to}:${edge.type}`));
 
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function edgeSpecBlock(id, language, from, to) {
   const match = readSpec(id, language).match(new RegExp(
     `  - from: ${from}\\n    to: ${to}\\n[\\s\\S]*?(?=\\n  - from:|\\nmodules:)`,
@@ -69,7 +77,7 @@ function renderFallback(arch) {
     lines.push(`    ${node.id}["${mermaidLabel(node.label)}"]`);
   }
   for (const edge of arch.edges) {
-    const arrow = edge.type === 'primary' ? '-->' : '-.->';
+    const arrow = mermaidArrow(edge);
     lines.push(`    ${edge.from} ${arrow} ${edge.to}`);
   }
   return lines.join('\n');

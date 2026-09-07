@@ -116,6 +116,26 @@ Key files:
 
 ---
 
+## Build-process sources and automated deployment
+
+The checked-in `.spec.yaml` files are the canonical graph source. Generate `.arch.json` with the pinned Draw.io toolchain; direct sidecar edits are rejected by CI. The HTML views use explicit module membership when available. Nodes without a declared construction/evaluation stage appear in a neutral pipeline, with no inference from labels, language, or array position.
+
+Every pull request and push to `main` runs data validation, TypeScript, frontend regression tests, and the source consistency gate. Only after those pass do the eight macOS export-fidelity shards run. The Pages build requires all shards to pass. A successful `main` push CI triggers deployment of that exact checked commit; pull-request CI cannot deploy. The existing manual deployment entry also runs the source consistency gate.
+
+For local source validation, install the same pinned toolchain used by `scripts/ci/install_drawio_toolchain*.sh` and set `IMPORTER_DRAWIO_E2E_CLI` to its `skills/drawio/scripts/cli.js`:
+
+```bash
+pnpm check:build-process-source
+node --test scripts/benchmark_build_process/check_arch_sources.test.mjs
+pnpm test:build-process
+pnpm test:drawio-fidelity
+pnpm build:ghpages
+```
+
+The source gate checks both languages for every catalog entry, including missing artifacts, node/edge/module metadata, and Mermaid fallbacks in both the detail and catalog records. It is read-only by default and fails if the generator is unavailable. To repair sidecar drift, run `node scripts/benchmark_build_process/check_arch_sources.mjs --write`, then synchronize affected fallbacks with `node scripts/benchmark_build_process/sync_detail_fallbacks_from_arch.mjs --ids ExampleA,ExampleB`. A changed spec also requires rebuilding its Draw.io/SVG/PNG assets through the existing export workflow. Fallback synchronization updates only fallback fields in the catalog, preserving its other metadata.
+
+Local fidelity tests skip desktop exports when Draw.io Desktop is unavailable; that result does not replace the macOS CI gate or a paper-level semantic review.
+
 ## Code of Conduct
 
 Please be respectful and constructive. We welcome contributions from researchers, engineers, and students at all levels.

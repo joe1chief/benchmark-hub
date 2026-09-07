@@ -1,3 +1,4 @@
+import { assertPublishedContract } from './assert_published_contract.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -319,7 +320,7 @@ function nodeLabelDigest(graph) {
   return createHash('sha256').update(canonical, 'utf8').digest('hex');
 }
 
-test('fully locks all four source-stage bilingual graphs, paths, fallbacks, and signoff gate', () => {
+test('fully locks all four bilingual graphs, published paths, canonical fallbacks, and manifest review state', () => {
   for (const id of benchmarkIds) {
     const en = readSpec(id, 'en');
     const zh = readSpec(id, 'zh');
@@ -369,21 +370,8 @@ test('fully locks all four source-stage bilingual graphs, paths, fallbacks, and 
     for (const [field, expectedPath] of Object.entries(expectedFlowchartPaths(id))) {
       assert.equal(detail[field], expectedPath, `${id} ${field}`);
     }
-    assert.equal(detail.mermaid_flowchart, null, `${id} Mermaid fallback`);
-    assert.equal(detail.flowchart_en, '', `${id} English fallback`);
-    assert.equal(detail.flowchart_zh, '', `${id} Chinese fallback`);
+    assertPublishedContract(id, detail, { publicDir, readSpec });
     assert.match(detail.drawio_review_note, /reviewed_at=2026-07-18/u, `${id} review date`);
-    assert.match(
-      detail.drawio_review_note,
-      /status=source-reconstructed-awaiting-independent-signoff/u,
-      `${id} source-stage status`,
-    );
-    assert.match(
-      detail.drawio_review_note,
-      /Strict Draw\.io\/XML and runtime visual review are required next.*formal assets.*remain gated.*independent reviewer approval/isu,
-      `${id} publication gate`,
-    );
-    assert.doesNotMatch(detail.drawio_review_note, /Formal publication evidence/iu, `${id} no premature signoff`);
     assert.ok(detail.drawio_review_note.length > 3_500, `${id} detailed provenance note`);
   }
 });

@@ -34,6 +34,21 @@ const edgeMap = arch => new Map(arch.edges.map(edge => [
   edge,
 ]));
 
+function mermaidLabel(label) {
+  return String(label)
+    .replace(/\\/gu, '\\\\')
+    .replace(/"/gu, '\\"')
+    .replace(/\r?\n/gu, '<br/>');
+}
+
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function topology(arch) {
   return {
     nodes: arch.nodes.map(({ id, type }) => ({ id, type })),
@@ -178,7 +193,7 @@ test('keeps every A8a fallback synchronized with the reviewed architecture', () 
       for (const edge of readArch(id, language).edges) {
         assert.match(
           fallback,
-          new RegExp(`^    ${escapeRegex(edge.from)} (?:-->|-\\.->) ${escapeRegex(edge.to)}$`, 'mu'),
+          new RegExp(`^    ${escapeRegex(edge.from)} ${escapeRegex(mermaidArrow(edge))} ${escapeRegex(edge.to)}$`, 'mu'),
           `${id}.${language}.${edge.from}->${edge.to}`,
         );
       }
