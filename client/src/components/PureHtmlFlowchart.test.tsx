@@ -172,19 +172,18 @@ describe('neutral pipeline UI', () => {
   it.each([true, false])('renders rich wrapping cards and readable branch outcomes (English: %s)', isEn => {
     const html = renderToStaticMarkup(<BuildProcessLanes arch={neutralGraph} isEn={isEn} isDark={false}
       selectedNodeId="internal_fix" onSelect={() => {}} />);
-    const text = html.replace(/<[^>]*>/g, '');
-    expect(text).toContain(isEn ? 'Pipeline' : '流程');
+    expect(html).toContain(isEn ? 'Pipeline' : '流程');
     expect(html.match(/<article /g)).toHaveLength(3);
     expect(html).toContain('grid-cols-1 md:grid-cols-2 xl:grid-cols-3');
     for (const node of neutralGraph.nodes) {
-      for (const line of node.label.split('\n')) expect(text).toContain(line);
-      expect(text).not.toContain(node.id);
+      for (const line of node.label.split('\n')) expect(html).toContain(line);
+      expect(html).not.toContain(node.id);
     }
-    for (const edge of neutralGraph.edges) expect(text).toContain(edge.label);
+    for (const edge of neutralGraph.edges) expect(html).toContain(edge.label);
     expect(html).toContain('aria-pressed="true"');
-    expect(text).not.toContain('Evaluation &amp; Scoring Protocol');
-    expect(text).not.toContain('Dataset Construction Pipeline');
-    expect(text).not.toContain('未指定阶段');
+    expect(html).not.toContain('Evaluation &amp; Scoring Protocol');
+    expect(html).not.toContain('Dataset Construction Pipeline');
+    expect(html).not.toContain('未指定阶段');
   });
 
   it('uses Other pipeline steps only for a partially assigned graph', () => {
@@ -208,10 +207,9 @@ describe('typed pipeline connections', () => {
       expect(html).toContain('d="M1 7H25"');
       if (type === 'primary') expect(html).not.toContain('stroke-dasharray');
       else expect(html).toContain('stroke-dasharray="3 3"');
-      const text = html.replace(/<[^>]*>/g, '');
-      expect(text).toContain('Needs repair');
-      expect(text).toContain('Repair candidate');
-      expect(text).not.toContain('internal_');
+      expect(html).toContain('Needs repair');
+      expect(html).toContain('Repair candidate');
+      expect(html).not.toContain('internal_');
     },
   );
 });
