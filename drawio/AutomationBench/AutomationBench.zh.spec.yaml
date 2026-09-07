@@ -1,166 +1,481 @@
 meta:
   profile: academic-paper
-  source: generated
   theme: academic-color
+  source: generated
   layout: horizontal
-  routing: orthogonal
-  title: AutomationBench 论文对齐构建流程
-  description: 依据 AutomationBench v1，展示工作流形态聚类、分配到六个预定义领域、模拟 API 与严格评测。
-  legend: 官方基准分数严格全有或全无；部分完成度仅作为训练或诊断旁注，绝不进入排行榜分数。
+  title: AutomationBench：数据构建与运行评测（1.0.6）
+  description: 构建方法依据论文 v1；当前公开运行与评分依据官方仓库 4a8e1061254004d9dac807054eed33fad7d1ff14。私有评测只引用官方披露。
+  legend: 数据构建与运行评测使用独立模块。实线表示主流程，虚线表示反馈、可选分支与支撑输入。提示仅用于构建期验证；公开、私有与 simple 成绩分开报告。
 nodes:
   - id: workflow_patterns
-    label: |-
-      收集工作流模式
-      抽象交互形态
-      移除客户特定数据
     type: database
-    size: xl
-    position:
-      x: 40
-      'y': 180
+    module: construction
+    label: |-
+      收集工作流形态
+      来自困难工作流的用户反馈
+      不使用个人信息或客户机密
   - id: cluster_shapes
-    label: |-
-      聚类工作流模式形态
-      归并相似动作图
-      保留多样结构
     type: process
-    size: xl
-    position:
-      x: 320
-      'y': 180
+    module: construction
+    label: |-
+      聚类工作流形态
+      归并收集到的工作流模式
+      论文未披露具体聚类算法
   - id: assign_domains
-    label: |-
-      分配到六个预定义业务领域
-      销售 • 营销 • 支持
-      运营 • 财务 • 人力资源
     type: process
-    size: xl
-    position:
-      x: 600
-      'y': 180
+    module: construction
+    label: |-
+      选取六个预定义领域的相关模式
+      销售、营销、运营
+      支持、财务、人力资源
   - id: task_generation
-    label: |-
-      生成候选任务
-      加入应用与约束
-      保留工作流形态
     type: process
-    size: xl
-    position:
-      x: 880
-      'y': 180
-  - id: hardening
+    module: construction
     label: |-
-      加固并验证任务
-      干扰项 • 隐藏状态
-      检查确定性奖励
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 180
-  - id: api_world
-    label: |-
-      构建模拟 API 世界
-      约 500 个端点
-      覆盖 47 个应用
-    type: database
-    size: xl
-    position:
-      x: 1440
-      'y': 180
-  - id: release
-    label: |-
-      发布 600 个公开任务
-      600+ 个留出任务
-      覆盖全部六个领域
-    type: database
-    size: xl
-    position:
-      x: 1720
-      'y': 180
-  - id: agent_run
-    label: |-
-      运行一条自主请求
-      搜索并调用 API
-      持久化跨应用变更
-    type: process
-    size: xl
-    position:
-      x: 1720
-      'y': 520
-  - id: end_state
-    label: |-
-      检查最终世界状态
-      正向与负向断言
-      拒绝撒网式操作
-    type: process
-    size: xl
-    position:
-      x: 1440
-      'y': 520
-  - id: official_score
-    label: |-
-      官方全有或全无评分
-      全部断言必须通过
-      基准分数无部分得分
-    type: process
-    size: xl
-    position:
-      x: 1160
-      'y': 520
-  - id: partial_note
-    label: |-
-      部分得分仅为旁注
-      仅用于训练与诊断
-      不计入官方分数
+      合成候选任务
+      工作流模式提供合成灵感
+      多轮修订真实性与应用多样性
+  - id: task_contract
     type: document
-    size: xl
-    position:
-      x: 1160
-      'y': 800
-  - id: report
+    module: construction
     label: |-
-      报告严格任务通过率
-      私有集排行榜
-      记录平均成本
+      设计任务与断言契约
+      单条指令与结构化业务状态
+      明确策略和确定性检查
+  - id: api_world
+    type: database
+    module: construction
+    label: |-
+      提供模拟 API 世界
+      论文 v1 记载约 500 个端点
+      47 个应用；Pydantic 保存世界状态
+  - id: hardening
+    type: process
+    module: construction
+    label: |-
+      加固过易任务
+      加入干扰项与相似记录名称
+      信息需经工具获取，并遵守策略优先级
+  - id: hint_audit
+    type: document
+    module: construction
+    label: |-
+      准备并审计提示清单
+      给出端点指引与参数线索
+      不包含实际参数值
+  - id: validation
+    type: process
+    module: construction
+    label: |-
+      检查可解性并抽样审阅
+      使用独立的带提示运行模式
+      抽样检查与重复审计
+  - id: reward_audit
+    type: process
+    module: construction
+    label: |-
+      用 RLVR 对奖励做压力测试
+      发现奖励攻击策略
+      反馈加固断言与奖励设计
+  - id: revision
+    type: document
+    module: construction
+    label: |-
+      应用版本化公平性修订
+      1.0.6：可发现性、格式与副作用要求
+      私有任务难度也随版本调整
+  - id: release
+    type: database
+    module: construction
+    label: |-
+      发布 600 个公开计分任务
+      六个业务领域各 100 个任务
+      仓库 1.0.6；默认 domains=all
+  - id: private_tasks
+    type: database
+    module: construction
+    label: |-
+      保留更难的私有任务
+      论文 v1 为 600+；任务未公开
+      未从公开仓库核实当前私有规模
+  - id: simple_tasks
+    type: database
+    module: construction
+    label: |-
+      提供 200 个 simple 基线任务
+      基础的一步与两步工作流
+      默认 domains=all 不包含此集合
+  - id: initialize
+    type: process
+    module: evaluation
+    label: |-
+      初始化每个选定任务
+      由 initial_state 创建新的 WorldState
+      保留指令与任务契约身份
+  - id: tool_mode
+    type: process
+    module: evaluation
+    label: |-
+      选择并记录工具接口
+      api（CLI 默认）、zapier、limited_zapier
+      受限模式仅暴露任务指定动作
+  - id: agent_run
+    type: process
+    module: evaluation
+    label: |-
+      获取 Agent 的下一次响应
+      按单条指令自主完成工作流
+      CLI 默认最多 50 次模型响应
+  - id: turn_gate
+    type: decision
+    module: evaluation
+    label: |-
+      继续调用工具还是结束轨迹？
+      在轮次预算内处理工具请求
+      停止运行不代表任务成功
+  - id: search_tools
+    type: process
+    module: evaluation
+    label: |-
+      按请求发现工具
+      api_search：BM25，默认 top_k=5
+      Zapier 模式检索动作描述
+  - id: execute_tools
+    type: process
+    module: evaluation
+    label: |-
+      执行请求的工具调用
+      REST 请求或 Zapier 动作
+      返回模拟 API 的观察结果
+  - id: end_state
+    type: process
+    module: evaluation
+    label: |-
+      检查最终业务状态
+      执行正向与负向断言
+      同时检查哪些条件在初态已经通过
+  - id: score_scope
+    type: process
+    module: evaluation
+    label: |-
+      确定有效计分断言
+      显式排除项不计分
+      保持初态已满足条件不获得免费分数
+      破坏守卫条件计失败；excluded:false 可强制计分
+  - id: assertion_ratio
+    type: process
+    module: evaluation
+    label: |-
+      计算 partial_credit
+      通过数 ÷ 有效计分断言数；分母为零则为 0
+      作为环境奖励，权重为 1
+  - id: official_score
+    type: process
+    module: evaluation
+    label: |-
+      计算严格全有或全无通过分数
+      仅 partial_credit = 1 时 task_completed_correctly = 1
+      有效计分断言全部通过，且至少存在一项
+  - id: partial_note
     type: terminal
-    size: xl
-    position:
-      x: 880
-      'y': 520
+    module: evaluation
+    label: |-
+      单独保留部分得分奖励
+      仅用于训练与诊断
+      不把 partial_credit 均值当作任务通过率
+  - id: completion_gate
+    type: decision
+    module: evaluation
+    label: |-
+      检查导出结果中的中断轨迹
+      末尾工具调用未执行，响应步数小于上限减 2
+      默认启用 ensure-complete；最多补跑 3 轮
+      禁用或使用 tasks/skip 切片时跳过
+  - id: rerun_aborted
+    type: process
+    module: evaluation
+    label: |-
+      仅重新运行中断任务并合并
+      沿用模型与工具集；按任务名合并
+      未传递自定义 search_top_k
+      保留已完成任务并再次检查
+  - id: incomplete_result
+    type: terminal
+    module: evaluation
+    label: |-
+      保留并标记仍中断的结果
+      有限补跑不保证全部完成
+      仅看 auto-bench 退出码不能证明完整性
+  - id: split_gate
+    type: decision
+    module: evaluation
+    label: |-
+      按选定数据集合分别报告
+      六个公开计分域或 simple 基线
+      记录版本、模型、工具集与完整性状态
+  - id: run_cost
+    type: process
+    module: evaluation
+    label: |-
+      从运行中收集用量与成本
+      模型 token 用量与配置的价格
+      另行报告每任务平均美元成本
+  - id: report
+    type: terminal
+    module: evaluation
+    label: |-
+      报告公开任务通过率
+      对选定公开任务的 task_completed_correctly 求均值
+      未切片的六域完整运行共 600 个任务
+  - id: simple_report
+    type: terminal
+    module: evaluation
+    label: |-
+      报告 simple 运行框架诊断
+      仅针对显式选定的 simple 任务
+      不计入官方基准分数
+  - id: private_report
+    type: terminal
+    module: evaluation
+    label: |-
+      查看官方私有集排行榜
+      独立留出评测，难度随版本变化
+      不可直接用公开集结果替代
 edges:
-  - from: workflow_patterns
+  - id: edge_1_workflow_patterns_cluster_shapes
+    from: workflow_patterns
     to: cluster_shapes
     type: primary
-  - from: cluster_shapes
+  - id: edge_2_cluster_shapes_assign_domains
+    from: cluster_shapes
     to: assign_domains
     type: primary
-  - from: assign_domains
+  - id: edge_3_assign_domains_task_generation
+    from: assign_domains
     to: task_generation
     type: primary
-  - from: task_generation
+    label: 模式提供灵感
+  - id: edge_4_task_generation_hardening
+    from: task_generation
     to: hardening
     type: primary
-  - from: hardening
-    to: api_world
+    label: 修订过易候选
+  - id: edge_5_task_contract_hardening
+    from: task_contract
+    to: hardening
+    type: data
+    label: 状态与策略约束
+  - id: edge_6_api_world_validation
+    from: api_world
+    to: validation
+    type: data
+    label: 模拟环境支撑
+  - id: edge_7_hardening_hint_audit
+    from: hardening
+    to: hint_audit
     type: primary
-  - from: api_world
+  - id: edge_8_hint_audit_validation
+    from: hint_audit
+    to: validation
+    type: primary
+    label: 独立提示模式
+  - id: edge_9_hardening_reward_audit
+    from: hardening
+    to: reward_audit
+    type: optional
+    label: RLVR 压力测试
+  - id: edge_10_reward_audit_task_contract
+    from: reward_audit
+    to: task_contract
+    type: optional
+    label: 发现攻击后加固奖励
+  - id: edge_11_validation_hardening
+    from: validation
+    to: hardening
+    type: optional
+    label: 审计反馈
+  - id: edge_12_validation_release
+    from: validation
     to: release
     type: primary
-  - from: release
+    label: 经审阅的公开任务
+  - id: edge_13_validation_private_tasks
+    from: validation
+    to: private_tasks
+    type: optional
+    label: 独立且进一步加固的留出集
+  - id: edge_14_revision_release
+    from: revision
+    to: release
+    type: data
+    label: 仓库 1.0.6 修订
+  - id: edge_15_revision_private_tasks
+    from: revision
+    to: private_tasks
+    type: data
+    label: 私有难度修订
+  - id: edge_16_release_initialize
+    from: release
+    to: initialize
+    type: primary
+    label: 选取公开任务
+  - id: edge_17_simple_tasks_initialize
+    from: simple_tasks
+    to: initialize
+    type: optional
+    label: 显式选取 simple
+  - id: edge_18_private_tasks_private_report
+    from: private_tasks
+    to: private_report
+    type: data
+    label: 官方留出评测；任务不公开
+  - id: edge_19_api_world_initialize
+    from: api_world
+    to: initialize
+    type: data
+    label: 新的模拟状态
+  - id: edge_20_initialize_tool_mode
+    from: initialize
+    to: tool_mode
+    type: primary
+  - id: edge_21_tool_mode_agent_run
+    from: tool_mode
     to: agent_run
     type: primary
-  - from: agent_run
+  - id: edge_22_agent_run_turn_gate
+    from: agent_run
+    to: turn_gate
+    type: primary
+  - id: edge_23_turn_gate_search_tools
+    from: turn_gate
+    to: search_tools
+    type: optional
+    label: 请求发现工具
+  - id: edge_24_turn_gate_execute_tools
+    from: turn_gate
+    to: execute_tools
+    type: primary
+    label: 请求执行工具
+  - id: edge_25_search_tools_agent_run
+    from: search_tools
+    to: agent_run
+    type: data
+    label: 工具描述观察
+  - id: edge_26_execute_tools_agent_run
+    from: execute_tools
+    to: agent_run
+    type: primary
+    label: 工具观察结果
+  - id: edge_27_turn_gate_end_state
+    from: turn_gate
     to: end_state
     type: primary
-  - from: end_state
+    label: 轨迹结束或到达上限
+  - id: edge_28_end_state_score_scope
+    from: end_state
+    to: score_scope
+    type: primary
+  - id: edge_29_score_scope_assertion_ratio
+    from: score_scope
+    to: assertion_ratio
+    type: primary
+  - id: edge_30_assertion_ratio_official_score
+    from: assertion_ratio
     to: official_score
     type: primary
-  - from: official_score
+    label: 转换为二元分数
+  - id: edge_31_assertion_ratio_partial_note
+    from: assertion_ratio
     to: partial_note
     type: optional
-    label: 仅诊断
-  - from: official_score
+    label: 奖励与诊断
+  - id: edge_32_official_score_completion_gate
+    from: official_score
+    to: completion_gate
+    type: primary
+    label: 导出任务结果
+  - id: edge_33_agent_run_run_cost
+    from: agent_run
+    to: run_cost
+    type: data
+    label: 用量记录
+  - id: edge_34_run_cost_completion_gate
+    from: run_cost
+    to: completion_gate
+    type: data
+    label: 导出用量与成本
+  - id: edge_35_completion_gate_rerun_aborted
+    from: completion_gate
+    to: rerun_aborted
+    type: optional
+    label: 仍有中断且剩余补跑轮次
+  - id: edge_36_rerun_aborted_completion_gate
+    from: rerun_aborted
+    to: completion_gate
+    type: primary
+    label: 合并补跑并复查
+  - id: edge_37_completion_gate_incomplete_result
+    from: completion_gate
+    to: incomplete_result
+    type: optional
+    label: 达到轮数上限后仍中断
+  - id: edge_38_completion_gate_split_gate
+    from: completion_gate
+    to: split_gate
+    type: primary
+    label: 没有剩余中断
+  - id: edge_39_completion_gate_split_gate
+    from: completion_gate
+    to: split_gate
+    type: optional
+    label: 显式禁用检查或采用切片运行
+  - id: edge_40_split_gate_report
+    from: split_gate
     to: report
     type: primary
-modules: []
+    label: 公开计分域
+  - id: edge_41_split_gate_simple_report
+    from: split_gate
+    to: simple_report
+    type: optional
+    label: 仅 simple 基线
+modules:
+  - id: construction
+    label: 数据集构建
+    nodes:
+      - workflow_patterns
+      - cluster_shapes
+      - assign_domains
+      - task_generation
+      - task_contract
+      - api_world
+      - hardening
+      - hint_audit
+      - validation
+      - reward_audit
+      - revision
+      - release
+      - private_tasks
+      - simple_tasks
+  - id: evaluation
+    label: 运行评测与评分
+    nodes:
+      - initialize
+      - tool_mode
+      - agent_run
+      - turn_gate
+      - search_tools
+      - execute_tools
+      - end_state
+      - score_scope
+      - assertion_ratio
+      - official_score
+      - partial_note
+      - completion_gate
+      - rerun_aborted
+      - incomplete_result
+      - split_gate
+      - run_cost
+      - report
+      - simple_report
+      - private_report
