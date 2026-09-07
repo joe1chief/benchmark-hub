@@ -61,6 +61,7 @@ console.log(JSON.stringify(Object.fromEntries(names.map(name =>
         self.assert_required_commands(jobs["html-flowchart"], [
             "node --test scripts/benchmark_build_process/check_arch_sources.test.mjs",
             "pnpm check:build-process-source", "pnpm audit:build-process", "pnpm test:html-flowchart",
+            "pnpm test:benchmark-ingestion",
         ])
 
     def setUp(self):
@@ -79,6 +80,7 @@ console.log(JSON.stringify(Object.fromEntries(names.map(name =>
     def test_website_gate_rejects_missing_or_bypassed_checks(self):
         mutations = [
             lambda w: w["jobs"]["html-flowchart"]["steps"].remove(next(step for step in w["jobs"]["html-flowchart"]["steps"] if step.get("run") == "pnpm audit:build-process")),
+            lambda w: w["jobs"]["html-flowchart"]["steps"].remove(next(step for step in w["jobs"]["html-flowchart"]["steps"] if step.get("run") == "pnpm test:benchmark-ingestion")),
             lambda w: next(step for step in w["jobs"]["validate-data"]["steps"] if step.get("run") == "python3 scripts/validate_benchmarks.py --html").update({"run": "python3 scripts/validate_benchmarks.py"}),
             lambda w: w["jobs"]["build-check"]["needs"].remove("html-flowchart"),
             lambda w: w["jobs"]["build-check"].update({"if": "${{ always() }}"}),
@@ -105,6 +107,7 @@ console.log(JSON.stringify(Object.fromEntries(names.map(name =>
         self.assert_required_commands(job, [
             "pnpm check:build-process-source", "pnpm audit:build-process", "pnpm test:html-flowchart",
             "pnpm exec tsc --noEmit", "pnpm test:build-process",
+            "pnpm test:benchmark-ingestion",
         ], condition="github.event_name == 'workflow_dispatch'")
         self.assert_required_commands(job, ["python3 scripts/validate_benchmarks.py --html", "pnpm build:ghpages"])
         self.assertNotIn("continue-on-error", job)

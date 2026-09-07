@@ -1,5 +1,8 @@
 import unittest
 import json
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 from scripts import validate_benchmarks as validator
@@ -33,6 +36,67 @@ from scripts.validate_benchmarks import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class IsolatedRootValidationTest(unittest.TestCase):
+    def test_cli_uses_isolated_catalog_details_and_assets_in_both_profiles(self):
+        originals = [ROOT / "README.md", ROOT / "client/public/benchmarks.json"]
+        before = [(p.read_bytes(), p.stat().st_mtime_ns) for p in originals]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "isolated repo"
+            public = root / "client/public"
+            details = public / "benchmarks_detail"
+            assets = public / "drawio/Isolated"
+            details.mkdir(parents=True)
+            assets.mkdir(parents=True)
+            spec = assets / "Isolated.en.spec.yaml"
+            arch = assets / "Isolated.en.arch.json"
+            spec.write_text("nodes: []\n", encoding="utf-8")
+            arch.write_text("{}\n", encoding="utf-8")
+            record = {
+                "id": "Isolated", "name": "Isolated", "l1": "通用语言能力", "year": "2026",
+                "drawio_spec_en": "drawio/Isolated/Isolated.en.spec.yaml",
+                "drawio_flowchart_en": "drawio/Isolated/Isolated.en.svg",
+            }
+            catalog = public / "benchmarks.json"
+            catalog.write_text(json.dumps([record]), encoding="utf-8")
+            detail = details / "Isolated.json"
+            detail.write_text(json.dumps({
+                "name": "Isolated detail",
+                "drawio_arch_en": "drawio/Isolated/Isolated.en.arch.json",
+            }), encoding="utf-8")
+
+            def run(*flags):
+                return subprocess.run(
+                    [sys.executable, str(ROOT / "scripts/validate_benchmarks.py"),
+                     "--root", str(root), *flags],
+                    cwd=tmp, capture_output=True, text=True,
+                )
+
+            snapshot = {p: (p.read_bytes(), p.stat().st_mtime_ns)
+                        for p in root.rglob("*") if p.is_file()}
+            for _ in range(2):
+                result = run("--html")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("Total entries: 1", result.stdout)
+                self.assertIn("Detail files:  1", result.stdout)
+            self.assertEqual(snapshot, {p: (p.read_bytes(), p.stat().st_mtime_ns)
+                                       for p in root.rglob("*") if p.is_file()})
+            result = run()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("missing public asset", result.stdout)
+            (assets / "Isolated.en.svg").write_text("<svg/>", encoding="utf-8")
+            self.assertEqual(run().returncode, 0)
+            arch.unlink()
+            result = run("--html")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("[Isolated detail] drawio_arch_en points to missing", result.stdout)
+            arch.write_text("{}\n", encoding="utf-8")
+            spec.unlink()
+            result = run("--html")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("drawio_spec_en points to missing", result.stdout)
+        self.assertEqual(before, [(p.read_bytes(), p.stat().st_mtime_ns) for p in originals])
 
 
 class OpennessValidationTest(unittest.TestCase):

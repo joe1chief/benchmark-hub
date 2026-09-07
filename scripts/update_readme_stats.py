@@ -11,6 +11,7 @@ update_readme_stats.py
   - 项目结构注释中的数量
 """
 
+import argparse
 import json
 import re
 import sys
@@ -22,8 +23,14 @@ DATA_FILE = ROOT / "client" / "public" / "benchmarks.json"
 README_FILE = ROOT / "README.md"
 
 
-def load_stats() -> dict:
-    data = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+def load_stats(data=None, *, root=None) -> dict:
+    """Compute existing statistics from records, or read the selected repository.
+
+    Supplying data (including an empty list) performs no filesystem access.
+    """
+    if data is None:
+        data_file = Path(root) / "client" / "public" / "benchmarks.json" if root is not None else DATA_FILE
+        data = json.loads(data_file.read_text(encoding="utf-8"))
     total = len(data)
     cats = Counter(b.get("default_l1") or b.get("l1", "Unknown") for b in data)
     dims = len(cats)
@@ -38,10 +45,15 @@ def load_stats() -> dict:
     }
 
 
-def update_readme(stats: dict) -> tuple[str, bool]:
+def update_readme(stats: dict, text=None, *, root=None) -> tuple[str, bool]:
+    """Return updated text and a changed flag without writing any files.
+
+    Supplying text makes the transformation pure; otherwise read README at root.
+    """
     total = stats["total"]
     dims = stats["dims"]
-    readme = README_FILE.read_text(encoding="utf-8")
+    readme_file = Path(root) / "README.md" if root is not None else README_FILE
+    readme = readme_file.read_text(encoding="utf-8") if text is None else text
     original = readme
 
     # 1. 更新 shields.io Badge 中的数字
@@ -107,9 +119,15 @@ def update_readme(stats: dict) -> tuple[str, bool]:
     return readme, changed
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Update README benchmark statistics")
+    parser.add_argument('--root', type=Path, help="Repository root (defaults to this script's repository)")
+    parser.add_argument('summary_file', nargs='?', type=Path, help="Append CI summary here (relative paths use the current working directory)")
+    args = parser.parse_args(argv)
+    root = args.root.resolve() if args.root is not None else None
+    readme_file = root / "README.md" if root is not None else README_FILE
     print("📊 Loading stats from benchmarks.json...")
-    stats = load_stats()
+    stats = load_stats(root=root)
     print(f"   Total: {stats['total']} benchmarks")
     print(f"   Dims:  {stats['dims']} capability dimensions")
     print(f"   Widely tested: {stats['widely_tested']}")
@@ -117,18 +135,18 @@ def main():
     print(f"   Categories: {list(stats['cats'].keys())}")
 
     print("\n📝 Updating README.md...")
-    new_content, changed = update_readme(stats)
+    new_content, changed = update_readme(stats, root=root)
 
     if changed:
-        README_FILE.write_text(new_content, encoding="utf-8")
+        readme_file.write_text(new_content, encoding="utf-8")
         print("✅ README.md updated successfully.")
     else:
         print("ℹ️  README.md is already up to date, no changes needed.")
 
     # 输出供 CI 使用的环境变量
-    summary_file = Path(sys.argv[1]) if len(sys.argv) > 1 else None
+    summary_file = args.summary_file
     if summary_file:
-        with open(summary_file, "a") as f:
+        with open(summary_file, "a", encoding="utf-8") as f:
             f.write(f"BENCHMARK_TOTAL={stats['total']}\n")
             f.write(f"BENCHMARK_DIMS={stats['dims']}\n")
             f.write(f"BENCHMARK_CHANGED={'true' if changed else 'false'}\n")

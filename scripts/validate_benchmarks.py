@@ -105,15 +105,15 @@ def canonicalize_openness(value) -> Optional[str]:
     return None
 
 
-def resolve_public_asset_path(value: str) -> Optional[Path]:
+def resolve_public_asset_path(value: str, *, public_dir: Optional[Path] = None) -> Optional[Path]:
     if URL_RE.match(value) or value.startswith(("data:", "blob:")):
         return None
     normalized = value.lstrip("/") if value.startswith("/") else value
     normalized = normalized[2:] if normalized.startswith("./") else normalized
-    return PUBLIC_DIR / normalized
+    return (PUBLIC_DIR if public_dir is None else Path(public_dir)) / normalized
 
 
-def validate_drawio_assets(entry: dict, prefix: str, *, html: bool = False):
+def validate_drawio_assets(entry: dict, prefix: str, *, html: bool = False, public_dir: Optional[Path] = None):
     for field, suffix in DRAWIO_ASSET_FIELDS.items():
         value = entry.get(field)
         if value in (None, ""):
@@ -124,7 +124,7 @@ def validate_drawio_assets(entry: dict, prefix: str, *, html: bool = False):
         if not value.endswith(suffix):
             err(f"{prefix} {field} must end with '{suffix}', got: '{value}'")
             continue
-        asset_path = resolve_public_asset_path(value)
+        asset_path = resolve_public_asset_path(value, public_dir=public_dir)
         optional_export = html and suffix in ('.svg', '.drawio', '.png')
         if not optional_export and asset_path is not None and not asset_path.exists():
             err(f"{prefix} {field} points to missing public asset: '{value}'")
@@ -208,15 +208,21 @@ def validate_identity_record(entry, index, catalog_id_counts, display_name_count
     return issues
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description='Validate benchmark catalog and referenced assets')
     parser.add_argument('--html', action='store_true', help='Require HTML graph assets; legacy image exports are optional')
-    args = parser.parse_args()
-    print(f"Validating {DATA_PATH} ...")
+    parser.add_argument('--root', type=Path, help="Repository root (defaults to this script's repository)")
+    args = parser.parse_args(argv)
+    public_dir = args.root.resolve() / 'client' / 'public' if args.root is not None else PUBLIC_DIR
+    data_path = public_dir / 'benchmarks.json' if args.root is not None else DATA_PATH
+    detail_dir = public_dir / 'benchmarks_detail' if args.root is not None else DETAIL_DIR
+    errors.clear()
+    warnings.clear()
+    print(f"Validating {data_path} ...")
 
     # 1. Valid JSON
     try:
-        with open(DATA_PATH, encoding="utf-8") as f:
+        with open(data_path, encoding="utf-8") as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         print(f"❌ FATAL: Invalid JSON — {e}")
@@ -277,11 +283,11 @@ def main():
         if flowchart is not None and not isinstance(flowchart, str):
             err(f"{prefix} mermaid_flowchart must be a string or null, got: {type(flowchart).__name__}")
 
-        validate_drawio_assets(entry, prefix, html=args.html)
+        validate_drawio_assets(entry, prefix, html=args.html, public_dir=public_dir)
 
     detail_count = 0
-    if DETAIL_DIR.exists():
-        for detail_path in sorted(DETAIL_DIR.glob("*.json")):
+    if detail_dir.exists():
+        for detail_path in sorted(detail_dir.glob("*.json")):
             detail_count += 1
             try:
                 with open(detail_path, encoding="utf-8") as f:
@@ -292,7 +298,7 @@ def main():
             if not isinstance(detail, dict):
                 err(f"[{detail_path.name}] detail JSON root must be an object")
                 continue
-            validate_drawio_assets(detail, f"[{detail.get('name', detail_path.stem)}]", html=args.html)
+            validate_drawio_assets(detail, f"[{detail.get('name', detail_path.stem)}]", html=args.html, public_dir=public_dir)
 
     # Summary
     print()

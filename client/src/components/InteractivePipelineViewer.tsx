@@ -22,6 +22,7 @@ import {
   Info,
 } from 'lucide-react';
 import type { Benchmark } from '@/types/benchmark';
+import { layoutPipeline, pipelineEdgeGeometry } from '@/lib/pipelineLayout';
 import { useLang } from '@/contexts/LangContext';
 
 interface ArchNode {
@@ -58,6 +59,40 @@ interface Props {
   isDark: boolean;
   onFallbackToSvg?: () => void;
   initialFullscreen?: boolean;
+}
+
+// Shared with SSR contract tests so branch labels and line styles exercise the
+// same SVG element that the interactive viewer displays.
+export function PipelineEdge({ edge, from, to, isDark, isHighlighted = false }: {
+  edge: ArchEdge;
+  from: { id: string; x: number; y: number };
+  to: { id: string; x: number; y: number };
+  isDark: boolean;
+  isHighlighted?: boolean;
+}) {
+  const { d, labelX, labelY } = pipelineEdgeGeometry(from, to);
+  return (
+    <g>
+      <path d={d} fill="none"
+        stroke={isHighlighted ? '#00F0FF' : (isDark ? 'rgba(71, 85, 105, 0.45)' : 'rgba(148, 163, 184, 0.55)')}
+        strokeWidth={isHighlighted ? 2.5 : 1.5}
+        strokeDasharray={edge.type === 'primary' ? 'none' : '5,5'}
+        markerEnd={isHighlighted ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+        className="transition-colors duration-200" />
+      {edge.label && (
+        <text x={labelX} y={labelY} textAnchor="middle" fontSize="11"
+          fill={isHighlighted ? '#0891B2' : (isDark ? '#CBD5E1' : '#475569')}
+          stroke={isDark ? '#020617' : '#F1F5F9'} strokeWidth="4" paintOrder="stroke" strokeLinejoin="round">
+          {edge.label}
+        </text>
+      )}
+      {isHighlighted && (
+        <circle r="3.5" fill="#00F0FF">
+          <animateMotion path={d} dur="2s" repeatCount="indefinite" />
+        </circle>
+      )}
+    </g>
+  );
 }
 
 // Node Type Theme Configuration
@@ -199,99 +234,10 @@ export default function InteractivePipelineViewer({
       });
   }, [benchmark.id, isEn]);
 
-  // Compute Topological Layers & Coordinates
-  const { laidOutNodes, nodeMap, maxLayers, maxRowHeight } = useMemo(() => {
-    if (!archData?.nodes) {
-      return { laidOutNodes: [], nodeMap: new Map<string, ArchNode>(), maxLayers: 0, maxRowHeight: 0 };
-    }
-
-    const nMap = new Map<string, ArchNode>();
-    archData.nodes.forEach(n => {
-      nMap.set(n.id, { ...n });
-    });
-
-    const inDegree = new Map<string, number>();
-    const adj = new Map<string, string[]>();
-
-    archData.nodes.forEach(n => {
-      inDegree.set(n.id, 0);
-      adj.set(n.id, []);
-    });
-
-    archData.edges.forEach(e => {
-      if (inDegree.has(e.to)) {
-        inDegree.set(e.to, (inDegree.get(e.to) || 0) + 1);
-      }
-      if (adj.has(e.from)) {
-        adj.get(e.from)?.push(e.to);
-      }
-    });
-
-    // Compute longest path from roots (layers)
-    const layers = new Map<string, number>();
-    const queue: string[] = [];
-
-    archData.nodes.forEach(n => {
-      if ((inDegree.get(n.id) || 0) === 0) {
-        layers.set(n.id, 0);
-        queue.push(n.id);
-      }
-    });
-
-    while (queue.length > 0) {
-      const u = queue.shift()!;
-      const currentLayer = layers.get(u) || 0;
-      const neighbors = adj.get(u) || [];
-
-      for (const v of neighbors) {
-        const nextLayer = currentLayer + 1;
-        if (!layers.has(v) || (layers.get(v)! < nextLayer)) {
-          layers.set(v, nextLayer);
-          queue.push(v);
-        }
-      }
-    }
-
-    // Default layer 0 if disconnected
-    archData.nodes.forEach(n => {
-      if (!layers.has(n.id)) {
-        layers.set(n.id, 0);
-      }
-    });
-
-    // Group nodes by layer
-    const layerBuckets = new Map<number, ArchNode[]>();
-    let maxL = 0;
-    archData.nodes.forEach(n => {
-      const l = layers.get(n.id) || 0;
-      if (l > maxL) maxL = l;
-      if (!layerBuckets.has(l)) layerBuckets.set(l, []);
-      layerBuckets.get(l)!.push(nMap.get(n.id)!);
-    });
-
-    // Position coordinates
-    const COLUMN_WIDTH = 290;
-    const ROW_HEIGHT = 160;
-    let maxRows = 0;
-
-    layerBuckets.forEach((nodesInLayer, layerIndex) => {
-      if (nodesInLayer.length > maxRows) maxRows = nodesInLayer.length;
-      nodesInLayer.forEach((node, rowIndex) => {
-        node.layer = layerIndex;
-        node.column = layerIndex;
-        node.row = rowIndex;
-        node.x = layerIndex * COLUMN_WIDTH + 40;
-        node.y = rowIndex * ROW_HEIGHT + 40;
-      });
-    });
-
-    return {
-      laidOutNodes: Array.from(nMap.values()),
-      nodeMap: nMap,
-      maxLayers: maxL + 1,
-      maxRowHeight: maxRows * ROW_HEIGHT + 120,
-    };
-  }, [archData]);
+  // Feedback loops share a column; the condensed DAG determines downstream layers.
+  const { laidOutNodes, nodeMap, maxLayers, maxRowHeight } = useMemo(
+    () => layoutPipeline(archData), [archData],
+  );
 
   // Simulation execution loop
   useEffect(() => {
@@ -547,37 +493,8 @@ export default function InteractivePipelineViewer({
                 selectedNodeId === edge.to ||
                 (activeRelations.upstream.has(edge.from) && activeRelations.downstream.has(edge.to));
 
-              // Anchor coordinates
-              const NODE_W = 240;
-              const NODE_H = 110;
-              const x1 = fromNode.x + NODE_W;
-              const y1 = fromNode.y + NODE_H / 2;
-              const x2 = toNode.x;
-              const y2 = toNode.y + NODE_H / 2;
-
-              // Smooth Bezier Curve Path
-              const dx = Math.max((x2 - x1) * 0.5, 40);
-              const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-
-              return (
-                <g key={`edge-${idx}`}>
-                  <path
-                    d={d}
-                    fill="none"
-                    stroke={isHighlighted ? '#00F0FF' : (isDark ? 'rgba(71, 85, 105, 0.45)' : 'rgba(148, 163, 184, 0.55)')}
-                    strokeWidth={isHighlighted ? 2.5 : 1.5}
-                    strokeDasharray={edge.type === 'dashed' ? '5,5' : 'none'}
-                    markerEnd={isHighlighted ? 'url(#arrow-active)' : 'url(#arrow-default)'}
-                    className="transition-colors duration-200"
-                  />
-                  {/* Glowing Particle along highlighted edge */}
-                  {isHighlighted && (
-                    <circle r="3.5" fill="#00F0FF">
-                      <animateMotion path={d} dur="2s" repeatCount="indefinite" />
-                    </circle>
-                  )}
-                </g>
-              );
+              return <PipelineEdge key={`edge-${idx}`} edge={edge} from={fromNode} to={toNode}
+                isDark={isDark} isHighlighted={isHighlighted} />;
             })}
           </svg>
 

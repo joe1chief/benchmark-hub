@@ -227,18 +227,89 @@ test('assigns clustered AutomationBench workflow shapes to six fixed domains', (
     const edges = edgeSet(arch);
     assert.match(nodes.get('cluster_shapes')?.label ?? '', /cluster.*workflow.*shape|聚类.*工作流.*形态/iu);
     assert.match(nodes.get('assign_domains')?.label ?? '', /six predefined|六个预定义/iu);
-    assert.match(nodes.get('release')?.label ?? '', /600.*600\+/su);
+    assert.match(nodes.get('release')?.label ?? '', /600.*100.*1\.0\.6/su);
+    assert.match(nodes.get('private_tasks')?.label ?? '', /v1.*600\+/su);
+    assert.match(nodes.get('simple_tasks')?.label ?? '', /200.*(?:Excluded from|不包含)/su);
     assert.match(nodes.get('api_world')?.label ?? '', /500.*47/su);
     assert.match(nodes.get('official_score')?.label ?? '', /all-or-nothing|全有或全无/iu);
     assert.match(nodes.get('partial_note')?.label ?? '', /training.*diagnostic only|仅.*训练.*诊断/iu);
     assert.ok(edges.has('workflow_patterns->cluster_shapes:primary'));
     assert.ok(edges.has('cluster_shapes->assign_domains:primary'));
     assert.ok(edges.has('assign_domains->task_generation:primary'));
-    assert.ok(edges.has('end_state->official_score:primary'));
-    assert.ok(edges.has('official_score->partial_note:optional'));
-    assert.ok(edges.has('official_score->report:primary'));
+    assert.ok(edges.has('api_world->validation:data'));
+    assert.ok(edges.has('api_world->initialize:data'));
+    assert.equal(edges.has('hardening->api_world:primary'), false);
+    assert.ok(edges.has('end_state->score_scope:primary'));
+    assert.ok(edges.has('score_scope->assertion_ratio:primary'));
+    assert.ok(edges.has('assertion_ratio->official_score:primary'));
+    assert.ok(edges.has('assertion_ratio->partial_note:optional'));
+    assert.equal(edges.has('official_score->partial_note:optional'), false);
     assert.equal(edges.has('partial_note->report:primary'), false);
   }
+});
+
+test('keeps AutomationBench construction checks separate from public, private and simple evaluation', () => {
+  for (const language of ['en', 'zh']) {
+    const arch = readArch('AutomationBench', language);
+    const nodes = nodeMap(arch);
+    const edges = edgeSet(arch);
+    const modules = new Map(arch.modules.map(module => [module.id, new Set(module.nodes)]));
+    for (const id of ['task_contract', 'api_world', 'hint_audit', 'validation', 'reward_audit', 'release', 'private_tasks', 'simple_tasks']) {
+      assert.ok(modules.get('construction').has(id), id);
+      assert.equal(nodes.get(id).module, 'construction', id);
+    }
+    for (const id of ['initialize', 'agent_run', 'official_score', 'report', 'private_report', 'simple_report']) {
+      assert.ok(modules.get('evaluation').has(id), id);
+      assert.equal(nodes.get(id).module, 'evaluation', id);
+    }
+    assert.match(nodes.get('hint_audit').label, /No actual parameter values|不包含实际参数值/u);
+    assert.ok(edges.has('hint_audit->validation:primary'));
+    assert.ok(edges.has('validation->hardening:optional'));
+    assert.ok(edges.has('reward_audit->task_contract:optional'));
+    assert.equal(arch.edges.some(edge => edge.from === 'hint_audit' && ['initialize', 'agent_run'].includes(edge.to)), false);
+    assert.ok(edges.has('private_tasks->private_report:data'));
+    assert.equal(arch.edges.some(edge => edge.from === 'private_tasks' && ['initialize', 'report'].includes(edge.to)), false);
+    assert.ok(edges.has('simple_tasks->initialize:optional'));
+    assert.ok(edges.has('split_gate->simple_report:optional'));
+    assert.ok(edges.has('split_gate->report:primary'));
+    assert.equal(arch.edges.some(edge => edge.from === 'simple_report' && edge.to === 'report'), false);
+  }
+});
+
+test('preserves AutomationBench 1.0.6 scored-assertion and bounded abort-repair contracts', () => {
+  for (const language of ['en', 'zh']) {
+    const arch = readArch('AutomationBench', language);
+    const nodes = nodeMap(arch);
+    const edges = edgeSet(arch);
+    assert.match(nodes.get('score_scope').label, /Explicit exclusions|显式排除/u);
+    assert.match(nodes.get('score_scope').label, /excluded:false/u);
+    assert.match(nodes.get('assertion_ratio').label, /zero denominator gives 0|分母为零则为 0/u);
+    assert.match(nodes.get('official_score').label, /partial_credit = 1/u);
+    assert.match(nodes.get('official_score').label, /at least one|至少存在一项/u);
+    assert.ok(edges.has('search_tools->agent_run:data'));
+    assert.ok(edges.has('execute_tools->agent_run:primary'));
+    assert.match(nodes.get('completion_gate').label, /3/u);
+    assert.match(nodes.get('completion_gate').label, /tasks\/skip/u);
+    assert.match(nodes.get('completion_gate').label, /cap minus 2|上限减 2/u);
+    assert.match(nodes.get('rerun_aborted').label, /task name|任务名/u);
+    assert.match(nodes.get('rerun_aborted').label, /search_top_k/u);
+    assert.ok(edges.has('completion_gate->rerun_aborted:optional'));
+    assert.ok(edges.has('rerun_aborted->completion_gate:primary'));
+    assert.ok(edges.has('completion_gate->incomplete_result:optional'));
+    assert.match(nodes.get('incomplete_result').label, /exit status alone is insufficient|退出码不能证明完整性/u);
+    const bypass = arch.edges.find(edge => edge.from === 'completion_gate' && edge.to === 'split_gate' && edge.type === 'optional');
+    assert.match(bypass?.label ?? '', /disabled or sliced|禁用检查或采用切片/u);
+    assert.equal(arch.edges.some(edge => edge.from === 'incomplete_result' && edge.to === 'report'), false);
+  }
+  const detail = readDetail('AutomationBench');
+  assert.deepEqual(detail, readCatalogRecord('AutomationBench'));
+  assert.match(detail.metric_en, /all scored assertions.*nonzero denominator/u);
+  assert.match(detail.scale_en, /600.*200.*current private size is not independently verifiable/u);
+  const manifest = readJson(join(publicDir, 'benchmarks_build_process_manifest.json')).find(entry => entry.id === 'AutomationBench');
+  assert.equal(manifest.html_generation.format, 'html-flowchart-generation/v1');
+  assert.match(manifest.source_url, /4a8e1061254004d9dac807054eed33fad7d1ff14/u);
+  assert.equal(manifest.paper_alignment_review.reviewed_at, '2026-09-07');
+  assert.equal(manifest.paper_alignment_review.source_locator, manifest.source_locator);
 });
 
 test('keeps each detail fallback synchronized with every reviewed node and edge', () => {
@@ -269,7 +340,7 @@ test('pins primary-source locators and review verdicts', () => {
     AstaBench: /REDRAW.*Table 2.*Appendices E.*F.*36c9/isu,
     'AthenaBench-Mini': /REDRAW.*Sections 3\.1-3\.6.*Tables 1-2/isu,
     AudioMC: /REDRAW.*Figure 3.*Appendices A\.4.*A\.6.*90ea/isu,
-    AutomationBench: /REDRAW.*Sections 2-4.*Tables 1-2.*Section 6.*a321/isu,
+    AutomationBench: /commit 4a8e1061254004d9dac807054eed33fad7d1ff14.*package 1\.0\.6.*rubric.*arXiv:2604\.18934v1 Sections 2-4.*2026-09-07/isu,
   };
   for (const [id, pattern] of Object.entries(expected)) {
     assert.match(readDetail(id).drawio_review_note, pattern, id);
