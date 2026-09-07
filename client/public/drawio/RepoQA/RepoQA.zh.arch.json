@@ -1,245 +1,157 @@
 {
   "version": 1,
-  "title": "RepoQA 数据构建、检索任务与计分流程",
+  "title": "RepoQA 基准构建、检索任务与评分流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 20,
-    "edges": 18,
-    "modules": 0
+    "nodes": 12,
+    "edges": 11,
+    "modules": 2
   },
   "nodes": [
     {
       "id": "repo_search",
-      "label": "候选查询（可选）",
+      "label": "GitHub 目标仓库源\n跨越 5 种主流语言的 50 个高星代码仓库\nPython · C++ · Java · TypeScript · Rust",
       "type": "database",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "repo_gate",
-      "label": "人工仓库准则",
+      "id": "dep_analysis",
+      "label": "跨文件依赖与拓扑排序\n分析入口目录源文件的模块引用图\n按依赖逻辑对全仓库代码文件实施拓扑排序",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "pinned_repos",
-      "label": "固定commit清单",
+      "id": "treesitter_extract",
+      "label": "Tree-Sitter 语法函数抽取\n解析 AST 并提取全部非重名具体函数定义\n过滤语法错误并限制函数体长度在 2KB 内",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "needle_selection",
+      "label": "针函数定位与选取\n每个代码仓库均匀选取 10 个代表性函数\n总计锁定 500 个金标待检索针函数 (Needles)",
       "type": "database",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "source_snapshot",
-      "label": "入口源码快照",
-      "type": "document",
-      "size": "medium"
-    },
-    {
-      "id": "dependency_graph",
-      "label": "语言依赖图",
+      "id": "desc_generation",
+      "label": "GPT-4 语义描述合成\n根据函数实现生成精炼自然语言功能描述\n描述业务逻辑并严格防范源码直接泄漏",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "topo_source",
-      "label": "拓扑源码序列",
-      "type": "process",
-      "size": "medium"
+      "id": "needle_quality_gate",
+      "label": "针函数描述消歧质检门\n自然语言描述是否在全库中唯一锁定目标？\n经专家与多模型交叉核验无二义性",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "parsed_functions",
-      "label": "Tree-sitter函数",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "function_filter",
-      "label": "唯一名·不超2KB",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "needle_sample",
-      "label": "64箱·随机10",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "gpt_annotation",
-      "label": "GPT-4四段描述",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "merge_description",
-      "label": "合并描述字段",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "dataset_release",
-      "label": "v1 500·发布600",
-      "type": "database",
-      "size": "medium"
-    },
-    {
-      "id": "snf_prompt",
-      "label": "16K检索提示",
-      "type": "document",
-      "size": "medium"
-    },
-    {
-      "id": "model_output",
-      "label": "被测模型输出",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "sanitize_output",
-      "label": "代码块清洗",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "needle_bleu",
-      "label": "10项needle BLEU",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "best_target",
-      "label": "最高相似目标",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "pass_gate",
-      "label": "名称命中·至少0.8",
-      "type": "process",
-      "size": "medium"
-    },
-    {
-      "id": "aggregate_score",
-      "label": "汇总Pass@1",
+      "id": "discard_ambiguous",
+      "label": "淘汰歧义与泛化针函数\n剔除描述过于泛化或库内存在近似实现的函数\n确保基准具备极高事实辨别力",
       "type": "terminal",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "quality_gap",
-      "label": "未披露复核门",
+      "id": "frozen_benchmark",
+      "label": "RepoQA 冻结评测基准集\n包含 500 个多语言代码大海捞针任务\n50 个代码仓库 x 每库 10 个精准针函数",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "context_assembly",
+      "label": "长程上下文草堆植入装配\n组装 16K-128K 词元全仓库代码上下文\n将针函数随机置于 10% 至 100% 深度位置",
       "type": "document",
-      "size": "medium"
+      "size": "xl"
+    },
+    {
+      "id": "model_inference",
+      "label": "模型代码检索与提取推理\n模型阅读全库上下文定位目标函数\n完整生成并提取对应语义描述的源码实现",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "treesitter_scoring",
+      "label": "Tree-Sitter 块抽取与打分\n提取模型输出中首个合法的语法代码块\n计算精确匹配 (EM) 与 CodeBLEU>=0.8 判定",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric_reporting",
+      "label": "代码大海捞针检索准确率\n按编程语言、仓库类别与植入深度报告准确率\n衡量大模型长代码上下文精准检索能力",
+      "type": "terminal",
+      "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
       "from": "repo_search",
-      "to": "repo_gate",
-      "type": "optional"
+      "to": "dep_analysis",
+      "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "repo_gate",
-      "to": "pinned_repos",
+      "from": "dep_analysis",
+      "to": "treesitter_extract",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "pinned_repos",
-      "to": "source_snapshot",
+      "from": "treesitter_extract",
+      "to": "needle_selection",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "source_snapshot",
-      "to": "dependency_graph",
+      "from": "needle_selection",
+      "to": "desc_generation",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "dependency_graph",
-      "to": "topo_source",
+      "from": "desc_generation",
+      "to": "needle_quality_gate",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "topo_source",
-      "to": "parsed_functions",
+      "from": "needle_quality_gate",
+      "to": "frozen_benchmark",
+      "label": "描述唯一且准确",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "parsed_functions",
-      "to": "function_filter",
+      "from": "needle_quality_gate",
+      "to": "discard_ambiguous",
+      "label": "存在歧义或重复",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "function_filter",
-      "to": "needle_sample",
+      "from": "frozen_benchmark",
+      "to": "context_assembly",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "needle_sample",
-      "to": "gpt_annotation",
+      "from": "context_assembly",
+      "to": "model_inference",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "gpt_annotation",
-      "to": "merge_description",
+      "from": "model_inference",
+      "to": "treesitter_scoring",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "merge_description",
-      "to": "dataset_release",
-      "type": "primary"
-    },
-    {
-      "id": "edge-12",
-      "from": "dataset_release",
-      "to": "snf_prompt",
-      "type": "primary"
-    },
-    {
-      "id": "edge-13",
-      "from": "snf_prompt",
-      "to": "model_output",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "model_output",
-      "to": "sanitize_output",
-      "type": "primary"
-    },
-    {
-      "id": "edge-15",
-      "from": "sanitize_output",
-      "to": "needle_bleu",
-      "type": "primary"
-    },
-    {
-      "id": "edge-16",
-      "from": "needle_bleu",
-      "to": "best_target",
-      "type": "primary"
-    },
-    {
-      "id": "edge-17",
-      "from": "best_target",
-      "to": "pass_gate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-18",
-      "from": "pass_gate",
-      "to": "aggregate_score",
+      "from": "treesitter_scoring",
+      "to": "metric_reporting",
       "type": "primary"
     }
   ],

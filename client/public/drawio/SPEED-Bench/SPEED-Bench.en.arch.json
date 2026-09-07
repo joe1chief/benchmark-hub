@@ -2,103 +2,85 @@
   "version": 1,
   "title": "SPEED-Bench Build and Evaluation Process",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 15,
-    "edges": 14,
-    "modules": 0
+    "nodes": 12,
+    "edges": 13,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "Pool 18 Sets",
+      "id": "public_sources",
+      "label": "Public Prompt Sources\n18 Diverse Datasets & Prompt Collections\nHumanEval · GSM8K · ShareGPT · UltraChat",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "Classify 11",
+      "id": "category_classification",
+      "label": "Category Classification & Tagging\nClassify Prompts into 11 Semantic Domains\nCode · Math · Multi-Turn · Reasoning · Chat",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "Embed Prompts",
+      "id": "split_curation_gate",
+      "label": "Benchmark Split Decision Gate\nSelect Diverse Qualitative Prompts (880)\nor Synthesize Serving Workloads (1k-32k)?",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "qualitative_pipeline",
+      "label": "Embedding Diversity Selection\ntext-embedding-3-large & Greedy Min-Similarity\n80 Diverse Prompts per Category (880 Total)",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "Select 880",
+      "id": "throughput_pipeline",
+      "label": "Length & Entropy Bucketing\n5 Length Buckets (1k, 2k, 8k, 16k, 32k)\n3 Entropy Groups x 512 Prompts per Bucket",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "Set Entropy",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "Bucket 1k-32k",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_7",
-      "label": "Truncate/Pad",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_8",
-      "label": "Package Splits",
+      "id": "frozen_benchmark",
+      "label": "SPEED-Bench Dual Benchmark Release\n880 Semantically Diverse Qualitative Tasks\n7,680 Realistic Serving Throughput Workloads",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "Tokenize Once",
+      "id": "offline_tokenization",
+      "label": "Offline Tokenizer Normalization\nStandardize Prompts Outside Inference Engine\nEliminates Client-Side Tokenization Bottlenecks",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "Run Engines",
+      "id": "spec_verification_gate",
+      "label": "Speculative Token Verification Gate\nDraft Tokens Accepted by Target Model Verifier?\nCompare Candidate Logits in Target Sandbox",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "accept_branch",
+      "label": "Draft Acceptance Fast-Path\nTarget Verifier Confirms Draft Tokens\nAdvance Context Window by Accepted Length",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "Stream Results",
+      "id": "rollback_branch",
+      "label": "Draft Rejection & Resampling Path\nTarget Model Corrects Mismatched Token\nRoll Back Speculative State & Resample from Target",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "Measure AR/AL",
+      "id": "token_telemetry",
+      "label": "Token Acceptance & Rollback Telemetry\nCompute Accepted Length (AL) & Rollback Steps\nDispatches Concurrent Requests up to 512",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "Measure TPS",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_14",
-      "label": "Sweep Serving",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_15",
-      "label": "Report Speedup",
+      "id": "metric_reporting",
+      "label": "Speculative Serving Metric Reporting\nAcceptance Rate · Output TPS · User TPS\nStandardized Speedup across SGLang & vLLM",
       "type": "terminal",
       "size": "xl"
     }
@@ -106,86 +88,84 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "from": "public_sources",
+      "to": "category_classification",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "category_classification",
+      "to": "split_curation_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "split_curation_gate",
+      "to": "qualitative_pipeline",
+      "label": "Qualitative Split",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "from": "split_curation_gate",
+      "to": "throughput_pipeline",
+      "label": "Throughput Split",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "from": "qualitative_pipeline",
+      "to": "frozen_benchmark",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "throughput_pipeline",
+      "to": "frozen_benchmark",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "frozen_benchmark",
+      "to": "offline_tokenization",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "offline_tokenization",
+      "to": "spec_verification_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "spec_verification_gate",
+      "to": "accept_branch",
+      "label": "Verified Match",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "from": "spec_verification_gate",
+      "to": "rollback_branch",
+      "label": "Draft Mismatch",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "accept_branch",
+      "to": "token_telemetry",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "from": "rollback_branch",
+      "to": "token_telemetry",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "step_14",
-      "to": "step_15",
+      "from": "token_telemetry",
+      "to": "metric_reporting",
       "type": "primary"
     }
   ],

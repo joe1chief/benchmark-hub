@@ -1,92 +1,110 @@
 {
   "version": 1,
-  "title": "RareBench 构建与评测流程",
+  "title": "RareBench 数据集构建流水线与双轨临床评测协议",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
-    "modules": 0
+    "nodes": 16,
+    "edges": 18,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "患者数据来源",
+      "id": "public_source",
+      "label": "公开罕见病病例库\n汇总 MME 40/17、LIRICAL 370/252、HMS 88/39 与 RAMEDIS 624/63\n共计覆盖 362 种罕见病的 1,122 份临床真实病例",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "pumch_source",
+      "label": "北京协和医院 (PUMCH) 电子病历队列\n1,650 份三甲医院真实临床电子病历全文数据\n包含 1,183 份罕见病病例与 467 份常见病鉴别病例",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "privacy_filter",
+      "label": "临床数据脱敏与质控审查\n全面消除患者隐私信息并由协和医院资深专家全程审查\n剔除表型描述少于 3 项或出院诊断不明确的低质病历",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "quality_gate",
+      "label": "临床病历质控与确诊标准核验？\n核验病史辅助检查完整性与出院金标准诊断结论\n确保具备可靠的标准表型映射与疾病归类",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "flawed_discard",
+      "label": "残缺与诊断模糊病历剔除池\n过滤病史严重残缺或诊断存疑的临床记录\n确保基准入选病例具备 100% 专家级确诊可靠性",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "task_allocation",
+      "label": "多任务临床子集分流划分\n任务一: 87份病历(34病种); 任务二: 33份病历(ALS/PNH/MSA)\n任务三: 527份(77病种); 任务四: 2,185例全集(421种罕见病)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "knowledge_graph",
+      "label": "罕见病多源综合知识图谱\n融合 HPO 层次树、OMIM、Orphanet 与中国罕见病知识库\n包含 17,232 个表型节点、9,260 种罕见病与 21,505 条关系边",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "rarebench_freeze",
+      "label": "RareBench 冻结多任务评测基准\n标准化四项临床能力的罕见病统一基准测试集\n完整保留 KDD 2024 论文 Table 1 报告的真实样本分布",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "ic_walk_retrieval",
+      "label": "信息量加权随机游走案例检索\n基于表型信息量 (IC) 偏差的 Node2vec 图表征学习 (256维)\n为任务四检索表型余弦相似度最高的前 3 例动态少样本示例",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_formatting",
+      "label": "罕见病专科临床提示词组装\n设定罕见病临床专家系统角色与结构化输入指令\n组装零样本直接推断、思维链 (CoT) 或动态三样本提示",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "表型抽取集",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "step_3",
-      "label": "不完整病例",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "step_4",
-      "label": "罕见常见鉴别",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "step_5",
-      "label": "通用鉴别诊断",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "罕见病图谱",
+      "id": "model_inference",
+      "label": "基座大模型临床推理推断\n对标评测 11 款主流商业 API 与开源大语言模型\n自回归生成抽取的临床表型实体或候选前十鉴别诊断",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_7",
-      "label": "IC随机游走",
+      "id": "task_routing_gate",
+      "label": "评测任务类别分流判定？\n表型抽取与专病筛查 (任务1/2) vs 鉴别诊断排序 (任务3/4)\n引导模型推断结果进入专有的评测计分流水线",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "task12_eval",
+      "label": "实体抽取与特定罕见病筛查评测\n任务一: 计算 PTE、GEE 与 GES 的精确率、召回率与 F1 值\n任务二: 分别评估 ALS、PNH 与 MSA 专病鉴别召回表现",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_8",
-      "label": "动态示例检索",
+      "id": "task34_eval",
+      "label": "前十鉴别诊断命中排序评分\n统计 Top-k 召回率 (k = 1, 3, 10) 以及整体诊断预测中位数位次\n判定目标金标准疾病是否成功命中模型输出的前十列表",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "提示模型",
-      "type": "document",
+      "id": "diagnostic_error_sink",
+      "label": "诊断失误与表型遗漏分析池\n记录未命中前十列表的漏诊病例与模型幻觉虚构病名\n精细定位表型信息抽取短板与鉴别诊断推理偏差",
+      "type": "terminal",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "比较少样本",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_11",
-      "label": "解析输出",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_12",
-      "label": "报告指标",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_13",
-      "label": "医生对比",
+      "id": "metrics_reporting",
+      "label": "RareBench 综合临床诊断评测报告\n综合呈现任务一抽取 F1、任务二各病种召回率\n以及任务三/四 Top-1/3/10 鉴别准确率与中位数位次",
       "type": "terminal",
       "size": "xl"
     }
@@ -94,76 +112,150 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "from": "public_source",
+      "to": "task_allocation",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "pumch_source",
+      "to": "privacy_filter",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "privacy_filter",
+      "to": "quality_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
-      "type": "primary"
+      "from": "quality_gate",
+      "to": "task_allocation",
+      "type": "primary",
+      "label": "通过质控审查"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
-      "type": "primary"
+      "from": "quality_gate",
+      "to": "flawed_discard",
+      "type": "optional",
+      "label": "病历残缺/诊断存疑"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "task_allocation",
+      "to": "rarebench_freeze",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "knowledge_graph",
+      "to": "ic_walk_retrieval",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
-      "type": "primary"
+      "from": "rarebench_freeze",
+      "to": "ic_walk_retrieval",
+      "type": "dashed",
+      "label": "待检索病例集"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "rarebench_freeze",
+      "to": "prompt_formatting",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
-      "type": "primary"
+      "from": "ic_walk_retrieval",
+      "to": "prompt_formatting",
+      "type": "dashed",
+      "label": "动态三样本上下文"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "prompt_formatting",
+      "to": "model_inference",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "from": "model_inference",
+      "to": "task_routing_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "task_routing_gate",
+      "to": "task12_eval",
+      "type": "primary",
+      "label": "任务1与任务2 (抽取与筛查)"
+    },
+    {
+      "id": "edge-14",
+      "from": "task_routing_gate",
+      "to": "task34_eval",
+      "type": "primary",
+      "label": "任务3与任务4 (鉴别诊断)"
+    },
+    {
+      "id": "edge-15",
+      "from": "task12_eval",
+      "to": "metrics_reporting",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "task12_eval",
+      "to": "diagnostic_error_sink",
+      "type": "optional",
+      "label": "抽取或筛查未命中"
+    },
+    {
+      "id": "edge-17",
+      "from": "task34_eval",
+      "to": "metrics_reporting",
+      "type": "primary",
+      "label": "命中前十鉴别列表"
+    },
+    {
+      "id": "edge-18",
+      "from": "task34_eval",
+      "to": "diagnostic_error_sink",
+      "type": "optional",
+      "label": "未能命中前十诊断"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction_track",
+      "title": "Track A: 数据集构建流程",
+      "nodes": [
+        "public_source",
+        "pumch_source",
+        "privacy_filter",
+        "quality_gate",
+        "flawed_discard",
+        "task_allocation",
+        "knowledge_graph",
+        "rarebench_freeze"
+      ]
+    },
+    {
+      "id": "evaluation_track",
+      "title": "Track B: 评测协议与执行流",
+      "nodes": [
+        "ic_walk_retrieval",
+        "prompt_formatting",
+        "model_inference",
+        "task_routing_gate",
+        "task12_eval",
+        "task34_eval",
+        "diagnostic_error_sink",
+        "metrics_reporting"
+      ]
+    }
+  ]
 }

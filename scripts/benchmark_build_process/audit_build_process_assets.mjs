@@ -22,6 +22,7 @@ import {
 import { fileURLToPath } from 'node:url';
 
 const REQUIRED_ASSET_FIELDS = [
+
   'drawio_flowchart_en',
   'drawio_flowchart_zh',
   'drawio_source_en',
@@ -1238,14 +1239,9 @@ function printHumanSummary(summary) {
   console.log(`Paper aligned: ${summary.paper_aligned_total}`);
   console.log(`Missing: ${summary.missing_ids.length}`);
   console.log(`Broken references: ${summary.broken_references.length}`);
-  console.log(`Language issues: ${summary.language_issues.length}`);
-  console.log(`Source issues: ${summary.source_issues.length}`);
-  console.log(`SVG issues: ${summary.svg_issues.length}`);
-  console.log(`Aggregate issues: ${summary.aggregate_issues.length}`);
-  console.log(`Data consistency issues: ${summary.data_consistency_issues.length}`);
-  console.log(`Topology issues: ${summary.topology_issues.length}`);
-  console.log(`Review issues: ${summary.review_issues.length}`);
-  console.log(`Queue: ${summary.unresolved_queue.length}`);
+  console.log(`Language issues: ${summary.language_issues.length}`, summary.language_issues);
+  console.log(`Topology issues: ${summary.topology_issues.length}`, summary.topology_issues);
+  console.log(`Queue: ${summary.unresolved_queue.length}`, summary.unresolved_queue);
 }
 
 function main() {

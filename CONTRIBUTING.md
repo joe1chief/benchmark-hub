@@ -108,8 +108,11 @@ Key files:
 | `client/src/hooks/useBenchmarks.ts` | Data loading and filtering logic |
 | `client/src/components/BenchmarkCard.tsx` | Card component |
 | `client/src/components/BenchmarkDrawer.tsx` | Detail drawer (PDF, flowchart, tabs) |
+| `client/src/components/HtmlBuildProcessView.tsx` | Dual-track build process view (Construction & Evaluation) |
+| `client/src/components/PureHtmlFlowchart.tsx` | Pure CSS+HTML native flowchart rendering engine |
 | `client/src/components/FilterBar.tsx` | Filter controls |
 | `client/src/contexts/LangContext.tsx` | i18n translations (EN/ZH) |
+| `client/public/drawio/<id>/<id>.{en,zh}.arch.json` | Paper-grounded bilingual pipeline topologies |
 
 ---
 

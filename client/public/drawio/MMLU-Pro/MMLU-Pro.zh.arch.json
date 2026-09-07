@@ -1,169 +1,101 @@
 {
   "version": 1,
-  "title": "MMLU-Pro 构建流程",
+  "title": "MMLU-Pro 构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
-    "modules": 0
+    "nodes": 12,
+    "edges": 11,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "mmlu",
-      "label": "原始MMLU",
+      "id": "mmlu_corpus",
+      "label": "MMLU 与外部高阶 STEM 题库源\n原始 MMLU (57 学科) + TheoremQA、SciBench 与科学网站\n聚焦高阶多步复杂推理与数理推导",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "filter",
-      "label": "八模型过易筛选",
+      "id": "difficulty_filtering",
+      "label": "8 模型难度筛选闸门\n使用 8 款开源与闭源主流基础模型进行联合基准测试\n剔除被超过 4 款模型轻松答对的低难度简单题目",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "new_sources",
-      "label": "三个新增来源",
+      "id": "domain_consolidation",
+      "label": "14 大核心学科重组归并\n将分散的 57 个子学科重组为 14 个核心专业学术大类\n标准化文本题干表述并剔除依赖图表的非纯文本题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "distractor_augmentation",
+      "label": "10 选项候选干扰项扩充\n基于 GPT-4-Turbo 将原有 4 选项 (A-D) 扩增至 10 选项 (A-J)\n将纯盲猜基线期望准确率压缩至约 10%",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "expert_review_phase1",
+      "label": "第一阶段：学科专家严苛精审\n专业领域评审员逐题核对题干完备性与黄金答案准确性\n筛除存在学术争议、题干残缺或格式不符的选择题",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "gemini_adversarial_scan",
+      "label": "第二阶段a：Gemini-1.5 对抗式扫描\n深度扫描 10 个选项之间的语义重叠与潜在假负干扰项\n自动标记高风险歧义项与同义干扰项供专家复审",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_adjudication",
+      "label": "第二阶段b：专家针对性仲裁\n领域专家对 AI 标记的假负干扰项进行二次人工裁决\n确保所有干扰项严格错误且与标准答案互斥",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "benchmark_freeze",
+      "label": "MMLU-Pro 基准全集冻结\n收录 12,032 道高难度大学级学科试题，覆盖 14 个专业领域\n平均每题达 9.47 个精选候选选项 (A 至 J)",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "extract",
-      "label": "GPT-4抽取与核对",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "integrate",
-      "label": "整合为14领域",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "augment",
-      "label": "扩展至近十选项",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "phase1",
-      "label": "专家第一阶段",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "gemini",
-      "label": "Gemini假负扫描",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "phase2",
-      "label": "人工第二阶段",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "final_set",
-      "label": "最终12032题",
+      "id": "cot_prompting",
+      "label": "5-Shot 思维链提示词装配\n分领域提供 5 个高质量逐步推导少样本 (CoT Exemplars)\n支持 24 种提示词模板变体以评估模型稳健性",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "cot",
-      "label": "五样本思维链",
+      "id": "autoregressive_inference",
+      "label": "模型自回归思维链推理\n贪婪解码 / 低温采样生成逐步多步思维推导过程\n在完整思考推演末尾输出最终预测选项代号",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "parse",
-      "label": "正则抽取A至J",
+      "id": "regex_answer_extraction",
+      "label": "正则选项抽取解析器\n从模型输出文本末尾严格解析预测选项代号 [A-J]\n具备对 24 种不同输出格式与包装语句的高容错解析能力",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "score",
-      "label": "准确率",
+      "id": "metric_aggregation",
+      "label": "准确率与稳健性评测汇总\n分别统计 14 个细分学科及全集宏平均/微平均准确率\n计算 24 种提示词扰动下的模型性能方差与抗扰能力",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
     }
   ],
   "edges": [
-    {
-      "id": "edge-1",
-      "from": "mmlu",
-      "to": "filter",
-      "type": "primary"
-    },
-    {
-      "id": "edge-2",
-      "from": "new_sources",
-      "to": "extract",
-      "type": "primary"
-    },
-    {
-      "id": "edge-3",
-      "from": "filter",
-      "to": "integrate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-4",
-      "from": "extract",
-      "to": "integrate",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "integrate",
-      "to": "augment",
-      "type": "primary"
-    },
-    {
-      "id": "edge-6",
-      "from": "augment",
-      "to": "phase1",
-      "type": "primary"
-    },
-    {
-      "id": "edge-7",
-      "from": "phase1",
-      "to": "gemini",
-      "type": "primary"
-    },
-    {
-      "id": "edge-8",
-      "from": "gemini",
-      "to": "phase2",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "phase2",
-      "to": "final_set",
-      "type": "primary"
-    },
-    {
-      "id": "edge-10",
-      "from": "final_set",
-      "to": "cot",
-      "type": "primary"
-    },
-    {
-      "id": "edge-11",
-      "from": "cot",
-      "to": "parse",
-      "type": "primary"
-    },
-    {
-      "id": "edge-12",
-      "from": "parse",
-      "to": "score",
-      "type": "primary"
-    }
-  ],
-  "modules": []
+    { "from": "mmlu_corpus", "to": "difficulty_filtering", "type": "primary" },
+    { "from": "difficulty_filtering", "to": "domain_consolidation", "type": "primary" },
+    { "from": "domain_consolidation", "to": "distractor_augmentation", "type": "primary" },
+    { "from": "distractor_augmentation", "to": "expert_review_phase1", "type": "primary" },
+    { "from": "expert_review_phase1", "to": "gemini_adversarial_scan", "type": "primary" },
+    { "from": "gemini_adversarial_scan", "to": "human_adjudication", "type": "primary" },
+    { "from": "human_adjudication", "to": "benchmark_freeze", "type": "primary" },
+    { "from": "benchmark_freeze", "to": "cot_prompting", "type": "primary" },
+    { "from": "cot_prompting", "to": "autoregressive_inference", "type": "primary" },
+    { "from": "autoregressive_inference", "to": "regex_answer_extraction", "type": "primary" },
+    { "from": "regex_answer_extraction", "to": "metric_aggregation", "type": "primary" }
+  ]
 }

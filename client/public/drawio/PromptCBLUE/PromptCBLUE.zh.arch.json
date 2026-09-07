@@ -8,91 +8,91 @@
   "layout": "horizontal",
   "counts": {
     "nodes": 14,
-    "edges": 13,
+    "edges": 16,
     "modules": 0
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "汇集16个医疗NLP任务\n基于CBLUE及配套任务\n保留真实中文医疗文本\n覆盖理解与生成",
+      "id": "cblue_tasks",
+      "label": "16 项中文医疗自然语言处理任务\n5 项信息抽取 · 3 项分类 · 4 项自然语言推理\n2 项症状识别对话 · 2 项医学内容生成\n源自权威 CBLUE 中文医学评测基准",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "组织五类任务组\n医疗信息抽取\n文本分类与自然语言推理\n对话状态与内容生成",
+      "id": "seed_prompt_authoring",
+      "label": "专家种子提示词人工编写\n3 名计算机专业标注员编写约 2 条种子模板\n定义医学实体、诊断意图与输出槽位约束\n覆盖多样化临床自然语言指令风格",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "seed_expert_gate",
+      "label": "临床医学与 NLP 专家种子审核门控\n2 名医学临床专家 + 1 名资深 NLP 学者复核\n试题提示语境是否具备医学严谨性？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "seed_revision",
+      "label": "修正不合格种子提示词\n修正有歧义或不符合临床习惯之术语\n调整格式规范约束指令",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "为LLM改造每个任务\n转换跨度标签与结构\n全部目标表达为生成文本\n保留任务专用语义",
+      "id": "chatgpt_augmentation",
+      "label": "ChatGPT 多风格指令泛化改写\n每条审核通过的种子模板改写扩增 10 种表达\n保持实体槽位与输出格式语义严格一致\n扩增至 94 套多样化微调指令模板",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "编写94个指令模板\n使用多样自然提示措辞\n适用任务加入候选答案\n任务身份不作为模型输入",
-      "type": "document",
+      "id": "template_review_gate",
+      "label": "扩增模板质量合规审核门控\n专家委员会全量筛查大模型改写模板\n改写模板是否保持逻辑严密无幻觉？",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "生成统一JSONL模式\ninput · target · task type\nanswer choices · sample ID\n全任务共用提示响应合同",
-      "type": "document",
+      "id": "prune_template",
+      "label": "剔除病态及槽位损坏模板\n清洗占位符丢失或语义扭曲的扩增模板\n过滤表达不通顺的低质指令",
+      "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_6",
-      "label": "保留数据切分\n68,900训练 · 10,360验证\n测试A与B各10,320条\n每个切分混合全部任务",
+      "id": "serialization_freeze",
+      "label": "PromptCBLUE 冻结基准数据集发布\n训练集 68,900 · 验证集 10,360 · 测试集 10,320\n标准化统一 JSONL 规范（测试目标严格隐藏）\n覆盖 16 项医学任务且物理防泄露隔离",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_7",
-      "label": "隐藏测试集标准答案\n发布固定测试输入\ntarget字符串留空\n减少直接标签泄漏",
+      "id": "shared_model_inference",
+      "label": "统一共享主干模型推理执行\n全任务共用同一参数主干与语言模型头\n参数高效微调 (PEFT) 参数量严格低于 1%\n严格保持数据行序与 sample_id 映射",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_8",
-      "label": "定义评测设置\n各任务固定少样本示例\n全量与少样本微调\n共用文本生成接口",
+      "id": "task_type_routing",
+      "label": "按医学任务族谱评测分流\n信息抽取 vs 分类/推理 vs 临床文本生成\n分发至对应专业后处理与评分引擎",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "extraction_scoring",
+      "label": "信息抽取与症状对话状态评测\n仅依赖 Python 标准库解析实体与关系三元组\n计算严格样本级 Micro-F1 指标\n核验医学实体边界与临床关系抽取准确率",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "约束参评模型\n一个共享LLM主干\n一个共享语言模型头\nPEFT参数低于主干1%",
+      "id": "classification_scoring",
+      "label": "医学分类与自然语言推理评测\n提取并标准化分类标签与推断结论\n宏平均 Macro-F1 (CHIP-CTC, KUAKE-QIC, IMCS-DAC)\n微平均 Micro-F1 (CHIP-STS, KUAKE-QQR/IR/QTR)",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "生成全部测试响应\n原样输入固定prompt\n保持行顺序与sample ID\n每条提交一个文本答案",
+      "id": "generation_scoring",
+      "label": "临床内容生成 ROUGE 评测\n汉字字符分词与医学术语规范化\n精确核算 ROUGE-1、ROUGE-2 与 ROUGE-L\n平均宏观综合 IMCS-V2-MRG 医疗报告六大段落",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "解析为任务结构\n提供仅标准库后处理代码\n文本转实体标签或章节\n生成按任务分组results JSON",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_12",
-      "label": "评估理解类任务\n抽取任务严格micro-F1\n部分分类任务macro-F1\n其余推理任务micro-F1",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_13",
-      "label": "评估生成类任务\nROUGE-1 · ROUGE-2 · ROUGE-L\n评分前按汉字切分\nIMCS-MRG六章节分数平均",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_14",
-      "label": "按总体分数排名\n每任务选F1或ROUGE-L\n平均16项任务主指标\n在在线平台执行评测",
+      "id": "overall_leaderboard",
+      "label": "PromptCBLUE 权威排行榜与评测报告\n全域 16 项任务主要指标算术平均总分\n天池在线平台全自动评测认证\n最具代表性的中文医疗大模型基准天梯榜",
       "type": "terminal",
       "size": "xl"
     }
@@ -100,80 +100,106 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "from": "cblue_tasks",
+      "to": "seed_prompt_authoring",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "seed_prompt_authoring",
+      "to": "seed_expert_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
-      "type": "primary"
+      "from": "seed_expert_gate",
+      "to": "chatgpt_augmentation",
+      "type": "primary",
+      "label": "通过专家审核"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
-      "type": "primary"
+      "from": "seed_expert_gate",
+      "to": "seed_revision",
+      "type": "primary",
+      "label": "需修改完善"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
-      "type": "primary"
+      "from": "seed_revision",
+      "to": "seed_expert_gate",
+      "type": "dashed",
+      "label": "重新提交审核"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "chatgpt_augmentation",
+      "to": "template_review_gate",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
-      "type": "primary"
+      "from": "template_review_gate",
+      "to": "serialization_freeze",
+      "type": "primary",
+      "label": "审核合规模板"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
-      "type": "primary"
+      "from": "template_review_gate",
+      "to": "prune_template",
+      "type": "primary",
+      "label": "病态/驳回模板"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "serialization_freeze",
+      "to": "shared_model_inference",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "from": "shared_model_inference",
+      "to": "task_type_routing",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
-      "type": "primary"
+      "from": "task_type_routing",
+      "to": "extraction_scoring",
+      "type": "primary",
+      "label": "信息抽取任务"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
-      "type": "primary"
+      "from": "task_type_routing",
+      "to": "classification_scoring",
+      "type": "primary",
+      "label": "分类与推理任务"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
+      "from": "task_type_routing",
+      "to": "generation_scoring",
+      "type": "primary",
+      "label": "内容生成任务"
+    },
+    {
+      "id": "edge-14",
+      "from": "extraction_scoring",
+      "to": "overall_leaderboard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "classification_scoring",
+      "to": "overall_leaderboard",
+      "type": "primary"
+    },
+    {
+      "id": "edge-16",
+      "from": "generation_scoring",
+      "to": "overall_leaderboard",
       "type": "primary"
     }
   ],

@@ -1,98 +1,110 @@
 {
   "version": 1,
-  "title": "Sudoku-Bench 构建与评测流程",
+  "title": "Sudoku-Bench 构建流水线与双轨评测协议",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
-    "edges": 13,
-    "modules": 0
+    "nodes": 16,
+    "edges": 18,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "选取核心100题",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_2",
-      "label": "按15 15 70分配",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_3",
-      "label": "50道CTC专门题",
-      "type": "user",
-      "size": "xl"
-    },
-    {
-      "id": "step_4",
-      "label": "20道Nikoli标准题",
+      "id": "puzzle_sources",
+      "label": "专业数独题目库\nCracking the Cryptic (CTC) 独家变体与 Nikoli 经典档案\n由世界顶级出题专家 Simon Anthony 与 Mark Goodliffe 策划",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "平衡1至5星难度",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "导出SudokuPad",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_7",
-      "label": "生成纯文本规范",
+      "id": "variant_diversity",
+      "label": "变体规则与约束规范\n温度计、杀手框、德国低语线、箭头线与回文线\n将视觉线条与区域几何约束转化为精确坐标拓扑关系",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_8",
-      "label": "冻结challenge_100",
+      "id": "sudokupad_export",
+      "label": "SudokuPad 纯文本编码转换\n将交互式 SudokuPad JSON 转换为纯文本格式的题目定义\n编码棋盘维度、初始已知数与空间约束线条坐标",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "solvability_gate",
+      "label": "唯一有效解验证？\n运行精确覆盖求解器 (Knuth Algorithm X) 与人工求解校验\n确保每道题目存在且仅存在唯一步骤确定解，无解分支歧义",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "flawed_discard",
+      "label": "无效/多解题目剔除\n剔除多解、无解或约束编码损坏的不合规候选题目\n保障基准测试具备严格确定性的逻辑可解性",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "difficulty_stratification",
+      "label": "五级难度梯度标定\n按照 1 星（入门级）至 5 星（大师级）进行分层校准\n覆盖 15 道 4×4、15 道 6×6 以及 70 道 9×9 挑战题",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "challenge_freeze",
+      "label": "Sudoku-Bench 核心冻结集\n包含 100 道核心评估题目及规范标准解答棋盘\n另附独立 Nikoli-100 与 CTC 视频解题轨迹研究资产",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "无工具双模式",
+      "id": "prompt_formatting",
+      "label": "文本题目呈现与提示组装\n零样本提示详细说明变体规则、网格尺寸与初始填数\n严格禁止调用外部求解器插件或执行 Python 代码",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "eval_mode_routing",
+      "label": "评测模式选择？\n多轮交互式逐步求解 vs 单轮整盘一次性求解\n检验分步局部战术推理能力与全局整体求解规划能力",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "singleshot_inference",
+      "label": "单轮自主模型推理\n模型在单次对话中直接输出整盘完整填数解\n各基础推理模型采用贪婪解码策略 (T=0)",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "提交确定数字",
+      "id": "singleshot_gate",
+      "label": "完整棋盘与标准答案完全匹配？\n逐行、逐列、逐宫及变体约束进行逐格等价性校验\n对任何错填、漏填或规则违规采取零容忍判定",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "multistep_turn",
+      "label": "多轮分步交互推理\n模型每轮输出至少一个坐标单元格填数 (r, c) = d\n滑动上下文窗口保留初始题目规则及最近 5 轮历史轨迹",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "更新棋盘或停止",
+      "id": "step_validity_gate",
+      "label": "本轮填数与标准答案一致？\n自动化校验器对比模型当前提交填数与标准解\n还原真实人类数独逻辑推演过程的严谨性",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "early_termination",
+      "label": "首错即停终止池\n一旦模型出现首次错误填数或冲突推断立即终止评测\n记录该题在发生错误前已正确填入的数字总数",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "board_update_loop",
+      "label": "棋盘状态动态更新\n将合规填数持久化写入棋盘状态并请求下一步逻辑推导\n循环执行填数推理直到棋盘完全解出或触发错误终止",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "保留首条与最近5次",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_13",
-      "label": "单轮完整求解",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_14",
-      "label": "报告平均结果",
+      "id": "metrics_reporting",
+      "label": "Sudoku-Bench 官方指标报告\n完全求解率 (% 无错解出整盘题目的比例)\n各难度等级下模型在终止前正确填入数字的平均数量",
       "type": "terminal",
       "size": "xl"
     }
@@ -100,82 +112,151 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "from": "puzzle_sources",
+      "to": "variant_diversity",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "variant_diversity",
+      "to": "sudokupad_export",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "sudokupad_export",
+      "to": "solvability_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
-      "type": "primary"
+      "from": "solvability_gate",
+      "to": "difficulty_stratification",
+      "type": "primary",
+      "label": "唯一解验证通过"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
-      "type": "primary"
+      "from": "solvability_gate",
+      "to": "flawed_discard",
+      "type": "optional",
+      "label": "有缺陷/多解"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "difficulty_stratification",
+      "to": "challenge_freeze",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "challenge_freeze",
+      "to": "prompt_formatting",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "prompt_formatting",
+      "to": "eval_mode_routing",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
-      "type": "primary"
+      "from": "eval_mode_routing",
+      "to": "singleshot_inference",
+      "type": "primary",
+      "label": "单轮求解模式"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
-      "type": "primary"
+      "from": "eval_mode_routing",
+      "to": "multistep_turn",
+      "type": "primary",
+      "label": "多轮分步模式"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "singleshot_inference",
+      "to": "singleshot_gate",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
-      "type": "primary"
+      "from": "singleshot_gate",
+      "to": "metrics_reporting",
+      "type": "primary",
+      "label": "100% 正确解答"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
+      "from": "singleshot_gate",
+      "to": "early_termination",
+      "type": "optional",
+      "label": "存在错误/不完整"
+    },
+    {
+      "id": "edge-14",
+      "from": "multistep_turn",
+      "to": "step_validity_gate",
       "type": "primary"
+    },
+    {
+      "id": "edge-15",
+      "from": "step_validity_gate",
+      "to": "board_update_loop",
+      "type": "primary",
+      "label": "填数正确"
+    },
+    {
+      "id": "edge-16",
+      "from": "step_validity_gate",
+      "to": "early_termination",
+      "type": "optional",
+      "label": "首次填数错误"
+    },
+    {
+      "id": "edge-17",
+      "from": "board_update_loop",
+      "to": "multistep_turn",
+      "type": "dashed",
+      "label": "推进下一步推理"
+    },
+    {
+      "id": "edge-18",
+      "from": "board_update_loop",
+      "to": "metrics_reporting",
+      "type": "primary",
+      "label": "棋盘全部解出"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction_track",
+      "title": "Track A: 数据集构建流水线",
+      "nodes": [
+        "puzzle_sources",
+        "variant_diversity",
+        "sudokupad_export",
+        "solvability_gate",
+        "flawed_discard",
+        "difficulty_stratification",
+        "challenge_freeze"
+      ]
+    },
+    {
+      "id": "evaluation_track",
+      "title": "Track B: 评测协议流程",
+      "nodes": [
+        "prompt_formatting",
+        "eval_mode_routing",
+        "singleshot_inference",
+        "singleshot_gate",
+        "multistep_turn",
+        "step_validity_gate",
+        "early_termination",
+        "board_update_loop",
+        "metrics_reporting"
+      ]
+    }
+  ]
 }

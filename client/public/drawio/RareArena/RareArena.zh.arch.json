@@ -1,169 +1,206 @@
 {
   "version": 1,
-  "title": "RareArena 构建与评测流程",
+  "title": "RareArena 罕见病基准构建与评测流程架构",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
-    "modules": 0
+    "nodes": 12,
+    "edges": 15,
+    "modules": 2
   },
+  "modules": [
+    {
+      "id": "track_a",
+      "title": "Track A: PMC文献挖掘、Orphanet映射与泄露过滤",
+      "nodes": [
+        "pmc_open_access",
+        "diagnostic_filter_gate",
+        "orphanet_mapping_gate",
+        "task_partitioning",
+        "leakage_detection_gate",
+        "rarearena_corpus"
+      ]
+    },
+    {
+      "id": "track_b",
+      "title": "Track B: 鉴别诊断评测与多级语义对齐",
+      "nodes": [
+        "zero_shot_prompting",
+        "eval_protocol_gate",
+        "semantic_alignment",
+        "recall_metrics",
+        "human_physician_audit",
+        "diagnostic_report"
+      ]
+    }
+  ],
   "nodes": [
     {
-      "id": "step_1",
-      "label": "PMC病例报告",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "step_2",
-      "label": "罕见病例筛选",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_3",
-      "label": "Orphanet映射",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_4",
-      "label": "保留映射病例",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_5",
-      "label": "RDS截断",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "RDC截断",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_7",
-      "label": "泄漏改写",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_8",
-      "label": "泄漏过滤",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_9",
-      "label": "RareArena发布",
+      "id": "pmc_open_access",
+      "label": "PubMed Central 开源文献库\n580万篇PMC临床学术期刊文献\n正则模式匹配提取病例报告段落\n初筛获得250,294篇原始临床病例叙述",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "请求五项诊断",
-      "type": "document",
+      "id": "diagnostic_filter_gate",
+      "label": "临床病历合规性筛选决策门\n单人真实患者 · 生前明确诊断 · 单一确定结局？\n聚焦诊断鉴别而非疗效随访？\n淘汰不合规病历或保留104,000例标准病例",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "诊断候选排序",
+      "id": "orphanet_mapping_gate",
+      "label": "Orphanet罕见病本体映射门\nCODER向量检索Top-10最相近疾病概念\nGPT-4o复核是否存在有效Orphanet编码映射？\n剔除未映射病例或产出57,000例映射金标准",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "task_partitioning",
+      "label": "临床任务双轨分流裁剪\n切分为罕见病筛查(RDS)与罕见病确认(RDC)\nRDS在辅助检查前截断，保留主诉体征\nRDC在确诊前截断，保留清洗后的确诊检查",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "疾病术语对齐",
+      "id": "leakage_detection_gate",
+      "label": "诊断信息泄露质检过滤门\nGPT-4o清洗重写剥离先验诊断提示与主观分析\n检测器全面扫描疾病全称、同义词与缩写\n彻底丢弃泄露病例或批准正式入库",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "rarearena_corpus",
+      "label": "RareArena罕见病基准库\n49,760例RDS筛查病例(涵盖4,597种罕见病)\n22,901例RDC确认病例(涵盖3,522种罕见病)\n金标准临床罕见病鉴别基准库",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "zero_shot_prompting",
+      "label": "零样本鉴别诊断推理\n输入病例临床描述，设定采样温度0.1\n要求大模型在4000+种罕见病空间内鉴别推理\n输出置信度前5项候选罕见病鉴别诊断",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "报告召回率",
+      "id": "eval_protocol_gate",
+      "label": "评测协议分流决策门\n分流不同评测工作流：\n自动化Top-k鉴别诊断基准评测\nvs 执业医师双盲质量审计专家组",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "semantic_alignment",
+      "label": "GPT-4o多级语义对齐打分\n将模型候选词与Orphanet金标准疾病对齐\n精确同义命中计2分 · 上位概念命中计1分\n未命中或错误疾病实体计0分",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recall_metrics",
+      "label": "Top-k 诊断召回率指标计算\n计算Top-1 Recall (首位候选即命中金标准)\n计算Top-5 Recall (金标准位列前五候选)\n分别汇总RDS初筛与RDC确诊分项表现",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_physician_audit",
+      "label": "执业医师双盲质量审计\n两名执业医师独立审计100例病例报告\n先经10例校准，争议由第三位资深专家裁决\n评估无泄露性、生成真实度与临床复杂度",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "diagnostic_report",
+      "label": "RareArena罕见病综合评测报告\n罕见病筛查与确诊能力双轨对比画像\n长尾罕见病诊断鉴别能力深度剖析\n权威临床罕见病诊断AI基准排行榜",
       "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
-      "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "id": "edge_1",
+      "from": "pmc_open_access",
+      "to": "diagnostic_filter_gate",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "id": "edge_2",
+      "from": "diagnostic_filter_gate",
+      "to": "orphanet_mapping_gate",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "id": "edge_3",
+      "from": "diagnostic_filter_gate",
+      "to": "pmc_open_access",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "id": "edge_4",
+      "from": "orphanet_mapping_gate",
+      "to": "task_partitioning",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "id": "edge_5",
+      "from": "orphanet_mapping_gate",
+      "to": "pmc_open_access",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "id": "edge_6",
+      "from": "task_partitioning",
+      "to": "leakage_detection_gate",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "id": "edge_7",
+      "from": "leakage_detection_gate",
+      "to": "rarearena_corpus",
       "type": "primary"
     },
     {
-      "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "id": "edge_8",
+      "from": "leakage_detection_gate",
+      "to": "task_partitioning",
       "type": "primary"
     },
     {
-      "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "id": "edge_9",
+      "from": "rarearena_corpus",
+      "to": "zero_shot_prompting",
       "type": "primary"
     },
     {
-      "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "id": "edge_10",
+      "from": "zero_shot_prompting",
+      "to": "eval_protocol_gate",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "id": "edge_11",
+      "from": "eval_protocol_gate",
+      "to": "semantic_alignment",
       "type": "primary"
     },
     {
-      "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "id": "edge_12",
+      "from": "eval_protocol_gate",
+      "to": "human_physician_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge_13",
+      "from": "semantic_alignment",
+      "to": "recall_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge_14",
+      "from": "recall_metrics",
+      "to": "diagnostic_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge_15",
+      "from": "human_physician_audit",
+      "to": "diagnostic_report",
       "type": "primary"
     }
-  ],
-  "modules": []
+  ]
 }
