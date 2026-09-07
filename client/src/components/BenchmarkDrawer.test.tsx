@@ -26,7 +26,7 @@ function renderDrawer(benchmark: Benchmark, isDark = false) {
 
 function flowchartTab(html: string) {
   const tab = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)
-    ?.find(button => button.replace(/<[^>]*>/g, '') === '构建流程');
+    ?.find(button => />构建流程<\//.test(button));
   expect(tab).toBeDefined();
   return tab!;
 }
