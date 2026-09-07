@@ -1,82 +1,94 @@
 {
   "version": 1,
-  "title": "LongDocURL 数据集构建与发布流程",
+  "title": "LongDocURL 数据集构建与评测协议流程",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 11,
-    "edges": 10,
-    "modules": 0
+    "nodes": 13,
+    "edges": 13,
+    "modules": 2
   },
   "nodes": [
     {
       "id": "source_pool",
-      "label": "CC PDF\n20 万",
+      "label": "Common Crawl PDF 原始文档库\n超过 200,000 份原始候选 PDF 文档\n未过滤的多领域网络公开发布数据转储",
       "type": "document",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "page_lang_filter",
-      "label": "初筛\n50-150 页·英文",
+      "label": "页数范围与语言初筛\n50 至 150 页中长文档长度窗口\nFastText 英文语言纯度识别过滤",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "type_scan",
-      "label": "类型抽检\n5-10 页",
+      "label": "内容多样性特征扫描\n筛选富含多种排版元素的复杂文档\n每页包含 5 至 10 个图表、表格与公式块",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "document_set",
-      "label": "保留 396 份",
+      "label": "396 份精选长文档基准集\n覆盖金融、法律、科学与政府报告领域\n文档平均长度达到 84.7 页",
       "type": "database",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "pdf_parse",
-      "label": "PDF 解析",
+      "label": "多层级文档结构解析\n提取文本流、字体属性与边界框定位\n将页面切分为视觉连续的阅读块",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
       "id": "region_triples",
-      "label": "text-type-bbox\n区域三元组",
+      "label": "文本-类型-边界框三元组\n构建结构化视觉文本排版表达\n边界框坐标归一化至 [0, 1000] 区间",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "qa_generate",
-      "label": "迭代问答生成",
+      "label": "迭代式跨页问答生成\nGPT-4o 生成问题-证据-答案三元组\n覆盖跨页交叉引用与空间排版推理",
       "type": "process",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "auto_verify",
-      "label": "三项自动核验",
-      "type": "process",
-      "size": "medium"
+      "id": "quality_gate",
+      "label": "三维质检与定位准入判定\n核验问题可答性与视觉定位准确性\n专家与自动化双重核验证据边界框",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "human_verify",
-      "label": "人工核验",
-      "type": "process",
-      "size": "medium"
+      "id": "reject_sink",
+      "label": "歧义候选剔除流\n剔除缺乏视觉证据或表述含糊的问答对\n记录淘汰原因用于管道质量追溯",
+      "type": "terminal",
+      "size": "xl"
     },
     {
       "id": "final_set",
-      "label": "2,325 问答",
+      "label": "2,325 道已验证黄金基准问答\n涵盖单页、跨页与跨模态综合推理\n附带精确证据区域边界框空间标注",
       "type": "database",
-      "size": "medium"
+      "size": "xl"
     },
     {
-      "id": "public_release",
-      "label": "HF 公开发布",
+      "id": "prompt_format",
+      "label": "多模态长文档输入组装\n高分辨率多页图像交错输入\n构建长文档开放问答与定位指令提示",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "vlm_inference",
+      "label": "多模态大模型前向推理\n评测主流前沿 VLM（GPT-4o、Claude 3.5、Gemini 1.5）\n输出自然语言推理答案与预测边界框",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "metric_eval",
+      "label": "双轨指标评测与基准报告\n文本答案精准匹配度与 F1 值统计\n空间定位交并比（IoU >= 0.5）精准度报告",
       "type": "terminal",
-      "size": "medium"
+      "size": "xl"
     }
   ],
   "edges": [
@@ -119,27 +131,74 @@
     {
       "id": "edge-7",
       "from": "qa_generate",
-      "to": "auto_verify",
+      "to": "quality_gate",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "auto_verify",
-      "to": "human_verify",
-      "type": "primary"
+      "from": "quality_gate",
+      "to": "final_set",
+      "type": "primary",
+      "label": "通过"
     },
     {
       "id": "edge-9",
-      "from": "human_verify",
-      "to": "final_set",
-      "type": "primary"
+      "from": "quality_gate",
+      "to": "reject_sink",
+      "type": "optional",
+      "label": "淘汰"
     },
     {
       "id": "edge-10",
       "from": "final_set",
-      "to": "public_release",
+      "to": "prompt_format",
       "type": "primary"
+    },
+    {
+      "id": "edge-11",
+      "from": "prompt_format",
+      "to": "vlm_inference",
+      "type": "primary"
+    },
+    {
+      "id": "edge-12",
+      "from": "vlm_inference",
+      "to": "metric_eval",
+      "type": "primary"
+    },
+    {
+      "id": "edge-13",
+      "from": "final_set",
+      "to": "metric_eval",
+      "type": "secondary",
+      "label": "真值比对"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction",
+      "name": "Track A: 跨页多模态长文档问答构建",
+      "nodeIds": [
+        "source_pool",
+        "page_lang_filter",
+        "type_scan",
+        "document_set",
+        "pdf_parse",
+        "region_triples",
+        "qa_generate",
+        "quality_gate",
+        "reject_sink",
+        "final_set"
+      ]
+    },
+    {
+      "id": "evaluation",
+      "name": "Track B: 多模态长文档理解与定位评测",
+      "nodeIds": [
+        "prompt_format",
+        "vlm_inference",
+        "metric_eval"
+      ]
+    }
+  ]
 }

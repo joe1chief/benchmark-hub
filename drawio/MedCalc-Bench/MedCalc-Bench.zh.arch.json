@@ -1,281 +1,262 @@
 {
   "version": 1,
-  "title": "MedCalc-Bench-Verified 数据集构建流程",
+  "title": "MedCalc-Bench 数据集构建流水线与临床计算评测协议",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 20,
-    "edges": 23,
-    "modules": 0
+    "nodes": 16,
+    "edges": 18,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "calculator_selection",
-      "label": "55 个热门计算器",
+      "id": "mdcalc_calculators",
+      "label": "MDCalc 临床医学计算器目录\n精选 55 个覆盖急诊与重症监护的临床常用医学计算器\n包含 19 个基于规则的离散评分系统与 36 个连续方程计算器",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "open_patients",
-      "label": "Open-Patients",
+      "id": "open_patients_corpus",
+      "label": "Open-Patients 临床病历语料库\n汇总 MIMIC-IV、MTSamples 与 PMC 的 18 万份脱敏病历\n涵盖详尽的患者人口统计学、生命体征及实验室生化检验指标",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "gpt35_filter",
-      "label": "GPT-3.5 筛选",
+      "id": "llm_extraction_pipeline",
+      "label": "两阶段大模型属性抽取流水线\nGPT-3.5 Turbo 初筛病历，GPT-4 深度抽取公式必需临床参数\n精准提取年龄、体重、实验室血生化检验值与合并症评分",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "gpt4_extract",
-      "label": "GPT-4 提取属性",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "medical_review",
-      "label": "医学背景者核验",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "coverage_gate",
-      "label": "病历覆盖？",
+      "id": "coverage_completeness_gate",
+      "label": "必需临床参数是否完全覆盖？\n检验病历中是否显式完整包含目标计算器所需的全部生理参数\n识别缺乏足够天然真实病历表征的特定计算任务",
       "type": "decision",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "eligible_notes",
-      "label": "34 类：核验后病历",
-      "type": "document",
-      "size": "large"
-    },
-    {
-      "id": "template_notes",
-      "label": "11 类：模板 ×20",
+      "id": "synthetic_note_generation",
+      "label": "临床医生专业病历合成\n执业医师针对缺乏公开病历的 21 个计算器合成逼真临床记录\n确保 55 个计算器各自拥有恰好 20 个高质量的评测样本",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "handwritten_notes",
-      "label": "10 类：临床撰写×20",
-      "type": "process",
-      "size": "large"
+      "id": "expert_validation_gate",
+      "label": "医学专业人员复核验证门控？\n执业临床医生逐项人工比对病历文本与抽取的属性数值\n校正 OCR 乱码、计量单位不一致及语义参数对应偏差",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "eval_count_conflict",
-      "label": "主文↔附录/CSV",
-      "type": "document",
-      "size": "large"
+      "id": "flawed_note_discard",
+      "label": "错误抽取与瑕疵病历剔除池\n剔除存在歧义、数值物理矛盾或单位冲突的不合格病历\n确保所有测试病历在临床医学与生理学上 100% 真实可靠",
+      "type": "terminal",
+      "size": "xl"
     },
     {
-      "id": "note_bundle",
-      "label": "病历 + 已核属性",
-      "type": "document",
-      "size": "large"
+      "id": "medcalc_freeze",
+      "label": "MedCalc-Bench 冻结评测基准\n1,100 个经医学专家严格审计的临床实例 (55 任务 x 20 题)\n配套详细的分步数学推导过程与标准确定性数值结果",
+      "type": "database",
+      "size": "xl"
     },
     {
-      "id": "calculator_templates",
-      "label": "55 套计算 / 解释模板",
+      "id": "prompt_formatting",
+      "label": "临床计算提示词组装\n整合原始病历文本、明确的临床医学计算问题及目标单位\n支持零样本直接提示、零样本思维链及单样本思维链评测",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "answer_generation",
-      "label": "答案 + 解释生成",
+      "id": "model_inference",
+      "label": "自回归数学与临床推理\n待测模型从复杂文本中抽取数值并执行临床公式计算\n生成分步临床推理陈述以及最终框定的数值答案",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "paper_dataset",
-      "label": "论文集：1,047 条",
-      "type": "document",
-      "size": "large"
-    },
-    {
-      "id": "training_attrs",
-      "label": "抽取未核",
+      "id": "regex_numeric_extraction",
+      "label": "数值答案抽取与正则解析引擎\n从生成回答中提取计算所得医学数值、离散评分或日期\n标准化度量单位、小数位数、科学计数法及舍入规则",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "paper_training",
-      "label": "论文:10053/40",
-      "type": "document",
-      "size": "large"
+      "id": "calculator_type_routing",
+      "label": "计算器类型评测分流？\n基于规则的离散评分系统 vs 基于连续方程的医学计算器\n根据临床应用场景制定差异化的容差判定阈值",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "training_template_notes",
-      "label": "11 类模板×80",
-      "type": "database",
-      "size": "large"
+      "id": "rule_exact_match_gate",
+      "label": "规则评分精确匹配？\n要求离散整型得分必须完全相等（容差为 0）\n评估 CHA2DS2-VASc、CURB-65 与格拉斯哥昏迷评分 (GCS) 等",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "release_train_conflict",
-      "label": "CSV 41类·HOMA×1",
-      "type": "document",
-      "size": "large"
+      "id": "equation_tolerance_gate",
+      "label": "连续计算处于 5% 相对容差内？\n验证预测连续数值满足相对误差比率 |Y - Y*| / Y* <= 0.05\n评估肾小球滤过率 (GFR)、阴离子间隙 (Anion Gap) 及 MELD 等",
+      "type": "decision",
+      "size": "xl"
     },
     {
-      "id": "verified_updates",
-      "label": "Verified 版本化修订",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "pinned_release",
-      "label": "10.5K·1.1K·55",
+      "id": "calculation_error_sink",
+      "label": "计算失败与超差分析池\n归纳参数抽取遗漏、公式计算错误及量纲单位换算失误\n精细定位模型在信息抽取、数学计算与临床推理间的短板",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
+    },
+    {
+      "id": "metrics_reporting",
+      "label": "MedCalc-Bench 官方指标报告\n全局计算准确率 (%)、规则评分准确率（严格精确匹配）\n及连续方程计算准确率（5% 相对误差容差）",
+      "type": "terminal",
+      "size": "xl"
     }
   ],
   "edges": [
     {
       "id": "edge-1",
-      "from": "calculator_selection",
-      "to": "gpt35_filter",
+      "from": "mdcalc_calculators",
+      "to": "llm_extraction_pipeline",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "open_patients",
-      "to": "gpt35_filter",
+      "from": "open_patients_corpus",
+      "to": "llm_extraction_pipeline",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "gpt35_filter",
-      "to": "gpt4_extract",
+      "from": "llm_extraction_pipeline",
+      "to": "coverage_completeness_gate",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "gpt4_extract",
-      "to": "medical_review",
-      "type": "primary"
+      "from": "coverage_completeness_gate",
+      "to": "expert_validation_gate",
+      "type": "primary",
+      "label": "天然病历完全匹配 (34个计算器)"
     },
     {
       "id": "edge-5",
-      "from": "medical_review",
-      "to": "coverage_gate",
-      "type": "primary"
+      "from": "coverage_completeness_gate",
+      "to": "synthetic_note_generation",
+      "type": "optional",
+      "label": "病历参数不足 (21个计算器)"
     },
     {
       "id": "edge-6",
-      "from": "coverage_gate",
-      "to": "eligible_notes",
-      "type": "primary",
-      "label": "34 类合格"
+      "from": "synthetic_note_generation",
+      "to": "expert_validation_gate",
+      "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "coverage_gate",
-      "to": "template_notes",
+      "from": "expert_validation_gate",
+      "to": "medcalc_freeze",
       "type": "primary",
-      "label": "11 类模板"
+      "label": "医生复核通过"
     },
     {
       "id": "edge-8",
-      "from": "coverage_gate",
-      "to": "handwritten_notes",
-      "type": "primary",
-      "label": "10 类临床撰写"
+      "from": "expert_validation_gate",
+      "to": "flawed_note_discard",
+      "type": "optional",
+      "label": "生理矛盾/信息不全"
     },
     {
       "id": "edge-9",
-      "from": "coverage_gate",
-      "to": "eval_count_conflict",
-      "type": "data",
-      "label": "10/11 冲突"
+      "from": "medcalc_freeze",
+      "to": "prompt_formatting",
+      "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "eligible_notes",
-      "to": "note_bundle",
+      "from": "prompt_formatting",
+      "to": "model_inference",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "template_notes",
-      "to": "note_bundle",
+      "from": "model_inference",
+      "to": "regex_numeric_extraction",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "handwritten_notes",
-      "to": "note_bundle",
+      "from": "regex_numeric_extraction",
+      "to": "calculator_type_routing",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "note_bundle",
-      "to": "answer_generation",
-      "type": "primary"
+      "from": "calculator_type_routing",
+      "to": "rule_exact_match_gate",
+      "type": "primary",
+      "label": "规则评分系统 (19个)"
     },
     {
       "id": "edge-14",
-      "from": "calculator_templates",
-      "to": "answer_generation",
-      "type": "primary"
+      "from": "calculator_type_routing",
+      "to": "equation_tolerance_gate",
+      "type": "primary",
+      "label": "连续方程计算器 (36个)"
     },
     {
       "id": "edge-15",
-      "from": "answer_generation",
-      "to": "paper_dataset",
-      "type": "primary"
+      "from": "rule_exact_match_gate",
+      "to": "metrics_reporting",
+      "type": "primary",
+      "label": "精确匹配"
     },
     {
       "id": "edge-16",
-      "from": "gpt4_extract",
-      "to": "training_attrs",
-      "type": "primary"
+      "from": "rule_exact_match_gate",
+      "to": "calculation_error_sink",
+      "type": "optional",
+      "label": "分值不符"
     },
     {
       "id": "edge-17",
-      "from": "training_attrs",
-      "to": "paper_training",
-      "type": "primary"
+      "from": "equation_tolerance_gate",
+      "to": "metrics_reporting",
+      "type": "primary",
+      "label": "相对误差 <= 5%"
     },
     {
       "id": "edge-18",
-      "from": "training_template_notes",
-      "to": "paper_training",
-      "type": "primary"
-    },
-    {
-      "id": "edge-19",
-      "from": "calculator_templates",
-      "to": "paper_training",
-      "type": "primary"
-    },
-    {
-      "id": "edge-20",
-      "from": "paper_training",
-      "to": "release_train_conflict",
-      "type": "data"
-    },
-    {
-      "id": "edge-21",
-      "from": "paper_dataset",
-      "to": "verified_updates",
-      "type": "primary"
-    },
-    {
-      "id": "edge-22",
-      "from": "paper_training",
-      "to": "verified_updates",
-      "type": "primary"
-    },
-    {
-      "id": "edge-23",
-      "from": "verified_updates",
-      "to": "pinned_release",
-      "type": "primary"
+      "from": "equation_tolerance_gate",
+      "to": "calculation_error_sink",
+      "type": "optional",
+      "label": "误差 > 5%"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction_track",
+      "title": "Track A: 数据集构建流水线",
+      "nodes": [
+        "mdcalc_calculators",
+        "open_patients_corpus",
+        "llm_extraction_pipeline",
+        "coverage_completeness_gate",
+        "synthetic_note_generation",
+        "expert_validation_gate",
+        "flawed_note_discard",
+        "medcalc_freeze"
+      ]
+    },
+    {
+      "id": "evaluation_track",
+      "title": "Track B: 评测协议流程",
+      "nodes": [
+        "prompt_formatting",
+        "model_inference",
+        "regex_numeric_extraction",
+        "calculator_type_routing",
+        "rule_exact_match_gate",
+        "equation_tolerance_gate",
+        "calculation_error_sink",
+        "metrics_reporting"
+      ]
+    }
+  ]
 }

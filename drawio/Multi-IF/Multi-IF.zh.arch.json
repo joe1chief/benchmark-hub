@@ -1,106 +1,124 @@
 {
   "version": 1,
-  "title": "Multi-IF 数据集构建流程",
+  "title": "Multi-IF 数据集构建与多轮多语言验证流水线",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 15,
-    "edges": 14,
-    "modules": 0
+    "nodes": 16,
+    "edges": 16,
+    "modules": 2
   },
+  "modules": [
+    {
+      "id": "english_track",
+      "label": "赛道 A：英语多轮对话合成与黄金集校验",
+      "nodes": ["ifeval", "original_turn", "instruction_types", "sampled_types", "synthesize_followups", "english_candidates", "conflict_scan", "conflict_audit", "discard_conflict", "english_gold"]
+    },
+    {
+      "id": "multilingual_track",
+      "label": "赛道 B：多语言跨语种拓展、安全审查与基准发布",
+      "nodes": ["translate", "multilingual_review", "safety_scan", "safety_audit", "release_gap", "release"]
+    }
+  ],
   "nodes": [
     {
       "id": "ifeval",
-      "label": "IFEval 英语数据",
+      "label": "IFEval 种子数据库\n541 条基础可验证指令种子\n单轮英语金标准规则与基础提示",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "original_turn",
-      "label": "原始第 1 轮",
+      "label": "第一轮原始提示锚定\n提取种子任务作为首轮对话指令\n为多轮连续交互建立上下文基础",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "instruction_types",
-      "label": "30 类可验证指令",
+      "label": "30类可验证规则分类体系\n确定性多轮指令规范库\n词汇量、标点、格式与多轮增量约束",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "sampled_types",
-      "label": "第 2/3 轮各自独立采 1 类",
+      "label": "轮次独立规则抽样\n后续第2/3轮各独立抽取1类规则\n保证跨轮次约束的多样性与独立性",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "synthesize_followups",
-      "label": "405B 生成第 2/3 轮",
+      "label": "Llama-3.1-405B 多轮指令合成\n合成自然的第2轮与第3轮追问\n在保持对话连贯性前提下注入新规则",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "english_candidates",
-      "label": "两组英语三轮候选",
+      "label": "英语多轮候选提示集合\n每条种子合成两套独立对话树\n形成成对的后续多轮对话交互流",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "conflict_scan",
-      "label": "405B 冲突扫描",
+      "label": "跨轮次规则冲突自动扫描\n利用 405B 深度检测轮次间规则碰撞\n排查第1至第3轮间存在的互斥约束",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "conflict_audit",
-      "label": "人工冲突核验",
-      "type": "process",
-      "size": "large"
+      "label": "冲突研判与准入闸门\n人工复核核验跨轮规则自洽性\n消除多轮对话逻辑矛盾",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "discard_conflict",
+      "label": "淘汰冲突对话树\n剔除跨轮规则无法调和的对话\n丢弃上下文语义断裂样本",
+      "type": "terminal",
+      "size": "xl"
     },
     {
       "id": "english_gold",
-      "label": "英语黄金集",
+      "label": "精校英语多轮黄金集\n无逻辑冲突的三轮评测对话基准\n配套经严格测试的 Python 判别代码",
       "type": "database",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "translate",
-      "label": "405B 翻译七种语言",
+      "label": "多语言扩展至7大主流语种\nLlama-3.1-405B 高保真机器翻译\n将语言特异性规则适配到目标语系",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "multilingual_review",
-      "label": "多语审校 · 约 15%",
-      "type": "process",
-      "size": "large"
+      "label": "母语专家抽样审校（约15%）\n母语评测员人工抽检语言地道性\n校准本地化可验证规则的生效边界",
+      "type": "user",
+      "size": "xl"
     },
     {
       "id": "safety_scan",
-      "label": "LLM 敏感内容标记",
+      "label": "Llama-Guard 自动化安全扫描\n筛查有害、涉黄涉暴与偏见内容\n高亮潜在违规提示以供人工二次判定",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "safety_audit",
-      "label": "人工确认并移除",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "release",
-      "label": "4,501 行 · 8 语",
-      "type": "terminal",
-      "size": "large"
+      "label": "安全合规与完整性闸门\n人工复核确认提示词纯净度\n过滤不安全样本并校验3轮完整性",
+      "type": "decision",
+      "size": "xl"
     },
     {
       "id": "release_gap",
-      "label": "CSV 56 行缺第 3 轮",
-      "type": "document",
-      "size": "large"
+      "label": "异常归档：缺失第3轮（56条）\n官方发布已知的未补齐缺陷归档\n隔离残缺的两轮截断数据",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "release",
+      "label": "Multi-IF 官方基准正式发布\n跨8大语种共 4,501 条高质量多轮指令\n输出全方位的跨语言多轮遵循能力评测",
+      "type": "terminal",
+      "size": "xl"
     }
   ],
   "edges": [
@@ -156,38 +174,53 @@
       "id": "edge-9",
       "from": "conflict_audit",
       "to": "english_gold",
-      "type": "primary"
+      "type": "primary",
+      "label": "自洽无冲突"
     },
     {
       "id": "edge-10",
+      "from": "conflict_audit",
+      "to": "discard_conflict",
+      "type": "secondary",
+      "label": "驳回互斥项"
+    },
+    {
+      "id": "edge-11",
       "from": "english_gold",
       "to": "translate",
       "type": "primary"
     },
     {
-      "id": "edge-11",
+      "id": "edge-12",
       "from": "translate",
       "to": "multilingual_review",
       "type": "primary"
     },
     {
-      "id": "edge-12",
+      "id": "edge-13",
       "from": "multilingual_review",
       "to": "safety_scan",
       "type": "primary"
     },
     {
-      "id": "edge-13",
+      "id": "edge-14",
       "from": "safety_scan",
       "to": "safety_audit",
       "type": "primary"
     },
     {
-      "id": "edge-14",
+      "id": "edge-15",
       "from": "safety_audit",
       "to": "release",
-      "type": "primary"
+      "type": "primary",
+      "label": "完整3轮发布"
+    },
+    {
+      "id": "edge-16",
+      "from": "safety_audit",
+      "to": "release_gap",
+      "type": "secondary",
+      "label": "缺失第3轮(56条)"
     }
-  ],
-  "modules": []
+  ]
 }

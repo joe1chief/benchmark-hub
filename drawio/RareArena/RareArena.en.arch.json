@@ -1,169 +1,206 @@
 {
   "version": 1,
-  "title": "RareArena Build and Evaluation Process",
+  "title": "RareArena Benchmark Construction and Evaluation Architecture",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 13,
-    "edges": 12,
-    "modules": 0
+    "nodes": 12,
+    "edges": 15,
+    "modules": 2
   },
+  "modules": [
+    {
+      "id": "track_a",
+      "title": "Track A: PMC Mining, Orphanet Mapping & Leakage Filtering",
+      "nodes": [
+        "pmc_open_access",
+        "diagnostic_filter_gate",
+        "orphanet_mapping_gate",
+        "task_partitioning",
+        "leakage_detection_gate",
+        "rarearena_corpus"
+      ]
+    },
+    {
+      "id": "track_b",
+      "title": "Track B: Differential Diagnostic Evaluation & Semantic Alignment",
+      "nodes": [
+        "zero_shot_prompting",
+        "eval_protocol_gate",
+        "semantic_alignment",
+        "recall_metrics",
+        "human_physician_audit",
+        "diagnostic_report"
+      ]
+    }
+  ],
   "nodes": [
     {
-      "id": "step_1",
-      "label": "PMC Reports",
-      "type": "document",
-      "size": "xl"
-    },
-    {
-      "id": "step_2",
-      "label": "Rare Cases",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_3",
-      "label": "Orphanet Map",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_4",
-      "label": "Mapped Cases",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_5",
-      "label": "RDS Truncation",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "RDC Truncation",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_7",
-      "label": "Rewrite Leaks",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_8",
-      "label": "Leakage Filter",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_9",
-      "label": "Release Set",
+      "id": "pmc_open_access",
+      "label": "PMC Open Access Corpus\n5.8 million PubMed Central clinical publications\nRegex candidate extraction across case reports\nYields 250,294 raw clinical patient narratives",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "Ask Top Five",
-      "type": "document",
+      "id": "diagnostic_filter_gate",
+      "label": "Clinical Eligibility Filter Gate\nSingle patient · post-birth diagnosis · single outcome?\nDiagnostic rather than treatment-focused?\nDiscard ineligible records or retain 104,000 cases",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "Rank Diagnoses",
+      "id": "orphanet_mapping_gate",
+      "label": "Orphanet Ontology Mapping Gate\nCODER embeddings retrieve top-10 candidate diseases\nDoes GPT-4o confirm valid Orphanet mapping?\nDiscard unmapped or advance 57,000 mapped cases",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "task_partitioning",
+      "label": "Clinical Task Partitioning\nBranch into Screening (RDS) vs Confirmation (RDC)\nRDS truncates before any diagnostic testing\nRDC truncates before final diagnosis with test findings",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "Align Terms",
+      "id": "leakage_detection_gate",
+      "label": "Diagnosis Leakage Detection Gate\nGPT-4o rewrite strips diagnostic clues & rationales\nDetector scans names, synonyms & abbreviations\nDiscard leaking cases or approve release",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "rarearena_corpus",
+      "label": "RareArena Curated Benchmark\n49,760 RDS cases across 4,597 rare diseases\n22,901 RDC cases across 3,522 rare diseases\nGold-standard clinical rare disease repository",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "zero_shot_prompting",
+      "label": "Zero-Shot Diagnostic Prompting\nInput clinical narrative with temperature 0.1\nPrompt model to reason across 4,000+ conditions\nOutput top-5 differential rare disease diagnoses",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "Report Recall",
+      "id": "eval_protocol_gate",
+      "label": "Evaluation Protocol Routing Gate\nRoute evaluation workflow:\nAutomated Top-k Diagnostic Benchmark\nvs Dual-Physician Quality Audit Panel",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "semantic_alignment",
+      "label": "GPT-4o Semantic Term Alignment\nCompare predicted candidates against gold diagnosis\nScore 2 for exact/synonym · Score 1 for hypernym\nScore 0 for miss or incorrect disease entity",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "recall_metrics",
+      "label": "Top-k Diagnostic Recall Metrics\nCalculate Top-1 Recall (Top prediction matches gold)\nCalculate Top-5 Recall (Gold in top-5 candidates)\nReport separately across RDS and RDC tracks",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "human_physician_audit",
+      "label": "Dual-Physician Expert Audit\nTwo licensed physicians independently audit 100 cases\nCalibrated on 10 cases with third-reviewer adjudication\nScore leakage, generation fidelity & complexity",
+      "type": "user",
+      "size": "xl"
+    },
+    {
+      "id": "diagnostic_report",
+      "label": "RareArena Comprehensive Report\nRare disease screening vs confirmation curves\nLong-tail disease diagnostic competence profile\nAuthoritative clinical rare disease leaderboard",
       "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
     {
-      "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "id": "edge_1",
+      "from": "pmc_open_access",
+      "to": "diagnostic_filter_gate",
       "type": "primary"
     },
     {
-      "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "id": "edge_2",
+      "from": "diagnostic_filter_gate",
+      "to": "orphanet_mapping_gate",
       "type": "primary"
     },
     {
-      "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "id": "edge_3",
+      "from": "diagnostic_filter_gate",
+      "to": "pmc_open_access",
       "type": "primary"
     },
     {
-      "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "id": "edge_4",
+      "from": "orphanet_mapping_gate",
+      "to": "task_partitioning",
       "type": "primary"
     },
     {
-      "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "id": "edge_5",
+      "from": "orphanet_mapping_gate",
+      "to": "pmc_open_access",
       "type": "primary"
     },
     {
-      "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "id": "edge_6",
+      "from": "task_partitioning",
+      "to": "leakage_detection_gate",
       "type": "primary"
     },
     {
-      "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "id": "edge_7",
+      "from": "leakage_detection_gate",
+      "to": "rarearena_corpus",
       "type": "primary"
     },
     {
-      "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "id": "edge_8",
+      "from": "leakage_detection_gate",
+      "to": "task_partitioning",
       "type": "primary"
     },
     {
-      "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "id": "edge_9",
+      "from": "rarearena_corpus",
+      "to": "zero_shot_prompting",
       "type": "primary"
     },
     {
-      "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "id": "edge_10",
+      "from": "zero_shot_prompting",
+      "to": "eval_protocol_gate",
       "type": "primary"
     },
     {
-      "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "id": "edge_11",
+      "from": "eval_protocol_gate",
+      "to": "semantic_alignment",
       "type": "primary"
     },
     {
-      "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "id": "edge_12",
+      "from": "eval_protocol_gate",
+      "to": "human_physician_audit",
+      "type": "primary"
+    },
+    {
+      "id": "edge_13",
+      "from": "semantic_alignment",
+      "to": "recall_metrics",
+      "type": "primary"
+    },
+    {
+      "id": "edge_14",
+      "from": "recall_metrics",
+      "to": "diagnostic_report",
+      "type": "primary"
+    },
+    {
+      "id": "edge_15",
+      "from": "human_physician_audit",
+      "to": "diagnostic_report",
       "type": "primary"
     }
-  ],
-  "modules": []
+  ]
 }

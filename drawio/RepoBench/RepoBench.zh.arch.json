@@ -1,98 +1,86 @@
 {
   "version": 1,
-  "title": "RepoBench 构建与评测流程",
+  "title": "RepoBench 基准构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 14,
+    "nodes": 12,
     "edges": 13,
-    "modules": 0
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "抓取仓库",
+      "id": "crawl_repos",
+      "label": "GitHub 代码仓库抓取\n高质量开源 Python 与 Java 仓库\n设置时间截止点以防止预训练数据泄漏",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "过滤仓库",
+      "id": "filter_quality",
+      "label": "仓库质量与开源许可筛选\nStars>=10 并保留宽松开源协议代码\n过滤低质、模板化或单文件简单仓库",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "解析依赖",
+      "id": "parse_ast_deps",
+      "label": "抽象语法树与跨文件依赖解析\n解析 import 语句与模块调用图\n提取函数、类定义与跨文件引用关系",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "遮盖目标行",
+      "id": "mask_target_lines",
+      "label": "目标续写代码行掩码标注\n定位依赖跨文件上下文的代码续写目标行\n构建跨文件强依赖与文件内上下文场景",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "构造候选片段",
-      "type": "process",
+      "id": "task_curation_gate",
+      "label": "多任务体系解耦与划分决策\n分配至代码段检索 (RepoBench-R)、\n行级补全 (RepoBench-C) 或端到端 (RepoBench-P)？",
+      "type": "decision",
       "size": "xl"
     },
     {
-      "id": "step_6",
-      "label": "构建R任务",
+      "id": "repobench_r",
+      "label": "RepoBench-R 检索基准集\n构建跨文件候选代码片段候选池\n评测模型在众多模块中定位目标代码段能力",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_7",
-      "label": "构建C任务",
+      "id": "repobench_c",
+      "label": "RepoBench-C 补全基准集\n给定已知跨文件参考上下文 (2K/8K 窗口)\n评测模型利用长程上下文完成下一行补全",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_8",
-      "label": "构建P任务",
+      "id": "repobench_p",
+      "label": "RepoBench-P 端到端全流程集\n模拟真实 IDE 补全：先检索跨文件上下文\n再进行下一步目标代码行生成预测",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "排序片段",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_10",
-      "label": "检查Acc@k",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_11",
-      "label": "预测代码行",
+      "id": "prompt_assembly",
+      "label": "多文件上下文提示装配\n文件内上下文 + 检索到或标准跨文件代码段\n使用统一文件分隔符与注释语法组装提示",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "运行端到端",
+      "id": "model_inference",
+      "label": "模型推理与代码生成\n输出下一行目标代码或对候选片段打分排序\n采用贪心解码保证评测结果完全复现",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "规范代码",
+      "id": "eval_sandbox",
+      "label": "语法与词法规整引擎\n对模型生成行进行代码 Token 化与空白归一化\n消除表面缩进排版差异与无关注释干扰",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_14",
-      "label": "报告指标",
+      "id": "metric_reporting",
+      "label": "多维指标综合统计评估\n检索任务：Accuracy@k (k=1, 3, 5)\n生成任务：精确匹配 (EM)、编辑相似度、CodeBLEU",
       "type": "terminal",
       "size": "xl"
     }
@@ -100,80 +88,83 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "from": "crawl_repos",
+      "to": "filter_quality",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "filter_quality",
+      "to": "parse_ast_deps",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "parse_ast_deps",
+      "to": "mask_target_lines",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "from": "mask_target_lines",
+      "to": "task_curation_gate",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "from": "task_curation_gate",
+      "to": "repobench_r",
+      "label": "检索任务 (R)",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "task_curation_gate",
+      "to": "repobench_c",
+      "label": "补全任务 (C)",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "task_curation_gate",
+      "to": "repobench_p",
+      "label": "全流程任务 (P)",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "repobench_r",
+      "to": "prompt_assembly",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "repobench_c",
+      "to": "prompt_assembly",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "from": "repobench_p",
+      "to": "prompt_assembly",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "prompt_assembly",
+      "to": "model_inference",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "from": "model_inference",
+      "to": "eval_sandbox",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
+      "from": "eval_sandbox",
+      "to": "metric_reporting",
       "type": "primary"
     }
   ],

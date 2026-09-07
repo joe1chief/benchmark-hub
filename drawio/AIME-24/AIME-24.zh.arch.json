@@ -1,85 +1,102 @@
 {
   "version": 1,
-  "title": "AIME-24 来源封装与披露边界",
+  "title": "AIME-24 数据集构建与评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 6,
-    "edges": 5,
-    "modules": 0
+    "nodes": 12,
+    "edges": 12,
+    "modules": 2
   },
   "nodes": [
     {
       "id": "exam_origin",
-      "label": "2024 AIME I + II\nMAA 考试来源",
+      "label": "MAA 2024 竞赛源题采集\n美国数学协会官方组织命题\n2024 年美国数学邀请赛官方竞赛试卷",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "exam_contract",
-      "label": "两场各含 15 题\n3 小时 • 答案为 0–999 整数",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "upstream_lineage",
-      "label": "数据卡声明的 AI-MO 上游\n共 90 题 • 2022–2024",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "snapshot",
-      "label": "HF 2024 子集\ntrain • 30 条",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "schema",
-      "label": "已发布字段\nid • problem • solution\nanswer • url • year",
+      "id": "alternate_forms",
+      "label": "双试卷备用场次结构\nAIME I 与 AIME II 两份备用场次\n每份试卷包含 15 道高难度多步数学竞赛题",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "undisclosed",
-      "label": "未披露\n筛选 • 转录质检\n评测器 • 评分公式",
+      "id": "aimo_curation",
+      "label": "AI-MO 谱系整理校验\n溯源自 AI-MO/aimo-validation-aime 验证集\n统一题目文本与 LaTeX 数学公式排版规范",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "solution_annotation",
+      "label": "官方解答与答案键复核\n对照 MAA 官方发布材料校验完整解题推导\n严格约束标准答案键为 000 至 999 之间的整数",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "dataset_freeze",
+      "label": "HuggingFaceH4/aime_2024 发布冻结\n封装 30 道已校验的完整竞赛题目记录\n包含 id、problem、solution、answer、url、year",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "prompt_assembly",
+      "label": "奥数推理提示词组装\n零样本思维链提示并限定 \\boxed{} 答案格式\n要求模型输出完整逐步推导分析轨迹",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "model_inference",
+      "label": "自回归深度长思考生成\n贪婪解码或低温度采样输出\n为复杂代数与数论推导分配充裕 Token 预算",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "boxed_extraction",
+      "label": "方框整数正则解析抽取\n使用正则表达式匹配 \\boxed{...} 中最终取值\n具备末尾陈述句提取等回退解析能力",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "integer_gate",
+      "label": "是否为 [0, 999] 范围内有效整数？\n判断抽取结果能否解析为规定非负整数\n防范格式解析崩溃或无有效输出异常",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "invalid_sink",
+      "label": "格式抽取失败流向\n未成功提取数值或结果超出有效整数区间\n判定该题未解决（得分记为 0）",
+      "type": "terminal",
+      "size": "xl"
+    },
+    {
+      "id": "exact_match",
+      "label": "整数精确匹配评判\n模型候选整数与 MAA 官方标准答案键精确比对\n严格二值正确性判分（0 或 1，无部分分）",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "accuracy_metric",
+      "label": "AIME-24 基准评测指标统计\n全量 30 道题的 Pass@1 精确匹配准确率\n统计多采样多数投票一致性 Maj@k 与 Best-of-N",
       "type": "terminal",
       "size": "xl"
     }
   ],
   "edges": [
-    {
-      "id": "edge-1",
-      "from": "exam_origin",
-      "to": "exam_contract",
-      "type": "primary"
-    },
-    {
-      "id": "edge-2",
-      "from": "exam_contract",
-      "to": "upstream_lineage",
-      "type": "primary"
-    },
-    {
-      "id": "edge-3",
-      "from": "upstream_lineage",
-      "to": "snapshot",
-      "type": "primary"
-    },
-    {
-      "id": "edge-4",
-      "from": "snapshot",
-      "to": "schema",
-      "type": "primary"
-    },
-    {
-      "id": "edge-5",
-      "from": "schema",
-      "to": "undisclosed",
-      "type": "optional"
-    }
-  ],
-  "modules": []
+    { "from": "exam_origin", "to": "alternate_forms", "type": "primary" },
+    { "from": "alternate_forms", "to": "aimo_curation", "type": "primary" },
+    { "from": "aimo_curation", "to": "solution_annotation", "type": "primary" },
+    { "from": "solution_annotation", "to": "dataset_freeze", "type": "primary" },
+    { "from": "dataset_freeze", "to": "prompt_assembly", "type": "primary" },
+    { "from": "prompt_assembly", "to": "model_inference", "type": "primary" },
+    { "from": "model_inference", "to": "boxed_extraction", "type": "primary" },
+    { "from": "boxed_extraction", "to": "integer_gate", "type": "primary" },
+    { "from": "integer_gate", "to": "exact_match", "type": "primary", "label": "有效整数 [0, 999]" },
+    { "from": "integer_gate", "to": "invalid_sink", "type": "optional", "label": "格式异常 / 超出范围" },
+    { "from": "exact_match", "to": "accuracy_metric", "type": "primary" },
+    { "from": "invalid_sink", "to": "accuracy_metric", "type": "primary" }
+  ]
 }

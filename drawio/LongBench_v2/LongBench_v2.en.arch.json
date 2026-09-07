@@ -1,88 +1,100 @@
 {
   "version": 1,
-  "title": "LongBench v2 Dataset Construction",
+  "title": "LongBench-v2 Dataset Construction and Evaluation Protocol",
   "type": "academic-diagram",
   "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 12,
-    "edges": 13,
-    "modules": 0
+    "nodes": 14,
+    "edges": 15,
+    "modules": 2
   },
   "nodes": [
     {
       "id": "annotators",
-      "label": "97 annotators",
-      "type": "document",
-      "size": "large"
+      "label": "97 Qualified Annotators\nScreened native English and bilingual domain experts\nTrained with strict guidelines on long-context QA authoring",
+      "type": "user",
+      "size": "xl"
     },
     {
       "id": "documents",
-      "label": "English files",
+      "label": "English Document Ingestion\nAcademic papers, legal books, literature, and technical reports\nDiverse high-quality long-context text sources",
       "type": "document",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "text_extract",
-      "label": "PyMuPDF text",
+      "label": "PyMuPDF Text Extraction & Parsing\nExtract clean linear text stream from PDF/HTML documents\nFilter formatting noise, tables, and OCR artifacts",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "doc_filter",
-      "label": "8192+ & dedup",
-      "type": "process",
-      "size": "large"
+      "label": "Length & Deduplication Gate\nEnforce minimum length threshold (>8,192 words)\nMinHash deduplication against standard benchmarks",
+      "type": "decision",
+      "size": "xl"
     },
     {
       "id": "doc_reject",
-      "label": "Doc rejected",
+      "label": "Document Rejection\nDiscard short, malformed, or repetitive documents\nLog rejection criteria for pipeline auditing",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "annotation",
-      "label": "MCQ + evidence",
+      "label": "MCQ Generation & Evidence Anchoring\nCreate challenging 4-choice questions\nPinpoint multi-hop evidence sentences across context",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
-      "id": "model_review",
-      "label": "3-model gate",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "human_review",
-      "label": "24-reviewer pool · expert review",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "final_verify",
-      "label": "70-item audit",
-      "type": "process",
-      "size": "large"
-    },
-    {
-      "id": "final",
-      "label": "503 EN MCQs",
-      "type": "terminal",
-      "size": "large"
+      "id": "qa_review_gate",
+      "label": "3-Model & 24-Reviewer Quality Gate\nFrontier LLM screen (GPT-4o, Claude 3.5, Gemini 1.5)\nIndependent domain expert blind cross-validation",
+      "type": "decision",
+      "size": "xl"
     },
     {
       "id": "revision",
-      "label": "Revise ≤5x",
+      "label": "Iterative Revision Loop (<= 5 Rounds)\nAnnotator refines question wording and distractors\nFilter questions solvable by short-context heuristics",
       "type": "process",
-      "size": "large"
+      "size": "xl"
     },
     {
       "id": "terminate",
-      "label": "Stop after >5",
+      "label": "Question Termination (> 5 Revisions)\nPermanently drop questions exceeding revision budget\nMaintain rigorous quality control threshold",
       "type": "terminal",
-      "size": "large"
+      "size": "xl"
+    },
+    {
+      "id": "final",
+      "label": "503 Validated English MCQs\nFinal frozen LongBench-v2 evaluation dataset\nBalanced distribution across lengths (8k to 128k words)",
+      "type": "database",
+      "size": "xl"
+    },
+    {
+      "id": "eval_prompt",
+      "label": "Long-Context Prompt Assembly\nStandardized prompt format with full context & question\nSupport zero-shot and few-shot evaluation regimes",
+      "type": "document",
+      "size": "xl"
+    },
+    {
+      "id": "model_inference",
+      "label": "Model Context Processing & Generation\nEvaluate models over 8K-128K context windows\nExtract predicted option letter (A, B, C, D)",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "scoring_pipeline",
+      "label": "Accuracy Scoring & Stratification\nCompute overall accuracy across 6 core categories\nStratify performance across context length tiers",
+      "type": "process",
+      "size": "xl"
+    },
+    {
+      "id": "leaderboard_report",
+      "label": "LongBench-v2 Leaderboard Report\nEffective context window capacity ratings\nHard long-context reasoning benchmark freeze",
+      "type": "terminal",
+      "size": "xl"
     }
   ],
   "edges": [
@@ -108,62 +120,108 @@
       "id": "edge-4",
       "from": "doc_filter",
       "to": "annotation",
-      "type": "primary"
+      "type": "primary",
+      "label": "Pass"
     },
     {
       "id": "edge-5",
       "from": "doc_filter",
       "to": "doc_reject",
-      "type": "optional"
+      "type": "optional",
+      "label": "Reject"
     },
     {
       "id": "edge-6",
       "from": "annotation",
-      "to": "model_review",
+      "to": "qa_review_gate",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "model_review",
-      "to": "human_review",
-      "type": "primary"
+      "from": "qa_review_gate",
+      "to": "final",
+      "type": "primary",
+      "label": "Approved"
     },
     {
       "id": "edge-8",
-      "from": "human_review",
-      "to": "final",
-      "type": "primary"
+      "from": "qa_review_gate",
+      "to": "revision",
+      "type": "optional",
+      "label": "Revise"
     },
     {
       "id": "edge-9",
-      "from": "final",
-      "to": "final_verify",
-      "type": "secondary"
+      "from": "revision",
+      "to": "annotation",
+      "type": "optional",
+      "label": "Retry"
     },
     {
       "id": "edge-10",
-      "from": "model_review",
-      "to": "revision",
-      "type": "optional"
+      "from": "revision",
+      "to": "terminate",
+      "type": "optional",
+      "label": "Drop"
     },
     {
       "id": "edge-11",
-      "from": "human_review",
-      "to": "revision",
-      "type": "optional"
+      "from": "final",
+      "to": "eval_prompt",
+      "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "revision",
-      "to": "annotation",
-      "type": "optional"
+      "from": "eval_prompt",
+      "to": "model_inference",
+      "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "revision",
-      "to": "terminate",
-      "type": "optional"
+      "from": "model_inference",
+      "to": "scoring_pipeline",
+      "type": "primary"
+    },
+    {
+      "id": "edge-14",
+      "from": "final",
+      "to": "scoring_pipeline",
+      "type": "secondary",
+      "label": "Ground Truth"
+    },
+    {
+      "id": "edge-15",
+      "from": "scoring_pipeline",
+      "to": "leaderboard_report",
+      "type": "primary"
     }
   ],
-  "modules": []
+  "modules": [
+    {
+      "id": "construction",
+      "name": "Track A: Multi-Hop Long-Context QA Construction",
+      "nodeIds": [
+        "annotators",
+        "documents",
+        "text_extract",
+        "doc_filter",
+        "doc_reject",
+        "annotation",
+        "qa_review_gate",
+        "revision",
+        "terminate",
+        "final"
+      ]
+    },
+    {
+      "id": "evaluation",
+      "name": "Track B: Model Evaluation & Length Stratification",
+      "nodeIds": [
+        "eval_prompt",
+        "model_inference",
+        "scoring_pipeline",
+        "leaderboard_report"
+      ]
+    }
+  ]
 }

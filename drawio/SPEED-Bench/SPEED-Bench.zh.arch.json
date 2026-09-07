@@ -1,104 +1,86 @@
 {
   "version": 1,
-  "title": "SPEED-Bench 构建与评测流程",
+  "title": "SPEED-Bench 基准构建与推测解码评测流程",
   "type": "academic-diagram",
-  "source": "generated",
+  "source": "paper-grounded",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
-    "nodes": 15,
-    "edges": 14,
-    "modules": 0
+    "nodes": 12,
+    "edges": 13,
+    "modules": 2
   },
   "nodes": [
     {
-      "id": "step_1",
-      "label": "汇集18来源",
+      "id": "public_sources",
+      "label": "公开提示词数据源\n涵盖 18 个主流开源评测与对话语料集\nHumanEval · GSM8K · ShareGPT · UltraChat",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_2",
-      "label": "划分11类别",
+      "id": "category_classification",
+      "label": "领域分类与语义标注\n将候选提示词规范归类至 11 个语义领域\n代码 · 数学 · 多轮对话 · 逻辑推理 · 问答",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_3",
-      "label": "嵌入提示",
+      "id": "split_curation_gate",
+      "label": "评测基准切分流向门\n筛选高多样性语义质量集 (880条)\n或构造生产吞吐压力负载 (1k-32k)？",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "qualitative_pipeline",
+      "label": "嵌入空间语义多样性筛选\n基于 text-embedding-3-large 与贪心局部互换\n每类精选 80 条提示词 (共 880 条质量集)",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_4",
-      "label": "筛选880条",
+      "id": "throughput_pipeline",
+      "label": "长度分桶与领域信息熵划分\n划分 5 个输入长度分桶 (1k, 2k, 8k, 16k, 32k)\n涵盖高/混合/低熵3类 · 每组 512 条基准样本",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_5",
-      "label": "按熵分组",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_6",
-      "label": "长度分桶",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_7",
-      "label": "截断或填充",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_8",
-      "label": "封装双数据集",
+      "id": "frozen_benchmark",
+      "label": "SPEED-Bench 双轨评测发布集\n880 条高语义多样性定性评测提示词\n7,680 条真实大并发生产吞吐压力负载",
       "type": "database",
       "size": "xl"
     },
     {
-      "id": "step_9",
-      "label": "统一token序列",
+      "id": "offline_tokenization",
+      "label": "离线分词与输入规整引擎\n在推理服务引擎外提前完成统一分词\n彻底消除客户端网络传输与分词耗时干扰",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_10",
-      "label": "运行生产引擎",
+      "id": "spec_verification_gate",
+      "label": "推测词元验证判定门\n草稿模型生成的词元是否被目标模型接受？\n在目标模型沙箱中执行推测采样与对齐校验",
+      "type": "decision",
+      "size": "xl"
+    },
+    {
+      "id": "accept_branch",
+      "label": "草稿词元快速接收通路\n目标大模型验证确认草稿预测准确\n按接收长度推进上下文窗口并跳过自回归计算",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_11",
-      "label": "收集流式结果",
+      "id": "rollback_branch",
+      "label": "草稿回滚与重新采样通路\n目标大模型纠正不匹配的草稿预测\n回滚推测状态并依据目标分布重新采样",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_12",
-      "label": "计算AR与AL",
+      "id": "token_telemetry",
+      "label": "词元接收与回滚动态度量\n统计词元接收长度 (AL) 与回滚惩罚开销\n高并发分发请求最高支持 512 突发并发",
       "type": "process",
       "size": "xl"
     },
     {
-      "id": "step_13",
-      "label": "计算TPS",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_14",
-      "label": "扫描服务参数",
-      "type": "process",
-      "size": "xl"
-    },
-    {
-      "id": "step_15",
-      "label": "报告加速比",
+      "id": "metric_reporting",
+      "label": "推测解码服务效率指标报告\n接收率 (AR) · 输出 TPS · 用户端 TPS\n跨 SGLang、vLLM 与 TensorRT-LLM 加速比",
       "type": "terminal",
       "size": "xl"
     }
@@ -106,86 +88,84 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "step_1",
-      "to": "step_2",
+      "from": "public_sources",
+      "to": "category_classification",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "step_2",
-      "to": "step_3",
+      "from": "category_classification",
+      "to": "split_curation_gate",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "step_3",
-      "to": "step_4",
+      "from": "split_curation_gate",
+      "to": "qualitative_pipeline",
+      "label": "质量多样性集",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "step_4",
-      "to": "step_5",
+      "from": "split_curation_gate",
+      "to": "throughput_pipeline",
+      "label": "生产吞吐负载",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "step_5",
-      "to": "step_6",
+      "from": "qualitative_pipeline",
+      "to": "frozen_benchmark",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "step_6",
-      "to": "step_7",
+      "from": "throughput_pipeline",
+      "to": "frozen_benchmark",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "step_7",
-      "to": "step_8",
+      "from": "frozen_benchmark",
+      "to": "offline_tokenization",
       "type": "primary"
     },
     {
       "id": "edge-8",
-      "from": "step_8",
-      "to": "step_9",
+      "from": "offline_tokenization",
+      "to": "spec_verification_gate",
       "type": "primary"
     },
     {
       "id": "edge-9",
-      "from": "step_9",
-      "to": "step_10",
+      "from": "spec_verification_gate",
+      "to": "accept_branch",
+      "label": "验证通过接收",
       "type": "primary"
     },
     {
       "id": "edge-10",
-      "from": "step_10",
-      "to": "step_11",
+      "from": "spec_verification_gate",
+      "to": "rollback_branch",
+      "label": "预测失配回滚",
       "type": "primary"
     },
     {
       "id": "edge-11",
-      "from": "step_11",
-      "to": "step_12",
+      "from": "accept_branch",
+      "to": "token_telemetry",
       "type": "primary"
     },
     {
       "id": "edge-12",
-      "from": "step_12",
-      "to": "step_13",
+      "from": "rollback_branch",
+      "to": "token_telemetry",
       "type": "primary"
     },
     {
       "id": "edge-13",
-      "from": "step_13",
-      "to": "step_14",
-      "type": "primary"
-    },
-    {
-      "id": "edge-14",
-      "from": "step_14",
-      "to": "step_15",
+      "from": "token_telemetry",
+      "to": "metric_reporting",
       "type": "primary"
     }
   ],
