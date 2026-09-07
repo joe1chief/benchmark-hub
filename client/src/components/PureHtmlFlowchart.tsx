@@ -1,41 +1,16 @@
 // LLM Benchmark Costco — Pure CSS + HTML Flowchart Engine
 // Renders paper-aligned benchmark build & evaluation flowcharts completely from scratch using CSS & HTML DOM
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Database,
-  Cpu,
-  GitBranch,
-  ShieldCheck,
-  Users,
-  FileText,
-  Bot,
-  ExternalLink,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Play,
-  Pause,
-  Copy,
-  Check,
-  Sparkles,
-  Layers,
-  ArrowRight,
-  BookOpen,
-  Filter,
-  CheckCircle2,
-  Info,
-  Maximize2,
-  Minimize2,
-  ListFilter,
-  Network,
-} from 'lucide-react';
+import { ExternalLink, ZoomIn, ZoomOut, RotateCcw, Play, Pause, Copy, Check, Maximize2, Minimize2, ListFilter, Network } from 'lucide-react';
 import type { Benchmark } from '@/types/benchmark';
+import { partitionBuildProcess, type StageModule } from '@/lib/buildProcessStages';
+import { BuildProcessLanes, ProcessTransitions, processNodeTitle, SHAPE_CONFIG } from './BuildProcessCards';
 import { useLang } from '@/contexts/LangContext';
 
 interface ArchNode {
   id: string;
+  module?: string;
   label: string;
   type: string;
   size?: string;
@@ -55,6 +30,7 @@ interface ArchData {
   title: string;
   type: string;
   layout?: string;
+  modules?: StageModule[];
   nodes: ArchNode[];
   edges: ArchEdge[];
 }
@@ -64,72 +40,6 @@ interface Props {
   isDark: boolean;
   initialFullscreen?: boolean;
 }
-
-// Shape & Theme configurations for HTML+CSS flowchart nodes
-const SHAPE_CONFIG: Record<string, {
-  nameEn: string;
-  nameZh: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  borderClass: string;
-  bgClass: string;
-  accentColor: string;
-  shapeStyle: string;
-}> = {
-  database: {
-    nameEn: 'DATA SOURCE / REPO',
-    nameZh: '数据源 / 语料库',
-    icon: Database,
-    borderClass: 'border-cyan-500/50 hover:border-cyan-400',
-    bgClass: 'bg-cyan-500/[0.07] hover:bg-cyan-500/[0.12]',
-    accentColor: '#06B6D4',
-    shapeStyle: 'rounded-xl border-t-4 border-t-cyan-400',
-  },
-  document: {
-    nameEn: 'SPEC / CANDIDATE',
-    nameZh: '候选集 / 规约文档',
-    icon: FileText,
-    borderClass: 'border-blue-500/50 hover:border-blue-400',
-    bgClass: 'bg-blue-500/[0.07] hover:bg-blue-500/[0.12]',
-    accentColor: '#3B82F6',
-    shapeStyle: 'rounded-xl',
-  },
-  process: {
-    nameEn: 'PROCESS / EXECUTION',
-    nameZh: '处理阶段 / 执行管道',
-    icon: Cpu,
-    borderClass: 'border-emerald-500/50 hover:border-emerald-400',
-    bgClass: 'bg-emerald-500/[0.07] hover:bg-emerald-500/[0.12]',
-    accentColor: '#10B981',
-    shapeStyle: 'rounded-xl',
-  },
-  decision: {
-    nameEn: 'QUALITY GATE / FILTER',
-    nameZh: '质检闸门 / 准入判定',
-    icon: GitBranch,
-    borderClass: 'border-amber-500/50 hover:border-amber-400',
-    bgClass: 'bg-amber-500/[0.07] hover:bg-amber-500/[0.12]',
-    accentColor: '#F59E0B',
-    shapeStyle: 'rounded-2xl border-l-4 border-l-amber-400',
-  },
-  user: {
-    nameEn: 'HUMAN REVIEW / AUDIT',
-    nameZh: '人工复核 / 专家标注',
-    icon: Users,
-    borderClass: 'border-purple-500/50 hover:border-purple-400',
-    bgClass: 'bg-purple-500/[0.07] hover:bg-purple-500/[0.12]',
-    accentColor: '#8B5CF6',
-    shapeStyle: 'rounded-xl border-t-4 border-t-purple-400',
-  },
-  terminal: {
-    nameEn: 'BENCHMARK / METRIC',
-    nameZh: '基准冻结 / 评测打分',
-    icon: ShieldCheck,
-    borderClass: 'border-pink-500/50 hover:border-pink-400',
-    bgClass: 'bg-pink-500/[0.07] hover:bg-pink-500/[0.12]',
-    accentColor: '#EC4899',
-    shapeStyle: 'rounded-2xl border-r-4 border-r-pink-400',
-  },
-};
 
 export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscreen = false }: Props) {
   const { lang } = useLang();
@@ -171,61 +81,9 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
       });
   }, [b.id, isEn]);
 
-  // Separate nodes into Construction and Evaluation Swimlanes
-  const { constructionNodes, evaluationNodes, allNodes, nodeMap, edges } = useMemo(() => {
-    if (!archData?.nodes) {
-      return {
-        constructionNodes: [],
-        evaluationNodes: [],
-        allNodes: [],
-        nodeMap: new Map<string, ArchNode>(),
-        edges: [],
-      };
-    }
-
-    const nMap = new Map<string, ArchNode>();
-    archData.nodes.forEach(n => nMap.set(n.id, n));
-
-    const evalKeywords = [
-      'eval', 'test', 'infer', 'prompt', 'judge', 'cot', 'extract',
-      'score', 'metric', 'report', 'accuracy', 'pass@', '评测', '推理',
-      '提示', '裁判', '抽取', '得分', '准确率', 'leaderboard',
-    ];
-
-    const construct: ArchNode[] = [];
-    const evaluate: ArchNode[] = [];
-
-    archData.nodes.forEach((node, idx) => {
-      const lower = (node.id + ' ' + node.label).toLowerCase();
-      const isEval =
-        evalKeywords.some(kw => lower.includes(kw)) ||
-        idx >= Math.floor(archData.nodes.length * 0.6);
-
-      if (isEval && idx > 0) {
-        evaluate.push(node);
-      } else {
-        construct.push(node);
-      }
-    });
-
-    return {
-      constructionNodes: construct,
-      evaluationNodes: evaluate,
-      allNodes: archData.nodes,
-      nodeMap: nMap,
-      edges: archData.edges || [],
-    };
-  }, [archData]);
-
-  // Outgoing flow mapping
-  const outgoingMap = useMemo(() => {
-    const map = new Map<string, string[]>();
-    edges.forEach(e => {
-      if (!map.has(e.from)) map.set(e.from, []);
-      map.get(e.from)!.push(e.to);
-    });
-    return map;
-  }, [edges]);
+  const { allNodes, nodeMap, edges } = useMemo(
+    () => partitionBuildProcess(archData), [archData],
+  );
 
   // Simulation execution loop
   useEffect(() => {
@@ -253,16 +111,16 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
       `### ${b.name} Build Process Flowchart (${isEn ? 'Paper-Aligned' : '论文严格对齐'})`,
       `**Source Paper:** ${b.paper_url || 'N/A'}`,
       '',
-      `| Step | Phase | Node ID | Stage Operation & Verification Gate |`,
-      `| :--- | :--- | :--- | :--- |`,
+      `| Step | Phase | Stage Operation & Verification Gate |`,
+      `| :--- | :--- | :--- |`,
     ];
 
     allNodes.forEach((n, idx) => {
       const parts = n.label.split('\n').map(s => s.trim()).filter(Boolean);
-      const title = parts[0] || n.id;
+      const title = processNodeTitle(n, isEn);
       const details = parts.slice(1).join('; ');
       const category = SHAPE_CONFIG[n.type]?.[isEn ? 'nameEn' : 'nameZh'] || n.type;
-      lines.push(`| ${idx + 1} | ${category} | \`${n.id}\` | **${title}** ${details ? `— ${details}` : ''} |`);
+      lines.push(`| ${idx + 1} | ${category} | **${title}** ${details ? `— ${details}` : ''} |`);
     });
 
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
@@ -413,184 +271,10 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
             // RENDERING NATIVE CSS+HTML FLOWCHART...
           </div>
         ) : viewLayout === 'swimlane' ? (
-          /* ── Swimlane Layout (Track A & Track B) ── */
-          <div
-            style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
-            className="space-y-6 min-w-[860px] pb-10"
-          >
-            {/* Swimlane 1: Dataset Construction Flow */}
-            <section className={`rounded-xl border p-4 backdrop-blur-md ${
-              isDark ? 'bg-slate-950/70 border-cyan-900/40' : 'bg-white/80 border-cyan-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-cyan-500/20">
-                <Database size={15} className="text-cyan-400" />
-                <h4 className="font-hud font-bold text-xs uppercase tracking-wider text-cyan-300">
-                  {isEn ? 'Track A: Dataset Construction Pipeline' : '泳道 A：数据集采集、过滤与构建流'}
-                </h4>
-                <span className="text-[10px] font-mono-tech text-slate-500 ml-auto">
-                  {constructionNodes.length} STAGES
-                </span>
-              </div>
-
-              {/* Horizontal CSS Flex Flow */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-1">
-                {constructionNodes.map((node, idx) => {
-                  const isSelected = selectedNodeId === node.id;
-                  const cfg = SHAPE_CONFIG[node.type] || SHAPE_CONFIG.process;
-                  const Icon = cfg.icon;
-                  const lines = node.label.split('\n').map(l => l.trim()).filter(Boolean);
-                  const title = lines[0] || node.id;
-                  const bullets = lines.slice(1);
-
-                  return (
-                    <React.Fragment key={node.id}>
-                      {/* Node Block */}
-                      <div
-                        onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
-                        className={`w-56 shrink-0 p-3.5 rounded-xl border backdrop-blur-md transition-all duration-200 cursor-pointer ${
-                          cfg.shapeStyle
-                        } ${cfg.borderClass} ${cfg.bgClass} ${
-                          isSelected
-                            ? 'ring-2 ring-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.35)] scale-105 z-20'
-                            : isDark ? 'bg-slate-900/90' : 'bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1 mb-2">
-                          <span
-                            className="inline-flex items-center gap-1 text-[9px] font-mono-tech font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border"
-                            style={{ color: cfg.accentColor, borderColor: `${cfg.accentColor}40`, backgroundColor: `${cfg.accentColor}15` }}
-                          >
-                            <Icon size={9} />
-                            <span>{isEn ? cfg.nameEn : cfg.nameZh}</span>
-                          </span>
-                          <span className="text-[9.5px] font-mono-tech text-slate-500">
-                            #{node.id}
-                          </span>
-                        </div>
-
-                        <h5 className={`text-xs font-bold leading-snug mb-1.5 transition-colors line-clamp-2 ${
-                          isSelected ? 'text-cyan-300' : isDark ? 'text-slate-100' : 'text-slate-900'
-                        }`}>
-                          {title}
-                        </h5>
-
-                        {bullets.length > 0 && (
-                          <div className="space-y-1 mt-2 pt-1.5 border-t border-slate-800/40 text-[10.5px]">
-                            {bullets.slice(0, 2).map((bullet, bIdx) => (
-                              <div key={bIdx} className="text-slate-400 dark:text-slate-300 truncate">
-                                • {bullet}
-                              </div>
-                            ))}
-                            {bullets.length > 2 && (
-                              <span className="text-[9px] font-mono-tech text-cyan-400/80 block pt-0.5">
-                                +{bullets.length - 2} more...
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Pure CSS Flow Connector Arrow */}
-                      {idx < constructionNodes.length - 1 && (
-                        <div className="flex items-center justify-center shrink-0 px-1">
-                          <div className="flex items-center">
-                            <div className="w-5 h-[2px] bg-gradient-to-r from-cyan-500 to-teal-400" />
-                            <ArrowRight size={12} className="text-teal-400 -ml-1" />
-                          </div>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Swimlane 2: Model Evaluation & Scoring Flow */}
-            <section className={`rounded-xl border p-4 backdrop-blur-md ${
-              isDark ? 'bg-slate-950/70 border-purple-900/40' : 'bg-white/80 border-purple-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-purple-500/20">
-                <Bot size={15} className="text-purple-400" />
-                <h4 className="font-hud font-bold text-xs uppercase tracking-wider text-purple-300">
-                  {isEn ? 'Track B: Model Evaluation & Scoring Protocol' : '泳道 B：模型推理、判定与指标打分流'}
-                </h4>
-                <span className="text-[10px] font-mono-tech text-slate-500 ml-auto">
-                  {evaluationNodes.length} STAGES
-                </span>
-              </div>
-
-              {/* Horizontal CSS Flex Flow */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-1">
-                {evaluationNodes.map((node, idx) => {
-                  const isSelected = selectedNodeId === node.id;
-                  const cfg = SHAPE_CONFIG[node.type] || SHAPE_CONFIG.terminal;
-                  const Icon = cfg.icon;
-                  const lines = node.label.split('\n').map(l => l.trim()).filter(Boolean);
-                  const title = lines[0] || node.id;
-                  const bullets = lines.slice(1);
-
-                  return (
-                    <React.Fragment key={node.id}>
-                      {/* Node Block */}
-                      <div
-                        onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
-                        className={`w-56 shrink-0 p-3.5 rounded-xl border backdrop-blur-md transition-all duration-200 cursor-pointer ${
-                          cfg.shapeStyle
-                        } ${cfg.borderClass} ${cfg.bgClass} ${
-                          isSelected
-                            ? 'ring-2 ring-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.35)] scale-105 z-20'
-                            : isDark ? 'bg-slate-900/90' : 'bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1 mb-2">
-                          <span
-                            className="inline-flex items-center gap-1 text-[9px] font-mono-tech font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border"
-                            style={{ color: cfg.accentColor, borderColor: `${cfg.accentColor}40`, backgroundColor: `${cfg.accentColor}15` }}
-                          >
-                            <Icon size={9} />
-                            <span>{isEn ? cfg.nameEn : cfg.nameZh}</span>
-                          </span>
-                          <span className="text-[9.5px] font-mono-tech text-slate-500">
-                            #{node.id}
-                          </span>
-                        </div>
-
-                        <h5 className={`text-xs font-bold leading-snug mb-1.5 transition-colors line-clamp-2 ${
-                          isSelected ? 'text-purple-300' : isDark ? 'text-slate-100' : 'text-slate-900'
-                        }`}>
-                          {title}
-                        </h5>
-
-                        {bullets.length > 0 && (
-                          <div className="space-y-1 mt-2 pt-1.5 border-t border-slate-800/40 text-[10.5px]">
-                            {bullets.slice(0, 2).map((bullet, bIdx) => (
-                              <div key={bIdx} className="text-slate-400 dark:text-slate-300 truncate">
-                                • {bullet}
-                              </div>
-                            ))}
-                            {bullets.length > 2 && (
-                              <span className="text-[9px] font-mono-tech text-purple-400/80 block pt-0.5">
-                                +{bullets.length - 2} more...
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Pure CSS Flow Connector Arrow */}
-                      {idx < evaluationNodes.length - 1 && (
-                        <div className="flex items-center justify-center shrink-0 px-1">
-                          <div className="flex items-center">
-                            <div className="w-5 h-[2px] bg-gradient-to-r from-purple-500 to-pink-400" />
-                            <ArrowRight size={12} className="text-pink-400 -ml-1" />
-                          </div>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </section>
+          <div style={{ zoom: scale }}>
+            <BuildProcessLanes arch={archData} isDark={isDark} isEn={isEn}
+              selectedNodeId={selectedNodeId}
+              onSelect={id => setSelectedNodeId(selectedNodeId === id ? null : id)} />
           </div>
         ) : (
           /* ── Stage Matrix Layout (Structured Table) ── */
@@ -600,7 +284,6 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
                 <tr className={`border-b ${isDark ? 'border-slate-800 bg-slate-950/60' : 'border-slate-200 bg-slate-100/60'}`}>
                   <th className="py-2.5 px-3 font-mono-tech text-cyan-400">#</th>
                   <th className="py-2.5 px-3 font-mono-tech text-slate-400">{isEn ? 'PHASE' : '阶段类型'}</th>
-                  <th className="py-2.5 px-3 font-mono-tech text-slate-400">{isEn ? 'NODE ID' : '节点标识'}</th>
                   <th className="py-2.5 px-3 font-mono-tech text-slate-400">{isEn ? 'OPERATION' : '核心操作与准则'}</th>
                   <th className="py-2.5 px-3 font-mono-tech text-slate-400">{isEn ? 'LEADS TO' : '下游流转'}</th>
                 </tr>
@@ -610,9 +293,8 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
                   const cfg = SHAPE_CONFIG[n.type] || SHAPE_CONFIG.process;
                   const Icon = cfg.icon;
                   const lines = n.label.split('\n').map(l => l.trim()).filter(Boolean);
-                  const title = lines[0] || n.id;
+                  const title = processNodeTitle(n, isEn);
                   const details = lines.slice(1).join('; ');
-                  const outgoing = outgoingMap.get(n.id) || [];
 
                   return (
                     <tr
@@ -634,13 +316,12 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
                           <span>{isEn ? cfg.nameEn : cfg.nameZh}</span>
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 font-mono-tech text-cyan-400">{n.id}</td>
                       <td className="py-2.5 px-3">
                         <div className="font-semibold text-slate-200 dark:text-slate-100">{title}</div>
                         {details && <div className="text-[11px] text-slate-400 mt-0.5">{details}</div>}
                       </td>
                       <td className="py-2.5 px-3 font-mono-tech text-[10.5px] text-teal-400">
-                        {outgoing.join(', ') || '—'}
+                        <ProcessTransitions nodeId={n.id} edges={edges} nodeMap={nodeMap} isEn={isEn} onSelect={setSelectedNodeId} />
                       </td>
                     </tr>
                   );
@@ -665,7 +346,7 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
             <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-slate-800">
               <div>
                 <span className="text-[10px] font-mono-tech text-cyan-400 uppercase font-bold">
-                  STAGE SPECIFICATION · #{selectedNode.id}
+                  {isEn ? 'Step details' : '步骤详情'}
                 </span>
                 <h4 className="font-bold text-sm text-cyan-300 mt-0.5">
                   {selectedNode.label.split('\n')[0]}
@@ -689,7 +370,7 @@ export default function PureHtmlFlowchart({ benchmark: b, isDark, initialFullscr
             </div>
 
             <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono-tech text-slate-400">
-              <span>OUTGOING: {outgoingMap.get(selectedNode.id)?.length || 0}</span>
+              <ProcessTransitions nodeId={selectedNode.id} edges={edges} nodeMap={nodeMap} isEn={isEn} onSelect={setSelectedNodeId} />
               {b.paper_url && (
                 <a
                   href={b.paper_url}

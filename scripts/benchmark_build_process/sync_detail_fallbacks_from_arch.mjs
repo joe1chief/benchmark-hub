@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { writeFileBatchAtomically } from './atomic_file_batch.mjs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -47,7 +48,16 @@ function mermaidEdgeLabel(label) {
   return mermaidLabel(label).replace(/\|/gu, '&#124;');
 }
 
-function renderFallback(arch) {
+export function applyFallbacks(record, fallbacks) {
+  return {
+    ...record,
+    flowchart_en: fallbacks.en,
+    flowchart_zh: fallbacks.zh,
+    mermaid_flowchart: fallbacks.en,
+  };
+}
+
+export function renderFallback(arch) {
   const lines = ['flowchart LR'];
   for (const node of arch.nodes) {
     lines.push(`    ${node.id}["${mermaidLabel(node.label)}"]`);
@@ -69,6 +79,8 @@ function main() {
   const { ids, archRoot } = parseArgs(process.argv.slice(2));
   const catalog = readJson(catalogPath);
   const catalogIndex = new Map(catalog.map((record, index) => [record.id, index]));
+  const originalCatalog = JSON.stringify(catalog);
+  const writes = [];
 
   for (const id of ids) {
     const detailPath = join(publicDir, 'benchmarks_detail', `${id}.json`);
@@ -83,18 +95,21 @@ function main() {
       fallbacks[language] = renderFallback(readJson(archPath));
     }
 
-    detail.flowchart_en = fallbacks.en;
-    detail.flowchart_zh = fallbacks.zh;
-    detail.mermaid_flowchart = fallbacks.en;
-    writeFileSync(detailPath, `${JSON.stringify(detail, null, 2)}\n`);
+    const updatedDetail = applyFallbacks(detail, fallbacks);
+    if (JSON.stringify(updatedDetail) !== JSON.stringify(detail)) {
+      writes.push({ path: detailPath, content: `${JSON.stringify(updatedDetail, null, 2)}\n` });
+    }
 
     const index = catalogIndex.get(id);
     if (index === undefined) throw new Error(`${id}: missing catalog record`);
-    catalog[index] = detail;
+    catalog[index] = applyFallbacks(catalog[index], fallbacks);
   }
 
-  writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+  if (JSON.stringify(catalog) !== originalCatalog) {
+    writes.push({ path: catalogPath, content: `${JSON.stringify(catalog, null, 2)}\n` });
+  }
+  if (writes.length) writeFileBatchAtomically(writes);
   console.log(`Synchronized bilingual Mermaid fallbacks for ${ids.length} benchmark details.`);
 }
 
-main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

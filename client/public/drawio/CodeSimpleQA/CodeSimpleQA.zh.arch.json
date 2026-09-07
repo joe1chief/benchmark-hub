@@ -1,74 +1,74 @@
 {
   "version": 1,
-  "title": "CodeSimpleQA 基准构建与评测流程",
+  "title": "CodeSimpleQA 评测集构建流程",
   "type": "academic-diagram",
-  "source": "paper-grounded",
+  "source": "generated",
   "profile": "academic-paper",
   "theme": "academic-color",
   "layout": "horizontal",
   "counts": {
     "nodes": 10,
-    "edges": 9,
-    "modules": 2
+    "edges": 8,
+    "modules": 0
   },
   "nodes": [
     {
-      "id": "raw_sources",
-      "label": "双语技术语料源\n官方技术文档 · Stack Overflow 讨论\nCommon Crawl 技术文章与 GitHub 仓库",
-      "type": "database",
-      "size": "xl"
+      "id": "documents",
+      "label": "双语代码文档",
+      "type": "document",
+      "size": "large"
     },
     {
-      "id": "content_filter",
-      "label": "文档过滤与内容清洗\nFastText 分类器与代码文本比例过滤\n去除 HTML 噪声与跨平台内容去重",
+      "id": "annotators",
+      "label": "8 位受训标注者",
+      "type": "user",
+      "size": "large"
+    },
+    {
+      "id": "rewrite",
+      "label": "人工改写事实问答",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "qa_generation",
-      "label": "候选问答对合成\nDeepSeek-V3.1 在 T=0.1 下精准采样\n基于技术事实合成 1,500 对候选问答",
+      "id": "candidates",
+      "label": "1.5K 候选到 680 对",
       "type": "process",
-      "size": "xl"
+      "size": "large"
     },
     {
-      "id": "human_consensus_gate",
-      "label": "多专家一致性质检门\n8名专业标注员 + 资深软件工程师复核\n要求至少 3 位评审员达成事实一致",
-      "type": "decision",
-      "size": "xl"
+      "id": "review",
+      "label": "至少 3 位复核者共识",
+      "type": "process",
+      "size": "large"
     },
     {
-      "id": "discard_ambiguous",
-      "label": "淘汰争议与模糊题目\n剔除存在事实争议或主观推测的问题\n确保标准答案客观唯一且无可辩驳",
-      "type": "terminal",
-      "size": "xl"
-    },
-    {
-      "id": "frozen_benchmark",
-      "label": "CodeSimpleQA 冻结基准集\n包含 1,498 对高质量中英双语问答\n覆盖多种主流编程语言与计算机核心领域",
-      "type": "database",
-      "size": "xl"
-    },
-    {
-      "id": "prompt_formatting",
-      "label": "双语问答提示装配\n直接问题输入 + 简练事实回答格式约定\n单跳编程知识记忆与事实检索评估",
+      "id": "senior_conflict",
+      "label": "高级工程师人数冲突 · 3/4",
       "type": "document",
       "size": "xl"
     },
     {
-      "id": "model_inference",
-      "label": "模型事实问答推理\n零样本自回归生成知识回答\n模型输出简明事实陈述与关键代码名",
-      "type": "process",
-      "size": "xl"
+      "id": "human_subset",
+      "label": "312 条人工子集",
+      "type": "document",
+      "size": "large"
     },
     {
-      "id": "fact_verification",
-      "label": "事实一致性核验引擎\n正则精确匹配 + LLM-as-a-Judge 语义对齐\n严格检验事实正确性并拦截幻觉回答",
-      "type": "process",
-      "size": "xl"
+      "id": "other_sources",
+      "label": "其他论文来源",
+      "type": "document",
+      "size": "large"
     },
     {
-      "id": "metric_reporting",
-      "label": "事实准确率指标评估\n总体准确率 (Accuracy) 与幻觉率报告\n按编程语言与学科领域分层细粒度评估",
+      "id": "assembly",
+      "label": "双语评测集汇编",
+      "type": "process",
+      "size": "large"
+    },
+    {
+      "id": "final",
+      "label": "1,478（§2）/ 1,498（摘要与表 2）",
       "type": "terminal",
       "size": "xl"
     }
@@ -76,58 +76,50 @@
   "edges": [
     {
       "id": "edge-1",
-      "from": "raw_sources",
-      "to": "content_filter",
+      "from": "documents",
+      "to": "annotators",
       "type": "primary"
     },
     {
       "id": "edge-2",
-      "from": "content_filter",
-      "to": "qa_generation",
+      "from": "annotators",
+      "to": "rewrite",
       "type": "primary"
     },
     {
       "id": "edge-3",
-      "from": "qa_generation",
-      "to": "human_consensus_gate",
+      "from": "rewrite",
+      "to": "candidates",
       "type": "primary"
     },
     {
       "id": "edge-4",
-      "from": "human_consensus_gate",
-      "to": "frozen_benchmark",
-      "label": "共识通过 (≥3票)",
+      "from": "candidates",
+      "to": "review",
       "type": "primary"
     },
     {
       "id": "edge-5",
-      "from": "human_consensus_gate",
-      "to": "discard_ambiguous",
-      "label": "存在争议或模糊",
+      "from": "review",
+      "to": "human_subset",
       "type": "primary"
     },
     {
       "id": "edge-6",
-      "from": "frozen_benchmark",
-      "to": "prompt_formatting",
+      "from": "human_subset",
+      "to": "assembly",
       "type": "primary"
     },
     {
       "id": "edge-7",
-      "from": "prompt_formatting",
-      "to": "model_inference",
-      "type": "primary"
+      "from": "other_sources",
+      "to": "assembly",
+      "type": "data"
     },
     {
       "id": "edge-8",
-      "from": "model_inference",
-      "to": "fact_verification",
-      "type": "primary"
-    },
-    {
-      "id": "edge-9",
-      "from": "fact_verification",
-      "to": "metric_reporting",
+      "from": "assembly",
+      "to": "final",
       "type": "primary"
     }
   ],

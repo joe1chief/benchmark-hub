@@ -253,10 +253,21 @@ test('keeps BackendBench suite choice exclusive and pairs only TorchBench arrays
   }
   const detail = readDetail('BackendBench');
   assert.match(detail.drawio_review_note, /2a8d7e19e2c13c789ff2dceb44883ea8ea04dab4/u);
-  const fallback = fallbackText(detail);
-  assert.match(fallback, /exactly one mutually exclusive --suite|只选择一个互斥的 --suite/iu);
-  assert.match(fallback, /correctness\[\].*performance\[\].*same test index|correctness\[\].*performance\[\].*同一测试索引/isu);
-  assert.match(fallback, /never merged across suites|不同套件之间不合并/u);
+  for (const language of ['en', 'zh']) {
+    const expected = language === 'en' ? [
+      'suite_selector["One --suite per Run<br/>Smoke • OpInfo<br/>FACTO • TorchBench"]',
+      'paired_arrays["Pair Suite-Local Arrays<br/>correctness[i] + performance[i]<br/>Same TorchBench Test Index<br/>Compute Metrics in This Run"]',
+      'report["Publish Per-Suite Artifacts<br/>Selected --suite Results<br/>Per-Operator CSV + Failures<br/>No Cross-Suite Score Merge"]',
+    ] : [
+      "suite_selector[\"每次仅一个 --suite<br/>Smoke • OpInfo<br/>FACTO • TorchBench\"]",
+      "paired_arrays[\"配对套件内数组<br/>correctness[i] + performance[i]<br/>使用同一 TorchBench 测试索引<br/>在本次运行内计算指标\"]",
+      "report[\"发布分套件运行产物<br/>所选 --suite 结果<br/>算子级 CSV + 失败项<br/>不合并跨套件分数\"]"
+];
+    for (const node of expected) {
+      assert.ok(detail[`flowchart_${language}`].split('\n').includes(`    ${node}`),
+        `BackendBench.${language} preserves suite choice, paired indices, and suite-local reporting: ${node}`);
+    }
+  }
 });
 
 test('pins primary-source versions and publishes native fixed-light SVG/PNG pairs', () => {

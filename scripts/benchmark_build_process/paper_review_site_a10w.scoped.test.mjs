@@ -44,6 +44,14 @@ const findEdge = (graph, from, to, type) => graph.edges.find(
   edge => edge.from === from && edge.to === to && edge.type === type,
 );
 
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function topology(arch) {
   return {
     nodes: arch.nodes.map(({ id, type }) => ({ id, type })),
@@ -64,7 +72,7 @@ function renderFallback(arch) {
     lines.push(`    ${node.id}["${mermaidLabel(node.label)}"]`);
   }
   for (const edge of arch.edges) {
-    const arrow = edge.type === 'primary' ? '-->' : '-.->';
+    const arrow = mermaidArrow(edge);
     lines.push(`    ${edge.from} ${arrow} ${edge.to}`);
   }
   return lines.join('\n');

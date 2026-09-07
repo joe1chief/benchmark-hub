@@ -1,3 +1,4 @@
+import { BuildProcessCards } from './BuildProcessCards';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import HtmlBuildProcessView from './HtmlBuildProcessView';
@@ -58,4 +59,23 @@ describe('HtmlBuildProcessView', () => {
     expect(html).toContain('基于论文的构建方法与流程拓扑');
     expect(html).toContain('Pass@2像素级精确整题正确率');
   });
+});
+
+
+it('keeps the stage-card renderer rich and labels every branch without exposing internal IDs', () => {
+  const nodes = [
+    { id: 'private_check', type: 'decision', label: '人工复验\n逐项核对证据\n保留完整说明' },
+    { id: 'private_repair', type: 'process', label: '修复候选\n重新提交' },
+  ];
+  const html = renderToStaticMarkup(<BuildProcessCards nodes={nodes} allNodes={nodes}
+    edges={[{ from: 'private_check', to: 'private_repair', label: '未通过' },
+      { from: 'private_repair', to: 'private_check', label: '再次复验' }]}
+    isEn={false} isDark selectedNodeId="private_check" onSelect={() => {}} />);
+  const text = html.replace(/<[^>]*>/g, '');
+  expect(html.match(/<article /g)).toHaveLength(2);
+  for (const value of ['人工复验', '逐项核对证据', '保留完整说明', '修复候选', '重新提交', '未通过', '再次复验']) {
+    expect(text).toContain(value);
+  }
+  expect(text).not.toContain('private_');
+  expect(html).toContain('aria-pressed="true"');
 });

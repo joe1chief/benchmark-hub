@@ -41,6 +41,14 @@ const readDetail = id => readJson(join(publicDir, 'benchmarks_detail', `${id}.js
 const nodeMap = arch => new Map(arch.nodes.map(node => [node.id, node]));
 const edgeSet = arch => new Set(arch.edges.map(edge => `${edge.from}->${edge.to}:${edge.type}`));
 
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function topology(arch) {
   return {
     nodes: arch.nodes.map(({ id, type }) => ({ id, type })),
@@ -59,7 +67,7 @@ function renderFallback(arch) {
   const lines = ['flowchart LR'];
   for (const node of arch.nodes) lines.push(`    ${node.id}["${mermaidLabel(node.label)}"]`);
   for (const edge of arch.edges) {
-    const arrow = edge.type === 'primary' ? '-->' : '-.->';
+    const arrow = mermaidArrow(edge);
     lines.push(`    ${edge.from} ${arrow} ${edge.to}`);
   }
   return lines.join('\n');

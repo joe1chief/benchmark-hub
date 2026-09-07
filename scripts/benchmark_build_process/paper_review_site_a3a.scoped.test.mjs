@@ -18,6 +18,21 @@ const benchmarkIds = [
   'AgentHarm',
 ];
 
+function mermaidLabel(label) {
+  return String(label)
+    .replace(/\\/gu, '\\\\')
+    .replace(/"/gu, '\\"')
+    .replace(/\r?\n/gu, '<br/>');
+}
+
+function mermaidArrow(edge) {
+  const label = String(edge.label ?? '').trim();
+  const escaped = mermaidLabel(label).replace(/\|/gu, '&#124;');
+  return edge.type === 'primary'
+    ? (label ? `-->|${escaped}|` : '-->')
+    : (label ? `-. ${escaped} .->` : '-.->');
+}
+
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -57,11 +72,40 @@ function escapeRegex(value) {
 
 function mermaidEdges(mermaid) {
   return [...mermaid.matchAll(
-    /^    ([A-Za-z0-9_-]+) (-->|-\.->) ([A-Za-z0-9_-]+)$/gmu,
+    /^    ([A-Za-z0-9_-]+) (-->(?:\|[^|\r\n]*\|)?|-\.(?: [^\r\n]* \.)?->) ([A-Za-z0-9_-]+)$/gmu,
   )].map(([, from, arrow, to]) => (
-    `${from}->${to}:${arrow === '-->' ? 'primary' : 'secondary'}`
+    `${from}->${to}:${arrow.startsWith('-->') ? 'primary' : 'secondary'}`
   )).sort();
 }
+
+test('preserves labeled edge text, escaping, and exact primary/secondary style', () => {
+  const cases = [
+    [{ type: 'primary' }, '-->'],
+    [{ type: 'primary', label: ' \n ' }, '-->'],
+    [{ type: 'data' }, '-.->'],
+    [{ type: 'secondary', label: '  重试  ' }, '-. 重试 .->'],
+    [{ type: 'primary', label: '  Yes | "通过"\\path\r\nnext  ' }, '-->|Yes &#124; \\"通过\\"\\\\path<br/>next|'],
+    [{ type: 'data', label: '  No | "失败"\\path\nretry  ' }, '-. No &#124; \\"失败\\"\\\\path<br/>retry .->'],
+  ];
+  for (const [edge, expected] of cases) assert.equal(mermaidArrow(edge), expected);
+
+  const primary = '    gate -->|Yes &#124; 通过| result';
+  const secondary = '    gate -. No: retry .-> retry';
+  assert.deepEqual(mermaidEdges(`${primary}\n${secondary}`), [
+    'gate->result:primary', 'gate->retry:secondary',
+  ]);
+  const exact = new RegExp(`^    gate ${escapeRegex(mermaidArrow({
+    type: 'primary', label: 'Yes | 通过',
+  }))} result$`, 'mu');
+  assert.match(primary, exact);
+  for (const wrong of [
+    '    gate --> result',
+    '    gate -->|No &#124; 通过| result',
+    '    gate -. Yes &#124; 通过 .-> result',
+    '    gate -->|Yes &#124; 通过| retry',
+  ]) assert.doesNotMatch(wrong, exact);
+  assert.deepEqual(mermaidEdges('    gate -..-> result'), []);
+});
 
 test('keeps all six A3a diagrams bilingual with identical typed topology', () => {
   for (const id of benchmarkIds) {
@@ -259,7 +303,7 @@ test('keeps each Mermaid fallback synchronized with the reviewed Draw.io topolog
         );
       }
       for (const edge of arch.edges) {
-        const arrow = edge.type === 'primary' ? '-->' : '-.->';
+        const arrow = mermaidArrow(edge);
         assert.match(
           mermaid,
           new RegExp(`^    ${escapeRegex(edge.from)} ${escapeRegex(arrow)} ${escapeRegex(edge.to)}$`, 'mu'),
